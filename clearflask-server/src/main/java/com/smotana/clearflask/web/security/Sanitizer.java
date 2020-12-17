@@ -20,9 +20,8 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.HtmlStreamRenderer;
 import org.owasp.html.PolicyFactory;
-import org.xbill.DNS.CNAMERecord;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Type;
+import org.xbill.DNS.*;
+import org.xbill.DNS.Record;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -35,6 +34,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 
 @Slf4j
 @Singleton
@@ -162,23 +162,34 @@ public class Sanitizer {
             throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have a public suffix. If this is an error, please contact support team.");
         }
 
+        if (config.reservedDomains().contains(domain)) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + domain + "' domain is reserved");
+        }
+
+        Lookup lookup = null;
         try {
-            boolean isCanonical = Optional.ofNullable(new Lookup(domain, Type.CNAME).run())
-                    .stream()
-                    .flatMap(Arrays::stream)
+            lookup = new Lookup(domain, Type.CNAME);
+        } catch (TextParseException e) {
+            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain name appears to be invalid.");
+        }
+        Record[] records = Optional.ofNullable(lookup.run()).orElse(new Record[]{});
+            switch(lookup.getResult()) {
+                case Lookup.SUCCESSFUL:
+                    break;
+                case Lookup.HOST_NOT_FOUND:
+                case Lookup.TYPE_NOT_FOUND:
+                case Lookup.UNRECOVERABLE:
+                    throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
+                case Lookup.TRY_AGAIN:
+                    throw new ErrorWithMessageException(INTERNAL_SERVER_ERROR, "Failed to validate Custom Domain DNS entry");
+            }
+            boolean isCanonical = records.length > 0 && Arrays.stream(records)
                     .allMatch(r -> r.getType() == Type.CNAME
                             && r instanceof CNAMERecord
                             && config.sniDomain().equals(((CNAMERecord) r).getTarget().toString(true)));
             if (!isCanonical) {
-                throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
+                throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS CNAME record in your DNS to " + config.sniDomain());
             }
-        } catch (Exception ex) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
-        }
-
-        if (config.reservedDomains().contains(domain)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + domain + "' domain is reserved");
-        }
     }
 
     public void subdomain(String subdomain) {

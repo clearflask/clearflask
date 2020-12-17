@@ -36,6 +36,8 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
+import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -177,7 +179,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 changedResponse = Optional.empty();
             }
 
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId();
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/post/" + idea.getIdeaId();
 
             Set<String> userSeen = Sets.newHashSet();
             BiConsumer<SubscriptionAction, UserModel> sendToUser = (subscriptionAction, user) -> {
@@ -240,7 +242,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/transaction";
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/transaction";
 
             try {
                 notificationStore.notificationCreate(new NotificationModel(
@@ -297,7 +299,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
 
             Optional<UserModel> userOpt = userStore.getUser(idea.getProjectId(), userId);
             if (!userOpt.isPresent()) {
@@ -354,7 +356,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/account";
             checkState(!Strings.isNullOrEmpty(user.getEmail()));
 
             String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());
@@ -421,7 +423,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/account";
             checkState(!Strings.isNullOrEmpty(user.getEmail()));
 
             String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());
@@ -445,7 +447,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/account";
             checkState(!Strings.isNullOrEmpty(user.getEmail()));
 
             String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry(), false);

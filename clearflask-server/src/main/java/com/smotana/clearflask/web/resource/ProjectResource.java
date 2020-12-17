@@ -192,6 +192,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
         sanitizer.subdomain(configAdmin.getSlug());
+        Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(sanitizer::domain);
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);

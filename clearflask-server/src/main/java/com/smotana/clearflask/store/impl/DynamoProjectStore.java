@@ -56,6 +56,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.EqualsAndHashCode;
@@ -104,6 +105,8 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -670,6 +673,11 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public ImmutableSet<WebhookListener> getWebhookListenerUrls(String event) {
             return webhookEventToListeners.getOrDefault(event, ImmutableSet.of());
+        }
+
+        @Override
+        public String getHostname() {
+            return Project.getHostname(versionedConfigAdmin.getConfig(), configApp);
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {

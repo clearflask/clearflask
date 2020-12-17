@@ -1,13 +1,12 @@
 package com.smotana.clearflask.store;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.VersionedConfig;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -76,6 +75,14 @@ public interface ProjectStore {
         Function<String, String> getIntercomEmailToIdentityFun();
 
         ImmutableSet<WebhookListener> getWebhookListenerUrls(String eventType);
+
+        String getHostname();
+
+        static String getHostname(ConfigAdmin configAdmin, Application.Config configApp) {
+            return Strings.isNullOrEmpty(configAdmin.getDomain())
+                ? configAdmin.getSlug() + "." + configApp.domain()
+                : configAdmin.getDomain();
+        }
     }
 
     @Value

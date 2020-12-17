@@ -5,15 +5,18 @@ import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.xbill.DNS.CNAMERecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Type;
 
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Slf4j
 public class SanitizerTest extends AbstractTest {
@@ -46,7 +49,6 @@ public class SanitizerTest extends AbstractTest {
                 .replace("<br>", "<br />");
         assertSanitize("Expected same", expectedHtml, html);
     }
-
 
     @Test(timeout = 10_000L)
     public void testA() throws Exception {
@@ -106,6 +108,29 @@ public class SanitizerTest extends AbstractTest {
                 .allMatch(r -> r.getType() == Type.CNAME
                         && "sni.clearflask.com".equals(((CNAMERecord) r).getTarget().toString(true)));
         log.info("DEBUG {}", isCanonical);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testDomain() throws Exception {
+        assertSanitizeDomain("feedback.clearflask.com", false);
+        assertSanitizeDomain("feedback.example.com", true);
+    }
+
+    void assertSanitizeDomain(String domain, boolean expectFailure) {
+        try {
+            sanitizer.domain(domain);
+            if(expectFailure) {
+                fail("Expected failure");
+            }
+        } catch (ErrorWithMessageException ex) {
+            if(ex.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+                // It's fine, test was probably performed without network connection
+                return;
+            }
+            if(!expectFailure) {
+                throw ex;
+            }
+        }
     }
 
     void assertSanitize(String message, String expHtml, String inpHtml) {

@@ -10,6 +10,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.CreditViewUtil;
@@ -66,7 +67,7 @@ public class OnCreditChange {
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
+        String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
