@@ -4,7 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
-import ServerAdmin, { Project, ReduxStateAdmin } from '../../api/serverAdmin';
+import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import DividerCorner from '../../app/utils/DividerCorner';
 import UpgradeWrapper, { Action as FeatureAction } from '../../common/config/settings/UpgradeWrapper';
 import SubmitButton from '../../common/SubmitButton';
@@ -21,7 +21,6 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
-  activeProject?: Project;
 }
 interface ConnectProps {
   account?: Admin.AccountAdmin;
@@ -133,10 +132,6 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Account ID</Typography></Grid>
               <Grid item xs={12} sm={6}>{this.props.account.accountId}</Grid>
-            </Grid>
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Current Project ID</Typography></Grid>
-              <Grid item xs={12} sm={6}>{this.props.activeProject?.projectId || 'No project selected'}</Grid>
             </Grid>
           </UpgradeWrapper>
         </DividerCorner>

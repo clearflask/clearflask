@@ -54,18 +54,18 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
                   variant='overline'
                 >No notifications</Typography>
               ) : this.props.notifications!.map(notification => (
-                <Link
-                  to={this.getNotificationTo(notification)}
-                  onClick={() => this.clearNotification(notification)}
+                <TableRow
+                  key={notification.notificationId}
+                  hover
                 >
-                  <TableRow
-                    key={notification.notificationId}
-                    hover
+                  <Link
+                    to={this.getNotificationTo(notification)}
+                    onClick={() => this.clearNotification(notification)}
                   >
                     <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
                     <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
-                  </TableRow>
-                </Link>
+                  </Link>
+                </TableRow>
               ))}
             </TableBody>
           </Table>

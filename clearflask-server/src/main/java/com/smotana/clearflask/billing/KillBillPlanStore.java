@@ -78,12 +78,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             ImmutableList.of(
                     new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit"), TERMS_PROJECTS),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Roadmap view", ImmutableList.of("Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("Single Sign-On", ImmutableList.of("No", "Yes"), TERMS_SSO),
                     new FeaturesTableFeatures("API and Zapier", ImmutableList.of("No", "Yes"), TERMS_API_AND_ZAPIER),
-                    new FeaturesTableFeatures("Tracking Integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes"), TERMS_INTERCOM),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes"), TERMS_SITE_TEMPLATE)
             ), null);

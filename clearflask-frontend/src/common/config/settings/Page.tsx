@@ -62,7 +62,6 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
         {creditPreview}
         {workflowPreview}
         {this.props.page.getChildren().all
-          .filter(child => (child as ConfigEditor.Property).subType !== ConfigEditor.PropSubType.Id)
           .filter(child => !(child as ConfigEditor.Property).hide)
           .map(child => (
             <Property

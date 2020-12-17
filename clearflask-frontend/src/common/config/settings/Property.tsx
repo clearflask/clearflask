@@ -59,10 +59,6 @@ export default class Property extends Component<Props> {
       case ConfigEditor.PropertyType.Integer:
       case ConfigEditor.PropertyType.String:
         switch (prop.subType) {
-          case ConfigEditor.PropSubType.Id:
-            // ID is an invisible field
-            propertySetter = undefined;
-            break OUTER;
           case ConfigEditor.PropSubType.Color:
             propertySetter = (
               <div style={{
@@ -181,7 +177,7 @@ export default class Property extends Component<Props> {
                   minWidth: Property.inputMinWidth,
                   width: this.props.width,
                 },
-                readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
+                readOnly: prop.subType === ConfigEditor.PropSubType.Emoji || prop.subType === ConfigEditor.PropSubType.Id,
                 onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
                   if (!prop.value) prop.set(randomUuid());
                 } : undefined,
@@ -424,7 +420,6 @@ export default class Property extends Component<Props> {
           <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
             {prop.childProperties && prop.childProperties
               .filter(childProp => !childProp.hide)
-              .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
               .map(childProp => (
                 <Property {...this.props} bare={false} key={childProp.key} prop={childProp} />
               ))

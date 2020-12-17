@@ -342,8 +342,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'account':
         setTitle('Account - Dashboard');
-        allowProjectUserSelect = true;
-        page = (<SettingsPage activeProject={activeProject} />);
+        page = (<SettingsPage />);
         crumbs = [{ name: 'Settings', slug: activePath }];
         break;
       case 'help':

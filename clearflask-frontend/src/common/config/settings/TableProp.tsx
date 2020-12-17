@@ -75,7 +75,6 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           const row: React.ReactNode[] = [];
           childPropObject.childProperties && childPropObject.childProperties
             .filter(childProp => !childProp.hide)
-            .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
             .forEach((grandchildProp, grandchildPropIndex) => {
               if (childPropIndex === 0) {
                 header.push(this.renderHeaderCell(grandchildPropIndex, grandchildProp.name, grandchildProp.description));
@@ -88,7 +87,6 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
       const arrayProp: ConfigEditor.ArrayProperty = this.props.data;
       arrayProp.childProperties && arrayProp.childProperties
         .filter(childProp => !childProp.hide)
-        .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
         .forEach((childProp, childPropIndex, arr) => {
           if (childPropIndex === 0) {
             header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
