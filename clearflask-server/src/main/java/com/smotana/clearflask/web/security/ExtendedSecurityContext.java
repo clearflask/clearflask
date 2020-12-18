@@ -1,6 +1,8 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import lombok.NonNull;
@@ -22,23 +24,27 @@ public class ExtendedSecurityContext implements SecurityContext {
     @Value
     public static class ExtendedPrincipal implements Principal {
         @NonNull
-        private final String name;
+        String name;
         @NonNull
-        private final String remoteIp;
+        String remoteIp;
         @NonNull
-        private final Optional<AccountSession> accountSessionOpt;
+        Optional<AccountSession> accountSessionOpt;
         @NonNull
-        private final Optional<AccountSession> superAdminSessionOpt;
+        Optional<AccountSession> superAccountSessionOpt;
         @NonNull
-        private final Optional<UserSession> userSessionOpt;
+        Optional<Account> accountOpt;
+        @NonNull
+        Optional<Account> superAccountOpt;
+        @NonNull
+        Optional<UserSession> userSessionOpt;
     }
 
-    private final ExtendedPrincipal userPrincipal;
+    ExtendedPrincipal userPrincipal;
     @NonNull
-    private final Predicate<String> userHasRolePredicate;
+    Predicate<String> userHasRolePredicate;
     @NonNull
-    private final ContainerRequestContext requestContext;
-    private final String authenticationScheme = "COOKIE_TOKEN_AUTH";
+    ContainerRequestContext requestContext;
+    String authenticationScheme = "COOKIE_TOKEN_AUTH";
 
     @VisibleForTesting
     protected ExtendedSecurityContext(ExtendedPrincipal userPrincipal, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
@@ -47,17 +53,32 @@ public class ExtendedSecurityContext implements SecurityContext {
         this.requestContext = requestContext;
     }
 
-    public static ExtendedSecurityContext create(@NonNull String remoteIp, @NonNull Optional<AccountSession> accountSession, @NonNull Optional<AccountSession> superAdminSession, @NonNull Optional<UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext create(
+            @NonNull String remoteIp,
+            @NonNull Optional<AccountSession> accountSession,
+            @NonNull Optional<AccountSession> superAccountSession,
+            @NonNull Optional<Account> account,
+            @NonNull Optional<Account> superAccount,
+            @NonNull Optional<UserSession> userSession,
+            @NonNull Predicate<String> userHasRolePredicate,
+            @NonNull ContainerRequestContext requestContext) {
         String name;
-        if (accountSession.isPresent()) {
-            name = accountSession.get().getAccountId();
+        if (account.isPresent()) {
+            name = account.get().getAccountId();
         } else if (userSession.isPresent()) {
             name = userSession.get().getUserId();
         } else {
             name = remoteIp;
         }
         return new ExtendedSecurityContext(
-                new ExtendedPrincipal(name, remoteIp, accountSession, superAdminSession, userSession),
+                new ExtendedPrincipal(
+                        name,
+                        remoteIp,
+                        accountSession,
+                        superAccountSession,
+                        account,
+                        superAccount,
+                        userSession),
                 userHasRolePredicate,
                 requestContext);
     }

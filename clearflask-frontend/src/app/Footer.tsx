@@ -1,4 +1,3 @@
-import { Divider } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -28,13 +27,10 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: 250,
   },
   poweredBy: {
-    marginTop: theme.spacing(1),
+    marginTop: theme.spacing(4),
     marginBottom: theme.spacing(4),
     display: 'flex',
     justifyContent: 'center',
-  },
-  divider: {
-    margin: theme.spacing(2, 0, 0, 0),
   },
 });
 interface Props {
@@ -52,14 +48,6 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           template={this.props.config.style.templates.footer}
           customPageSlug={this.props.customPageSlug}
         />
-      );
-    } else {
-      footer = (
-        <div className={this.props.classes.footerSpacing}>
-          <div className={this.props.classes.footerWrapper}>
-            <Divider className={this.props.classes.divider} />
-          </div>
-        </div>
       );
     }
 

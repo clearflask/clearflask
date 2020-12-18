@@ -19,6 +19,8 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.Application;
@@ -81,7 +83,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
     @Limit(requiredPermits = 100, challengeAfter = 10)
     @Override
     public void supportMessage(SupportMessage supportMessage) {
-        Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt);
+        Optional<Account> accountOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountOpt);
         String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
         String emailDisplayName = config.emailDisplayName();
         if (!Strings.isNullOrEmpty(emailDisplayName)) {
@@ -102,7 +104,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
                                     .withData(generateSubject(supportMessage)))
                             .withBody(new Body().withText(new Content()
                                     .withCharset(Charsets.UTF_8.name())
-                                    .withData(generateBody(supportMessage, accountSessionOpt)))))));
+                                    .withData(generateBody(supportMessage, accountOpt)))))));
         } catch (Exception ex) {
             log.error("Failed to send support message {}", supportMessage, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to send, please use support@clearflask.com", ex);
@@ -129,11 +131,11 @@ public class SupportResource extends AbstractResource implements SupportApi {
         return sb.toString();
     }
 
-    private String generateBody(SupportMessage supportMessage, Optional<AccountSession> accountSessionOpt) {
+    private String generateBody(SupportMessage supportMessage, Optional<Account> accountOpt) {
         return Stream.concat(
                 ImmutableMap.of(
                         "ip", IpUtil.getRemoteIp(request, env),
-                        "loggedInAccountEmail", accountSessionOpt.map(AccountSession::getEmail).orElse("None")
+                        "loggedInAccountEmail", accountOpt.map(Account::getEmail).orElse("None")
                 ).entrySet().stream(),
                 supportMessage.getContent().entrySet().stream())
                 .map(pair -> Strings.nullToEmpty(pair.getKey()) + ": " + Strings.nullToEmpty(pair.getValue()))

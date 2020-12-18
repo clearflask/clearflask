@@ -118,45 +118,34 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public AccountBindAdminResponse accountBindAdmin() {
+        Optional<Account> accountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt);
+        Optional<Account> superAccountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountOpt);
         Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
-        Optional<AccountSession> superAdminSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAdminSessionOpt);
-        if (!accountSessionOpt.isPresent()) {
-            return new AccountBindAdminResponse(null, false);
-        }
-        AccountSession accountSession = accountSessionOpt.get();
+        Optional<AccountSession> superAccountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt);
 
         // Token refresh
-        if (accountSession.getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
-            accountSession = accountStore.refreshSession(
-                    accountSession,
-                    Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        if (accountSessionOpt.isPresent() && accountSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
+            accountSessionOpt = Optional.of(accountStore.refreshSession(
+                    accountSessionOpt.get(),
+                    Instant.now().plus(config.sessionExpiry()).getEpochSecond()));
 
-            authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+            authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSessionOpt.get().getSessionId(), accountSessionOpt.get().getTtlInEpochSec());
         }
-        if (superAdminSessionOpt.isPresent()) {
-            if (superAdminSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
-                AccountSession superAdminSession = accountStore.refreshSession(
-                        superAdminSessionOpt.get(),
-                        Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        if (superAccountSessionOpt.isPresent()) {
+            if (superAccountSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
+                superAccountSessionOpt = Optional.of(accountStore.refreshSession(
+                        superAccountSessionOpt.get(),
+                        Instant.now().plus(config.sessionExpiry()).getEpochSecond()));
 
-                authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, superAdminSession.getSessionId(), superAdminSession.getTtlInEpochSec());
+                authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, superAccountSessionOpt.get().getSessionId(), superAccountSessionOpt.get().getTtlInEpochSec());
             }
         }
 
-        // Fetch account
-        Optional<Account> accountOpt = accountStore.getAccountByAccountId(accountSession.getAccountId());
-        if (!accountOpt.isPresent()) {
-            log.info("Account bind on valid session to non-existent account, revoking all sessions for accountId {}",
-                    accountSession.getAccountId());
-            accountStore.revokeSessions(accountSession.getAccountId());
-            authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
-            return new AccountBindAdminResponse(null, false);
-        }
-        Account account = accountOpt.get();
-
         return new AccountBindAdminResponse(
-                account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate),
-                superAdminSessionOpt.isPresent());
+                accountOpt.or(() -> superAccountOpt)
+                        .map(account -> account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate))
+                .orElse(null),
+                superAccountOpt.isPresent());
     }
 
     @PermitAll
@@ -195,7 +184,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public void accountLogoutAdmin() {
         Optional<String> accountSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
-        Optional<String> superAdminSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAdminSessionOpt).map(AccountSession::getAccountId);
+        Optional<String> superAdminSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt).map(AccountSession::getAccountId);
 
         log.debug("Logout session for accountId {} superAdminAccountId {}",
                 accountSessionIdOpt, superAdminSessionIdOpt);
@@ -276,35 +265,32 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountUpdateAdmin(AccountUpdateAdmin accountUpdateAdmin) {
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = null;
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
             sanitizer.accountName(accountUpdateAdmin.getName());
-            account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName()).getAccount();
+            account = accountStore.updateName(account.getAccountId(), accountUpdateAdmin.getName()).getAccount();
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
-            if (account == null) {
-                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-            }
             // Check if it already exists
-            accountStore.getAccountByApiKey(accountUpdateAdmin.getApiKey())
-                    .ifPresent(accountOther -> {
-                        if (!accountOther.getAccountId().equals(accountSession.getAccountId())) {
-                            log.error("Account {} tried to set same API key as account {}, notify the account of compromised key",
-                                    accountSession.getEmail(), accountOther.getEmail());
-                            // Throw invalid format rather than telling them that they guessed someone else's API key
-                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
-                        }
-                    });
+            Optional<Account> accountOtherOpt = accountStore.getAccountByApiKey(accountUpdateAdmin.getApiKey());
+            if(accountOtherOpt.isPresent()) {
+                    if (!accountOtherOpt.get().getAccountId().equals(account.getAccountId())) {
+                        log.error("Account {} tried to set same API key as account {}, notify the account of compromised key",
+                                account.getEmail(), accountOtherOpt.get().getEmail());
+                        // Throw invalid format rather than telling them that they guessed someone else's API key
+                        throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
+                    }
+            }
             planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
-            account = accountStore.updateApiKey(accountSession.getAccountId(), accountUpdateAdmin.getApiKey());
+            account = accountStore.updateApiKey(account.getAccountId(), accountUpdateAdmin.getApiKey());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
-            account = accountStore.updatePassword(accountSession.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
+            account = accountStore.updatePassword(account.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
             sanitizer.email(accountUpdateAdmin.getEmail());
-            account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
+            account = accountStore.updateEmail(account.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
         boolean alsoResume = false;
         if (accountUpdateAdmin.getPaymentToken() != null) {
@@ -317,93 +303,76 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 log.warn("Account update payment token fails with invalid gateway type {}", accountUpdateAdmin.getPaymentToken().getType());
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
             }
-            billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
+            billing.updatePaymentToken(account.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
 
-            if (account == null) {
-                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-            }
             if (account.getStatus() == SubscriptionStatus.ACTIVENORENEWAL) {
                 alsoResume = true;
             }
         }
         if (accountUpdateAdmin.getCancelEndOfTerm() == Boolean.TRUE) {
-            if (account == null) {
-                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-            }
-            Subscription subscription = billing.cancelSubscription(accountSession.getAccountId());
+            Subscription subscription = billing.cancelSubscription(account.getAccountId());
             SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
-                    billing.getAccount(accountSession.getAccountId()),
+                    billing.getAccount(account.getAccountId()),
                     subscription,
                     "user requested cancel");
         }
         if (accountUpdateAdmin.getResume() == Boolean.TRUE || alsoResume) {
-            if (account == null) {
-                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-            }
-            Subscription subscription = billing.resumeSubscription(accountSession.getAccountId());
+            Subscription subscription = billing.resumeSubscription(account.getAccountId());
             SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
-                    billing.getAccount(accountSession.getAccountId()),
+                    billing.getAccount(account.getAccountId()),
                     subscription,
                     alsoResume ? "user requested update payment and resume" : "user requested resume");
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getBasePlanId())) {
             String newPlanid = accountUpdateAdmin.getBasePlanId();
-            Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(accountSession.getAccountId()).stream()
+            Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(account.getAccountId()).stream()
                     .filter(p -> p.getBasePlanId().equals(newPlanid))
                     .findAny();
             if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {
                 log.warn("Account {} not allowed to change plans to {}",
-                        accountSession.getAccountId(), newPlanid);
+                        account.getAccountId(), newPlanid);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            if (account == null) {
-                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-            }
             account.getProjectIds().stream()
                     .map(projectId -> projectStore.getProject(projectId, true))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .forEach(project -> planStore.verifyConfigMeetsPlanRestrictions(newPlanid, project.getVersionedConfigAdmin().getConfig()));
 
-            Subscription subscription = billing.changePlan(accountSession.getAccountId(), newPlanid);
+            Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
             // Only update account if plan was changed immediately, as oppose to end of term
             if (newPlanid.equals(subscription.getPlanName())) {
-                account = accountStore.setPlan(accountSession.getAccountId(), newPlanid).getAccount();
+                account = accountStore.setPlan(account.getAccountId(), newPlanid).getAccount();
             } else if (!newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
                 if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
                     log.warn("Plan change to {} doesnt seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
-                            newPlanid, accountSession.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
+                            newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
                 }
             }
         }
-        return (account == null
-                ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
-                : account)
-                .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AccountAdmin accountUpdateSuperAdmin(AccountUpdateSuperAdmin accountUpdateAdmin) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
 
         if (accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice() != null) {
-            Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-
-            Subscription subscription = billing.changePlanToFlatYearly(accountSession.getAccountId(), accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice());
+            Subscription subscription = billing.changePlanToFlatYearly(account.getAccountId(), accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice());
 
             // Sync entitlement status
             SubscriptionStatus status = billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
-                    billing.getAccount(accountSession.getAccountId()),
+                    billing.getAccount(account.getAccountId()),
                     subscription,
                     "Change to flat plan");
         }
 
-        return accountStore.getAccountByAccountId(accountSession.getAccountId()).get()
+        return accountStore.getAccountByAccountId(account.getAccountId()).get()
                 .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
@@ -420,8 +389,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         } catch (IllegalArgumentException ex) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
         }
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceId);
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        String invoiceHtml = billing.getInvoiceHtml(account.getAccountId(), invoiceId);
         return new InvoiceHtmlResponse(invoiceHtml);
     }
 
@@ -429,9 +398,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public Invoices invoicesSearchAdmin(String cursor) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         return billing.getInvoices(
-                accountSession.getAccountId(),
+                account.getAccountId(),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
     }
 
@@ -439,10 +408,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 1)
     @Override
     public void accountDeleteAdmin() {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
-        accountStore.deleteAccount(accountSession.getAccountId());
+        accountStore.deleteAccount(account.getAccountId());
         billing.closeAccount(account.getAccountId());
     }
 
@@ -450,15 +418,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public AccountBilling accountBillingAdmin(Boolean refreshPayments) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
 
         if (refreshPayments == Boolean.TRUE) {
-            billing.syncActions(accountSession.getAccountId());
+            billing.syncActions(account.getAccountId());
         }
 
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-        org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
-        Subscription subscription = billing.getSubscription(accountSession.getAccountId());
+        account = accountStore.getAccountByAccountId(account.getAccountId()).get();
+        org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(account.getAccountId());
+        Subscription subscription = billing.getSubscription(account.getAccountId());
 
         // Sync entitlement status
         SubscriptionStatus status = billing.updateAndGetEntitlementStatus(
@@ -467,7 +435,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 subscription,
                 "Get account billing");
         if (!account.getStatus().equals(status)) {
-            account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            account = accountStore.getAccountByAccountId(account.getAccountId()).get();
         }
 
         // Sync plan id
@@ -479,9 +447,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
 
         Plan plan = planStore.getPlan(account.getPlanid(), Optional.of(subscription)).get();
-        ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
-        Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
-        Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(accountSession.getAccountId());
+        ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(account.getAccountId());
+        Invoices invoices = billing.getInvoices(account.getAccountId(), Optional.empty());
+        Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(account.getAccountId());
 
         Optional<AccountBillingPayment> accountBillingPayment = paymentMethodDetails.map(p -> new AccountBillingPayment(
                 p.getCardBrand().orElse(null),
@@ -491,7 +459,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         Long billingPeriodMau = null;
         if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(status)) {
-            billingPeriodMau = billing.getUsageCurrentPeriod(accountSession.getAccountId());
+            billingPeriodMau = billing.getUsageCurrentPeriod(account.getAccountId());
         }
 
         Instant billingPeriodEnd = null;

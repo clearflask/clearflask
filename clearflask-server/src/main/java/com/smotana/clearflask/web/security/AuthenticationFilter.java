@@ -9,6 +9,7 @@ import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
@@ -79,51 +80,49 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<AccountSession> superAdminSessionOpt = authenticateSuperAdmin(requestContext);
-        Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext)
-                .or(() -> superAdminSessionOpt);
+        Optional<Account> accountByApiKey = getAccountByApiKey(requestContext);
+
+        Optional<AccountSession> accountSessionOpt = getAccountSessionForCookieName(requestContext, AccountResource.ACCOUNT_AUTH_COOKIE_NAME);
+        Optional<AccountSession> superAccountSessionOpt = getAccountSessionForCookieName(requestContext, AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME);
+
+        Optional<Account> accountOpt = accountByApiKey.or(() -> accountSessionOpt
+                .map(AccountSession::getAccountId)
+                .flatMap(accountStore::getAccountByAccountId))
+        Optional<Account> superAccountOpt = accountByApiKey
+                .filter(account -> superAdminPredicate.isEmailSuperAdmin(account.getEmail()))
+                .or(() -> superAccountSessionOpt
+                        .map(AccountSession::getAccountId)
+                        .flatMap(accountStore::getAccountByAccountId)
+                        .filter(account -> superAdminPredicate.isEmailSuperAdmin(account.getEmail())));
+
         Optional<UserSession> userSessionOpt = getPathParameter(requestContext, "projectId")
                 .or(() -> getPathParameter(requestContext, "slug")
                         .flatMap(slug -> projectStore.getProjectBySlug(slug, true)
                                 .map(Project::getProjectId)))
                 .flatMap(projectId -> authenticateUser(projectId, requestContext));
+
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,
-                superAdminSessionOpt,
+                superAccountSessionOpt,
+                accountOpt,
+                superAccountOpt,
                 userSessionOpt,
-                role -> hasRole(role, accountSessionOpt, userSessionOpt, superAdminSessionOpt, requestContext),
+                role -> hasRole(role, accountOpt, userSessionOpt, superAccountOpt, requestContext),
                 requestContext);
     }
 
-    private Optional<AccountSession> authenticateAccount(ContainerRequestContext requestContext) {
-        Cookie cookie = requestContext.getCookies().get(AccountResource.ACCOUNT_AUTH_COOKIE_NAME);
-        if (cookie == null) {
-            return Optional.empty();
-        }
-
+    private Optional<AccountSession> getAccountSessionForCookieName(ContainerRequestContext requestContext, String cookieName) {
         // TODO check for HttpOnly, isSecure, etc...
         // TODO sanity check cookie.getValue()
-
-        return accountStore.getSession(cookie.getValue());
+        return Optional.ofNullable(requestContext.getCookies().get(cookieName))
+                .map(Cookie::getValue)
+                .flatMap(accountStore::getSession);
     }
 
-    private Optional<AccountSession> authenticateSuperAdmin(ContainerRequestContext requestContext) {
-        Cookie cookie = requestContext.getCookies().get(AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME);
-        if (cookie == null) {
-            return Optional.empty();
-        }
-
-        // TODO check for HttpOnly, isSecure, etc...
-        // TODO sanity check cookie.getValue()
-
-        Optional<AccountSession> superAdminSession = accountStore.getSession(cookie.getValue());
-        if (!superAdminSession.isPresent()
-                || !superAdminPredicate.isEmailSuperAdmin(superAdminSession.get().getEmail())) {
-            return Optional.empty();
-        }
-
-        return superAdminSession;
+    private Optional<Account> getAccountByApiKey(ContainerRequestContext requestContext) {
+        return getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN)
+                .flatMap(accountStore::getAccountByApiKey);
     }
 
     private Optional<UserSession> authenticateUser(String projectId, ContainerRequestContext requestContext) {
@@ -144,8 +143,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return userStore.getSession(cookie.getValue());
     }
 
-    private boolean hasRole(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
-        boolean hasRole = hasRoleInternal(role, accountSession, userSession, superAdminSessionOpt, requestContext);
+    private boolean hasRole(String role, Optional<Account> accountOpt, Optional<UserSession> userSession, Optional<Account> superAccountOpt, ContainerRequestContext requestContext) {
+        boolean hasRole = hasRoleInternal(role, accountOpt, userSession, superAccountOpt, requestContext);
         if (hasRole) {
             log.debug("User does have role {}", role);
         } else {
@@ -154,12 +153,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return hasRole;
     }
 
-    private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
+    private boolean hasRoleInternal(String role, Optional<Account> accountOpt, Optional<UserSession> userSession, Optional<Account> superAccountOpt, ContainerRequestContext requestContext) {
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
-        Optional<String> headerToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN);
 
-        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {}",
-                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt);
+        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {} isSuperAdmin {}",
+                role, accountOpt.map(Account::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, superAccountOpt.isPresent());
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
@@ -168,33 +166,19 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        Optional<AccountStore.Account> accountOpt;
         Optional<String> pathParamIdeaIdOpt;
         Optional<String> pathParamCommentIdOpt;
         switch (role) {
             case Role.SUPER_ADMIN:
-                return superAdminSessionOpt.isPresent();
+                return superAccountOpt.isPresent();
             case Role.CONNECT:
                 Optional<String> headerConnectToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_CONNECT_TOKEN);
                 return headerConnectToken.isPresent()
                         && config.connectToken().equals(headerConnectToken.get());
             case Role.ADMINISTRATOR_ACTIVE:
-                if (headerToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
-                    if (!accountOpt.isPresent()) {
-                        log.trace("Role {} no account given token", role);
-                        return false;
-                    }
-                } else {
-                    if (!accountSession.isPresent()) {
-                        log.trace("Role {} missing account session", role);
-                        return false;
-                    }
-                    accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
-                    if (!accountOpt.isPresent()) {
-                        log.trace("Role {} missing account", role);
-                        return false;
-                    }
+                if (!accountOpt.isPresent()) {
+                    log.trace("Role {} missing account", role);
+                    return false;
                 }
                 if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     log.trace("Role {} inactive subscription", role);
@@ -202,17 +186,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 }
                 return true;
             case Role.ADMINISTRATOR:
-                if (headerToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
-                    if (!accountOpt.isPresent()) {
-                        log.trace("Role {} no account given token", role);
-                        return false;
-                    }
-                } else {
-                    if (!accountSession.isPresent()) {
-                        log.trace("Role {} missing account session", role);
-                        return false;
-                    }
+                if (!accountOpt.isPresent()) {
+                    log.trace("Role {} missing account", role);
+                    return false;
                 }
                 return true;
             case Role.PROJECT_OWNER_ACTIVE:
@@ -221,24 +197,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     log.trace("Role {} missing project id", role);
                     return false;
                 }
-                if (headerToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
-                    if (!accountOpt.isPresent()) {
-                        log.trace("Role {} no account given token", role);
-                        return false;
-                    }
-                } else {
-                    if (!accountSession.isPresent()) {
-                        log.trace("Role {} missing account session", role);
-                        return false;
-                    }
-                    accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
-                    if (!accountOpt.isPresent()) {
-                        log.trace("Role {} missing account", role);
-                        return false;
-                    }
+                if (!accountOpt.isPresent()) {
+                    log.trace("Role {} missing account", role);
+                    return false;
                 }
-                if (role == Role.PROJECT_OWNER
+                if (Role.PROJECT_OWNER.equals(role)
                         || !Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     log.trace("Role {} inactive subscription", role);
                     return false;
@@ -270,20 +233,33 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                         && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
                         && userSession.get().getIsMod() == Boolean.TRUE;
             case Role.PROJECT_MODERATOR_ACTIVE:
-                accountOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true)
+                if(!userSession.isPresent() || !pathParamProjectIdOpt.isPresent()
+                    || !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
+                    || userSession.get().getIsMod() != Boolean.TRUE) {
+                    return false;
+                }
+                if (!userSession.isPresent()) {
+                    log.trace("Role {} with no user", role, projectAccountOpt.get().getStatus());
+                    return false;
+                }
+                if (Role.PROJECT_MODERATOR.equals(role) {
+                    return true;
+                }
+                // From here on just checking the _ACTIVE portion
+                Optional<Account> projectAccountOpt = accountOpt
+                        .filter(account -> account.getProjectIds().contains(pathParamProjectIdOpt.get()))
+                        .or(() -> projectStore.getProject(pathParamProjectIdOpt.get(), true)
                         .map(Project::getAccountId)
-                        .flatMap(accountStore::getAccountByAccountId);
-                if (!accountOpt.isPresent()) {
+                        .flatMap(accountStore::getAccountByAccountId));
+                if (!projectAccountOpt.isPresent()) {
                     log.trace("Role {} missing account from projectId {}", role, pathParamProjectIdOpt.get());
                     return false;
                 }
-                if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
-                    log.trace("Role {} with inactive account status {}", role, accountOpt.get().getStatus());
+                if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(projectAccountOpt.get().getStatus())) {
+                    log.trace("Role {} with inactive account status {}", role, projectAccountOpt.get().getStatus());
                     return false;
                 }
-                return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
-                        && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
-                        && userSession.get().getIsMod() == Boolean.TRUE;
+                return true;
             case Role.PROJECT_USER:
                 return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
                         && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get());

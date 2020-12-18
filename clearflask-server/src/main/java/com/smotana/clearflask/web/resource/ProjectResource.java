@@ -145,11 +145,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public ConfigAndBindAllResult configGetAllAndUserBindAllAdmin() {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> {
-            log.warn("Account not found for session with accountId {}", accountSession.getAccountId());
-            return new InternalServerErrorException();
-        });
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
                 ? ImmutableSet.of()
                 : projectStore.getProjects(account.getProjectIds(), false);
@@ -183,8 +179,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         // Amount of times I've made this mistake and rolled it back:   2
         //
 
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
@@ -202,8 +197,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
         sanitizer.subdomain(configAdmin.getSlug());
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(sanitizer::domain);
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
 
         String projectId = projectStore.genProjectId(configAdmin.getSlug());
@@ -226,9 +220,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public void projectDeleteAdmin(String projectId) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         try {
-            ListenableFuture<UpdateResponse> projectFuture = accountStore.removeProject(accountSession.getAccountId(), projectId).getIndexingFuture();
+            ListenableFuture<UpdateResponse> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
             ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
