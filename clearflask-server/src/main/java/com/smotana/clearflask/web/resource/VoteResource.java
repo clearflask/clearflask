@@ -40,8 +40,8 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.FundModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.util.WebhookService;
@@ -166,7 +166,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
         if (voteUpdate.getVote() != null) {
             VoteValue voteValue = VoteValue.fromVoteOption(voteUpdate.getVote());
             if (!project.isVotingAllowed(voteValue, idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Voting not allowed");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Voting not allowed");
             }
             idea = ideaStore.voteIdea(projectId, ideaId, userId, voteValue)
                     .getIdea();
@@ -176,7 +176,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
         Optional<ImmutableSet<String>> expressionOpt = Optional.empty();
         if (voteUpdate.getExpressions() != null) {
             if (!project.isExpressingAllowed(idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expressions not allowed");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Expressions not allowed");
             }
 
             String categoryId = idea.getCategoryId();
@@ -185,10 +185,10 @@ public class VoteResource extends AbstractResource implements VoteApi {
                     .getSupport()
                     .getExpress();
             if (expressing == null) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expressions not allowed");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Expressions not allowed");
             }
             if (expressing.getLimitEmojiSet() != null && expressing.getLimitEmojiSet().stream().noneMatch(e -> e.getDisplay().equals(voteUpdate.getExpressions().getExpression()))) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expression not allowed");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Expression not allowed");
             }
 
             IdeaAndExpressionsAndIndexingFuture result;
@@ -218,7 +218,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
         Optional<Balance> balanceOpt = Optional.empty();
         if (voteUpdate.getFundDiff() != null && voteUpdate.getFundDiff() != 0L) {
             if (!project.isFundingAllowed(idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Funding not allowed");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Funding not allowed");
             }
             boolean isIdeaAuthor = userId.equals(idea.getAuthorUserId());
             Optional<String> updateBloomWithIdeaIdOpt = isIdeaAuthor ? Optional.empty() : Optional.of(ideaId);

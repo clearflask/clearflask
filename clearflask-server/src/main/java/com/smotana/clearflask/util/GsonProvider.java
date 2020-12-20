@@ -12,29 +12,47 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 
+@Slf4j
 @Singleton
 public class GsonProvider implements Provider<Gson> {
-    public static final Gson GSON = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-            .disableHtmlEscaping()
-            .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
-            .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
-            .registerTypeAdapter(Instant.class, new InstantTypeConverter())
-            .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
-            .registerTypeAdapter(ExplicitNull.class, ExplicitNull.get())
-            .create();
+    @Inject
+    private ConfigSchemaUpgrader configSchemaUpgrader;
+
+    private Gson gson;
 
     @Override
     public Gson get() {
-        return GSON;
+        if (gson == null) {
+            gson = create(true);
+        }
+        return gson;
+    }
+
+    private Gson create(boolean useConfigAdminUpgrader) {
+        GsonBuilder gsonBuilder = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                .disableHtmlEscaping()
+                .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
+                .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
+                .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+                .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
+                .registerTypeAdapter(ExplicitNull.class, ExplicitNull.get());
+        if (useConfigAdminUpgrader) {
+            gsonBuilder.registerTypeAdapter(ConfigAdmin.class, new ConfigAdminUpgrader());
+        }
+        return gsonBuilder.create();
     }
 
     private static class InstantTypeConverter
@@ -60,6 +78,21 @@ public class GsonProvider implements Provider<Gson> {
         @Override
         public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return LocalDate.parse(json.getAsString());
+        }
+    }
+
+    private class ConfigAdminUpgrader
+            implements JsonDeserializer<ConfigAdmin> {
+        private Gson gsonWithoutConfigAdminUpgrader = create(false);
+
+        @Override
+        public ConfigAdmin deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(json);
+            if (configUpgradedOpt.isPresent()) {
+                return gsonWithoutConfigAdminUpgrader.fromJson(configUpgradedOpt.get(), ConfigAdmin.class);
+            } else {
+                return gsonWithoutConfigAdminUpgrader.fromJson(json, ConfigAdmin.class);
+            }
         }
     }
 

@@ -58,7 +58,7 @@ import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.util.Extern;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
@@ -235,7 +235,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                     .withNameMap(Map.of("#partitionKey", ideaSchema.partitionKeyName())));
         } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Similar title already exists, please choose another.", ex);
+            throw new ApiException(Response.Status.CONFLICT, "Similar title already exists, please choose another.", ex);
         }
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
@@ -373,7 +373,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     sortOrderOpt = Optional.of(SortOrder.DESC);
                     break;
                 default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                    throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
             }
         } else if (Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
@@ -579,7 +579,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     public IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         if (vote == votePrev) {
-            return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         HashMap<String, String> nameMap = Maps.newHashMap();
@@ -652,7 +652,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         ImmutableSet<String> expressions = expressionOpt.map(ImmutableSet::of).orElse(ImmutableSet.of());
 
         if (expressionsPrev.equals(expressions)) {
-            return new IdeaAndExpressionsAndIndexingFuture(expressions, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressions, getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         SetView<String> expressionsAdded = Sets.difference(expressions, expressionsPrev);
@@ -726,7 +726,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiAdd(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (expressionsPrev.contains(expression)) {
-            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         double expressionValueDiff = expressionToWeightMapper.apply(expression);
@@ -768,7 +768,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiRemove(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (!expressionsPrev.contains(expression)) {
-            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         double expressionValueDiff = -expressionToWeightMapper.apply(expression);
@@ -805,7 +805,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Override
     public IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary) {
         if (fundDiff == 0L) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot fund zero");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot fund zero");
         }
 
         TransactionAndFundPrevious transactionAndFundPrevious = voteStore.fund(projectId, userId, ideaId, fundDiff, transactionType, summary);

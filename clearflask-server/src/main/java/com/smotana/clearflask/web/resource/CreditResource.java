@@ -20,11 +20,10 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.ListResponse;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.Role;
-import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -86,7 +85,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Override
     public TransactionSearchResponse transactionSearch(String projectId, String userId, TransactionSearch transactionSearch, String cursor) {
         ListResponse<TransactionModel> transactionModelListResponse = voteStore.transactionList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
-        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.FORBIDDEN, "User not found"));
+        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.FORBIDDEN, "User not found"));
         return new TransactionSearchResponse(
                 transactionModelListResponse.getCursorOpt().orElse(null),
                 transactionModelListResponse.getItems().stream().map(TransactionModel::toTransaction).collect(ImmutableList.toImmutableList()),

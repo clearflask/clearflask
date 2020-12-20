@@ -69,7 +69,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.util.WebhookService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -288,7 +288,7 @@ public class DynamoElasticUserStore implements UserStore {
                     .build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
-                throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+                throw new ApiException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
             }
             throw ex;
         }
@@ -358,7 +358,7 @@ public class DynamoElasticUserStore implements UserStore {
                     sortOrderOpt = Optional.of(SortOrder.DESC);
                     break;
                 default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                    throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
             }
         } else {
@@ -379,7 +379,7 @@ public class DynamoElasticUserStore implements UserStore {
                 case FUNDEDAMOUNT:
                 case LASTACTIVE:
                 default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                    throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
             }
         } else {
@@ -456,7 +456,7 @@ public class DynamoElasticUserStore implements UserStore {
             String browserPushToken) {
         UserModel user = getUser(projectId, userId).get();
         if (!Strings.isNullOrEmpty(updates.getPassword()) && !Strings.isNullOrEmpty(user.getSsoGuid())) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change password when using Single Sign-On");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot change password when using Single Sign-On");
         }
 
         UserModel.UserModelBuilder userUpdatedBuilder = user.toBuilder();
@@ -622,7 +622,7 @@ public class DynamoElasticUserStore implements UserStore {
             log.info("transactWriteItemsResult {} {}", transactWriteItemsResult.getConsumedCapacity(), transactWriteItemsResult.getItemCollectionMetrics());
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
-                throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+                throw new ApiException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
             }
             throw ex;
         }
@@ -642,7 +642,7 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId) {
-        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.voteBloomFilterExpectedInsertions(), config.voteBloomFilterFalsePositiveProbability()));
@@ -661,7 +661,7 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserModel userCommentVoteUpdateBloom(String projectId, String userId, String commentId) {
-        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getCommentVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.commentVoteBloomFilterExpectedInsertions(), config.commentVoteBloomFilterFalsePositiveProbability()));
@@ -680,7 +680,7 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId) {
-        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getExpressBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.expressBloomFilterExpectedInsertions(), config.expressBloomFilterFalsePositiveProbability()));
@@ -711,7 +711,7 @@ public class DynamoElasticUserStore implements UserStore {
         setUpdates.add("#balance = if_not_exists(#balance, :zero) + :balanceDiff");
 
         if (updateBloomWithIdeaIdOpt.isPresent()) {
-            UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+            UserModel user = getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
             BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
                     .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                     .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
@@ -748,7 +748,7 @@ public class DynamoElasticUserStore implements UserStore {
                 log.warn("Attempted to set balance below zero, projectId {} userId {} balanceDiff {} updateBloomWithIdeaIdOpt {}",
                         projectId, userId, balanceDiff, updateBloomWithIdeaIdOpt, ex);
             }
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not enough credits");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Not enough credits");
         }
 
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();

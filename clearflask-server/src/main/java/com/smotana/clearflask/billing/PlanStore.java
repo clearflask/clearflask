@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
@@ -26,9 +26,9 @@ public interface PlanStore {
 
     String prettifyPlanName(String planIdOrPrettyPlanName);
 
-    void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ErrorWithMessageException;
+    void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException;
 
-    void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException;
+    void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException;
 
     enum Action {
         API_KEY

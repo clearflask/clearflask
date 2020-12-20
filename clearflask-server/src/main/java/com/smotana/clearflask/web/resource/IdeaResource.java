@@ -45,8 +45,8 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.util.WebhookService;
@@ -97,7 +97,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         IdeaModel ideaModel = new IdeaModel(
                 projectId,
                 ideaStore.genIdeaId(ideaCreate.getTitle()),
@@ -156,7 +156,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         Project project = projectStore.getProject(projectId, true).get();
         UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         IdeaModel ideaModel = new IdeaModel(
                 projectId,
                 ideaStore.genIdeaId(ideaCreateAdmin.getTitle()),
@@ -212,7 +212,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         .orElseGet(() -> ideaModel.toIdeaWithVote(
                                 IdeaVote.builder().build(),
                                 sanitizer)))
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -221,7 +221,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
                 .map(idea -> idea.toIdea(sanitizer))
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
     @RolesAllowed({Role.PROJECT_ANON})

@@ -12,6 +12,7 @@ import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
 import com.smotana.clearflask.security.limiter.challenge.MockChallenger;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -133,7 +134,7 @@ public class TieredWebLimiterTest extends AbstractTest {
                         limiter.filter(null, limit, "127.0.0.1", "a");
                         success++;
                     }
-                } catch (WebApplicationException ex) {
+                } catch (ApiException ignored) {
                 }
                 successes[j] = success;
                 stopwatch.addMicros(1_000_000);

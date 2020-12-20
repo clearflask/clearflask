@@ -3,8 +3,12 @@ package com.smotana.clearflask.store.elastic;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.Gson;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.*;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
@@ -33,6 +37,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Inject
     private Config config;
+    @Inject
+    private Gson gson;
 
     private Optional<RestHighLevelClient> restClientOpt = Optional.empty();
 
@@ -51,7 +57,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         Futures.allAsList(Arrays.stream(ElasticScript.values())
                 .map(script -> {
                     SettableFuture<AcknowledgedResponse> scriptsFuture = SettableFuture.create();
-                    restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(),
+                    restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(gson),
                             RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
                     return scriptsFuture;
                 })

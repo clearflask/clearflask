@@ -37,7 +37,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.Response;
@@ -357,7 +357,7 @@ public class DynamoVoteStore implements VoteStore {
                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                     .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
         } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
+            throw new ApiException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
         }
         return transaction;
     }
@@ -407,7 +407,7 @@ public class DynamoVoteStore implements VoteStore {
                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                     .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
         } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
+            throw new ApiException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
         }
         return new TransactionAndFundPrevious(transaction, fundAmountPrevious);
     }

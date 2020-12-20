@@ -66,7 +66,7 @@ import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.filter.LogExFilter;
+import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
@@ -227,7 +227,7 @@ public enum ServiceInjector {
                 install(KillBillPlanStore.module());
 
                 // Other
-                install(LogExFilter.module());
+                install(ApiExceptionMapperFilter.module());
                 install(ClearFlaskSso.module());
                 install(ClearFlaskCreditSync.module());
                 install(AuthCookieImpl.module());

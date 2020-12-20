@@ -54,7 +54,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
@@ -329,7 +329,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                     sortOrderOpt = Optional.of(SortOrder.DESC);
                     break;
                 default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                    throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sort order '" + commentSearchAdmin.getSortOrder() + "' not supported");
             }
         } else {
@@ -349,7 +349,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                     sortFields = ImmutableList.of("score");
                     break;
                 default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                    throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + commentSearchAdmin.getSortBy() + "' not supported");
             }
         } else {
@@ -520,7 +520,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote) {
         VoteValue votePrev = voteStore.vote(projectId, userId, commentId, vote);
         if (vote == votePrev) {
-            return new CommentAndIndexingFuture<>(getComment(projectId, ideaId, commentId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Comment not found")), Futures.immediateFuture(null));
+            return new CommentAndIndexingFuture<>(getComment(projectId, ideaId, commentId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Comment not found")), Futures.immediateFuture(null));
         }
 
         ImmutableList.Builder<AttributeUpdate> attrUpdatesBuilder = ImmutableList.builder();

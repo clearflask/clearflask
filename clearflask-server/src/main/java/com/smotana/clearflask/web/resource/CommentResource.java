@@ -35,8 +35,8 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.util.WebhookService;
@@ -82,7 +82,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         sanitizer.content(create.getContent());
 
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt).map(UserStore.UserSession::getUserId).get();
-        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.FORBIDDEN, "User not found"));
+        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.FORBIDDEN, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)

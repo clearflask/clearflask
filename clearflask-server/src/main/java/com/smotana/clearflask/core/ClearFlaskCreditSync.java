@@ -12,6 +12,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.CreditIncome;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -20,7 +21,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_TOKEN;
@@ -106,7 +107,7 @@ public class ClearFlaskCreditSync extends ManagedService {
                     || res.getStatusLine().getStatusCode() > 299) {
                 log.warn("Failed to sync credit, response status {}, request {}",
                         res.getStatusLine().getStatusCode(), creditRequest);
-                throw new WebApplicationException(res.getStatusLine().getStatusCode());
+                throw new ApiException(Response.Status.fromStatusCode(res.getStatusLine().getStatusCode()));
             }
         }
     }

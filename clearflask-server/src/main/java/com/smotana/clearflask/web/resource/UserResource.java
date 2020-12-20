@@ -43,8 +43,8 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
@@ -177,7 +177,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (allowedDomainsOpt.isPresent() && !Strings.isNullOrEmpty(userCreate.getEmail())) {
             String domain = userCreate.getEmail().substring(userCreate.getEmail().indexOf("@") + 1);
             if (!allowedDomainsOpt.get().contains(domain)) {
-                throw new ErrorWithMessageException(
+                throw new ApiException(
                         Response.Status.BAD_REQUEST,
                         "Allowed domains are " + allowedDomainsOpt.get().stream().collect(Collectors.joining(", ")));
             }
@@ -196,7 +196,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             } else {
                 emailVerified = tokenVerifyStore.useToken(userCreate.getEmailVerification(), userCreate.getEmail());
                 if (!emailVerified) {
-                    throw new ErrorWithMessageException(
+                    throw new ApiException(
                             Response.Status.BAD_REQUEST,
                             "Invalid code");
                 }
@@ -275,7 +275,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             if (userCreateAdmin.getSsoGuid() != null) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot specify both password and ssoGuid");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot specify both password and ssoGuid");
             }
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
         }
@@ -321,7 +321,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public User userGet(String projectId, String userId) {
         return userStore.getUser(projectId, userId)
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"))
                 .toUser();
     }
 
@@ -359,13 +359,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         Optional<UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
         if (!userOpt.isPresent()) {
             log.info("User login with non-existent email {}", userLogin.getEmail());
-            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         UserModel user = userOpt.get();
 
         if (user.getSsoGuid() != null) {
             log.info("Account login for sso user {}", user.getEmail());
-            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
@@ -373,7 +373,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             // Password-less user
         } else if (!user.getPassword().equals(passwordSupplied)) {
             log.info("Account login incorrect password for email {}", user.getEmail());
-            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful user login for email {}", userLogin.getEmail());
 
@@ -392,7 +392,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     public UserMeWithBalance userLoginAdmin(String projectId, String userId) {
         Optional<UserModel> userOpt = userStore.getUser(projectId, userId);
         if (!userOpt.isPresent()) {
-            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "User does not exist");
+            throw new ApiException(Response.Status.NOT_FOUND, "User does not exist");
         }
         UserModel user = userOpt.get();
         log.debug("Successful user login by admin for userId {}", userId);
@@ -434,13 +434,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
         if (!Strings.isNullOrEmpty(user.getSsoGuid())) {
             if (!Strings.isNullOrEmpty(userUpdate.getEmail())) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change email when using Single Sign-On");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot change email when using Single Sign-On");
             }
             if (!Strings.isNullOrEmpty(userUpdate.getName())) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change name when using Single Sign-On");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot change name when using Single Sign-On");
             }
             if (!Strings.isNullOrEmpty(userUpdate.getPassword())) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot set a password when using Single Sign-On");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot set a password when using Single Sign-On");
             }
         }
 
@@ -489,7 +489,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     public UserAdmin userGetAdmin(String projectId, String userId) {
         Project project = projectStore.getProject(projectId, true).get();
         return userStore.getUser(projectId, userId)
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"))
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 

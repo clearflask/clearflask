@@ -56,8 +56,8 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -70,7 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -238,7 +237,7 @@ public class DynamoProjectStore implements ProjectStore {
                     transactionsBuilder.build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
-                throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
+                throw new ApiException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
             }
             throw ex;
         }
@@ -290,7 +289,7 @@ public class DynamoProjectStore implements ProjectStore {
                                 ":projectId", projectId)));
                 slugCache.invalidate(slugTo);
             } catch (ConditionalCheckFailedException ex) {
-                throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
+                throw new ApiException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
             }
         });
         try {
@@ -344,7 +343,7 @@ public class DynamoProjectStore implements ProjectStore {
                                         "slug", slugTo))));
                 slugCache.invalidate(slugTo);
             });
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
+            throw new ApiException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
         }
         slugsToChange.forEach((slugFrom, slugTo) -> {
             if (Strings.isNullOrEmpty(slugFrom)) {
@@ -438,9 +437,7 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     private Project getProjectWithUpgrade(ProjectModel projectModel) {
-        Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(
-                projectModel.getSchemaVersion() == null ? OptionalLong.empty() : OptionalLong.of(projectModel.getSchemaVersion()),
-                projectModel.getConfigJson());
+        Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(projectModel.getConfigJson());
 
         if (configUpgradedOpt.isPresent()) {
             projectModel = projectModel.toBuilder()
@@ -570,7 +567,7 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public boolean isVotingAllowed(VoteValue voteValue, String categoryId, Optional<String> statusIdOpt) {
             Optional<Voting> votingOpt = Optional.ofNullable(getCategory(categoryId)
-                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
                     .getSupport()
                     .getVote());
             if (!votingOpt.isPresent()) {
@@ -581,7 +578,7 @@ public class DynamoProjectStore implements ProjectStore {
 
             if (statusIdOpt.isPresent()) {
                 IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
-                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                        .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
                 if (status.getDisableVoting() == Boolean.TRUE) {
                     return false;
                 }
@@ -593,7 +590,7 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public boolean isExpressingAllowed(String categoryId, Optional<String> statusIdOpt) {
             Optional<Expressing> expressOpt = Optional.ofNullable(getCategory(categoryId)
-                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
                     .getSupport()
                     .getExpress());
             if (!expressOpt.isPresent()) {
@@ -602,7 +599,7 @@ public class DynamoProjectStore implements ProjectStore {
 
             if (statusIdOpt.isPresent()) {
                 IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
-                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                        .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
                 if (status.getDisableExpressions() == Boolean.TRUE) {
                     return false;
                 }
@@ -614,7 +611,7 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public boolean isFundingAllowed(String categoryId, Optional<String> statusIdOpt) {
             boolean fundAllowed = getCategory(categoryId)
-                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
                     .getSupport()
                     .getFund();
             if (!fundAllowed) {
@@ -623,7 +620,7 @@ public class DynamoProjectStore implements ProjectStore {
 
             if (statusIdOpt.isPresent()) {
                 IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
-                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                        .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
                 if (status.getDisableFunding() == Boolean.TRUE) {
                     return false;
                 }
@@ -633,13 +630,13 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
-        public void areTagsAllowedByUser(List<String> tagIds, String categoryId) throws ErrorWithMessageException {
+        public void areTagsAllowedByUser(List<String> tagIds, String categoryId) throws ApiException {
             if (tagIds == null || tagIds.isEmpty()) {
                 return;
             }
             Optional<Category> categoryOpt = getCategory(categoryId);
             if (!categoryOpt.isPresent()) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot find this category");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot find this category");
             }
             categoryOpt.stream()
                     .map(Category::getTagging)
@@ -647,7 +644,7 @@ public class DynamoProjectStore implements ProjectStore {
                             ? Stream.of() : tagging.getTagGroups().stream())
                     .forEach(group -> {
                         if (!group.getUserSettable()) {
-                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Tags for " + group.getName() + " are not allowed");
+                            throw new ApiException(Response.Status.BAD_REQUEST, "Tags for " + group.getName() + " are not allowed");
                         }
                         if (group.getMaxRequired() == null && group.getMinRequired() == null) {
                             return;
@@ -656,10 +653,10 @@ public class DynamoProjectStore implements ProjectStore {
                                 .filter(tagId -> group.getTagIds().contains(tagId))
                                 .count();
                         if (group.getMaxRequired() != null && group.getMaxRequired() < tagsInGroupCount) {
-                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Maximum tags for " + group.getName() + " is " + group.getMaxRequired());
+                            throw new ApiException(Response.Status.BAD_REQUEST, "Maximum tags for " + group.getName() + " is " + group.getMaxRequired());
                         }
                         if (group.getMinRequired() != null && group.getMinRequired() > tagsInGroupCount) {
-                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Minimum tags for " + group.getName() + " is " + group.getMinRequired());
+                            throw new ApiException(Response.Status.BAD_REQUEST, "Minimum tags for " + group.getName() + " is " + group.getMinRequired());
                         }
                     });
 

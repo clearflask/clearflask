@@ -14,8 +14,13 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
-import com.google.common.base.Preconditions;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -36,7 +41,6 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -45,7 +49,7 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -74,7 +78,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
@@ -168,7 +171,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                     .withNameMap(new NameMap().with("#partitionKey", accountIdByEmailSchema.partitionKeyName())));
         } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Email already in use, please choose another.", ex);
+            throw new ApiException(Response.Status.CONFLICT, "Email already in use, please choose another.", ex);
         }
         accountSchema.table().putItem(new PutItemSpec()
                 .withItem(accountSchema.toItem(account))
@@ -220,7 +223,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 log.error("Multiple accounts found for same apiKey, account emails {}",
                         accountsByApiKey.stream().map(Account::getEmail).collect(Collectors.toList()));
             }
-            throw new ErrorWithMessageException(Response.Status.FORBIDDEN, "Your API key is misconfigured");
+            throw new ApiException(Response.Status.FORBIDDEN, "Your API key is misconfigured");
         } else if (accountsByApiKey.size() == 1) {
             return Optional.of(accountsByApiKey.get(0));
         } else {

@@ -9,10 +9,8 @@ import com.smotana.clearflask.testutil.AbstractTest;
 import org.junit.Test;
 
 import java.util.Optional;
-import java.util.OptionalLong;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ConfigSchemaUpgraderTest extends AbstractTest {
 
@@ -380,15 +378,25 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
 
     @Test(timeout = 10_000L)
     public void testUpgrade() throws Exception {
-        Optional<String> configJsonUpgradedOpt = upgrader.upgrade(OptionalLong.empty(), SAMPLE_SCHEMA_VERSION_ONE);
-
+        Optional<String> configJsonUpgradedOpt = upgrader.upgrade(SAMPLE_SCHEMA_VERSION_ONE);
         assertTrue(configJsonUpgradedOpt.isPresent());
+
         ConfigAdmin config = gson.fromJson(configJsonUpgradedOpt.get(), ConfigAdmin.class);
+        assertUpgraded(config);
 
-        assertEquals(Long.valueOf(3L), config.getSchemaVersion());
+        Optional<String> configJsonSameOpt = upgrader.upgrade(gson.toJson(config));
+        assertFalse(configJsonSameOpt.isPresent());
+    }
 
+    @Test(timeout = 10_000L)
+    public void testUpgradeViaGson() throws Exception {
+        ConfigAdmin config = gson.fromJson(SAMPLE_SCHEMA_VERSION_ONE, ConfigAdmin.class);
+        assertUpgraded(config);
+    }
+
+    void assertUpgraded(ConfigAdmin config) throws Exception {
+        assertEquals(Long.valueOf(ConfigSchemaUpgrader.LATEST_SCHEMA_VERSION), config.getSchemaVersion());
         assertEquals(EmailSignup.ModeEnum.SIGNUPANDLOGIN, config.getUsers().getOnboarding().getNotificationMethods().getEmail().getMode());
         assertEquals(Integrations.builder().build(), config.getIntegrations());
     }
-
 }

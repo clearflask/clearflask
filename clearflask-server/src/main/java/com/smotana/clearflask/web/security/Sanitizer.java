@@ -12,7 +12,7 @@ import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.owasp.html.Handler;
 import org.owasp.html.HtmlChangeListener;
@@ -20,8 +20,11 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.HtmlStreamRenderer;
 import org.owasp.html.PolicyFactory;
-import org.xbill.DNS.*;
+import org.xbill.DNS.CNAMERecord;
+import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.Type;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -114,43 +117,43 @@ public class Sanitizer {
         try {
             new InternetAddress(email).validate();
         } catch (AddressException ex) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Invalid email format", ex);
+            throw new ApiException(BAD_REQUEST, "Invalid email format", ex);
         }
     }
 
     public void accountName(String accountName) {
         if (accountName != null && accountName.length() > NAME_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
 
     public void userName(String userName) {
         if (userName != null && userName.length() > NAME_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
 
     public void content(String content) {
         if (content != null && content.length() > CONTENT_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Content is too long, must be at most " + CONTENT_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Content is too long, must be at most " + CONTENT_MAX_LENGTH + " characters");
         }
     }
 
     public void postTitle(String postTitle) {
         if (postTitle != null && postTitle.length() > POST_TITLE_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Title is too long, must be at most " + POST_TITLE_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Title is too long, must be at most " + POST_TITLE_MAX_LENGTH + " characters");
         }
     }
 
     public void searchText(String searchText) {
         if (searchText != null && searchText.length() > SEARCH_TEXT_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Search text is too long, must be at most " + SEARCH_TEXT_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Search text is too long, must be at most " + SEARCH_TEXT_MAX_LENGTH + " characters");
         }
     }
 
     public void domain(String domain) {
         if (Strings.isNullOrEmpty(domain)) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain is empty");
+            throw new ApiException(BAD_REQUEST, "Custom domain is empty");
         }
 
         if (Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {
@@ -159,52 +162,52 @@ public class Sanitizer {
         }
 
         if (!InternetDomainName.from(domain).isUnderPublicSuffix()) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have a public suffix. If this is an error, please contact support team.");
+            throw new ApiException(BAD_REQUEST, "Custom domain doesn't appear to have a public suffix. If this is an error, please contact support team.");
         }
 
         if (config.reservedDomains().contains(domain)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + domain + "' domain is reserved");
+            throw new ApiException(Response.Status.BAD_REQUEST, "'" + domain + "' domain is reserved");
         }
 
         Lookup lookup = null;
         try {
             lookup = new Lookup(domain, Type.CNAME);
         } catch (TextParseException e) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain name appears to be invalid.");
+            throw new ApiException(BAD_REQUEST, "Custom domain name appears to be invalid.");
         }
         Record[] records = Optional.ofNullable(lookup.run()).orElse(new Record[]{});
-            switch(lookup.getResult()) {
-                case Lookup.SUCCESSFUL:
-                    break;
-                case Lookup.HOST_NOT_FOUND:
-                case Lookup.TYPE_NOT_FOUND:
-                case Lookup.UNRECOVERABLE:
-                    throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
-                case Lookup.TRY_AGAIN:
-                    throw new ErrorWithMessageException(INTERNAL_SERVER_ERROR, "Failed to validate Custom Domain DNS entry");
-            }
-            boolean isCanonical = records.length > 0 && Arrays.stream(records)
-                    .allMatch(r -> r.getType() == Type.CNAME
-                            && r instanceof CNAMERecord
-                            && config.sniDomain().equals(((CNAMERecord) r).getTarget().toString(true)));
-            if (!isCanonical) {
-                throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS CNAME record in your DNS to " + config.sniDomain());
-            }
+        switch (lookup.getResult()) {
+            case Lookup.SUCCESSFUL:
+                break;
+            case Lookup.HOST_NOT_FOUND:
+            case Lookup.TYPE_NOT_FOUND:
+            case Lookup.UNRECOVERABLE:
+                throw new ApiException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
+            case Lookup.TRY_AGAIN:
+                throw new ApiException(INTERNAL_SERVER_ERROR, "Failed to validate Custom Domain DNS entry");
+        }
+        boolean isCanonical = records.length > 0 && Arrays.stream(records)
+                .allMatch(r -> r.getType() == Type.CNAME
+                        && r instanceof CNAMERecord
+                        && config.sniDomain().equals(((CNAMERecord) r).getTarget().toString(true)));
+        if (!isCanonical) {
+            throw new ApiException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS CNAME record in your DNS to " + config.sniDomain());
+        }
     }
 
     public void subdomain(String subdomain) {
         if (subdomain.length() < SUBDOMAIN_MIN_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too short, must be at least " + SUBDOMAIN_MIN_LENGTH + " character(s)");
+            throw new ApiException(BAD_REQUEST, "Subdomain is too short, must be at least " + SUBDOMAIN_MIN_LENGTH + " character(s)");
         }
         if (subdomain.length() > SUBDOMAIN_MAX_LENGTH) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");
+            throw new ApiException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");
         }
         if (!subdomainPredicate.test(subdomain)) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain can only contain lowercase letters, numbers and dashes in the middle");
+            throw new ApiException(BAD_REQUEST, "Subdomain can only contain lowercase letters, numbers and dashes in the middle");
         }
 
         if (config.reservedSubdomains().contains(subdomain)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + subdomain + "' subdomain is reserved");
+            throw new ApiException(Response.Status.BAD_REQUEST, "'" + subdomain + "' subdomain is reserved");
         }
     }
 

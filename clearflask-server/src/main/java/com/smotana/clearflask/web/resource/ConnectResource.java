@@ -12,6 +12,7 @@ import com.smotana.clearflask.store.CertStore.ChallengeModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -51,7 +51,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
     public Keypair accountKeypairGetConnect(String id) {
         return certStore.getKeypair(KeypairType.ACCOUNT, id)
                 .map(KeypairModel::toKeyPair)
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
     @RolesAllowed({Role.CONNECT})
@@ -75,7 +75,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
     public Challenge certChallengeGetConnect(String key) {
         return certStore.getChallenge(key)
                 .map(ChallengeModel::toChallenge)
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
     @RolesAllowed({Role.CONNECT})
@@ -117,7 +117,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
     public Keypair certKeypairGetConnect(String id) {
         return certStore.getKeypair(KeypairType.CERT, id)
                 .map(KeypairModel::toKeyPair)
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
     @RolesAllowed({Role.CONNECT})

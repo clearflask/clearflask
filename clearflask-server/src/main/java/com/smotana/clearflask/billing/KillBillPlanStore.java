@@ -20,7 +20,7 @@ import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.util.Extern;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
@@ -232,12 +232,12 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ErrorWithMessageException {
+    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
                 switch (action) {
                     case API_KEY:
-                        throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use API on your plan");
+                        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use API on your plan");
                 }
                 return;
             case "standard-monthly":
@@ -247,30 +247,30 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException {
+    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use SSO on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Templates on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Intercom on your plan");
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Intercom on your plan");
                 }
                 return;
             case "standard-monthly":
@@ -287,7 +287,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case ANNUAL:
                 return PeriodEnum.YEARLY;
             default:
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected billing period");
+                throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected billing period");
         }
     }
 

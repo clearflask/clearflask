@@ -19,6 +19,7 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -49,7 +50,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -238,7 +238,7 @@ public class KillBillResource extends ManagedService {
         } catch (KillBillClientException ex) {
             log.warn("Failed to fetch payment, paymentId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
         }
         PaymentMetadata paymentMetadata = gson.fromJson(event.metaData, PaymentMetadata.class);
         PaymentTransaction paymentTransaction = payment.getTransactions().stream()
@@ -266,7 +266,7 @@ public class KillBillResource extends ManagedService {
         if (event.getObjectType() != ObjectType.INVOICE) {
             log.warn("Expected {} event to have object type {}, but found {}",
                     event.getEventType(), ObjectType.INVOICE, event.objectType);
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw new ApiException(Response.Status.BAD_REQUEST);
         }
 
         Invoice invoice = null;
@@ -275,7 +275,7 @@ public class KillBillResource extends ManagedService {
         } catch (KillBillClientException ex) {
             log.warn("Failed to fetch invoice, invoiceId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         if (!InvoiceStatus.COMMITTED.equals(invoice.getStatus())) {
@@ -298,7 +298,7 @@ public class KillBillResource extends ManagedService {
         } catch (Exception ex) {
             log.warn("Failed to sync credit, invoiceId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -22,15 +22,14 @@ import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
@@ -45,7 +44,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -99,7 +97,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             projectOpt = projectStore.getProjectBySlug(slug, true);
         }
         if (!projectOpt.isPresent()) {
-            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
+            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
         }
         Project project = projectOpt.get();
 
@@ -136,7 +134,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public VersionedConfigAdmin configGetAdmin(String projectId) {
         Optional<Project> projectOpt = projectStore.getProject(projectId, false);
         if (!projectOpt.isPresent()) {
-            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
+            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
         }
         return projectOpt.get().getVersionedConfigAdmin();
     }
@@ -211,7 +209,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         try {
             Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
         } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
         }
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }
@@ -230,7 +228,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             voteStore.deleteAllForProject(projectId);
         } catch (Throwable th) {
             log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);
         }
     }
 

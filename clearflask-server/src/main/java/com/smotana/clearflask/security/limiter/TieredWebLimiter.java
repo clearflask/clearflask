@@ -11,11 +11,13 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.security.limiter.challenge.ChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.RateLimiter;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.util.Comparator;
@@ -138,7 +140,7 @@ public class TieredWebLimiter implements Limiter {
 
 
     @Override
-    public void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) throws WebApplicationException {
+    public void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -151,11 +153,9 @@ public class TieredWebLimiter implements Limiter {
                     limit.requiredPermits(),
                     prechargedPeriodInSecondsCache,
                     altPermitsCapacityCache)) {
-                throw new WebApplicationException(
-                        "Request rate limited",
-                        Response.status(Response.Status.TOO_MANY_REQUESTS)
-                                .entity(new ErrorResponse(config.rateLimitedUserFacingMessage()))
-                                .build());
+                throw new ApiException(
+                        Response.Status.TOO_MANY_REQUESTS,
+                        config.rateLimitedUserFacingMessage());
             }
         }
 
@@ -169,6 +169,7 @@ public class TieredWebLimiter implements Limiter {
                 throw new WebApplicationException(
                         "Request challenged",
                         Response.status(Response.Status.TOO_MANY_REQUESTS)
+                                .type(MediaType.APPLICATION_JSON)
                                 .header(CHALLENGE_HEADER, newChallengeOpt.get())
                                 .entity(new ErrorResponse(config.challengedUserFacingMessage()))
                                 .build());

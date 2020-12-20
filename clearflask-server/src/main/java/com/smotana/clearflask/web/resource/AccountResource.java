@@ -44,8 +44,8 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
@@ -144,7 +144,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return new AccountBindAdminResponse(
                 accountOpt.or(() -> superAccountOpt)
                         .map(account -> account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate))
-                .orElse(null),
+                        .orElse(null),
                 superAccountOpt.isPresent());
     }
 
@@ -157,14 +157,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Optional<Account> accountOpt = accountStore.getAccountByEmail(credentials.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", credentials.getEmail());
-            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         Account account = accountOpt.get();
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail());
         if (!account.getPassword().equals(passwordSupplied)) {
             log.info("Account login incorrect password for email {}", credentials.getEmail());
-            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful account login for email {}", credentials.getEmail());
 
@@ -219,9 +219,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Plan plan = planStore.getPublicPlans().getPlans().stream()
                 .filter(p -> p.getBasePlanId().equals(signup.getBasePlanId()))
                 .findAny()
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available"));
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Plan not available"));
         if (plan.getComingSoon() == Boolean.TRUE) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Plan not available");
         }
 
         // Create customer in KillBill
@@ -274,13 +274,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
             // Check if it already exists
             Optional<Account> accountOtherOpt = accountStore.getAccountByApiKey(accountUpdateAdmin.getApiKey());
-            if(accountOtherOpt.isPresent()) {
-                    if (!accountOtherOpt.get().getAccountId().equals(account.getAccountId())) {
-                        log.error("Account {} tried to set same API key as account {}, notify the account of compromised key",
-                                account.getEmail(), accountOtherOpt.get().getEmail());
-                        // Throw invalid format rather than telling them that they guessed someone else's API key
-                        throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
-                    }
+            if (accountOtherOpt.isPresent()) {
+                if (!accountOtherOpt.get().getAccountId().equals(account.getAccountId())) {
+                    log.error("Account {} tried to set same API key as account {}, notify the account of compromised key",
+                            account.getEmail(), accountOtherOpt.get().getEmail());
+                    // Throw invalid format rather than telling them that they guessed someone else's API key
+                    throw new ApiException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
+                }
             }
             planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
             account = accountStore.updateApiKey(account.getAccountId(), accountUpdateAdmin.getApiKey());
@@ -301,7 +301,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             if (!gatewayOpt.isPresent()
                     || (env.isProduction() && !gatewayOpt.get().isAllowedInProduction())) {
                 log.warn("Account update payment token fails with invalid gateway type {}", accountUpdateAdmin.getPaymentToken().getType());
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
             }
             billing.updatePaymentToken(account.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
 
@@ -333,7 +333,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {
                 log.warn("Account {} not allowed to change plans to {}",
                         account.getAccountId(), newPlanid);
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
+                throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
             account.getProjectIds().stream()
@@ -381,13 +381,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public InvoiceHtmlResponse invoiceHtmlGetAdmin(String invoiceIdStr) {
         if (invoiceIdStr == null) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number");
         }
         UUID invoiceId;
         try {
             invoiceId = UUID.fromString(invoiceIdStr);
         } catch (IllegalArgumentException ex) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number");
         }
         Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         String invoiceHtml = billing.getInvoiceHtml(account.getAccountId(), invoiceId);
@@ -509,7 +509,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Optional<Account> accountOpt = accountStore.getAccountByEmail(accountLoginAs.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", accountLoginAs.getEmail());
-            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Account does not exist");
+            throw new ApiException(Response.Status.NOT_FOUND, "Account does not exist");
         }
         Account account = accountOpt.get();
 

@@ -87,7 +87,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<Account> accountOpt = accountByApiKey.or(() -> accountSessionOpt
                 .map(AccountSession::getAccountId)
-                .flatMap(accountStore::getAccountByAccountId))
+                .flatMap(accountStore::getAccountByAccountId));
         Optional<Account> superAccountOpt = accountByApiKey
                 .filter(account -> superAdminPredicate.isEmailSuperAdmin(account.getEmail()))
                 .or(() -> superAccountSessionOpt
@@ -229,28 +229,33 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                         .getVisibility();
                 return Onboarding.VisibilityEnum.PUBLIC.equals(visibility);
             case Role.PROJECT_MODERATOR:
-                return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
-                        && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
-                        && userSession.get().getIsMod() == Boolean.TRUE;
             case Role.PROJECT_MODERATOR_ACTIVE:
-                if(!userSession.isPresent() || !pathParamProjectIdOpt.isPresent()
-                    || !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
-                    || userSession.get().getIsMod() != Boolean.TRUE) {
-                    return false;
-                }
                 if (!userSession.isPresent()) {
-                    log.trace("Role {} with no user", role, projectAccountOpt.get().getStatus());
+                    log.trace("Role {} with no user", role);
                     return false;
                 }
-                if (Role.PROJECT_MODERATOR.equals(role) {
+                if (!pathParamProjectIdOpt.isPresent()) {
+                    log.trace("Role {} with no path param", role);
+                    return false;
+                }
+                if (!userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
+                    log.trace("Role {} with user {} project {} not matching project {}",
+                            role, userSession.get().getUserId(), userSession.get().getProjectId(), pathParamProjectIdOpt.get());
+                    return false;
+                }
+                if (userSession.get().getIsMod() != Boolean.TRUE) {
+                    log.trace("Role {} with user {} not being a mod", role, userSession.get().getUserId());
+                    return false;
+                }
+                if (Role.PROJECT_MODERATOR.equals(role)) {
                     return true;
                 }
                 // From here on just checking the _ACTIVE portion
                 Optional<Account> projectAccountOpt = accountOpt
                         .filter(account -> account.getProjectIds().contains(pathParamProjectIdOpt.get()))
                         .or(() -> projectStore.getProject(pathParamProjectIdOpt.get(), true)
-                        .map(Project::getAccountId)
-                        .flatMap(accountStore::getAccountByAccountId));
+                                .map(Project::getAccountId)
+                                .flatMap(accountStore::getAccountByAccountId));
                 if (!projectAccountOpt.isPresent()) {
                     log.trace("Role {} missing account from projectId {}", role, pathParamProjectIdOpt.get());
                     return false;

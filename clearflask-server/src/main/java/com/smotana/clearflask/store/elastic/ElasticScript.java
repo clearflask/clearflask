@@ -2,7 +2,7 @@ package com.smotana.clearflask.store.elastic;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-import com.smotana.clearflask.util.GsonProvider;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -46,10 +46,10 @@ public enum ElasticScript {
         }
     }
 
-    public PutStoredScriptRequest toPutStoredScriptRequest() {
+    public PutStoredScriptRequest toPutStoredScriptRequest(Gson gson) {
         PutStoredScriptRequest request = new PutStoredScriptRequest();
         request.id(getScriptName());
-        request.content(new BytesArray(GsonProvider.GSON.toJson(ImmutableMap.of(
+        request.content(new BytesArray(gson.toJson(ImmutableMap.of(
                 "script", ImmutableMap.of(
                         "lang", lang,
                         "source", source)))),

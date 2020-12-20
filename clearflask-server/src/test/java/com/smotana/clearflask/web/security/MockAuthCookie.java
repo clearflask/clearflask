@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
@@ -31,8 +32,10 @@ public class MockAuthCookie implements AuthCookie {
     @Inject(optional = true)
     private UserStore userStore;
 
-    private Optional<AccountSession> accountSession = Optional.empty();
-    private Optional<AccountSession> superAdminSession = Optional.empty();
+    private Optional<AccountSession> accountSessionOpt = Optional.empty();
+    private Optional<AccountSession> superAccountSessionOpt = Optional.empty();
+    private Optional<Account> accountOpt = Optional.empty();
+    private Optional<Account> superAccountOpt = Optional.empty();
     private Optional<UserSession> userSession = Optional.empty();
 
     @Override
@@ -40,12 +43,14 @@ public class MockAuthCookie implements AuthCookie {
         if (mockExtendedSecurityContext != null) {
             if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
                 if (accountStore != null) {
-                    accountSession = accountStore.getSession(sessionId);
+                    accountSessionOpt = accountStore.getSession(sessionId);
+                    accountOpt = accountSessionOpt.flatMap(session -> accountStore.getAccountByAccountId(session.getAccountId()));
                     updateSecurityContext();
                 }
             } else if (SUPER_ADMIN_AUTH_COOKIE_NAME.equals(cookieName)) {
                 if (accountStore != null) {
-                    superAdminSession = accountStore.getSession(sessionId);
+                    superAccountSessionOpt = accountStore.getSession(sessionId);
+                    superAccountOpt = superAccountSessionOpt.flatMap(session -> accountStore.getAccountByAccountId(session.getAccountId()));
                     updateSecurityContext();
                 }
             } else if (cookieName.startsWith(USER_AUTH_COOKIE_NAME_PREFIX)) {
@@ -61,7 +66,11 @@ public class MockAuthCookie implements AuthCookie {
     public void unsetAuthCookie(HttpServletResponse response, String cookieName) {
         if (mockExtendedSecurityContext != null) {
             if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
-                accountSession = Optional.empty();
+                accountSessionOpt = Optional.empty();
+                accountOpt = Optional.empty();
+            } else if (SUPER_ADMIN_AUTH_COOKIE_NAME.equals(cookieName)) {
+                superAccountSessionOpt = Optional.empty();
+                superAccountOpt = Optional.empty();
             } else if (cookieName.startsWith(USER_AUTH_COOKIE_NAME_PREFIX)) {
                 userSession = Optional.empty();
             }
@@ -73,20 +82,22 @@ public class MockAuthCookie implements AuthCookie {
         if (mockExtendedSecurityContext != null) {
             ExtendedPrincipal principal = null;
             Predicate<String> userHasRolePredicate = role -> false;
-            if (accountSession.isPresent() || userSession.isPresent()) {
+            if (accountSessionOpt.isPresent() || userSession.isPresent()) {
                 principal = new ExtendedPrincipal(
-                        accountSession.map(AccountSession::getAccountId).orElseGet(() -> userSession.map(UserSession::getUserId).orElse("127.0.0.1")),
+                        accountSessionOpt.map(AccountSession::getAccountId).orElseGet(() -> userSession.map(UserSession::getUserId).orElse("127.0.0.1")),
                         "127.0.0.1",
-                        accountSession,
-                        superAdminSession,
+                        accountSessionOpt,
+                        superAccountSessionOpt,
+                        accountOpt,
+                        superAccountOpt,
                         userSession);
                 userHasRolePredicate = role -> {
                     switch (role) {
                         case Role.SUPER_ADMIN:
-                            return superAdminSession.isPresent();
+                            return superAccountSessionOpt.isPresent();
                         case Role.ADMINISTRATOR_ACTIVE:
                         case Role.PROJECT_OWNER_ACTIVE:
-                            return accountSession.isPresent();
+                            return accountSessionOpt.isPresent();
                         case Role.PROJECT_MODERATOR:
                         case Role.PROJECT_MODERATOR_ACTIVE:
                             return userSession.isPresent() && userSession.get().getIsMod() == Boolean.TRUE;

@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -43,7 +44,6 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.Marshall
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerItem;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerItem;
-import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -94,13 +94,15 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
     @Inject
     private Config config;
     @Inject
+    private Gson gson;
+    @Inject
     private DynamoDB dynamoDoc;
 
     private final DynamoConvertersProxy.Converters converters = DynamoConvertersProxy.proxy();
-    private final MarshallerItem gsonMarshallerItem = (o, a, i) -> i.withString(a, GsonProvider.GSON.toJson(o));
-    private final MarshallerAttrVal gsonMarshallerAttrVal = o -> new AttributeValue().withS(GsonProvider.GSON.toJson(o));
-    private final Function<Class, UnMarshallerAttrVal> gsonUnMarshallerAttrVal = k -> a -> GsonProvider.GSON.fromJson(a.getS(), k);
-    private final Function<Class, UnMarshallerItem> gsonUnMarshallerItem = k -> (a, i) -> GsonProvider.GSON.fromJson(i.getString(a), k);
+    private final MarshallerItem gsonMarshallerItem = (o, a, i) -> i.withString(a, gson.toJson(o));
+    private final MarshallerAttrVal gsonMarshallerAttrVal = o -> new AttributeValue().withS(gson.toJson(o));
+    private final Function<Class, UnMarshallerAttrVal> gsonUnMarshallerAttrVal = k -> a -> gson.fromJson(a.getS(), k);
+    private final Function<Class, UnMarshallerItem> gsonUnMarshallerItem = k -> (a, i) -> gson.fromJson(i.getString(a), k);
     private final Map<String, DynamoTable> rangePrefixToDynamoTable = Maps.newHashMap();
 
     @Override
@@ -352,7 +354,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                         getPartitionKeyName(dt.type(), dt.indexNumber()),
                         obj -> StringSerdeUtil.mergeStrings(dtPartitionKeyMappers.stream()
                                 .map(m -> m.apply(obj))
-                                .map(GsonProvider.GSON::toJson)
+                                .map(gson::toJson)
                                 .toArray(String[]::new)));
             }
             String dtRangePrefix = dt.rangePrefix();
@@ -364,14 +366,14 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     getRangeKeyName(dt.type(), dt.indexNumber()),
                     obj -> StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(dtRangePrefix), dtRangeKeyMappers.stream()
                             .map(m -> m.apply(obj))
-                            .map(GsonProvider.GSON::toJson))
+                            .map(gson::toJson))
                             .toArray(String[]::new)));
         }
         ImmutableMap<String, Function<T, String>> toItemOtherKeysMapper = toItemOtherKeysMapperBuilder.build();
         Function<T, String> getPartitionKeyVal = obj -> StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
                 .map(f -> {
                     try {
-                        return GsonProvider.GSON.toJson(checkNotNull(f.get(obj)));
+                        return gson.toJson(checkNotNull(f.get(obj)));
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -380,7 +382,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         Function<T, String> getRangeKeyVal = obj -> StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeyFields)
                 .map(f -> {
                     try {
-                        return GsonProvider.GSON.toJson(checkNotNull(f.get(obj)));
+                        return gson.toJson(checkNotNull(f.get(obj)));
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -532,7 +534,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         return Optional.empty();
     }
 
-    public static class SchemaImpl<T> implements TableSchema<T>, IndexSchema<T> {
+    public class SchemaImpl<T> implements TableSchema<T>, IndexSchema<T> {
         private final String[] partitionKeys;
         private final String[] rangeKeys;
         private final Field[] partitionKeyFields;
@@ -625,12 +627,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     new KeyAttribute(
                             partitionKeyName,
                             StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeys)
-                                    .map(partitionKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
+                                    .map(partitionKey -> gson.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
                                     .toArray(String[]::new))),
                     new KeyAttribute(
                             rangeKeyName,
                             StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
-                                    .map(rangeKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
+                                    .map(rangeKey -> gson.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
                                     .toArray(String[]::new))));
         }
 
@@ -646,7 +648,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
                             .map(partitionKeyField -> {
                                 try {
-                                    return GsonProvider.GSON.toJson(checkNotNull(partitionKeyField.get(obj),
+                                    return gson.toJson(checkNotNull(partitionKeyField.get(obj),
                                             "Partition key value null, should add @NonNull on all keys for class %s", obj));
                                 } catch (IllegalAccessException ex) {
                                     throw new RuntimeException(ex);
@@ -658,7 +660,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         @Override
         public KeyAttribute partitionKey(Map<String, Object> values) {
             String[] partitionValues = Arrays.stream(partitionKeys)
-                    .map(partitionKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
+                    .map(partitionKey -> gson.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
                     .toArray(String[]::new);
             checkState(partitionValues.length == values.size(), "Unexpected extra values, partition keys %s values %s", rangeKeys, values);
             return new KeyAttribute(
@@ -678,7 +680,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeyFields)
                             .map(rangeKeyField -> {
                                 try {
-                                    return GsonProvider.GSON.toJson(checkNotNull(rangeKeyField.get(obj),
+                                    return gson.toJson(checkNotNull(rangeKeyField.get(obj),
                                             "Range key value null, should add @NonNull on all keys for class %s", obj));
                                 } catch (IllegalAccessException ex) {
                                     throw new RuntimeException(ex);
@@ -693,7 +695,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             return new KeyAttribute(
                     rangeKeyName,
                     StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
-                            .map(rangeKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
+                            .map(rangeKey -> gson.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
                             .toArray(String[]::new)));
         }
 
@@ -704,7 +706,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
                             .map(values::get)
                             .takeWhile(Objects::nonNull)
-                            .map(GsonProvider.GSON::toJson))
+                            .map(gson::toJson))
                             .toArray(String[]::new)));
         }
 
@@ -713,7 +715,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             return StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
                     .map(values::get)
                     .takeWhile(Objects::nonNull)
-                    .map(GsonProvider.GSON::toJson))
+                    .map(gson::toJson))
                     .toArray(String[]::new));
         }
 
@@ -803,12 +805,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         @Override
         public String serializeLastEvaluatedKey(Map<String, AttributeValue> lastEvaluatedKey) {
-            return GsonProvider.GSON.toJson(Maps.transformValues(lastEvaluatedKey, AttributeValue::getS));
+            return gson.toJson(Maps.transformValues(lastEvaluatedKey, AttributeValue::getS));
         }
 
         @Override
         public PrimaryKey toExclusiveStartKey(String serializedlastEvaluatedKey) {
-            Map<String, String> attributes = GsonProvider.GSON.fromJson(serializedlastEvaluatedKey, new TypeToken<Map<String, String>>() {
+            Map<String, String> attributes = gson.fromJson(serializedlastEvaluatedKey, new TypeToken<Map<String, String>>() {
             }.getType());
             return new PrimaryKey(attributes.entrySet().stream()
                     .map(e -> new KeyAttribute(e.getKey(), e.getValue()))

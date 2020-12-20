@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.testutil.AbstractTest;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.xbill.DNS.CNAMERecord;
@@ -119,15 +119,15 @@ public class SanitizerTest extends AbstractTest {
     void assertSanitizeDomain(String domain, boolean expectFailure) {
         try {
             sanitizer.domain(domain);
-            if(expectFailure) {
+            if (expectFailure) {
                 fail("Expected failure");
             }
-        } catch (ErrorWithMessageException ex) {
-            if(ex.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+        } catch (ApiException ex) {
+            if (ex.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
                 // It's fine, test was probably performed without network connection
                 return;
             }
-            if(!expectFailure) {
+            if (!expectFailure) {
                 throw ex;
             }
         }

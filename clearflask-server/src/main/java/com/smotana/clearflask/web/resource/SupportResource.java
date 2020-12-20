@@ -19,12 +19,10 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.util.IpUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
@@ -107,7 +105,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
                                     .withData(generateBody(supportMessage, accountOpt)))))));
         } catch (Exception ex) {
             log.error("Failed to send support message {}", supportMessage, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to send, please use support@clearflask.com", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to send, please use support@clearflask.com", ex);
         }
     }
 
@@ -115,7 +113,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         Optional<String> replyToOpt = Optional.ofNullable(supportMessage.getContent().get(CONTACT_FIELD));
         try {
             replyToOpt.ifPresent(sanitizer::email);
-        } catch (ErrorWithMessageException ex) {
+        } catch (ApiException ex) {
             return Optional.empty();
         }
         return replyToOpt;

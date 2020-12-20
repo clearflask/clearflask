@@ -30,7 +30,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
-import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.ApiException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
@@ -174,7 +174,7 @@ public class KillBilling extends ManagedService implements Billing {
                     .setCurrency(Currency.USD), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to create KillBill Account for email {} name {}", email, name, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor, try again later", ex);
         }
 
@@ -194,7 +194,7 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to create KillBill Subscription for accountId {} email {} name {}", account.getAccountId(), email, name, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor, try again later", ex);
         }
 
@@ -213,13 +213,13 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
             if (account == null) {
                 log.warn("Account doesn't exist by account id {}", accountId);
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                throw new ApiException(Response.Status.BAD_REQUEST,
                         "Account doesn't exist");
             }
             return account;
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve KillBill Account by id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
         }
     }
 
@@ -234,13 +234,13 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
             if (account == null) {
                 log.warn("Account doesn't exist by account kb id {}", accountIdKb);
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                throw new ApiException(Response.Status.BAD_REQUEST,
                         "Account doesn't exist");
             }
             return account;
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve KillBill Account by kb id {}", accountIdKb, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
         }
     }
 
@@ -252,7 +252,7 @@ public class KillBilling extends ManagedService implements Billing {
                 .or(() -> getSubscriptionByExternalKey(accountId))
                 .orElseThrow(() -> {
                     log.warn("No subscription found for accountId {}", accountId);
-                    return new ErrorWithMessageException(
+                    return new ApiException(
                             Response.Status.BAD_REQUEST, "Subscription doesn't exist, contact support");
                 });
     }
@@ -273,7 +273,7 @@ public class KillBilling extends ManagedService implements Billing {
                             .thenComparing(Subscription::getSubscriptionId));
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve KillBill Subscription by bundle external key {}", externalKey, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
         }
     }
 
@@ -287,7 +287,7 @@ public class KillBilling extends ManagedService implements Billing {
             return Optional.ofNullable(kbSubscription.getSubscriptionByKey(externalKey, KillBillUtil.roDefault()));
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve KillBill Subscription by external key {}", externalKey, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
         }
     }
 
@@ -361,7 +361,7 @@ public class KillBilling extends ManagedService implements Billing {
             overdueState = kbAccount.getOverdueAccount(account.getAccountId(), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve KillBill Overdue State from account id {}", account.getAccountId(), ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process", ex);
         }
         // TODO All of this needs to be verified
         final SubscriptionStatus status;
@@ -422,7 +422,7 @@ public class KillBilling extends ManagedService implements Billing {
             Account accountInKb = getAccount(accountId);
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, getSubscription(accountId), "Update payment token");
             if (status == BLOCKED) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to update payment token");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to update payment token");
             }
 
             kbAccount.createPaymentMethod(
@@ -442,7 +442,7 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to update KillBill payment token for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method", ex);
         }
     }
 
@@ -488,7 +488,7 @@ public class KillBilling extends ManagedService implements Billing {
             return Optional.of(getPaymentStripeAction(paymentIntent.getClientSecret()));
         } catch (KillBillClientException | StripeException ex) {
             log.warn("Failed to get actions from KillBill/Stripe accountId {}", accountIdKb, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to retrieve payment status", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to retrieve payment status", ex);
         }
     }
 
@@ -511,7 +511,7 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve payments from KillBill to sync actions for accountIdKb {}", accountIdKb, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to synchronize", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to synchronize", ex);
         }
     }
 
@@ -524,7 +524,7 @@ public class KillBilling extends ManagedService implements Billing {
 
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Cancel subscription");
             if (status != ACTIVE) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to cancel, delete account instead");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to cancel, delete account instead");
             }
 
             kbSubscription.cancelSubscriptionPlan(
@@ -540,7 +540,7 @@ public class KillBilling extends ManagedService implements Billing {
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
             log.warn("Failed to cancel KillBill subscription for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription", ex);
         }
     }
 
@@ -553,7 +553,7 @@ public class KillBilling extends ManagedService implements Billing {
 
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Resume subscription");
             if (status != ACTIVENORENEWAL && status != CANCELLED) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to resume subscription");
+                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to resume subscription");
             }
 
             if (subscriptionInKb.getState() == EntitlementState.ACTIVE
@@ -583,7 +583,7 @@ public class KillBilling extends ManagedService implements Billing {
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
             log.warn("Failed to resume KillBill subscription for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to resume subscription", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to resume subscription", ex);
         }
     }
 
@@ -630,7 +630,7 @@ public class KillBilling extends ManagedService implements Billing {
 
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
             if (status != ACTIVETRIAL && status != ACTIVE) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
+                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
             }
 
             // Even though we are using START_OF_SUBSCRIPTION changeAlignment
@@ -673,7 +673,7 @@ public class KillBilling extends ManagedService implements Billing {
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
             log.warn("Failed to change KillBill plan for account id {} planId {}", accountId, planId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
         }
     }
 
@@ -710,7 +710,7 @@ public class KillBilling extends ManagedService implements Billing {
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
             log.warn("Failed to change KillBill plan to flat yearly for account id {} yearlyPrice {}", accountId, yearlyPrice, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
         }
     }
 
@@ -773,7 +773,7 @@ public class KillBilling extends ManagedService implements Billing {
                     invoices);
         } catch (KillBillClientException ex) {
             log.warn("Failed to get invoices from KillBill for accountId {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch invoices", ex);
         }
     }
@@ -784,18 +784,18 @@ public class KillBilling extends ManagedService implements Billing {
         try {
             Invoice invoice = kbInvoice.getInvoice(invoiceId, KillBillUtil.roDefault());
             if (invoice == null) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                throw new ApiException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
             UUID accountIdKb = getAccount(accountId).getAccountId();
             if (!invoice.getAccountId().equals(accountIdKb)) {
                 log.warn("Requested HTML for invoiceId {} with account ext id {} id {} belonging to different account id {}",
                         invoiceId, accountId, accountIdKb, invoice.getAccountId());
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                throw new ApiException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
             if (invoice.getStatus() == InvoiceStatus.DRAFT) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                throw new ApiException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
             String invoiceHtml = kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
@@ -811,7 +811,7 @@ public class KillBilling extends ManagedService implements Billing {
             return invoiceHtml;
         } catch (KillBillClientException ex) {
             log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch invoice", ex);
         }
     }
@@ -881,7 +881,7 @@ public class KillBilling extends ManagedService implements Billing {
             });
         } catch (KillBillClientException ex) {
             log.warn("Failed to get payment method details from KillBill for accountIdKb {}", accountIdKb, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch payment method", ex);
         }
     }
@@ -895,7 +895,7 @@ public class KillBilling extends ManagedService implements Billing {
                     ? ImmutableSet.of() : ImmutableSet.copyOf(planDetails);
         } catch (KillBillClientException ex) {
             log.warn("Failed to get available base plans for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor", ex);
         }
     }
@@ -999,7 +999,7 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to close KillBill accountIdKb {}", accountIdKb, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to close account", ex);
         }
     }
@@ -1020,7 +1020,7 @@ public class KillBilling extends ManagedService implements Billing {
             return activeUsers;
         } catch (KillBillClientException ex) {
             log.warn("Failed to get usage for subscription id {}", subscription.getSubscriptionId(), ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to get subscription usage", ex);
         }
     }
