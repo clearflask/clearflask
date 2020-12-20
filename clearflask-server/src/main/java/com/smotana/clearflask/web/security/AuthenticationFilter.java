@@ -201,12 +201,19 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     log.trace("Role {} missing account", role);
                     return false;
                 }
-                if (Role.PROJECT_OWNER.equals(role)
-                        || !Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                if (accountOpt.get().getProjectIds().stream().noneMatch(pathParamProjectIdOpt.get()::equals)) {
+                    log.trace("Role {} doesn't own project", role);
+                    return false;
+                }
+                if (Role.PROJECT_OWNER.equals(role)) {
+                    return true;
+                }
+                // From here on just checking the _ACTIVE portion
+                if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     log.trace("Role {} inactive subscription", role);
                     return false;
                 }
-                return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
+                return true;
             case Role.PROJECT_ANON:
                 if (!pathParamProjectIdOpt.isPresent()) {
                     log.warn("Possible misconfiguration, role {} requested, but no projectId path param found in {}",
