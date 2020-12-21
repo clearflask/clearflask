@@ -43,6 +43,7 @@ import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -442,14 +443,22 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     @Override
     public Account updateApiKey(String accountId, String apiKey) {
+        Expression expression = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("apiKey", apiKey)
+                /**
+                 * This is a rare case where the attribute to update is also a partition key.
+                 * Explicitly set it here to update GSI
+                 */
+                .set(accountByApiKeySchema.partitionKeyName(), accountByApiKeySchema.partitionKey(Map.of("apiKey", apiKey)).getValue())
+                .set(accountByApiKeySchema.rangeKeyName(), accountByApiKeySchema.rangeKey(Map.of()).getValue())
+                .build();
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("SET #apiKey = :apiKey")
-                .withNameMap(new NameMap()
-                        .with("#apiKey", "apiKey")
-                        .with("#partitionKey", accountSchema.partitionKeyName()))
-                .withValueMap(new ValueMap().withString(":apiKey", apiKey))
+                .withConditionExpression(expression.conditionExpression())
+                .withUpdateExpression(expression.updateExpression())
+                .withNameMap(expression.nameMap())
+                .withValueMap(expression.valMap())
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }

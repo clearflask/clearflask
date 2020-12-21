@@ -82,11 +82,53 @@ public interface DynamoMapper {
         String tableName();
 
         Table table();
+
+        ExpressionBuilder expressionBuilder();
     }
 
     interface IndexSchema<T> extends Schema<T> {
         Index index();
 
         String indexName();
+    }
+
+    /**
+     * Update expression builder that ensures updated pk or sk keys are properly
+     * mapped.
+     */
+    interface ExpressionBuilder {
+        ExpressionBuilder set(String fieldName, Object object);
+
+        ExpressionBuilder remove(String fieldName);
+
+
+        String fieldMapping(String fieldName);
+
+        String valueMapping(String fieldName, Object object);
+
+
+        ExpressionBuilder condition(String expression);
+
+        ExpressionBuilder conditionExists();
+
+        ExpressionBuilder conditionNotExists();
+
+        ExpressionBuilder conditionFieldEquals(String fieldName, Object objectOther);
+
+        ExpressionBuilder conditionFieldExists(String fieldName);
+
+        ExpressionBuilder conditionFieldNotExists(String fieldName);
+
+
+        Expression build();
+    }
+    interface Expression {
+        String updateExpression();
+
+        String conditionExpression();
+
+        ImmutableMap<String, String> nameMap();
+
+        ImmutableMap<String, Object> valMap();
     }
 }

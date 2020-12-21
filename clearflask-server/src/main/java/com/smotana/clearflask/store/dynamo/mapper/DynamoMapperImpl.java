@@ -6,19 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -64,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -421,6 +410,144 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         ImmutableMap<String, MarshallerAttrVal> fieldAttrMarshallers = fieldAttrMarshallersBuilder.build();
         ImmutableMap<String, UnMarshallerAttrVal> fieldAttrUnMarshallers = fieldAttrUnMarshallersBuilder.build();
 
+        // Expression Builder Supplier
+        Supplier<ExpressionBuilder> expressionBuilderSupplier = () -> new ExpressionBuilder() {
+            private boolean built = false;
+            private final Map<String, String> nameMap = Maps.newHashMap();
+            private final Map<String, Object> valMap = Maps.newHashMap();
+            private final Map<String, String> setUpdates = Maps.newHashMap();
+            private final Map<String, String> removeUpdates = Maps.newHashMap();
+            private Optional<String> conditionExpressionOpt = Optional.empty();
+
+            @Override
+            public ExpressionBuilder set(String fieldName, Object object) {
+                checkState(!built);
+                checkState(!setUpdates.containsKey(fieldName));
+                setUpdates.put(fieldName,
+                        fieldMapping(fieldName) + " = " + valueMapping(fieldName, object));
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder remove(String fieldName) {
+                checkState(!built);
+                checkState(!removeUpdates.containsKey(fieldName));
+                removeUpdates.put(fieldName, fieldMapping(fieldName));
+                return this;
+            }
+
+            @Override
+            public String fieldMapping(String fieldName) {
+                checkState(!built);
+                String mappedName = "#" + fieldName;
+                nameMap.put(mappedName, fieldName);
+                return mappedName;
+            }
+
+            @Override
+            public String valueMapping(String fieldName, Object object) {
+                checkState(!built);
+                String mappedName = ":" + fieldName;
+                Object val;
+                if(object instanceof String) {
+                    // For partition range keys and strings in general, there is no marshaller
+                    val = object;
+                } else {
+                    Item tempItem = new Item();
+                    checkNotNull(fieldMarshallers.get(fieldName), "Unknown field name %s", fieldName)
+                            .marshall(object, "tempAttr", tempItem);
+                    val = tempItem.get("tempAttr");
+                }
+                valMap.put(mappedName, val);
+                return mappedName;
+            }
+
+            @Override
+            public ExpressionBuilder condition(String expression) {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of(expression);
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder conditionExists() {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of("attribute_exists(" + fieldMapping(partitionKeyName) + ")");
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder conditionNotExists() {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of("attribute_not_exists(" + fieldMapping(partitionKeyName) + ")");
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder conditionFieldEquals(String fieldName, Object objectOther) {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of(fieldMapping(partitionKeyName) + " = " + valueMapping(fieldName, objectOther));
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder conditionFieldExists(String fieldName) {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of("attribute_exists(" + fieldMapping(fieldName) + ")");
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder conditionFieldNotExists(String fieldName) {
+                checkState(!built);
+                checkState(!conditionExpressionOpt.isPresent());
+                conditionExpressionOpt = Optional.of("attribute_not_exists(" + fieldMapping(fieldName) + ")");
+                return this;
+            }
+
+           @Override
+            public Expression build() {
+                built = true;
+                ArrayList<String> updates = Lists.newArrayList();
+                if(!setUpdates.isEmpty()) {
+                    updates.add("SET " + String.join(", ", setUpdates.values()));
+                }
+                if(!removeUpdates.isEmpty()) {
+                    updates.add("REMOVE " + String.join(", ", removeUpdates.values()));
+                }
+                final String update = String.join(" ", updates);
+                final Optional<String> conditionOpt = conditionExpressionOpt;
+                final ImmutableMap<String, String> nameImmutableMap = ImmutableMap.copyOf(nameMap);
+                final ImmutableMap<String, Object> valImmutableMap = ImmutableMap.copyOf(valMap);
+                return new Expression() {
+                    @Override
+                    public String updateExpression() {
+                        return update;
+                    }
+
+                    @Override
+                    public String conditionExpression() {
+                        return conditionOpt.get();
+                    }
+
+                    @Override
+                    public ImmutableMap<String, String> nameMap() {
+                        return nameImmutableMap;
+                    }
+
+                    @Override
+                    public ImmutableMap<String, Object> valMap() {
+                        return valImmutableMap;
+                    }
+                };
+            }
+        };
+
         return new SchemaImpl<T>(
                 partitionKeys,
                 rangeKeys,
@@ -440,7 +567,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 fromAttrMapToCtorArgs,
                 objCtor,
                 toItemMapper,
-                toAttrMapMapper);
+                toAttrMapMapper,
+                expressionBuilderSupplier);
     }
 
     private <T> Constructor<T> findConstructor(Class<T> objectClazz, int argc) {
@@ -554,6 +682,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         private final Constructor<T> objCtor;
         private final Function<T, Item> toItemMapper;
         private final Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper;
+        private final Supplier<ExpressionBuilder> expressionBuilderSupplier;
 
         public SchemaImpl(
                 String[] partitionKeys,
@@ -573,7 +702,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 Function<Item, Object[]> fromItemToCtorArgs,
                 Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs,
                 Constructor<T> objCtor, Function<T, Item> toItemMapper,
-                Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper) {
+                Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper,
+                Supplier<ExpressionBuilder> expressionBuilderSupplier) {
             this.partitionKeys = partitionKeys;
             this.rangeKeys = rangeKeys;
             this.partitionKeyFields = partitionKeyFields;
@@ -593,6 +723,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             this.objCtor = objCtor;
             this.toItemMapper = toItemMapper;
             this.toAttrMapMapper = toAttrMapMapper;
+            this.expressionBuilderSupplier = expressionBuilderSupplier;
         }
 
         @Override
@@ -603,6 +734,11 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         @Override
         public Table table() {
             return table;
+        }
+
+        @Override
+        public ExpressionBuilder expressionBuilder() {
+            return expressionBuilderSupplier.get();
         }
 
         @Override

@@ -167,4 +167,25 @@ public class AccountStoreIT extends AbstractIT {
         store.revokeSessions(account.getAccountId());
         assertFalse(store.getSession(accountSession3.getSessionId()).isPresent());
     }
+
+    @Test(timeout = 30_000L)
+    public void testAccountByApiKey() throws Exception {
+        Account account = new Account(
+                store.genAccountId(),
+                "my@email.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "name",
+                "password",
+                ImmutableSet.of());
+        store.createAccount(account);
+
+        String apiKey = "asdfgagasd";
+        account = store.updateApiKey(account.getAccountId(), apiKey);
+        assertEquals(apiKey, account.getApiKey());
+        assertEquals(Optional.of(apiKey), store.getAccountByAccountId(account.getAccountId()).map(Account::getApiKey));
+        assertEquals(Optional.of(apiKey), store.getAccountByApiKey(apiKey).map(Account::getApiKey));
+    }
 }
