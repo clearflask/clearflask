@@ -13,6 +13,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.SubscriptionEventTypeComment;
@@ -253,6 +254,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
             @Override
             protected void configure() {
                 bind(WebhookService.class).to(WebhookServiceImpl.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WebhookServiceImpl.class);
                 install(ConfigSystem.configModule(Config.class));
             }
         };
