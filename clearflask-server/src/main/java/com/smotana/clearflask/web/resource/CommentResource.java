@@ -30,6 +30,7 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -198,6 +199,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Override
     public void commentSubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.COMMENT,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }
@@ -207,6 +209,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Override
     public void commentUnsubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
         projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.COMMENT,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }

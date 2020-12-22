@@ -6,7 +6,19 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.Projection;
+import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -449,7 +461,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 checkState(!built);
                 String mappedName = ":" + fieldName;
                 Object val;
-                if(object instanceof String) {
+                if (object instanceof String) {
                     // For partition range keys and strings in general, there is no marshaller
                     val = object;
                 } else {
@@ -510,14 +522,14 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 return this;
             }
 
-           @Override
+            @Override
             public Expression build() {
                 built = true;
                 ArrayList<String> updates = Lists.newArrayList();
-                if(!setUpdates.isEmpty()) {
+                if (!setUpdates.isEmpty()) {
                     updates.add("SET " + String.join(", ", setUpdates.values()));
                 }
-                if(!removeUpdates.isEmpty()) {
+                if (!removeUpdates.isEmpty()) {
                     updates.add("REMOVE " + String.join(", ", removeUpdates.values()));
                 }
                 final String update = String.join(" ", updates);
@@ -857,6 +869,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         @Override
         public Object toDynamoValue(String fieldName, Object object) {
+            if (object == null) {
+                return null;
+            }
             Item tempItem = new Item();
             checkNotNull(fieldMarshallers.get(fieldName), "Unknown field name %s", fieldName)
                     .marshall(object, "tempAttr", tempItem);
@@ -865,6 +880,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         @Override
         public Object fromDynamoValue(String fieldName, Object object) {
+            if (object == null) {
+                return null;
+            }
             Item tempItem = new Item();
             tempItem.with("tempAttr", object);
             return checkNotNull(fieldUnMarshallers.get(fieldName), "Unknown field name %s", fieldName)

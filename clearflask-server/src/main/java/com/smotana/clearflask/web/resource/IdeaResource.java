@@ -38,6 +38,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
@@ -126,11 +127,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 ImmutableMap.of(),
                 0d);
-        ideaStore.createIdea(ideaModel);
-
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
-            ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
+            ideaStore.createIdeaAndUpvote(ideaModel);
+        } else {
+            ideaStore.createIdea(ideaModel);
         }
 
         webhookService.eventPostNew(ideaModel, user);
@@ -186,12 +187,13 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 ImmutableMap.of(),
                 0d);
-        ideaStore.createIdea(ideaModel);
-
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
-            ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
+            ideaStore.createIdeaAndUpvote(ideaModel);
+        } else {
+            ideaStore.createIdea(ideaModel);
         }
+
         webhookService.eventPostNew(ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
         return ideaModel.toIdeaWithVote(
@@ -312,11 +314,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.content(ideaUpdateAdmin.getDescription());
 
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
-        Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
-                .map(UserSession::getUserId)
-                .flatMap(userId -> userStore.getUser(projectId, userId));
-        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, userOpt).getIdea();
+        Optional<UserModel> responseAuthorUserOpt = Optional.empty();
+        if (!Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse())) {
+            responseAuthorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
+                    .or(() -> getExtendedPrincipal()
+                            .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                            .map(UserSession::getUserId))
+                    .flatMap(userId -> userStore.getUser(projectId, userId));
+        }
+        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, responseAuthorUserOpt).getIdea();
         boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
         boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
         if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
@@ -382,6 +388,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaSubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.POST,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }
@@ -391,6 +398,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaUnsubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
         projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.POST,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }

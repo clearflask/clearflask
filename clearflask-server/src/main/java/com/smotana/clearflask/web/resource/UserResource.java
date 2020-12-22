@@ -35,6 +35,7 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.TokenVerifyStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
@@ -531,6 +532,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public void userSubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.USER,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }
@@ -540,6 +542,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public void userUnsubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
         projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                ResourceType.USER,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
     }

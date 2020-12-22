@@ -207,6 +207,32 @@ public class IdeaStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 30_000L)
+    public void testCreateUpvoted() throws Exception {
+        String projectId = IdUtil.randomId();
+
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+
+        store.createIndex(projectId).get();
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .authorUserId(userId2)
+                .projectId(projectId).build();
+        store.createIdeaAndUpvote(idea).get();
+
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+
+        store.voteIdea(projectId, idea.getIdeaId(), userId1, Upvote).getIndexingFuture().get();
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+
+        store.voteIdea(projectId, idea.getIdeaId(), userId2, Upvote).getIndexingFuture().get();
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+    }
+
+    @Test(timeout = 30_000L)
     public void testVote() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();

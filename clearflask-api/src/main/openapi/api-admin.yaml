@@ -7,9 +7,6 @@ info:
 servers:
 - url: https://clearflask.com/api/v1
 
-externalDocs:
-  url: https://clearflask.com/docs
-
 paths:
   /support/message:
     $ref: 'api-account.yaml#/~1support~1message'

@@ -46,6 +46,7 @@ import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.api.model.Voting;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -207,7 +208,7 @@ public class DynamoProjectStore implements ProjectStore {
                 projectId,
                 versionedConfigAdmin.getVersion(),
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
-                null,
+                ImmutableSet.of(),
                 gson.toJson(versionedConfigAdmin.getConfig()));
         try {
             ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.<TransactWriteItem>builder()
@@ -426,14 +427,18 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     private String packWebhookListener(WebhookListener listener) {
-        return StringSerdeUtil.mergeStrings(listener.getEventType(), listener.getUrl());
+        return StringSerdeUtil.mergeStrings(listener.getResourceType().name(), listener.getEventType(), listener.getUrl());
     }
 
-    private WebhookListener unpackWebhookListener(String listenerStr) {
+    private Optional<WebhookListener> unpackWebhookListener(String listenerStr) {
         String[] listenerParts = StringSerdeUtil.unMergeString(listenerStr);
-        return new WebhookListener(
-                listenerParts[0],
-                listenerParts[1] != null ? listenerParts[1] : "");
+        if (listenerParts.length != 3) {
+            return Optional.empty();
+        }
+        return Optional.of(new WebhookListener(
+                ResourceType.valueOf(listenerParts[0]),
+                listenerParts[1],
+                listenerParts[2]));
     }
 
     private Project getProjectWithUpgrade(ProjectModel projectModel) {
@@ -512,8 +517,9 @@ public class DynamoProjectStore implements ProjectStore {
                     ? ImmutableMap.of()
                     : ImmutableMap.copyOf(projectModel.getWebhookListeners().stream()
                     .map(DynamoProjectStore.this::unpackWebhookListener)
+                    .flatMap(Optional::stream)
                     .collect(Collectors.groupingBy(
-                            WebhookListener::getEventType,
+                            l -> webhookListenerSearchKey(l.getResourceType(), l.getEventType()),
                             Collectors.mapping(l -> l, ImmutableSet.toImmutableSet()))));
         }
 
@@ -668,8 +674,12 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
-        public ImmutableSet<WebhookListener> getWebhookListenerUrls(String event) {
-            return webhookEventToListeners.getOrDefault(event, ImmutableSet.of());
+        public ImmutableSet<WebhookListener> getWebhookListenerUrls(ResourceType resourceType, String event) {
+            return webhookEventToListeners.getOrDefault(webhookListenerSearchKey(resourceType, event), ImmutableSet.of());
+        }
+
+        private String webhookListenerSearchKey(ResourceType resourceType, String event) {
+            return resourceType.name() + event;
         }
 
         @Override

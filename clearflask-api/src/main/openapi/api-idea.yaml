@@ -192,6 +192,8 @@ components:
           properties:
             response:
               type: string
+            responseAuthorUserId:
+              type: string
             statusId:
               type: string
             tagIds:

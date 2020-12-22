@@ -228,6 +228,23 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
+    public ListenableFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea) {
+        voteStore.vote(idea.getProjectId(), idea.getAuthorUserId(), idea.getIdeaId(), VoteValue.Upvote);
+
+        IdeaModel ideaUpvoted = idea.toBuilder()
+                .voteValue(idea.getVoteValue() == null ? 1 : idea.getVoteValue() + 1)
+                .votersCount(idea.getVotersCount() == null ? 1 : idea.getVotersCount() + 1)
+                .trendScore(expDecayScoreWeek.updateScore(
+                        idea.getTrendScore() == null ? 0 : idea.getTrendScore(),
+                        System.currentTimeMillis()))
+                .build();
+
+        // No need to update bloom filter, it is assumed own ideas are always upvoted
+
+        return this.createIdea(ideaUpvoted);
+    }
+
+    @Override
     public ListenableFuture<IndexResponse> createIdea(IdeaModel idea) {
         try {
             ideaSchema.table().putItem(new PutItemSpec()
@@ -494,6 +511,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         null,
                         null,
                         null,
+                        null,
                         null),
                 Optional.empty());
     }
@@ -526,6 +544,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response").delete());
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId").delete());
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName").delete());
+                indexUpdates.put("response", "");
                 indexUpdates.put("responseAuthorUserId", "");
                 indexUpdates.put("responseAuthorName", "");
             } else {
@@ -534,10 +553,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 if (responseAuthor.isPresent()) {
                     updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId")
                             .put(ideaSchema.toDynamoValue("responseAuthorUserId", responseAuthor.get().getUserId())));
-                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName")
-                            .put(ideaSchema.toDynamoValue("responseAuthorName", responseAuthor.get().getName())));
                     indexUpdates.put("responseAuthorUserId", responseAuthor.get().getUserId());
-                    indexUpdates.put("responseAuthorName", responseAuthor.get().getName());
+                    if (responseAuthor.get().getName() != null) {
+                        updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName")
+                                .put(ideaSchema.toDynamoValue("responseAuthorName", responseAuthor.get().getName())));
+                        indexUpdates.put("responseAuthorName", responseAuthor.get().getName());
+                    } else {
+                        indexUpdates.put("responseAuthorName", "");
+                    }
                 } else {
                     indexUpdates.put("responseAuthorUserId", "");
                     indexUpdates.put("responseAuthorName", "");

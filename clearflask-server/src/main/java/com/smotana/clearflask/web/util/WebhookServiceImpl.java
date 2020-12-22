@@ -25,6 +25,7 @@ import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener;
+import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -35,7 +36,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -80,7 +80,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventUserNew(UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeUser.NEW.name(), user.getProjectId(), () -> {
+        return handleEvent(ResourceType.USER, SubscriptionEventTypeUser.NEW.name(), user.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeUser.NEW.name());
             map.put("user", userPayload(user));
@@ -90,7 +90,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventCommentNew(IdeaStore.IdeaModel idea, CommentStore.CommentModel comment, UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeComment.NEW.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.COMMENT, SubscriptionEventTypeComment.NEW.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeComment.NEW.name());
             map.put("post", ideaPayload(idea));
@@ -102,7 +102,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostNew(IdeaStore.IdeaModel idea, UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeIdea.NEW.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.NEW.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.NEW.name());
             map.put("post", ideaPayload(idea));
@@ -113,7 +113,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostVoteChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, VoteOption vote) {
-        return handleEvent(SubscriptionEventTypeIdea.VOTE_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.VOTE_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.VOTE_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -125,7 +125,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostFundingChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, long fundDiff) {
-        return handleEvent(SubscriptionEventTypeIdea.FUNDING_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.FUNDING_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.FUNDING_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -137,7 +137,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostExpressionsChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, ImmutableSet<String> expressions) {
-        return handleEvent(SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -149,7 +149,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostResponseChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.RESPONSE_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.RESPONSE_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.RESPONSE_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -159,7 +159,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostStatusChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.STATUS_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.STATUS_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.STATUS_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -169,7 +169,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostTagsChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.TAG_CHANGED.name(), idea.getProjectId(), () -> {
+        return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.TAG_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.TAG_CHANGED.name());
             map.put("post", ideaPayload(idea));
@@ -193,7 +193,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
         map.put("responseText", idea.getResponseAsText(sanitizer));
         map.put("responseHtml", idea.getResponseSanitized(sanitizer));
         map.put("responseAuthorUserId", idea.getResponseAuthorUserId());
-        map.put("getResponseAuthorName", idea.getResponseAuthorName());
+        map.put("responseAuthorName", idea.getResponseAuthorName());
         return map;
     }
 
@@ -220,9 +220,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
         return map;
     }
 
-    private ListenableFuture<Void> handleEvent(String eventType, String projectId, Supplier<Map<String, Object>> payloadSupplier) {
+    private ListenableFuture<Void> handleEvent(ResourceType resourceType, String eventType, String projectId, Supplier<Map<String, Object>> payloadSupplier) {
         ImmutableSet<WebhookListener> listeners = projectStore.getProject(projectId, true)
-                .map(project -> project.getWebhookListenerUrls(eventType))
+                .map(project -> project.getWebhookListenerUrls(resourceType, eventType))
                 .orElse(ImmutableSet.of());
 
         if (listeners.isEmpty()) {

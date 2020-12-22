@@ -23,7 +23,7 @@ public class OnAccountSignup {
         @DefaultValue("Welcome to ClearFlask")
         String subject();
 
-        @DefaultValue("Hello __NAME__, thank you for signing up with us. If you get stuck, feel free to reach out to support or leave feedback. It's very valuable to us.\n")
+        @DefaultValue("Hello __NAME__, thank you for signing up with us. Visit the dashboard below to get started.")
         String content();
     }
 

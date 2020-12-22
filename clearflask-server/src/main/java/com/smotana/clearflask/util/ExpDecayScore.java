@@ -13,6 +13,7 @@ public class ExpDecayScore {
         this.rate = 1d / decayPeriodMillis;
     }
 
+    /** If changed, also change in exp-decay.painless */
     public double updateScore(double prevScore, long timeInMillis) {
         double u = Math.max(prevScore, rate * timeInMillis);
         double v = Math.min(prevScore, rate * timeInMillis);

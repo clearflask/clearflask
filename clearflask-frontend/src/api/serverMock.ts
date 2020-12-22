@@ -774,7 +774,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.ideaUpdateAdmin.description !== undefined) idea.description = request.ideaUpdateAdmin.description;
     if (request.ideaUpdateAdmin.response !== undefined) {
       idea.response = request.ideaUpdateAdmin.response;
-      const user = this.getProject(request.projectId).loggedInUser;
+      const user = request.ideaUpdateAdmin.responseAuthorUserId
+        && this.getProject(request.projectId).users.find(user => user.userId === request.ideaUpdateAdmin.responseAuthorUserId)
+        || this.getProject(request.projectId).loggedInUser;
       if (user) {
         idea.responseAuthorName = user.name;
         idea.responseAuthorUserId = user.userId;

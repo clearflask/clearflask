@@ -2,7 +2,11 @@ package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Category;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.VersionedConfig;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
@@ -74,14 +78,14 @@ public interface ProjectStore {
 
         Function<String, String> getIntercomEmailToIdentityFun();
 
-        ImmutableSet<WebhookListener> getWebhookListenerUrls(String eventType);
+        ImmutableSet<WebhookListener> getWebhookListenerUrls(WebhookListener.ResourceType resourceType, String eventType);
 
         String getHostname();
 
         static String getHostname(ConfigAdmin configAdmin, Application.Config configApp) {
             return Strings.isNullOrEmpty(configAdmin.getDomain())
-                ? configAdmin.getSlug() + "." + configApp.domain()
-                : configAdmin.getDomain();
+                    ? configAdmin.getSlug() + "." + configApp.domain()
+                    : configAdmin.getDomain();
         }
     }
 
@@ -103,6 +107,7 @@ public interface ProjectStore {
         /** Schema version mainly used for automatic upgrades */
         Long schemaVersion;
 
+        @NonNull
         ImmutableSet<String> webhookListeners;
 
         @NonNull
@@ -113,10 +118,19 @@ public interface ProjectStore {
     @AllArgsConstructor
     class WebhookListener {
         @NonNull
+        ResourceType resourceType;
+
+        @NonNull
         String eventType;
 
         @NonNull
         String url;
+
+        public enum ResourceType {
+            POST,
+            COMMENT,
+            USER
+        }
     }
 
     @Value

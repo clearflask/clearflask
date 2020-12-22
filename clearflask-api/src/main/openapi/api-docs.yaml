@@ -7,6 +7,18 @@ info:
 servers:
 - url: https://clearflask.com/api/v1
 
+externalDocs:
+  url: https://clearflask.com/api
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-cf-token
+security:
+  - ApiKeyAuth: []
+
 paths:
   # api-client.yaml
   /project/{projectId}/ideasearch:
@@ -68,16 +80,10 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
   /admin/account/noop:
     $ref: 'api-account.yaml#/~1admin~1account~1noop'
-  /superadmin/account/loginas:
-    $ref: 'api-account.yaml#/~1superadmin~1account~1loginas'
-  /superadmin/accountsearch:
-    $ref: 'api-account.yaml#/~1superadmin~1accountsearch'
   /admin/account/logout:
     $ref: 'api-account.yaml#/~1admin~1account~1logout'
   /admin/account/update:
     $ref: 'api-account.yaml#/~1admin~1account~1update'
-  /admin/account/updateSuper:
-    $ref: 'api-account.yaml#/~1admin~1account~1updateSuper'
   /admin/account/billing:
     $ref: 'api-account.yaml#/~1admin~1account~1billing'
   /admin/account/billing/invoices:
@@ -124,12 +130,3 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin'
   /project/{projectId}/admin/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1config'
-  # api-connect.yaml
-  /connect/account/keypair:
-    $ref: 'api-sni.yaml#/~1connect~1account~1keypair'
-  /connect/cert/keypair:
-    $ref: 'api-sni.yaml#/~1connect~1cert~1keypair'
-  /connect/cert/challenge:
-    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge'
-  /connect/cert:
-    $ref: 'api-sni.yaml#/~1connect~1cert'

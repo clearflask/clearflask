@@ -22,7 +22,6 @@ import com.smotana.clearflask.store.VoteStore.ListResponse;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,7 +76,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Limit(requiredPermits = 1)
     @Override
     public TransactionSearchAdminResponse transactionSearchAdmin(String projectId, TransactionSearchAdmin transactionSearchAdmin, String cursor) {
-        throw new NotImplementedException();
+        throw new ApiException(Response.Status.NOT_IMPLEMENTED);
     }
 
     @RolesAllowed({Role.PROJECT_USER})

@@ -73,7 +73,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <DialogTitle>Edit post</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
-              <Grid item xs={12} className={this.props.classes.row}>
+              <Grid item xs={isModOrAdminLoggedIn ? 8 : 12} className={this.props.classes.row}>
                 <TextField
                   variant='outlined'
                   size='small'
@@ -84,6 +84,21 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   onChange={e => this.setState({ title: e.target.value })}
                 />
               </Grid>
+              {isModOrAdminLoggedIn && (
+                <Grid item xs={4} className={this.props.classes.row}>
+                  <TextField
+                    variant='outlined'
+                    size='small'
+                    disabled={this.state.isSubmitting}
+                    label='Post ID'
+                    fullWidth
+                    value={this.props.idea.ideaId}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+              )}
               <Grid item xs={12} className={this.props.classes.row}>
                 <Suspense fallback={<Loading />}>
                   <RichEditor

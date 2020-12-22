@@ -5,9 +5,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.store.NotificationStore;
-import com.smotana.clearflask.web.NotImplementedException;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.core.Response;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 
@@ -25,17 +26,17 @@ public class MockNotificationStore implements NotificationStore {
 
     @Override
     public NotificationListResponse notificationList(String projectId, String userId, Optional<String> cursorOpt) {
-        throw new NotImplementedException();
+        throw new ApiException(Response.Status.NOT_IMPLEMENTED);
     }
 
     @Override
     public void notificationClear(String projectId, String userId, String notificationId) {
-        throw new NotImplementedException();
+        throw new ApiException(Response.Status.NOT_IMPLEMENTED);
     }
 
     @Override
     public void notificationClearAll(String projectId, String userId) {
-        throw new NotImplementedException();
+        throw new ApiException(Response.Status.NOT_IMPLEMENTED);
     }
 
     public static Module module() {

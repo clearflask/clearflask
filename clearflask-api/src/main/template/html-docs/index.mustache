@@ -16,7 +16,7 @@
   {{#hasAuthMethods}}
     <ol>
     {{#authMethods}}
-      <li>{{#isBasic}}HTTP Basic Authentication{{/isBasic}}{{#isOAuth}}OAuth AuthorizationUrl:{{authorizationUrl}}TokenUrl:{{tokenUrl}}{{/isOAuth}}{{#isApiKey}}APIKey KeyParamName:{{keyParamName}} KeyInQuery:{{isKeyInQuery}} KeyInHeader:{{isKeyInHeader}}{{/isApiKey}}</li>
+      <li>{{#isBasic}}HTTP Basic Authentication{{/isBasic}}{{#isOAuth}}OAuth AuthorizationUrl:{{authorizationUrl}}TokenUrl:{{tokenUrl}}{{/isOAuth}}{{#isApiKey}}APIKey {{#isKeyInQuery}}Query{{/isKeyInQuery}}{{#isKeyInHeader}}Header{{/isKeyInHeader}}ParamName:{{keyParamName}}{{/isApiKey}}</li>
     {{/authMethods}}
     </ol>
   {{/hasAuthMethods}}

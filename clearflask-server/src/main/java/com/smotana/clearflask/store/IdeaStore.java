@@ -52,6 +52,8 @@ public interface IdeaStore {
 
     ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
 
+    ListenableFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea);
+
     Optional<IdeaModel> getIdea(String projectId, String ideaId);
 
     ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);

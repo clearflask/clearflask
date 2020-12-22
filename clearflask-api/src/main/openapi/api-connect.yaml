@@ -7,9 +7,6 @@ info:
 servers:
 - url: https://clearflask.com/api/v1
 
-externalDocs:
-  url: https://clearflask.com/docs
-
 paths:
   /connect/account/keypair:
     $ref: 'api-sni.yaml#/~1connect~1account~1keypair'

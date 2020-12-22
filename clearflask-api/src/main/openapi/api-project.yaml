@@ -617,7 +617,6 @@ components:
             properties:
               categoryId:
                 x-clearflask-prop: { order: 0, name: 'Category ID', description: 'Used in API calls', subType: 'id' }
-                x-clearflask-hide: true
                 type: string
               name:
                 x-clearflask-prop: { defaultValue: 'Category <>', order: 1, name: 'Name', description: 'Category name. Keep it short as the name is visible in tight spaces.' }

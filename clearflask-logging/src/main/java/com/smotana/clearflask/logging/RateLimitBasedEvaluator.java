@@ -26,6 +26,9 @@ public class RateLimitBasedEvaluator extends EventEvaluatorBase<ILoggingEvent> {
 
     @Override
     public boolean evaluate(ILoggingEvent event) throws NullPointerException, EvaluationException {
+        if (event.getLevel().levelInt >= Level.ERROR_INT) {
+            return true;
+        }
         return rateLimiter.tryAcquire();
     }
 }

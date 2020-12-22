@@ -42,7 +42,7 @@ ${OPENAPI_GENERATOR} generate \
 # HTML Docs
 ${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/html-docs \
-    -i ${OPENAPI_SOURCE_DIR}/api.yaml \
+    -i ${OPENAPI_SOURCE_DIR}/api-docs.yaml \
     -p infoUrl="https://clearflask.com" \
     -p infoEmail="support@clearflask.com" \
     -g html \
