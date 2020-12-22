@@ -72,8 +72,8 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
         <To>ops@clearflask.com</To>
         <From>no-reply@clearflask.com</From>
         <Subject>[ClearFlask Logs] [Kaui] ${HOSTNAME}</Subject>
-        <evaluator class="com.smotana.clearflask.logging.CounterBasedEvaluator">
-            <param name="CounterLimit" value="10"/>
+        <evaluator class="com.smotana.clearflask.logging.RateLimitBasedEvaluator">
+            <param name="OncePerSeconds" value="600"/>
         </evaluator>
         <layout class="com.smotana.clearflask.logging.HTMLLayout">
             <pattern>%msg</pattern>

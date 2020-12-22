@@ -1,8 +1,8 @@
 package com.smotana.clearflask.web.util;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -35,6 +35,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -78,129 +80,147 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventUserNew(UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeUser.NEW.name(), user.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeUser.NEW.name())
-                .put("user", userPayload(user))
-                .build());
+        return handleEvent(SubscriptionEventTypeUser.NEW.name(), user.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeUser.NEW.name());
+            map.put("user", userPayload(user));
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventCommentNew(IdeaStore.IdeaModel idea, CommentStore.CommentModel comment, UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeComment.NEW.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeComment.NEW.name())
-                .put("post", ideaPayload(idea))
-                .put("comment", commentPayload(comment))
-                .put("user", userPayload(user))
-                .build());
+        return handleEvent(SubscriptionEventTypeComment.NEW.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeComment.NEW.name());
+            map.put("post", ideaPayload(idea));
+            map.put("comment", commentPayload(comment));
+            map.put("user", userPayload(user));
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostNew(IdeaStore.IdeaModel idea, UserStore.UserModel user) {
-        return handleEvent(SubscriptionEventTypeIdea.NEW.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.NEW.name())
-                .put("post", ideaPayload(idea))
-                .put("user", userPayload(user))
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.NEW.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.NEW.name());
+            map.put("post", ideaPayload(idea));
+            map.put("user", userPayload(user));
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostVoteChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, VoteOption vote) {
-        return handleEvent(SubscriptionEventTypeIdea.VOTE_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.VOTE_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .put("user", userPayload(userSupplier.get()))
-                .put("vote", vote.name())
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.VOTE_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.VOTE_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            map.put("user", userPayload(userSupplier.get()));
+            map.put("vote", vote.name());
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostFundingChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, long fundDiff) {
-        return handleEvent(SubscriptionEventTypeIdea.FUNDING_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.FUNDING_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .put("user", userPayload(userSupplier.get()))
-                .put("fundDiff", fundDiff)
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.FUNDING_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.FUNDING_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            map.put("user", userPayload(userSupplier.get()));
+            map.put("fundDiff", fundDiff);
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostExpressionsChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, ImmutableSet<String> expressions) {
-        return handleEvent(SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .put("user", userPayload(userSupplier.get()))
-                .put("expressions", expressions)
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            map.put("user", userPayload(userSupplier.get()));
+            map.put("expressions", expressions);
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostResponseChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.RESPONSE_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.RESPONSE_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.RESPONSE_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.RESPONSE_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostStatusChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.STATUS_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.STATUS_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.STATUS_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.STATUS_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            return map;
+        });
     }
 
     @Override
     public ListenableFuture<Void> eventPostTagsChanged(IdeaStore.IdeaModel idea) {
-        return handleEvent(SubscriptionEventTypeIdea.TAG_CHANGED.name(), idea.getProjectId(), () -> ImmutableMap.<String, Object>builder()
-                .put("event_type", SubscriptionEventTypeIdea.TAG_CHANGED.name())
-                .put("post", ideaPayload(idea))
-                .build());
+        return handleEvent(SubscriptionEventTypeIdea.TAG_CHANGED.name(), idea.getProjectId(), () -> {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("event_type", SubscriptionEventTypeIdea.TAG_CHANGED.name());
+            map.put("post", ideaPayload(idea));
+            return map;
+        });
     }
 
-    private ImmutableMap<String, Object> ideaPayload(IdeaStore.IdeaModel idea) {
-        return ImmutableMap.<String, Object>builder()
-                .put("projectId", idea.getProjectId())
-                .put("postId", idea.getIdeaId())
-                .put("categoryId", idea.getCategoryId())
-                .put("statusId", idea.getStatusId())
-                .put("tagIds", idea.getTagIds())
-                .put("authorUserId", idea.getAuthorUserId())
-                .put("authorIsMod", idea.getAuthorIsMod())
-                .put("created", idea.getCreated())
-                .put("title", idea.getTitle())
-                .put("descriptionText", idea.getDescriptionAsText(sanitizer))
-                .put("descriptionHtml", idea.getDescriptionSanitized(sanitizer))
-                .put("responseText", idea.getResponseAsText(sanitizer))
-                .put("responseHtml", idea.getResponseSanitized(sanitizer))
-                .put("responseAuthorUserId", idea.getResponseAuthorUserId())
-                .put("getResponseAuthorName", idea.getResponseAuthorName())
-                .build();
+    private Map<String, Object> ideaPayload(IdeaStore.IdeaModel idea) {
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("projectId", idea.getProjectId());
+        map.put("postId", idea.getIdeaId());
+        map.put("categoryId", idea.getCategoryId());
+        map.put("statusId", idea.getStatusId());
+        map.put("tagIds", idea.getTagIds());
+        map.put("authorUserId", idea.getAuthorUserId());
+        map.put("authorIsMod", idea.getAuthorIsMod());
+        map.put("created", idea.getCreated());
+        map.put("title", idea.getTitle());
+        map.put("descriptionText", idea.getDescriptionAsText(sanitizer));
+        map.put("descriptionHtml", idea.getDescriptionSanitized(sanitizer));
+        map.put("responseText", idea.getResponseAsText(sanitizer));
+        map.put("responseHtml", idea.getResponseSanitized(sanitizer));
+        map.put("responseAuthorUserId", idea.getResponseAuthorUserId());
+        map.put("getResponseAuthorName", idea.getResponseAuthorName());
+        return map;
     }
 
-    private ImmutableMap<String, Object> userPayload(UserStore.UserModel user) {
-        return ImmutableMap.<String, Object>builder()
-                .put("projectId", user.getProjectId())
-                .put("userId", user.getUserId())
-                .put("isMod", user.getIsMod())
-                .put("name", user.getName())
-                .put("email", user.getEmail())
-                .put("created", user.getCreated())
-                .build();
+    private Map<String, Object> userPayload(UserStore.UserModel user) {
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("projectId", user.getProjectId());
+        map.put("userId", user.getUserId());
+        map.put("isMod", user.getIsMod());
+        map.put("name", user.getName());
+        map.put("email", user.getEmail());
+        map.put("created", user.getCreated());
+        return map;
     }
 
-    private ImmutableMap<String, Object> commentPayload(CommentStore.CommentModel comment) {
-        return ImmutableMap.<String, Object>builder()
-                .put("projectId", comment.getProjectId())
-                .put("commentId", comment.getCommentId())
-                .put("authorUserId", comment.getAuthorUserId())
-                .put("authorIsMod", comment.getAuthorIsMod())
-                .put("created", comment.getCreated())
-                .put("contentText", comment.getContentAsText(sanitizer))
-                .put("contentHtml", comment.getContentSanitized(sanitizer))
-                .build();
+    private Map<String, Object> commentPayload(CommentStore.CommentModel comment) {
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("projectId", comment.getProjectId());
+        map.put("commentId", comment.getCommentId());
+        map.put("authorUserId", comment.getAuthorUserId());
+        map.put("authorIsMod", comment.getAuthorIsMod());
+        map.put("created", comment.getCreated());
+        map.put("contentText", comment.getContentAsText(sanitizer));
+        map.put("contentHtml", comment.getContentSanitized(sanitizer));
+        return map;
     }
 
-    private ListenableFuture<Void> handleEvent(String eventType, String projectId, Supplier<ImmutableMap<String, Object>> payloadSupplier) {
+    private ListenableFuture<Void> handleEvent(String eventType, String projectId, Supplier<Map<String, Object>> payloadSupplier) {
         ImmutableSet<WebhookListener> listeners = projectStore.getProject(projectId, true)
                 .map(project -> project.getWebhookListenerUrls(eventType))
                 .orElse(ImmutableSet.of());
