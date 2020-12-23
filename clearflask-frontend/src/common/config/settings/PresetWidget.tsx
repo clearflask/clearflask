@@ -34,21 +34,18 @@ interface Preset {
 class PresetWidget extends Component<Props> {
   static presets: { [pathStr: string]: Array<Preset> } = {
     '': [
-      {
-        title: 'Feedback', body: 'Collect feedback from user, comes with a "Feature" and "Bug" category',
-        actionTitle: 'Add', action: (templater, path) => templater.templateFeedback(true, false)
-      },
-      {
-        title: 'Changelog', body: 'Update your users with new changes to your product',
-        actionTitle: 'Add', action: (templater, path) => templater.templateChangelog(true)
-      },
-      {
-        title: 'Knowledge Base', body: 'Helpful articles around your product',
-        actionTitle: 'Add', action: (templater, path) => templater.templateKnowledgeBase()
-      },
+      // People are just confused about this
       // {
-      //   title: 'Blog', body: 'Add articles for your users',
-      //   actionTitle: 'Add', action: (templater, path) => templater.templateBlog(true)
+      //   title: 'Feedback', body: 'Collect feedback from user, comes with a "Feature" and "Bug" category',
+      //   actionTitle: 'Add', action: (templater, path) => templater.templateFeedback(true, false)
+      // },
+      // {
+      //   title: 'Changelog', body: 'Update your users with new changes to your product',
+      //   actionTitle: 'Add', action: (templater, path) => templater.templateChangelog(true)
+      // },
+      // {
+      //   title: 'Knowledge Base', body: 'Helpful articles around your product',
+      //   actionTitle: 'Add', action: (templater, path) => templater.templateKnowledgeBase()
       // },
     ],
     'content.categories.<>.support': [
