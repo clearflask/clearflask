@@ -7,6 +7,16 @@ components:
           type: string
         authToken:
           type: string
+        oauthToken:
+          type: object
+          required:
+          - id
+          - code
+          properties:
+            id:
+              type: string
+            code:
+              type: string
         browserPushToken:
           type: string
     UserLogin:

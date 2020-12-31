@@ -4,16 +4,20 @@ import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.smotana.clearflask.api.model.NotificationMethodsOauth;
+import com.smotana.clearflask.api.model.UserBindOauthToken;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.resource.UserResource;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -38,6 +42,7 @@ public class UserBindUtil {
             Optional<ExtendedSecurityContext.ExtendedPrincipal> extendedPrincipalOpt,
             Optional<String> ssoTokenOpt,
             Optional<String> authTokenOpt,
+            Optional<UserBindOauthToken> oauthTokenOpt,
             Optional<String> browserPushTokenOpt) {
 
         Optional<UserSession> userSessionOpt = extendedPrincipalOpt.flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt);
@@ -75,6 +80,32 @@ public class UserBindUtil {
             userOpt = userStore.ssoCreateOrGet(projectId, project.getVersionedConfigAdmin().getConfig().getSsoSecretKey(), ssoTokenOpt.get());
             if (userOpt.isPresent()) {
                 createSession = true;
+            }
+        }
+
+        // Auto login using oauth token
+        if (!userOpt.isPresent() && oauthTokenOpt.isPresent()) {
+            Project project = projectStore.getProject(projectId, true).get();
+            Optional<NotificationMethodsOauth> oauthMethodOpt = project.getVersionedConfigAdmin().getConfig().getUsers().getOnboarding().getNotificationMethods().getOauth().stream()
+                    .filter(nmo -> oauthTokenOpt.get().getId().equals(nmo.getOauthId()))
+                    .findAny();
+            Optional<String> clientSecretOpt = oauthMethodOpt.flatMap(oauthMethod -> {
+                if (project.getVersionedConfigAdmin().getConfig().getOauthClientSecrets() == null) {
+                    return Optional.empty();
+                }
+                return Optional.ofNullable(Strings.emptyToNull(project.getVersionedConfigAdmin().getConfig().getOauthClientSecrets().get(oauthMethod.getOauthId())));
+            });
+            if (clientSecretOpt.isPresent()) {
+                userOpt = Optional.of(userStore.oauthCreateOrGet(
+                        project.getProjectId(),
+                        oauthMethodOpt.get(),
+                        clientSecretOpt.get(),
+                        "https://" + project.getHostname() + "/oauth",
+                        oauthTokenOpt.get().getCode()));
+            } else {
+                log.trace("OAuth failed, token {} with oauth provider present {} client secret present {}",
+                        oauthTokenOpt.get(), oauthMethodOpt.isPresent(), clientSecretOpt.isPresent());
+                throw new ApiException(Response.Status.FORBIDDEN, "OAuth provider not found");
             }
         }
 

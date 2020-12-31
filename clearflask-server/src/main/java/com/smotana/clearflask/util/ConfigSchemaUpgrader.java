@@ -1,6 +1,7 @@
 package com.smotana.clearflask.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
@@ -13,7 +14,7 @@ import java.util.Optional;
 @Singleton
 public class ConfigSchemaUpgrader {
 
-    public static final long LATEST_SCHEMA_VERSION = 3L;
+    public static final long LATEST_SCHEMA_VERSION = 4L;
 
     @Inject
     private Gson gson;
@@ -32,7 +33,8 @@ public class ConfigSchemaUpgrader {
         }
 
         if (schemaVersion < 2L) {
-            JsonElement emailEl = config.getAsJsonObject().get("users")
+            JsonElement emailEl = config
+                    .getAsJsonObject().get("users")
                     .getAsJsonObject().get("onboarding")
                     .getAsJsonObject().get("notificationMethods")
                     .getAsJsonObject().get("email");
@@ -50,8 +52,20 @@ public class ConfigSchemaUpgrader {
             config.getAsJsonObject().addProperty("schemaVersion", 3L);
         }
 
+        if (schemaVersion < 4L) {
+            JsonObject notificationMethodsObj = config
+                    .getAsJsonObject().get("users")
+                    .getAsJsonObject().get("onboarding")
+                    .getAsJsonObject().get("notificationMethods")
+                    .getAsJsonObject();
+            if (!notificationMethodsObj.has("oauth")) {
+                notificationMethodsObj.add("oauth", new JsonArray());
+            }
+            config.getAsJsonObject().addProperty("schemaVersion", 4L);
+        }
+
         // Important notes:
-        // - Don't forget to increment schema version udner LATEST_SCHEMA_VERSION
+        // - Don't forget to increment schema version under LATEST_SCHEMA_VERSION
         // - Don't forget to set the schemaVersion property
         // - Make sure the upgrade is idempotent
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded

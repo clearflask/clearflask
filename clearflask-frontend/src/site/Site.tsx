@@ -244,7 +244,11 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               </Route>
               <Route exact path='/sso'>
                 <SetTitle title='Single sign-on' />
-                <SsoSuccessDemoPage />
+                <SsoSuccessDemoPage type='sso' />
+              </Route>
+              <Route path='/oauth'>
+                <SetTitle title='OAuth' />
+                <SsoSuccessDemoPage type='oauth' />
               </Route>
               <Route exact path='/(tos|terms|terms-of-service)'>
                 <SetTitle title='Terms of Service' />

@@ -68,9 +68,11 @@ public class ModelUtil {
                                                 EmailSignup.PasswordEnum.NONE,
                                                 EmailSignup.VerificationEnum.NONE,
                                                 null),
-                                        null),
+                                        null,
+                                        ImmutableList.of()),
                                 null)),
                 new Integrations(null, null, null),
+                null,
                 null,
                 null
         ), IdUtil.randomAscId());

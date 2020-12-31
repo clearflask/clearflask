@@ -141,6 +141,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 getExtendedPrincipal(),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
+                Optional.ofNullable(userBind.getOauthToken()),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
         Project project = projectStore.getProject(projectId, true).get();

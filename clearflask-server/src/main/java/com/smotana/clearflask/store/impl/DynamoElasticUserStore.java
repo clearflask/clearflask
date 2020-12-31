@@ -41,23 +41,34 @@ import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
+import com.google.gson.GsonNonNull;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
+import com.smotana.clearflask.api.model.NotificationMethodsOauth;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -80,7 +91,16 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -108,6 +128,9 @@ import org.elasticsearch.search.sort.SortOrder;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
@@ -126,7 +149,15 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
 @Singleton
-public class DynamoElasticUserStore implements UserStore {
+public class DynamoElasticUserStore extends ManagedService implements UserStore {
+
+    @Value
+    public class OAuthAuthorizationResponse {
+        @NonNull
+        @GsonNonNull
+        @SerializedName("access_token")
+        String accessToken;
+    }
 
     public interface Config {
         /**
@@ -206,6 +237,7 @@ public class DynamoElasticUserStore implements UserStore {
      * Value not important, simply need to check for existence of key
      */
     private Cache<String, Object> userActivityCache;
+    private CloseableHttpClient client;
 
     @Inject
     private void setup() {
@@ -221,6 +253,19 @@ public class DynamoElasticUserStore implements UserStore {
                 .maximumSize(10_000L)
                 .expireAfterAccess(config.userActivityCacheExpireAfterAccess())
                 .build();
+    }
+
+    @Override
+    protected void serviceStart() throws Exception {
+        client = HttpClientBuilder.create().build();
+    }
+
+
+    @Override
+    protected void serviceStop() throws Exception {
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Extern
@@ -914,7 +959,7 @@ public class DynamoElasticUserStore implements UserStore {
             return Optional.empty();
         }
 
-        UserModel userModel = ssoCreateOrGet(projectId, guid, emailOpt, nameOpt);
+        UserModel userModel = createOrGet(projectId, guid, emailOpt, nameOpt);
 
         if (userModel.getAuthTokenValidityStart() != null
                 && claims.getIssuedAt() != null
@@ -927,8 +972,79 @@ public class DynamoElasticUserStore implements UserStore {
         return Optional.of(userModel);
     }
 
+    @Extern
     @Override
-    public UserModel ssoCreateOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt) {
+    public UserModel oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) {
+        HttpPost reqAuthorize = new HttpPost(oauthProvider.getTokenUrl());
+        reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
+                new BasicNameValuePair("grant_type", "authorization_code"),
+                new BasicNameValuePair("client_id", oauthProvider.getClientId()),
+                new BasicNameValuePair("client_secret", clientSecret),
+                new BasicNameValuePair("redirect_uri", redirectUrl),
+                new BasicNameValuePair("code", code)),
+                Charsets.UTF_8));
+        OAuthAuthorizationResponse oAuthAuthorizationResponse;
+        try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
+            if (res.getStatusLine().getStatusCode() < 200
+                    || res.getStatusLine().getStatusCode() > 299) {
+                log.debug("OAuth provider failed authorization, projectId {} url {} response status {}",
+                        projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
+                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to authorize");
+            }
+            try {
+                oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), OAuthAuthorizationResponse.class);
+            } catch (JsonSyntaxException | JsonIOException ex) {
+                log.debug("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
+                        projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
+                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to retrieve response from provider");
+            }
+        } catch (IOException ex) {
+            log.debug("OAuth provider failed authorization, projectId {} url {}",
+                    projectId, reqAuthorize.getURI(), ex);
+            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed contacting provider", ex);
+        }
+
+        HttpGet reqProfile = new HttpGet(oauthProvider.getUserProfileUrl());
+        String profileResponse;
+        try (CloseableHttpResponse res = client.execute(reqProfile)) {
+            if (res.getStatusLine().getStatusCode() < 200
+                    || res.getStatusLine().getStatusCode() > 299) {
+                log.debug("OAuth provider failed profile fetch, projectId {} url {} response status {}",
+                        projectId, reqProfile.getURI(), res.getStatusLine().getStatusCode());
+                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to fetch your profile");
+            }
+            profileResponse = CharStreams.toString(new InputStreamReader(
+                    res.getEntity().getContent(), Charsets.UTF_8));
+        } catch (IOException ex) {
+            log.debug("OAuth provider failed fetching profile, projectId {} url {}",
+                    projectId, reqProfile.getURI(), ex);
+            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed fetching profile", ex);
+        }
+
+        String guid;
+        Optional<String> nameOpt = Optional.empty();
+        Optional<String> emailOpt = Optional.empty();
+        try {
+            Object profileResponseObj = Configuration.defaultConfiguration().jsonProvider().parse(profileResponse);
+            guid = JsonPath.read(profileResponseObj, oauthProvider.getGuidJsonPath());
+            if (!Strings.isNullOrEmpty(oauthProvider.getNameJsonPath())) {
+                nameOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, oauthProvider.getNameJsonPath())));
+            }
+            if (!Strings.isNullOrEmpty(oauthProvider.getEmailJsonPath())) {
+                emailOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, oauthProvider.getEmailJsonPath())));
+            }
+        } catch (JsonPathException ex) {
+            log.debug("OAuth provider failed parsing profile, projectId {} url {}",
+                    projectId, reqProfile.getURI(), ex);
+            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed parsing profile", ex);
+        }
+
+        return createOrGet(projectId, guid, emailOpt, nameOpt);
+    }
+
+    @Extern
+    @Override
+    public UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt) {
         Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.SSO_GUID, guid);
         if (!userOpt.isPresent()) {
             userOpt = Optional.of(createUser(new UserModel(
@@ -1167,6 +1283,7 @@ public class DynamoElasticUserStore implements UserStore {
                 bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("user")));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class);
             }
         };
     }

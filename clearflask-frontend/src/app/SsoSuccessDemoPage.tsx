@@ -7,6 +7,7 @@ import ErrorPage from './ErrorPage';
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
+  type: 'sso' | 'oauth';
 }
 class SsoSuccessDemoPage extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
@@ -16,7 +17,7 @@ class SsoSuccessDemoPage extends Component<Props & RouteComponentProps & WithSty
       this.props.history.replace(this.props.location.pathname);
     }
 
-    return (<ErrorPage msg='This is a demo success page of Single Sign-On' variant='success' />);
+    return (<ErrorPage msg={`This is a demo success page of ${this.props.type === 'sso' ? 'Single Sign-On' : 'OAuth'}`} variant='success' />);
   }
 }
 

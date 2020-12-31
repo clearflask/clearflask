@@ -56,7 +56,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
         sanitizer.email(creditIncome.getEmail());
 
         UserModel user = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.SSO_GUID, creditIncome.getGuid())
-                .orElseGet(() -> userStore.ssoCreateOrGet(
+                .orElseGet(() -> userStore.createOrGet(
                         projectId,
                         creditIncome.getGuid(),
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getEmail())),

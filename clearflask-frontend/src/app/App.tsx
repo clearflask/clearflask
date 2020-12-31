@@ -14,6 +14,7 @@ import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
 import BasePage from './BasePage';
+import { OAuthState, OAUTH_CODE_PARAM_NAME, OAUTH_STATE_PARAM_NAME, OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX } from './comps/LogIn';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
 import CustomPage from './CustomPage';
@@ -82,6 +83,36 @@ class App extends Component<Props, State> {
       // Clear token from URL for safety
       this.props.history.replace(this.props.location.pathname);
     }
+    // Used for OAuth
+    var oauthToken: Client.UserBindOauthToken | undefined;
+    const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
+    const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
+    if (oauthStateStr && oauthCode) {
+      var oauthState: OAuthState | undefined;
+      try {
+        const oauthStateCandidate = JSON.parse(oauthStateStr);
+        if (oauthStateCandidate
+          && typeof oauthStateCandidate === 'object'
+          && oauthStateCandidate.csrf
+          && typeof oauthStateCandidate.csrf === 'string'
+          && oauthStateCandidate.oid
+          && typeof oauthStateCandidate.oid === 'string') {
+          oauthState = oauthStateCandidate;
+        }
+      } catch (e) {
+        oauthState = undefined;
+      }
+      if (oauthState) {
+        const oauthCsrfExpected = sessionStorage.getItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`);
+        if (oauthCsrfExpected === oauthState?.csrf) {
+          sessionStorage.removeItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`)
+          oauthToken = {
+            id: oauthState.oid,
+            code: oauthCode,
+          };
+        }
+      }
+    }
 
     var configResult: Client.ConfigAndBindResult | undefined;
     var user: Client.UserMeWithBalance | undefined;
@@ -91,6 +122,7 @@ class App extends Component<Props, State> {
         userBind: {
           ssoToken: token || undefined,
           authToken: authToken || undefined,
+          oauthToken: oauthToken || undefined,
         },
       });
       user = configResult.user;
@@ -198,7 +230,7 @@ class App extends Component<Props, State> {
             <PrivateProjectLogin server={server}>
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
-              <Route key='header' path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
+              <Route key='header' path='/:page?' render={props => ['embed', 'sso', 'oauth'].includes(props.match.params['page']) ? null : (
                 <Header
                   pageSlug={props.match.params['page'] || ''}
                   server={server}
@@ -232,9 +264,11 @@ class App extends Component<Props, State> {
                     <AccountPage server={server} />
                   </BasePage>
                 )} />
-                <Route key='sso' path='/sso' render={props => (
-                  <BasePage pageTitle='Single Sign-On' showFooter={!props.match.params['embed']}>
-                    <SsoSuccessPage />
+                <Route key='sso' path='/:type(sso|oauth)' render={props => (
+                  <BasePage
+                    pageTitle={props.match.params['type'] === 'sso' ? 'Single Sign-On' : 'OAuth'}
+                    showFooter={!props.match.params['embed']}>
+                    <SsoSuccessPage type={props.match.params['type']} />
                   </BasePage>
                 )} />
                 <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (

@@ -107,6 +107,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 getExtendedPrincipal(),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
+                Optional.ofNullable(userBind.getOauthToken()),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
         if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()

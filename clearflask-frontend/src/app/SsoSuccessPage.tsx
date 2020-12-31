@@ -8,6 +8,7 @@ import ErrorPage from './ErrorPage';
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
+  type: 'sso' | 'oauth';
 }
 interface ConnectProps {
   userMe?: Client.UserMe;

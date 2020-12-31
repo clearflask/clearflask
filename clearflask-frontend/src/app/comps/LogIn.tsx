@@ -8,7 +8,7 @@ import EmailIcon from '@material-ui/icons/Email';
 /** Alternatives: NotificationsActive, Web */
 import WebPushIcon from '@material-ui/icons/NotificationsActive';
 /** Alternatives: AccountCircle, Fingerprint, HowToReg, Person, PersonAdd, OpenInNew */
-import SsoIcon from '@material-ui/icons/OpenInNew';
+import NewWindowIcon from '@material-ui/icons/OpenInNew';
 /** Alternatives: PhonelinkRing, Vibration */
 import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -26,6 +26,7 @@ import WebNotification from '../../common/notification/webNotification';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { detectEnv, Environment } from '../../common/util/detectEnv';
+import randomUuid from '../../common/util/uuid';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
 import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
@@ -37,7 +38,16 @@ enum NotificationType {
   Android = 'android',
   Silent = 'silent',
   SSO = 'sso',
+  OAuth = 'oauth',
 }
+
+export interface OAuthState {
+  csrf: string;
+  oid: string;
+}
+export const OAUTH_CODE_PARAM_NAME = 'code';
+export const OAUTH_STATE_PARAM_NAME = 'state';
+export const OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
 const styles = (theme: Theme) => createStyles({
   content: {
@@ -89,16 +99,17 @@ interface ConnectProps {
 
 interface State {
   open?: boolean;
-  notificationType?: NotificationType
-  notificationDataAndroid?: string
-  notificationDataIos?: string
-  notificationDataBrowser?: string
+  notificationType?: NotificationType;
+  oauthType?: string;
+  notificationDataAndroid?: string;
+  notificationDataIos?: string;
+  notificationDataBrowser?: string;
   displayName?: string;
   email?: string;
   pass?: string;
   revealPassword?: boolean;
   isLogin?: boolean;
-  awaitExternalBind?: 'recovery' | 'sso';
+  awaitExternalBind?: 'recovery' | 'sso' | 'oauth';
   isSubmitting?: boolean;
   emailVerifyDialog?: boolean;
   emailVerification?: (number | undefined)[];
@@ -118,6 +129,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     const onboarding = this.props.config?.users.onboarding || this.props.onboardBefore;
 
     const notifOpts: Set<NotificationType> = new Set();
+    const oauthOpts: Array<Client.NotificationMethodsOauth> = onboarding?.notificationMethods.oauth || [];
     if (onboarding) {
       // if (onboarding.notificationMethods.mobilePush === true
       //   && (this.props.overrideMobileNotification || MobileNotification.getInstance()).canAskPermission()) {
@@ -145,6 +157,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       if (onboarding.notificationMethods.sso) {
         notifOpts.add(NotificationType.SSO);
       }
+      if (oauthOpts.length > 0) {
+        notifOpts.add(NotificationType.OAuth);
+      }
     }
 
     var dialogContent;
@@ -166,12 +181,15 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const signupAllowed = notifOpts.size > 0;
       const loginAllowed = !!onboarding?.notificationMethods.email;
       const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
-      const onlySingleOption = notifOpts.size === 1;
+      const onlySingleOption = notifOpts.size === 1 && oauthOpts.length <= 1;
       const singleColumnLayout = this.props.fullScreen || onlySingleOption;
 
       const selectedNotificationType = !isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
         ? this.state.notificationType
         : (onlySingleOption ? notifOpts.values().next().value : undefined);
+      const selectedOauthType = selectedNotificationType === NotificationType.OAuth && (this.state.oauthType
+        ? this.state.oauthType
+        : oauthOpts[0]?.oauthId);
 
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const emailValid = this.isEmailValid(this.state.email);
@@ -205,7 +223,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 className={this.props.classes.content}
                 style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
               >
-                <List component="nav" className={this.props.classes.notificationList}>
+                <List component='nav' className={this.props.classes.notificationList}>
                   <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle || 'Create account'}</ListSubheader>
                   <Collapse in={notifOpts.has(NotificationType.SSO)}>
                     <ListItem
@@ -214,7 +232,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       onClick={!onlySingleOption ? this.onClickSsoNotif.bind(this) : e => this.setState({ notificationType: NotificationType.SSO })}
                       disabled={this.state.isSubmitting}
                     >
-                      <ListItemIcon><SsoIcon /></ListItemIcon>
+                      <ListItemIcon><NewWindowIcon /></ListItemIcon>
                       <ListItemText primary={onboarding?.notificationMethods.sso?.buttonTitle
                         || this.props.config?.name
                         || 'External'} />
@@ -223,6 +241,27 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
                     </Collapse>
                   </Collapse>
+                  {oauthOpts.map(oauthOpt => (
+                    <Collapse in={notifOpts.has(NotificationType.OAuth)}>
+                      <ListItem
+                        button={!onlySingleOption as any}
+                        selected={!onlySingleOption && selectedNotificationType === NotificationType.OAuth && selectedOauthType === oauthOpt.oauthId}
+                        onClick={!onlySingleOption
+                          ? e => this.onClickOauthNotif(oauthOpt)
+                          : e => this.setState({
+                            notificationType: NotificationType.OAuth,
+                            oauthType: oauthOpt.oauthId,
+                          })}
+                        disabled={this.state.isSubmitting}
+                      >
+                        <ListItemIcon><NewWindowIcon /></ListItemIcon>
+                        <ListItemText primary={oauthOpt.buttonTitle} />
+                      </ListItem>
+                      <Collapse in={onlySingleOption}>
+                        <Button color='primary' className={this.props.classes.allowButton} onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
+                      </Collapse>
+                    </Collapse>
+                  ))}
                   <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                     <ListItem
                       // https://github.com/mui-org/material-ui/pull/15049
@@ -493,7 +532,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               {this.state.awaitExternalBind === 'recovery' ? (
                 <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
               ) : (
-                  <DialogContentText>A popup was opened leading you to a signup page. After you complete sign up, this dialog will automatically close.</DialogContentText>
+                  <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
                 )}
             </DialogContent>
             <DialogActions>
@@ -613,6 +652,25 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       }
     }
     window.addEventListener('storage', this.storageListener);
+  }
+
+  onClickOauthNotif(oauthConfig: Client.NotificationMethodsOauth) {
+    const oauthCsrfToken = randomUuid();
+    const oauthState: OAuthState = {
+      csrf: oauthCsrfToken,
+      oid: oauthConfig.oauthId,
+    };
+    const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
+    sessionStorage.setItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthStateStr);
+    this.listenForExternalBind();
+    this.setState({ awaitExternalBind: 'oauth' });
+    window.open(`${oauthConfig.authorizeUrl}?`
+      + `response_type=code`
+      + `&client_id=${oauthConfig.clientId}`
+      + `&redirect_uri=${window.location.protocol}//${window.location.host}/oauth`
+      + `&scope=${oauthConfig.scope}`
+      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
+      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`);
   }
 
   onClickSsoNotif() {

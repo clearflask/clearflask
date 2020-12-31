@@ -251,6 +251,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
                 // Restrict Single Sign-On
+                if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use OAuth on your plan");
+                }
+                // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use SSO on your plan");
                 }

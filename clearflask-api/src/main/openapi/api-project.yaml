@@ -20,7 +20,7 @@ components:
         # or editing existing fields. Don't forget to write upgrade path in ConfigSchemaUpgrader.java
         schemaVersion:
           x-clearflask-hide: true
-          x-clearflask-prop: { defaultValue: 3 }
+          x-clearflask-prop: { defaultValue: 4 }
           type: integer
           format: int64
         # TODO remove test page
@@ -161,6 +161,7 @@ components:
           type: object
           required:
             - browserPush
+            - oauth
           properties:
             anonymous:
               x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: false, description: 'Allow users to sign up with no contact. Not recommended in most cases as it invites feedback from users that do not care about the outcome.' }
@@ -207,7 +208,7 @@ components:
                   maxItems: 10
             sso:
               x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
-              x-clearflask-additional-props: { propPaths: [['ssoSecretKey']] }
+              x-clearflask-additional-props: { props: [{ propPath: ['ssoSecretKey'] }] }
               type: object
               title: SsoSignup
               required:
@@ -219,6 +220,54 @@ components:
                 redirectUrl:
                   x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
                   type: string
+            oauth:
+              x-clearflask-prop: { order: 4, name: 'OAuth', description: 'Authenticate users to an OAuth2 compatible service provider. Your OAuth provider will require a callback URL which you should set as https://<subdomain>.clearflask.com/oauth or https://<domain>/oauth' }
+              type: array
+              title: OAuthSignup
+              items:
+                x-clearflask-additional-props: { props: [{ propPath: ['oauthClientSecrets', '<&>'], dynamicIdPropName: 'oauthId' }] }
+                type: object
+                required:
+                - oauthId
+                - buttonTitle
+                - clientId
+                - authorizeUrl
+                - tokenUrl
+                - scope
+                - userProfileUrl
+                - guidJsonPath
+                properties:
+                  oauthId:
+                    x-clearflask-prop: { order: 0, name: 'OAuth ID', description: 'Used in API calls', subType: 'id' }
+                    x-clearflask-hide: true
+                    type: string
+                  buttonTitle:
+                    x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Set the user-visible button title with the name of your provider.', defaultValue: 'My provider' }
+                    type: string
+                  clientId:
+                    x-clearflask-prop: { order: 2, name: 'Client ID', decription: 'Given by your OAuth Provider as Client ID.' }
+                    type: string
+                  authorizeUrl:
+                    x-clearflask-prop: { order: 4, name: 'Authorize URL', description: 'Given by your OAuth Provider as authorization URL where users will be redirected to.', placeholder: 'https://.../authorize' }
+                    type: string
+                  tokenUrl:
+                    x-clearflask-prop: { order: 5, name: 'Token URL', description: 'Given by your OAuth Provider as token URL where our backend will fetch the authorization token.', placeholder: 'https://.../token' }
+                    type: string
+                  scope:
+                    x-clearflask-prop: { order: 6, name: 'Request Scope', description: 'Minimal scope to retrieve ID, name and email.' }
+                    type: string
+                  userProfileUrl:
+                    x-clearflask-prop: { order: 7, name: 'User Profile URL', description: 'This url will be fetched after authorization and the result will be used to extract user profile. If not set, we assume the access token is a JWT and the user profile will be extracted from there.', placeholder: 'https://.../user' }
+                    type: string
+                  guidJsonPath:
+                    x-clearflask-prop: { order: 8, name: 'GUID path', description: 'JsonPath to retrieve user ID (GUID).', placeholder: 'user.id' }
+                    type: string
+                  nameJsonPath:
+                    x-clearflask-prop: { order: 9, name: 'Name path', description: 'Optional JsonPath to retrieve name otherwise shown as Anonymous.', placeholder: 'user.name' }
+                    type: string
+                  emailJsonPath:
+                    x-clearflask-prop: { order: 10, name: 'Email path', description: 'Optional JsonPath to retrieve email for notifications.', placeholder: 'user.email' }
+                    type: string
         terms:
           x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
           title: CustomTerms
@@ -230,17 +279,16 @@ components:
               x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents to show during sign-up. Leave blank to show no terms.' }
               type: array
               items:
-                x-clearflask-prop: { name: 'Object', description: 'Document' }
                 type: object
                 properties:
                   shortName:
-                    x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
+                    x-clearflask-prop: { order: 1, name: 'Name', description: 'Name of document.', placeholder: 'Terms of Service' }
                     type: string
                   name:
-                    x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
+                    x-clearflask-prop: { order: 2, name: 'Short name', description: 'Short name.', placeholder: 'Terms' }
                     type: string
                   link:
-                    x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
+                    x-clearflask-prop: { order: 3, name: 'Link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
                     type: string
     style:
       x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your branding.' }
@@ -430,7 +478,7 @@ components:
                 x-clearflask-prop: { order: 1, name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
                 type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'], description: 'List of all pages. After creating a page, you may add the page to the menu below.'}
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames: ['name', 'slug'], description: 'List of all pages. After creating a page, you may add the page to the menu below.'}
           type: array
           items:
             x-clearflask-page: { name: 'Page', description: 'Create and customize this page. Each page typically consists of one or more of the four components: description, panels, board and explorer.', nameFromProp: 'name' }
@@ -463,7 +511,7 @@ components:
                 x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
               panels:
-                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
+                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: ['title'] }
                 type: array
                 items:
                   $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
@@ -483,7 +531,7 @@ components:
           x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['.', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
           type: string
         statuses:
-          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color', 'nextStatusIds'] }
+          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames: ['name', 'color', 'nextStatusIds'] }
           type: array
           items:
             x-clearflask-page: { name: 'Status', nameFromProp: 'name', colorFromProp: 'color' }
@@ -556,7 +604,7 @@ components:
                 x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Assign a color for displaying this tag' }
                 type: string
         tagGroups:
-          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames:['name', 'tagIds'] }
+          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames: ['name', 'tagIds'] }
           type: array
           items:
             x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
@@ -600,7 +648,7 @@ components:
         - categories
       properties:
         categories:
-          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames:['name', 'color', 'userCreatable'], disableReordering: true }
+          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames: ['name', 'color', 'userCreatable'], disableReordering: true }
           type: array
           items:
             x-clearflask-page: { name: 'Category', nameFromProp: 'name', colorFromProp: 'color' }
@@ -666,7 +714,7 @@ components:
           type: string
     intercom:
       x-clearflask-page: { order: 2, name: 'Intercom', description: 'Add Intercom messenger.' }
-      x-clearflask-additional-props: { propPaths: [['intercomIdentityVerificationSecret']] }
+      x-clearflask-additional-props: { props: [{ propPath: ['intercomIdentityVerificationSecret'] }] }
       title: Intercom
       type: object
       required:
@@ -687,6 +735,12 @@ components:
               x-clearflask-hide: true
               x-clearflask-prop: { subType: 'keygen', order: 2, name: 'Secret Key', description: 'Secret Key for signing JWT tokens. Do not publicly expose.' }
               type: string
+            oauthClientSecrets:
+              x-clearflask-hide: true
+              type: object
+              additionalProperties:
+                x-clearflask-prop: { order: 3, name: 'Client Secret', decription: 'Given by your OAuth Provider as Client Secret.' }
+                type: string
             intercomIdentityVerificationSecret:
               x-clearflask-hide: true
               x-clearflask-prop: { order: 3, name: 'Identity Verification Secret (Optional)', description: 'Verification prevents third parties from impersonating your logged-in users and seeing their conversations. Paste in your identity verification secret here. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
@@ -699,7 +753,7 @@ components:
           x-clearflask-prop: { order: 1, name: 'Board title'}
           type: string
         panels:
-          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames:['title'] }
+          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames: ['title'] }
           type: array
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'

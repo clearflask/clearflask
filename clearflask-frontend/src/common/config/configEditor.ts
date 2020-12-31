@@ -126,7 +126,16 @@ export interface xCfPropLink {
 }
 export interface xCfAdditionalProps {
   /** Path to the property */
-  propPaths: string[][];
+  props: Array<{
+    propPath: string[];
+    /**
+     * If set, the special variable <&> will be replaced with value of this id prop
+     * path and auto-created.
+     * In more detail: This is useful when you are under an array path and don't want
+     * to have all the items in the array point to the exact same additional prop.
+     */
+    dynamicIdPropName?: string;
+  }>;
 }
 
 /**
@@ -200,7 +209,8 @@ export enum PropertyType {
   Boolean = 'boolean',
   Enum = 'enum',
   Array = 'array',
-  Object = 'object'
+  Object = 'object',
+  Dict = 'dict',
 }
 export type Property =
   StringProperty
@@ -211,7 +221,8 @@ export type Property =
   | BooleanProperty
   | EnumProperty
   | ArrayProperty
-  | ObjectProperty;
+  | ObjectProperty
+  | DictProperty;
 
 export interface StringProperty extends PropertyBase<PropertyType.String, string> {
   minLength?: number;
@@ -297,6 +308,13 @@ export interface LinkMultiProperty extends PropertyBase<PropertyType.LinkMulti, 
  */
 export interface ObjectProperty extends PropertyBase<PropertyType.Object, true> {
   childProperties?: Property[];
+  setRaw(val: object | undefined): void;
+}
+
+export interface DictProperty extends PropertyBase<PropertyType.Dict, true> {
+  childProperties?: { [key: string]: Property };
+  put(key: string): Property;
+  delete(key: string): void;
   setRaw(val: object | undefined): void;
 }
 
@@ -544,11 +562,21 @@ export class EditorImpl implements Editor {
 
   getSubSchema(path: Path, schema: any = Schema): any {
     return this.mergeAllOf(path.reduce(
-      (subSchema, nextKey) =>
-        this.skipPaths(this.mergeAllOf(subSchema), ['properties'])
-        [typeof nextKey === 'number' ? 'items' : nextKey]
-        || (() => { throw Error(`Cannot find ${nextKey} in path ${path}`) })(),
-      schema));
+      (subSchema, nextKey) => {
+        var nextSchema = this.mergeAllOf(subSchema);
+        if (nextSchema.additionalProperties) {
+          // Since schema is same for all dict types, just return the child schema
+          // No need to use nextKey here.
+          nextSchema = nextSchema.additionalProperties;
+        } else {
+          nextSchema = this.skipPaths(nextSchema, ['properties']);
+          nextSchema = nextSchema[typeof nextKey === 'number' ? 'items' : nextKey];
+        }
+        if (!nextSchema) {
+          throw Error(`Cannot find ${nextKey} in path ${path}`);
+        }
+        return nextSchema;
+      }, schema));
   }
 
   mergeAllOf(schema: any): any {
@@ -775,17 +803,45 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
-  parseAdditionalProps(objSchema: any): Property[] {
+  parseAdditionalProps(objSchema: any, currPath: Path): Property[] {
     const additionalProps: Property[] = [];
     const xAdditionalProps = objSchema[OpenApiTags.AdditionalProps] as xCfAdditionalProps;
     if (!xAdditionalProps) {
       return additionalProps;
     }
-    xAdditionalProps.propPaths.forEach(path => {
+    xAdditionalProps.props.forEach(adtlProp => {
+      var path = [...adtlProp.propPath];
+      if (adtlProp.dynamicIdPropName) {
+        var dynamicValue = 'unknown';
+        const dynamicIdProp = this.getProperty([...currPath, adtlProp.dynamicIdPropName]);
+        if (dynamicIdProp
+          && dynamicIdProp.type === PropertyType.String
+          && dynamicIdProp.subType === PropSubType.Id) {
+          if (!dynamicIdProp.value) {
+            dynamicIdProp.setDefault();
+          }
+          dynamicValue = dynamicIdProp.value!;
+        }
+        const dynamicIdIndex = adtlProp.propPath.indexOf('<&>');
+        // Make sure the dict property is created
+        if (dynamicIdIndex >= 0) {
+          path[dynamicIdIndex] = dynamicValue;
+          const dynamicIdParentProp = this.get(path.slice(0, dynamicIdIndex));
+          if (dynamicIdParentProp.type !== PropertyType.Dict) {
+            throw Error(`Dynamic ID parent path must be a dict under ${dynamicIdParentProp.pathStr}, found ${dynamicIdParentProp.type}`);
+          }
+          if (!dynamicIdParentProp.value) {
+            dynamicIdParentProp.set(true);
+          }
+          if (dynamicIdParentProp.childProperties?.[dynamicValue] === undefined) {
+            dynamicIdParentProp.put(dynamicValue);
+          }
+        }
+      }
       const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
       if (!parentSchema) return;
       const propName = path[path.length - 1];
-      const propSchema = parentSchema.properties && parentSchema.properties[propName];
+      const propSchema = this.getSubSchema(path);
       if (!propSchema) return;
       const isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       const prop = this.parseProperty(path, isRequired, propSchema);
@@ -817,12 +873,11 @@ export class EditorImpl implements Editor {
 
     const fetchChildren = (): PageChildren => {
       const objSchema = this.skipPaths(pageSchema, ['allOf']);
-      const additionalProps = this.parseAdditionalProps(objSchema);
       const children: PageChildren = {
-        all: [...additionalProps],
+        all: [],
         pages: [],
         groups: [],
-        props: [...additionalProps],
+        props: [],
       };
       const propsSchema = objSchema.properties
         || (() => { throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`) })();
@@ -855,6 +910,9 @@ export class EditorImpl implements Editor {
           children.props.push(childProp);
         }
       });
+      const additionalProps = this.parseAdditionalProps(objSchema, path);
+      children.all.push(...additionalProps);
+      children.props.push(...additionalProps);
       children.all.sort(this.sortPagesProps);
       children.pages.sort(this.sortPagesProps);
       children.groups.sort(this.sortPagesProps);
@@ -1489,6 +1547,8 @@ export class EditorImpl implements Editor {
             for (let i = 0; i < arr.length; i++) {
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
             }
+            childProperties.push(...this.parseAdditionalProps(propSchema, path));
+            childProperties.sort(this.sortPagesProps);
           }
           return childProperties;
         }
@@ -1544,9 +1604,8 @@ export class EditorImpl implements Editor {
             } else {
               arr.push(undefined);
             }
-            const newChildProperties = fetchChildPropertiesArray();
             const arrayProperty: ArrayProperty = (property as ArrayProperty);
-            arrayProperty.childProperties = newChildProperties;
+            arrayProperty.childProperties = fetchChildPropertiesArray();
             const newProperty = arrayProperty.childProperties![
               index !== undefined
                 ? index
@@ -1619,11 +1678,94 @@ export class EditorImpl implements Editor {
         };
         break;
       case 'object':
+        if (propSchema.additionalProperties && propSchema.properties) {
+          throw Error(`Object with both dict and object items unsupported yet for path ${path}`);
+        }
+        if (propSchema.additionalProperties) {
+          const fetchChildPropertiesDict = (): { [key: string]: Property } | undefined => {
+            const obj = this.getValue(path);
+            var childProperties: { [key: string]: Property } | undefined;
+            if (obj) {
+              childProperties = {};
+              const childPropSchema = propSchema.additionalProperties;
+              const requiredProps = propSchema.required || [];
+              Object.keys(obj).forEach(propName => {
+                childProperties![propName] = this.getProperty(
+                  [...path, propName],
+                  requiredProps.includes(propName),
+                  childPropSchema);
+              });
+            }
+            return childProperties;
+          }
+          property = {
+            defaultValue: isRequired ? true : undefined,
+            ...base,
+            type: PropertyType.Dict,
+            value: value === undefined ? undefined : true,
+            childProperties: fetchChildPropertiesDict(),
+            set: (val: true | undefined): void => {
+              if (!val && isRequired) throw Error(`Cannot unset a required dict prop for path ${path}`)
+              const dictProperty = property as DictProperty;
+              if (val) {
+                this.setValue(path, {});
+                dictProperty.childProperties = {};
+              } else {
+                this.setValue(path, undefined);
+                dictProperty.childProperties = undefined;
+              }
+              dictProperty.value = val;
+              dictProperty.validateValue(val);
+              this.notify(localSubscribers);
+            },
+            setRaw: (val: object | undefined): void => {
+              this.setValue(path, val);
+              this.cacheInvalidateChildren(path);
+              const dictProperty = property as DictProperty;
+              if (val !== undefined) {
+                dictProperty.value = true;
+                dictProperty.childProperties = fetchChildPropertiesDict();
+              } else {
+                dictProperty.value = undefined;
+                dictProperty.childProperties = undefined;
+              }
+              dictProperty.validateValue(dictProperty.value);
+              this.notify(localSubscribers);
+            },
+            setDefault: (): void => {
+              const dictProperty = property as DictProperty;
+              dictProperty.set(dictProperty.defaultValue);
+            },
+            put: (key: string): Property => {
+              const dictProperty = property as DictProperty;
+              const dict = this.getOrDefaultValue(path, {});
+              dict[key] = undefined;
+              property.value = true;
+              dictProperty.childProperties = fetchChildPropertiesDict();
+              const newProperty = dictProperty.childProperties![key]!;
+              newProperty.setDefault();
+              dictProperty.validateValue(dictProperty.value);
+              this.notify(localSubscribers);
+              return newProperty;
+            },
+            delete: (key: string): void => {
+              if (!property.value) return;
+              const dictProperty = property as DictProperty;
+              const dict = this.getValue(path);
+              delete dict[key];
+              this.cacheInvalidateChildren(path);
+              dictProperty.childProperties = fetchChildPropertiesDict();
+              dictProperty.validateValue(dictProperty.value);
+              this.notify(localSubscribers);
+            },
+          };
+          break;
+        }
         const fetchChildPropertiesObject = (): Property[] | undefined => {
           const obj = this.getValue(path);
           var childProperties: Property[] | undefined;
           if (obj) {
-            childProperties = this.parseAdditionalProps(propSchema);
+            childProperties = [];
             const childPropsSchema = propSchema.properties
               || (() => { throw Error(`Cannot find 'properties' under path ${path}`) })();
             const requiredProps = propSchema.required || [];
@@ -1634,6 +1776,7 @@ export class EditorImpl implements Editor {
                 requiredProps.includes(propName),
                 objectPropSchema));
             });
+            childProperties.push(...this.parseAdditionalProps(propSchema, path));
             childProperties.sort(this.sortPagesProps);
           }
           return childProperties;

@@ -12,6 +12,7 @@ import { Path, pathEquals } from '../configEditor';
 export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
   'growth-monthly': [
     ['users', 'onboarding', 'notificationMethods', 'sso'],
+    ['users', 'onboarding', 'notificationMethods', 'oauth'],
     ['users', 'onboarding', 'visibility'],
     ['style', 'templates'],
     ['integrations', 'googleAnalytics'],
