@@ -297,7 +297,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             >
               <Badge
                 color='secondary'
-                invisible={!!this.props.loggedInUser.isSso || !!this.props.loggedInUser.name}
+                invisible={!!this.props.loggedInUser.isExternal || !!this.props.loggedInUser.name}
                 variant='dot'
               >
                 <AccountIcon fontSize='inherit' />

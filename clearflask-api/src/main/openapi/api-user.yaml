@@ -84,7 +84,7 @@ components:
             - emailNotify
             - hasPassword
           properties:
-            isSso:
+            isExternal:
               type: boolean
             email:
               type: string

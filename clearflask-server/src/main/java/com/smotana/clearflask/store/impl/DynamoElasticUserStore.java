@@ -664,7 +664,6 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamo.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(transactionsBuilder.build()));
-            log.info("transactWriteItemsResult {} {}", transactWriteItemsResult.getConsumedCapacity(), transactWriteItemsResult.getItemCollectionMetrics());
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
                 throw new ApiException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
@@ -1052,14 +1051,38 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
             // A user already exists that was created a different way other than SSO, OAuth, ...
             // So let's associate that user with this GUID
-            userOpt.ifPresent(user -> identifierToUserIdSchema.table().putItem(new PutItemSpec()
-                    .withItem(identifierToUserIdSchema.toItem(new IdentifierUser(
-                            IdentifierType.GUID.getType(),
-                            IdentifierType.GUID.isHashed() ? hashIdentifier(guid) : guid,
-                            projectId,
-                            user.getUserId())))
-                    .withConditionExpression("attribute_not_exists(#partitionKey)")
-                    .withNameMap(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))));
+            if (userOpt.isPresent()) {
+                try {
+                    TransactWriteItemsResult transactWriteItemsResult = dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
+                            new TransactWriteItem().withPut(new Put()
+                                    .withTableName(identifierToUserIdSchema.tableName())
+                                    .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
+                                            IdentifierType.GUID.getType(),
+                                            IdentifierType.GUID.isHashed() ? hashIdentifier(guid) : guid,
+                                            projectId,
+                                            userOpt.get().getUserId())))
+                                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                                    .withExpressionAttributeNames(Map.of(
+                                            "#partitionKey", identifierToUserIdSchema.partitionKeyName()))),
+                            new TransactWriteItem().withUpdate(new Update()
+                                    .withTableName(userSchema.tableName())
+                                    .withKey(ItemUtils.toAttributeValueMap(userSchema.primaryKey(Map.of(
+                                            "userId", userOpt.get().getUserId(),
+                                            "projectId", projectId))))
+                                    .withUpdateExpression("SET #ssoGuid = :ssoGuid")
+                                    .withConditionExpression("attribute_exists(#partitionKey) AND attribute_not_exists(#ssoGuid)")
+                                    .withExpressionAttributeNames(Map.of(
+                                            "#partitionKey", userSchema.partitionKeyName(),
+                                            "#ssoGuid", "ssoGuid"))
+                                    .withExpressionAttributeValues(Map.of(
+                                            ":ssoGuid", userSchema.toAttrValue("ssoGuid", guid))))));
+                } catch (TransactionCanceledException ex) {
+                    if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
+                        throw new ApiException(Response.Status.CONFLICT, "User with your email already exists", ex);
+                    }
+                    throw ex;
+                }
+            }
         }
         if (!userOpt.isPresent()) {
             userOpt = Optional.of(createUser(new UserModel(

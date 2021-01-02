@@ -592,7 +592,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
               email: token['email'],
               name: token['name'],
               ...{
-                isSso: true,
+                isExternal: true,
               },
             },
           });

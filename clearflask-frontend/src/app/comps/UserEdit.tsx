@@ -116,15 +116,15 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               <TextField
                 variant='outlined'
                 size='small'
-                disabled={this.state.isSubmitting || !!this.props.user.isSso}
+                disabled={this.state.isSubmitting || !!this.props.user.isExternal}
                 label='Email'
                 fullWidth
-                helperText={!!this.props.user.isSso ? 'Cannot change when using Single Sign-On' : undefined}
+                helperText={!!this.props.user.isExternal ? 'Cannot be changed' : undefined}
                 value={(this.state.email === undefined ? this.props.user.email : this.state.email) || ''}
                 onChange={e => this.setState({ email: e.target.value })}
               />
             </Grid>
-            {!this.props.user.isSso && (
+            {!this.props.user.isExternal && (
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
                   variant='outlined'

@@ -640,7 +640,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             email: 'mock@email.com',
             name: 'Mock User',
             ...{
-              isSso: true,
+              isExternal: true, // Only used during development, disregarded otherwise
             },
           },
         });

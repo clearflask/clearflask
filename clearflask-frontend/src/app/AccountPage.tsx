@@ -53,7 +53,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     // const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
     const emailControl = this.renderEmailControl();
 
-    const isPushOrAnon = !this.props.userMe.email && !this.props.userMe.isSso;
+    const isPushOrAnon = !this.props.userMe.email && !this.props.userMe.isExternal;
 
     return (
       <div className={this.props.classes.page}>
@@ -62,8 +62,8 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              {!!this.props.userMe.isSso ? (
-                <Tooltip title="Cannot change when using Single Sign-On" placement='top-start'>
+              {!!this.props.userMe.isExternal ? (
+                <Tooltip title="Cannot be changed" placement='top-start'>
                   <Typography>{this.props.userMe.name || 'None'}</Typography>
                 </Tooltip>
               ) : (
@@ -98,8 +98,8 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              {!!this.props.userMe.isSso ? (
-                <Tooltip title="Cannot change when using Single Sign-On" placement='top-start'>
+              {!!this.props.userMe.isExternal ? (
+                <Tooltip title="Cannot be changed" placement='top-start'>
                   <Typography>{this.props.userMe.email || 'None'}</Typography>
                 </Tooltip>
               ) : (
@@ -130,7 +130,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 )}
             </Grid>
           </Grid>
-          {!this.props.userMe.isSso && (
+          {!this.props.userMe.isExternal && (
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
               <Grid item xs={12} sm={6}>

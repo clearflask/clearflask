@@ -182,6 +182,7 @@ public interface UserStore {
         @NonNull
         String userId;
 
+        /** For SSO and OAuth */
         String ssoGuid;
 
         Boolean isMod;
