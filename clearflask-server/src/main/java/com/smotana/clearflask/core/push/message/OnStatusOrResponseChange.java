@@ -44,22 +44,22 @@ public class OnStatusOrResponseChange {
     }
 
     public interface Config {
-        @DefaultValue("'__title__' marked as __status__")
+        @DefaultValue("'__title__' marked __status__")
         String statusChangedSubjectTemplate();
 
-        @DefaultValue("A post you __subscription_action__, __title__ is marked as __status__")
+        @DefaultValue("A post you __subscription_action__, __title__ is marked __status__")
         String statusChangedTemplate();
 
-        @DefaultValue("'__title__' has a new response")
+        @DefaultValue("'__title__' has a response")
         String responseSubjectTemplate();
 
         @DefaultValue("A post you __subscription_action__, __title__ has a new response __response__")
         String responseTemplate();
 
-        @DefaultValue("'__title__' marked as __status__ with a response")
+        @DefaultValue("'__title__' marked __status__ with a response")
         String statusChangeAndResponseSubjectTemplate();
 
-        @DefaultValue("A post you __subscription_action__, __title__ is marked as __status__ and has a new response __response__")
+        @DefaultValue("A post you __subscription_action__, __title__ is marked __status__ with a response __response__")
         String statusChangeAndResponseTemplate();
     }
 

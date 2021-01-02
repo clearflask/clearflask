@@ -574,8 +574,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             indexUpdates.put("statusId", ideaUpdateAdmin.getStatusId());
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("tagIds")
-                    .put(ideaSchema.toDynamoValue("tagIds", ImmutableSet.copyOf(ideaUpdateAdmin.getTagIds()))));
+            if (ideaUpdateAdmin.getTagIds().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("tagIds")
+                        .delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("tagIds")
+                        .put(ideaSchema.toDynamoValue("tagIds", ImmutableSet.copyOf(ideaUpdateAdmin.getTagIds()))));
+            }
             indexUpdates.put("tagIds", ideaUpdateAdmin.getTagIds());
         }
         if (ideaUpdateAdmin.getFundGoal() != null) {
