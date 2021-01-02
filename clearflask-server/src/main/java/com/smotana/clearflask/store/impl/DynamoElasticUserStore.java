@@ -974,7 +974,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Extern
     @Override
-    public UserModel oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) {
+    public Optional<UserModel> oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) {
         HttpPost reqAuthorize = new HttpPost(oauthProvider.getTokenUrl());
         reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
                 new BasicNameValuePair("grant_type", "authorization_code"),
@@ -989,19 +989,19 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     || res.getStatusLine().getStatusCode() > 299) {
                 log.debug("OAuth provider failed authorization, projectId {} url {} response status {}",
                         projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to authorize");
+                return Optional.empty();
             }
             try {
                 oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), OAuthAuthorizationResponse.class);
             } catch (JsonSyntaxException | JsonIOException ex) {
                 log.debug("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
                         projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to retrieve response from provider");
+                return Optional.empty();
             }
         } catch (IOException ex) {
             log.debug("OAuth provider failed authorization, projectId {} url {}",
                     projectId, reqAuthorize.getURI(), ex);
-            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed contacting provider", ex);
+            return Optional.empty();
         }
 
         HttpGet reqProfile = new HttpGet(oauthProvider.getUserProfileUrl());
@@ -1012,14 +1012,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     || res.getStatusLine().getStatusCode() > 299) {
                 log.debug("OAuth provider failed profile fetch, projectId {} url {} response status {}",
                         projectId, reqProfile.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to fetch your profile");
+                return Optional.empty();
             }
             profileResponse = CharStreams.toString(new InputStreamReader(
                     res.getEntity().getContent(), Charsets.UTF_8));
         } catch (IOException ex) {
             log.debug("OAuth provider failed fetching profile, projectId {} url {}",
                     projectId, reqProfile.getURI(), ex);
-            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed fetching profile", ex);
+            return Optional.empty();
         }
 
         String guid;
@@ -1037,16 +1037,30 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         } catch (JsonPathException ex) {
             log.debug("OAuth provider failed parsing profile, projectId {} url {}",
                     projectId, reqProfile.getURI(), ex);
-            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed parsing profile", ex);
+            return Optional.empty();
         }
 
-        return createOrGet(projectId, guid, emailOpt, nameOpt);
+        return Optional.of(createOrGet(projectId, guid, emailOpt, nameOpt));
     }
 
     @Extern
     @Override
     public UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt) {
-        Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.SSO_GUID, guid);
+        Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.GUID, guid);
+        if (!userOpt.isPresent() && emailOpt.isPresent()) {
+            userOpt = getUserByIdentifier(projectId, IdentifierType.EMAIL, emailOpt.get());
+
+            // A user already exists that was created a different way other than SSO, OAuth, ...
+            // So let's associate that user with this GUID
+            userOpt.ifPresent(user -> identifierToUserIdSchema.table().putItem(new PutItemSpec()
+                    .withItem(identifierToUserIdSchema.toItem(new IdentifierUser(
+                            IdentifierType.GUID.getType(),
+                            IdentifierType.GUID.isHashed() ? hashIdentifier(guid) : guid,
+                            projectId,
+                            user.getUserId())))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))));
+        }
         if (!userOpt.isPresent()) {
             userOpt = Optional.of(createUser(new UserModel(
                     projectId,
@@ -1272,7 +1286,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             identifiersBuilder.put(IdentifierType.IOS_PUSH, user.getIosPushToken());
         }
         if (!Strings.isNullOrEmpty(user.getSsoGuid())) {
-            identifiersBuilder.put(IdentifierType.SSO_GUID, user.getSsoGuid());
+            identifiersBuilder.put(IdentifierType.GUID, user.getSsoGuid());
         }
         return identifiersBuilder.build();
     }

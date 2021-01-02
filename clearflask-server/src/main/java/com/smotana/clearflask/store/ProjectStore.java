@@ -80,6 +80,10 @@ public interface ProjectStore {
 
         ImmutableSet<WebhookListener> getWebhookListenerUrls(WebhookListener.ResourceType resourceType, String eventType);
 
+        String getHostnameFromSubdomain();
+
+        Optional<String> getHostnameFromDomain();
+
         String getHostname();
 
         static String getHostname(ConfigAdmin configAdmin, Application.Config configApp) {

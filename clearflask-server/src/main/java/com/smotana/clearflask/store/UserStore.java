@@ -81,9 +81,9 @@ public interface UserStore {
     Optional<UserModel> ssoCreateOrGet(String projectId, String secretKey, String token);
 
     /**
-     * Create or return existing user. Otherwise throw ApiException
+     * Create or return existing user IFF OAuth is valid
      */
-    UserModel oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) throws ApiException;
+    Optional<UserModel> oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) throws ApiException;
 
     /**
      * Create or return existing user.
@@ -129,7 +129,7 @@ public interface UserStore {
         IOS_PUSH("i", true),
         ANDROID_PUSH("a", true),
         BROWSER_PUSH("b", true),
-        SSO_GUID("s", true);
+        GUID("s", true);
 
         String type;
         boolean isHashed;

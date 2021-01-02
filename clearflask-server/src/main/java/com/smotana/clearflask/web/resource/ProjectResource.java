@@ -102,6 +102,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Project project = projectOpt.get();
 
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
+                request,
                 response,
                 project.getProjectId(),
                 getExtendedPrincipal(),

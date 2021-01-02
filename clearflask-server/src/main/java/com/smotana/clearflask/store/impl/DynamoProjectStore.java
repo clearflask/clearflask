@@ -678,6 +678,16 @@ public class DynamoProjectStore implements ProjectStore {
             return webhookEventToListeners.getOrDefault(webhookListenerSearchKey(resourceType, event), ImmutableSet.of());
         }
 
+        @Override
+        public String getHostnameFromSubdomain() {
+            return versionedConfigAdmin.getConfig().getSlug() + "." + configApp.domain();
+        }
+
+        @Override
+        public Optional<String> getHostnameFromDomain() {
+            return Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
+        }
+
         private String webhookListenerSearchKey(ResourceType resourceType, String event) {
             return resourceType.name() + event;
         }

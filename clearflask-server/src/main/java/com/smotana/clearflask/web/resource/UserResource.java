@@ -136,6 +136,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public UserBindResponse userBind(String projectId, UserBind userBind) {
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
+                request,
                 response,
                 projectId,
                 getExtendedPrincipal(),

@@ -220,7 +220,7 @@ components:
                   x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
                   type: string
             oauth:
-              x-clearflask-prop: { order: 4, name: 'OAuth', description: 'Authenticate users to an OAuth2 compatible service provider. Your OAuth provider will require a callback URL which you should set as https://<subdomain>.clearflask.com/oauth or https://<domain>/oauth' }
+              x-clearflask-prop: { order: 4, name: 'OAuth', description: 'Authenticate users to an OAuth2 compatible service provider. Your OAuth provider will require a callback URL which you should set as https://<subdomain>.clearflask.com/oauth and/or https://<domain>/oauth depending on what you are planning on using.' }
               type: array
               title: OAuthSignup
               items:

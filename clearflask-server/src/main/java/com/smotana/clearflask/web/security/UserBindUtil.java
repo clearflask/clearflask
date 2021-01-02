@@ -11,13 +11,14 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.resource.UserResource;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -37,6 +38,7 @@ public class UserBindUtil {
     private AuthCookie authCookie;
 
     public Optional<UserModel> userBind(
+            HttpServletRequest request,
             HttpServletResponse response,
             String projectId,
             Optional<ExtendedSecurityContext.ExtendedPrincipal> extendedPrincipalOpt,
@@ -67,8 +69,8 @@ public class UserBindUtil {
         }
 
         // Auto login using auth token
-        if (!userOpt.isPresent() && ssoTokenOpt.isPresent()) {
-            userOpt = userStore.verifyToken(ssoTokenOpt.get());
+        if (!userOpt.isPresent() && authTokenOpt.isPresent()) {
+            userOpt = userStore.verifyToken(authTokenOpt.get());
             if (userOpt.isPresent()) {
                 createSession = true;
             }
@@ -95,17 +97,34 @@ public class UserBindUtil {
                 }
                 return Optional.ofNullable(Strings.emptyToNull(project.getVersionedConfigAdmin().getConfig().getOauthClientSecrets().get(oauthMethod.getOauthId())));
             });
+            Optional<String> refererHostOpt = Optional.ofNullable(request.getHeader("referer"))
+                    .flatMap(referer -> {
+                        try {
+                            return Optional.ofNullable(new URL(referer).getHost());
+                        } catch (MalformedURLException exception) {
+                            // Nothing to do
+                        }
+                        return Optional.empty();
+                    });
+            String redirectHostname;
+            if (refererHostOpt.isPresent() && refererHostOpt.get().startsWith(project.getHostnameFromSubdomain())) {
+                redirectHostname = project.getHostnameFromSubdomain();
+            } else if (refererHostOpt.isPresent() && project.getHostnameFromDomain().isPresent() && refererHostOpt.get().startsWith(project.getHostnameFromDomain().get())) {
+                redirectHostname = project.getHostnameFromDomain().get();
+            } else {
+                redirectHostname = project.getHostname();
+            }
             if (clientSecretOpt.isPresent()) {
-                userOpt = Optional.of(userStore.oauthCreateOrGet(
+                userOpt = userStore.oauthCreateOrGet(
                         project.getProjectId(),
                         oauthMethodOpt.get(),
                         clientSecretOpt.get(),
-                        "https://" + project.getHostname() + "/oauth",
-                        oauthTokenOpt.get().getCode()));
+                        "https://" + redirectHostname + "/oauth",
+                        oauthTokenOpt.get().getCode());
+                createSession = true;
             } else {
                 log.trace("OAuth failed, token {} with oauth provider present {} client secret present {}",
                         oauthTokenOpt.get(), oauthMethodOpt.isPresent(), clientSecretOpt.isPresent());
-                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth provider not found");
             }
         }
 
