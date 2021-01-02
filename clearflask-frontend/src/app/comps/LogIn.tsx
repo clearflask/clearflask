@@ -47,7 +47,7 @@ export interface OAuthState {
 }
 export const OAUTH_CODE_PARAM_NAME = 'code';
 export const OAUTH_STATE_PARAM_NAME = 'state';
-export const OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
+export const OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
 const styles = (theme: Theme) => createStyles({
   content: {
@@ -661,7 +661,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       oid: oauthConfig.oauthId,
     };
     const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
-    sessionStorage.setItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthStateStr);
+    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthCsrfToken);
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'oauth' });
     window.open(`${oauthConfig.authorizeUrl}?`

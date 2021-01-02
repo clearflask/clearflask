@@ -395,7 +395,6 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
     }
 
     void assertUpgraded(ConfigAdmin config) throws Exception {
-        assertEquals(Long.valueOf(ConfigSchemaUpgrader.LATEST_SCHEMA_VERSION), config.getSchemaVersion());
         assertEquals(EmailSignup.ModeEnum.SIGNUPANDLOGIN, config.getUsers().getOnboarding().getNotificationMethods().getEmail().getMode());
         assertEquals(Integrations.builder().build(), config.getIntegrations());
     }

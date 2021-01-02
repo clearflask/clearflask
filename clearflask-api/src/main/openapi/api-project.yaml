@@ -5,7 +5,6 @@ components:
       description: Config properties visible both to client app and admins.
       type: object
       required:
-        - schemaVersion
         - test
         - projectId
         - name
@@ -16,11 +15,11 @@ components:
         - users
         - integrations
       properties:
-        # Update schema version during breaking changes like adding required fields
-        # or editing existing fields. Don't forget to write upgrade path in ConfigSchemaUpgrader.java
+        # DEPRACATED no more versioning, upgrade is done automatically by server
+        # Remove this later on when everyone upgrades
         schemaVersion:
           x-clearflask-hide: true
-          x-clearflask-prop: { defaultValue: 4 }
+          x-clearflask-prop: { defaultValue: 5 }
           type: integer
           format: int64
         # TODO remove test page

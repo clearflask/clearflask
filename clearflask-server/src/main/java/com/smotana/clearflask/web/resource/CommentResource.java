@@ -83,7 +83,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         sanitizer.content(create.getContent());
 
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt).map(UserStore.UserSession::getUserId).get();
-        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.FORBIDDEN, "User not found"));
+        UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)

@@ -32,7 +32,7 @@ public class ModelUtil {
 
     public static VersionedConfigAdmin createEmptyConfig(String projectId) {
         return new VersionedConfigAdmin(new ConfigAdmin(
-                ConfigSchemaUpgrader.LATEST_SCHEMA_VERSION,
+                5L,
                 projectId,
                 null,
                 projectId,

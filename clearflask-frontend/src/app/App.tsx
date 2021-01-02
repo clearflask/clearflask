@@ -14,7 +14,7 @@ import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
 import BasePage from './BasePage';
-import { OAuthState, OAUTH_CODE_PARAM_NAME, OAUTH_STATE_PARAM_NAME, OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX } from './comps/LogIn';
+import { OAuthState, OAUTH_CODE_PARAM_NAME, OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX, OAUTH_STATE_PARAM_NAME } from './comps/LogIn';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
 import CustomPage from './CustomPage';
@@ -103,9 +103,9 @@ class App extends Component<Props, State> {
         oauthState = undefined;
       }
       if (oauthState) {
-        const oauthCsrfExpected = sessionStorage.getItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`);
+        const oauthCsrfExpected = sessionStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`);
         if (oauthCsrfExpected === oauthState?.csrf) {
-          sessionStorage.removeItem(`${OAUTH_STATE_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`)
+          sessionStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`)
           oauthToken = {
             id: oauthState.oid,
             code: oauthCode,

@@ -224,7 +224,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 log.error("Multiple accounts found for same apiKey, account emails {}",
                         accountsByApiKey.stream().map(Account::getEmail).collect(Collectors.toList()));
             }
-            throw new ApiException(Response.Status.FORBIDDEN, "Your API key is misconfigured");
+            throw new ApiException(Response.Status.UNAUTHORIZED, "Your API key is misconfigured");
         } else if (accountsByApiKey.size() == 1) {
             return Optional.of(accountsByApiKey.get(0));
         } else {

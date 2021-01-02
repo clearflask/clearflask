@@ -14,8 +14,6 @@ import java.util.Optional;
 @Singleton
 public class ConfigSchemaUpgrader {
 
-    public static final long LATEST_SCHEMA_VERSION = 4L;
-
     @Inject
     private Gson gson;
 
@@ -24,49 +22,35 @@ public class ConfigSchemaUpgrader {
     }
 
     public Optional<String> upgrade(JsonElement config) {
-        long schemaVersion = Optional.ofNullable(config.getAsJsonObject().get("schemaVersion"))
-                .map(JsonElement::getAsLong)
-                .orElse(1L);
+        boolean hasChanged = false;
 
-        if (schemaVersion == LATEST_SCHEMA_VERSION) {
-            return Optional.empty();
+        // Added email signup mode (Version 1 to 2 upgrade)
+        JsonElement emailEl = config
+                .getAsJsonObject().get("users")
+                .getAsJsonObject().get("onboarding")
+                .getAsJsonObject().get("notificationMethods")
+                .getAsJsonObject().get("email");
+        if (emailEl != null && !emailEl.getAsJsonObject().has("mode")) {
+            emailEl.getAsJsonObject().addProperty("mode", "SignupAndLogin");
         }
 
-        if (schemaVersion < 2L) {
-            JsonElement emailEl = config
-                    .getAsJsonObject().get("users")
-                    .getAsJsonObject().get("onboarding")
-                    .getAsJsonObject().get("notificationMethods")
-                    .getAsJsonObject().get("email");
-            if (emailEl != null) {
-                emailEl.getAsJsonObject().addProperty("mode", "SignupAndLogin");
-            }
-            config.getAsJsonObject().addProperty("schemaVersion", 2L);
+        // Added integrations (Version 2 to 3 upgrade)
+        JsonElement integrationsEl = config.getAsJsonObject().get("integrations");
+        if (integrationsEl == null) {
+            config.getAsJsonObject().add("integrations", new JsonObject());
         }
 
-        if (schemaVersion < 3L) {
-            JsonElement integrationsEl = config.getAsJsonObject().get("integrations");
-            if (integrationsEl == null) {
-                config.getAsJsonObject().add("integrations", new JsonObject());
-            }
-            config.getAsJsonObject().addProperty("schemaVersion", 3L);
-        }
-
-        if (schemaVersion < 4L) {
-            JsonObject notificationMethodsObj = config
-                    .getAsJsonObject().get("users")
-                    .getAsJsonObject().get("onboarding")
-                    .getAsJsonObject().get("notificationMethods")
-                    .getAsJsonObject();
-            if (!notificationMethodsObj.has("oauth")) {
-                notificationMethodsObj.add("oauth", new JsonArray());
-            }
-            config.getAsJsonObject().addProperty("schemaVersion", 4L);
+        // Added OAuth list (Version 3 to 4 upgrade)
+        JsonObject notificationMethodsObj = config
+                .getAsJsonObject().get("users")
+                .getAsJsonObject().get("onboarding")
+                .getAsJsonObject().get("notificationMethods")
+                .getAsJsonObject();
+        if (!notificationMethodsObj.has("oauth")) {
+            notificationMethodsObj.add("oauth", new JsonArray());
         }
 
         // Important notes:
-        // - Don't forget to increment schema version under LATEST_SCHEMA_VERSION
-        // - Don't forget to set the schemaVersion property
         // - Make sure the upgrade is idempotent
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded
 

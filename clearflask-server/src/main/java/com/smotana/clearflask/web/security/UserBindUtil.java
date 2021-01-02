@@ -105,7 +105,7 @@ public class UserBindUtil {
             } else {
                 log.trace("OAuth failed, token {} with oauth provider present {} client secret present {}",
                         oauthTokenOpt.get(), oauthMethodOpt.isPresent(), clientSecretOpt.isPresent());
-                throw new ApiException(Response.Status.FORBIDDEN, "OAuth provider not found");
+                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth provider not found");
             }
         }
 

@@ -989,36 +989,37 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     || res.getStatusLine().getStatusCode() > 299) {
                 log.debug("OAuth provider failed authorization, projectId {} url {} response status {}",
                         projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to authorize");
+                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to authorize");
             }
             try {
                 oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), OAuthAuthorizationResponse.class);
             } catch (JsonSyntaxException | JsonIOException ex) {
                 log.debug("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
                         projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to retrieve response from provider");
+                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to retrieve response from provider");
             }
         } catch (IOException ex) {
             log.debug("OAuth provider failed authorization, projectId {} url {}",
                     projectId, reqAuthorize.getURI(), ex);
-            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed contacting provider", ex);
+            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed contacting provider", ex);
         }
 
         HttpGet reqProfile = new HttpGet(oauthProvider.getUserProfileUrl());
+        reqProfile.addHeader("Authorization", "Bearer " + oAuthAuthorizationResponse.getAccessToken());
         String profileResponse;
         try (CloseableHttpResponse res = client.execute(reqProfile)) {
             if (res.getStatusLine().getStatusCode() < 200
                     || res.getStatusLine().getStatusCode() > 299) {
                 log.debug("OAuth provider failed profile fetch, projectId {} url {} response status {}",
                         projectId, reqProfile.getURI(), res.getStatusLine().getStatusCode());
-                throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed to fetch your profile");
+                throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed to fetch your profile");
             }
             profileResponse = CharStreams.toString(new InputStreamReader(
                     res.getEntity().getContent(), Charsets.UTF_8));
         } catch (IOException ex) {
             log.debug("OAuth provider failed fetching profile, projectId {} url {}",
                     projectId, reqProfile.getURI(), ex);
-            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed fetching profile", ex);
+            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed fetching profile", ex);
         }
 
         String guid;
@@ -1036,7 +1037,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         } catch (JsonPathException ex) {
             log.debug("OAuth provider failed parsing profile, projectId {} url {}",
                     projectId, reqProfile.getURI(), ex);
-            throw new ApiException(Response.Status.FORBIDDEN, "OAuth failed parsing profile", ex);
+            throw new ApiException(Response.Status.UNAUTHORIZED, "OAuth failed parsing profile", ex);
         }
 
         return createOrGet(projectId, guid, emailOpt, nameOpt);
