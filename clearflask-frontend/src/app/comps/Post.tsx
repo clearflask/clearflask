@@ -101,7 +101,6 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(0.5),
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'flex-start',
     textTransform: 'none',
   },
   expandable: {

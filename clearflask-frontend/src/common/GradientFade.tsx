@@ -4,6 +4,7 @@ import React from 'react';
 const styles = (theme: Theme) => createStyles({
   content: {
     display: 'inline-block',
+    width: '100%',
   },
 });
 
