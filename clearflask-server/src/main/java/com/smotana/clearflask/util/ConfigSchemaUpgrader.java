@@ -32,12 +32,14 @@ public class ConfigSchemaUpgrader {
                 .getAsJsonObject().get("email");
         if (emailEl != null && !emailEl.getAsJsonObject().has("mode")) {
             emailEl.getAsJsonObject().addProperty("mode", "SignupAndLogin");
+            hasChanged = true;
         }
 
         // Added integrations (Version 2 to 3 upgrade)
         JsonElement integrationsEl = config.getAsJsonObject().get("integrations");
         if (integrationsEl == null) {
             config.getAsJsonObject().add("integrations", new JsonObject());
+            hasChanged = true;
         }
 
         // Added OAuth list (Version 3 to 4 upgrade)
@@ -48,12 +50,13 @@ public class ConfigSchemaUpgrader {
                 .getAsJsonObject();
         if (!notificationMethodsObj.has("oauth")) {
             notificationMethodsObj.add("oauth", new JsonArray());
+            hasChanged = true;
         }
 
         // Important notes:
-        // - Make sure the upgrade is idempotent
+        // - Make sure the upgrade is idempotent, update hasChanged if necessary
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded
 
-        return Optional.of(gson.toJson(config));
+        return hasChanged ? Optional.of(gson.toJson(config)) : Optional.empty();
     }
 }
