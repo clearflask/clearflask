@@ -161,7 +161,8 @@ public class NotificationServiceTest extends AbstractTest {
                 versionedConfigAdmin.getConfig(),
                 idea,
                 true,
-                true);
+                true,
+                Optional.empty());
 
         Email email = mockEmailService.sent.take();
         BrowserPush push = mockBrowserPushService.sent.take();

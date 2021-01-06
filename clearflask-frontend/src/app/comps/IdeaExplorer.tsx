@@ -433,6 +433,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               width='100%'
               className={this.props.classes.createFormField}
               disabled={this.state.newItemIsSubmitting}
+              suppressInitialOnChange
               onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
               allowCreate
             />

@@ -47,7 +47,9 @@ export class BaseAPI {
             // do not handle correctly sometimes.
             url += '?' + querystring(context.query);
         }
-        const body = JSON.stringify(context.body);
+        const body = typeof Blob !== 'undefined' && context.body instanceof Blob
+            ? context.body
+            : JSON.stringify(context.body);
         const init = {
             method: context.method,
             headers: context.headers,
@@ -257,5 +259,32 @@ export class TextApiResponse {
 
     async value() {
         return await this.raw.text();
+    };
+}
+
+export type FileDownload = {
+    blob: Blob,
+    contentType?: string;
+    filename?: string;
+}
+export class FileDownloadApiResponse {
+    constructor(public raw: Response) {}
+
+    async value() {
+        const result: FileDownload = {
+            contentType: this.raw.headers.get('content-type') || undefined,
+            blob: await this.raw.blob(),
+        };
+
+        var disposition = this.raw.headers.get('content-disposition');
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            var matches = filenameRegex.exec(disposition);
+            if (matches != null && matches[1]) { 
+                result.filename = matches[1].replace(/['"]/g, '');
+            }
+        }
+
+        return result;
     };
 }

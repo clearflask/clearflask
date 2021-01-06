@@ -93,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -491,6 +492,21 @@ public class DynamoElasticCommentStore implements CommentStore {
                     .map(item -> commentSchema.fromItem(item))
                     .collect(ImmutableSet.toImmutableSet());
         }
+    }
+
+    @Override
+    public void exportAllForProject(String projectId, Consumer<CommentModel> consumer) {
+        StreamSupport.stream(commentByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(commentByProjectIdSchema::fromItem)
+                .filter(comment -> projectId.equals(comment.getProjectId()))
+                .forEach(consumer);
     }
 
     @Override

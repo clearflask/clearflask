@@ -823,6 +823,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.deleteProject(request.projectId);
     return this.returnLater();
   }
+  projectExportAdmin(request: Admin.ProjectExportAdminRequest): Promise<Admin.FileDownload> {
+    return this.returnLater({
+      filename: `${request.projectId}.csv`,
+      contentType: 'application/csv',
+      blob: new Blob(['a,b\n1,4'], { type: 'application/csv' }),
+    }, undefined, true);
+  }
+  projectImportPostAdmin(request: Admin.ProjectImportPostAdminRequest): Promise<Admin.ImportResponse> {
+    return this.returnLater({
+      userFacingMessage: 'Imported successfully',
+    });
+  }
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user: Admin.UserAdmin = {
       userId: randomUuid(),
@@ -1215,11 +1227,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return t;
   }
 
-  async returnLater<T>(returnValue: T | undefined = undefined, additionalLatency?: number): Promise<T> {
+  async returnLater<T>(returnValue: T | undefined = undefined, additionalLatency?: number, skipStringify?: boolean): Promise<T> {
     // if (!isProd()) console.log('Server SEND:', returnValue);
     if (additionalLatency) await this.wait(additionalLatency);
     await this.waitLatency();
-    return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
+    return skipStringify ? returnValue : (returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue)));
   }
 
   async throwLater(httpStatus: number, userFacingMessage?: string): Promise<any> {

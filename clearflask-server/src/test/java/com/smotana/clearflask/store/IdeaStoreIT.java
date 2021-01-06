@@ -218,7 +218,7 @@ public class IdeaStoreIT extends AbstractIT {
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
                 .authorUserId(userId2)
                 .projectId(projectId).build();
-        store.createIdeaAndUpvote(idea).get();
+        store.createIdeaAndUpvote(idea).getIndexingFuture().get();
 
         assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
         assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());

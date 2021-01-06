@@ -1,5 +1,7 @@
 /* tslint:disable */
 // eslint-disable-next-line no-unused-vars
+import * as runtime from './runtime';
+// eslint-disable-next-line no-unused-vars
 import { Api, ApiInterface } from './apis';
 // eslint-disable-next-line no-unused-vars
 import * as Model from './models';
@@ -55,7 +57,7 @@ export enum {{nickname}}ActionStatus {
 export interface {{nickname}}ActionFulfilled {
   type: {{nickname}}ActionStatus.Fulfilled;
   meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}{{^allParams.0}}undefined{{/allParams.0}}; };
-  payload: {{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}};
+  payload: {{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}Model.{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}};
 }
 export interface {{nickname}}ActionPending {
   type: {{nickname}}ActionStatus.Pending;
@@ -86,7 +88,7 @@ export class Dispatcher implements ApiInterface {
 {{#operations}}
 {{#operation}}
 
-  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request, {{/allParams.0}}metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<{{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request, {{/allParams.0}}metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}Model.{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
     return this.dispatcherDelegate({
       type: Action.{{nickname}},
       meta: {

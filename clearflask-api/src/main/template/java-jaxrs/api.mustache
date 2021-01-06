@@ -9,7 +9,10 @@ import javax.ws.rs.core.MediaType;
 {{#useBeanValidation}}
 import javax.validation.constraints.*;
 import javax.validation.Valid;
+import javax.annotation.Nullable;
 {{/useBeanValidation}}
+import javax.ws.rs.core.StreamingOutput;
+import java.io.InputStream;
 
 
 {{#appName}}
@@ -38,8 +41,8 @@ public interface {{classname}}  {
     {{/summary}}
     @{{httpMethod}}
     {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+{{#hasConsumes}}    @Consumes({ {{#consumes}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/consumes}} }){{/hasConsumes}}
+{{#hasProduces}}    @Produces({ {{#produces}}"{{{mediaType}}}"{{^-last}}, {{/-last}}{{/produces}} }){{/hasProduces}}
     {{>returnTypes}} {{operationId}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
 {{/operation}}
 }

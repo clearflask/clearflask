@@ -1,6 +1,8 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import * as Client from '../../api/client';
+import { ReduxState } from '../../api/server';
 import SelectionPicker, { Label } from './SelectionPicker';
 
 const styles = (theme: Theme) => createStyles({
@@ -15,6 +17,9 @@ interface Props {
   onChange: (categoryId: string) => void;
   disabled?: boolean;
   errorText?: string;
+  width?: string | number;
+  minWidth?: string | number;
+  maxWidth?: string | number;
   variant?: 'standard' | 'outlined' | 'filled';
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
@@ -46,6 +51,9 @@ class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> 
         bareTags
         disableInput
         disableClearable
+        width={this.props.width}
+        minWidth={this.props.minWidth}
+        maxWidth={this.props.maxWidth}
         onValueChange={labels => labels[0] && this.props.onChange(labels[0]?.value)}
         {...this.props.SelectionPickerProps}
       />
@@ -63,3 +71,9 @@ class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> 
 }
 
 export default withStyles(styles, { withTheme: true })(CategorySelect);
+export const CategorySelectWithConnect = connect<Pick<Props, 'categoryOptions'>, {}, Omit<Props, 'categoryOptions'>, ReduxState>((state, ownProps) => {
+  const connectProps: Pick<Props, 'categoryOptions'> = {
+    categoryOptions: state.conf.conf?.content.categories || [],
+  };
+  return connectProps;
+})(withStyles(styles, { withTheme: true })(CategorySelect));

@@ -40,7 +40,7 @@ export interface {{classname}}Interface {
      * {{&summary}}
      {{/summary}}
      */
-    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
     {{/operation}}
 }
 
@@ -58,7 +58,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>> {
+    async {{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>> {
         {{#allParams}}
         {{#required}}
         if (requestParameters.{{paramName}} === null || requestParameters.{{paramName}} === undefined) {
@@ -208,7 +208,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
 
         {{#returnType}}
         {{#isResponseFile}}
-        return new runtime.BlobApiResponse(response);
+        return new runtime.FileDownloadApiResponse(response);
         {{/isResponseFile}}
         {{^isResponseFile}}
         {{#returnTypeIsPrimitive}}
@@ -245,7 +245,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    async {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
         {{#returnType}}
         const response = await this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}}headerExtra);
         return await response.value();

@@ -1,5 +1,6 @@
 package com.smotana.clearflask.core.push;
 
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -36,7 +37,6 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -144,7 +144,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onStatusOrResponseChanged(ConfigAdmin configAdmin, IdeaModel idea, boolean statusChanged, boolean responseChanged) {
+    public void onStatusOrResponseChanged(ConfigAdmin configAdmin, IdeaModel idea, boolean statusChanged, boolean responseChanged, Optional<UserModel> senderOpt) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -228,7 +228,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                     log.warn("Failed to send browser push notification", ex);
                 }
             };
-            Subscribers subscribers = getSubscribers(idea);
+            Subscribers subscribers = getSubscribers(idea, senderOpt);
             subscribers.usersExpressed.forEach(user -> sendToUser.accept(EXPRESSED, user));
             subscribers.usersFunded.forEach(user -> sendToUser.accept(FUNDED, user));
             subscribers.usersVoted.forEach(user -> sendToUser.accept(VOTED, user));
@@ -492,7 +492,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         });
     }
 
-    private Subscribers getSubscribers(IdeaModel idea) {
+    private Subscribers getSubscribers(IdeaModel idea, Optional<UserModel> senderOpt) {
+        String skipUserId = senderOpt.map(UserModel::getUserId).orElse("");
         ImmutableSet.Builder<String> userIdsFundBuilder = ImmutableSet.builder();
         if (idea.getFundersCount() != null && idea.getFundersCount() != 0) {
             VoteStore.ListResponse<VoteStore.FundModel> resultFund = null;
@@ -500,6 +501,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 resultFund = voteStore.fundListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultFund).flatMap(VoteStore.ListResponse::getCursorOpt));
                 userIdsFundBuilder.addAll(resultFund.getItems().stream()
                         .map(VoteStore.FundModel::getUserId)
+                        .filter(Predicates.not(skipUserId::equals))
                         .collect(Collectors.toSet()));
             } while (resultFund.getCursorOpt().isPresent());
         }
@@ -512,6 +514,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 resultVote = voteStore.voteListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultVote).flatMap(VoteStore.ListResponse::getCursorOpt));
                 userIdsVoteBuilder.addAll(resultVote.getItems().stream()
                         .map(VoteStore.VoteModel::getUserId)
+                        .filter(Predicates.not(skipUserId::equals))
                         .collect(Collectors.toSet()));
             } while (resultVote.getCursorOpt().isPresent());
         }
@@ -524,6 +527,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 resultExpress = voteStore.expressListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultExpress).flatMap(VoteStore.ListResponse::getCursorOpt));
                 userIdsExpressBuilder.addAll(resultExpress.getItems().stream()
                         .map(VoteStore.ExpressModel::getUserId)
+                        .filter(Predicates.not(skipUserId::equals))
                         .collect(Collectors.toSet()));
             } while (resultExpress.getCursorOpt().isPresent());
         }
