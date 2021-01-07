@@ -123,7 +123,7 @@ public class SanitizerTest extends AbstractTest {
                 fail("Expected failure");
             }
         } catch (ApiException ex) {
-            if (ex.getResponse().getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+            if (ex.getStatus().getStatusCode() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
                 // It's fine, test was probably performed without network connection
                 return;
             }

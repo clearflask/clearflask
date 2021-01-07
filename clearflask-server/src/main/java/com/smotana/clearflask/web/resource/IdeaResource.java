@@ -129,7 +129,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
-            ideaStore.createIdeaAndUpvote(ideaModel);
+            ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
         } else {
             ideaStore.createIdea(ideaModel);
         }
@@ -189,7 +189,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
-            ideaStore.createIdeaAndUpvote(ideaModel);
+            ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
         } else {
             ideaStore.createIdea(ideaModel);
         }
@@ -314,15 +314,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.content(ideaUpdateAdmin.getDescription());
 
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
-        Optional<UserModel> responseAuthorUserOpt = Optional.empty();
-        if (!Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse())) {
-            responseAuthorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
-                    .or(() -> getExtendedPrincipal()
-                            .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
-                            .map(UserSession::getUserId))
-                    .flatMap(userId -> userStore.getUser(projectId, userId));
-        }
-        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, responseAuthorUserOpt).getIdea();
+        Optional<UserModel> authorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
+                .or(() -> getExtendedPrincipal()
+                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                        .map(UserSession::getUserId))
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, authorUserOpt).getIdea();
         boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
         boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
         if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
@@ -331,7 +328,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         configAdmin,
                         idea,
                         statusChanged,
-                        responseChanged);
+                        responseChanged,
+                        authorUserOpt);
             }
         }
         if (ideaUpdateAdmin.getTagIds() != null) {

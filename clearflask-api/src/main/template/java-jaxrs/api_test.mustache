@@ -43,7 +43,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.web.server.LocalServerPort;
 {{/generateSpringBootApplication}}
 {{#generateOperationBody}}
-import java.io.File;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.InputStream;
 {{^fullJavaUtil}}
 import java.util.Set;
 {{/fullJavaUtil}}

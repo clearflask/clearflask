@@ -1036,3 +1036,111 @@ components:
         $ref: 'api-client.yaml#/components/responses/ConfigChanged'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/import/post:
+  post:
+    operationId: projectImportPostAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: firstRowIsHeader
+      in: query
+      schema:
+        type: boolean
+    - name: categoryId
+      in: query
+      required: true
+      schema:
+        type: string
+    - name: authorUserId
+      in: query
+      required: true
+      schema:
+        type: string
+    - name: indexTitle
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: int64
+    - name: indexDescription
+      in: query
+      schema:
+        type: integer
+        format: int64
+    - name: indexStatusId
+      in: query
+      schema:
+        type: integer
+        format: int64
+    - name: indexStatusName
+      in: query
+      schema:
+        type: integer
+        format: int64
+    - name: indexTagIds
+      in: query
+      schema:
+        type: integer
+        format: int64
+    - name: indexTagNames
+      in: query
+      schema:
+        type: integer
+        format: int64
+    - name: indexVoteValue
+      in: query
+      schema:
+        type: integer
+        format: int64
+    requestBody:
+      required: true
+      content:
+        application/csv:
+          schema:
+            type: string
+            format: binary
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ImportResponse
+              type: object
+              properties:
+                userFacingMessage:
+                  type: string
+                isError:
+                  type: boolean
+/project/{projectId}/admin/export:
+  get:
+    operationId: projectExportAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: includePosts
+      in: query
+      schema:
+        type: boolean
+    - name: includeUsers
+      in: query
+      schema:
+        type: boolean
+    - name: includeComments
+      in: query
+      schema:
+        type: boolean
+    responses:
+      '200':
+        content:
+          application/zip:
+            schema:
+              type: string
+              format: binary

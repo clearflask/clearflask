@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface NotificationService {
 
-    void onStatusOrResponseChanged(ConfigAdmin configAdmin, IdeaModel idea, boolean statusChanged, boolean responseChanged);
+    void onStatusOrResponseChanged(ConfigAdmin configAdmin, IdeaModel idea, boolean statusChanged, boolean responseChanged, Optional<UserModel> senderOpt);
 
     void onCreditChanged(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction);
 

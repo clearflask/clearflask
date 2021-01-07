@@ -1,4 +1,4 @@
 {{#useGenericResponse}}Response{{/useGenericResponse}}{{! non-generic response: 
 }}{{^useGenericResponse}}{{!
-}}{{{returnType}}}{{!
+}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{#isResponseFile}}StreamingOutput{{/isResponseFile}}{{!
 }}{{/useGenericResponse}}

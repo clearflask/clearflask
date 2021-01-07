@@ -22,6 +22,7 @@ interface Props {
   disabled?: boolean;
   server: Server;
   onChange?: (userLabel?: Label) => void;
+  suppressInitialOnChange?: boolean;
   allowCreate?: boolean;
   allowClear?: boolean;
   label?: string;
@@ -51,6 +52,9 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     super(props);
     const selectedUserLabel = props.loggedInUserLabel;
     this.state = { selectedUserLabel };
+    if (selectedUserLabel && !props.suppressInitialOnChange) {
+      this.props.onChange && this.props.onChange(selectedUserLabel);
+    }
     const searchDebounced = debounce(
       (newValue: string) => this.props.server.dispatchAdmin()
         .then(d => d.userSearchAdmin({

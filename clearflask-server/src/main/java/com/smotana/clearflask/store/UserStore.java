@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
@@ -54,6 +55,8 @@ public interface UserStore {
     Optional<UserModel> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
     SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
+
+    void exportAllForProject(String projectId, Consumer<UserModel> consumer);
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin);
 

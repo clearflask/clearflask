@@ -618,6 +618,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 placeholder='Anonymous'
                 minWidth={50}
                 maxWidth={150}
+                suppressInitialOnChange
                 onChange={userLabel => {
                   if (activeProject) {
                     const projectId = activeProject.projectId

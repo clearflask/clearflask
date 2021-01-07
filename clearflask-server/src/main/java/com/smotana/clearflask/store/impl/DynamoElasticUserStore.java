@@ -141,6 +141,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -463,6 +464,21 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 searchResponseWithCursor.getCursorOpt(),
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
+    }
+
+    @Override
+    public void exportAllForProject(String projectId, Consumer<UserModel> consumer) {
+        StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
+                .withHashKey(userByProjectSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
+                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(userByProjectSchema::fromItem)
+                .filter(user -> projectId.equals(user.getProjectId()))
+                .forEach(consumer);
     }
 
     @Override

@@ -93,11 +93,13 @@ import org.elasticsearch.search.sort.SortOrder;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
@@ -228,7 +230,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public ListenableFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea) {
+    public IdeaAndIndexingFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea) {
         voteStore.vote(idea.getProjectId(), idea.getAuthorUserId(), idea.getIdeaId(), VoteValue.Upvote);
 
         IdeaModel ideaUpvoted = idea.toBuilder()
@@ -241,7 +243,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         // No need to update bloom filter, it is assumed own ideas are always upvoted
 
-        return this.createIdea(ideaUpvoted);
+        ListenableFuture<IndexResponse> indexingFuture = this.createIdea(ideaUpvoted);
+
+        return new IdeaAndIndexingFuture<>(ideaUpvoted, indexingFuture);
     }
 
     @Override
@@ -256,38 +260,67 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(IDEA_INDEX, idea.getProjectId()))
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .id(idea.getIdeaId())
-                        .source(gson.toJson(ImmutableMap.builder()
-                                .put("authorUserId", idea.getAuthorUserId())
-                                .put("authorName", orNull(idea.getAuthorName()))
-                                .put("authorIsMod", orNull(idea.getAuthorIsMod()))
-                                .put("created", idea.getCreated().getEpochSecond())
-                                .put("lastActivity", idea.getCreated().getEpochSecond())
-                                .put("title", idea.getTitle())
-                                .put("description", orNull(idea.getDescriptionAsText(sanitizer)))
-                                .put("response", orNull(idea.getResponseAsText(sanitizer)))
-                                .put("responseAuthorUserId", orNull(idea.getResponseAuthorUserId()))
-                                .put("responseAuthorName", orNull(idea.getResponseAuthorName()))
-                                .put("categoryId", idea.getCategoryId())
-                                .put("statusId", orNull(idea.getStatusId()))
-                                .put("tagIds", idea.getTagIds())
-                                .put("commentCount", idea.getCommentCount())
-                                .put("childCommentCount", idea.getCommentCount())
-                                .put("funded", orNull(idea.getFunded()))
-                                .put("fundGoal", orNull(idea.getFundGoal()))
-                                .put("fundersCount", orNull(idea.getFundersCount()))
-                                .put("voteValue", orNull(idea.getVoteValue()))
-                                .put("votersCount", orNull(idea.getVotersCount()))
-                                .put("expressionsValue", orNull(idea.getExpressionsValue()))
-                                .put("expressions", idea.getExpressions() == null ? ExplicitNull.get() : idea.getExpressions().keySet())
-                                .put("trendScore", orNull(idea.getTrendScore()))
-                                .build()), XContentType.JSON),
+        elastic.indexAsync(
+                ideaToEsIndexRequest(idea, true),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
 
         return indexingFuture;
+    }
+
+    private IndexRequest ideaToEsIndexRequest(IdeaModel idea, boolean setRefreshPolicy) {
+        IndexRequest req = new IndexRequest(elasticUtil.getIndexName(IDEA_INDEX, idea.getProjectId()))
+                .id(idea.getIdeaId())
+                .source(gson.toJson(ImmutableMap.builder()
+                        .put("authorUserId", idea.getAuthorUserId())
+                        .put("authorName", orNull(idea.getAuthorName()))
+                        .put("authorIsMod", orNull(idea.getAuthorIsMod()))
+                        .put("created", idea.getCreated().getEpochSecond())
+                        .put("lastActivity", idea.getCreated().getEpochSecond())
+                        .put("title", idea.getTitle())
+                        .put("description", orNull(idea.getDescriptionAsText(sanitizer)))
+                        .put("response", orNull(idea.getResponseAsText(sanitizer)))
+                        .put("responseAuthorUserId", orNull(idea.getResponseAuthorUserId()))
+                        .put("responseAuthorName", orNull(idea.getResponseAuthorName()))
+                        .put("categoryId", idea.getCategoryId())
+                        .put("statusId", orNull(idea.getStatusId()))
+                        .put("tagIds", idea.getTagIds())
+                        .put("commentCount", idea.getCommentCount())
+                        .put("childCommentCount", idea.getCommentCount())
+                        .put("funded", orNull(idea.getFunded()))
+                        .put("fundGoal", orNull(idea.getFundGoal()))
+                        .put("fundersCount", orNull(idea.getFundersCount()))
+                        .put("voteValue", orNull(idea.getVoteValue()))
+                        .put("votersCount", orNull(idea.getVotersCount()))
+                        .put("expressionsValue", orNull(idea.getExpressionsValue()))
+                        .put("expressions", idea.getExpressions() == null ? ExplicitNull.get() : idea.getExpressions().keySet())
+                        .put("trendScore", orNull(idea.getTrendScore()))
+                        .build()), XContentType.JSON);
+        if (setRefreshPolicy) {
+            req.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL);
+        }
+        return req;
+    }
+
+    @Override
+    public ListenableFuture<List<BulkResponse>> createIdeas(Iterable<IdeaModel> ideas) {
+        ArrayList<ListenableFuture<BulkResponse>> indexingFutures = Lists.newArrayList();
+        Iterables.partition(ideas, DYNAMO_WRITE_BATCH_MAX_SIZE).forEach(ideasBatch -> {
+            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
+                    .withItemsToPut(ideasBatch.stream()
+                            .map(ideaSchema::toItem)
+                            .collect(ImmutableList.toImmutableList()))));
+
+            SettableFuture<BulkResponse> indexingFuture = SettableFuture.create();
+            indexingFutures.add(indexingFuture);
+            elastic.bulkAsync(new BulkRequest()
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                            .add(ideasBatch.stream()
+                                    .map(idea -> ideaToEsIndexRequest(idea, false))
+                                    .collect(ImmutableList.toImmutableList())),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        });
+        return Futures.allAsList(indexingFutures);
     }
 
     @Extern
@@ -370,6 +403,21 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 total,
                 statusesBuilder.build(),
                 tagsBuilder.build());
+    }
+
+    @Override
+    public void exportAllForProject(String projectId, Consumer<IdeaModel> consumer) {
+        StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(ideaByProjectIdSchema::fromItem)
+                .filter(idea -> projectId.equals(idea.getProjectId()))
+                .forEach(consumer);
     }
 
     private SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, Optional<String> requestorUserIdOpt, boolean useAccurateCursor, Optional<String> cursorOpt) {
@@ -503,7 +551,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
+    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
                         ideaUpdate.getTitle(),
                         ideaUpdate.getDescription(),
@@ -517,7 +565,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor) {
+    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -597,17 +645,17 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture(idea, indexingFuture);
+            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
         }
     }
 
     @Override
-    public IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
+    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         if (vote == votePrev) {
-            return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         HashMap<String, String> nameMap = Maps.newHashMap();
@@ -668,9 +716,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             }
             elastic.updateAsync(updateRequest.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture(idea, indexingFuture);
+            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
         }
     }
 
@@ -902,7 +950,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Extern
     @Override
-    public IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
+    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
         ImmutableList.Builder<AttributeUpdate> attrUpdates = ImmutableList.builder();
         attrUpdates.add(new AttributeUpdate("commentCount").addNumeric(1));
         if (incrementChildCount) {
@@ -927,7 +975,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
-        return new IdeaAndIndexingFuture(idea, indexingFuture);
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
     }
 
     @Extern

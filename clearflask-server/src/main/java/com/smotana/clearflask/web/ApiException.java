@@ -18,11 +18,10 @@ package com.smotana.clearflask.web;
 
 import com.google.common.base.Strings;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
-public class ApiException extends WebApplicationException {
+public class ApiException extends RuntimeException {
 
     private final Response.Status status;
     private final Optional<String> userFacingMessageOpt;
@@ -40,7 +39,7 @@ public class ApiException extends WebApplicationException {
     }
 
     public ApiException(Response.Status status, String userFacingMessage, final Throwable cause) {
-        super(userFacingMessage, cause, status);
+        super(status.getStatusCode() + (userFacingMessage == null ? "" : ": " + userFacingMessage), cause);
         this.status = status;
         this.userFacingMessageOpt = Optional.ofNullable(Strings.emptyToNull(userFacingMessage));
     }
