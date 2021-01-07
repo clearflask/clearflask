@@ -99,7 +99,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         CommentModel commentModel = commentStore.createComment(new CommentModel(
                 projectId,
                 ideaId,
-                commentStore.genCommentId(create.getContent()),
+                commentStore.genCommentId(sanitizer.richHtmlToPlaintext(create.getContent())),
                 parentCommentIds,
                 parentCommentIds.size(),
                 0,

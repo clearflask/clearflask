@@ -124,8 +124,8 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
         <div className={this.props.classes.container}>
           <InputLabel>Import data</InputLabel>
           <FormHelperText style={{ minWidth: Property.inputMinWidth }}>
-            Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping from your columns to this project.
-            Supported fields are title, description, status, tags, and vote value.
+            Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping of your columns.
+            Supported fields are title, description, status, tags, and vote value. Status and Tags can be imported by ID or by Name; make sure you create them in project settings before importing.
           </FormHelperText>
           <Dropzone
             minSize={1}
@@ -270,6 +270,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
                   variant='outlined'
                   size='small'
                   label='Category'
+                  errorText={!this.state.importCategoryId && 'Select category' || undefined}
                   value={this.state.importCategoryId || ''}
                   onChange={categoryId => this.setState({ importCategoryId: categoryId })}
                   disabled={this.state.importIsSubmitting}
