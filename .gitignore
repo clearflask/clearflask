@@ -13,6 +13,7 @@ nb-configuration.xml
 .env.production.local
 !.mvn/wrapper/maven-wrapper.jar
 .vscode
+.srl
 
 ### MAVEN ###
 target/
