@@ -357,7 +357,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
           <div className={this.props.classes.toggleButtonGroup}>
             {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
             {this.renderToggleButton(StrikethroughIcon, 'strike', undefined, true)}
-            {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'bullet')}
+            {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'bullet')}
             {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'unchecked', ['unchecked', 'checked'])}
             {this.renderToggleButtonLink(LinkIcon)}
             <Fade in={!this.state.showFormatsExtended}>
@@ -368,7 +368,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             <div className={this.props.classes.toggleButtonGroup}>
               {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
               {this.renderToggleButton(UnderlineIcon, 'underline', undefined, true)}
-              {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'ordered')}
+              {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'ordered')}
               {this.renderToggleButton(QuoteIcon, undefined, 'blockquote', true)}
               {this.renderToggleButton(CodeIcon, undefined, 'code-block', true)}
             </div>
