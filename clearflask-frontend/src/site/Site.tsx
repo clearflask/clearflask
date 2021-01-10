@@ -1,22 +1,36 @@
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { AppBar, Button, Container, Divider, Drawer, Grid, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar } from '@material-ui/core';
+import { OverridableComponent } from '@material-ui/core/OverridableComponent';
+import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import GrowIcon from '@material-ui/icons/AccessibilityNew';
+import CrowdFundingIcon from '@material-ui/icons/AccountBalance';
+import CustomizeIcon from '@material-ui/icons/Brush';
+import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
+import InternalFeedbackIcon from '@material-ui/icons/Feedback';
+import RequestTrackingIcon from '@material-ui/icons/Forum';
+import CollectIcon from '@material-ui/icons/Hearing';
 import MenuIcon from '@material-ui/icons/Menu';
+import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
+import ActivateIcon from '@material-ui/icons/RssFeed';
+import AnalyzeIcon from '@material-ui/icons/ShowChart';
+import WidgetIcon from '@material-ui/icons/Widgets';
+// import CareersIcon from '@material-ui/icons/Work';
+import classNames from 'classnames';
 import React, { Component, Suspense } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
-import DropdownButton from '../common/DropdownButton';
+import ClosablePopper from '../common/ClosablePopper';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
+import { LandingClearFlaskDemo, LandingCollectFeedback, LandingCollectFeedbackHero, LandingCrowdFunding, LandingCustomize, LandingEngagement, LandingEngagementHero, LandingFeatureRequestTracking, LandingGrowWithUs, LandingHero, LandingIdeaManagement, LandingIntegrations, LandingInternalFeedback, LandingLoop, LandingPrioritization, LandingPrioritizationHero, LandingPublicRoadmap, LandingSales } from './LandingPages';
 
 const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const LandingPage = React.lazy(() => import('./LandingPage'/* webpackChunkName: "LandingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed));
 const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
@@ -66,6 +80,7 @@ const styles = (theme: Theme) => createStyles({
     paddingBottom: theme.spacing(1),
     color: theme.palette.text.secondary,
     fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   logoButton: {
     display: 'flex',
@@ -84,29 +99,70 @@ const styles = (theme: Theme) => createStyles({
     height: 'auto',
     padding: theme.spacing(1),
   },
-  menuIndent: {
-    marginLeft: theme.spacing(2),
-  },
-  menuButton: {
-    textTransform: 'unset',
-  },
   menuItemsContainer: {
     display: 'flex',
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
+  roadmapIcon: {
+    transform: 'rotate(180deg)',
+  },
+  button: {
+    borderRadius: 10,
+    display: 'flex',
+    justifyContent: 'flex-start',
+    padding: theme.spacing(0.5, 2),
+    textTransform: 'unset',
+  },
+  buttonInsideDropdown: {
+    margin: theme.spacing(2),
+    padding: theme.spacing(0, 2),
+  },
+  buttonOuter: {
+    margin: theme.spacing(0, 1),
+  },
+  buttonIcon: {
+    margin: theme.spacing(1, 3, 1, 0),
+  },
+  dropdownContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  menuPopper: {
+    padding: theme.spacing(1),
+  },
+  menuPopperPaper: {
+    transform: 'translateX(-50%)',
+    borderRadius: 10,
+    marginTop: theme.spacing(1),
+  },
+  bottomNavigationDivider: {
+    minHeight: theme.spacing(1.5),
+  },
 });
+const useStyles = makeStyles(styles);
 
 interface MenuDropdown {
   type: 'dropdown';
   title: string;
-  items: Array<{ name: string; val: string }>;
+  items: Array<MenuButton | MenuHeader | MenuDivider>;
 }
 interface MenuButton {
+  icon?: OverridableComponent<SvgIconTypeMap>,
+  iconClassName?: string,
   type: 'button';
   title: string;
-  path: string;
+  link: string;
+  linkIsExternal?: boolean;
   scrollState?: string;
+}
+interface MenuHeader {
+  type: 'header';
+  title: string;
+}
+interface MenuDivider {
+  type: 'divider';
 }
 
 interface State {
@@ -116,59 +172,93 @@ interface State {
 class Site extends Component<RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   projectPromise: undefined | Promise<Project>;
-  readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
   render() {
+    const isLandingPage = this.props.location.pathname === '/';
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
-      { type: 'button', path: '/', scrollState: 'collect', title: 'Collect' },
-      { type: 'button', path: '/', scrollState: 'prioritize', title: 'Prioritize' },
-      { type: 'button', path: '/', scrollState: 'engage', title: 'Engage' },
-      { type: 'button', path: '/', scrollState: 'customize', title: 'Customize' },
+      {
+        type: 'dropdown', title: 'Product', items: [
+          { type: 'button', link: '/product/collect', title: 'Collect', icon: CollectIcon },
+          { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
+          { type: 'button', link: '/product/activate', title: 'Activate', icon: ActivateIcon },
+          { type: 'divider' },
+          { type: 'button', link: '/product/customize', title: 'Customize', icon: CustomizeIcon },
+          { type: 'button', link: '/product/grow-with-us', title: 'Grow With Us', icon: GrowIcon },
+          { type: 'button', link: '/product/integrations', title: 'Integrations', icon: WidgetIcon },
+        ]
+      },
+      {
+        type: 'dropdown', title: 'Solutions', items: [
+          { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
+          { type: 'button', link: '/solutions/public-roadmap', title: 'Public Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/solutions/crowd-funding', title: 'Crowd-funding', icon: CrowdFundingIcon },
+          { type: 'divider' },
+          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
+          { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
+        ]
+      },
+      {
+        type: 'dropdown', title: 'Resources', items: [
+          { type: 'button', link: `${window.location.protocol}//blog.${window.location.host}`, linkIsExternal: true, title: 'Blog' },
+          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/docs`, linkIsExternal: true, title: 'Docs' },
+          { type: 'button', link: `${window.location.protocol}//${window.location.host}/api`, linkIsExternal: true, title: 'API' },
+          { type: 'divider' },
+          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/roadmap`, linkIsExternal: true, title: 'Roadmap' },
+          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/feedback`, linkIsExternal: true, title: 'Feedback' },
+        ]
+      },
     ];
-    const menuItemsRight: Array<MenuButton | MenuDropdown> = [
-      { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
-      { type: 'button', path: '/pricing', title: 'Pricing' },
-      { type: 'button', path: '/dashboard', title: 'Dashboard' },
+    const menuItemsRight: Array<MenuButton> = [
+      isLandingPage
+        ? { type: 'button', link: '/login', title: 'Log in' }
+        : { type: 'button', link: '/signup', title: 'Sign up' },
+      { type: 'button', link: '/pricing', title: 'Pricing' },
+    ];
+    const bottomNavigation: Array<MenuButton | MenuDropdown> = [
+      ...menuItemsLeft,
+      {
+        type: 'dropdown', title: `© Smotana`, items: [
+          { type: 'button', link: 'https://smotana.com', linkIsExternal: true, title: 'Smotana.com' },
+          { type: 'button', link: '/contact', title: 'Contact' },
+          { type: 'divider' },
+          { type: 'button', link: '/signup', title: 'Sign up' },
+          { type: 'button', link: '/dashboard', title: 'Dashboard' },
+          { type: 'divider' },
+          { type: 'button', link: '/privacy-policy', title: 'Privacy Policy' },
+          { type: 'button', link: '/terms-of-service', title: 'Terms of Service' },
+        ]
+      }
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
         <AppBar position='fixed' color='inherit' elevation={0} variant='elevation' className={this.props.classes.appBar}>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>
-              <Hidden smUp implementation='css'>
+              <Hidden mdUp implementation='css'>
                 <IconButton
-                  ref={this.menuButtonRef}
                   aria-label='Menu'
                   onClick={() => this.setState({ menuOpen: true })}
                 >
                   <MenuIcon />
                 </IconButton>
-                <Menu
-                  anchorEl={this.menuButtonRef.current}
-                  keepMounted
-                  open={!!this.state.menuOpen}
+
+                <Drawer
+                  variant='temporary'
+                  open={this.state.menuOpen}
                   onClose={() => this.setState({ menuOpen: false })}
+                  ModalProps={{
+                    keepMounted: true,
+                  }}
                 >
-                  {[...menuItemsLeft, ...menuItemsRight].map((menuItem, index) => menuItem.type === 'button' ? (
-                    <MenuItem
-                      key={menuItem.path}
-                      component={Link as any}
-                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
-                      onClick={() => this.setState({ menuOpen: false })}
-                    >{menuItem.title}</MenuItem>
-                  ) : [(
-                    <MenuItem disabled key={menuItem.title}>{menuItem.title}</MenuItem>
-                  ),
-                  menuItem.items.map(subMenuItem => (
-                    <MenuItem
-                      key={subMenuItem.val}
-                      className={this.props.classes.menuIndent}
-                      component={Link as any}
-                      to={subMenuItem.val}
-                      onClick={() => this.setState({ menuOpen: false })}
-                    >{subMenuItem.name}</MenuItem>
-                  ))])}
-                </Menu>
+                  <MenuItems
+                    items={[
+                      { type: 'header', title: 'ClearFlask' },
+                      ...menuItemsRight,
+                      ...menuItemsLeft]}
+                    flattenDropdown
+                    onClick={() => this.setState({ menuOpen: false })}
+                  />
+                </Drawer>
               </Hidden>
               <Link
                 className={this.props.classes.logoButton}
@@ -180,43 +270,20 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   src='/img/clearflask-logo.png' />
                 ClearFlask
               </Link>
-              <Hidden xsDown implementation='css'>
+              <Hidden smDown implementation='css'>
                 <div className={this.props.classes.menuItemsContainer}>
-                  {menuItemsLeft.map(menuItem => menuItem.type === 'button' ? (
-                    <Button
-                      key={menuItem.path}
-                      className={this.props.classes.menuButton}
-                      component={Link}
-                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
-                    >{menuItem.title}</Button>
-                  ) : (
-                      <DropdownButton
-                        key={menuItem.title}
-                        buttonClassName={this.props.classes.menuButton}
-                        label={menuItem.title}
-                        links={menuItem.items}
-                      />
-                    ))}
+                  <MenuItems
+                    items={menuItemsLeft}
+                  />
+
                 </div>
               </Hidden>
               <div className={this.props.classes.grow} />
-              <Hidden xsDown implementation='css'>
+              <Hidden smDown implementation='css'>
                 <div className={this.props.classes.menuItemsContainer}>
-                  {menuItemsRight.map(menuItem => menuItem.type === 'button' ? (
-                    <Button
-                      key={menuItem.path}
-                      className={this.props.classes.menuButton}
-                      component={Link}
-                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
-                    >{menuItem.title}</Button>
-                  ) : (
-                      <DropdownButton
-                        key={menuItem.title}
-                        buttonClassName={this.props.classes.menuButton}
-                        label={menuItem.title}
-                        links={menuItem.items}
-                      />
-                    ))}
+                  <MenuItems
+                    items={menuItemsRight}
+                  />
                 </div>
               </Hidden>
             </Toolbar>
@@ -233,10 +300,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <Route path='/contact'>
                 <SetTitle title='Contact' />
                 <ContactPage />
-              </Route>
-              <Route exact path='/pricing'>
-                <SetTitle title='Pricing' />
-                <PricingPage />
               </Route>
               <Route exact path='/signup'>
                 <SetTitle title='Sign up' />
@@ -258,10 +321,68 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <SetTitle title='Terms of Service' />
                 <LegalPage type='privacy' />
               </Route>
+
               <Route exact path='/'>
                 <SetTitle />
-                <LandingPage />
+                <LandingHero />
+                <LandingClearFlaskDemo />
+                <LandingLoop />
+                <LandingCollectFeedbackHero />
+                <LandingPrioritizationHero />
+                <LandingEngagementHero />
+                <LandingSales />
               </Route>
+
+              <Route exact path='/product/collect'>
+                <SetTitle title='Collect' />
+                <LandingCollectFeedback />
+              </Route>
+              <Route exact path='/product/analyze'>
+                <SetTitle title='Analyze' />
+                <LandingPrioritization />
+              </Route>
+              <Route exact path='/product/activate'>
+                <SetTitle title='Activate' />
+                <LandingEngagement />
+              </Route>
+              <Route exact path='/product/customize'>
+                <SetTitle title='Customize' />
+                <LandingCustomize />
+              </Route>
+              <Route exact path='/product/integrations'>
+                <SetTitle title='Integrations' />
+                <LandingIntegrations />
+              </Route>
+              <Route exact path='/product/grow-with-us'>
+                <SetTitle title='Grow with us' />
+                <LandingGrowWithUs />
+              </Route>
+
+              <Route exact path='/solutions/feature-request-tracking'>
+                <SetTitle title='Feature Request Tracking' />
+                <LandingFeatureRequestTracking />
+              </Route>
+              <Route exact path='/solutions/public-roadmap'>
+                <SetTitle title='Public Roadmap' />
+                <LandingPublicRoadmap />
+              </Route>
+              <Route exact path='/solutions/crowd-funding'>
+                <SetTitle title='Crowd-funding' />
+                <LandingCrowdFunding />
+              </Route>
+              <Route exact path='/solutions/internal-feedback'>
+                <SetTitle title='Internal Feedback' />
+                <LandingInternalFeedback />
+              </Route>
+              <Route exact path='/solutions/idea-management'>
+                <SetTitle title='Idea Management' />
+                <LandingIdeaManagement />
+              </Route>
+              <Route exact path='/pricing'>
+                <SetTitle title='Pricing' />
+                <PricingPage />
+              </Route>
+
               <Route>
                 <SetTitle title='Page not found' />
                 <ErrorPage msg='Page not found' variant='error' />
@@ -272,26 +393,36 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>
             <Grid container justify='center' alignContent='center' spacing={6}>
-              {/* <Grid item xs={10} sm={4} md={3} xl={2}>
-                <div className={this.props.classes.bottomHeader}>PRODUCT</div>
-                <NavLink to='/contact/sales' className={this.props.classes.bottomItem}>Talk to Sales</NavLink>
-                <NavLink to='/pricing' className={this.props.classes.bottomItem}>Pricing</NavLink>
-                <NavLink to='/demo' className={this.props.classes.bottomItem}>Demo</NavLink>
-                <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink>
-              </Grid> */}
-              <Grid item xs={10} sm={4} md={3} xl={2}>
-                <div className={this.props.classes.bottomHeader}>RESOURCES</div>
-                <NavLink to='/contact/support' className={this.props.classes.bottomItem}>Support</NavLink>
-                <NavLink to='/privacy-policy' className={this.props.classes.bottomItem}>Privacy Policy</NavLink>
-                <NavLink to='/terms-of-service' className={this.props.classes.bottomItem}>Terms of Service</NavLink>
-              </Grid>
-              <Grid item xs={10} sm={4} md={3} xl={2} className={this.props.classes.growAndFlex}>
-                <div className={this.props.classes.bottomHeader}>COMPANY</div>
-                <MuiLink target="_blank" href='https://www.smotana.com' className={this.props.classes.bottomItem}>Smotana</MuiLink>
-                <MuiLink href='mailto:hi@clearflask.com' className={this.props.classes.bottomItem}>hi@clearflask.com</MuiLink>
-                <div className={this.props.classes.grow} />
-                <div className={this.props.classes.bottomItem}>© ClearFlask</div>
-              </Grid>
+              {bottomNavigation.map((item, index) => {
+                if (item.type === 'dropdown') {
+                  return (
+                    <Grid key={index} item xs={6} sm={3} md={3} lg={2}>
+                      <div key='header' className={this.props.classes.bottomHeader}>{item.title}</div>
+                      {item.items.map((subItem, subIndex) => {
+                        switch (subItem.type) {
+                          case 'header':
+                            return (
+                              <div key={subIndex} className={this.props.classes.bottomHeader}>{subItem.title}</div>
+                            );
+                          case 'button':
+                            return subItem.linkIsExternal ? (
+                              <MuiLink key={subIndex} href={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</MuiLink>
+                            ) : (
+                                <NavLink key={subIndex} to={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>
+                              );
+                          case 'divider':
+                            return (
+                              <div className={this.props.classes.bottomNavigationDivider} />
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
+                    </Grid>
+                  );
+                }
+                return null;
+              })}
             </Grid>
           </Container>
         </div>
@@ -299,5 +430,196 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     );
   }
 }
+
+interface MenuDropdownButtonProps {
+  dropdown: MenuDropdown;
+  isOuter?: boolean;
+}
+interface MenuDropdownButtonState {
+  open?: boolean;
+  hover?: boolean;
+}
+class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & WithStyles<typeof styles, true>, MenuDropdownButtonState> {
+  state: MenuDropdownButtonState = {};
+  lastEventId = 0;
+
+  render() {
+    const onMouseOver = () => {
+      this.setState({ hover: true });
+      const lastEventId = ++this.lastEventId;
+      setTimeout(() => lastEventId === this.lastEventId
+        && this.state.hover
+        && this.setState({ open: true }), 1);
+    };
+    const onMouseOut = () => {
+      this.setState({ hover: false });
+      const lastEventId = ++this.lastEventId;
+      setTimeout(() => lastEventId === this.lastEventId
+        && !this.state.hover
+        && this.setState({ open: false }), 1);
+    };
+    return (
+      <div className={this.props.classes.dropdownContainer}>
+        <Button
+          size='large'
+          className={classNames(this.props.classes.button, this.props.isOuter && this.props.classes.buttonOuter)}
+          onClick={() => {
+            ++this.lastEventId;
+            this.setState({ open: true })
+          }}
+          onMouseOver={onMouseOver}
+          onMouseOut={onMouseOut}
+        >
+          {this.props.dropdown.title}
+        </Button>
+        <ClosablePopper
+          paperClassName={this.props.classes.menuPopperPaper}
+          className={this.props.classes.menuPopper}
+          clickAway
+          disableCloseButton
+          open={!!this.state.open}
+          onClose={() => {
+            ++this.lastEventId;
+            this.setState({ open: false })
+          }}
+          onMouseOver={onMouseOver}
+          onMouseOut={onMouseOut}
+        >
+          <MenuItems
+            items={this.props.dropdown.items}
+            onClick={() => {
+              ++this.lastEventId;
+              this.setState({ open: false })
+            }}
+            insideDropdown
+          />
+        </ClosablePopper>
+      </div>
+    );
+  }
+}
+const MenuDropdownButton = withStyles(styles, { withTheme: true })(MenuDropdownButtonRaw);
+
+function MenuItems(props: {
+  items: Array<MenuButton | MenuHeader | MenuDivider | MenuDropdown>;
+  onClick?: () => void;
+  flattenDropdown?: boolean;
+  insideDropdown?: boolean;
+}) {
+  const isOuter = !props.insideDropdown && !props.flattenDropdown;
+  return (
+    <React.Fragment>
+      {props.items.map((item, index) => {
+        switch (item.type) {
+          case 'header':
+            return (
+              <MenuItemHeader
+                item={item}
+              />
+            );
+          case 'button':
+            return (
+              <MenuItemButton
+                item={item}
+                onClick={props.onClick}
+                isOuter={isOuter}
+                insideDropdown={props.insideDropdown}
+              />
+            );
+          case 'divider':
+            return (
+              <MenuItemDivider
+                item={item}
+              />
+            );
+          case 'dropdown':
+            if (props.flattenDropdown) {
+              return (
+                <React.Fragment>
+                  <MenuItemHeader
+                    item={{ type: 'header', title: item.title }}
+                  />
+                  <MenuItems
+                    key={item.title}
+                    items={item.items}
+                    onClick={props.onClick}
+                    flattenDropdown={props.flattenDropdown}
+                    insideDropdown={props.insideDropdown}
+                  />
+                </React.Fragment>
+              );
+            } else {
+              return (
+                <MenuDropdownButton
+                  key={item.title}
+                  dropdown={item}
+                  isOuter={isOuter}
+                />
+              );
+            }
+          default:
+            return null;
+        }
+      })}
+    </React.Fragment>
+  );
+};
+
+function MenuItemButton(props: {
+  item: MenuButton;
+  onClick?: () => void;
+  isOuter?: boolean;
+  insideDropdown?: boolean;
+}) {
+  const classes = useStyles();
+  const Icon = props.item.icon
+  return (
+    <Button
+      size='large'
+      key={props.item.title}
+      className={classNames(classes.button, props.isOuter && classes.buttonOuter, props.insideDropdown && classes.buttonInsideDropdown)}
+      component={(props.item.linkIsExternal ? MuiLink : Link) as any}
+      {...(props.item.linkIsExternal
+        ? { href: props.item.link }
+        : {
+          to: {
+            pathname: props.item.link,
+            state: props.item.scrollState ? { [SCROLL_TO_STATE_KEY]: props.item.scrollState } : undefined,
+          }
+        })}
+      onClick={props.onClick}
+    >
+      {Icon && (
+        <Icon className={classNames(classes.buttonIcon, props.item.iconClassName)} />)}
+      {props.item.title}
+    </Button>
+  );
+};
+
+function MenuItemHeader(props: {
+  item: MenuHeader;
+}) {
+  return (
+    <React.Fragment>
+      <MenuItem
+        key={props.item.title}
+        disabled
+        style={{
+          justifyContent: 'center',
+          minHeight: 48,
+        }}
+      >{props.item.title}</MenuItem>
+      <Divider />
+    </React.Fragment>
+  );
+};
+
+function MenuItemDivider(props: {
+  item: MenuDivider;
+}) {
+  return (
+    <Divider />
+  );
+};
 
 export default withStyles(styles, { withTheme: true })(Site);

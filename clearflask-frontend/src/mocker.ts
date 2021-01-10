@@ -5,9 +5,10 @@ import * as ConfigEditor from './common/config/configEditor';
 import Templater, { createTemplateOptionsDefault } from './common/config/configTemplater';
 import { detectEnv, Environment } from './common/util/detectEnv';
 
+var mockedProjectId: string | undefined;
 export function mock(): Promise<any> {
   if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-    const slug = 'mock';
+    const slug = window.location.hostname.split('.')[0] || 'mock';
     const editor = new ConfigEditor.EditorImpl();
     editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
     const templater = Templater.get(editor);
@@ -23,6 +24,10 @@ export function mock(): Promise<any> {
       .then(d => d.projectCreateAdmin({
         configAdmin: editor.getConfig(),
       })
+        .then(project => {
+          mockedProjectId = project.projectId;
+          return project;
+        })
         .then(project => d.configSetAdmin({
           projectId: project.projectId,
           versionLast: project.config.version,
@@ -33,4 +38,11 @@ export function mock(): Promise<any> {
   } else {
     return Promise.resolve();
   }
+}
+
+export async function mockIdeaGetProjectId(postId: string): Promise<string> {
+  await DataMock.get(mockedProjectId!).mockFakeIdeaWithComments(postId, config => ({
+    statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
+  }));
+  return mockedProjectId!;
 }

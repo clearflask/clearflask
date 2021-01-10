@@ -1,9 +1,10 @@
-import { Button, Typography } from '@material-ui/core';
+import { Button, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import PostStatusIframe from '../../app/PostStatusIframe';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
 
 const styles = (theme: Theme) => createStyles({
@@ -33,8 +34,9 @@ export interface Props {
   title?: string;
   marker?: string;
   description?: string | React.ReactNode;
+  postStatusId?: string;
   buttonTitle?: string;
-  buttonOnClick?: () => void;
+  buttonLinkExt?: string;
   buttonLink?: string;
   buttonState?: any;
   variant?: 'hero' | 'heading-main' | 'heading' | 'content';
@@ -91,20 +93,32 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
           <ScrollAnchor {...this.props.scrollAnchor} />
         )}
         <Typography variant={bodyVariant} component={bodyCmpt} className={this.props.classes.description}>{this.props.description}</Typography>
+        {this.props.postStatusId && (
+          <PostStatusIframe
+            className={this.props.classes.button}
+            postId={this.props.postStatusId}
+            config={{
+              fontSize: '1.1em',
+              alignItems: 'end',
+              justifyContent: 'end',
+            }}
+          />
+        )}
         {this.props.buttonTitle && (
           <Button
             className={this.props.classes.button}
             variant='text'
             color='primary'
-            onClick={() => {
-              this.props.buttonOnClick && this.props.buttonOnClick();
-            }}
             {...(this.props.buttonLink ? {
               component: Link,
               to: {
                 pathname: this.props.buttonLink,
                 state: this.props.buttonState,
               },
+            } : {})}
+            {...(this.props.buttonLinkExt ? {
+              component: MuiLink,
+              href: this.props.buttonLinkExt,
             } : {})}
           >
             {this.props.buttonTitle}

@@ -23,15 +23,16 @@ export async function getProject(
   settings?: StateSettings,
 ): Promise<Project> {
   await new Promise(resolve => setTimeout(resolve, 1));
-  const server = new Server(undefined, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   const slug = `demo${randomUuid().substring(0, 5)}`;
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   template && template(templater);
+  const config = editor.getConfig();
+  const server = new Server(config.projectId, settings, ServerMock.get());
   const d = await server.dispatchAdmin();
   const projectCreateResult = await d.projectCreateAdmin({
-    configAdmin: editor.getConfig(),
+    configAdmin: config,
   });
   const projectId = projectCreateResult.config.config.projectId
   server.subscribeToChanges(editor);

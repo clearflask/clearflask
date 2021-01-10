@@ -8,6 +8,7 @@ import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.Filter;
@@ -44,14 +45,18 @@ public class ApiExceptionMapperFilter implements Filter {
         try {
             filterChain.doFilter(request, response);
         } catch (ServletException ex) {
-            String ignoreMessageRegex = config.ignoreMessageRegex();
-            if (Strings.isNullOrEmpty(ignoreMessageRegex)
-                    || ex.getRootCause() == null
-                    || ex.getRootCause().getMessage() == null
-                    || !ex.getRootCause().getMessage().matches(ignoreMessageRegex)) {
-                log.warn("Uncaught exception", ex);
+            if (ex.getCause() instanceof ApiException) {
+                log.trace("ApiException passing through", ex);
             } else {
-                log.trace("Uncaught exception", ex);
+                String ignoreMessageRegex = config.ignoreMessageRegex();
+                if (Strings.isNullOrEmpty(ignoreMessageRegex)
+                        || ex.getRootCause() == null
+                        || ex.getRootCause().getMessage() == null
+                        || !ex.getRootCause().getMessage().matches(ignoreMessageRegex)) {
+                    log.warn("Uncaught exception", ex);
+                } else {
+                    log.trace("Uncaught exception", ex);
+                }
             }
             throw ex;
         } catch (IOException ex) {

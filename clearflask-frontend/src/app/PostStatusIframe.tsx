@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import QueryString from 'query-string';
 import React, { Component } from 'react';
 import { detectEnv, Environment } from '../common/util/detectEnv';
@@ -16,6 +17,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className?: string;
   postId: string;
   projectId?: string; // Defaults to ClearFlask
   config?: PostStatusConfig;
@@ -28,7 +30,7 @@ class PostStatusIframe extends Component<Props & WithStyles<typeof styles, true>
     const src = `${window.location.protocol}//${this.props.projectId || detectEnv() === Environment.DEVELOPMENT_FRONTEND ? 'mock' : 'clearflask'}.${window.location.host}/embed-status/post/${this.props.postId}${query}`;
     return (
       <iframe
-        className={this.props.classes.iframe}
+        className={classNames(this.props.className, this.props.classes.iframe)}
         style={{
           width: this.props.width,
           height: this.props.height,

@@ -87,7 +87,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props extends PopperProps {
-  innerClassName?: string;
+  paperClassName?: string;
   zIndex?: number;
   onClose: () => void;
   /** Convenience method instead of anchorEl */
@@ -113,7 +113,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     const {
       children,
       classes,
-      innerClassName,
+      paperClassName,
       zIndex,
       onClose,
       anchorElGetter,
@@ -192,7 +192,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
               {...clickAwayProps}
             >
               <Fade {...props.TransitionProps}>
-                <Paper className={classes.paper}>
+                <Paper className={classNames(paperClassName, classes.paper)}>
                   {arrow && (
                     <span x-arrow='true' className={classes.arrow} ref={this.arrowRef} />
                   )}

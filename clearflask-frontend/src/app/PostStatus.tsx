@@ -55,36 +55,33 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
     var server: Server | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const DemoApp = await import('../site/DemoApp'/* webpackChunkName: "demoApp" */);
-      const project = await DemoApp.getProject(
-        templater => templater.workflowFeatures(templater.demoCategory()),
-        mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
-          statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
-        })),
-        { suppressSetTitle: true });
-      server = project.server;
+      const mocker = await import('../mocker'/* webpackChunkName: "mocker" */)
+      const serverMock = await import('../api/serverMock'/* webpackChunkName: "serverMock" */)
+      const projectId = await mocker.mockIdeaGetProjectId(props.postId);
+      server = new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
     } else {
       server = new Server();
     }
 
-    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
+    const subscriptionResult = await WebNotification.getInstance().getPermission();
+
+    const configAndUserBind = await server.dispatch().configGetAndUserBind({
       slug: window.location.hostname,
       userBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
       },
-    }));
-
-    const postPromise = server.dispatch().ideaGet({
-      projectId: server.getProjectId(),
-      ideaId: props.postId,
     });
-
-    const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
+
+    console.log('debugdebug', server.getProjectId());
+    const post = await server.dispatch().ideaGet({
+      projectId: configAndUserBind.config.config.projectId,
+      ideaId: props.postId,
+    });
 
     return [configAndUserBind.config, configAndUserBind.user, post];
   }

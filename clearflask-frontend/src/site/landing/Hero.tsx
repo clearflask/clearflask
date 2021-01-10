@@ -1,4 +1,4 @@
-import { Button, Grid, Typography } from '@material-ui/core';
+import { Button, Grid, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
@@ -51,8 +51,11 @@ interface Props {
   title?: string;
   description?: string;
   imagePath?: string;
+  imageWidth?: string | number;
+  imageHeight?: string | number;
   mirror?: boolean;
   buttonTitle?: string;
+  buttonLinkExt?: string;
   buttonLink?: string;
   buttonRemark?: React.ReactNode;
 }
@@ -73,6 +76,8 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                 alt=''
                 className={this.props.classes.image}
                 src={this.props.imagePath}
+                width={this.props.imageWidth}
+                height={this.props.imageHeight}
               />
             </Grid>
           )}
@@ -95,6 +100,10 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                   {...(this.props.buttonLink ? {
                     component: Link,
                     to: this.props.buttonLink,
+                  } : {})}
+                  {...(this.props.buttonLinkExt ? {
+                    component: MuiLink,
+                    href: this.props.buttonLinkExt,
                   } : {})}
                 >
                   {this.props.buttonTitle}
