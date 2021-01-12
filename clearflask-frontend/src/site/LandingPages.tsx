@@ -8,8 +8,19 @@ import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import KnowledgeIcon from '@material-ui/icons/Help';
+import ContentDeliveryIcon from '@material-ui/icons/Cached';
+import EncryptionIcon from '@material-ui/icons/Https';
+import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
+import PrivacyIcon from '@material-ui/icons/VisibilityOff';
+import BillingIcon from '@material-ui/icons/Receipt';
+import SearchIcon from '@material-ui/icons/Search';
+import ClientIcon from '@material-ui/icons/Devices';
+import ServerIcon from '@material-ui/icons/Dns';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationIcon from '@material-ui/icons/Notifications';
+import StorageIcon from '@material-ui/icons/Storage';
+import BackupIcon from '@material-ui/icons/FileCopy';
+import OncallIcon from '@material-ui/icons/Alarm';
 import CommunityIcon from '@material-ui/icons/People';
 import QuestionIcon from '@material-ui/icons/QuestionAnswer';
 import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
@@ -214,6 +225,7 @@ export function LandingClearFlaskDemo() {
             fixedHeight={500}
           >
             <iframe
+              title='Demo: ClearFlask Feedback'
               src={`${window.location.protocol}//feedback.${window.location.host}`}
               width='100%'
               height='100%'
@@ -521,7 +533,6 @@ export function LandingPrioritization() {
 }
 
 export function LandingPrioritizationTypes() {
-  const classes = useStyles();
   return (
     <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
       <Demo
@@ -864,22 +875,7 @@ export function LandingIntegrations() {
           postStatusId='zapier-integration-rfs'
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
-        <BlockContent
-          variant='content'
-          title='Google Analytics'
-          description='Extend your Analytics reach to feedback pages'
-          icon={(
-            <img
-              alt=''
-              className={classes.integrationImage}
-              src='/img/landing/googleanalytics.svg'
-            />
-          )}
-          className={classes.smallBlock}
-          buttonTitle='Setup'
-          buttonLink='/dashboard/settings/integrations'
-        />
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Hotjar'
@@ -895,8 +891,23 @@ export function LandingIntegrations() {
           buttonTitle='Setup'
           buttonLink='/dashboard/settings/integrations'
         />
+        <BlockContent
+          variant='content'
+          title='Google Analytics'
+          description='Extend your Analytics reach to feedback pages'
+          icon={(
+            <img
+              alt=''
+              className={classes.integrationImage}
+              src='/img/landing/googleanalytics.svg'
+            />
+          )}
+          className={classes.smallBlock}
+          buttonTitle='Setup'
+          buttonLink='/dashboard/settings/integrations'
+        />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md'>
         <BlockContent
           variant='content'
           title='Intercom Messenger'
@@ -927,7 +938,7 @@ export function LandingIntegrations() {
           postStatusId='intercom-integration-mbf'
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Slack'
@@ -1182,89 +1193,98 @@ export function LandingGrowWithUs() {
     <React.Fragment>
       <Hero
         title='Grow With Us'
-        description=''
+        description='Built on scalable infrastructure to grow with your needs.'
         imagePath='/img/landing/architecture.svg'
       />
       <Block
-        title='Efficiency'
-        description=''
+        title='Reliability and scalability'
+        description='Our automated systems are continuously monitoring the health to scale up resources as needed or to notify our engineers of an issue.'
       />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
+          icon={(<OncallIcon />)}
+          title='On-call'
+          description='Our engineers are on-call 24/7 to resolve any elevated issues brought up by our automatic monitoring.'
+          />
+        <BlockContent
+          icon={(<ServerIcon />)}
           variant='content'
-          title='ElasticSearch'
-          description=''
+          title='Compute'
+          description='All of our server infrastructure is auto-scaled to meet your traffic demand.'
+          />
+        <BlockContent
+          icon={(<StorageIcon />)}
+          variant='content'
+          title='Storage'
+          description='Data is stored on a NoSQL Dynamo database and distributed Object Storage S3 that allows us to scale with ease.'
+          />
+        <BlockContent
+          icon={(<BackupIcon />)}
+          variant='content'
+          title='Backups'
+          description='All of our data is continuously backed up in case of an incident to protect your data.'
         />
       </HorizontalPanels>
       <Block
-        title='Reliability'
-        description=''
+        title='Responsiveness'
+        description='Bringing together the right tools for the best User Experience'
       />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
+          icon={(<ContentDeliveryIcon />)}
           variant='content'
-          title='On-Call'
-          description=''
+          title='Content delivery network'
+          description='ClearFlask is hosted by CloudFront: a large network of globally distributed PoPs that deliver low-latency performance and high-availability.'
         />
         <BlockContent
+          icon={(<SearchIcon />)}
           variant='content'
-          title='Auto scalable resources'
-          description=''
+          title='Search engine'
+          description='We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets. It also ensures your users are not submitting duplicate ideas.'
         />
         <BlockContent
+          icon={(<ClientIcon />)}
           variant='content'
-          title='Scalable database (No-SQL)'
-          description=''
-        />
-      </HorizontalPanels>
-      <Block
-        title='Page speed'
-        description=''
-        mirror
-      />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
-        <BlockContent
-          variant='content'
-          title='POPs with CloudFront'
-          description=''
+          title='Client-side Framework'
+          description='Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use and keeps your users engaged.'
         />
         <BlockContent
+          icon={(<ServerIcon />)}
           variant='content'
-          title='SSR'
-          description=''
+          title='Server-Side Rendering'
+          description='Web pages are pre-rendered server-side to minimize the first page load on the client and improve SEO.'
           postStatusId='serverside-rendering-vni'
         />
       </HorizontalPanels>
       <Block
-        title='Billing system'
-        description=''
+        title='Security and Privacy'
+        description='Both Security and Privacy is critically important to us. We are thoughtful about the personal information we ask you to provide and we are building our systems with security in mind.'
       />
-      <Block
-        title='Security'
-        description=''
-        mirror
-      />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
+          icon={(<EncryptionIcon />)}
           variant='content'
           title='Encryption'
-          description=''
-        />
+          description='All pages are only accessible over encrypted channels. If you use a custom domain, we automatically generate a certificate for you via LetsEncrypt.'
+          />
         <BlockContent
+          icon={(<AntiSpamIcon />)}
           variant='content'
           title='Anti-Spam'
-          description=''
-        />
-      </HorizontalPanels>
-      <Block
-        title='Privacy'
-        description=''
-      />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+          description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.'        />
         <BlockContent
+          icon={(<PrivacyIcon />)}
           variant='content'
           title='Do Not Track'
-          description=''
+          description='We respect the Do Not Track (DNT) flag that respects your privacy.'
+          buttonTitle='Privacy Policy'
+          buttonLink='/privacy-policy'
+          />
+        <BlockContent
+          icon={(<BillingIcon />)}
+          variant='content'
+          title='Billing system'
+          description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
         />
       </HorizontalPanels>
     </React.Fragment>

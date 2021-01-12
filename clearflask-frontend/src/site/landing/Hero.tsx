@@ -7,8 +7,8 @@ import { vh } from '../../common/util/vhUtil';
 const styles = (theme: Theme) => createStyles({
   hero: {
     width: '100vw',
-    minHeight: vh(60),
-    padding: `${vh(20)}px 10vw`,
+    minHeight: vh(40),
+    padding: `${vh(10)}px 10vw`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',

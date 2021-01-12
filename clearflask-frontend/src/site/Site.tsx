@@ -406,7 +406,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                             );
                           case 'button':
                             return subItem.linkIsExternal ? (
-                              <MuiLink key={subIndex} href={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</MuiLink>
+                              <MuiLink key={subIndex} href={subItem.link} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>
                             ) : (
                                 <NavLink key={subIndex} to={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>
                               );
@@ -580,8 +580,10 @@ function MenuItemButton(props: {
       className={classNames(classes.button, props.isOuter && classes.buttonOuter, props.insideDropdown && classes.buttonInsideDropdown)}
       component={(props.item.linkIsExternal ? MuiLink : Link) as any}
       {...(props.item.linkIsExternal
-        ? { href: props.item.link }
-        : {
+        ? {
+          href: props.item.link,
+          underline: 'none',
+        } : {
           to: {
             pathname: props.item.link,
             state: props.item.scrollState ? { [SCROLL_TO_STATE_KEY]: props.item.scrollState } : undefined,

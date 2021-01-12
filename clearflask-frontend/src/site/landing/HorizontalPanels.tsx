@@ -9,18 +9,9 @@ const styles = (theme: Theme) => createStyles({
   },
   content: {
     display: 'flex',
-    flex: '1 1 auto',
+    flex: '1 1 0px',
     padding: theme.spacing(4),
-    justifyContent: 'center',
-  },
-  contentFirst: {
-    justifyContent: 'flex-start',
-  },
-  contentMiddle: {
-    justifyContent: 'center',
-  },
-  contentLast: {
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
   },
 });
 interface Props {
@@ -49,31 +40,25 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
       >
         {React.Children.map(this.props.children, (content, index) => {
           if (!content) return null;
-          var contentClass: string | undefined = undefined;
-          if (!isHorizontal) {
-            if (index === 0) {
-              contentClass = this.props.classes.contentFirst;
-            } else if (index === contentsSize - 1) {
-              contentClass = this.props.classes.contentLast;
-            } else {
-              contentClass = this.props.classes.contentMiddle;
-            }
-          }
+          var leftPads = index;
+          var rightPads = contentsSize - index - 1;
           return (
             <div
               key={content?.['key'] || index}
-              className={`${this.props.classes.content} ${contentClass || ''}`}
+              className={this.props.classes.content}
               style={isHorizontal ? {
                 marginTop: staggerAsc
-                  ? (childrenCount - index) * staggerHeight
+                  ? (childrenCount - index - 1) * staggerHeight
                   : index * staggerHeight
               } : undefined}
             >
+              {[...Array(leftPads)].map((u, i) => (<div key={`left-${i}`} />))}
               <Container maxWidth={this.props.maxContentWidth} style={{
                 margin: 'unset',
               }}>
                 {content}
               </Container>
+              {[...Array(rightPads)].map((u, i) => (<div key={`right-${i}`} />))}
             </div>
           )
         })}
