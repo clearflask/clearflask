@@ -436,6 +436,34 @@ export function LandingCollectFeedback() {
           buttonLink='/product/integrations'
         />
       </HorizontalPanels>
+      <Block
+        title='Collect'
+        description='collect, embed in iframe, use API, internal feedback'
+      />
+      <Block
+        title='Feature request tracking'
+        description=''
+        buttonTitle='Learn more'
+        buttonLink='/solutions/feature-request-tracking'
+      />
+      <Block
+        title='Internal feedback'
+        description=''
+        buttonTitle='Learn more'
+        buttonLink='/solutions/internal-feedback'
+      />
+      <Block
+        title='Idea management'
+        description=''
+        buttonTitle='Learn more'
+        buttonLink='/solutions/idea-management'
+      />
+      <Block
+        title='Crowd-funding'
+        description=''
+        buttonTitle='Learn more'
+        buttonLink='/solutions/crowd-funding'
+      />
     </React.Fragment>
   );
 }
@@ -527,6 +555,27 @@ export function LandingPrioritization() {
             </div>
           </div>
         )}
+      />
+      <Block
+        title="Gauge users's reactions to features"
+        description=''
+      />
+      <Block
+        title='Communication channel with the exact customers you need'
+        description='Validate solutions, recruit beta users, shape upcoming features'
+      />
+      <Block
+        title='Segmentation'
+        description=''
+        postStatusId='segmentation'
+      />
+      <Block
+        title='Identify top ideas'
+        description=''
+      />
+      <Block
+        title=''
+        description=''
       />
     </React.Fragment>
   );
@@ -732,6 +781,26 @@ export function LandingEngagement() {
         // - Custom (language courses): Gaining traction, Beta, Public
         // - Custom (Game ideas): Semi-finals, Selected */}
       <LandingEngagementRoadmap />
+      <Block
+        title='Understand potential customers'
+        description=''
+      />
+      <Block
+        title='Bring back churned customers'
+        description=''
+      />
+      <Block
+        title='Notify the right people'
+        description=''
+      />
+      <Block
+        title='Show status for future ideas'
+        description=''
+      />
+      <Block
+        title='Roadmap changes'
+        description=''
+      />
     </React.Fragment>
   );
 }

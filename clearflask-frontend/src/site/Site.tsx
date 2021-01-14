@@ -1,4 +1,4 @@
-import { AppBar, Button, Container, Divider, Drawer, Grid, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar } from '@material-ui/core';
+import { AppBar, Button, Collapse, Container, Divider, Drawer, Grid, Grow, Hidden, IconButton, Link as MuiLink, MenuItem, Slide, SvgIconTypeMap, Toolbar, Zoom } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
@@ -484,6 +484,11 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
           }}
           onMouseOver={onMouseOver}
           onMouseOut={onMouseOut}
+          transitionCmpt={Grow}
+          transitionProps={{
+            style: { transformOrigin: '50% 0 0' },
+          }}
+          placement='bottom'
         >
           <MenuItems
             items={this.props.dropdown.items}

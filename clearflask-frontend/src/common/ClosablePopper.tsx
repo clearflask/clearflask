@@ -1,5 +1,7 @@
-import { ClickAwayListener, Fade, IconButton, Paper, Popper, PopperProps } from '@material-ui/core';
+import { ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
+import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { TransitionProps } from '@material-ui/core/transitions';
 import CloseIcon from '@material-ui/icons/Close';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -103,6 +105,9 @@ interface Props extends PopperProps {
   clickAway?: boolean;
   clickAwayProps?: Partial<React.ComponentProps<typeof ClickAwayListener>>;
   arrow?: boolean;
+  transitionCmpt?: React.ElementType<TransitionProps>;
+  transitionProps?: any;
+  placement?: PopperPlacementType;
 }
 class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> {
   readonly anchorRef = React.createRef<HTMLDivElement>();
@@ -121,8 +126,13 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
       clickAway,
       clickAwayProps,
       arrow,
+      transitionCmpt,
+      transitionProps,
+      placement,
       ...popperProps
     } = this.props;
+
+    const TransitionCmpt = transitionCmpt || Fade;
 
     const anchorElGetterWrapped = anchorElGetter ? () => {
       const bounds = anchorElGetter && anchorElGetter();
@@ -143,7 +153,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
               zIndex: zIndex,
             }),
           }}
-          placement='right-start'
+          placement={placement || 'right-start'}
           anchorEl={this.props.anchorEl !== undefined
             ? this.props.anchorEl
             : () => {
@@ -191,7 +201,10 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
               }}
               {...clickAwayProps}
             >
-              <Fade {...props.TransitionProps}>
+              <TransitionCmpt
+                {...props.TransitionProps}
+                {...transitionProps}
+              >
                 <Paper className={classNames(paperClassName, classes.paper)}>
                   {arrow && (
                     <span x-arrow='true' className={classes.arrow} ref={this.arrowRef} />
@@ -210,7 +223,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
                   )}
                   {children}
                 </Paper>
-              </Fade>
+              </TransitionCmpt>
             </ClickAwayListener>
           )}
         </Popper>
