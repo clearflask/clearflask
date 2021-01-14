@@ -191,6 +191,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         type: 'dropdown', title: 'Solutions', items: [
           { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
           { type: 'button', link: '/solutions/public-roadmap', title: 'Public Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/solutions/crowd-funding', title: 'Content creator', icon: CrowdFundingIcon },
           { type: 'button', link: '/solutions/crowd-funding', title: 'Crowd-funding', icon: CrowdFundingIcon },
           { type: 'divider' },
           { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },

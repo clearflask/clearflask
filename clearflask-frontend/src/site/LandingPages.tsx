@@ -1191,11 +1191,17 @@ export function LandingPublicRoadmap() {
 
 export function LandingCrowdFunding() {
   return (
-    <Hero
-      title='Crowd-funding'
-      description=''
-      imagePath='/img/landing/crowdfund.svg'
-    />
+    <React.Fragment>
+      <Hero
+        title='Crowd-funding'
+        description=''
+        imagePath='/img/landing/crowdfund.svg'
+      />
+      <Block
+        title=''
+        description=''
+      />
+    </React.Fragment>
   );
 }
 
