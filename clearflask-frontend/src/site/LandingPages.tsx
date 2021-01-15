@@ -1152,6 +1152,15 @@ export function LandingFeatureRequestTracking() {
         mirror
       />
       <Block
+        title='Recruit Beta users'
+        description=''
+      />
+      <Block
+        title='Community feedback'
+        description=''
+        mirror
+      />
+      <Block
         title='Close the loop with customers'
         description=''
       />
@@ -1193,9 +1202,21 @@ export function LandingCrowdFunding() {
   return (
     <React.Fragment>
       <Hero
-        title='Crowd-funding'
-        description=''
+        title='Content Creators: Feedback from your most valued fans'
+        description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
         imagePath='/img/landing/crowdfund.svg'
+      />
+      <Block
+        title='How it works'
+        description='Infographic: show Patreon/Ko-fi -> Stripe -> ClearFlask'
+      />
+      <Block
+        title=''
+        description=''
+      />
+      <Block
+        title=''
+        description=''
       />
       <Block
         title=''

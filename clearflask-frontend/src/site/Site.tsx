@@ -1,8 +1,9 @@
-import { AppBar, Button, Collapse, Container, Divider, Drawer, Grid, Grow, Hidden, IconButton, Link as MuiLink, MenuItem, Slide, SvgIconTypeMap, Toolbar, Zoom } from '@material-ui/core';
+import { AppBar, Button, Container, Divider, Drawer, Grid, Grow, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
-import CrowdFundingIcon from '@material-ui/icons/AccountBalance';
+import CommercialSupportIcon from '@material-ui/icons/AccountBalance';
+import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import CustomizeIcon from '@material-ui/icons/Brush';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import InternalFeedbackIcon from '@material-ui/icons/Feedback';
@@ -131,6 +132,7 @@ const styles = (theme: Theme) => createStyles({
   },
   menuPopper: {
     padding: theme.spacing(1),
+    maxWidth: 300,
   },
   menuPopperPaper: {
     transform: 'translateX(-50%)',
@@ -178,7 +180,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
-          { type: 'button', link: '/product/collect', title: 'Collect', icon: CollectIcon },
+          { type: 'button', link: '/product/collect', title: 'Ask', icon: CollectIcon },
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/activate', title: 'Activate', icon: ActivateIcon },
           { type: 'divider' },
@@ -191,9 +193,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         type: 'dropdown', title: 'Solutions', items: [
           { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
           { type: 'button', link: '/solutions/public-roadmap', title: 'Public Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/solutions/crowd-funding', title: 'Content creator', icon: CrowdFundingIcon },
-          { type: 'button', link: '/solutions/crowd-funding', title: 'Crowd-funding', icon: CrowdFundingIcon },
-          { type: 'divider' },
+          { type: 'button', link: '/solutions/content-creator-brainstorm', title: 'Content Creator Brainstorm', icon: ContentCreatorIcon },
+          { type: 'button', link: '/solutions/commercial-support-management', title: 'Commercial Support Management', icon: CommercialSupportIcon },
           { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
           { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
         ]
@@ -445,12 +446,15 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
   lastEventId = 0;
 
   render() {
-    const onMouseOver = () => {
+    const onMouseOverButton = () => {
       this.setState({ hover: true });
       const lastEventId = ++this.lastEventId;
       setTimeout(() => lastEventId === this.lastEventId
         && this.state.hover
         && this.setState({ open: true }), 1);
+    };
+    const onMouseOverPopper = () => {
+      ++this.lastEventId; // Cancel any events including mouse out
     };
     const onMouseOut = () => {
       this.setState({ hover: false });
@@ -468,7 +472,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
             ++this.lastEventId;
             this.setState({ open: true })
           }}
-          onMouseOver={onMouseOver}
+          onMouseOver={onMouseOverButton}
           onMouseOut={onMouseOut}
         >
           {this.props.dropdown.title}
@@ -483,7 +487,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
             ++this.lastEventId;
             this.setState({ open: false })
           }}
-          onMouseOver={onMouseOver}
+          onMouseOver={onMouseOverPopper}
           onMouseOut={onMouseOut}
           transitionCmpt={Grow}
           transitionProps={{
