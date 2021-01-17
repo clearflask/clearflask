@@ -1,32 +1,32 @@
 import { Container, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
+import OncallIcon from '@material-ui/icons/Alarm';
+import ContentDeliveryIcon from '@material-ui/icons/Cached';
 import ApiIcon from '@material-ui/icons/Code';
 import BlogIcon from '@material-ui/icons/Description';
+import ClientIcon from '@material-ui/icons/Devices';
+import ServerIcon from '@material-ui/icons/Dns';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import FeedbackIcon from '@material-ui/icons/Feedback';
+import BackupIcon from '@material-ui/icons/FileCopy';
 import KnowledgeIcon from '@material-ui/icons/Help';
-import ContentDeliveryIcon from '@material-ui/icons/Cached';
 import EncryptionIcon from '@material-ui/icons/Https';
-import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
-import PrivacyIcon from '@material-ui/icons/VisibilityOff';
-import BillingIcon from '@material-ui/icons/Receipt';
-import SearchIcon from '@material-ui/icons/Search';
-import ClientIcon from '@material-ui/icons/Devices';
-import ServerIcon from '@material-ui/icons/Dns';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationIcon from '@material-ui/icons/Notifications';
-import StorageIcon from '@material-ui/icons/Storage';
-import BackupIcon from '@material-ui/icons/FileCopy';
-import OncallIcon from '@material-ui/icons/Alarm';
 import CommunityIcon from '@material-ui/icons/People';
 import QuestionIcon from '@material-ui/icons/QuestionAnswer';
+import BillingIcon from '@material-ui/icons/Receipt';
 import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
 import RespondIcon from '@material-ui/icons/ReplyAll';
+import SearchIcon from '@material-ui/icons/Search';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
+import StorageIcon from '@material-ui/icons/Storage';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
+import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
+import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
 import React, { Suspense, useRef } from 'react';
@@ -1164,6 +1164,12 @@ export function LandingFeatureRequestTracking() {
         title='Close the loop with customers'
         description=''
       />
+      <Block
+        title='Internal feedback'
+        description=''
+        buttonTitle='Learn more'
+        buttonLink='/solutions/interal-feedback'
+      />
     </React.Fragment>
   );
 }
@@ -1173,12 +1179,12 @@ export function LandingPublicRoadmap() {
     <React.Fragment>
       <Hero
         title='Public Roadmap'
-        description=''
+        description='Transparency between development and customers for stronger ties with your community.'
         imagePath='/img/landing/roadmap2.svg'
       />
       <Block
         title='Clear and concise'
-        description=''
+        description='Show that your project is active'
       />
       <Block
         title='Asking for feature requests'
@@ -1186,12 +1192,12 @@ export function LandingPublicRoadmap() {
         mirror
       />
       <Block
-        title='Embracing discussions'
+        title='Let customers be notified'
         description=''
       />
       <Block
-        title='Subscribe to updates'
-        description=''
+        title='Embrace discussions'
+        description='<Show threaded comments>'
         mirror
       />
     </React.Fragment>
@@ -1202,25 +1208,51 @@ export function LandingCrowdFunding() {
   return (
     <React.Fragment>
       <Hero
-        title='Content Creators: Feedback from your most valued fans'
-        description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
+        title='Transparent Feature Crowdfunding'
+        description='Reward your customers with a voice to shape your product.'
         imagePath='/img/landing/crowdfund.svg'
       />
       <Block
-        title='How it works'
-        description='Infographic: show Patreon/Ko-fi -> Stripe -> ClearFlask'
+        title='Issue credits to customers'
+        description='After customer makes a payment on your site, update their ClearFlask balance via API or one of our integrations.'
       />
       <Block
-        title=''
+        title='Let them prioritize'
+        description='<Show credits prioritization>'
+      />
+      <Block
+        title='Works best with'
+        description='Works best with subscription products'
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <BlockContent
+          title='SAAS Subscription'
+          description=''
+        />
+        <BlockContent
+          title='Donation-based'
+          description=''
+          buttonTitle='Learn more'
+          buttonLink='/solutions/content-creator-forum'
+        />
+        <BlockContent
+          title='Commercial Support'
+          description=''
+          buttonTitle='Learn more'
+          buttonLink='/solutions/commercial-support-management'
+        />
+      </HorizontalPanels>
+      <Block
+        title='Advertise value-added credits'
         description=''
       />
       <Block
-        title=''
-        description=''
+        title='Option to purchase additional credits'
+        description='Entice your users to support'
       />
       <Block
-        title=''
-        description=''
+        title='Transparency in feature prioritization'
+        description='Ensures it is clear that the highest paying customer voices are heard. Encourages users'
       />
     </React.Fragment>
   );
@@ -1284,6 +1316,65 @@ export function LandingIdeaManagement() {
     </React.Fragment>
   );
 }
+
+export function LandingContentCreator() {
+  return (
+    <React.Fragment>
+      <Hero
+        title='Content Creator forums'
+        description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
+      />
+      <Block
+        title='Threaded conversations'
+        description=''
+      />
+      <Block
+        title='Idea bucket'
+        description=''
+      />
+      <Block
+        title='Feedback from your most valued fans, Credit based prioritization'
+        description='Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas.'
+      />
+      <Block
+        title='How it works'
+        description='Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
+      />
+      <Block
+        title='Single Sign-On'
+        description=''
+      />
+    </React.Fragment>
+  );
+}
+
+export function LandingCommercialSupportManagement() {
+  return (
+    <React.Fragment>
+      <Hero
+        title='Content Creator Brainstorm'
+        description=''
+      />
+      <Block
+        title=''
+        description=''
+      />
+      <Block
+        title=''
+        description=''
+      />
+      <Block
+        title=''
+        description=''
+      />
+      <Block
+        title=''
+        description=''
+      />
+    </React.Fragment>
+  );
+}
+
 export function LandingGrowWithUs() {
   return (
     <React.Fragment>
@@ -1301,19 +1392,19 @@ export function LandingGrowWithUs() {
           icon={(<OncallIcon />)}
           title='On-call'
           description='Our engineers are on-call 24/7 to resolve any elevated issues brought up by our automatic monitoring.'
-          />
+        />
         <BlockContent
           icon={(<ServerIcon />)}
           variant='content'
           title='Compute'
           description='All of our server infrastructure is auto-scaled to meet your traffic demand.'
-          />
+        />
         <BlockContent
           icon={(<StorageIcon />)}
           variant='content'
           title='Storage'
           description='Data is stored on a NoSQL Dynamo database and distributed Object Storage S3 that allows us to scale with ease.'
-          />
+        />
         <BlockContent
           icon={(<BackupIcon />)}
           variant='content'
@@ -1362,12 +1453,12 @@ export function LandingGrowWithUs() {
           variant='content'
           title='Encryption'
           description='All pages are only accessible over encrypted channels. If you use a custom domain, we automatically generate a certificate for you via LetsEncrypt.'
-          />
+        />
         <BlockContent
           icon={(<AntiSpamIcon />)}
           variant='content'
           title='Anti-Spam'
-          description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.'        />
+          description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.' />
         <BlockContent
           icon={(<PrivacyIcon />)}
           variant='content'
@@ -1375,7 +1466,7 @@ export function LandingGrowWithUs() {
           description='We respect the Do Not Track (DNT) flag that respects your privacy.'
           buttonTitle='Privacy Policy'
           buttonLink='/privacy-policy'
-          />
+        />
         <BlockContent
           icon={(<BillingIcon />)}
           variant='content'

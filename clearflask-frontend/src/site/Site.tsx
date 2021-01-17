@@ -3,13 +3,14 @@ import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
 import CommercialSupportIcon from '@material-ui/icons/AccountBalance';
-import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import CustomizeIcon from '@material-ui/icons/Brush';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import InternalFeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
 import CollectIcon from '@material-ui/icons/Hearing';
+import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MenuIcon from '@material-ui/icons/Menu';
+import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
 import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
 import ActivateIcon from '@material-ui/icons/RssFeed';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
@@ -28,7 +29,6 @@ import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
-import { LandingClearFlaskDemo, LandingCollectFeedback, LandingCollectFeedbackHero, LandingCrowdFunding, LandingCustomize, LandingEngagement, LandingEngagementHero, LandingFeatureRequestTracking, LandingGrowWithUs, LandingHero, LandingIdeaManagement, LandingIntegrations, LandingInternalFeedback, LandingLoop, LandingPrioritization, LandingPrioritizationHero, LandingPublicRoadmap, LandingSales } from './LandingPages';
 
 const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
@@ -36,6 +36,27 @@ const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "Leg
 const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const SsoSuccessDemoPage = React.lazy(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed));
+
+const LandingClearFlaskDemo = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingClearFlaskDemo" */).then((module) => importSuccess({ default: module.LandingClearFlaskDemo })).catch(importFailed));
+const LandingCollectFeedback = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCollectFeedback" */).then((module) => importSuccess({ default: module.LandingCollectFeedback })).catch(importFailed));
+const LandingCollectFeedbackHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCollectFeedbackHero" */).then((module) => importSuccess({ default: module.LandingCollectFeedbackHero })).catch(importFailed));
+const LandingCommercialSupportManagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCommercialSupportManagement" */).then((module) => importSuccess({ default: module.LandingCommercialSupportManagement })).catch(importFailed));
+const LandingContentCreator = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingContentCreator" */).then((module) => importSuccess({ default: module.LandingContentCreator })).catch(importFailed));
+const LandingCrowdFunding = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCrowdFunding" */).then((module) => importSuccess({ default: module.LandingCrowdFunding })).catch(importFailed));
+const LandingCustomize = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCustomize" */).then((module) => importSuccess({ default: module.LandingCustomize })).catch(importFailed));
+const LandingEngagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingEngagement" */).then((module) => importSuccess({ default: module.LandingEngagement })).catch(importFailed));
+const LandingEngagementHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingEngagementHero" */).then((module) => importSuccess({ default: module.LandingEngagementHero })).catch(importFailed));
+const LandingFeatureRequestTracking = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingFeatureRequestTracking" */).then((module) => importSuccess({ default: module.LandingFeatureRequestTracking })).catch(importFailed));
+const LandingGrowWithUs = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingGrowWithUs" */).then((module) => importSuccess({ default: module.LandingGrowWithUs })).catch(importFailed));
+const LandingHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingHero" */).then((module) => importSuccess({ default: module.LandingHero })).catch(importFailed));
+const LandingIdeaManagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingIdeaManagement" */).then((module) => importSuccess({ default: module.LandingIdeaManagement })).catch(importFailed));
+const LandingIntegrations = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingIntegrations" */).then((module) => importSuccess({ default: module.LandingIntegrations })).catch(importFailed));
+const LandingInternalFeedback = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingInternalFeedback" */).then((module) => importSuccess({ default: module.LandingInternalFeedback })).catch(importFailed));
+const LandingLoop = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingLoop" */).then((module) => importSuccess({ default: module.LandingLoop })).catch(importFailed));
+const LandingPrioritization = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPrioritization" */).then((module) => importSuccess({ default: module.LandingPrioritization })).catch(importFailed));
+const LandingPrioritizationHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPrioritizationHero" */).then((module) => importSuccess({ default: module.LandingPrioritizationHero })).catch(importFailed));
+const LandingPublicRoadmap = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPublicRoadmap" */).then((module) => importSuccess({ default: module.LandingPublicRoadmap })).catch(importFailed));
+const LandingSales = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingSales" */).then((module) => importSuccess({ default: module.LandingSales })).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -193,10 +214,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         type: 'dropdown', title: 'Solutions', items: [
           { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
           { type: 'button', link: '/solutions/public-roadmap', title: 'Public Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/solutions/content-creator-brainstorm', title: 'Content Creator Brainstorm', icon: ContentCreatorIcon },
-          { type: 'button', link: '/solutions/commercial-support-management', title: 'Commercial Support Management', icon: CommercialSupportIcon },
-          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
+          { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
+          { type: 'divider' },
           { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
+          { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum', icon: ContentCreatorIcon },
+          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
+          { type: 'button', link: '/solutions/commercial-support-management', title: 'Commercial Support Management', icon: CommercialSupportIcon },
         ]
       },
       {
@@ -368,17 +391,25 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <SetTitle title='Public Roadmap' />
                 <LandingPublicRoadmap />
               </Route>
-              <Route exact path='/solutions/crowd-funding'>
-                <SetTitle title='Crowd-funding' />
+              <Route exact path='/solutions/feature-crowdfunding'>
+                <SetTitle title='Feature Crowdfunding' />
                 <LandingCrowdFunding />
+              </Route>
+              <Route exact path='/solutions/idea-management'>
+                <SetTitle title='Idea Management' />
+                <LandingIdeaManagement />
+              </Route>
+              <Route exact path='/solutions/content-creator-forum'>
+                <SetTitle title='Content Creator Forum' />
+                <LandingContentCreator />
               </Route>
               <Route exact path='/solutions/internal-feedback'>
                 <SetTitle title='Internal Feedback' />
                 <LandingInternalFeedback />
               </Route>
-              <Route exact path='/solutions/idea-management'>
-                <SetTitle title='Idea Management' />
-                <LandingIdeaManagement />
+              <Route exact path='/solutions/commercial-support-management'>
+                <SetTitle title='Commercial Support Management' />
+                <LandingCommercialSupportManagement />
               </Route>
               <Route exact path='/pricing'>
                 <SetTitle title='Pricing' />
