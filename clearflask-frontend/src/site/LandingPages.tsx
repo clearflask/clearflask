@@ -1144,30 +1144,46 @@ export function LandingFeatureRequestTracking() {
       />
       <Block
         title='Centralize all your feature requests'
-        description=''
+        description='A dedicated portal for users to share and discuss new and upcoming product features. Easily collect feedback on-behalf of your users arriving from other channels.'
       />
       <Block
-        title='Prioritize features'
-        description=''
-        mirror
-      />
-      <Block
-        title='Recruit Beta users'
-        description=''
-      />
-      <Block
-        title='Community feedback'
-        description=''
-        mirror
-      />
+          title='Prioritize features'
+          description='Give customers a voice to tell you the importance of a particular feature.'
+          mirror
+        />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
+        <BlockContent
+          title='Idea validation'
+          description='Get a sense of how successful a feature will be prior to any development work.'
+        />
+        <BlockContent
+          title='Recruit Beta users'
+          description='Easily find users that are willing to test out your upcoming feature before you roll it out.'
+        />
+        <BlockContent
+          title='Just talk'
+          description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind a product.'
+        />
+      </HorizontalPanels>
       <Block
         title='Close the loop with customers'
-        description=''
       />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
+      <BlockContent
+          title='Keep users engaged'
+          description=''
+        />
+        <BlockContent
+          title='Visualize with a Roadmap'
+          description='High-level overview of the features currently in your pipeline for users to get an idea of what is going on.'
+          buttonTitle='See a Roadmap'
+          buttonLink='/solutions/public-roadmap'
+        />
+      </HorizontalPanels>
       <Block
         title='Internal feedback'
         description=''
-        buttonTitle='Learn more'
+        buttonTitle='See how'
         buttonLink='/solutions/interal-feedback'
       />
     </React.Fragment>
