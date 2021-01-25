@@ -70,6 +70,27 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
+                                    <directory>${project.basedir}/src/api/connect/</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/greenlock.d</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>.greenlockrc</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/public/api/</directory>
                                     <includes>
                                         <include>**</include>
@@ -126,6 +147,16 @@
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
                                     <artifactId>clearflask-api</artifactId>
+                                    <classifier>connect</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/src/api/connect/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-api</artifactId>
                                     <classifier>docs</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
@@ -159,6 +190,16 @@
                             <arguments>install</arguments>
                         </configuration>
                         <phase>initialize</phase>
+                    </execution>
+                    <execution>
+                        <id>npm test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>test</arguments>
+                        </configuration>
+                        <phase>test</phase>
                     </execution>
                     <execution>
                         <id>npm run build</id>
@@ -197,6 +238,23 @@
                                 </resource>
                             </resources>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/connect-server.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

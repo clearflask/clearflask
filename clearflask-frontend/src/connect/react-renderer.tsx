@@ -6,7 +6,7 @@ import { renderCfToString } from './renderer';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
-  const filePath = path.resolve(__dirname, '..', 'build', 'index.html');
+  const filePath = path.resolve(__dirname, '..', '..', 'build', 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if(!err) {
       resolve(html);
@@ -16,7 +16,7 @@ const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
   });
 });
 
-export function render() {
+export default function render() {
   return (req, res, next) => {
     indexHtmlPromise.then(html => {
       const staticRouterContext: StaticRouterContext = {};

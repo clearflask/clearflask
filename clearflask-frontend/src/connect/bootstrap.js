@@ -25,4 +25,4 @@ require('@babel/register')({
     ]
   ]
 });
-require('./connect/index');
+require('./index');

@@ -14,7 +14,7 @@ try {
   configLoaded = require(configFile).default;
 }
 catch (e) {
-  console.error('Failed to load config file', configFile, e);
+  console.info('Failed to load config file', configFile, e);
 }
 
 const connectConfig: ConnectConfig = {

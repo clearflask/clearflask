@@ -22,14 +22,14 @@ greenlockExpress
     debug: true,
 
     manager: {
-      module: `${process.cwd()}/src/greenlock/greenlock-manager-clearflask.js`
+      module: `${process.cwd()}/src/connect/greenlock/greenlock-manager-clearflask.js`
     },
     store: {
-      module: `${process.cwd()}/src/greenlock/greenlock-store-clearflask.js`
+      module: `${process.cwd()}/src/connect/greenlock/greenlock-store-clearflask.js`
     },
     challenges: {
       "http-01": {
-        module: `${process.cwd()}/src/greenlock/greenlock-challenge-http-clearflask.js`,
+        module: `${process.cwd()}/src/connect/greenlock/greenlock-challenge-http-clearflask.js`,
       },
     },
 
@@ -53,7 +53,6 @@ function worker(glx) {
   });
 
   // App
-  const reactRenderer = require('./react-renderer');
   const app = express();
   // app.use(express.static(path.resolve(__dirname, '../public')))
   app.all('/api/*', function (req, res) {
@@ -61,7 +60,7 @@ function worker(glx) {
       target: "http://localhost:8080",
     });
   })
-  app.all('/*', reactRenderer.render());
+  app.all('/*', reactRenderer());
 
   // Http
   const serverHttp = glx.httpServer();
