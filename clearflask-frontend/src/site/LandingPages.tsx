@@ -1144,22 +1144,27 @@ export function LandingFeatureRequestTracking() {
       />
       <Block
         title='Centralize all your feature requests'
-        description=''
+        description='One place for all of your feedback, record your email, phone calls and sticky notes into a single repository.'
       />
       <Block
         title='Prioritize features'
         description=''
         mirror
       />
-      <Block
-        title='Recruit Beta users'
-        description=''
-      />
-      <Block
-        title='Community feedback'
-        description=''
-        mirror
-      />
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md'>
+        <BlockContent
+          title='Customer feedback'
+          description='Get immediate reaction directly from your customers on upcoming features.'
+        />
+        <BlockContent
+          title='Recruit Beta users'
+          description='Find your beta testers for upcoming features before you roll it out to everyone.'
+        />
+        <BlockContent
+          title='Validate your ideas'
+          description='Fast and inexpensive way to validate and minimize risk on new ideas.'
+        />
+      </HorizontalPanels>
       <Block
         title='Close the loop with customers'
         description=''
@@ -1167,6 +1172,7 @@ export function LandingFeatureRequestTracking() {
       <Block
         title='Internal feedback'
         description=''
+        mirror
         buttonTitle='Learn more'
         buttonLink='/solutions/interal-feedback'
       />
