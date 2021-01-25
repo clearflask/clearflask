@@ -224,7 +224,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
             Optional<String> updateBloomWithIdeaIdOpt = isIdeaAuthor ? Optional.empty() : Optional.of(ideaId);
             String transactionType = TransactionType.VOTE.name().toLowerCase();
             String summary = "Funding for " + StringUtils.abbreviate(idea.getTitle(), 40);
-            UserStore.UserAndIndexingFuture<UpdateResponse> updateUserBalanceResponse;
+            UserStore.UserAndIndexingFuture updateUserBalanceResponse;
             IdeaTransactionAndIndexingFuture fundIdeaResponse;
             if (voteUpdate.getFundDiff() > 0) {
                 // For funding, first take from user, then give to idea

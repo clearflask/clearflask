@@ -24,6 +24,7 @@ import lombok.ToString;
 import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -46,7 +47,7 @@ public interface UserStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
-    UserAndIndexingFuture<IndexResponse> createUser(UserModel user);
+    UserAndIndexingFuture createUser(UserModel user);
 
     Optional<UserModel> getUser(String projectId, String userId);
 
@@ -58,9 +59,9 @@ public interface UserStore {
 
     void exportAllForProject(String projectId, Consumer<UserModel> consumer);
 
-    UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin);
+    UserAndIndexingFuture updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin);
 
-    UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
+    UserAndIndexingFuture updateUser(String projectId, String userId, UserUpdate updates);
 
     UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId);
 
@@ -68,7 +69,7 @@ public interface UserStore {
 
     UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId);
 
-    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
+    UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
@@ -122,9 +123,9 @@ public interface UserStore {
     }
 
     @Value
-    class UserAndIndexingFuture<T> {
+    class UserAndIndexingFuture {
         UserModel user;
-        ListenableFuture<T> indexingFuture;
+        ListenableFuture<WriteResponse> indexingFuture;
     }
 
     enum IdentifierType {

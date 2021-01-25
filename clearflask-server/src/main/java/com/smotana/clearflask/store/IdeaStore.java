@@ -29,6 +29,7 @@ import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -54,7 +55,7 @@ public interface IdeaStore {
 
     ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
 
-    IdeaAndIndexingFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea);
+    IdeaAndIndexingFuture createIdeaAndUpvote(IdeaModel idea);
 
     ListenableFuture<List<BulkResponse>> createIdeas(Iterable<IdeaModel> ideas);
 
@@ -70,11 +71,11 @@ public interface IdeaStore {
 
     void exportAllForProject(String projectId, Consumer<IdeaModel> consumer);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor);
 
-    IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
+    IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
 
     IdeaAndExpressionsAndIndexingFuture expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt);
 
@@ -87,7 +88,7 @@ public interface IdeaStore {
     /**
      * Increments total comment count. If incrementChildCount is true, also increments immediate child count too.
      */
-    IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
+    IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
     ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
 
@@ -104,16 +105,16 @@ public interface IdeaStore {
     }
 
     @Value
-    class IdeaAndIndexingFuture<T> {
+    class IdeaAndIndexingFuture {
         IdeaModel idea;
-        ListenableFuture<T> indexingFuture;
+        ListenableFuture<? extends WriteResponse> indexingFuture;
     }
 
     @Value
     class IdeaAndExpressionsAndIndexingFuture {
         ImmutableSet<String> expressions;
         IdeaModel idea;
-        ListenableFuture<UpdateResponse> indexingFuture;
+        ListenableFuture<? extends WriteResponse> indexingFuture;
     }
 
     @Value
@@ -121,7 +122,7 @@ public interface IdeaStore {
         long ideaFundAmount;
         IdeaModel idea;
         TransactionModel transaction;
-        ListenableFuture<UpdateResponse> indexingFuture;
+        ListenableFuture<? extends WriteResponse> indexingFuture;
     }
 
     @Value
