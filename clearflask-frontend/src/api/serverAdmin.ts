@@ -3,6 +3,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { StoresInitialState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
 import { Server, Status } from './server';
@@ -52,7 +53,8 @@ export default class ServerAdmin {
     }
     this.store = createStore(
       reducersAdmin,
-      ServerAdmin._initialState(),
+      (window['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverAdminStore
+        || ServerAdmin._initialState(),
       storeMiddleware);
   }
 
@@ -73,6 +75,13 @@ export default class ServerAdmin {
       }
       return ServerAdmin.instance;
     }
+  }
+
+  ssrSubscribeState(storesInitialState: StoresInitialState): void {
+    this.store.subscribe(() => storesInitialState.serverAdminStore = this.store.getState());
+
+    Server.storesInitialState = storesInitialState;
+    this.getServers().forEach(server => server.ssrSubscribeState(storesInitialState));
   }
 
   getStore(): Store<ReduxStateAdmin, Admin.Actions> {

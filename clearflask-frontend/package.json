@@ -1,5 +1,5 @@
 {
-  "name": "clearflask",
+  "name": "clearflask-frontend",
   "version": "1.0.0",
   "homepage": "https://clearflask.com/",
   "private": true,
@@ -76,14 +76,33 @@
     "redux-thunk": "2.3.0",
     "source-map-explorer": "2.5.0",
     "typescript": "3.7.5",
-    "use-query-params": "1.1.6"
+    "use-query-params": "1.1.6",
+    "@babel/core": "7.12.10",
+    "@babel/plugin-proposal-class-properties": "7.12.1",
+    "@babel/plugin-transform-modules-commonjs": "7.12.1",
+    "@babel/plugin-transform-runtime": "7.12.10",
+    "@babel/preset-env": "7.12.10",
+    "@babel/preset-react": "7.12.10",
+    "@babel/preset-typescript": "7.12.7",
+    "@babel/register": "7.12.10",
+    "@types/express": "4.17.9",
+    "@types/node-fetch": "2.5.7",
+    "babel-plugin-transform-assets": "1.0.2",
+    "express": "4.17.1",
+    "greenlock-express": "4.0.3",
+    "http-proxy": "1.18.1",
+    "ignore-styles": "5.0.1",
+    "node-fetch": "2.6.1",
+    "querystring": "0.2.0",
+    "superagent": "6.1.0"
   },
   "scripts": {
-    "start": "react-app-rewired start",
-    "build": "GENERATE_SOURCEMAP=false react-app-rewired build",
-    "test": "react-app-rewired test",
+    "start": "node --unhandled-rejections=strict --trace-warnings src/bootstrap.js",
+    "postinstall": "patch-package",
     "eject": "react-scripts eject",
-    "analyze": "GENERATE_SOURCEMAP=true react-app-rewired build && source-map-explorer 'build/static/js/*.js'"
+    "dev-frontend": "react-app-rewired start",
+    "dev-connect": "./node/node --unhandled-rejections=strict --trace-warnings src/bootstrap.js -- --staging",
+    "test": "./node/node --unhandled-rejections=strict --trace-warnings src/test.js -- --staging"
   },
   "eslintConfig": {
     "extends": "react-app",

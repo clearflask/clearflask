@@ -5,6 +5,7 @@ import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
+import { StoresInitialState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
@@ -27,6 +28,8 @@ export enum Status {
 type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
 
 export class Server {
+  static storesInitialState: StoresInitialState | undefined;
+
   readonly store: Store<ReduxState, AllActions>;
   readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
@@ -46,8 +49,13 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(projectId, settings),
+      // TODO what if projectId is unknown, only slug is known
+      projectId && (window['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverStores?.[projectId]
+        || Server.initialState(projectId, settings),
       storeMiddleware);
+    if (Server.storesInitialState) {
+      this.ssrSubscribeState(Server.storesInitialState);
+    }
 
     const dispatchers = Server.getDispatchers(
       msg => Server._dispatch(msg, this.store),
@@ -153,6 +161,11 @@ export class Server {
 
   getProjectId(): string {
     return this.store.getState().projectId!;
+  }
+
+  ssrSubscribeState(storesInitialState: StoresInitialState): void {
+    storesInitialState.serverStores = storesInitialState.serverStores || {};
+    this.store.subscribe(() => storesInitialState.serverStores![this.getProjectId()] = this.store.getState());
   }
 
   getStore(): Store<ReduxState, AllActions> {

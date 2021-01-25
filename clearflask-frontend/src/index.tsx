@@ -7,7 +7,7 @@ import Main from './Main';
 if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
   import('./mocker'/* webpackChunkName: "mocker" */)
     .then(mocker => mocker.mock())
-    .then(() => ReactDOM.render(<Main />, document.getElementById('mainScreen')));
+    .then(() => ReactDOM.hydrate(<Main />, document.getElementById('mainScreen')));
 } else {
-  ReactDOM.render(<Main />, document.getElementById('mainScreen'));
+  ReactDOM.hydrate(<Main />, document.getElementById('mainScreen'));
 }

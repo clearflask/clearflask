@@ -8,6 +8,7 @@ import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import { RouteWithStatus } from '../common/util/routerUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
@@ -262,10 +263,10 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <SetTitle />
                 <LandingPage />
               </Route>
-              <Route>
+              <RouteWithStatus httpCode={404} >
                 <SetTitle title='Page not found' />
                 <ErrorPage msg='Page not found' variant='error' />
-              </Route>
+              </RouteWithStatus>
             </MuiAnimatedSwitch>
           </Suspense>
         </div>

@@ -34,7 +34,7 @@ if (!isFork) {
   }, 10000);
 }
 
-require('./bootstrap');
+require('../bootstrap');
 
 require('./greenlock/greenlock-manager-clearflask').create();
 require('./greenlock/greenlock-challenge-http-clearflask').create();

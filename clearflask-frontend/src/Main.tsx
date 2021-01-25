@@ -5,7 +5,8 @@ import { ProviderContext } from 'notistack';
 import React, { Component, Suspense } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
+import { StaticRouterContext } from 'react-router';
+import { StaticRouter, BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
 import { ComponentPropsOverrides } from './app/AppThemeProvider';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
@@ -20,6 +21,11 @@ import { vh } from './common/util/vhUtil';
 import windowIso from './common/windowIso';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
+
+export interface StoresInitialState {
+  serverAdminStore?: any,
+  serverStores?: {[projectId: string]: any},
+}
 
 const notistackRef = React.createRef<ProviderContext>();
 export const importSuccess = i => {
@@ -65,12 +71,20 @@ const theme: Theme = createMuiTheme({
     ...ComponentPropsOverrides,
   },
 });
-
-class Main extends Component {
+interface Props {
+  ssrLocation?: string;
+  ssrStaticRouterContext?: StaticRouterContext;
+  ssrStoresInitialState?: StoresInitialState;
+}
+class Main extends Component<Props> {
   customerTrackerPresent: boolean = false;
 
   constructor(props) {
     super(props);
+
+    if(props.ssrStoresInitialState) {
+      ServerAdmin.get().ssrSubscribeState(props.ssrStoresInitialState);
+    }
 
     if (isTracking() && !windowIso.isSsr) {
       try {
@@ -92,6 +106,7 @@ class Main extends Component {
       return (<Redirect to={windowIso.location.origin.replace(`www.`, '')} />);
     }
     const isProject = this.isProject();
+    const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -105,7 +120,12 @@ class Main extends Component {
             flexDirection: 'column',
             background: theme.palette.background.default,
           }}>
-            <BrowserRouter>
+            <Router
+              {...(windowIso.isSsr ? {
+                location: this.props.ssrLocation,
+                context: this.props.ssrStaticRouterContext,
+              } : {})}
+            >
               <ScrollAnchor scrollOnNavigate />
               {isTracking() && (
                 <Route path='/' render={({ location }) => {
@@ -155,7 +175,7 @@ class Main extends Component {
                   )])}
                 </Switch>
               </Suspense>
-            </BrowserRouter>
+            </Router>
           </div>
         </MuiSnackbarProvider>
       </MuiThemeProvider>
