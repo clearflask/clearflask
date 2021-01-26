@@ -38,6 +38,9 @@ export default function render() {
 
       return res.end(html);
     })
-    .catch(() => res.status(500).end());
+    .catch(e => {
+      console.error('Failed to get page', e);
+      res.status(500).end()
+    });
   };
 };
