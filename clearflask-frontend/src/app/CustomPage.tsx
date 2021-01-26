@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
+import RichViewer from '../common/RichViewer';
 import { vh } from '../common/util/vhUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
@@ -15,8 +16,6 @@ import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
-
-const RichViewer = windowIso.isSsr ? React.Component : React.lazy(() => import('../common/RichViewer'/* webpackChunkName: "RichViewer", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   page: {

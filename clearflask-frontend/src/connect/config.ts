@@ -10,11 +10,13 @@ export interface ConnectConfig {
 const configFile = '/opt/clearflask/connect.config.js';
 
 var configLoaded;
-try {
-  configLoaded = require(configFile).default;
-}
-catch (e) {
-  console.info('Failed to load config file', configFile, e);
+if (process.env.NODE_ENV === 'production') {
+  try {
+    configLoaded = require(configFile).default;
+  }
+  catch (e) {
+    console.info('Failed to load config file', configFile, e);
+  }
 }
 
 const connectConfig: ConnectConfig = {

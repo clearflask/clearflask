@@ -16,11 +16,9 @@ greenlockExpress
     packageAgent: 'clearflask/1.0',
     maintainerEmail: connectConfig.email,
     subscriberEmail: connectConfig.email,
-
     cluster: true,
-
     debug: true,
-
+    workers: process.env.NODE_ENV === 'production' ? undefined : 2,
     manager: {
       module: `${process.cwd()}/src/connect/greenlock/greenlock-manager-clearflask.js`
     },
@@ -32,7 +30,6 @@ greenlockExpress
         module: `${process.cwd()}/src/connect/greenlock/greenlock-challenge-http-clearflask.js`,
       },
     },
-
     notify: (event, details) => {
       console.log('EVENT:', event, details);
     },
@@ -43,6 +40,8 @@ greenlockExpress
   });
 
 function worker(glx) {
+  console.log('Worker Started');
+
   // Proxy
   const serverHttpp = httpp.createProxyServer({ xfwd: true });
   serverHttpp.on("error", function (err, req, res) {
@@ -54,13 +53,18 @@ function worker(glx) {
 
   // App
   const app = express();
-  // app.use(express.static(path.resolve(__dirname, '../public')))
+  app.use(express.static(path.resolve(__dirname, '../public')))
   app.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
       target: "http://localhost:8080",
     });
   })
   app.all('/*', reactRenderer());
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(9081, () => {
+      console.info("App on", 9081);
+    });
+  }
 
   // Http
   const serverHttp = glx.httpServer();

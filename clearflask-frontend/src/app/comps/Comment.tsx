@@ -9,6 +9,7 @@ import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
+import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
@@ -19,8 +20,6 @@ import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import { MaxContentWidth } from './Post';
 import VotingControl from './VotingControl';
-
-const RichViewer = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichViewer'/* webpackChunkName: "RichViewer", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   comment: {

@@ -6,10 +6,11 @@ import { Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
 });
