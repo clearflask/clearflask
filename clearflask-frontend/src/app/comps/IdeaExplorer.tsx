@@ -4,7 +4,6 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
 import React, { Component, Suspense } from 'react';
-import ReactQuill from 'react-quill';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
@@ -16,6 +15,7 @@ import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -43,7 +43,7 @@ import TagSelect from './TagSelect';
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -130,7 +130,6 @@ interface State {
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
-  readonly descriptionInputRef: React.RefObject<ReactQuill> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
@@ -349,7 +348,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               variant='outlined'
               size='small'
               id='createDescription'
-              inputRef={this.descriptionInputRef}
               multiline
               disabled={this.state.newItemIsSubmitting}
               className={this.props.classes.createFormField}

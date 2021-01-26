@@ -11,12 +11,13 @@ import Loading from '../../../app/utils/Loading';
 import { importFailed, importSuccess } from '../../../Main';
 import Overlay from '../../Overlay';
 import randomUuid from '../../util/uuid';
+import windowIso from '../../windowIso';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
 
 const EmojiPicker = React.lazy(() => import('../../EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const RichEditor = React.lazy(() => import('../../RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 interface Props {
   key: string;

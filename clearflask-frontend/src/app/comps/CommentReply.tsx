@@ -3,10 +3,11 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component, Suspense } from 'react';
 import { Server } from '../../api/server';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
