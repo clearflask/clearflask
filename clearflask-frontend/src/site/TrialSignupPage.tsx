@@ -16,6 +16,7 @@ import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import preloadImage from '../common/util/imageUtil';
+import windowIso from '../common/windowIso';
 import { WelcomeImagePath } from './dashboard/WelcomePage';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
@@ -94,7 +95,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
-    if (!SIGNUP_PROD_ENABLED && isProd() && new URL(window.location.href).searchParams.get('please') !== 'true') {
+    if (!SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
       return <ErrorPage variant='warning' msg={(
         <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
           Direct sign ups are currently disabled. Instead,&nbsp;

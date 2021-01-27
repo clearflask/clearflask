@@ -34,7 +34,13 @@ function isTracking(): boolean {
 }
 
 function isDoNotTrack(): boolean {
-  return navigator.doNotTrack === "yes" || navigator.doNotTrack === "1" || navigator['msDoNotTrack'] === "1" || window.doNotTrack === "yes" || window.doNotTrack === "1" || window['msDoNotTrack'] === "1";
+  return windowIso.isSsr
+    || windowIso.navigator.doNotTrack === "yes"
+    || windowIso.navigator.doNotTrack === "1"
+    || windowIso.navigator['msDoNotTrack'] === "1"
+    || windowIso.doNotTrack === "yes"
+    || windowIso.doNotTrack === "1"
+    || windowIso['msDoNotTrack'] === "1";
 }
 
 export { isProd, isTracking, detectEnv, Environment };

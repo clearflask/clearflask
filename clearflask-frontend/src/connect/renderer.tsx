@@ -1,18 +1,60 @@
 import React from 'react';
+import path from 'path';
+import fs from 'fs';
+import Main, { StoresInitialState } from '../Main';
 import { StaticRouterContext } from 'react-router';
-import Main, { StoresInitialState } from "../Main";
 import ReactDOMServer from 'react-dom/server';
+import { WindowIsoSsrProvider } from '../common/windowIso';
 
-export const renderCfToString = (
-    location: string,
-    staticRouterContext: StaticRouterContext,
-    storesInitialState: StoresInitialState,
-) => {
-    return ReactDOMServer.renderToString(
-        <Main
-          ssrLocation={location}
-          ssrStaticRouterContext={staticRouterContext}
-          ssrStoresInitialState={storesInitialState}
-        />
-    );
-}
+// Cache index.html in memory
+const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
+  const filePath = path.resolve(__dirname, '..', '..', 'build', 'index.html');
+  fs.readFile(filePath, 'utf8', (err, html) => {
+    if(!err) {
+      resolve(html);
+    } else {
+      error(err);
+    }
+  });
+});
+
+export default function render() {
+  return (req, res, next) => {
+    indexHtmlPromise.then(html => {
+      const staticRouterContext: StaticRouterContext = {};
+      const storesInitialState: StoresInitialState = {};
+      const port = req.app.settings.port;
+      const requested_url = `${req.protocol}://${req.host}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
+      const reactDom = ReactDOMServer.renderToString(
+        <WindowIsoSsrProvider
+         url={requested_url}
+        >
+          <Main
+            ssrLocation={req.url}
+            ssrStaticRouterContext={staticRouterContext}
+            ssrStoresInitialState={storesInitialState}
+          />
+        </WindowIsoSsrProvider>
+      );
+      
+      res.writeHead(staticRouterContext.statusCode || 200, {
+        'Content-Type': 'text/html',
+        ...(staticRouterContext.url && { Location: staticRouterContext.url }),
+      });
+
+      // Add rendered html
+      html.replace('&zwnj;', reactDom);
+
+      // Add populated stores
+      if(Object.keys(storesInitialState).length > 0) {
+        html.replace('</body>', `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesInitialState)};</script>\n</body>`);
+      }
+
+      return res.end(html);
+    })
+    .catch(e => {
+      console.error('Failed to get page', e);
+      res.status(500).end()
+    });
+  };
+};

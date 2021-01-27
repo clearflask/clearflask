@@ -1,6 +1,7 @@
 import { Box, Button } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { Component } from 'react';
+import windowIso from '../windowIso';
 import { vh } from './vhUtil';
 
 export interface Props {
@@ -34,7 +35,7 @@ class ErrorBoundary extends Component<Props, State> {
             variant='outlined'
             severity='error'
             action={(
-              <Button onClick={() => window.location.reload(true)}>Refresh</Button>
+              <Button onClick={() => windowIso.location.reload(true)}>Refresh</Button>
             )}
           >
             Something went wrong!

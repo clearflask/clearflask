@@ -8,6 +8,7 @@ import { Server } from '../api/server';
 import WebNotification from '../common/notification/webNotification';
 import Promised from '../common/Promised';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 
 export class PostStatusConfigDef {
   fontSize?: number | string;
@@ -68,7 +69,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     }
 
     const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
-      slug: window.location.hostname,
+      slug: windowIso.location.hostname,
       userBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
@@ -123,7 +124,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             return null;
           };
 
-          const src = `${window.location.origin}/post/${post.ideaId}`;
+          const src = `${windowIso.location.origin}/post/${post.ideaId}`;
 
           return (
             <div

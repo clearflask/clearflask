@@ -1,8 +1,9 @@
+import windowIso from "../windowIso";
 
 export function intercomLoad(APP_ID) {
   // https://developers.intercom.com/installing-intercom/docs/basic-javascript
   (function () {
-    var w = window;
+    var w = windowIso;
     var ic = w.Intercom;
     if (typeof ic === "function") {
       ic('reattach_activator');
@@ -37,21 +38,21 @@ export function intercomLoad(APP_ID) {
 }
 
 export function intercomStart(APP_ID, userData) {
-  window.Intercom("boot", {
+  !windowIso.isSsr && windowIso.Intercom("boot", {
     app_id: APP_ID,
     ...userData,
   });
 }
 
 export function intercomUpdate(APP_ID, userData) {
-  window.Intercom("update", {
+  !windowIso.isSsr && windowIso.Intercom("update", {
     app_id: APP_ID,
     ...userData,
   });
 }
 
 export function intercomShutdown(APP_ID) {
-  window.Intercom("shutdown", {
+  !windowIso.isSsr && windowIso.Intercom("shutdown", {
     app_id: APP_ID,
   });
 }

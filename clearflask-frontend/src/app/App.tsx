@@ -9,6 +9,7 @@ import ServerMock from '../api/serverMock';
 import WebNotification, { Status } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
+import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
@@ -74,7 +75,7 @@ class App extends Component<Props, State> {
       server = new Server(undefined, this.props.settings);
     }
 
-    const params = new URL(window.location.href).searchParams;
+    const params = new URL(windowIso.location.href).searchParams;
     // Used for links within emails
     const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
     // Used for SSO

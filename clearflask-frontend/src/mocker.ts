@@ -4,6 +4,7 @@ import ServerMock, { SSO_SECRET_KEY } from './api/serverMock';
 import * as ConfigEditor from './common/config/configEditor';
 import Templater, { createTemplateOptionsDefault } from './common/config/configTemplater';
 import { detectEnv, Environment } from './common/util/detectEnv';
+import windowIso from './common/windowIso';
 
 export function mock(): Promise<any> {
   if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
@@ -18,7 +19,7 @@ export function mock(): Promise<any> {
       expressionAllowed: true,
     });
 
-    templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${window.location.protocol}//${window.location.host.substr(window.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
+    templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
     return ServerAdmin.get().dispatchAdmin()
       .then(d => d.projectCreateAdmin({
         configAdmin: editor.getConfig(),
@@ -29,7 +30,7 @@ export function mock(): Promise<any> {
           configAdmin: editor.getConfig(),
         })
           .then(() => DataMock.get(project.projectId).mockAll())
-          .then(() => { if (window.location.hash && window.location.hash.substring(1) === 'latency') ServerMock.get().setLatency(true) })));
+          .then(() => { if (windowIso.location.hash && windowIso.location.hash.substring(1) === 'latency') ServerMock.get().setLatency(true) })));
   } else {
     return Promise.resolve();
   }

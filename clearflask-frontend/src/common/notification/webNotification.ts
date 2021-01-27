@@ -1,4 +1,5 @@
 import { detectEnv, Environment } from "../util/detectEnv";
+import windowIso from "../windowIso";
 
 export enum Status {
   Unsupported = 'unsupported',
@@ -138,7 +139,7 @@ export default class WebNotification {
     if ('Notification' in window
       && 'serviceWorker' in navigator
       && 'PushManager' in window) {
-      switch (window.Notification.permission) {
+      switch (!windowIso.isSsr && windowIso.Notification.permission || '') {
         case 'granted':
           this.status = Status.Granted;
           break;
@@ -174,7 +175,7 @@ export default class WebNotification {
       .replace(/-/g, '+')
       .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
+    const rawData = !windowIso.isSsr && windowIso.atob(base64) || '';
     const outputArray = new Uint8Array(rawData.length);
 
     for (let i = 0; i < rawData.length; ++i) {

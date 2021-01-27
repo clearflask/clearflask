@@ -3,7 +3,7 @@ import httpp from 'http-proxy';
 import connectConfig from './config';
 import httpx from './httpx';
 import express from 'express';
-import reactRenderer from './react-renderer';
+import reactRenderer from './renderer';
 import path from 'path';
 
 greenlockExpress

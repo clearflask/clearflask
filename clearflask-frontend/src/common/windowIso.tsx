@@ -1,4 +1,4 @@
-
+import React from 'react';
 
 var win: any;
 if (typeof window !== "undefined") {
@@ -17,5 +17,20 @@ if (typeof window !== "undefined") {
   win.isSsr = true;
 }
 
-const windowIso: Window & { isSsr: false } | NodeJS.Global & { isSsr: true } = win;
+export const WindowIsoSsrProvider = (props: {
+  children: React.ReactElement;
+  url: string;
+}) => {
+  // tODO
+  const url = new URL(props.url);
+  win['location'] = url;
+  return props.children;
+};
+
+export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.Global & {
+  isSsr: true
+  location: URL,
+};
+
+const windowIso: WindowIso = win;
 export default windowIso;

@@ -5,6 +5,7 @@ import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
+import windowIso from '../common/windowIso';
 import { StoresInitialState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
@@ -39,19 +40,30 @@ export class Server {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
-        typeof window === 'object' &&
-          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
+    var preloadedState: any;
+    if (!windowIso.isSsr && windowIso['__SSR_STORE_INITIAL_STATE__']) {
+      const serverStores = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverStores;
+      if( serverStores) {
+        if (projectId) {
+          preloadedState = serverStores[projectId];
+        } else {
+          preloadedState = Object.values(serverStores).find(state => !windowIso.isSsr && (state as ReduxState)?.conf.conf?.slug === windowIso.location.hostname);
+        }
+      }
+    }
+    if (!preloadedState) {
+      preloadedState = Server.initialState(projectId, settings);
+    }
     this.store = createStore(
       reducers,
-      // TODO what if projectId is unknown, only slug is known
-      projectId && (window['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverStores?.[projectId]
-        || Server.initialState(projectId, settings),
+      preloadedState,
       storeMiddleware);
     if (Server.storesInitialState) {
       this.ssrSubscribeState(Server.storesInitialState);
@@ -130,7 +142,7 @@ export class Server {
     if (!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
     } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
+      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
     }
 
     const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,

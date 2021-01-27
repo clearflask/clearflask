@@ -94,7 +94,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const expandedProp = (isExpanded: boolean) => ({ expanded: isExpanded });
     const isLoggedIn = !!this.props.loggedInUser;
     const slug = this.props.slug || this.props.server.getProjectId();
-    const projectUrl = `${window.location.protocol}//${slug}.${window.location.host}`;
+    const projectUrl = `${windowIso.location.protocol}//${slug}.${windowIso.location.host}`;
     return (
       <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
         <Container maxWidth='md'>

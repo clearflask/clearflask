@@ -3,6 +3,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 import { StoresInitialState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
@@ -43,17 +44,16 @@ export default class ServerAdmin {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
-        typeof window === 'object' &&
-          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
           : compose;
-      storeMiddleware = composeEnhancers(storeMiddleware);
+  storeMiddleware = composeEnhancers(storeMiddleware);
     }
     this.store = createStore(
       reducersAdmin,
-      (window['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverAdminStore
+      (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverAdminStore
         || ServerAdmin._initialState(),
       storeMiddleware);
   }

@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { Route } from 'react-router';
 import * as Client from '../../api/client';
 import { ReduxState } from '../../api/server';
+import windowIso from '../../common/windowIso';
 import HotjarWrapperCustomer from '../../site/HotjarWrapperCustomer';
 
 const CustomerTrackerName = 'customerTracker';
@@ -50,7 +51,7 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
     ReactGA.ga(`${CustomerTrackerName}.set`, 'anonymizeIp', true);
     ReactGA.ga(`${CustomerTrackerName}.set`, 'forceSSL', true);
 
-    ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': window.location.pathname + window.location.search });
+    ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': windowIso.location.pathname + windowIso.location.search });
   }
 }
 

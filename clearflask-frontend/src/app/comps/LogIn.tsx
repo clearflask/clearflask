@@ -27,6 +27,7 @@ import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { detectEnv, Environment } from '../../common/util/detectEnv';
 import randomUuid from '../../common/util/uuid';
+import windowIso from '../../common/windowIso';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
 import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
@@ -120,7 +121,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   storageListener?: any;
 
   componentWillUnmount() {
-    this.storageListener && window.removeEventListener('storage', this.storageListener);
+    this.storageListener && !windowIso.isSsr && windowIso.removeEventListener('storage', this.storageListener);
   }
 
   render() {
@@ -651,7 +652,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         });
       }
     }
-    window.addEventListener('storage', this.storageListener);
+    !windowIso.isSsr && windowIso.addEventListener('storage', this.storageListener);
   }
 
   onClickOauthNotif(oauthConfig: Client.NotificationMethodsOauth) {
@@ -664,10 +665,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthCsrfToken);
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'oauth' });
-    window.open(`${oauthConfig.authorizeUrl}?`
+    !windowIso.isSsr && windowIso.open(`${oauthConfig.authorizeUrl}?`
       + `response_type=code`
       + `&client_id=${oauthConfig.clientId}`
-      + `&redirect_uri=${window.location.protocol}//${window.location.host}/oauth`
+      + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}/oauth`
       + `&scope=${oauthConfig.scope}`
       + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
       `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`);
@@ -678,8 +679,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     if (!onboarding?.notificationMethods.sso?.redirectUrl) return;
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'sso' });
-    window.open(onboarding.notificationMethods.sso.redirectUrl
-      .replace('<return_uri>', `${window.location.protocol}//${window.location.host}/sso`),
+    !windowIso.isSsr && windowIso.open(onboarding.notificationMethods.sso.redirectUrl
+      .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}/sso`),
       `cf_${this.props.server.getProjectId()}_sso`,
       `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`,
     );

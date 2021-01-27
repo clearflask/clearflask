@@ -30,6 +30,7 @@ import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { isProd } from '../common/util/detectEnv';
 import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';
 import setTitle from '../common/util/titleUtil';
+import windowIso from '../common/windowIso';
 import ContactPage from './ContactPage';
 import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CommentsPage from './dashboard/CommentsPage';
@@ -737,7 +738,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   openFeedbackUrl(page?: string) {
-    return `${window.location.protocol}//feedback.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
+    return `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

@@ -148,7 +148,7 @@ class Main extends Component<Props> {
                     )} />
                   ), (
                     <Route key='app' path="/" render={props => (
-                      <App slug={window.location.hostname} {...props} />
+                      <App slug={windowIso.location.hostname} {...props} />
                     )} />
                   )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
@@ -186,12 +186,12 @@ class Main extends Component<Props> {
   isProject(): boolean {
     switch (detectEnv()) {
       case Environment.PRODUCTION:
-        return window.location.hostname !== 'clearflask.com';
+        return windowIso.location.hostname !== 'clearflask.com';
       default:
       case Environment.DEVELOPMENT_FRONTEND:
       case Environment.DEVELOPMENT_LOCAL:
-        return window.location.hostname !== 'localhost'
-          && window.location.hostname !== 'localhost.com';
+        return windowIso.location.hostname !== 'localhost'
+          && windowIso.location.hostname !== 'localhost.com';
     }
   }
 }
