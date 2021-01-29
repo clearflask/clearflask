@@ -50,7 +50,7 @@ export class Server {
     var preloadedState: any;
     if (!windowIso.isSsr && windowIso['__SSR_STORE_INITIAL_STATE__']) {
       const serverStores = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverStores;
-      if( serverStores) {
+      if (serverStores) {
         if (projectId) {
           preloadedState = serverStores[projectId];
         } else {
@@ -678,9 +678,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId],
           status: Status.FULFILLED,
           commentIds: new Set([
-            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]
-              ? newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId].commentIds || []
-              : []),
+            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]?.commentIds || []),
             comment.commentId,
           ]),
         }
