@@ -1,9 +1,20 @@
+// import {
+//   withQueryParams,
+//   StringParam,
+//   NumberParam,
+//   ArrayParam,
+//   withDefault,
+//   DecodedValueMap,
+//   SetQuery,
+//   QueryParamConfig,
+// } from 'use-query-params';
+import loadable from '@loadable/component';
 import { Grid, isWidthUp, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
@@ -15,7 +26,6 @@ import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
-import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -29,21 +39,11 @@ import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
-// import {
-//   withQueryParams,
-//   StringParam,
-//   NumberParam,
-//   ArrayParam,
-//   withDefault,
-//   DecodedValueMap,
-//   SetQuery,
-//   QueryParamConfig,
-// } from 'use-query-params';
 
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
 
-const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -343,32 +343,30 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           />
         </Grid>
         <Grid item xs={12} className={this.props.classes.createGridItem}>
-          <Suspense fallback={<Loading />}>
-            <RichEditor
-              variant='outlined'
-              size='small'
-              id='createDescription'
-              multiline
-              disabled={this.state.newItemIsSubmitting}
-              className={this.props.classes.createFormField}
-              label='Details'
-              iAgreeInputIsSanitized
-              value={this.state.newItemDescription || ''}
-              onChange={(e, delta, source, editor) => {
-                const value = e.target.value;
-                if (this.state.newItemDescription === value
-                  || (!this.state.newItemDescription && !value)) {
-                  return;
-                }
-                const descriptionTextOnly = editor.getText();
-                this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
-                this.setState({
-                  newItemDescription: value,
-                  newItemDescriptionTextOnly: descriptionTextOnly,
-                })
-              }}
-            />
-          </Suspense>
+          <RichEditor
+            variant='outlined'
+            size='small'
+            id='createDescription'
+            multiline
+            disabled={this.state.newItemIsSubmitting}
+            className={this.props.classes.createFormField}
+            label='Details'
+            iAgreeInputIsSanitized
+            value={this.state.newItemDescription || ''}
+            onChange={(e, delta, source, editor) => {
+              const value = e.target.value;
+              if (this.state.newItemDescription === value
+                || (!this.state.newItemDescription && !value)) {
+                return;
+              }
+              const descriptionTextOnly = editor.getText();
+              this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
+              this.setState({
+                newItemDescription: value,
+                newItemDescriptionTextOnly: descriptionTextOnly,
+              })
+            }}
+          />
         </Grid>
         {categoryOptions.length > 1 && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>

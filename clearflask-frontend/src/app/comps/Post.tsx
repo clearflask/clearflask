@@ -1,3 +1,4 @@
+import loadable from '@loadable/component';
 import { Button, Chip, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -8,7 +9,7 @@ import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,7 @@ import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
-const EmojiPicker = React.lazy(() => import('../../common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const EmojiPicker = loadable(() => import('../../common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export type PostVariant = 'list' | 'page';
 export const MaxContentWidth = 600;
@@ -992,13 +993,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         expressionAllowed ? () => clickExpression(expressionDisplay) : undefined,
         0));
     const picker = limitEmojiSet ? undefined : (
-      <Suspense fallback={<Loading />}>
-        <EmojiPicker
-          key='picker'
-          inline
-          onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
-        />
-      </Suspense>
+      <EmojiPicker
+        key='picker'
+        inline
+        onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
+      />
     );
 
     const maxItems = 3;

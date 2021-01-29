@@ -1,13 +1,13 @@
+import loadable from '@loadable/component';
 import { Button, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { Server } from '../../api/server';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
-import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
 
-const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
@@ -53,25 +53,23 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   render() {
     return (
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
-        <Suspense fallback={<Loading />}>
-          <RichEditor
-            variant='outlined'
-            size='small'
-            id='createComment'
-            className={this.props.classes.addCommentField}
-            label='Comment'
-            iAgreeInputIsSanitized
-            value={this.state.newCommentInput || ''}
-            onChange={e => this.setState({ newCommentInput: e.target.value })}
-            multiline
-            rowsMax={10}
-            InputProps={{
-              inputRef: this.inputRef,
-              // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
-              onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
-            }}
-          />
-        </Suspense>
+        <RichEditor
+          variant='outlined'
+          size='small'
+          id='createComment'
+          className={this.props.classes.addCommentField}
+          label='Comment'
+          iAgreeInputIsSanitized
+          value={this.state.newCommentInput || ''}
+          onChange={e => this.setState({ newCommentInput: e.target.value })}
+          multiline
+          rowsMax={10}
+          InputProps={{
+            inputRef: this.inputRef,
+            // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
+            onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
+          }}
+        />
         <Collapse in={!!this.state.newCommentInput}>
           <Button
             color='primary'

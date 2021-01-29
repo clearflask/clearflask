@@ -35,7 +35,7 @@ class ErrorBoundary extends Component<Props, State> {
             variant='outlined'
             severity='error'
             action={(
-              <Button onClick={() => windowIso.location.reload(true)}>Refresh</Button>
+              <Button onClick={() => !windowIso.isSsr && windowIso.location.reload(true)}>Refresh</Button>
             )}
           >
             Something went wrong!

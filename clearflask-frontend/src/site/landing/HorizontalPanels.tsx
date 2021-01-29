@@ -76,7 +76,7 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
               </Container>
             </div>
           )
-        })}
+        }) || {}}
       </Container>
     );
   }

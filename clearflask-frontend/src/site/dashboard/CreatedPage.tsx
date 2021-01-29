@@ -1,8 +1,9 @@
+import loadable from '@loadable/component';
 import { Container, Grid, Link as MuiLink, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import OpenIcon from '@material-ui/icons/OpenInNew';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -15,7 +16,7 @@ import { importFailed, importSuccess } from '../../Main';
 
 export const CreatedImagePath = '/img/dashboard/created.svg';
 
-const RichEditor = windowIso.isSsr ? React.Component : React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -177,21 +178,19 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             maxLength: PostTitleMaxLength,
                           }}
                         />
-                        <Suspense fallback={<Loading />}>
-                          <RichEditor
-                            variant='outlined'
-                            size='small'
-                            disabled={this.state.isSubmitting}
-                            className={this.props.classes.field}
-                            placeholder='Description'
-                            iAgreeInputIsSanitized
-                            value={this.state.newItemDescription || ''}
-                            onChange={e => this.setState({ newItemDescription: e.target.value })}
-                            multiline
-                            rows={1}
-                            rowsMax={5}
-                          />
-                        </Suspense>
+                        <RichEditor
+                          variant='outlined'
+                          size='small'
+                          disabled={this.state.isSubmitting}
+                          className={this.props.classes.field}
+                          placeholder='Description'
+                          iAgreeInputIsSanitized
+                          value={this.state.newItemDescription || ''}
+                          onChange={e => this.setState({ newItemDescription: e.target.value })}
+                          multiline
+                          rows={1}
+                          rowsMax={5}
+                        />
                         <SubmitButton
                           wrapperClassName={this.props.classes.button}
                           color='primary'

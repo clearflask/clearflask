@@ -1,10 +1,7 @@
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import React from 'react';
-
-const styles = (theme: Theme) => createStyles({
-});
 
 export enum Side {
   Center = 'center',
@@ -84,19 +81,3 @@ export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center,
     },
   };
 };
-
-class ContentScroll extends React.Component<Props & WithStyles<typeof styles, true>> {
-
-  render() {
-    return (
-      <div className={this.props.className} style={{
-        ...(this.props.style || {}),
-        ...(contentScrollApplyStyles(this.props.theme, this.props.side, this.props.isVertical, this.props.backgroundColor)),
-      }}>
-        {this.props.children}
-      </div>
-    );
-  }
-}
-
-export default withStyles(styles, { withTheme: true })(ContentScroll);

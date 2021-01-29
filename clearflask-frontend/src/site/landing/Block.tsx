@@ -1,6 +1,5 @@
 import { Grid, GridItemsAlignment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -75,7 +74,7 @@ export interface Props extends BlockContentProps {
   demo?: React.ReactNode;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
-  imageStyle?: CSSProperties;
+  imageStyle?: React.CSSProperties;
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';

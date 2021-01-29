@@ -7,8 +7,6 @@ import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
 import { vh } from '../common/util/vhUtil';
-import windowIso from '../common/windowIso';
-import { importFailed, importSuccess } from '../Main';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';

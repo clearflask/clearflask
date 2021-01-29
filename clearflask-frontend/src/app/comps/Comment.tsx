@@ -14,8 +14,6 @@ import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
-import windowIso from '../../common/windowIso';
-import { importFailed, importSuccess } from '../../Main';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import { MaxContentWidth } from './Post';

@@ -5,6 +5,8 @@ import './common.css';
 import { detectEnv, Environment } from './common/util/detectEnv';
 import Main from './Main';
 
+console.log(ReactDOM);
+
 loadableReady(() => {
   const rootEl = document.getElementById('mainScreen')!;
   if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
