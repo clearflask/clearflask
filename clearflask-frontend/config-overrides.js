@@ -5,11 +5,7 @@ const LoadablePlugin = require('@loadable/webpack-plugin');
 module.exports = override(
   useBabelRc(),
   (config, env) => {
-
-    config.plugins = [
-      ...config.plugins,
-      new LoadablePlugin(),
-    ];
+    config.plugins.push(new LoadablePlugin());
 
     // https://github.com/webpack/webpack/issues/6876#issuecomment-376417847
     config.optimization.namedChunks = false;

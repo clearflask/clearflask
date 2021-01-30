@@ -7,7 +7,7 @@ import { StaticRouterContext } from 'react-router';
 import { WindowIsoSsrProvider } from '../common/windowIso';
 import Main, { StoresInitialState } from '../Main';
 
-const statsFile = path.resolve('../dist/loadable-stats.json')
+const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
@@ -27,9 +27,10 @@ export default function render() {
       const staticRouterContext: StaticRouterContext = {};
       const storesInitialState: StoresInitialState = {};
       const port = req.app.settings.port;
-      const requested_url = `${req.protocol}://${req.host}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
+      const requested_url = `${req.protocol}://${req.hostname}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
       const extractor = new ChunkExtractor({
         statsFile,
+        entrypoints: ['main'],
         // publicPath: 'https://cdn.example.org/v1.1.0/',
       });
 

@@ -1,6 +1,7 @@
 import windowIso from "../windowIso";
 
 export function intercomLoad(APP_ID) {
+  if (windowIso.isSsr) return;
   // https://developers.intercom.com/installing-intercom/docs/basic-javascript
   (function () {
     var w = windowIso;
@@ -38,21 +39,24 @@ export function intercomLoad(APP_ID) {
 }
 
 export function intercomStart(APP_ID, userData) {
-  !windowIso.isSsr && windowIso.Intercom("boot", {
+  if (windowIso.isSsr) return;
+  windowIso.Intercom("boot", {
     app_id: APP_ID,
     ...userData,
   });
 }
 
 export function intercomUpdate(APP_ID, userData) {
-  !windowIso.isSsr && windowIso.Intercom("update", {
+  if (windowIso.isSsr) return;
+  windowIso.Intercom("update", {
     app_id: APP_ID,
     ...userData,
   });
 }
 
 export function intercomShutdown(APP_ID) {
-  !windowIso.isSsr && windowIso.Intercom("shutdown", {
+  if (windowIso.isSsr) return;
+  windowIso.Intercom("shutdown", {
     app_id: APP_ID,
   });
 }

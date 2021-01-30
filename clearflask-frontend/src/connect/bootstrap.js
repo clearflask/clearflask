@@ -18,6 +18,7 @@ require('@babel/register')({
     "@babel/preset-typescript"
   ],
   "plugins": [
+    "@loadable/babel-plugin",
     // "@babel/plugin-transform-runtime",
     // ["@babel/plugin-transform-modules-commonjs", {loose: true}],
     // [

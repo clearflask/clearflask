@@ -671,7 +671,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}/oauth`
       + `&scope=${oauthConfig.scope}`
       + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
-      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`);
+      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`);
   }
 
   onClickSsoNotif() {
@@ -682,7 +682,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     !windowIso.isSsr && windowIso.open(onboarding.notificationMethods.sso.redirectUrl
       .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}/sso`),
       `cf_${this.props.server.getProjectId()}_sso`,
-      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`,
+      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`,
     );
   }
 

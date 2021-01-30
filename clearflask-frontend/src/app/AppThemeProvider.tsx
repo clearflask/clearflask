@@ -7,6 +7,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
+import windowIso from '../common/windowIso';
 
 interface ThemeCustomProps {
   disableTransitions?: boolean;
@@ -104,7 +105,9 @@ class AppThemeProvider extends Component<Props> {
         props: {
           ...ComponentPropsOverrides,
           MuiDialog: {
-            container: () => document.getElementById(this.props.appRootId)!,
+            ...(!windowIso.isSsr ? {
+              container: () => document.getElementById(this.props.appRootId)!,
+            } : {}),
             ...(this.props.isInsideContainer ? {
               style: { position: 'absolute' },
               BackdropProps: { style: { position: 'absolute' } },

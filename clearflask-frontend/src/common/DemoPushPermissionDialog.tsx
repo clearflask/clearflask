@@ -109,7 +109,7 @@ class DemoPushPermissionDialog extends React.Component<Props & WithStyles<typeof
   onAccept: undefined | (() => void);
   onBlock: undefined | (() => void);
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.mobileNotification.mockSetStatus(MobileStatus.Available);
     this.props.mobileNotification.mockSetDevice(MobileDevice.Ios);
     this.props.mobileNotification.mockSetAskPermission(() => new Promise((resolve, reject) => {

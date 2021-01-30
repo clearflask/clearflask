@@ -14,6 +14,7 @@ const styles = (theme: Theme) => createStyles({
     width: 160,
     height: 32,
     overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
 });
 interface Props {
@@ -34,7 +35,6 @@ class PostStatusIframe extends Component<Props & WithStyles<typeof styles, true>
           width: this.props.width,
           height: this.props.height,
         }}
-        allowTransparency={true}
         scrolling='no'
         src={src}
         title='Status frame'
