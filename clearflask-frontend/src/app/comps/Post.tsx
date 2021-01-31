@@ -41,7 +41,7 @@ import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
-const EmojiPicker = loadable(() => import('../../common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export type PostVariant = 'list' | 'page';
 export const MaxContentWidth = 600;
@@ -1163,7 +1163,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     for (; ;) {
       if (await animate({ sleepInMs: 500 })) return;
-      await new Promise(resolve => this.fundingExpand(resolve));
+      await new Promise<void>(resolve => this.fundingExpand(resolve));
 
       if (!this.fundingControlRef.current) return;
       await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
@@ -1200,7 +1200,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             }
             break;
           case 'express':
-            await new Promise(resolve => this.expressExpand(resolve));
+            await new Promise<void>(resolve => this.expressExpand(resolve));
 
             if (await animate({ sleepInMs: 1000 })) return;
 

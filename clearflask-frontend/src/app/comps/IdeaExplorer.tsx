@@ -43,7 +43,7 @@ import TagSelect from './TagSelect';
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
 
-const RichEditor = loadable(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -127,6 +127,13 @@ interface State {
 //     decode: () => ;
 //   };
 // }
+
+
+// const styles: (theme: Theme) => Record<"tab              Root", CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>>
+// const styles: (theme: Theme) => Record<"createButtonClickable", CSSProperties | CreateCSSProperties<(value: JSSFontface, index: number, array: JSSFontface[]) => unknown> | PropsFunc<...>>
+
+
+
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();

@@ -40,15 +40,15 @@ export const importFailed = e => {
     persist: true,
   });
 };
-const App = loadable(() => import('./app/App'/* webpackChunkName: "app", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Dashboard = loadable(() => import('./site/Dashboard' /* webpackChunkName: "dashboard" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Site = loadable(() => import('./site/Site'/* webpackChunkName: "site" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Invoice = loadable(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const PostStatus = loadable(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const App = loadable(() => import(/* webpackChunkName: "app", webpackPrefetch: true */'./app/App').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const Dashboard = loadable(() => import(/* webpackChunkName: "dashboard" */'./site/Dashboard').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 // Prefetch
-!windowIso.isSsr && import('./common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */);
-import('./common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */);
+!windowIso.isSsr && import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'./common/RichEditor');
+import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'./common/EmojiPicker');
 
 const theme: Theme = createMuiTheme({
   palette: {

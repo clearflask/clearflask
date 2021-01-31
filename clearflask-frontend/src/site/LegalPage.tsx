@@ -24,7 +24,7 @@ interface ConnectProps {
 
 class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    var doc;
+    var doc: string | undefined;
     switch (this.props.type) {
       case 'terms':
         doc = this.props.legal?.terms;

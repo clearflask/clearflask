@@ -1276,7 +1276,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async wait(latency: number): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, latency));
+    await new Promise<void>(resolve => setTimeout(resolve, latency));
   }
 
   generateId(): string {

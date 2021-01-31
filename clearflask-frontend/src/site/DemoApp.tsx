@@ -22,7 +22,7 @@ export async function getProject(
   mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>) | undefined = undefined,
   settings?: StateSettings,
 ): Promise<Project> {
-  await new Promise(resolve => setTimeout(resolve, 1));
+  await new Promise<void>(resolve => setTimeout(resolve, 1));
   const server = new Server(undefined, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   const slug = `demo${randomUuid().substring(0, 5)}`;

@@ -40,7 +40,7 @@ import RoadmapControls from './landing/RoadmapControls';
 import TemplateDemoWithControls from './landing/TemplateDemo';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
-const WorkflowPreview = loadable(() => import('../common/config/settings/injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   marker: {

@@ -16,13 +16,13 @@ import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 
-const SigninPage = loadable(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const ContactPage = loadable(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const LandingPage = loadable(() => import('./LandingPage'/* webpackChunkName: "LandingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const LegalPage = loadable(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const PricingPage = loadable(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const TrialSignupPage = loadable(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const SsoSuccessDemoPage = loadable(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const SigninPage = loadable(() => import(/* webpackChunkName: "SigninPage", webpackPrefetch: true */'./SigninPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const LandingPage = loadable(() => import(/* webpackChunkName: "LandingPage", webpackPrefetch: true */'./LandingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/SsoSuccessDemoPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {

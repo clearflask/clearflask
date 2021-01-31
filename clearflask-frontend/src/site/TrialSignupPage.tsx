@@ -105,7 +105,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       )} />
     }
 
-    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_BASE_PLAN_ID]
+    const selectedPlanId = (this.props.location.state as any)?.[PRE_SELECTED_BASE_PLAN_ID]
       || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
     const selectedPlan = !selectedPlanId ? undefined : this.props.plans?.find(plan => plan.basePlanId === selectedPlanId);
 
@@ -118,7 +118,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       && !!this.state.email
       && !requiresWorkEmail
       && !!this.state.pass;
-    const emailDisposableList = import('../common/util/emailDisposableList'/* webpackChunkName: "emailDisposableList" */);
+    const emailDisposableList = import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList');
 
     return (
       <Container maxWidth='md' className={this.props.classes.page}>

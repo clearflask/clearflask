@@ -56,7 +56,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
     var server: Server | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const DemoApp = await import('../site/DemoApp'/* webpackChunkName: "demoApp" */);
+      const DemoApp = await import(/* webpackChunkName: "demoApp" */'../site/DemoApp');
       const project = await DemoApp.getProject(
         templater => templater.workflowFeatures(templater.demoCategory()),
         mock => mock.mockFakeIdeaWithComments(props.postId, config => ({

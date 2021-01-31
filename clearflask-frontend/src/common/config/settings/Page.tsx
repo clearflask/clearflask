@@ -12,7 +12,7 @@ import PresetWidget from './PresetWidget';
 import Property from './Property';
 import { RestrictedProperties } from './UpgradeWrapper';
 
-const WorkflowPreview = loadable(() => import('./injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'./injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
 });

@@ -10,10 +10,10 @@ console.log(ReactDOM);
 loadableReady(() => {
   const rootEl = document.getElementById('mainScreen')!;
   if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-    import('./mocker'/* webpackChunkName: "mocker" */)
+    import(/* webpackChunkName: "mocker" */'./mocker')
       .then(mocker => mocker.mock())
-      .then(() => ReactDOM['unstable_createRoot'](rootEl).render(<Main />));
+      .then(() => ReactDOM.hydrate(<Main />, rootEl));
   } else {
-    ReactDOM['unstable_createRoot'](rootEl).render(<Main />);
+    ReactDOM.hydrate(<Main />, rootEl);
   }
 })

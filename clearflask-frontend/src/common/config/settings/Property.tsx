@@ -16,8 +16,8 @@ import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
 
-const EmojiPicker = loadable(() => import('../../EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
-const RichEditor = loadable(() => import('../../RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 interface Props {
   key: string;

@@ -19,7 +19,7 @@ interface Props {
 
 export const RadialSize = 15;
 
-export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): CSSProperties => {
+export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): Record<string, string | CSSProperties> => {
   var startHor;
   var startVer;
   var endHor;

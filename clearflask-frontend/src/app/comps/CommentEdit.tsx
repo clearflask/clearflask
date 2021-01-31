@@ -10,7 +10,7 @@ import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
 
-const RichEditor = loadable(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
 });
