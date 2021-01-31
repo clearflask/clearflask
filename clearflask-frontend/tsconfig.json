@@ -18,14 +18,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "sourceMap": true,
     "noImplicitReturns": true,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "downlevelIteration": true,
     "outDir": "./target/build",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "noFallthroughCasesInSwitch": true
   },
   "exclude": [
     "**/node_modules/*",

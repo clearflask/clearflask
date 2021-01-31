@@ -11,7 +11,7 @@ const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.j
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
-  const filePath = path.resolve(__dirname, '..', '..', 'build', 'index.html');
+  const filePath = path.resolve(__dirname, '..', '..', 'public', 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if (!err) {
       resolve(html);
@@ -31,7 +31,8 @@ export default function render() {
       const extractor = new ChunkExtractor({
         statsFile,
         entrypoints: ['main'],
-        // publicPath: 'https://cdn.example.org/v1.1.0/',
+        publicPath: '/', // connectConfig.chunksPublicPath
+        outputPath: path.resolve(__dirname, '..', '..', 'build'),
       });
 
       const reactDom = ReactDOMServer.renderToString(
@@ -54,15 +55,15 @@ export default function render() {
       });
 
       // Add chunks
-      html.replace('</head>', `${extractor.getLinkTags()}\n${extractor.getStyleTags()}\n</head>`);
-      html.replace('</body>', `${extractor.getScriptTags()}\n</body>`);
+      html = html.replace('</head>', `${extractor.getLinkTags()}\n${extractor.getStyleTags()}\n</head>`);
+      html = html.replace('</body>', `${extractor.getScriptTags()}\n</body>`);
 
       // Add rendered html
-      html.replace('&zwnj;', reactDom);
+      html = html.replace('&zwnj;', reactDom);
 
       // Add populated stores
       if (Object.keys(storesInitialState).length > 0) {
-        html.replace('</body>', `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesInitialState)};</script>\n</body>`);
+        html = html.replace('</body>', `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesInitialState)};</script>\n</body>`);
       }
 
       return res.end(html);

@@ -187,7 +187,7 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install</arguments>
+                            <arguments>install --production=false</arguments>
                         </configuration>
                         <phase>initialize</phase>
                     </execution>

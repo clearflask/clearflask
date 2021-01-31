@@ -1,10 +1,10 @@
+import express from 'express';
 import greenlockExpress from 'greenlock-express';
 import httpp from 'http-proxy';
+import path from 'path';
 import connectConfig from './config';
 import httpx from './httpx';
-import express from 'express';
 import reactRenderer from './renderer';
-import path from 'path';
 
 greenlockExpress
   .init({
@@ -53,7 +53,11 @@ function worker(glx) {
 
   // App
   const app = express();
-  app.use(express.static(path.resolve(__dirname, '../public')))
+  app.use(express.static(
+    path.resolve(__dirname, '..', '..', 'build'),
+    {
+      index: false,
+    }));
   app.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
       target: "http://localhost:8080",
@@ -85,10 +89,10 @@ function worker(glx) {
   });
 
   // Servers
-  serverHttp.listen(9080, "0.0.0.0", function() {
+  serverHttp.listen(9080, "0.0.0.0", function () {
     console.info("Http on", serverHttp.address().port);
   });
-  serverHttps.listen(9443, "0.0.0.0", function() {
+  serverHttps.listen(9443, "0.0.0.0", function () {
     console.info("Https on", serverHttps.address().port);
   });
 }
