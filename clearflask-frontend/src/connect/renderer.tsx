@@ -1,4 +1,5 @@
 import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server';
+import htmlparser from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 import React from 'react';
@@ -6,11 +7,13 @@ import ReactDOMServer from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
 import { WindowIsoSsrProvider } from '../common/windowIso';
 import Main, { StoresInitialState } from '../Main';
+import connectConfig from './config';
 
 const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
 
+
 // Cache index.html in memory
-const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
+const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
   const filePath = path.resolve(__dirname, '..', '..', 'public', 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if (!err) {
@@ -19,6 +22,13 @@ const indexHtmlPromise: Promise<string> = new Promise((resolve, error) => {
       error(err);
     }
   });
+}).then(htmlStr => {
+  const publicUrl = (connectConfig.chunksPublicPath || '').replace(/\/$/, '');
+  htmlStr = htmlStr.replace('%PUBLIC_URL%', publicUrl)
+  const $ = htmlparser.load(htmlStr);
+  $('#loader-css').remove();
+  $('#loadingScreen').remove();
+  return $.root().html() || '';
 });
 
 export default function render() {
@@ -31,7 +41,7 @@ export default function render() {
       const extractor = new ChunkExtractor({
         statsFile,
         entrypoints: ['main'],
-        publicPath: '/', // connectConfig.chunksPublicPath
+        publicPath: connectConfig.chunksPublicPath,
         outputPath: path.resolve(__dirname, '..', '..', 'build'),
       });
 

@@ -54,10 +54,9 @@ function worker(glx) {
   // App
   const app = express();
   app.use(express.static(
-    path.resolve(__dirname, '..', '..', 'build'),
-    {
-      index: false,
-    }));
+    path.resolve(__dirname, '..', '..', 'build'), {
+    index: false,
+  }));
   app.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
       target: "http://localhost:8080",

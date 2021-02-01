@@ -37,10 +37,14 @@
             url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.svg#Roboto')
             format('svg');
       }
-
       .body {
         margin: 0px;
       }
+      .mainScreen {
+        min-height: 100vh;
+      }
+    </style>
+    <style id="loader-css">
       div.showScreen {
         visibility: visible;
         animation: fadeInOpacity 150ms linear 0s 1 normal forwards;
@@ -54,7 +58,6 @@
       .mainScreen {
         visibility: hidden;
         opacity: 0;
-        min-height: 100vh;
       }
       .loadingScreen {
         position: absolute;
