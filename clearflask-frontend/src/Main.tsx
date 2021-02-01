@@ -7,7 +7,7 @@ import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
 import { StaticRouterContext } from 'react-router';
-import { BrowserRouter, Redirect, Route, StaticRouter, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, StaticRouter, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
 import { ComponentPropsOverrides } from './app/AppThemeProvider';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
@@ -17,6 +17,7 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
+import { RedirectIso } from './common/util/routerUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { vh } from './common/util/vhUtil';
 import windowIso from './common/windowIso';
@@ -101,10 +102,17 @@ class Main extends Component<Props> {
     }
   }
 
+  componentDidMount() {
+    if (!windowIso.isSsr) {
+      const ssrJssEl = document.getElementById('ssr-jss');
+      if (ssrJssEl) ssrJssEl.parentNode?.removeChild(ssrJssEl);
+    }
+  }
+
   render() {
     if (!windowIso.isSsr && windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
-      return (<Redirect to={windowIso.location.origin.replace(`www.`, '')} />);
+      return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
     }
     const isProject = this.isProject();
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;

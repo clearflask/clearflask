@@ -6,7 +6,6 @@ const titleSuffix = ' | ClearFlask: Feedback Management Tool'
 const titleSuffixShort = ' | ClearFlask'
 
 function setTitle(text?: string, forceShort?: boolean) {
-  if (windowIso.isSsr) return;
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
     if (text.length < 16 && !forceShort) {
@@ -17,23 +16,31 @@ function setTitle(text?: string, forceShort?: boolean) {
   } else {
     title += defaultText
   }
-  windowIso.document.title = title;
+  setTitleIso(title);
 }
 
 export function setAppTitle(projectName: string, text?: string) {
-  if (windowIso.isSsr) return;
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
     title += text + ' | ' + projectName
   } else {
     title += projectName;
   }
-  windowIso.document.title = title;
+  setTitleIso(title);
 }
 
 export const SetTitle = (props: { title?: string, forceShort?: boolean }) => {
   setTitle(props.title, props.forceShort);
   return null;
 };
+
+const setTitleIso = (title: string) => {
+  if (windowIso.isSsr) {
+    windowIso.setTitle(title);
+  } else {
+    windowIso.document.title = title;
+  }
+
+}
 
 export default setTitle;

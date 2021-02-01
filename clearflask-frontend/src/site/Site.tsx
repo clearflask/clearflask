@@ -9,7 +9,7 @@ import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import { RouteWithStatus } from '../common/util/routerUtil';
+import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
@@ -251,13 +251,19 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <SetTitle title='OAuth' />
               <SsoSuccessDemoPage type='oauth' />
             </Route>
-            <Route exact path='/(tos|terms|terms-of-service)'>
+            <Route exact path='/terms-of-service'>
               <SetTitle title='Terms of Service' />
               <LegalPage type='terms' />
             </Route>
-            <Route exact path='/(privacy|policy|privacy-policy)'>
+            <Route exact path='/(tos|terms)'>
+              <RedirectIso to='/terms-of-service' />
+            </Route>
+            <Route exact path='/privacy-policy'>
               <SetTitle title='Terms of Service' />
               <LegalPage type='privacy' />
+            </Route>
+            <Route exact path='/(privacy|policy)'>
+              <RedirectIso to='/privacy-policy' />
             </Route>
             <Route exact path='/'>
               <SetTitle />

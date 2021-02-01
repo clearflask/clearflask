@@ -4,7 +4,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Redirect, RouteComponentProps, withRouter } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -13,6 +13,7 @@ import ErrorPage from '../app/ErrorPage';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
+import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import { SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
@@ -72,7 +73,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
         windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
       }
-      return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
+      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
     return (

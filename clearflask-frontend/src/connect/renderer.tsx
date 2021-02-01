@@ -12,6 +12,7 @@ import connectConfig from './config';
 
 const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
 
+const PH_PAGE_TITLE = '%PAGE_TITLE%';
 const PH_LINK_TAGS = '%LINK_TAGS%';
 const PH_STYLE_TAGS = '%STYLE_TAGS%';
 const PH_MUI_STYLE_TAGS = '%MUI_STYLE_TAGS%';
@@ -34,10 +35,12 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   htmlStr = htmlStr.replace(/%PUBLIC_URL%/g, publicUrl)
   const $ = htmlparser.load(htmlStr);
   $('#loader-css').remove();
+  $('noscript').remove();
   $('#loadingScreen').remove();
+  $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
   $('head').append(PH_STYLE_TAGS);
-  $('head').append(`<style id="jss-server-side">${PH_MUI_STYLE_TAGS}</style>`);
+  $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
@@ -59,10 +62,12 @@ export default function render() {
       });
       const muiSheets = new ServerStyleSheets();
 
+      var title = 'ClearFlask';
       const reactDom = ReactDOMServer.renderToString(muiSheets.collect(
         <ChunkExtractorManager extractor={extractor}>
           <WindowIsoSsrProvider
             url={requested_url}
+            setTitle={newTitle => title = newTitle}
           >
             <Main
               ssrLocation={req.url}
@@ -78,7 +83,10 @@ export default function render() {
         ...(staticRouterContext.url && { Location: staticRouterContext.url }),
       });
 
-      // Add chunks
+      // Page title
+      html = html.replace(PH_PAGE_TITLE, title);
+
+      // JS, CSS
       html = html.replace(PH_LINK_TAGS, extractor.getLinkTags());
       html = html.replace(PH_STYLE_TAGS, extractor.getStyleTags());
       html = html.replace(PH_SCRIPT_TAGS, extractor.getScriptTags());

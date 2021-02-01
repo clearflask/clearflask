@@ -5,7 +5,7 @@ import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { NavLink, Redirect, RouteComponentProps, withRouter } from 'react-router-dom';
+import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -16,6 +16,7 @@ import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import preloadImage from '../common/util/imageUtil';
+import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import { WelcomeImagePath } from './dashboard/WelcomePage';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
@@ -92,7 +93,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
 
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
-      return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
+      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
     if (!SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
