@@ -64,6 +64,7 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
           <Provider store={this.props.server.getStore()}>
             <AppThemeProvider
               appRootId='onboardingDemo'
+              seed='onboardingDemo'
               isInsideContainer={true}
               supressCssBaseline={true}
               breakpoints={this.state.device === Device.Mobile ? {

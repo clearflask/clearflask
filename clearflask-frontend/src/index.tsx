@@ -1,7 +1,6 @@
 import { loadableReady } from '@loadable/component';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './common.css';
 import { detectEnv, Environment } from './common/util/detectEnv';
 import Main from './Main';
 

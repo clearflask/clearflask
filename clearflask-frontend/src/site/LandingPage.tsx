@@ -572,7 +572,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             .then(() => mocker.mockLoggedIn())}
           demo={project => (
             <Provider store={project.server.getStore()}>
-              <AppThemeProvider isInsideContainer>
+              <AppThemeProvider
+                seed='demo-community'
+                isInsideContainer
+              >
                 <CommentList
                   server={project.server}
                   ideaId='ideaId'

@@ -43,6 +43,18 @@
       .mainScreen {
         min-height: 100vh;
       }
+      html {
+        font-family: -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue,
+          Helvetica, Arial, sans-serif;
+        font-family: Roboto, -apple-system-body, BlinkMacSystemFont, SFUI,
+          HelveticaNeue, Helvetica, Arial, sans-serif;
+        color: #333;
+        -webkit-font-smoothing: antialiased;
+        height: 100%;
+      }
+      a {
+        color: currentColor;
+      }
     </style>
     <style id="loader-css">
       div.showScreen {
@@ -96,7 +108,7 @@
   </head>
   <body class="body">
     <div class="loadingScreen" id="loadingScreen">Loading...</div>
-    <div class="mainScreen" id="mainScreen">&zwnj;</div>
+    <div class="mainScreen" id="mainScreen"></div>
     <noscript>You need to enable JavaScript to run this app.</noscript>
   </body>
 </html>

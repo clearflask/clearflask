@@ -1,5 +1,5 @@
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 import { ComponentsProps } from '@material-ui/core/styles/props';
@@ -37,6 +37,7 @@ interface Props {
   isInsideContainer?: boolean;
   breakpoints?: { [key in Breakpoint]: number };
   appRootId: string;
+  seed: string;
   // connect
   config?: Client.Config;
 }
@@ -125,17 +126,21 @@ class AppThemeProvider extends Component<Props> {
     }
 
     return (
-      <MuiThemeProvider theme={theme}>
-        {!this.props.supressCssBaseline && (<CssBaseline />)}
-        <div style={{
-          height: '100%',
-          background: theme.palette.background.default,
-          color: theme.palette.text.primary,
-          ...(this.props.containerStyle || {}),
-        }}>
-          {this.props.children}
-        </div>
-      </MuiThemeProvider>
+      <StylesProvider generateClassName={createGenerateClassName({
+        seed: this.props.seed,
+      })}>
+        <MuiThemeProvider theme={theme}>
+          {!this.props.supressCssBaseline && (<CssBaseline />)}
+          <div style={{
+            height: '100%',
+            background: theme.palette.background.default,
+            color: theme.palette.text.primary,
+            ...(this.props.containerStyle || {}),
+          }}>
+            {this.props.children}
+          </div>
+        </MuiThemeProvider>
+      </StylesProvider>
     );
   }
 }

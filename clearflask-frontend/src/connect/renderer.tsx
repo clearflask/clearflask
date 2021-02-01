@@ -1,4 +1,5 @@
 import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server';
+import { ServerStyleSheets } from '@material-ui/core';
 import htmlparser from 'cheerio';
 import fs from 'fs';
 import path from 'path';
@@ -11,6 +12,12 @@ import connectConfig from './config';
 
 const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
 
+const PH_LINK_TAGS = '%LINK_TAGS%';
+const PH_STYLE_TAGS = '%STYLE_TAGS%';
+const PH_MUI_STYLE_TAGS = '%MUI_STYLE_TAGS%';
+const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
+const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
+const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
@@ -24,10 +31,16 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   });
 }).then(htmlStr => {
   const publicUrl = (connectConfig.chunksPublicPath || '').replace(/\/$/, '');
-  htmlStr = htmlStr.replace('%PUBLIC_URL%', publicUrl)
+  htmlStr = htmlStr.replace(/%PUBLIC_URL%/g, publicUrl)
   const $ = htmlparser.load(htmlStr);
   $('#loader-css').remove();
   $('#loadingScreen').remove();
+  $('#mainScreen').text(PH_MAIN_SCREEN);
+  $('head').append(PH_STYLE_TAGS);
+  $('head').append(`<style id="jss-server-side">${PH_MUI_STYLE_TAGS}</style>`);
+  $('head').append(PH_LINK_TAGS);
+  $('body').append(PH_SCRIPT_TAGS);
+  $('body').append(PH_STORE_CONTENT);
   return $.root().html() || '';
 });
 
@@ -44,8 +57,9 @@ export default function render() {
         publicPath: connectConfig.chunksPublicPath,
         outputPath: path.resolve(__dirname, '..', '..', 'build'),
       });
+      const muiSheets = new ServerStyleSheets();
 
-      const reactDom = ReactDOMServer.renderToString(
+      const reactDom = ReactDOMServer.renderToString(muiSheets.collect(
         <ChunkExtractorManager extractor={extractor}>
           <WindowIsoSsrProvider
             url={requested_url}
@@ -57,7 +71,7 @@ export default function render() {
             />
           </WindowIsoSsrProvider>
         </ChunkExtractorManager>
-      );
+      ));
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',
@@ -65,15 +79,19 @@ export default function render() {
       });
 
       // Add chunks
-      html = html.replace('</head>', `${extractor.getLinkTags()}\n${extractor.getStyleTags()}\n</head>`);
-      html = html.replace('</body>', `${extractor.getScriptTags()}\n</body>`);
+      html = html.replace(PH_LINK_TAGS, extractor.getLinkTags());
+      html = html.replace(PH_STYLE_TAGS, extractor.getStyleTags());
+      html = html.replace(PH_SCRIPT_TAGS, extractor.getScriptTags());
+      html = html.replace(PH_MUI_STYLE_TAGS, muiSheets.toString());
 
       // Add rendered html
-      html = html.replace('&zwnj;', reactDom);
+      html = html.replace(PH_MAIN_SCREEN, reactDom);
 
       // Add populated stores
       if (Object.keys(storesInitialState).length > 0) {
-        html = html.replace('</body>', `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesInitialState)};</script>\n</body>`);
+        html = html.replace(PH_STORE_CONTENT, `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesInitialState)};</script>\n</body>`);
+      } else {
+        html = html.replace(PH_STORE_CONTENT, '');
       }
 
       return res.end(html);

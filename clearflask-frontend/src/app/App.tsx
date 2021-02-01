@@ -195,13 +195,16 @@ class App extends Component<Props, State> {
     } else if (!this.state.server) {
       return null;
     }
-    const server = this.state.server;
 
-    const appRootId = `appRoot-${this.state.server.getProjectId()}-${this.uniqId}`;
+    const server = this.state.server;
+    const projectId = this.state.server.getProjectId();
+    const appRootId = `appRoot-${projectId}-${this.uniqId}`;
+
     return (
       <Provider store={server.getStore()}>
         <AppThemeProvider
           appRootId={appRootId}
+          seed={projectId}
           isInsideContainer={this.props.isInsideContainer}
           supressCssBaseline={this.props.supressCssBaseline}
           containerStyle={{
