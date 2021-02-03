@@ -4,9 +4,9 @@ import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Route } from 'react-router-dom';
 import * as Client from '../api/client';
-import { Server, StateSettings } from '../api/server';
+import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
-import WebNotification, { Status } from '../common/notification/webNotification';
+import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
@@ -25,6 +25,7 @@ import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
 import CustomerExternalTrackers from './utils/CustomerExternalTrackers';
+import Loading from './utils/Loading';
 import PrivateProjectLogin from './utils/PrivateProjectLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
@@ -52,23 +53,36 @@ interface Props {
   location: Location;
 }
 interface State {
-  notFound?: boolean;
   server?: Server;
 }
 class App extends Component<Props, State> {
-  state: State = {};
   readonly uniqId = randomUuid();
 
   constructor(props) {
     super(props);
 
-    const initPromise = this.init();
-    if (windowIso.isSsr) {
-      windowIso.awaitPromises.push(initPromise);
+    const server = this.getOrCreateServer();
+
+    if (server.getStore().getState().conf.status === undefined) {
+      const initPromise = this.init(server);
+      if (windowIso.isSsr) {
+        windowIso.awaitPromises.push(initPromise);
+        initPromise.catch(err => {
+          if (!windowIso.isSsr) return;
+          if (isNaN(err?.status)) {
+            windowIso.staticRouterContext.statusCode = 500;
+          } else {
+            windowIso.staticRouterContext.statusCode = err.status;
+          }
+        });
+      }
+      this.state = {};
+    } else {
+      this.state = { server };
     }
   }
 
-  async init() {
+  getOrCreateServer(): Server {
     var server: Server | undefined;
     if (this.props.serverOverride) {
       server = this.props.serverOverride;
@@ -77,7 +91,10 @@ class App extends Component<Props, State> {
     } else {
       server = new Server(undefined, this.props.settings);
     }
+    return server;
+  }
 
+  async init(server: Server) {
     const params = new URL(windowIso.location.href).searchParams;
     // Used for links within emails
     const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
@@ -118,26 +135,15 @@ class App extends Component<Props, State> {
       }
     }
 
-    var configResult: Client.ConfigAndBindResult | undefined;
-    var user: Client.UserMeWithBalance | undefined;
-    try {
-      configResult = await server.dispatch().configGetAndUserBind({
-        slug: this.props.slug,
-        userBind: {
-          ssoToken: token || undefined,
-          authToken: authToken || undefined,
-          oauthToken: oauthToken || undefined,
-        },
-      });
-      user = configResult.user;
-    } catch (err) {
-      if (err?.status === 404) {
-        this.setState({ notFound: true });
-        return;
-      } else {
-        throw err;
-      }
-    }
+    var configResult = await server.dispatch().configGetAndUserBind({
+      slug: this.props.slug,
+      userBind: {
+        ssoToken: token || undefined,
+        authToken: authToken || undefined,
+        oauthToken: oauthToken || undefined,
+      },
+    });
+    var user = configResult.user;
 
     // If no user is logged in, check if Web Push is enabled
     // It's possible user cleared cookies and we can log in using the Web Push result
@@ -147,7 +153,7 @@ class App extends Component<Props, State> {
     const loggedIn = !!configResult?.user;
     if (!loggedIn) {
       var subscriptionResult;
-      if (WebNotification.getInstance().getStatus() === Status.Granted) {
+      if (WebNotification.getInstance().getStatus() === WebNotificationStatus.Granted) {
         subscriptionResult = await WebNotification.getInstance().getPermission();
       }
 
@@ -191,12 +197,12 @@ class App extends Component<Props, State> {
   }
 
   render() {
-    if (this.state.notFound) {
+    if (!this.state.server) {
+      return (<Loading />);
+    } else if (this.state.server.getStore().getState().conf.status === Status.REJECTED) {
       return (
-        <ErrorPage msg='Project does not exist or was deleted by owner' />
+        <ErrorPage msg={this.state.server.getStore().getState().conf.rejectionMessage || 'Failed to load'} />
       );
-    } else if (!this.state.server) {
-      return null;
     }
 
     const server = this.state.server;

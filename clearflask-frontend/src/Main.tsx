@@ -42,10 +42,6 @@ const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').
 const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
-// Prefetch
-!windowIso.isSsr && import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'./common/RichEditor');
-import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'./common/EmojiPicker');
-
 const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',

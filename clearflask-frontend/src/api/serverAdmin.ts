@@ -3,8 +3,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
-import windowIso from '../common/windowIso';
-import { StoresState } from '../Main';
+import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
 import { Server, Status } from './server';
@@ -52,27 +51,14 @@ export default class ServerAdmin {
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
 
-
-    var preloadedState: any;
     if (windowIso.isSsr) {
-      preloadedState = windowIso.storesState.serverAdminStore;
+      windowIso.storesState.serverAdminStore = windowIso.storesState.serverAdminStore
+        || createStore(reducersAdmin, ServerAdmin._initialState(), storeMiddleware);
+      this.store = windowIso.storesState.serverAdminStore;
     } else {
-      preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresState)?.serverAdminStore;
-    }
-    if (!preloadedState) {
-      preloadedState = ServerAdmin._initialState();
-    }
-
-    // Server.StoresState = StoresState;
-    // this.getServers().forEach(server => server.ssrSubscribeState(StoresState));
-
-    this.store = createStore(
-      reducersAdmin,
-      preloadedState,
-      storeMiddleware);
-
-    if (windowIso.isSsr) {
-      this.store.subscribe(() => StoresState.serverAdminStore = this.store.getState());
+      const preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresStateSerializable)?.serverAdminStore
+        || ServerAdmin._initialState();
+      this.store = createStore(reducersAdmin, preloadedState, storeMiddleware);
     }
   }
 

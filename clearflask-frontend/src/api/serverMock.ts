@@ -519,14 +519,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   async configGet(request: Omit<Client.ConfigGetAndUserBindRequest, 'userBind'>): Promise<Omit<Client.ConfigAndBindResult, 'user'>> {
     const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
     return this.returnLater({
       config: project.config,
     });
   }
   async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
     const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
 
     const configGet = await this.configGet(request);
     const userBind = await this.userBind({
@@ -811,7 +811,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
+    const projectId = request.configAdmin.projectId || `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
     request.configAdmin.projectId = projectId;
     this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({

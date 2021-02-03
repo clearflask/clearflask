@@ -5,8 +5,7 @@ import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
-import windowIso from '../common/windowIso';
-import { StoresState } from '../Main';
+import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
@@ -29,13 +28,15 @@ export enum Status {
 type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
 
 export class Server {
-  static StoresState: StoresState | undefined;
+  static storesState: StoresState | undefined;
 
   readonly store: Store<ReduxState, AllActions>;
   readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
 
+  // NOTE: If creating multiple projects, only one project can have projectId undefined
+  // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
@@ -48,36 +49,16 @@ export class Server {
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
 
-    const findStoreState = (storesState?: StoresState): any => !!storesState && Object.values(storesState.serverStores)
-      .find(state => {
-        const conf = (state as ReduxState)?.conf.conf;
-        if (!windowIso.isSsr || !conf) return false;
-        if (windowIso.location.hostname.startsWith(`${conf.slug}.`)) return true;
-        if (windowIso.location.hostname === conf.domain) return true;
-        return false;
-      });
-    var preloadedState: any;
+    const projectStoreId = projectId || windowIso.location.hostname;
     if (windowIso.isSsr) {
-      if (windowIso.storesState.serverStores) {
-        if (projectId) {
-          preloadedState = windowIso.storesState.serverStores[projectId];
-        } else {
-          preloadedState = findStoreState(windowIso.storesState);
-        }
-      }
+      windowIso.storesState.serverStores = windowIso.storesState.serverStores || {};
+      windowIso.storesState.serverStores[projectStoreId] = windowIso.storesState.serverStores[projectStoreId]
+        || createStore(reducers, Server.initialState(projectId, settings), storeMiddleware);
+      this.store = windowIso.storesState.serverStores[projectStoreId];
     } else {
-      preloadedState = findStoreState(windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresState);
-    }
-    if (!preloadedState) {
-      preloadedState = Server.initialState(projectId, settings);
-    }
-
-    this.store = createStore(
-      reducers,
-      preloadedState,
-      storeMiddleware);
-    if (Server.StoresState) {
-      this.ssrSubscribeState(Server.StoresState);
+      const preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresStateSerializable)?.serverStores?.[projectStoreId]
+        || Server.initialState(projectId, settings);
+      this.store = createStore(reducers, preloadedState, storeMiddleware);
     }
 
     const dispatchers = Server.getDispatchers(
@@ -184,11 +165,6 @@ export class Server {
 
   getProjectId(): string {
     return this.store.getState().projectId!;
-  }
-
-  ssrSubscribeState(StoresState: StoresState): void {
-    StoresState.serverStores = StoresState.serverStores || {};
-    this.store.subscribe(() => StoresState.serverStores![this.getProjectId()] = this.store.getState());
   }
 
   getStore(): Store<ReduxState, AllActions> {
@@ -326,12 +302,16 @@ export interface StateConf {
   conf?: Client.Config;
   onboardBefore?: Client.Onboarding;
   ver?: string;
+  rejectionMessage?: string;
 }
 const stateConfDefault = {};
 function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
-      return { status: Status.PENDING };
+      return {
+        status: Status.PENDING,
+        rejectionMessage: undefined,
+      };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
     case Admin.configGetAdminActionStatus.Fulfilled:
       const versionedConfigAdmin = action.type === Admin.projectCreateAdminActionStatus.Fulfilled
@@ -339,18 +319,23 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
         : action.payload;
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: versionedConfigAdmin.config,
         ver: versionedConfigAdmin.version,
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: action.payload.config?.config,
         onboardBefore: action.payload.onboardBefore,
         ver: action.payload.config?.version,
       };
     case Client.configGetAndUserBindActionStatus.Rejected:
-      return { status: Status.REJECTED };
+      return {
+        status: Status.REJECTED,
+        rejectionMessage: action.payload.userFacingMessage,
+      };
     default:
       return state;
   }

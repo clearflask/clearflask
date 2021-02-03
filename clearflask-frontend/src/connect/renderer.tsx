@@ -6,12 +6,20 @@ import path from 'path';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
-import { StoresState, WindowIsoSsrProvider } from '../common/windowIso';
+import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
 import Main from '../Main';
 import connectConfig from './config';
 
+interface RenderResult {
+  title: string;
+  extractor: ChunkExtractor;
+  muiSheets: ServerStyleSheets;
+  renderedScreen: string;
+}
+
 const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
 
+const PH_ENV = '%ENV%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
 const PH_LINK_TAGS = '%LINK_TAGS%';
 const PH_STYLE_TAGS = '%STYLE_TAGS%';
@@ -39,6 +47,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('#loadingScreen').remove();
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
+  $('head').prepend(PH_ENV);
   $('head').append(PH_STYLE_TAGS);
   $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
@@ -54,59 +63,100 @@ export default function render() {
       const storesState: StoresState = {};
       const port = req.app.settings.port;
       const requested_url = `${req.protocol}://${req.hostname}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
+      const awaitPromises: Array<Promise<any>> = [];
 
-      var title = 'ClearFlask';
-      var extractor: ChunkExtractor | undefined;
-      var muiSheets: ServerStyleSheets | undefined;
-      var renderedScreen: string = '';
-      var awaitPromises: Array<Promise<any>> = [];
-      do {
-        extractor = new ChunkExtractor({
-          statsFile,
-          entrypoints: ['main'],
-          publicPath: connectConfig.chunksPublicPath,
-          outputPath: path.resolve(__dirname, '..', '..', 'build'),
-        });
-        muiSheets = new ServerStyleSheets();
 
-        await Promise.all(awaitPromises);
-        awaitPromises = [];
+      var renderResult: RenderResult | undefined;
+      var isFinished = false;
+      var renderCounter = 0;
+      const renderPromise = new Promise<void>(async resolve => {
+        do {
+          ++renderCounter;
+          const rr: RenderResult = {
+            title: 'ClearFlask',
+            extractor: new ChunkExtractor({
+              statsFile,
+              entrypoints: ['main'],
+              publicPath: connectConfig.chunksPublicPath,
+              outputPath: path.resolve(__dirname, '..', '..', 'build'),
+            }),
+            muiSheets: new ServerStyleSheets(),
+            renderedScreen: '',
+          };
 
-        renderedScreen = ReactDOMServer.renderToString(muiSheets.collect(
-          <ChunkExtractorManager extractor={extractor}>
-            <WindowIsoSsrProvider
-              url={requested_url}
-              setTitle={newTitle => title = newTitle}
-              storesState={storesState}
-              awaitPromises={awaitPromises}
-            >
-              <Main
-                ssrLocation={req.url}
-                ssrStaticRouterContext={staticRouterContext}
-              />
-            </WindowIsoSsrProvider>
-          </ChunkExtractorManager>
-        ));
+          try {
+            await Promise.all(awaitPromises);
+          } catch (e) { }
+          awaitPromises.length = 0;
 
-      } while (awaitPromises.length > 0);
+          rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
+            <ChunkExtractorManager extractor={rr.extractor}>
+              <WindowIsoSsrProvider
+                nodeEnv={process.env.NODE_ENV}
+                url={requested_url}
+                setTitle={newTitle => rr.title = newTitle}
+                storesState={storesState}
+                awaitPromises={awaitPromises}
+                staticRouterContext={staticRouterContext}
+              >
+                <Main
+                  ssrLocation={req.url}
+                  ssrStaticRouterContext={staticRouterContext}
+                />
+              </WindowIsoSsrProvider>
+            </ChunkExtractorManager>
+          ));
+          if (isFinished) {
+            return; // Request timed out
+          }
+          renderResult = rr;
+        } while (awaitPromises.length > 0);
+        console.info(`Rendered ${requested_url} in ${renderCounter} pass(es)`);
+        resolve();
+      });
+      const timeoutPromise = new Promise<void>(resolve => setTimeout(() => {
+        !isFinished && console.warn(`Render timeout on ${requested_url} after ${renderCounter} pass(es)`);
+        resolve();
+      }, 30000));
+      await Promise.race([timeoutPromise, renderPromise]);
+      isFinished = true;
+
+      if (!renderResult) {
+        // Timeout with no render finished, fallback to client-side rendering
+        res.status(500);
+        res.sendFile(path.join(__dirname, '..', '..', "build", "index.html"));
+        return;
+      }
 
       var html = await indexHtmlPromise;
 
+      if (process.env.NODE_ENV !== 'production') {
+        html = html.replace(PH_ENV, '<script>window.NODE_ENV=development</script>');
+      } else {
+        html = html.replace(PH_ENV, '');
+      }
+
       // Page title
-      html = html.replace(PH_PAGE_TITLE, title);
+      html = html.replace(PH_PAGE_TITLE, renderResult.title);
 
       // JS, CSS
-      html = html.replace(PH_LINK_TAGS, extractor.getLinkTags());
-      html = html.replace(PH_STYLE_TAGS, extractor.getStyleTags());
-      html = html.replace(PH_SCRIPT_TAGS, extractor.getScriptTags());
-      html = html.replace(PH_MUI_STYLE_TAGS, muiSheets.toString());
+      html = html.replace(PH_LINK_TAGS, renderResult.extractor.getLinkTags());
+      html = html.replace(PH_STYLE_TAGS, renderResult.extractor.getStyleTags());
+      html = html.replace(PH_SCRIPT_TAGS, renderResult.extractor.getScriptTags());
+      html = html.replace(PH_MUI_STYLE_TAGS, renderResult.muiSheets.toString());
 
       // Add rendered html
-      html = html.replace(PH_MAIN_SCREEN, reactDom);
+      html = html.replace(PH_MAIN_SCREEN, renderResult.renderedScreen);
 
       // Add populated stores
-      if (Object.keys(StoresState).length > 0) {
-        html = html.replace(PH_STORE_CONTENT, `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(StoresState)};</script>\n</body>`);
+      if (storesState.serverAdminStore || storesState.serverStores) {
+        const storesStateSerializable: StoresStateSerializable = {
+          serverAdminStore: storesState.serverAdminStore?.getState(),
+          serverStores: {},
+        };
+        !!storesState.serverStores && Object.entries(storesState.serverStores)
+          .forEach(([id, store]) => storesStateSerializable.serverStores![id] = store.getState());
+        html = html.replace(PH_STORE_CONTENT, `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesStateSerializable)};</script>`);
       } else {
         html = html.replace(PH_STORE_CONTENT, '');
       }
@@ -115,14 +165,13 @@ export default function render() {
         'Content-Type': 'text/html',
         ...(staticRouterContext.url && { Location: staticRouterContext.url }),
       });
-      return res.end(html);
-
+      res.end(html);
     } catch (e) {
       console.error('Failed to get page', e);
       if (process.env.NODE_ENV !== 'production') {
         res.status(500).end();
       } else {
-        // fallback to client-side rendering
+        // fallback to client-side rendering but still throw 500
         res.status(500);
         res.sendFile(path.join(__dirname, '..', '..', "build", "index.html"));
       }

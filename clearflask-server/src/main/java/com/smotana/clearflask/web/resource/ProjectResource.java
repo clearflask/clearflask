@@ -133,7 +133,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             projectOpt = projectStore.getProjectBySlug(slug, true);
         }
         if (!projectOpt.isPresent()) {
-            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
+            throw new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner");
         }
         Project project = projectOpt.get();
 

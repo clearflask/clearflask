@@ -1,8 +1,17 @@
 import React from 'react';
+import { StaticRouterContext } from 'react-router';
+import { Store } from 'redux';
+import { ReduxState } from '../api/server';
+import { ReduxStateAdmin } from '../api/serverAdmin';
 
 export interface StoresState {
-  serverAdminStore?: any,
-  serverStores?: { [projectId: string]: any },
+  serverAdminStore?: Store<ReduxStateAdmin, any>,
+  serverStores?: { [projectId: string]: Store<ReduxState, any> },
+}
+
+export interface StoresStateSerializable {
+  serverAdminStore?: ReduxStateAdmin,
+  serverStores?: { [projectId: string]: ReduxState },
 }
 
 var win: any;
@@ -24,25 +33,31 @@ if (typeof window !== "undefined") {
 
 export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;
+  nodeEnv: 'development' | 'production' | 'test';
   url: string;
   setTitle: (title: string) => void;
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
+  staticRouterContext: StaticRouterContext;
 }) => {
+  win['nodeEnv'] = props.nodeEnv;
   const url = new URL(props.url);
   win['location'] = url;
   win['setTitle'] = props.setTitle;
   win['storesState'] = props.storesState;
   win['awaitPromises'] = props.awaitPromises;
+  win['staticRouterContext'] = props.staticRouterContext;
   return props.children;
 };
 
 export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.Global & {
   isSsr: true;
+  nodeEnv: 'development' | 'production' | 'test';
   location: URL;
   setTitle: (title: string) => void;
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
+  staticRouterContext: StaticRouterContext;
 };
 
 const windowIso: WindowIso = win;
