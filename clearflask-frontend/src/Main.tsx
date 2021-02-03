@@ -24,11 +24,6 @@ import windowIso from './common/windowIso';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
 
-export interface StoresInitialState {
-  serverAdminStore?: any,
-  serverStores?: { [projectId: string]: any },
-}
-
 const notistackRef = React.createRef<ProviderContext>();
 export const importSuccess = i => {
   closeLoadingScreen();
@@ -76,17 +71,12 @@ const theme: Theme = createMuiTheme({
 interface Props {
   ssrLocation?: string;
   ssrStaticRouterContext?: StaticRouterContext;
-  ssrStoresInitialState?: StoresInitialState;
 }
 class Main extends Component<Props> {
   customerTrackerPresent: boolean = false;
 
   constructor(props) {
     super(props);
-
-    if (props.ssrStoresInitialState) {
-      ServerAdmin.get().ssrSubscribeState(props.ssrStoresInitialState);
-    }
 
     if (isTracking() && !windowIso.isSsr) {
       try {

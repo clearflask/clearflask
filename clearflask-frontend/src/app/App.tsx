@@ -62,7 +62,10 @@ class App extends Component<Props, State> {
   constructor(props) {
     super(props);
 
-    this.init();
+    const initPromise = this.init();
+    if (windowIso.isSsr) {
+      windowIso.awaitPromises.push(initPromise);
+    }
   }
 
   async init() {

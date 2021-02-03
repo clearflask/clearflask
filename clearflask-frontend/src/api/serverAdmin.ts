@@ -4,7 +4,7 @@ import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import windowIso from '../common/windowIso';
-import { StoresInitialState } from '../Main';
+import { StoresState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
 import { Server, Status } from './server';
@@ -49,13 +49,31 @@ export default class ServerAdmin {
             serialize: true,
           })
           : compose;
-  storeMiddleware = composeEnhancers(storeMiddleware);
+      storeMiddleware = composeEnhancers(storeMiddleware);
     }
+
+
+    var preloadedState: any;
+    if (windowIso.isSsr) {
+      preloadedState = windowIso.storesState.serverAdminStore;
+    } else {
+      preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresState)?.serverAdminStore;
+    }
+    if (!preloadedState) {
+      preloadedState = ServerAdmin._initialState();
+    }
+
+    // Server.StoresState = StoresState;
+    // this.getServers().forEach(server => server.ssrSubscribeState(StoresState));
+
     this.store = createStore(
       reducersAdmin,
-      (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverAdminStore
-        || ServerAdmin._initialState(),
+      preloadedState,
       storeMiddleware);
+
+    if (windowIso.isSsr) {
+      this.store.subscribe(() => StoresState.serverAdminStore = this.store.getState());
+    }
   }
 
   static get(forceMock: boolean = false): ServerAdmin {
@@ -75,13 +93,6 @@ export default class ServerAdmin {
       }
       return ServerAdmin.instance;
     }
-  }
-
-  ssrSubscribeState(storesInitialState: StoresInitialState): void {
-    this.store.subscribe(() => storesInitialState.serverAdminStore = this.store.getState());
-
-    Server.storesInitialState = storesInitialState;
-    this.getServers().forEach(server => server.ssrSubscribeState(storesInitialState));
   }
 
   getStore(): Store<ReduxStateAdmin, Admin.Actions> {

@@ -6,7 +6,7 @@ import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
-import { StoresInitialState } from '../Main';
+import { StoresState } from '../Main';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
@@ -29,7 +29,7 @@ export enum Status {
 type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
 
 export class Server {
-  static storesInitialState: StoresInitialState | undefined;
+  static StoresState: StoresState | undefined;
 
   readonly store: Store<ReduxState, AllActions>;
   readonly mockServer: ServerMock | undefined;
@@ -47,26 +47,37 @@ export class Server {
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
+
+    const findStoreState = (storesState?: StoresState): any => !!storesState && Object.values(storesState.serverStores)
+      .find(state => {
+        const conf = (state as ReduxState)?.conf.conf;
+        if (!windowIso.isSsr || !conf) return false;
+        if (windowIso.location.hostname.startsWith(`${conf.slug}.`)) return true;
+        if (windowIso.location.hostname === conf.domain) return true;
+        return false;
+      });
     var preloadedState: any;
-    if (!windowIso.isSsr && windowIso['__SSR_STORE_INITIAL_STATE__']) {
-      const serverStores = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresInitialState)?.serverStores;
-      if (serverStores) {
+    if (windowIso.isSsr) {
+      if (windowIso.storesState.serverStores) {
         if (projectId) {
-          preloadedState = serverStores[projectId];
+          preloadedState = windowIso.storesState.serverStores[projectId];
         } else {
-          preloadedState = Object.values(serverStores).find(state => !windowIso.isSsr && (state as ReduxState)?.conf.conf?.slug === windowIso.location.hostname);
+          preloadedState = findStoreState(windowIso.storesState);
         }
       }
+    } else {
+      preloadedState = findStoreState(windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresState);
     }
     if (!preloadedState) {
       preloadedState = Server.initialState(projectId, settings);
     }
+
     this.store = createStore(
       reducers,
       preloadedState,
       storeMiddleware);
-    if (Server.storesInitialState) {
-      this.ssrSubscribeState(Server.storesInitialState);
+    if (Server.StoresState) {
+      this.ssrSubscribeState(Server.StoresState);
     }
 
     const dispatchers = Server.getDispatchers(
@@ -175,9 +186,9 @@ export class Server {
     return this.store.getState().projectId!;
   }
 
-  ssrSubscribeState(storesInitialState: StoresInitialState): void {
-    storesInitialState.serverStores = storesInitialState.serverStores || {};
-    this.store.subscribe(() => storesInitialState.serverStores![this.getProjectId()] = this.store.getState());
+  ssrSubscribeState(StoresState: StoresState): void {
+    StoresState.serverStores = StoresState.serverStores || {};
+    this.store.subscribe(() => StoresState.serverStores![this.getProjectId()] = this.store.getState());
   }
 
   getStore(): Store<ReduxState, AllActions> {
