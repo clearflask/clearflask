@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import greenlockExpress from 'greenlock-express';
 import httpp from 'http-proxy';
 import path from 'path';
@@ -53,8 +54,18 @@ function worker(glx) {
 
   // App
   const app = express();
-  app.use(express.static(
-    path.resolve(__dirname, '..', '..', 'build'), {
+  if (process.env.NODE_ENV !== 'production') {
+    app.get("/asset-manifest.json", function (req, res) {
+      fs.readFile(path.join(connectConfig.distPath, 'asset-manifest.json'), 'utf8', (err, data) => {
+        if (err) {
+          res.sendStatus(404);
+        } else {
+          res.send(data.replace(/https:\/\/clearflask\.com/g, ''));
+        }
+      });
+    });
+  }
+  app.use(express.static(connectConfig.distPath, {
     index: false,
   }));
   app.all('/api/*', function (req, res) {

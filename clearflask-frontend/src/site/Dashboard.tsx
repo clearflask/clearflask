@@ -78,7 +78,6 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  forceMock?: boolean;
 }
 interface ConnectProps {
   accountStatus?: Status;
@@ -114,7 +113,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         currentPagePath: [],
         binding: true,
       };
-      ServerAdmin.get(props.forceMock).dispatchAdmin()
+      ServerAdmin.get().dispatchAdmin()
         .then(d => d.accountBindAdmin({})
           .then(result => {
             this.setState({ binding: false })
@@ -125,7 +124,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       this.state = {
         currentPagePath: [],
       };
-      ServerAdmin.get(props.forceMock).dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
+      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
     } else {
       this.state = {
         currentPagePath: [],
@@ -170,7 +169,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
     const projects = Object.keys(this.props.bindByProjectId)
-      .map(projectId => ServerAdmin.get(this.props.forceMock)
+      .map(projectId => ServerAdmin.get()
         .getOrCreateProject(this.props.bindByProjectId![projectId].config,
           this.props.bindByProjectId![projectId].user));
     projects.forEach(project => {
@@ -624,7 +623,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   if (activeProject) {
                     const projectId = activeProject.projectId
                     if (userLabel) {
-                      activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
+                      ServerAdmin.get().dispatchAdmin().then(d => d.userLoginAdmin({
                         projectId,
                         userId: userLabel.value,
                       }));
@@ -706,7 +705,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <Typography style={{ flexGrow: 1 }}>You have unsaved changes</Typography>
               <Button color='primary' onClick={() => {
                 const currentProject = activeProject;
-                currentProject.server.dispatchAdmin().then(d => d.configSetAdmin({
+                ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
                   projectId: currentProject.projectId,
                   versionLast: currentProject.configVersion,
                   configAdmin: currentProject.editor.getConfig(),

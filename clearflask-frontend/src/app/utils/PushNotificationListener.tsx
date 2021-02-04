@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { Server, Status } from '../../api/server';
+import windowIso from '../../common/windowIso';
 
 interface Props {
   server: Server;
@@ -23,8 +24,8 @@ export default class PushNotificationListener extends Component<Props> {
     }
   }
 
-  componentDidMount = () => navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', this.messageReceived.bind(this));
-  componentWillUnmount = () => navigator.serviceWorker && navigator.serviceWorker.removeEventListener('message', this.messageReceived.bind(this));
+  componentDidMount = () => !windowIso.isSsr && windowIso.navigator.serviceWorker && windowIso.navigator.serviceWorker.addEventListener('message', this.messageReceived.bind(this));
+  componentWillUnmount = () => !windowIso.isSsr && windowIso.navigator.serviceWorker && windowIso.navigator.serviceWorker.removeEventListener('message', this.messageReceived.bind(this));
 
   render = () => null;
 

@@ -122,7 +122,8 @@
   },
   "scripts": {
     "start": "NODE_ENV=production node --unhandled-rejections=strict --trace-warnings src/bootstrap.js",
-    "build": "GENERATE_SOURCEMAP=false react-app-rewired build",
+    "build": "GENERATE_SOURCEMAP=false react-app-rewired build && rm -fR dist && cp -r build dist",
+    "build-dev": "GENERATE_SOURCEMAP=true PUBLIC_URL=/ react-app-rewired build && rm -fR dist-dev && cp -r build dist-dev",
     "preinstall_DISABLED": "npx npm-force-resolutions",
     "postinstall": "patch-package",
     "eject": "react-scripts eject",

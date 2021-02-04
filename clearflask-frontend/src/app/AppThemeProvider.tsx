@@ -1,7 +1,6 @@
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
 import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
-import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 import { ComponentsProps } from '@material-ui/core/styles/props';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -126,7 +125,7 @@ class AppThemeProvider extends Component<Props> {
     }
 
     return (
-      <StylesProvider generateClassName={createGenerateClassName({
+      <StylesProvider injectFirst generateClassName={createGenerateClassName({
         seed: this.props.seed,
       })}>
         <MuiThemeProvider theme={theme}>

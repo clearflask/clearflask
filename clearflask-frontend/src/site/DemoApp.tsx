@@ -3,6 +3,7 @@ import { MemoryRouter, Route, RouteComponentProps, withRouter } from 'react-rout
 import * as Admin from "../api/admin";
 import DataMock from '../api/dataMock';
 import { Server, StateSettings } from '../api/server';
+import ServerAdmin from '../api/serverAdmin';
 import ServerMock from '../api/serverMock';
 import App from '../app/App';
 import * as ConfigEditor from '../common/config/configEditor';
@@ -31,8 +32,8 @@ export async function getProject(
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   template && template(templater);
-  const d = await server.dispatchAdmin();
-  const projectCreateResult = await d.projectCreateAdmin({
+  const d = await ServerAdmin.get().dispatchAdmin();
+  await d.projectCreateAdmin({
     configAdmin: editor.getConfig(),
   });
   server.subscribeToChanges(editor);

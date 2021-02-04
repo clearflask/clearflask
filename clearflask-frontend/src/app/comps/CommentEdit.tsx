@@ -4,6 +4,7 @@ import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } fro
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import ModAction from '../../common/ModAction';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
@@ -133,7 +134,7 @@ export const CommentDelete = withTheme((props: {
           onClick={() => {
             setSubmitting(true);
             (props.asAdmin
-              ? props.server.dispatchAdmin().then(d => d.commentDeleteAdmin({
+              ? ServerAdmin.get().dispatchAdmin().then(d => d.commentDeleteAdmin({
                 projectId: props.server.getProjectId(),
                 ideaId: props.comment.ideaId,
                 commentId: props.comment.commentId,

@@ -140,9 +140,9 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 textTransform: statusConfig.textTransform as any,
               }}
             >
-              <a
+              <a // eslint-disable-line react/jsx-no-target-blank
                 href={src}
-                target='_blank' // eslint-disable-line react/jsx-no-target-blank
+                target='_blank'
                 rel='noopener nofollow'
                 className={this.props.classes.link}
               >

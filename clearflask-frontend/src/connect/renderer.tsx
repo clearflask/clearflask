@@ -17,7 +17,7 @@ interface RenderResult {
   renderedScreen: string;
 }
 
-const statsFile = path.resolve(__dirname, '..', '..', 'build', 'loadable-stats.json')
+const statsFile = path.resolve(connectConfig.distPath, 'loadable-stats.json')
 
 const PH_ENV = '%ENV%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
@@ -30,7 +30,7 @@ const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
-  const filePath = path.resolve(__dirname, '..', '..', 'public', 'index.html');
+  const filePath = path.resolve(connectConfig.distPath, 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if (!err) {
       resolve(html);
@@ -131,7 +131,7 @@ export default function render() {
       var html = await indexHtmlPromise;
 
       if (process.env.NODE_ENV !== 'production') {
-        html = html.replace(PH_ENV, '<script>window.NODE_ENV=development</script>');
+        html = html.replace(PH_ENV, '<script>window.NODE_ENV=\'development\'</script>');
       } else {
         html = html.replace(PH_ENV, '');
       }

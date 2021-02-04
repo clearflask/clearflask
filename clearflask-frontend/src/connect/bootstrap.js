@@ -16,4 +16,4 @@ require('@babel/register')({
     "@loadable/babel-plugin",
   ]
 });
-require('./server');
+require('./connect');

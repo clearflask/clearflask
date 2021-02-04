@@ -5,6 +5,7 @@ export interface ConnectConfig {
   email: string;
   connectToken: string;
   chunksPublicPath?: string,
+  distPath: string,
 }
 
 const configFile = process.env.NODE_ENV === 'production'
@@ -24,6 +25,8 @@ const connectConfig: ConnectConfig = {
   listenPort: 44380,
   chunksDomain: '/',
   email: 'hostmaster@clearflask.com',
+  distPath: path.join(__dirname, '..', '..', process.env.NODE_ENV === 'production'
+    ? 'dist' : 'dist-dev'),
   ...(configLoaded || {}),
 };
 

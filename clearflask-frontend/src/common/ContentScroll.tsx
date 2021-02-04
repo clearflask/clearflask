@@ -1,20 +1,11 @@
 import { Theme } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
-import React from 'react';
 
 export enum Side {
   Center = 'center',
   Left = 'left',
   Right = 'right',
-}
-
-interface Props {
-  style?: React.CSSProperties,
-  className?: string;
-  isVertical?: boolean;
-  side?: Side;
-  backgroundColor?: string;
 }
 
 export const RadialSize = 15;

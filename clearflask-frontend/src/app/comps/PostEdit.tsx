@@ -4,6 +4,7 @@ import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
@@ -214,7 +215,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
               this.setState({ isSubmitting: true });
               (isModOrAdminLoggedIn
-                ? this.props.server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
+                ? ServerAdmin.get().dispatchAdmin().then(d => d.ideaUpdateAdmin({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
                   ideaUpdateAdmin: {
@@ -268,7 +269,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               onClick={() => {
                 this.setState({ isSubmitting: true });
                 (isModOrAdminLoggedIn
-                  ? this.props.server.dispatchAdmin().then(d => d.ideaDeleteAdmin({
+                  ? ServerAdmin.get().dispatchAdmin().then(d => d.ideaDeleteAdmin({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
                   }))

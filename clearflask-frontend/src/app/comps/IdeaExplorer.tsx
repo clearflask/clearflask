@@ -20,6 +20,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import SubmitButton from '../../common/SubmitButton';
@@ -481,7 +482,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     this.setState({ newItemIsSubmitting: true });
     var createPromise: Promise<Client.Idea | Admin.Idea>;
     if (this.props.server.isModOrAdminLoggedIn()) {
-      createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
+      createPromise = ServerAdmin.get().dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
           authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,

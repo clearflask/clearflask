@@ -31,9 +31,7 @@ export class Server {
   static storesState: StoresState | undefined;
 
   readonly store: Store<ReduxState, AllActions>;
-  readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
-  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
 
   // NOTE: If creating multiple projects, only one project can have projectId undefined
   // and is conside
@@ -61,11 +59,15 @@ export class Server {
       this.store = createStore(reducers, preloadedState, storeMiddleware);
     }
 
-    const dispatchers = Server.getDispatchers(
+    const apiConf: Client.ConfigurationParameters = {};
+    if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      apiOverride = ServerMock.get();
+    } else {
+      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
+    }
+    this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
-      apiOverride);
-    this.dispatcherClient = dispatchers.client;
-    this.dispatcherAdmin = dispatchers.adminPromise;
+      new Client.Api(new Client.Configuration(apiConf), apiOverride));
   }
 
   static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
@@ -126,27 +128,6 @@ export class Server {
     return result.value;
   }
 
-  static getDispatchers(
-    dispatcherDelegate: (msg: any) => Promise<any>,
-    apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
-
-    const apiConf: Client.ConfigurationParameters = {};
-    if (!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      apiOverride = ServerMock.get();
-    } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
-    }
-
-    const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
-      new Client.Api(new Client.Configuration(apiConf), apiOverride));
-    const dispatcherAdminPromise = Promise.resolve(new Admin.Dispatcher(dispatcherDelegate,
-      new Admin.Api(new Admin.Configuration(apiConf), apiOverride)));
-    return {
-      client: dispatcherClient,
-      adminPromise: dispatcherAdminPromise,
-    };
-  }
-
   static initialState(projectId?: string, settings?: StateSettings): any {
     const state: ReduxState = {
       projectId: projectId || stateProjectIdDefault,
@@ -178,13 +159,11 @@ export class Server {
       && !!state.users.loggedIn.user?.isMod;
   }
 
-  dispatch(): Client.Dispatcher {
-    return this.dispatcherClient;
-  }
-
-  async dispatchAdmin(): Promise<Admin.Dispatcher> {
-    // TODO load as async webpack here. remove all references to Admin.*
-    return this.dispatcherAdmin;
+  dispatch(props: { ssr: boolean }): Promise<Client.Dispatcher> {
+    if (!props.ssr && windowIso.isSsr) {
+      return new Promise(() => { }); // Promise that never resolves
+    }
+    return Promise.resolve(this.dispatcherClient);
   }
 
   subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {

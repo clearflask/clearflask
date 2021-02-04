@@ -69,3 +69,5 @@ builds/
 ### Connect
 greenlock.d/
 .greenlockrc
+clearflask-frontend/dist
+clearflask-frontend/dist-dev

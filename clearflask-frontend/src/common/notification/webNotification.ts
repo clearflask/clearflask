@@ -63,7 +63,10 @@ export default class WebNotification {
   }
 
   async getPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
-    this.swRegistration = await navigator.serviceWorker?.getRegistration(SERVICE_WORKER_URL);
+    if (windowIso.isSsr) {
+      return { type: 'error' };
+    }
+    this.swRegistration = await windowIso.navigator.serviceWorker?.getRegistration(SERVICE_WORKER_URL);
     const pushSubscription = await this.swRegistration?.pushManager.getSubscription();
     if (pushSubscription === null) {
       return {
@@ -79,6 +82,10 @@ export default class WebNotification {
   }
 
   async askPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
+    if (windowIso.isSsr) {
+      return { type: 'error' };
+    }
+
     if (this.isMock) return this.mockAskPermission!();
 
     if (this.status === Status.Granted) {
@@ -86,11 +93,14 @@ export default class WebNotification {
     }
 
     if (this.status === Status.Unsupported) {
-      throw Error('Cannot ask for permission when unsupported');
+      return {
+        type: 'error',
+        userFacingMsg: 'Cannot ask for permission when unsupported',
+      };
     }
 
     try {
-      this.swRegistration = await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
+      this.swRegistration = await windowIso.navigator.serviceWorker.register(SERVICE_WORKER_URL, {
         scope: '/',
       });
     } catch (err) {
@@ -102,7 +112,7 @@ export default class WebNotification {
     }
 
     // Await sw to be ready before continuing
-    await navigator.serviceWorker.ready;
+    await windowIso.navigator.serviceWorker.ready;
 
     var pushSubscription: PushSubscription;
     try {
@@ -136,10 +146,11 @@ export default class WebNotification {
   mockSetAskPermission(mockAskPermission?: () => Promise<WebNotificationSubscription | WebNotificationError>) { this.mockAskPermission = mockAskPermission };
 
   _checkStatus() {
-    if ('Notification' in window
-      && 'serviceWorker' in navigator
-      && 'PushManager' in window) {
-      switch (!windowIso.isSsr && windowIso.Notification.permission || '') {
+    if (!windowIso.isSsr
+      && 'Notification' in windowIso
+      && 'serviceWorker' in windowIso.navigator
+      && 'PushManager' in windowIso) {
+      switch (windowIso.Notification.permission) {
         case 'granted':
           this.status = Status.Granted;
           break;

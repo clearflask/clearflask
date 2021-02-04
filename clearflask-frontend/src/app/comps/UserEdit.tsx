@@ -7,6 +7,7 @@ import React, { Component } from 'react';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
@@ -263,7 +264,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           >Delete</SubmitButton>
           <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
             this.setState({ isSubmitting: true });
-            this.props.server.dispatchAdmin().then(d => d.userUpdateAdmin({
+            ServerAdmin.get().dispatchAdmin().then(d => d.userUpdateAdmin({
               projectId: this.props.server.getProjectId(),
               userId: this.props.user.userId,
               userUpdateAdmin: {
@@ -318,7 +319,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
-                this.props.server.dispatchAdmin().then(d => d.userDeleteAdmin({
+                ServerAdmin.get().dispatchAdmin().then(d => d.userDeleteAdmin({
                   projectId: this.props.server.getProjectId(),
                   userId: this.props.user.userId,
                 }))

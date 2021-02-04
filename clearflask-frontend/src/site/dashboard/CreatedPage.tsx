@@ -139,7 +139,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         isSubmitting={this.state.isSubmitting}
                         onClick={e => {
                           this.setState({ isSubmitting: true });
-                          this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
+                          ServerAdmin.get().dispatchAdmin().then(d => d.userCreateAdmin({
                             projectId: this.props.server.getProjectId(),
                             userCreateAdmin: {
                               name: this.state.newModName,

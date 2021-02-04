@@ -230,7 +230,10 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
+    const plansGetPromise = ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
+    if (windowIso.isSsr) {
+      windowIso.awaitPromises.push(plansGetPromise);
+    }
   }
   return {
     accountStatus: state.account.account.status,
