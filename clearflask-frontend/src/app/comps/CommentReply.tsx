@@ -75,14 +75,14 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
             color='primary'
             disabled={!this.state.newCommentInput}
             onClick={e => {
-              this.props.logIn().then(() => this.props.server.dispatch().commentCreate({
+              this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({
                 projectId: this.props.server.getProjectId(),
                 ideaId: this.props.ideaId,
                 commentCreate: {
                   content: this.state.newCommentInput!,
                   parentCommentId: this.props.parentCommentId,
                 },
-              })).then(comment => {
+              }))).then(comment => {
                 this.setState({ newCommentInput: undefined })
                 this.props.onSubmitted && this.props.onSubmitted();
               });

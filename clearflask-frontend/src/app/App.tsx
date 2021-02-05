@@ -135,7 +135,7 @@ class App extends Component<Props, State> {
       }
     }
 
-    var configResult = await server.dispatch().configGetAndUserBind({
+    var configResult = await (await server.dispatch()).configGetAndUserBind({
       slug: this.props.slug,
       userBind: {
         ssoToken: token || undefined,
@@ -161,7 +161,7 @@ class App extends Component<Props, State> {
         if (!projectId) {
           // projectId missing, meaning project is private and requires login
           try {
-            configResult = await server.dispatch().configGetAndUserBind({
+            configResult = await (await server.dispatch()).configGetAndUserBind({
               slug: this.props.slug,
               userBind: {
                 browserPushToken: subscriptionResult.token,
@@ -176,7 +176,7 @@ class App extends Component<Props, State> {
             }
           }
         } else {
-          user = (await server.dispatch().userBind({
+          user = (await (await server.dispatch()).userBind({
             projectId: projectId,
             userBind: {
               browserPushToken: subscriptionResult.token,

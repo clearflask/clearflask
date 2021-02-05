@@ -198,7 +198,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           disabled={!isLoggedIn || !this.state.newItemTitle}
                           onClick={e => {
                             this.setState({ isSubmitting: true });
-                            this.props.server.dispatch().ideaCreate({
+                            this.props.server.dispatch().then(d => d.ideaCreate({
                               projectId: this.props.server.getProjectId(),
                               ideaCreate: {
                                 authorUserId: this.props.loggedInUser!.userId,
@@ -207,7 +207,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                                 categoryId: this.props.ideaCategoryId!,
                                 tagIds: [],
                               },
-                            })
+                            }))
                               .then(() => this.setState({
                                 isSubmitting: false,
                                 newItemSubmitted: true,

@@ -494,7 +494,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         },
       }))
     } else {
-      createPromise = this.props.server.dispatch().ideaCreate({
+      createPromise = this.props.server.dispatch().then(d => d.ideaCreate({
         projectId: this.props.server.getProjectId(),
         ideaCreate: {
           authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
@@ -503,7 +503,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           categoryId: this.state.newItemChosenCategoryId!,
           tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
         },
-      })
+      }));
     }
     createPromise.then(idea => {
       this.setState({
@@ -597,10 +597,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({
+    ownProps.server.dispatch().then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
       userBind: {}
-    });
+    }));
   }
   return {
     configver: state.conf.ver, // force rerender on config change

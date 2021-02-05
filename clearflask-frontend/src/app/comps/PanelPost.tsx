@@ -168,10 +168,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch().ideaSearch({
+    ownProps.server.dispatch().then(d => d.ideaSearch({
       projectId: state.projectId!,
       ideaSearch: newProps.searchMerged,
-    });
+    }));
   } else {
     const missingVotesByIdeaIds: string[] = [];
     newProps.searchResult.status = bySearch.status;
@@ -185,7 +185,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     if (state.users.loggedIn.status === Status.FULFILLED
       && state.users.loggedIn.user
       && missingVotesByIdeaIds.length > 0) {
-      ownProps.server.dispatch().ideaVoteGetOwn({
+      ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
         projectId: state.projectId!,
         ideaIds: missingVotesByIdeaIds,
         myOwnIdeaIds: missingVotesByIdeaIds
@@ -193,7 +193,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
           .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
           .map(idea => idea?.idea?.ideaId)
           .filter(notEmpty),
-      });
+      }));
     }
   }
 

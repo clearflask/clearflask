@@ -632,9 +632,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                         && this.state.quickView.id === activeProject.server.getStore().getState().users.loggedIn.user?.userId) {
                         this.setState({ quickView: undefined });
                       }
-                      activeProject.server.dispatch().userLogout({
+                      activeProject.server.dispatch().then(d => d.userLogout({
                         projectId,
-                      });
+                      }));
                     }
                   }
                 }}

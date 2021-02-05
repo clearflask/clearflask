@@ -228,14 +228,14 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     suppressNotifications: this.state.suppressNotifications,
                   },
                 }))
-                : this.props.server.dispatch().ideaUpdate({
+                : this.props.server.dispatch().then(d => d.ideaUpdate({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
                   ideaUpdate: {
                     title: this.state.title,
                     description: this.state.description,
                   },
-                }))
+                })))
                 .then(idea => {
                   this.setState({
                     isSubmitting: false,
@@ -273,10 +273,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
                   }))
-                  : this.props.server.dispatch().ideaDelete({
+                  : this.props.server.dispatch().then(d => d.ideaDelete({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
-                  }))
+                  })))
                   .then(() => {
                     this.setState({
                       isSubmitting: false,

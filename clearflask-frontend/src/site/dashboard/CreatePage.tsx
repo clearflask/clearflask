@@ -99,10 +99,10 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
       const config = this.createConfig();
       await this.mockData(config)
       this.props.previewProject.editor.setConfig(config);
-      await this.props.previewProject.server.dispatch().userBind({
+      await this.props.previewProject.server.dispatch().then(d => d.userBind({
         projectId: config.projectId,
         userBind: {},
-      });
+      }));
     }, DemoUpdateDelay);
     this.updatePreview();
 

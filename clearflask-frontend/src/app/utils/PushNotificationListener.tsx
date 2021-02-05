@@ -18,9 +18,9 @@ export default class PushNotificationListener extends Component<Props> {
     const loggedInUser = this.props.server.getStore().getState().users.loggedIn;
     if (typeof event === 'object' && event.data && event.data.type === 'update-notification-list'
       && loggedInUser.status === Status.FULFILLED && loggedInUser.user && loggedInUser.user.userId) {
-      this.props.server.dispatch().notificationSearch({
+      this.props.server.dispatch().then(d => d.notificationSearch({
         projectId: this.props.server.getProjectId(),
-      });
+      }));
     }
   }
 

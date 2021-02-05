@@ -68,15 +68,15 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       server = new Server();
     }
 
-    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
+    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().then(d => d.configGetAndUserBind({
       slug: windowIso.location.hostname,
       userBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
       },
-    }));
+    })));
 
-    const postPromise = server.dispatch().ideaGet({
+    const postPromise = (await server.dispatch()).ideaGet({
       projectId: server.getProjectId(),
       ideaId: props.postId,
     });

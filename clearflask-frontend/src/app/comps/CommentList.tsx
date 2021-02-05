@@ -39,11 +39,11 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
     if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
-      this.props.server.dispatch().ideaCommentSearch({
+      this.props.server.dispatch().then(d => d.ideaCommentSearch({
         projectId: this.props.server.getProjectId(),
         ideaId: this.props.ideaId,
         ideaCommentSearch: {},
-      });
+      }));
     }
   }
 
@@ -120,7 +120,7 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
       comments.push(comment.comment);
     });
     if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByCommentIds.length > 0) {
-      ownProps.server.dispatch().commentVoteGetOwn({
+      ownProps.server.dispatch().then(d => d.commentVoteGetOwn({
         projectId: state.projectId!,
         commentIds: missingVotesByCommentIds,
         myOwnCommentIds: missingVotesByCommentIds
@@ -128,21 +128,21 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
           .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
           .map(comment => comment?.comment?.commentId)
           .filter(notEmpty),
-      });
+      }));
     }
   }
   return {
     commentsStatus: commentsStatus,
     comments: comments,
     settings: state.settings,
-    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().ideaCommentSearch({
+    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().then(d => d.ideaCommentSearch({
       projectId: state.projectId!,
       ideaId: ownProps.ideaId,
       ideaCommentSearch: {
         parentCommentId: ownProps.parentCommentId,
         excludeChildrenCommentIds: commentIds && commentIds.commentIds ? [...commentIds.commentIds] : undefined,
       },
-    }),
+    })),
   };
 })(withStyles(styles, { withTheme: true })(CommentListRaw));
 export default CommentList;

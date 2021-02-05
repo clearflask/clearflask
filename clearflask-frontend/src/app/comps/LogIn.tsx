@@ -470,21 +470,21 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   if (!!isLogin && !this.state.pass) {
                     this.listenForExternalBind();
                     this.setState({ awaitExternalBind: 'recovery' });
-                    this.props.server.dispatch().forgotPassword({
+                    this.props.server.dispatch().then(d => d.forgotPassword({
                       projectId: this.props.server.getProjectId(),
                       forgotPassword: {
                         email: this.state.email!,
                       },
-                    });
+                    }));
                   } else if (!!isLogin && !!this.state.pass) {
                     this.setState({ isSubmitting: true });
-                    this.props.server.dispatch().userLogin({
+                    this.props.server.dispatch().then(d => d.userLogin({
                       projectId: this.props.server.getProjectId(),
                       userLogin: {
                         email: this.state.email!,
-                        password: saltHashPassword(this.state.pass),
+                        password: saltHashPassword(this.state.pass!),
                       },
-                    }).then(() => {
+                    })).then(() => {
                       this.setState({ isSubmitting: false });
                       this.props.onLoggedInAndClose();
                     }).catch(() => {
@@ -492,7 +492,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     });
                   } else {
                     this.setState({ isSubmitting: true });
-                    this.props.server.dispatch().userCreate({
+                    this.props.server.dispatch().then(d => d.userCreate({
                       projectId: this.props.server.getProjectId(),
                       userCreate: {
                         name: showDisplayNameInput ? this.state.displayName : undefined,
@@ -502,7 +502,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
                         browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
                       },
-                    }).then(userCreateResponse => {
+                    })).then(userCreateResponse => {
                       if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
                         this.setState({
                           isSubmitting: false,
@@ -558,7 +558,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       emailVerification: val,
                       isSubmitting: true,
                     }, () => setTimeout(() => {
-                      this.props.server.dispatch().userCreate({
+                      this.props.server.dispatch().then(d => d.userCreate({
                         projectId: this.props.server.getProjectId(),
                         userCreate: {
                           name: this.state.displayName,
@@ -566,7 +566,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           emailVerification: val.join(),
                           password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
                         },
-                      }).then(userCreateResponse => {
+                      })).then(userCreateResponse => {
                         if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
                           this.setState({ isSubmitting: false });
                         } else {
@@ -635,7 +635,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     this.storageListener = (ev: StorageEvent) => {
       if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
       if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-        this.props.server.dispatch().userCreate({
+        this.props.server.dispatch().then(d => d.userCreate({
           projectId: this.props.server.getProjectId(),
           userCreate: {
             email: 'mock@email.com',
@@ -644,12 +644,12 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               isExternal: true, // Only used during development, disregarded otherwise
             },
           },
-        });
+        }));
       } else {
-        this.props.server.dispatch().userBind({
+        this.props.server.dispatch().then(d => d.userBind({
           projectId: this.props.server.getProjectId(),
           userBind: {},
-        });
+        }));
       }
     }
     !windowIso.isSsr && windowIso.addEventListener('storage', this.storageListener);

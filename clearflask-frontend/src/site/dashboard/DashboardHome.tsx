@@ -260,10 +260,10 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({
+    ownProps.server.dispatch().then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
       userBind: {}
-    });
+    }));
   }
   return {
     configver: state.conf.ver, // force rerender on config change

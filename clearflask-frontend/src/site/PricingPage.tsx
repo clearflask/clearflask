@@ -11,7 +11,6 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import windowIso from '../common/windowIso';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
@@ -297,10 +296,7 @@ const FeatureListItem = (props: {
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   if (state.plans.plans.status === undefined) {
-    const plansGetPromise = ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
-    if (windowIso.isSsr) {
-      windowIso.awaitPromises.push(plansGetPromise);
-    }
+    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
   }
   return {
     plans: state.plans.plans.plans,

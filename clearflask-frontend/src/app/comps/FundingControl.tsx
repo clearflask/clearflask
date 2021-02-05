@@ -402,22 +402,22 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
     settings: state.settings,
-    updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
+    updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
       projectId: state.projectId!,
       ideaId: ideaId,
       ideaVoteUpdate: ideaVoteUpdate,
-    }),
+    })),
     callOnMount: () => {
       if (dispatchIdeaGetOnIdeaId) {
-        ownProps.server.dispatch().ideaGet({
+        ownProps.server.dispatch().then(d => d.ideaGet({
           projectId: state.projectId!,
           ideaId: dispatchIdeaGetOnIdeaId,
-        });
+        }));
       }
-      ownProps.server.dispatch().ideaSearch({
+      ownProps.server.dispatch().then(d => d.ideaSearch({
         projectId: state.projectId!,
         ideaSearch: search,
-      });
+      }));
     },
   };
 
@@ -440,11 +440,11 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       });
     if (bySearch.cursor) {
       newProps.loadMore = () => {
-        ownProps.server.dispatch().ideaSearch({
+        ownProps.server.dispatch().then(d => d.ideaSearch({
           projectId: state.projectId!,
           ideaSearch: search,
           cursor: bySearch.cursor,
-        });
+        }));
       }
     }
   }

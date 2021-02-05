@@ -1226,12 +1226,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       if (ownProps.variant === 'page'
         && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user) {
-        ownProps.server.dispatch().ideaVoteGetOwn({
+        ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
           projectId: state.projectId!,
-          ideaIds: [ownProps.idea.ideaId],
-          myOwnIdeaIds: ownProps.idea.authorUserId === state.users.loggedIn.user?.userId
-            ? [ownProps.idea.ideaId] : [],
-        });
+          ideaIds: [ownProps.idea!.ideaId],
+          myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
+            ? [ownProps.idea!.ideaId] : [],
+        }));
       }
     } else {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
@@ -1252,10 +1252,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
+    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
       projectId: state.projectId!,
       ideaId: ownProps.idea!.ideaId,
       ideaVoteUpdate,
-    }),
+    })),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

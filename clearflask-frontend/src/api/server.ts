@@ -159,11 +159,27 @@ export class Server {
       && !!state.users.loggedIn.user?.isMod;
   }
 
-  dispatch(props: { ssr: boolean }): Promise<Client.Dispatcher> {
+  dispatch(props: { ssr?: boolean } = {}): Promise<Client.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherClient);
+  }
+
+  static __dispatch<D>(props: { ssr?: boolean } = {}, dispatcher: D): Promise<D> {
     if (!props.ssr && windowIso.isSsr) {
       return new Promise(() => { }); // Promise that never resolves
     }
-    return Promise.resolve(this.dispatcherClient);
+    const dispatchPromise = Promise.resolve(dispatcher);
+    if (props.ssr && windowIso.isSsr) {
+      windowIso.awaitPromises.push(dispatchPromise);
+      // Intercept the 'then' method and add any API calls
+      // to the list of promises to wait for in SSR
+      const thenOriginal = dispatchPromise.then;
+      dispatchPromise.then = (...args): any => {
+        const apiPromise = thenOriginal.call(this, args as any);
+        if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
+        return apiPromise;
+      }
+    }
+    return dispatchPromise;
   }
 
   subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {

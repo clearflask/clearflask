@@ -104,7 +104,9 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
                   />
                 ) : (
                     <Button
-                      onClick={() => this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })
+                      onClick={() => this.props.server.dispatch().then(d => d.userLogout({
+                        projectId: this.props.server.getProjectId(),
+                      }))
                         .then(() => {
                           this.mobileNotification.mockSetStatus(MobileStatus.Available);
                           this.mobileNotification.mockSetDevice(MobileDevice.Ios);

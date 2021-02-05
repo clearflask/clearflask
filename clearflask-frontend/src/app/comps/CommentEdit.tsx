@@ -72,14 +72,14 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             >Delete</Button>
             <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
               this.setState({ isSubmitting: true });
-              this.props.server.dispatch().commentUpdate({
+              this.props.server.dispatch().then(d => d.commentUpdate({
                 projectId: this.props.server.getProjectId(),
                 ideaId: this.props.comment.ideaId,
                 commentId: this.props.comment.commentId,
                 commentUpdate: {
                   content: this.state.content,
                 },
-              })
+              }))
                 .then(idea => {
                   this.setState({
                     isSubmitting: false,
@@ -139,11 +139,11 @@ export const CommentDelete = withTheme((props: {
                 ideaId: props.comment.ideaId,
                 commentId: props.comment.commentId,
               }))
-              : props.server.dispatch().commentDelete({
+              : props.server.dispatch().then(d => d.commentDelete({
                 projectId: props.server.getProjectId(),
                 ideaId: props.comment.ideaId,
                 commentId: props.comment.commentId,
-              }))
+              })))
               .then(() => {
                 setSubmitting(false);
                 props.onDelete();

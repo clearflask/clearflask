@@ -78,8 +78,8 @@ export default class ServerAdmin {
   getServers(): Server[] {
     return Object.values(this.projects).map(p => p.server);
   }
-  dispatchAdmin(): Promise<Admin.Dispatcher> {
-    return Promise.resolve(this.dispatcherAdmin);
+  dispatchAdmin(props: { ssr?: boolean } = {}): Promise<Admin.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherAdmin);
   }
 
   getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {
