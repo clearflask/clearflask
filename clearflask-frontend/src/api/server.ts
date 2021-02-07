@@ -59,7 +59,9 @@ export class Server {
       this.store = createStore(reducers, preloadedState, storeMiddleware);
     }
 
-    const apiConf: Client.ConfigurationParameters = {};
+    const apiConf: Client.ConfigurationParameters = {
+      fetchApi: windowIso.fetch.bind(windowIso),
+    };
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
     } else {

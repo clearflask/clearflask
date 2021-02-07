@@ -10,8 +10,10 @@ enum Environment {
 
 function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (process?.env?.NODE_ENV === 'development'
-      || windowIso['NODE_ENV'] === 'development') {
+    if (process?.env?.NODE_ENV === 'development' // npm run start:frontend
+      || windowIso['nodeEnv'] === 'development' // npm run start:dev SSR
+      || windowIso['ENV'] === 'development' // npm run start:dev CSR
+    ) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
     } else if (windowIso.location.hostname.endsWith('localhost.com'
       || windowIso.location.hostname.endsWith('localhost'))) {

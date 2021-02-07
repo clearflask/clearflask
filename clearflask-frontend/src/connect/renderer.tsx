@@ -2,6 +2,7 @@ import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server';
 import { ServerStyleSheets } from '@material-ui/core';
 import htmlparser from 'cheerio';
 import fs from 'fs';
+import fetch from 'node-fetch';
 import path from 'path';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
@@ -40,7 +41,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   });
 }).then(htmlStr => {
   const publicUrl = (connectConfig.chunksPublicPath || '').replace(/\/$/, '');
-  htmlStr = htmlStr.replace(/%PUBLIC_URL%/g, publicUrl)
+  // htmlStr = htmlStr.replace(/%PUBLIC_URL%/g, publicUrl)
   const $ = htmlparser.load(htmlStr);
   $('#loader-css').remove();
   $('noscript').remove();
@@ -53,6 +54,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
+  $('body').find('script').remove();
   return $.root().html() || '';
 });
 
@@ -79,7 +81,7 @@ export default function render() {
           console.debug(`Rendering ${requested_url} pass #${renderCounter} with ${awaitPromises.length} promises`);
           const rr: RenderResult = {
             title: 'ClearFlask',
-            extractor: new ChunkExtractor({
+            extractor: renderResult?.extractor || new ChunkExtractor({
               statsFile,
               entrypoints: ['main'],
               publicPath: connectConfig.chunksPublicPath,
@@ -98,7 +100,8 @@ export default function render() {
           rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
             <ChunkExtractorManager extractor={rr.extractor}>
               <WindowIsoSsrProvider
-                nodeEnv={process.env.NODE_ENV}
+                nodeEnv={process.env.ENV || process.env.NODE_ENV as any}
+                fetch={fetch}
                 url={requested_url}
                 setTitle={newTitle => rr.title = newTitle}
                 storesState={storesState}
@@ -134,8 +137,8 @@ export default function render() {
 
       var html = await indexHtmlPromise;
 
-      if (process.env.NODE_ENV !== 'production') {
-        html = html.replace(PH_ENV, '<script>window.NODE_ENV=\'development\'</script>');
+      if (process.env.ENV !== 'production') {
+        html = html.replace(PH_ENV, '<script>window.ENV=\'development\'</script>');
       } else {
         html = html.replace(PH_ENV, '');
       }
@@ -172,12 +175,12 @@ export default function render() {
       res.end(html);
     } catch (e) {
       console.error('Failed to get page', e);
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.ENV !== 'production') {
         res.status(500).end();
       } else {
         // fallback to client-side rendering but still throw 500
         res.status(500);
-        res.sendFile(path.join(__dirname, '..', '..', "build", "index.html"));
+        res.sendFile(path.join(connectConfig.distPath, 'index.html'));
       }
     }
   };

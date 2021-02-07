@@ -31,7 +31,9 @@ export default class ServerAdmin {
   constructor() {
     if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
 
-    const apiConf: Admin.ConfigurationParameters = {};
+    const apiConf: Admin.ConfigurationParameters = {
+      fetchApi: windowIso.fetch.bind(windowIso),
+    };
     var apiOverride: Client.ApiInterface & Admin.ApiInterface | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();

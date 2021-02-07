@@ -6,9 +6,10 @@ class ServerConnect {
   readonly dispatcher: Connect.Dispatcher;
 
   constructor() {
-    const apiConf: Connect.ConfigurationParameters = {};
-    apiConf.basePath = Connect.BASE_PATH.replace(/https:\/\/clearflask\.com/, `http://localhost:8080`);
-    apiConf.fetchApi = fetch;
+    const apiConf: Connect.ConfigurationParameters = {
+      fetchApi: fetch,
+      basePath: Connect.BASE_PATH.replace(/https:\/\/clearflask\.com/, `http://localhost:8080`),
+    };
 
     this.dispatcher = new Connect.Dispatcher(msg => msg.payload,
       new Connect.Api(new Connect.Configuration(apiConf)));

@@ -33,6 +33,7 @@ if (typeof window !== "undefined") {
 
 export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;
+  fetch: any;
   nodeEnv: 'development' | 'production' | 'test';
   url: string;
   setTitle: (title: string) => void;
@@ -41,6 +42,7 @@ export const WindowIsoSsrProvider = (props: {
   staticRouterContext: StaticRouterContext;
 }) => {
   win['nodeEnv'] = props.nodeEnv;
+  win['fetch'] = props.fetch;
   const url = new URL(props.url);
   win['location'] = url;
   win['setTitle'] = props.setTitle;
@@ -52,6 +54,7 @@ export const WindowIsoSsrProvider = (props: {
 
 export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.Global & {
   isSsr: true;
+  fetch: any;
   nodeEnv: 'development' | 'production' | 'test';
   location: URL;
   setTitle: (title: string) => void;

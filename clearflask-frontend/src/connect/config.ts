@@ -8,7 +8,7 @@ export interface ConnectConfig {
   distPath: string,
 }
 
-const configFile = process.env.NODE_ENV === 'production'
+const configFile = process.env.ENV === 'production'
   ? '/opt/clearflask/connect.config.js'
   : path.resolve(__dirname, '..', '..', 'connect.config.dev.js');
 
@@ -25,7 +25,7 @@ const connectConfig: ConnectConfig = {
   listenPort: 44380,
   chunksDomain: '/',
   email: 'hostmaster@clearflask.com',
-  distPath: path.join(__dirname, '..', '..', process.env.NODE_ENV === 'production'
+  distPath: path.join(__dirname, '..', '..', process.env.ENV === 'production'
     ? 'dist' : 'dist-dev'),
   ...(configLoaded || {}),
 };

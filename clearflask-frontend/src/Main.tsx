@@ -1,7 +1,7 @@
 import loadable from '@loadable/component';
 import { createMuiTheme, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { ProviderContext } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -91,7 +91,7 @@ class Main extends Component<Props> {
   componentDidMount() {
     if (!windowIso.isSsr) {
       const ssrJssEl = document.getElementById('ssr-jss');
-      if (ssrJssEl) ssrJssEl.parentNode?.removeChild(ssrJssEl);
+      ssrJssEl?.parentNode?.removeChild(ssrJssEl);
     }
   }
 
@@ -104,74 +104,78 @@ class Main extends Component<Props> {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     return (
       // <React.StrictMode>
-      <MuiThemeProvider theme={theme}>
-        <MuiSnackbarProvider notistackRef={notistackRef}>
-          <CssBaseline />
-          <ServerErrorNotifier />
-          <CaptchaChallenger />
-          <div style={{
-            minHeight: vh(100),
-            display: 'flex',
-            flexDirection: 'column',
-            background: theme.palette.background.default,
-          }}>
-            <Router
-              {...(windowIso.isSsr ? {
-                location: this.props.ssrLocation,
-                context: this.props.ssrStaticRouterContext,
-              } : {})}
-            >
-              <ScrollAnchor scrollOnNavigate />
-              {isTracking() && (
-                <Route path='/' render={({ location }) => {
-                  ReactGA.set({ page: location.pathname + location.search });
-                  ReactGA.pageview(location.pathname + location.search);
-                  return null;
-                }} />
-              )}
-              <Route render={({ location }) => location.pathname.startsWith('/embed-status') ? null : (
-                <EnvironmentNotifier key='env-notifier' />
-              )} />
-              <Switch>
-                {isProject ? ([(
-                  <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                    <PostStatus
-                      {...props}
-                      postId={props.match.params['postId'] || ''}
-                    />
-                  )} />
-                ), (
-                  <Route key='app' path="/" render={props => (
-                    <App slug={windowIso.location.hostname} {...props} />
-                  )} />
-                )]) : ([(
-                  <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
-                    <Provider store={ServerAdmin.get().getStore()}>
-                      <Dashboard {...props} />
-                      <IntercomWrapperMain />
-                      <HotjarWrapperMain />
-                    </Provider>
-                  )} />
-                ), (
-                  <Route key='invoice' path="/invoice/:invoiceId" render={props => (
-                    <Provider store={ServerAdmin.get().getStore()}>
-                      <Invoice invoiceId={props.match.params['invoiceId']} />
-                    </Provider>
-                  )} />
-                ), (
-                  <Route key='site' render={props => (
-                    <Provider store={ServerAdmin.get().getStore()}>
-                      <Site {...props} />
-                      <IntercomWrapperMain />
-                      <HotjarWrapperMain />
-                    </Provider>
-                  )} />
-                )])}
-              </Switch>
-            </Router>
-          </div>
-        </MuiSnackbarProvider>
-      </MuiThemeProvider>
+      <StylesProvider injectFirst generateClassName={createGenerateClassName({
+        seed: 'main',
+      })}>
+        <MuiThemeProvider theme={theme}>
+          <MuiSnackbarProvider notistackRef={notistackRef}>
+            <CssBaseline />
+            <ServerErrorNotifier />
+            <CaptchaChallenger />
+            <div style={{
+              minHeight: vh(100),
+              display: 'flex',
+              flexDirection: 'column',
+              background: theme.palette.background.default,
+            }}>
+              <Router
+                {...(windowIso.isSsr ? {
+                  location: this.props.ssrLocation,
+                  context: this.props.ssrStaticRouterContext,
+                } : {})}
+              >
+                <ScrollAnchor scrollOnNavigate />
+                {isTracking() && (
+                  <Route path='/' render={({ location }) => {
+                    ReactGA.set({ page: location.pathname + location.search });
+                    ReactGA.pageview(location.pathname + location.search);
+                    return null;
+                  }} />
+                )}
+                <Route render={({ location }) => location.pathname.startsWith('/embed-status') ? null : (
+                  <EnvironmentNotifier key='env-notifier' />
+                )} />
+                <Switch>
+                  {isProject ? ([(
+                    <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                      <PostStatus
+                        {...props}
+                        postId={props.match.params['postId'] || ''}
+                      />
+                    )} />
+                  ), (
+                    <Route key='app' path="/" render={props => (
+                      <App slug={windowIso.location.hostname} {...props} />
+                    )} />
+                  )]) : ([(
+                    <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Dashboard {...props} />
+                        <IntercomWrapperMain />
+                        <HotjarWrapperMain />
+                      </Provider>
+                    )} />
+                  ), (
+                    <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Invoice invoiceId={props.match.params['invoiceId']} />
+                      </Provider>
+                    )} />
+                  ), (
+                    <Route key='site' render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Site {...props} />
+                        <IntercomWrapperMain />
+                        <HotjarWrapperMain />
+                      </Provider>
+                    )} />
+                  )])}
+                </Switch>
+              </Router>
+            </div>
+          </MuiSnackbarProvider>
+        </MuiThemeProvider>
+      </StylesProvider>
       // </React.StrictMode>
     );
   }
