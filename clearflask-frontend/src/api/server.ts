@@ -163,21 +163,35 @@ export class Server {
     return Server.__dispatch(props, this.dispatcherClient);
   }
 
-  static __dispatch<D>(props: { ssr?: boolean } = {}, dispatcher: D): Promise<D> {
+  static __dispatch<D>(props: {
+    ssr?: boolean;
+    ssrStatusPassthrough?: boolean;
+  } = {}, dispatcher: D): Promise<D> {
     if (!props.ssr && windowIso.isSsr) {
       return new Promise(() => { }); // Promise that never resolves
     }
     const dispatchPromise = Promise.resolve(dispatcher);
     if (props.ssr && windowIso.isSsr) {
       windowIso.awaitPromises.push(dispatchPromise);
-      // Intercept the 'then' method and add any API calls
+      // Extend the 'then' method and add any API calls
       // to the list of promises to wait for in SSR
-      const thenOriginal = dispatchPromise.then;
-      dispatchPromise.then = (...args): any => {
-        const apiPromise = thenOriginal.call(this, args as any);
-        if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
-        return apiPromise;
-      }
+      dispatchPromise.then = (function (_super) {
+        return function (this: any) {
+          var apiPromise = _super.apply(this, arguments as any);
+          if (props.ssrStatusPassthrough) {
+            apiPromise = apiPromise.catch(err => {
+              if (!windowIso.isSsr) return;
+              if (isNaN(err?.status)) {
+                windowIso.staticRouterContext.statusCode = 500;
+              } else {
+                windowIso.staticRouterContext.statusCode = err.status;
+              }
+            })
+          }
+          if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
+          return apiPromise;
+        };
+      })(dispatchPromise.then) as any;
     }
     return dispatchPromise;
   }

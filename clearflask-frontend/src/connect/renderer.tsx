@@ -71,7 +71,12 @@ export default function render() {
       var renderCounter = 0;
       const renderPromise = new Promise<void>(async resolve => {
         do {
-          ++renderCounter;
+          if (++renderCounter > 10) {
+            console.warn(`Render give up after too many passes ${renderCounter} on ${requested_url}`);
+            resolve();
+            return;
+          }
+          console.debug(`Rendering ${requested_url} pass #${renderCounter} with ${awaitPromises.length} promises`);
           const rr: RenderResult = {
             title: 'ClearFlask',
             extractor: new ChunkExtractor({
@@ -85,9 +90,10 @@ export default function render() {
           };
 
           try {
-            await Promise.all(awaitPromises);
+            await Promise.allSettled(awaitPromises);
           } catch (e) { }
           awaitPromises.length = 0;
+          if (isFinished) return; // Request timed out
 
           rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
             <ChunkExtractorManager extractor={rr.extractor}>
@@ -106,9 +112,7 @@ export default function render() {
               </WindowIsoSsrProvider>
             </ChunkExtractorManager>
           ));
-          if (isFinished) {
-            return; // Request timed out
-          }
+          if (isFinished) return; // Request timed out
           renderResult = rr;
         } while (awaitPromises.length > 0);
         console.info(`Rendered ${requested_url} in ${renderCounter} pass(es)`);
@@ -117,7 +121,7 @@ export default function render() {
       const timeoutPromise = new Promise<void>(resolve => setTimeout(() => {
         !isFinished && console.warn(`Render timeout on ${requested_url} after ${renderCounter} pass(es)`);
         resolve();
-      }, 30000));
+      }, 10000));
       await Promise.race([timeoutPromise, renderPromise]);
       isFinished = true;
 

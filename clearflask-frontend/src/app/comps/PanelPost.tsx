@@ -168,7 +168,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch().then(d => d.ideaSearch({
+    ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
       projectId: state.projectId!,
       ideaSearch: newProps.searchMerged,
     }));

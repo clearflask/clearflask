@@ -1,12 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "es7"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "es7"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -31,10 +26,9 @@
   "exclude": [
     "**/node_modules/*",
     "node_modules",
+    "dist/*",
+    "dist-dev/*",
     "public/*"
   ],
-  "include": [
-    "src/**/*",
-    "public/sw.ts"
-  ]
+  "include": ["src/**/*", "public/sw.ts"]
 }

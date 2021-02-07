@@ -52,33 +52,21 @@ interface Props {
   history: History;
   location: Location;
 }
-interface State {
-  server?: Server;
-}
-class App extends Component<Props, State> {
+class App extends Component<Props> {
   readonly uniqId = randomUuid();
+  readonly server;
 
   constructor(props) {
     super(props);
 
-    const server = this.getOrCreateServer();
+    this.server = this.getOrCreateServer();
 
-    if (server.getStore().getState().conf.status === undefined) {
-      const initPromise = this.init(server);
+    if (this.server.getStore().getState().conf.status === undefined) {
       if (windowIso.isSsr) {
-        windowIso.awaitPromises.push(initPromise);
-        initPromise.catch(err => {
-          if (!windowIso.isSsr) return;
-          if (isNaN(err?.status)) {
-            windowIso.staticRouterContext.statusCode = 500;
-          } else {
-            windowIso.staticRouterContext.statusCode = err.status;
-          }
-        });
+        windowIso.awaitPromises.push(this.initSsr());
+      } else {
+        this.init();
       }
-      this.state = {};
-    } else {
-      this.state = { server };
     }
   }
 
@@ -94,7 +82,14 @@ class App extends Component<Props, State> {
     return server;
   }
 
-  async init(server: Server) {
+  async initSsr() {
+    await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
+      slug: this.props.slug,
+      userBind: {},
+    });
+  }
+
+  async init() {
     const params = new URL(windowIso.location.href).searchParams;
     // Used for links within emails
     const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
@@ -135,7 +130,7 @@ class App extends Component<Props, State> {
       }
     }
 
-    var configResult = await (await server.dispatch()).configGetAndUserBind({
+    var configResult = await (await this.server.dispatch()).configGetAndUserBind({
       slug: this.props.slug,
       userBind: {
         ssoToken: token || undefined,
@@ -161,7 +156,7 @@ class App extends Component<Props, State> {
         if (!projectId) {
           // projectId missing, meaning project is private and requires login
           try {
-            configResult = await (await server.dispatch()).configGetAndUserBind({
+            configResult = await (await this.server.dispatch()).configGetAndUserBind({
               slug: this.props.slug,
               userBind: {
                 browserPushToken: subscriptionResult.token,
@@ -176,7 +171,7 @@ class App extends Component<Props, State> {
             }
           }
         } else {
-          user = (await (await server.dispatch()).userBind({
+          user = (await (await this.server.dispatch()).userBind({
             projectId: projectId,
             userBind: {
               browserPushToken: subscriptionResult.token,
@@ -187,7 +182,7 @@ class App extends Component<Props, State> {
     }
 
     // Start render since we received our configuration
-    this.setState({ server });
+    this.forceUpdate();
 
     if (!!user) {
       // Broadcast to other tabs of successful bind
@@ -197,20 +192,20 @@ class App extends Component<Props, State> {
   }
 
   render() {
-    if (!this.state.server) {
+    const confStatus = this.server.getStore().getState().conf.status;
+    if (!confStatus || confStatus === Status.PENDING) {
       return (<Loading />);
-    } else if (this.state.server.getStore().getState().conf.status === Status.REJECTED) {
+    } else if (confStatus === Status.REJECTED) {
       return (
-        <ErrorPage msg={this.state.server.getStore().getState().conf.rejectionMessage || 'Failed to load'} />
+        <ErrorPage msg={this.server.getStore().getState().conf.rejectionMessage || 'Failed to load'} />
       );
     }
 
-    const server = this.state.server;
-    const projectId = this.state.server.getProjectId();
+    const projectId = this.server.getProjectId();
     const appRootId = `appRoot-${projectId}-${this.uniqId}`;
 
     return (
-      <Provider store={server.getStore()}>
+      <Provider store={this.server.getStore()}>
         <AppThemeProvider
           appRootId={appRootId}
           seed={projectId}
@@ -223,7 +218,7 @@ class App extends Component<Props, State> {
             overflowY: this.props.settings?.demoScrollY ? 'scroll' : undefined,
           }}
         >
-          <PushNotificationListener server={server} />
+          <PushNotificationListener server={this.server} />
           <ServerErrorNotifier />
           <CaptchaChallenger />
           <div
@@ -240,13 +235,13 @@ class App extends Component<Props, State> {
               } : {}),
             }}
           >
-            <PrivateProjectLogin server={server}>
+            <PrivateProjectLogin server={this.server}>
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
               <Route key='header' path='/:page?' render={props => ['embed', 'sso', 'oauth'].includes(props.match.params['page']) ? null : (
                 <Header
                   pageSlug={props.match.params['page'] || ''}
-                  server={server}
+                  server={this.server}
                   pageChanged={this.pageChanged.bind(this)}
                 />
               )} />
@@ -257,24 +252,24 @@ class App extends Component<Props, State> {
                     <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
                       <CustomPage
                         pageSlug={pageSlug}
-                        server={server}
+                        server={this.server}
                       />
                     </BasePage>
                   )} />
                 )} >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
-                    <UserPage server={server} userId={props.match.params.userId} />
+                    <UserPage server={this.server} userId={props.match.params.userId} />
                   </BasePage>
                 )} />
                 <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
                   <BasePage pageTitle='Bank' showFooter={!props.match.params['embed']}>
-                    <BankPage server={server} />
+                    <BankPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (
                   <BasePage pageTitle='Account' showFooter={!props.match.params['embed']}>
-                    <AccountPage server={server} />
+                    <AccountPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='sso' path='/:type(sso|oauth)' render={props => (
@@ -289,7 +284,7 @@ class App extends Component<Props, State> {
                     <PostPage
                       key={'postpage=' + props.match.params['postId']}
                       postId={props.match.params['postId'] || ''}
-                      server={server}
+                      server={this.server}
                     />
                   </BasePage>
                 )} />

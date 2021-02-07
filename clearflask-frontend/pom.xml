@@ -35,6 +35,20 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
+                                    <directory>${project.basedir}/dist</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/dist-dev</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/node</directory>
                                     <includes>
                                         <include>**</include>

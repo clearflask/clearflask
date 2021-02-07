@@ -239,7 +239,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     }
 
     return (
-      <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
+      <Loader inline key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
         {page}
       </Loader>
     );
