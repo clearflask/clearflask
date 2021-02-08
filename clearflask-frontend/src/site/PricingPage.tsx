@@ -10,6 +10,7 @@ import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
+import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
@@ -128,10 +129,11 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               <Typography component="div" variant="h6" color="textSecondary">Only pay for users that actively provide value.</Typography>
             </div>
             <Container maxWidth='md'>
-              <img
+              <ImgIso
                 alt=''
                 className={this.props.classes.image}
                 src='/img/landing/pricing.svg'
+                detectRatio
               />
             </Container>
           </div>

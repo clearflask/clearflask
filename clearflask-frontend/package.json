@@ -76,6 +76,7 @@
     "greenlock-express": "4.0.3",
     "http-proxy": "1.18.1",
     "ignore-styles": "5.0.1",
+    "image-size": "^0.9.3",
     "isomorphic-webcrypto": "2.3.6",
     "jsonwebtoken": "8.5.1",
     "lorem-ipsum": "2.0.1",

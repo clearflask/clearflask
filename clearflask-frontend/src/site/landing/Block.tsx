@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
+import ImgIso from '../../common/ImgIso';
 import { vh } from '../../common/util/vhUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
@@ -88,11 +89,12 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     const isHero = this.props.type === 'hero';
 
     var image = this.props.imagePath && (
-      <img
+      <ImgIso
         alt=''
         className={this.props.classes.image}
         src={this.props.imagePath}
         style={this.props.imageStyle}
+        detectRatio
       />
     );
 

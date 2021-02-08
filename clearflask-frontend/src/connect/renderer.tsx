@@ -7,15 +7,18 @@ import path from 'path';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
+import { IMAGE_SIZER_DATA_KEY } from '../common/imageSizerClient';
 import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
 import Main from '../Main';
 import connectConfig from './config';
+import imageSizer, { ImageSizerCollector } from './imageSizerCollector';
 
 interface RenderResult {
   title: string;
   extractor: ChunkExtractor;
   muiSheets: ServerStyleSheets;
   renderedScreen: string;
+  imageSizer: ImageSizerCollector;
 }
 
 const statsFile = path.resolve(connectConfig.distPath, 'loadable-stats.json')
@@ -28,6 +31,7 @@ const PH_MUI_STYLE_TAGS = '%MUI_STYLE_TAGS%';
 const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
 const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
 const PH_STORE_CONTENT = '%STORE_CONTENT%';
+const PH_IMAGE_SIZER_CACHE = '%IMAGE_SIZER_CACHE%';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
@@ -48,12 +52,13 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('#loadingScreen').remove();
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
-  $('head').prepend(PH_ENV);
   $('head').append(PH_STYLE_TAGS);
-  $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
+  $('head').append(`<style>${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
+  $('body').append(PH_ENV);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
+  $('body').append(PH_IMAGE_SIZER_CACHE);
   $('body').find('script').remove();
   return $.root().html() || '';
 });
@@ -89,6 +94,7 @@ export default function render() {
             }),
             muiSheets: new ServerStyleSheets(),
             renderedScreen: '',
+            imageSizer: new ImageSizerCollector(),
           };
 
           try {
@@ -107,6 +113,7 @@ export default function render() {
                 storesState={storesState}
                 awaitPromises={awaitPromises}
                 staticRouterContext={staticRouterContext}
+                imageSizer={rr.imageSizer}
               >
                 <Main
                   ssrLocation={req.url}
@@ -167,6 +174,8 @@ export default function render() {
       } else {
         html = html.replace(PH_STORE_CONTENT, '');
       }
+
+      html = html.replace(PH_IMAGE_SIZER_CACHE, `<script>window.${IMAGE_SIZER_DATA_KEY} = ${JSON.stringify(imageSizer.getCache())};</script>`);
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',

@@ -88,12 +88,15 @@ class Main extends Component<Props> {
     }
   }
 
-  componentDidMount() {
-    if (!windowIso.isSsr) {
-      const ssrJssEl = document.getElementById('ssr-jss');
-      ssrJssEl?.parentNode?.removeChild(ssrJssEl);
-    }
-  }
+  // TODO why is this unnecessary? MUI recommends pulling out the SSR generated CSS,
+  //      but it seems like it doesn't work without it.
+  //      Before re-enabling, set id="ssr-jss" in renderer.tsx
+  // componentDidMount() {
+  //   if (!windowIso.isSsr) {
+  //     const ssrJssEl = document.getElementById('ssr-jss');
+  //     ssrJssEl?.parentNode?.removeChild(ssrJssEl);
+  //   }
+  // }
 
   render() {
     if (!windowIso.isSsr && windowIso.location.hostname === 'www.clearflask.com') {

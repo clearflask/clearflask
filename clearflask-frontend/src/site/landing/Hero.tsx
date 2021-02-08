@@ -2,6 +2,7 @@ import { Button, Grid, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import ImgIso from '../../common/ImgIso';
 import { vh } from '../../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
@@ -69,10 +70,11 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
         >
           {this.props.imagePath && (
             <Grid item xs={12} md={6}>
-              <img
+              <ImgIso
                 alt=''
                 className={this.props.classes.image}
                 src={this.props.imagePath}
+                detectRatio
               />
             </Grid>
           )}
