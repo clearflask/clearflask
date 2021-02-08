@@ -1,7 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import classNames from 'classnames';
 import React, { Component } from 'react';
-import windowIso from './windowIso';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -18,14 +16,6 @@ const styles = (theme: Theme) => createStyles({
     height: '100%',
     maxWidth: 'inherit',
   },
-  ratio: {
-    paddingBottom: (props: Props) => {
-      if (!props.detectRatio || !windowIso.isSsr) return undefined;
-      const dimensions = windowIso.imageSizer.getDimensions(props.src);
-      if (!dimensions?.width || !dimensions?.height) return undefined;
-      return `${100 / (dimensions.width / dimensions.height)}%`
-    },
-  },
 });
 export interface Props {
   alt: string;
@@ -33,24 +23,21 @@ export interface Props {
   src: string;
   height?: number;
   width?: number;
-  detectSize?: boolean;
-  detectRatio?: boolean;
   style?: React.CSSProperties;
+  aspectRatio?: number;
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     var height = this.props.height;
     var width = this.props.width;
-    if (this.props.detectSize && windowIso.isSsr) {
-      if (!height) height = windowIso.imageSizer.getHeigth(this.props.src) || undefined;
-      if (!width) width = windowIso.imageSizer.getWidth(this.props.src) || undefined;
-    }
     return (
       <div className={this.props.className}>
-        <div className={classNames(
-          this.props.classes.container,
-          this.props.detectRatio && this.props.classes.ratio
-        )}>
+        <div
+          className={this.props.classes.container}
+          style={{
+            paddingBottom: this.props.aspectRatio ? `${100 / this.props.aspectRatio}%` : undefined,
+          }}
+        >
           <img
             alt={this.props.alt}
             className={this.props.classes.image}

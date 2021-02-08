@@ -74,7 +74,6 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                 alt=''
                 className={this.props.classes.image}
                 src={this.props.imagePath}
-                detectRatio
               />
             </Grid>
           )}

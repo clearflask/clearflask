@@ -1,3 +1,4 @@
+///<reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
@@ -12,6 +13,7 @@ import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
+import pricingImg from './pricing.svg';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
@@ -132,8 +134,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               <ImgIso
                 alt=''
                 className={this.props.classes.image}
-                src='/img/landing/pricing.svg'
-                detectRatio
+                src={pricingImg.pathname}
+                aspectRatio={pricingImg.aspectRatio}
               />
             </Container>
           </div>

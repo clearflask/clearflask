@@ -73,6 +73,7 @@ export interface Props extends BlockContentProps {
   type?: 'largeDemo' | 'hero' | 'column' | 'demoOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
+  image?: Img;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
   imageStyle?: React.CSSProperties;
@@ -88,13 +89,15 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
   render() {
     const isHero = this.props.type === 'hero';
 
-    var image = this.props.imagePath && (
+    const imageSrc = this.props.image?.src || this.props.imagePath;
+    const imageAspectRatio = this.props.image?.aspectRatio
+    var image = imageSrc && (
       <ImgIso
         alt=''
         className={this.props.classes.image}
-        src={this.props.imagePath}
+        src={imageSrc}
+        aspectRatio={imageAspectRatio}
         style={this.props.imageStyle}
-        detectRatio
       />
     );
 

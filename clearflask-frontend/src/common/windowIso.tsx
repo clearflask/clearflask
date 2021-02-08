@@ -3,7 +3,6 @@ import { StaticRouterContext } from 'react-router';
 import { Store } from 'redux';
 import { ReduxState } from '../api/server';
 import { ReduxStateAdmin } from '../api/serverAdmin';
-import { ImageSizer } from '../connect/imageSizerCollector';
 
 export interface StoresState {
   serverAdminStore?: Store<ReduxStateAdmin, any>,
@@ -41,7 +40,6 @@ export const WindowIsoSsrProvider = (props: {
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;
-  imageSizer: ImageSizer;
 }) => {
   win['nodeEnv'] = props.nodeEnv;
   win['fetch'] = props.fetch;
@@ -51,7 +49,6 @@ export const WindowIsoSsrProvider = (props: {
   win['storesState'] = props.storesState;
   win['awaitPromises'] = props.awaitPromises;
   win['staticRouterContext'] = props.staticRouterContext;
-  win['imageSizer'] = props.imageSizer;
   return props.children;
 };
 
@@ -64,7 +61,6 @@ export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.G
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;
-  imageSizer: ImageSizer;
 };
 
 const windowIso: WindowIso = win;

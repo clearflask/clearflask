@@ -14,6 +14,7 @@ require('@babel/register')({
   ],
   "plugins": [
     "@loadable/babel-plugin",
+    "babel-plugin-transform-media-imports",
   ]
 });
 require('./connect');
