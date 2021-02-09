@@ -137,7 +137,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
         Project project = projectOpt.get();
 
-        Optional<UserModel> loggedInUserOpt = userBindUtil.userBind(
+        Optional<UserModel> loggedInUserOpt = userBind.getSkipBind() == Boolean.TRUE
+            ? Optional.empty()
+            : userBindUtil.userBind(
                 request,
                 response,
                 project.getProjectId(),

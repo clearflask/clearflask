@@ -7,6 +7,7 @@ import path from 'path';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
+import { htmlDataCreate } from '../common/util/htmlData';
 import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
 import Main from '../Main';
 import connectConfig from './config';
@@ -163,7 +164,7 @@ export default function render() {
         };
         !!storesState.serverStores && Object.entries(storesState.serverStores)
           .forEach(([id, store]) => storesStateSerializable.serverStores![id] = store.getState());
-        html = html.replace(PH_STORE_CONTENT, `<script>window.__SSR_STORE_INITIAL_STATE__ = ${JSON.stringify(storesStateSerializable)};</script>`);
+        html = html.replace(PH_STORE_CONTENT, htmlDataCreate('__SSR_STORE_INITIAL_STATE__', storesStateSerializable));
       } else {
         html = html.replace(PH_STORE_CONTENT, '');
       }

@@ -28,6 +28,7 @@ import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
 import { initialWidth } from '../../common/util/screenUtil';
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -600,7 +601,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   if (!state.conf.conf && !state.conf.status) {
     ownProps.server.dispatch({ ssr: true }).then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      userBind: {}
+      userBind: {
+        skipBind: windowIso.isSsr,
+      }
     }));
   }
   return {

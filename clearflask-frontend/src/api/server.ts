@@ -4,6 +4,7 @@ import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { htmlDataRetrieve } from '../common/util/htmlData';
 import randomUuid from '../common/util/uuid';
 import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
@@ -58,7 +59,7 @@ export class Server {
         || createStore(reducers, Server.initialState(projectId, settings), storeMiddleware);
       this.store = windowIso.storesState.serverStores[projectStoreId];
     } else {
-      const preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresStateSerializable)?.serverStores?.[projectStoreId]
+      const preloadedState = (htmlDataRetrieve('__SSR_STORE_INITIAL_STATE__') as StoresStateSerializable | undefined)?.serverStores?.[projectStoreId]
         || Server.initialState(projectId, settings);
       this.store = createStore(reducers, preloadedState, storeMiddleware);
     }

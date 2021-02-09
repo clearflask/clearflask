@@ -3,6 +3,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
@@ -60,7 +61,7 @@ export default class ServerAdmin {
         || createStore(reducersAdmin, ServerAdmin._initialState(), storeMiddleware);
       this.store = windowIso.storesState.serverAdminStore;
     } else {
-      const preloadedState = (windowIso['__SSR_STORE_INITIAL_STATE__'] as StoresStateSerializable)?.serverAdminStore
+      const preloadedState = (htmlDataRetrieve('__SSR_STORE_INITIAL_STATE__') as StoresStateSerializable | undefined)?.serverAdminStore
         || ServerAdmin._initialState();
       this.store = createStore(reducersAdmin, preloadedState, storeMiddleware);
     }

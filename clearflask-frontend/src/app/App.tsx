@@ -85,7 +85,9 @@ class App extends Component<Props> {
   async initSsr() {
     await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
       slug: this.props.slug,
-      userBind: {},
+      userBind: {
+        skipBind: windowIso.isSsr,
+      },
     });
   }
 
