@@ -27,6 +27,7 @@ import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
+import { initialWidth } from '../../common/util/screenUtil';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -610,6 +611,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   }
 }, null, null, { forwardRef: true })(
   // withQueryParams(QueryState, 
-  withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))))
+  withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(IdeaExplorer))))
   // )
   ;

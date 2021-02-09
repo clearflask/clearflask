@@ -10,9 +10,9 @@ import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
+import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
-import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 

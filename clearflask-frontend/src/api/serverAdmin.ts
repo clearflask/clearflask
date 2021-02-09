@@ -6,7 +6,7 @@ import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import { Server, Status } from './server';
+import { DispatchProps, Server, Status } from './server';
 import ServerMock from './serverMock';
 
 export const DemoUpdateDelay = 300;
@@ -80,7 +80,7 @@ export default class ServerAdmin {
   getServers(): Server[] {
     return Object.values(this.projects).map(p => p.server);
   }
-  dispatchAdmin(props: { ssr?: boolean } = {}): Promise<Admin.Dispatcher> {
+  dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
     return Server.__dispatch(props, this.dispatcherAdmin);
   }
 

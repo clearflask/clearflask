@@ -438,14 +438,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   render() {
     if (!this.props.idea) return (
-      <Loader loaded={false}>
+      <Loader skipFade loaded={false}>
       </Loader>
     );
 
     const variant = this.state.currentVariant;
 
     return (
-      <Loader className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
+      <Loader skipFade className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
           <div className={this.props.classes.post}>
             <div className={this.props.classes.postVoting}>

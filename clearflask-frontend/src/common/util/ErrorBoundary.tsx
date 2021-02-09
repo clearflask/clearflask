@@ -2,7 +2,7 @@ import { Box, Button } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { Component } from 'react';
 import windowIso from '../windowIso';
-import { vh } from './vhUtil';
+import { vh } from './screenUtil';
 
 export interface Props {
 }

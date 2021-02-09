@@ -1,4 +1,4 @@
-import { Fade, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -70,7 +70,7 @@ interface ConnectProps {
   searchResult: SearchResult;
   searchMerged: Client.IdeaSearch;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps> {
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
@@ -140,13 +140,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         {content}
       </Panel>
     );
-    return (
-      <Fade in={true} appear>
-        <div>
-          {content}
-        </div>
-      </Fade>
-    );
+    return content;
   }
 }
 
@@ -198,4 +192,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withWidth()(withStyles(styles, { withTheme: true })(PanelPost)));
+})(withStyles(styles, { withTheme: true })(PanelPost));

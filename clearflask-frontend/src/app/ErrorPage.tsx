@@ -1,7 +1,7 @@
 import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
 import Message from '../common/Message';
-import { vh } from '../common/util/vhUtil';
+import { vh } from '../common/util/screenUtil';
 
 interface Props {
   msg?: string | React.ReactNode;

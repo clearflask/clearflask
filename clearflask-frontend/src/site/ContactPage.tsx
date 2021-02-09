@@ -12,7 +12,7 @@ import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import SubmitButton from '../common/SubmitButton';
 import preloadImage from '../common/util/imageUtil';
-import { vh } from '../common/util/vhUtil';
+import { vh } from '../common/util/screenUtil';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';

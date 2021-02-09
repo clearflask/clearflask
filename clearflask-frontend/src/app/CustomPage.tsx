@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
-import { vh } from '../common/util/vhUtil';
+import { vh } from '../common/util/screenUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -239,7 +239,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     }
 
     return (
-      <Loader inline key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
+      <Loader skipFade key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
         {page}
       </Loader>
     );

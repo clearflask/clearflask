@@ -26,6 +26,7 @@ import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { isTracking } from '../../common/util/detectEnv';
+import { initialWidth } from '../../common/util/screenUtil';
 import windowIso from '../../common/windowIso';
 import { StopTrialAfterActiveUsersReaches } from '../PricingPage';
 import PricingPlan from '../PricingPlan';
@@ -153,10 +154,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const status = this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus;
     if (!this.props.accountBilling || status !== Status.FULFILLED) {
       return (
-        <Loader
-          inline
-          status={status}
-        />
+        <Loader skipFade status={status} />
       );
     }
 
@@ -949,4 +947,4 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     isSuperAdmin: state.account.isSuperAdmin,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(BillingPage))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(BillingPage))));

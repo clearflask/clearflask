@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import ImgIso from '../../common/ImgIso';
-import { vh } from '../../common/util/vhUtil';
+import { vh } from '../../common/util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   hero: {

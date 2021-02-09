@@ -144,7 +144,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
         <br />
         <br />
         <Container maxWidth='md'>
-          <Loader loaded={!!this.props.plans} inline>
+          <Loader loaded={!!this.props.plans} skipFade>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
               {this.props.plans && this.props.plans.map((plan, index) => (
                 <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>

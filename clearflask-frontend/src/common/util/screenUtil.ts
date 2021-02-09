@@ -1,3 +1,4 @@
+import { Breakpoint } from "@material-ui/core/styles/createBreakpoints";
 import windowIso from "../windowIso";
 
 /**
@@ -10,3 +11,5 @@ const vhConstant = (windowIso.isSsr ? 768 : windowIso.innerHeight) / 100;
 export function vh(heightPerc: number): number {
   return vhConstant * heightPerc;
 }
+
+export const initialWidth: Breakpoint = 'md';

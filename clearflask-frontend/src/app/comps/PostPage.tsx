@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
+import { initialWidth } from '../../common/util/screenUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
@@ -120,7 +121,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
 
   const byId = state.ideas.byId[ownProps.postId];
   if (!byId) {
-    ownProps.server.dispatch().then(d => d.ideaGet({
+    ownProps.server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.ideaGet({
       projectId: state.projectId!,
       ideaId: ownProps.postId,
     }));
@@ -130,4 +131,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(withWidth()(PostPage)));
+})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(PostPage)));

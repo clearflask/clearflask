@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { InView } from 'react-intersection-observer';
 
 interface Props {
-
 }
 export default class InViewObserver extends Component<Props> {
   promise: Promise<IntersectionObserverEntry | undefined>;

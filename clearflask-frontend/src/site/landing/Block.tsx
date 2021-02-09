@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
 import ImgIso from '../../common/ImgIso';
-import { vh } from '../../common/util/vhUtil';
+import { vh } from '../../common/util/screenUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({

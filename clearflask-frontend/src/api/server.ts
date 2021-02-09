@@ -18,6 +18,10 @@ export const errorSubscribers: ErrorSubscribers = {}
 export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 export type ChallengeSubscribers = { [subscriberId: string]: ChallengeSubscriber };
 export const challengeSubscribers: ChallengeSubscribers = {}
+export interface DispatchProps {
+  ssr?: boolean;
+  ssrStatusPassthrough?: boolean;
+}
 
 export enum Status {
   PENDING = 'PENDING',
@@ -161,14 +165,11 @@ export class Server {
       && !!state.users.loggedIn.user?.isMod;
   }
 
-  dispatch(props: { ssr?: boolean } = {}): Promise<Client.Dispatcher> {
+  dispatch(props: DispatchProps = {}): Promise<Client.Dispatcher> {
     return Server.__dispatch(props, this.dispatcherClient);
   }
 
-  static __dispatch<D>(props: {
-    ssr?: boolean;
-    ssrStatusPassthrough?: boolean;
-  } = {}, dispatcher: D): Promise<D> {
+  static __dispatch<D>(props: DispatchProps = {}, dispatcher: D): Promise<D> {
     if (!props.ssr && windowIso.isSsr) {
       return new Promise(() => { }); // Promise that never resolves
     }
