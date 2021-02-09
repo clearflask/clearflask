@@ -101,7 +101,7 @@ export default function render() {
           rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
             <ChunkExtractorManager extractor={rr.extractor}>
               <WindowIsoSsrProvider
-                nodeEnv={process.env.ENV || process.env.NODE_ENV as any}
+                env={process.env.ENV || process.env.NODE_ENV as any}
                 fetch={fetch}
                 url={requested_url}
                 setTitle={newTitle => rr.title = newTitle}

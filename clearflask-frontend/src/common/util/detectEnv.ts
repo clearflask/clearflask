@@ -10,13 +10,12 @@ enum Environment {
 
 function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (process?.env?.NODE_ENV === 'development' // npm run start:frontend
-      || windowIso['nodeEnv'] === 'development' // npm run start:dev SSR
-      || windowIso['ENV'] === 'development' // npm run start:dev CSR
-    ) {
+    if (process?.env?.NODE_ENV === 'development' /* npm run start:frontend */
+      || windowIso['ENV'] === 'development' /* npm run start:dev */) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else if (windowIso.location.hostname.endsWith('localhost.com'
-      || windowIso.location.hostname.endsWith('localhost'))) {
+    } else if (windowIso.location.hostname.endsWith('localhost.com') /* fallback */
+      || windowIso.location.hostname.endsWith('localhost') /* fallback */
+      || windowIso['ENV'] === 'local' /* npm run start:local */) {
       envCache = Environment.DEVELOPMENT_LOCAL;
     } else {
       envCache = Environment.PRODUCTION;

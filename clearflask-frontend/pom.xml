@@ -247,7 +247,7 @@
                             <outputDirectory>${basedir}/target/classes/ROOT</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/build</directory>
+                                    <directory>${basedir}/dist</directory>
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>
