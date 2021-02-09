@@ -1,3 +1,4 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';

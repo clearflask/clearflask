@@ -51,6 +51,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   title?: string;
   description?: string;
+  image?: Img;
   imagePath?: string;
   mirror?: boolean;
   buttonTitle?: string;
@@ -60,6 +61,8 @@ interface Props {
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
+    const imageSrc = this.props.image?.src || this.props.imagePath;
+    const imageAspectRatio = this.props.image?.aspectRatio
     return (
       <div className={this.props.classes.hero}>
         <Grid container
@@ -68,12 +71,13 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
           alignItems='center'
           direction={!!this.props.mirror ? 'row-reverse' : undefined}
         >
-          {this.props.imagePath && (
+          {imageSrc && (
             <Grid item xs={12} md={6}>
               <ImgIso
                 alt=''
                 className={this.props.classes.image}
-                src={this.props.imagePath}
+                src={imageSrc}
+                aspectRatio={imageAspectRatio}
               />
             </Grid>
           )}

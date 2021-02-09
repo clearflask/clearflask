@@ -1,4 +1,4 @@
-///<reference path="../@types/transform-media-imports.d.ts"/>
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
@@ -7,13 +7,13 @@ import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import PricingImg from '../../public/img/landing/pricing.svg';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import pricingImg from './pricing.svg';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
@@ -134,8 +134,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               <ImgIso
                 alt=''
                 className={this.props.classes.image}
-                src={pricingImg.pathname}
-                aspectRatio={pricingImg.aspectRatio}
+                src={PricingImg.pathname}
+                aspectRatio={PricingImg.aspectRatio}
               />
             </Container>
           </div>

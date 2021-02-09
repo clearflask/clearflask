@@ -13,8 +13,14 @@ require('@babel/register')({
     "@babel/preset-typescript"
   ],
   "plugins": [
+    // If changed also change in .babelrc
     "@loadable/babel-plugin",
-    "babel-plugin-transform-media-imports",
+    [
+      "transform-media-imports",
+      {
+        "baseDir": "./public"
+      }
+    ],
   ]
 });
 require('./connect');

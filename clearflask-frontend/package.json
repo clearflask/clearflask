@@ -93,6 +93,7 @@
     "querystring": "0.2.0",
     "rc-trigger": "2.6.2",
     "react": "16.14.0",
+    "react-app-rewire-alias": "^0.2.1",
     "react-chartjs-2": "2.10.0",
     "react-cytoscapejs": "1.2.1",
     "react-dom": "16.14.0",

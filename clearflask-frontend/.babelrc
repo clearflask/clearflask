@@ -4,8 +4,7 @@
     [
       "transform-media-imports",
       {
-        "outputRoot": "build",
-        "pathnamePrefix": "static/img"
+        "baseDir": "./public"
       }
     ]
   ]
