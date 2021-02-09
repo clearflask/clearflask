@@ -124,7 +124,7 @@ public class UserStoreIT extends AbstractIT {
                 .androidPushToken("myAndroidPushToken2")
                 .browserPushToken("myBrowserPushToken2")
                 .build();
-        UserStore.UserAndIndexingFuture<UpdateResponse> updateResult = store.updateUser(user.getProjectId(), user.getUserId(), UserUpdate.builder()
+        UserStore.UserAndIndexingFuture updateResult = store.updateUser(user.getProjectId(), user.getUserId(), UserUpdate.builder()
                 .name(userUpdated.getName())
                 .email(userUpdated.getEmail())
                 .password(userUpdated.getPassword())
