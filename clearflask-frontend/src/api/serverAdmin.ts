@@ -34,12 +34,11 @@ export default class ServerAdmin {
 
     const apiConf: Admin.ConfigurationParameters = {
       fetchApi: windowIso.fetch.bind(windowIso),
+      basePath: Server.augmentApiBasePath(Admin.BASE_PATH),
     };
     var apiOverride: Client.ApiInterface & Admin.ApiInterface | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
-    } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
     }
     this.dispatcherAdmin = new Admin.Dispatcher(
       msg => Server._dispatch(msg, this.store),

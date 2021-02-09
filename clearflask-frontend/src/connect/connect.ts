@@ -17,9 +17,10 @@ greenlockExpress
     packageAgent: 'clearflask/1.0',
     maintainerEmail: connectConfig.email,
     subscriberEmail: connectConfig.email,
+    directoryUrl: connectConfig.acmeDirectoryUrl,
     cluster: true,
     debug: true,
-    workers: process.env.ENV === 'production' ? undefined : 2,
+    workers: connectConfig.workerCount,
     manager: {
       module: `${process.cwd()}/src/connect/greenlock/greenlock-manager-clearflask.js`
     },

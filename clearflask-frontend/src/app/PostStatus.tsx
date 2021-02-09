@@ -51,6 +51,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     super(props);
 
     this.dataPromise = this.fetchData(props);
+    if (windowIso.isSsr) windowIso.awaitPromises.push(this.dataPromise);
   }
 
   async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
@@ -68,25 +69,24 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       server = new Server();
     }
 
-    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.configGetAndUserBind({
+    const subscriptionResult = await WebNotification.getInstance().getPermission();
+    const configAndUserBind = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
       slug: windowIso.location.hostname,
       userBind: {
         skipBind: windowIso.isSsr,
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
       },
-    })));
-
-    const postPromise = (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
-      projectId: server.getProjectId(),
-      ideaId: props.postId,
     });
-
-    const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
+
+    const post = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
+      projectId: configAndUserBind.config?.config.projectId,
+      ideaId: props.postId,
+    });
 
     return [configAndUserBind.config, configAndUserBind.user, post];
   }

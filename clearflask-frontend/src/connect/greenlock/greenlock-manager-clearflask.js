@@ -18,7 +18,7 @@ Manager.create = function (opts) {
                 .certGetConnect(
                     { domain: opts.servername },
                     undefined,
-                    {'x-cf-connect-token': connectConfig.connectToken});
+                    { 'x-cf-connect-token': connectConfig.connectToken });
             console.log('Manager get found for servername', opts.servername);
             return result;
         } catch (response) {
@@ -56,8 +56,8 @@ Manager.create = function (opts) {
                         expiresAt: opts.expiresAt,
                     }
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
         return null;
     };
 
@@ -77,7 +77,7 @@ Manager.create = function (opts) {
     // Optional (Special Remove Functionality)
     // The default behavior is to set `deletedAt`
     //
-    manager.remove = async function(opts) {
+    manager.remove = async function (opts) {
         console.log('manager.remove', opts.subject);
         await ServerConnect.get()
             .dispatch()
@@ -85,8 +85,8 @@ Manager.create = function (opts) {
                 {
                     domain: opts.subject,
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
         return null;
     };
 

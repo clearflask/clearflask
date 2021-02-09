@@ -66,11 +66,10 @@ export class Server {
 
     const apiConf: Client.ConfigurationParameters = {
       fetchApi: windowIso.fetch.bind(windowIso),
+      basePath: Server.augmentApiBasePath(Client.BASE_PATH),
     };
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
-    } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
     }
     this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
@@ -149,6 +148,20 @@ export class Server {
       notifications: stateNotificationsDefault,
     };
     return state;
+  }
+
+  static augmentApiBasePath(basePath: string): string {
+    switch (detectEnv()) {
+      case Environment.DEVELOPMENT_FRONTEND:
+        break;
+      case Environment.DEVELOPMENT_LOCAL:
+        basePath = basePath.replace(/https:\/\/clearflask\.com/, 'http://localhost.com');
+        break;
+      default:
+        basePath = basePath.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
+        break;
+    }
+    return basePath;
   }
 
   getProjectId(): string {

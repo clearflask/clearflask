@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import * as Connect from './api/connect';
+import connectConfig from './config';
 
 class ServerConnect {
   static instance: ServerConnect | undefined;
@@ -8,7 +9,7 @@ class ServerConnect {
   constructor() {
     const apiConf: Connect.ConfigurationParameters = {
       fetchApi: fetch,
-      basePath: Connect.BASE_PATH.replace(/https:\/\/clearflask\.com/, `http://localhost:8080`),
+      basePath: Connect.BASE_PATH.replace(/https:\/\/clearflask\.com/, connectConfig.apiBasePath),
     };
 
     this.dispatcher = new Connect.Dispatcher(msg => msg.payload,

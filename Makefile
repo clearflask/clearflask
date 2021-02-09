@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 50
-_run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run ses-run elastic-run kibana-run
+_run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-run elastic-run kibana-run letsencrypt-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
@@ -29,11 +29,28 @@ npm-run-dev-frontend:
 npm-run-dev-connect:
 	cd clearflask-connect && node/node_modules/npm/bin/npm-cli.js run dev
 
+connect-run-dev:
+	#rm -fr `pwd`/clearflask-frontend/target/ROOT
+	#mkdir `pwd`/clearflask-frontend/target/ROOT
+	#tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
+	#sed -i '' -e 's/https:\/\/clearflask\.com\//\//g' `pwd`/clearflask-frontend/target/ROOT/dist/index.html `pwd`/clearflask-frontend/target/ROOT/dist/asset-manifest.json
+	docker run --rm --name clearflask-connect \
+	-p 80:44380 \
+	-p 443:44380 \
+	-p 9080:9080 \
+	-p 9443:9443 \
+	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
+	-v `pwd -P`/clearflask-frontend/connect.config.dev.js:/opt/clearflask/connect.config.js \
+	-w /srv/clearflask-connect \
+	--add-host=localhost.com:host-gateway \
+	node:14.15.1-slim \
+	npm run start:local
+
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
 	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
 	sed -i '' -e 's/clearflask\.com/localhost\.com/g' `pwd`/clearflask-server/target/ROOT/index.html `pwd`/clearflask-server/target/ROOT/asset-manifest.json
-	docker run --rm --name clearflask-webserver \
+	docker run --rm --name clearflask-server \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \
 		-Dcom.sun.management.jmxremote.authenticate=false \
@@ -41,7 +58,6 @@ tomcat-run-dev:
 		-Dcom.sun.management.jmxremote.port=9950 \
 		-Dcom.sun.management.jmxremote.rmi.port=9951 \
 		-Djava.rmi.server.hostname=0.0.0.0" \
-	-p 80:8080 \
 	-p 8080:8080 \
 	-p 9950:9950 \
 	-p 9951:9951 \
@@ -75,6 +91,8 @@ letsencrypt-run:
 	-p 14000:14000 \
 	-p 15000:15000 \
 	-e "PEBBLE_VA_NOSLEEP=1" \
+	-e "PEBBLE_VA_ALWAYS_VALID=0" \
+	--add-host=localhost.com:host-gateway \
 	letsencrypt/pebble
 
 ses-run:
