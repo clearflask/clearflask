@@ -5,6 +5,8 @@ import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
+import LogoImg from '../../public/img/clearflask-logo.png';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
@@ -177,9 +179,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 to='/'
               >
                 <img
-                  alt='logo'
+                  alt=''
                   className={this.props.classes.logo}
-                  src='/img/clearflask-logo.png' />
+                  src={LogoImg.src}
+                  width={LogoImg.width}
+                  height={LogoImg.height}
+                />
                 ClearFlask
               </Link>
               <Hidden xsDown implementation='css'>

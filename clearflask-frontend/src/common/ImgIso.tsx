@@ -28,8 +28,6 @@ export interface Props {
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    var height = this.props.height;
-    var width = this.props.width;
     return (
       <div className={this.props.className}>
         <div
@@ -42,8 +40,8 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
             alt={this.props.alt}
             className={this.props.classes.image}
             src={this.props.src}
-            height={height}
-            width={width}
+            height={this.props.height}
+            width={this.props.width}
             style={this.props.style}
           />
         </div>
