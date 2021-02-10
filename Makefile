@@ -30,10 +30,10 @@ npm-run-dev-connect:
 	cd clearflask-connect && node/node_modules/npm/bin/npm-cli.js run dev
 
 connect-run-dev:
-	#rm -fr `pwd`/clearflask-frontend/target/ROOT
-	#mkdir `pwd`/clearflask-frontend/target/ROOT
-	#tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
-	#sed -i '' -e 's/https:\/\/clearflask\.com\//\//g' `pwd`/clearflask-frontend/target/ROOT/dist/index.html `pwd`/clearflask-frontend/target/ROOT/dist/asset-manifest.json
+	rm -fr `pwd`/clearflask-frontend/target/ROOT
+	mkdir `pwd`/clearflask-frontend/target/ROOT
+	tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
+	sed -i '' -e 's/https:\/\/clearflask\.com\//\//g' `pwd`/clearflask-frontend/target/ROOT/dist/index.html `pwd`/clearflask-frontend/target/ROOT/dist/asset-manifest.json
 	docker run --rm --name clearflask-connect \
 	-p 80:44380 \
 	-p 443:44380 \
