@@ -17,7 +17,6 @@ greenlockExpress
     packageAgent: 'clearflask/1.0',
     maintainerEmail: connectConfig.email,
     subscriberEmail: connectConfig.email,
-    directoryUrl: connectConfig.acmeDirectoryUrl,
     cluster: true,
     debug: true,
     workers: connectConfig.workerCount,

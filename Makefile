@@ -37,12 +37,13 @@ connect-run-dev:
 	docker run --rm --name clearflask-connect \
 	-p 80:44380 \
 	-p 443:44380 \
+	-p 5002:44380 \
 	-p 9080:9080 \
 	-p 9443:9443 \
 	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
 	-v `pwd -P`/clearflask-frontend/connect.config.dev.js:/opt/clearflask/connect.config.js \
 	-w /srv/clearflask-connect \
-	--add-host=localhost.com:host-gateway \
+	--add-host=localhost.com:172.17.0.1 \
 	node:14.15.1-slim \
 	npm run start:local
 
@@ -91,8 +92,8 @@ letsencrypt-run:
 	-p 14000:14000 \
 	-p 15000:15000 \
 	-e "PEBBLE_VA_NOSLEEP=1" \
-	-e "PEBBLE_VA_ALWAYS_VALID=0" \
-	--add-host=localhost.com:host-gateway \
+	-e "PEBBLE_VA_ALWAYS_VALID=1" \
+	--add-host=localhost.com:172.17.0.1 \
 	letsencrypt/pebble
 
 ses-run:

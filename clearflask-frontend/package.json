@@ -126,7 +126,7 @@
     "start": "NODE_ENV=production ENV=production node --unhandled-rejections=strict --trace-warnings src/bootstrap.js",
     "start:frontend": "react-app-rewired start",
     "start:dev": "DEBUG=express:query NODE_ENV=production ENV=development ./node/node --unhandled-rejections=strict --trace-warnings src/connect/bootstrap.js -- --staging",
-    "start:local": "DEBUG=express:query NODE_ENV=production ENV=local node --unhandled-rejections=strict --trace-warnings src/connect/bootstrap.js -- --staging",
+    "start:local": "DEBUG=express:query NODE_ENV=production ENV=local NODE_TLS_REJECT_UNAUTHORIZED=0 node --unhandled-rejections=strict --trace-warnings src/connect/bootstrap.js",
     "build": "GENERATE_SOURCEMAP=false react-app-rewired build && rm -fR dist && cp -r build dist",
     "build:dev": "GENERATE_SOURCEMAP=true PUBLIC_URL=/ react-app-rewired build && rm -fR dist-dev && cp -r build dist-dev",
     "preinstall_DISABLED": "npx npm-force-resolutions",
