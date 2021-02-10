@@ -1,6 +1,6 @@
 import express from 'express';
 import fs from 'fs';
-import greenlockExpress from 'greenlock-express';
+import greenlockExpress, { glx } from 'greenlock-express';
 import httpp from 'http-proxy';
 import path from 'path';
 import connectConfig from './config';
@@ -41,7 +41,7 @@ greenlockExpress
     console.log('Master Started');
   });
 
-function worker(glx) {
+function worker(glx: glx) {
   console.log('Worker Started');
 
   // Proxy
@@ -101,9 +101,9 @@ function worker(glx) {
 
   // Servers
   serverHttp.listen(9080, "0.0.0.0", function () {
-    console.info("Http on", serverHttp.address().port);
+    console.info("Http on", (serverHttp.address() as any)?.port);
   });
   serverHttps.listen(9443, "0.0.0.0", function () {
-    console.info("Https on", serverHttps.address().port);
+    console.info("Https on", (serverHttps.address() as any)?.port);
   });
 }

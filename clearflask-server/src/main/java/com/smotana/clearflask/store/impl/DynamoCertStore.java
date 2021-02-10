@@ -27,15 +27,7 @@ import java.util.Optional;
 public class DynamoCertStore implements CertStore {
 
     @Inject
-    private AmazonDynamoDB dynamo;
-    @Inject
-    private DynamoDB dynamoDoc;
-    @Inject
     private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
-    @Inject
-    private Gson gson;
 
     private TableSchema<KeypairModel> keypairSchema;
     private TableSchema<ChallengeModel> challengeSchema;
