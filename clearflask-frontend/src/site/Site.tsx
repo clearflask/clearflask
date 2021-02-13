@@ -1,3 +1,4 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -5,7 +6,6 @@ import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
-/// <reference path="../@types/transform-media-imports.d.ts"/>
 import LogoImg from '../../public/img/clearflask-logo.png';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';

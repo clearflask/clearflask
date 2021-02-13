@@ -21,6 +21,7 @@
                     <descriptors>
                         <descriptor>${project.basedir}/src/main/assembly/legal.xml</descriptor>
                     </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>

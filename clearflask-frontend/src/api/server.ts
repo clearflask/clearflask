@@ -154,9 +154,6 @@ export class Server {
     switch (detectEnv()) {
       case Environment.DEVELOPMENT_FRONTEND:
         break;
-      case Environment.DEVELOPMENT_LOCAL:
-        basePath = basePath.replace(/https:\/\/clearflask\.com/, 'http://localhost.com');
-        break;
       default:
         basePath = basePath.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
         break;

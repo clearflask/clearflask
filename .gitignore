@@ -71,4 +71,4 @@ builds/
 greenlock.d/
 .greenlockrc
 clearflask-frontend/dist
-clearflask-frontend/dist-dev
+clearflask-frontend/dist-*

@@ -10,7 +10,6 @@ import { StaticRouterContext } from 'react-router';
 import { htmlDataCreate } from '../common/util/htmlData';
 import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
 import Main from '../Main';
-import connectConfig from './config';
 
 interface RenderResult {
   title: string;
@@ -19,7 +18,7 @@ interface RenderResult {
   renderedScreen: string;
 }
 
-const statsFile = path.resolve(connectConfig.distPath, 'loadable-stats.json')
+const statsFile = path.resolve(__dirname, 'public', 'loadable-stats.json')
 
 const PH_ENV = '%ENV%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
@@ -32,7 +31,7 @@ const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
-  const filePath = path.resolve(connectConfig.distPath, 'index.html');
+  const filePath = path.resolve(__dirname, 'public', 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if (!err) {
       resolve(html);
@@ -41,8 +40,6 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
     }
   });
 }).then(htmlStr => {
-  const publicUrl = (connectConfig.chunksPublicPath || '').replace(/\/$/, '');
-  // htmlStr = htmlStr.replace(/%PUBLIC_URL%/g, publicUrl)
   const $ = htmlparser.load(htmlStr);
   $('#loader-css').remove();
   $('noscript').remove();
@@ -68,7 +65,6 @@ export default function render() {
       const requested_url = `${req.protocol}://${req.hostname}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
       const awaitPromises: Array<Promise<any>> = [];
 
-
       var renderResult: RenderResult | undefined;
       var isFinished = false;
       var renderCounter = 0;
@@ -85,8 +81,8 @@ export default function render() {
             extractor: renderResult?.extractor || new ChunkExtractor({
               statsFile,
               entrypoints: ['main'],
-              publicPath: connectConfig.chunksPublicPath,
               outputPath: path.resolve(__dirname, '..', '..', 'build'),
+              publicPath: process.env.ENV !== 'production' ? '/' : undefined,
             }),
             muiSheets: new ServerStyleSheets(),
             renderedScreen: '',
@@ -139,7 +135,7 @@ export default function render() {
       var html = await indexHtmlPromise;
 
       if (process.env.ENV !== 'production') {
-        html = html.replace(PH_ENV, '<script>window.ENV=\'development\'</script>');
+        html = html.replace(PH_ENV, `<script>window.ENV='${process.env.ENV}'</script>`);
       } else {
         html = html.replace(PH_ENV, '');
       }
@@ -181,7 +177,7 @@ export default function render() {
       } else {
         // fallback to client-side rendering but still throw 500
         res.status(500);
-        res.sendFile(path.join(connectConfig.distPath, 'index.html'));
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
       }
     }
   };

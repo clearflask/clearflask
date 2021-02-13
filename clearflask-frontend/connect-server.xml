@@ -8,28 +8,8 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${project.basedir}</directory>
-            <includes>
-                <include>package.json</include>
-                <include>tsconfig.json</include>
-            </includes>
-            <outputDirectory>${file.separator}</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}${file.separator}src</directory>
-            <outputDirectory>${file.separator}src</outputDirectory>
-            <excludes>
-                <exclude>test.js</exclude>
-                <exclude>greenlock.d</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}${file.separator}node_modules</directory>
-            <outputDirectory>${file.separator}node_modules</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}${file.separator}dist</directory>
-            <outputDirectory>${file.separator}dist</outputDirectory>
+            <directory>${project.build.directory}${file.separator}dist</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

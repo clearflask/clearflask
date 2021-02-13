@@ -1,27 +1,30 @@
-import path from 'path';
 
 export interface ConnectConfig {
   listenPort: number;
   email: string;
   connectToken: string;
-  chunksPublicPath?: string,
-  distPath: string,
   acmeDirectoryUrl?: string,
   workerCount?: number, // Leave blank to match cores
   apiBasePath: string,
 }
 
-const configFile = process.env.NODE_ENV === 'test'
-  ? path.resolve(__dirname, '..', '..', 'connect.config.dev.js')
-  : '/opt/clearflask/connect.config.js';
-
 var configLoaded;
-try {
-  configLoaded = require(configFile).default;
-}
-catch (e) {
-  console.info('Failed to load config file', configFile, e);
-  throw e;
+if (process.env.ENV === 'production') {
+  const configFile = '/opt/clearflask/connect.config.js';
+  try {
+    configLoaded = require(configFile).default;
+  }
+  catch (e) {
+    console.info('Failed to load config file', configFile, e);
+    throw e;
+  }
+} else {
+  configLoaded = {
+    // If changed, also change in config-prod.cfg
+    connectToken: '7cb1e1c26f5d4705a213529257d081c6',
+    workerCount: 2,
+    acmeDirectoryUrl: 'https://acme.staging.localhost:14000/dir',
+  };
 }
 
 const connectConfig: ConnectConfig = {
@@ -29,8 +32,6 @@ const connectConfig: ConnectConfig = {
   chunksDomain: '/',
   email: 'hostmaster@clearflask.com',
   apiBasePath: process.env.ENV === 'local' ? 'http://host.docker.internal:8080' : 'http://localhost:8080',
-  distPath: path.join(__dirname, '..', '..',
-    (process.env.ENV === 'production' || process.env.ENV === 'local') ? 'dist' : 'dist-dev'),
   ...(configLoaded || {}),
 };
 

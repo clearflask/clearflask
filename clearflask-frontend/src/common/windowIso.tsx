@@ -41,7 +41,7 @@ export const WindowIsoSsrProvider = (props: {
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;
 }) => {
-  win['env'] = props.env;
+  win['ENV'] = props.env;
   win['fetch'] = props.fetch;
   const url = new URL(props.url);
   win['location'] = url;
@@ -55,7 +55,7 @@ export const WindowIsoSsrProvider = (props: {
 export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.Global & {
   isSsr: true;
   fetch: any;
-  env: 'development' | 'production' | 'local' | 'test';
+  ENV: 'development' | 'production' | 'local' | 'test';
   location: URL;
   setTitle: (title: string) => void;
   storesState: StoresState;

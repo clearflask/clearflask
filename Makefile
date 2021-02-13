@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 50
-_run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-run elastic-run kibana-run letsencrypt-run
+_run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-run elastic-run kibana-run nginx-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
@@ -33,19 +33,19 @@ connect-run-dev:
 	rm -fr `pwd`/clearflask-frontend/target/ROOT
 	mkdir `pwd`/clearflask-frontend/target/ROOT
 	tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
-	sed -i '' -e 's/https:\/\/clearflask\.com\//\//g' `pwd`/clearflask-frontend/target/ROOT/dist/index.html `pwd`/clearflask-frontend/target/ROOT/dist/asset-manifest.json
+	LANG=C find `pwd`/clearflask-frontend/target/ROOT -type f -exec \
+	sed -i '' -e 's/clearflask\.com/localhost\.com/g' {} +
 	docker run --rm --name clearflask-connect \
-	-p 80:44380 \
-	-p 443:44380 \
-	-p 5002:44380 \
-	-p 9080:9080 \
-	-p 9443:9443 \
+	-p 80:9080 \
 	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
 	-v `pwd -P`/clearflask-frontend/connect.config.dev.js:/opt/clearflask/connect.config.js \
 	-w /srv/clearflask-connect \
 	--add-host=localhost.com:172.17.0.1 \
+	--add-host=acme.staging.localhost:172.17.0.1 \
+	-e NODE_TLS_REJECT_UNAUTHORIZED=0 \
+	-e ENV=local \
 	node:14.15.1-slim \
-	npm run start:local
+	./start.sh
 
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
@@ -93,6 +93,8 @@ letsencrypt-run:
 	-p 15000:15000 \
 	-e "PEBBLE_VA_NOSLEEP=1" \
 	-e "PEBBLE_VA_ALWAYS_VALID=1" \
+	-e "PEBBLE_WFE_NONCEREJECT=0" \
+	-e "PEBBLE_AUTHZREUSE=100" \
 	--add-host=localhost.com:172.17.0.1 \
 	letsencrypt/pebble
 
@@ -202,7 +204,8 @@ deploy-cloudfront-invalidate-all:
 	  location / {
 	     proxy_pass http://host.docker.internal:80;
 	     proxy_http_version 1.1;
-	     proxy_set_header Upgrade $http_upgrade;
+	     proxy_set_header Host \$$host;
+	     proxy_set_header Upgrade \$$http_upgrade;
 	     proxy_set_header Connection "upgrade";
 	     proxy_read_timeout 86400;
 	  }

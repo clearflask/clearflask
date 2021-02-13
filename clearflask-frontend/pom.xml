@@ -205,6 +205,7 @@
                         </configuration>
                         <phase>initialize</phase>
                     </execution>
+                    <!--
                     <execution>
                         <id>npm test</id>
                         <goals>
@@ -215,6 +216,7 @@
                         </configuration>
                         <phase>test</phase>
                     </execution>
+                    -->
                     <execution>
                         <id>npm run build</id>
                         <goals>
@@ -261,6 +263,7 @@
                     <descriptors>
                         <descriptor>${project.basedir}/connect-server.xml</descriptor>
                     </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>
