@@ -11,3 +11,432 @@ index b346f38..d0c076c 100644
          var mng = greenlock.manager;
  
          if ('_' === String(ev)[0]) {
+diff --git a/node_modules/@root/greenlock/lib/manager-wrapper.js b/node_modules/@root/greenlock/lib/manager-wrapper.js
+index ff4c314..96bc161 100644
+--- a/node_modules/@root/greenlock/lib/manager-wrapper.js
++++ b/node_modules/@root/greenlock/lib/manager-wrapper.js
+@@ -8,7 +8,7 @@ var warned = {};
+ // The purpose of this file is to try to auto-build
+ // partial managers so that the external API can be smaller.
+ 
+-module.exports.wrap = function(greenlock, gconf) {
++module.exports.wrap = function (greenlock, gconf) {
+     var myFind = gconf.find;
+     delete gconf.find;
+ 
+@@ -48,8 +48,8 @@ module.exports.wrap = function(greenlock, gconf) {
+ 
+     // get / set default site settings such as
+     // subscriberEmail, store, challenges, renewOffset, renewStagger
+-    greenlock.manager.defaults = function(conf) {
+-        return greenlock._init().then(function() {
++    greenlock.manager.defaults = function (conf) {
++        return greenlock._init().then(function () {
+             if (!conf) {
+                 return mega.defaults();
+             }
+@@ -72,24 +72,24 @@ module.exports.wrap = function(greenlock, gconf) {
+                 'renewAt',
+                 'sites',
+                 'routes'
+-            ].some(function(k) {
++            ].some(function (k) {
+                 if (k in conf) {
+                     throw new Error(
+                         '`' + k + '` not allowed as a default setting'
+                     );
+                 }
+             });
+-            Object.keys(conf).forEach(function(k) {
++            Object.keys(conf).forEach(function (k) {
+                 if (!allowed.includes(k) && !warned[k]) {
+                     warned[k] = true;
+                     console.warn(
+                         k +
+-                            " isn't a known key. Please open an issue and let us know the use case."
++                        " isn't a known key. Please open an issue and let us know the use case."
+                     );
+                 }
+             });
+ 
+-            Object.keys(conf).forEach(function(k) {
++            Object.keys(conf).forEach(function (k) {
+                 if (-1 !== ['module', 'manager'].indexOf(k)) {
+                     return;
+                 }
+@@ -97,8 +97,8 @@ module.exports.wrap = function(greenlock, gconf) {
+                 if ('undefined' === typeof k) {
+                     throw new Error(
+                         "'" +
+-                            k +
+-                            "' should be set to a value, or `null`, but not left `undefined`"
++                        k +
++                        "' should be set to a value, or `null`, but not left `undefined`"
+                     );
+                 }
+             });
+@@ -107,11 +107,11 @@ module.exports.wrap = function(greenlock, gconf) {
+         });
+     };
+ 
+-    greenlock.manager._defaults = function(opts) {
++    greenlock.manager._defaults = function (opts) {
+         return mega.defaults(opts);
+     };
+ 
+-    greenlock.manager.add = function(args) {
++    greenlock.manager.add = function (args) {
+         if (!args || !Array.isArray(args.altnames) || !args.altnames.length) {
+             throw new Error(
+                 'you must specify `altnames` when adding a new site'
+@@ -129,8 +129,8 @@ module.exports.wrap = function(greenlock, gconf) {
+     // TODO agreeToTerms should be handled somewhere... maybe?
+ 
+     // Add and update remains because I said I had locked the API
+-    greenlock.manager.set = greenlock.manager.update = function(args) {
+-        return greenlock._init().then(function() {
++    greenlock.manager.set = greenlock.manager.update = function (args) {
++        return greenlock._init().then(function () {
+             // The goal is to make this decently easy to manage by hand without mistakes
+             // but also reasonably easy to error check and correct
+             // and to make deterministic auto-corrections
+@@ -146,11 +146,11 @@ module.exports.wrap = function(greenlock, gconf) {
+ 
+             // at this point we know that subject is the first of altnames
+             return Promise.all(
+-                (args.altnames || []).map(function(d) {
++                (args.altnames || []).map(function (d) {
+                     d = d.replace('*.', '');
+                     return U._validDomain(d);
+                 })
+-            ).then(function() {
++            ).then(function () {
+                 if (!U._uniqueNames(args.altnames || [])) {
+                     throw E.NOT_UNIQUE(
+                         'add',
+@@ -166,9 +166,9 @@ module.exports.wrap = function(greenlock, gconf) {
+                     args.renewStagger = U._parseDuration(args.renewStagger);
+                 }
+ 
+-                return mega.set(args).then(function(result) {
++                return mega.set(args).then(function (result) {
+                     if (!gconf._bin_mode) {
+-                        greenlock.renew({}).catch(function(err) {
++                        greenlock.renew({}).catch(function (err) {
+                             if (!err.context) {
+                                 err.contxt = 'renew';
+                             }
+@@ -181,8 +181,8 @@ module.exports.wrap = function(greenlock, gconf) {
+         });
+     };
+ 
+-    greenlock.manager.get = greenlock.sites.get = function(args) {
+-        return Promise.resolve().then(function() {
++    greenlock.manager.get = greenlock.sites.get = function (args) {
++        return Promise.resolve().then(function () {
+             if (args.subject) {
+                 throw new Error(
+                     'get({ servername }) searches certificates by altnames, not by subject specifically'
+@@ -197,8 +197,8 @@ module.exports.wrap = function(greenlock, gconf) {
+         });
+     };
+ 
+-    greenlock.manager.remove = function(args) {
+-        return Promise.resolve().then(function() {
++    greenlock.manager.remove = function (args) {
++        return Promise.resolve().then(function () {
+             args.subject = checkSubject(args);
+             if (args.servername) {
+                 throw new Error(
+@@ -232,7 +232,7 @@ module.exports.wrap = function(greenlock, gconf) {
+     */
+ 
+     // no transaction promise here because it calls set
+-    greenlock._find = async function(args) {
++    greenlock._find = async function (args) {
+         args = _mangleFindArgs(args);
+         var ours = await mega.find(args);
+         if (!myFind) {
+@@ -243,7 +243,7 @@ module.exports.wrap = function(greenlock, gconf) {
+         // between the managed state and the overlay, and choose
+         // what was found.
+         var theirs = await myFind(args);
+-        theirs = theirs.filter(function(site) {
++        theirs = theirs.filter(function (site) {
+             if (!site || 'string' !== typeof site.subject) {
+                 throw new Error('found site is missing subject');
+             }
+@@ -255,12 +255,12 @@ module.exports.wrap = function(greenlock, gconf) {
+             ) {
+                 throw new Error('missing or malformed altnames');
+             }
+-            ['renewAt', 'issuedAt', 'expiresAt'].forEach(function(k) {
++            ['renewAt', 'issuedAt', 'expiresAt'].forEach(function (k) {
+                 if (site[k]) {
+                     throw new Error(
+                         '`' +
+-                            k +
+-                            '` should be updated by `set()`, not by `find()`'
++                        k +
++                        '` should be updated by `set()`, not by `find()`'
+                     );
+                 }
+             });
+@@ -274,7 +274,7 @@ module.exports.wrap = function(greenlock, gconf) {
+             var servernames = args.servernames || args.altnames;
+             if (
+                 servernames &&
+-                !site.altnames.some(function(altname) {
++                !site.altnames.some(function (altname) {
+                     return servernames.includes(altname);
+                 })
+             ) {
+@@ -288,8 +288,8 @@ module.exports.wrap = function(greenlock, gconf) {
+ 
+     function _mergeFind(ours, theirs) {
+         var toUpdate = [];
+-        theirs.forEach(function(_newer) {
+-            var hasCurrent = ours.some(function(_older) {
++        theirs.forEach(function (_newer) {
++            var hasCurrent = ours.some(function (_older) {
+                 var changed = false;
+                 if (_newer.subject !== _older.subject) {
+                     return false;
+@@ -299,7 +299,7 @@ module.exports.wrap = function(greenlock, gconf) {
+                 _older._exists = true;
+ 
+                 _newer.deletedAt = _newer.deletedAt || 0;
+-                Object.keys(_newer).forEach(function(k) {
++                Object.keys(_newer).forEach(function (k) {
+                     if (_older[k] !== _newer[k]) {
+                         changed = true;
+                         _older[k] = _newer[k];
+@@ -318,7 +318,7 @@ module.exports.wrap = function(greenlock, gconf) {
+         });
+ 
+         // delete the things that are gone
+-        ours.forEach(function(_older) {
++        ours.forEach(function (_older) {
+             if (!_older._exists) {
+                 _older.deletedAt = Date.now();
+                 toUpdate.push(_older);
+@@ -327,8 +327,8 @@ module.exports.wrap = function(greenlock, gconf) {
+         });
+ 
+         Promise.all(
+-            toUpdate.map(function(site) {
+-                return greenlock.sites.update(site).catch(function(err) {
++            toUpdate.map(function (site) {
++                return greenlock.sites.update(site).catch(function (err) {
+                     console.error(
+                         'Developer Error: cannot update sites from user-supplied `find()`:'
+                     );
+@@ -349,9 +349,9 @@ function checkSubject(args) {
+         throw new Error('you must specify `subject` when configuring a site');
+     }
+     /*
+-		if (!args.subject) {
+-			throw E.NO_SUBJECT('add');
+-		}
++        if (!args.subject) {
++            throw E.NO_SUBJECT('add');
++        }
+     */
+ 
+     var subject = (args.subject || '').toLowerCase();
+@@ -364,7 +364,7 @@ function checkSubject(args) {
+ 
+ function checkAltnames(subject, args) {
+     // the things we have to check and get right
+-    var altnames = (args.altnames || []).map(function(name) {
++    var altnames = (args.altnames || []).map(function (name) {
+         return String(name || '').toLowerCase();
+     });
+ 
+@@ -379,7 +379,7 @@ function checkAltnames(subject, args) {
+ 
+     args.altnames = args.altnames.map(U._encodeName);
+     if (
+-        !args.altnames.every(function(d) {
++        !args.altnames.every(function (d) {
+             return U._validName(d);
+         })
+     ) {
+@@ -424,7 +424,7 @@ function loadManager(gconf) {
+ 
+     try {
+         // wrap this to be safe for @greenlock/manager
+-        m = require(gconf.manager.module).create(gconf.manager);
++        m = gconf.managerInstance.create(gconf.manager);
+     } catch (e) {
+         console.error('Error loading manager:');
+         console.error(e.code);
+@@ -458,7 +458,7 @@ function mergeManager(greenlock, gconf) {
+     var mega = {};
+     // optional
+     if (mini.defaults) {
+-        mega.defaults = function(opts) {
++        mega.defaults = function (opts) {
+             return mini.defaults(opts);
+         };
+     } else {
+@@ -467,17 +467,17 @@ function mergeManager(greenlock, gconf) {
+ 
+     // optional
+     if (mini.remove) {
+-        mega.remove = function(opts) {
++        mega.remove = function (opts) {
+             return mini.remove(opts);
+         };
+     } else {
+-        mega.remove = function(opts) {
+-            mega.get(opts).then(function(site) {
++        mega.remove = function (opts) {
++            mega.get(opts).then(function (site) {
+                 if (!site) {
+                     return null;
+                 }
+                 site.deletedAt = Date.now();
+-                return mega.set(site).then(function() {
++                return mega.set(site).then(function () {
+                     return site;
+                 });
+             });
+@@ -486,14 +486,14 @@ function mergeManager(greenlock, gconf) {
+ 
+     if (mini.find) {
+         // without this there cannot be fully automatic renewal
+-        mega.find = function(opts) {
++        mega.find = function (opts) {
+             return mini.find(opts);
+         };
+     }
+ 
+     // set and (find and/or get) should be from the same set
+     if (mini.set) {
+-        mega.set = function(opts) {
++        mega.set = function (opts) {
+             if (!mini.find) {
+                 // TODO create the list so that find can be implemented
+             }
+@@ -505,7 +505,7 @@ function mergeManager(greenlock, gconf) {
+     }
+ 
+     if (mini.get) {
+-        mega.get = async function(opts) {
++        mega.get = async function (opts) {
+             if (mini.set) {
+                 return mini.get(opts);
+             }
+@@ -547,12 +547,12 @@ function mergeManager(greenlock, gconf) {
+             return existing;
+         };
+     } else if (mini.find) {
+-        mega.get = function(opts) {
++        mega.get = function (opts) {
+             var servername = opts.servername;
+             delete opts.servername;
+             opts.servernames = (servername && [servername]) || undefined;
+-            return mini.find(opts).then(function(sites) {
+-                return sites.filter(function(site) {
++            return mini.find(opts).then(function (sites) {
++                return sites.filter(function (site) {
+                     return site.altnames.include(servername);
+                 })[0];
+             });
+@@ -560,7 +560,7 @@ function mergeManager(greenlock, gconf) {
+     } else if (mini.set) {
+         throw new Error(
+             gconf.manager.module +
+-                ' implements `set()`, but not `get()` or `find()`'
++            ' implements `set()`, but not `get()` or `find()`'
+         );
+     } else {
+         mega.find = m().find;
+@@ -569,12 +569,12 @@ function mergeManager(greenlock, gconf) {
+ 
+     if (!mega.find) {
+         mega._nofind = false;
+-        mega.find = async function(opts) {
++        mega.find = async function (opts) {
+             if (!mega._nofind) {
+                 console.warn(
+                     'Warning: manager `' +
+-                        greenlock.manager._modulename +
+-                        '` does not implement `find({})`\n'
++                    greenlock.manager._modulename +
++                    '` does not implement `find({})`\n'
+                 );
+                 mega._nofind = true;
+             }
+@@ -583,21 +583,21 @@ function mergeManager(greenlock, gconf) {
+     }
+ 
+     if (!mega.get) {
+-        mega.get = function(opts) {
++        mega.get = function (opts) {
+             var servername = opts.servername;
+             delete opts.servername;
+             opts.servernames = (servername && [servername]) || undefined;
+-            return mega.find(opts).then(function(sites) {
+-                return sites.filter(function(site) {
++            return mega.find(opts).then(function (sites) {
++                return sites.filter(function (site) {
+                     return site.altnames.include(servername);
+                 })[0];
+             });
+         };
+     }
+ 
+-    mega.init = function(deps) {
++    mega.init = function (deps) {
+         if (mini.init) {
+-            return mini.init(deps).then(function() {
++            return mini.init(deps).then(function () {
+                 if (mng) {
+                     return mng.init(deps);
+                 }
+@@ -620,7 +620,7 @@ function _mangleFindArgs(args) {
+     var modified = servernames.slice(0);
+ 
+     // servername, wildname, and altnames are all the same
+-    ['wildname', 'servername'].forEach(function(k) {
++    ['wildname', 'servername'].forEach(function (k) {
+         var altname = args[k] || '';
+         if (altname && !modified.includes(altname)) {
+             modified.push(altname);
+diff --git a/node_modules/@root/greenlock/plugins.js b/node_modules/@root/greenlock/plugins.js
+index 8dea68b..2b928f4 100644
+--- a/node_modules/@root/greenlock/plugins.js
++++ b/node_modules/@root/greenlock/plugins.js
+@@ -26,7 +26,7 @@ P._loadChallenge = function(chConfs, typ01) {
+ };
+ P._loadHelper = function(modname) {
+     try {
+-        return Promise.resolve(require(modname));
++        return Promise.resolve(modname); // Expect it already be resolved
+     } catch (e) {
+         console.error("Could not load '%s'", modname);
+         console.error('Did you install it?');
+@@ -192,7 +192,7 @@ P._normalizeChallenge = function(name, ch) {
+ 
+ P._loadSync = function(modname) {
+     try {
+-        return require(modname);
++        return P._loadHelper(modname);
+     } catch (e) {
+         console.error("Could not load '%s'", modname);
+         console.error('Did you install it?');
+@@ -212,10 +212,11 @@ P._loadSync = function(modname) {
+ 
+ P._installSync = function(moduleName) {
+     try {
+-        return require(moduleName);
++        return P._loadHelper(moduleName);
+     } catch (e) {
+         // continue
+     }
++    exit(1); // Don't install on the fly, this is crazy
+     var npm = 'npm';
+     var args = ['install', '--save', moduleName];
+     var out = '';
