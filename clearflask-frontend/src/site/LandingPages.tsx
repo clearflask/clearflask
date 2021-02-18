@@ -384,7 +384,7 @@ export function LandingCollectFeedback() {
   return (
     <React.Fragment>
       <LandingCollectFeedbackHero isHero />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={240}>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         {/* Collect feedback right from your website or app */}
         {/* Prioritize based on customer value */}
         {/* Keep your users updated */}
@@ -445,6 +445,7 @@ export function LandingCollectFeedback() {
         description=''
         buttonTitle='Learn more'
         buttonLink='/solutions/feature-request-tracking'
+        mirror
       />
       <Block
         title='Internal feedback'
@@ -457,6 +458,7 @@ export function LandingCollectFeedback() {
         description=''
         buttonTitle='Learn more'
         buttonLink='/solutions/idea-management'
+        mirror
       />
       <Block
         title='Crowd-funding'
@@ -1279,21 +1281,21 @@ export function LandingInternalFeedback() {
     <React.Fragment>
       <Hero
         title='Internal Feedback'
-        description=''
+        description='Collect feedback from within your organization or customer-base'
         imagePath='/img/landing/internalfeedback.svg'
       />
       <Block
         title='Keep all your data private'
-        description=''
+        description='Setup privacy settings so only authorized users can see and post feedback.'
       />
       <Block
         title='Stop forgetting what your coworker requested'
-        description=''
+        description='Eliminate the mess of keeping track of feedback via starred emails, post-it notes, and text documents. Keep it all in one place.'
         mirror
       />
       <Block
-        title='Keep whole company informed of decisions'
-        description=''
+        title='Keep your company informed'
+        description='Let your co-workers see your workload in order to understand your prioritization of their requests.'
       />
     </React.Fragment>
   );
@@ -1337,7 +1339,7 @@ export function LandingContentCreator() {
   return (
     <React.Fragment>
       <Hero
-        title='Content Creator forums'
+        title='Content Creator Forum'
         description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
       />
       <Block
@@ -1368,7 +1370,7 @@ export function LandingCommercialSupportManagement() {
   return (
     <React.Fragment>
       <Hero
-        title='Content Creator Brainstorm'
+        title='Commercial Support Management'
         description=''
       />
       <Block
@@ -1436,7 +1438,7 @@ export function LandingGrowWithUs() {
         <BlockContent
           icon={(<ContentDeliveryIcon />)}
           variant='content'
-          title='Content delivery network'
+          title='Content Delivery Network'
           description='ClearFlask is hosted by CloudFront: a large network of globally distributed PoPs that deliver low-latency performance and high-availability.'
         />
         <BlockContent
