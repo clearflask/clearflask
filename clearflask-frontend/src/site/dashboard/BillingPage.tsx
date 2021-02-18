@@ -209,7 +209,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       case Admin.SubscriptionStatus.ActiveTrial:
         if (this.props.accountBilling?.payment) {
           paymentTitle = 'Automatic renewal is active';
-          paymentDesc = `Your first payment will be automatically billed at the end of the trial period when you reach ${StopTrialAfterActiveUsersReaches} MAU.`;
+          if (this.props.accountBilling?.billingPeriodEnd) {
+            paymentDesc = (
+              <React.Fragment>
+                Your first payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />.
+              </React.Fragment>
+            );
+          } else {
+            paymentDesc = `Your first payment will be automatically billed at the end of the trial period when you reach ${StopTrialAfterActiveUsersReaches} MAU.`;
+          }
           cardState = 'active';
           showSetPayment = true;
           setPaymentTitle = 'Update payment method';

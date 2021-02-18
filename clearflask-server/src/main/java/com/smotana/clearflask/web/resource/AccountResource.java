@@ -52,6 +52,7 @@ import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -470,6 +471,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 && subscription.getChargedThroughDate() != null) {
             // TODO double check this is the correct time, should it not be at end of day instead?
             billingPeriodEnd = Instant.ofEpochMilli(subscription.getChargedThroughDate()
+                    .toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                    .toInstant()
+                    .getMillis());
+        } else if (subscription.getPhaseType() == PhaseType.TRIAL
+                && !PlanStore.STOP_TRIAL_FOR_PLANS.contains(subscription.getPlanName())) {
+
+            LocalDate trialStart = subscription.getChargedThroughDate();
+            if(trialStart == null ){
+                trialStart = subscription.getStartDate();
+            }
+            trialStart = trialStart.plusDays(14);
+            billingPeriodEnd = Instant.ofEpochMilli(trialStart
                     .toDateTimeAtStartOfDay(DateTimeZone.UTC)
                     .toInstant()
                     .getMillis());

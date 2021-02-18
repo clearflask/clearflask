@@ -17,8 +17,7 @@ import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPag
 
 export const TrialInfoText = () => (
   <div>
-    <div>Free trial up to 10 users.</div>
-    <div>No time-limit. No credit card.</div>
+    <div>Free 14-day trial</div>
   </div>
 );
 
@@ -55,17 +54,6 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
           Over time, you will accumulate and continue to pay for tracked users
           that are no longer providing you with feedback.
           With us, you only pay for users active in the past month.
-        </p>
-      </React.Fragment>
-    ),
-  },
-  {
-    heading: 'How long is the Trial period?',
-    body: (
-      <React.Fragment>
-        <p>
-          Trial period ends when you reach {StopTrialAfterActiveUsersReaches} MAU.
-          To continue using our service, you will be asked to provide a payment option if you haven't already.
         </p>
       </React.Fragment>
     ),

@@ -958,7 +958,7 @@ public class KillBilling extends ManagedService implements Billing {
                                         org.joda.time.LocalDate.now(DateTimeZone.UTC),
                                         1L))))), KillBillUtil.roDefault());
 
-                if (isTrial) {
+                if (isTrial && PlanStore.STOP_TRIAL_FOR_PLANS.contains(subscription.getPlanName())) {
                     long activeUsers = getUsageCurrentPeriod(subscription);
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
                         log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {} last userId {}",
