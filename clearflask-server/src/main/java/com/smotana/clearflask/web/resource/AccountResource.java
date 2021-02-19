@@ -73,6 +73,9 @@ import java.util.UUID;
 @Path(Application.RESOURCE_VERSION)
 public class AccountResource extends AbstractResource implements AccountAdminApi, AccountSuperAdminApi, PlanApi {
 
+    public AccountResource() {
+    }
+
     public interface Config {
         @DefaultValue("P30D")
         Duration sessionExpiry();

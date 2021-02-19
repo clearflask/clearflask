@@ -19,6 +19,15 @@ export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
     ['integrations', 'hotjar'],
     ['integrations', 'intercom'],
   ],
+  'growth2-monthly': [
+    ['users', 'onboarding', 'notificationMethods', 'sso'],
+    ['users', 'onboarding', 'notificationMethods', 'oauth'],
+    ['users', 'onboarding', 'visibility'],
+    ['style', 'templates'],
+    ['integrations', 'googleAnalytics'],
+    ['integrations', 'hotjar'],
+    ['integrations', 'intercom'],
+  ],
 };
 
 export enum Action {
@@ -27,6 +36,7 @@ export enum Action {
 /** If changed, also change in KillBillPlanStore.java */
 export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
   'growth-monthly': new Set([Action.API_KEY]),
+  'growth2-monthly': new Set([Action.API_KEY]),
 };
 
 const styles = (theme: Theme) => createStyles({

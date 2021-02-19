@@ -34,10 +34,7 @@ import org.killbill.billing.client.model.gen.Usage;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -52,14 +49,32 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
     private static final String TERMS_API = "Integrate with any external service via our API and webhooks";
     private static final String TERMS_INTERCOM = "Add Intercom widget on every page";
-    private static final ImmutableMap<String, Function<PlanPricing, Plan>> AVAILABLE_PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
+    private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
+            "growth2-monthly",
+            "standard2-monthly",
+            "flat-yearly");
+    private static final ImmutableMap<String, Function<PlanPricing, Plan>> PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
+            // Deprecated plan with unlimited trial up to 10 MAU
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited projects", null),
                     new PlanPerk("Credit System", null),
                     new PlanPerk("Roadmap", null)),
                     null, null))
+            // Deprecated plan with unlimited trial up to 10 MAU
             .put("standard-monthly", pp -> new Plan("standard-monthly", "Standard",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Single Sign-On", TERMS_SSO),
+                    new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
+                    null, null))
+            .put("growth2-monthly", pp -> new Plan("growth2-monthly", "Growth",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Unlimited projects", null),
+                    new PlanPerk("Credit System", null),
+                    new PlanPerk("Roadmap", null)),
+                    null, null))
+            .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Single Sign-On", TERMS_SSO),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
@@ -94,6 +109,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Inject
     private CatalogApi catalogApi;
 
+    private ImmutableMap<String, Plan> allPlans;
     private ImmutableMap<String, Plan> availablePlans;
     private PlansGetResponse plansGetResponse;
 
@@ -106,7 +122,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     protected void serviceStart() throws Exception {
         Catalogs catalogs = catalogApi.getCatalogJson(null, null, KillBillUtil.roDefault());
         Catalog catalog = catalogs.stream().max(Comparator.comparing(Catalog::getEffectiveDate)).get();
-        ImmutableList<Plan> plans = AVAILABLE_PLANS_BUILDER.entrySet().stream().map(e -> {
+        ImmutableList<Plan> plans = PLANS_BUILDER.entrySet().stream().map(e -> {
             // Oh god this is just terrible, this is what happens when you check in at 4am
             String planName = e.getKey();
             org.killbill.billing.client.model.gen.Plan plan = catalog.getProducts().stream()
@@ -135,11 +151,16 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     .build();
             return e.getValue().apply(planPricing);
         }).collect(ImmutableList.toImmutableList());
-        availablePlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
+        allPlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
                 .collect(ImmutableMap.toImmutableMap(
                         Plan::getBasePlanId,
                         p -> p));
-        Preconditions.checkState(availablePlans.keySet().stream().noneMatch(p -> p.matches(".*-[0-9]]+")),
+        availablePlans = allPlans.entrySet().stream()
+                .filter(e -> AVAILABLE_PLAN_NAMES.contains(e.getValue().getBasePlanId()))
+                .collect(ImmutableMap.toImmutableMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue));
+        Preconditions.checkState(allPlans.keySet().stream().noneMatch(p -> p.matches(".*-[0-9]]+")),
                 "Plans cannot end in a number, plans with price overrides end in a number");
         plansGetResponse = new PlansGetResponse(
                 availablePlans.values().asList(),
@@ -160,10 +181,18 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .orElse(subscription.getPlanName());
         switch (getBasePlanId(planToChangeFrom)) {
             case "growth-monthly":
-            case "standard-monthly":
                 return ImmutableSet.of(
                         availablePlans.get("growth-monthly"),
+                        availablePlans.get("standard2-monthly"));
+            case "standard-monthly":
+                return ImmutableSet.of(
+                        availablePlans.get("growth2-monthly"),
                         availablePlans.get("standard-monthly"));
+            case "growth2-monthly":
+            case "standard2-monthly":
+                return ImmutableSet.of(
+                        availablePlans.get("growth2-monthly"),
+                        availablePlans.get("standard2-monthly"));
             case "flat-yearly":
             default:
                 return ImmutableSet.of();
@@ -174,7 +203,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt) {
         String basePlanId = getBasePlanId(planId);
-        Optional<Plan> planOpt = Optional.ofNullable(availablePlans.get(basePlanId));
+        Optional<Plan> planOpt = Optional.ofNullable(allPlans.get(basePlanId));
         if (planOpt.isPresent()
                 && subscriptionOpt.isPresent()) {
             Optional<Long> recurringPrice = Stream.of(subscriptionOpt.get().getPriceOverrides(), subscriptionOpt.get().getPrices())
@@ -235,6 +264,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
+            case "growth2-monthly":
                 switch (action) {
                     case API_KEY:
                         throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use API on your plan");
@@ -250,6 +280,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
+            case "growth2-monthly":
                 // Restrict Single Sign-On
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use OAuth on your plan");
@@ -278,6 +309,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 }
                 return;
             case "standard-monthly":
+            case "standard2-monthly":
             case "flat-yearly":
         }
     }

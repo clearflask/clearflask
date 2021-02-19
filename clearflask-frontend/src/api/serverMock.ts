@@ -13,8 +13,8 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 export const SuperAdminEmail = 'admin@clearflask.com';
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'growth-monthly': {
-    basePlanId: 'growth-monthly', title: 'Growth',
+  'growth2-monthly': {
+    basePlanId: 'growth2-monthly', title: 'Growth',
     pricing: { basePrice: 50, baseMau: 50, unitPrice: 30, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
@@ -22,8 +22,8 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
       { desc: 'Roadmap' },
     ],
   },
-  'standard-monthly': {
-    basePlanId: 'standard-monthly', title: 'Standard',
+  'standard2-monthly': {
+    basePlanId: 'standard2-monthly', title: 'Standard',
     pricing: { basePrice: 200, baseMau: 300, unitPrice: 100, unitMau: 300, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Single Sign-On' },

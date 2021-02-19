@@ -2,7 +2,7 @@
 <catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="CatalogSchema.xsd">
 
-    <effectiveDate>2020-01-01T00:00:00+00:00</effectiveDate>
+    <effectiveDate>2021-02-01T00:00:00+00:00</effectiveDate>
     <catalogName>ClearFlask</catalogName>
     <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
 
@@ -253,6 +253,7 @@
                 </recurring>
             </finalPhase>
         </plan>
+        <!-- Remove below plans in next catalog -->
         <plan name="growth-monthly" prettyName="Growth Plan (Grandfathered)">
             <product>growth</product>
             <initialPhases>
