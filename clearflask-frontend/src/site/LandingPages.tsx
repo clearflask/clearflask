@@ -1,4 +1,4 @@
-import { Container, Typography } from '@material-ui/core';
+import { Container, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
@@ -35,6 +35,7 @@ import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
+import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
@@ -1227,50 +1228,97 @@ export function LandingCrowdFunding() {
     <React.Fragment>
       <Hero
         title='Transparent Feature Crowdfunding'
-        description='Reward your customers with a voice to shape your product.'
+        description='Credit-system to reward your paying customers with a voice to shape your product.'
         imagePath='/img/landing/crowdfund.svg'
       />
       <Block
-        title='Issue credits to customers'
-        description='After customer makes a payment on your site, update their ClearFlask balance via API or one of our integrations.'
+        title='Issue credits'
+        description='When a customer makes a payment on your site, issue them ClearFlask credits to spend on ideas.'
+        alignItems='center'
+        demo={(
+          <DividerCorner title='Transaction history' height='100%'>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell key='description'>Description</TableCell>
+                  <TableCell key='amount' align='right'>Amount</TableCell>
+                  <TableCell key='balance' align='right'>Account balance</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell key='description'>Credits for July 2021</TableCell>
+                  <TableCell key='amount'>$50.00</TableCell>
+                  <TableCell key='balance'>$70.00</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell key='description'>Fund 'Jira Integration'</TableCell>
+                  <TableCell key='amount' style={{ color: '#d50000' }}>($80.00)</TableCell>
+                  <TableCell key='balance'>$20.00</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell key='description'>Credits for June 2021</TableCell>
+                  <TableCell key='amount'>$50.00</TableCell>
+                  <TableCell key='balance'>$100.00</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell key='description'>Credits for May 2021</TableCell>
+                  <TableCell key='amount'>$50.00</TableCell>
+                  <TableCell key='balance'>$50.00</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </DividerCorner>
+        )}
       />
       <Block
+        alignItems='center'
         title='Let them prioritize'
-        description='<Show credits prioritization>'
+        description='Let your users decide where to spend their credits.'
+        mirror
+        imagePath='/img/landing/demo-crowdfund.png'
+        imageStyle={{ width: 'unset' }}
       />
       <Block
         title='Works best with'
-        description='Works best with subscription products'
+        description='Products with a paid subscription are most suitable for using a credit-system.'
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          title='SAAS Subscription'
-          description=''
+          title='SAAS Products'
+          description='Most common use case is to give SAAS customers credits based on their subscription'
         />
         <BlockContent
-          title='Donation-based'
-          description=''
+          title='Donation-based / Freemium'
+          description='Let users with the highest contributions dictate where your product should go.'
           buttonTitle='Learn more'
           buttonLink='/solutions/content-creator-forum'
         />
         <BlockContent
           title='Commercial Support'
-          description=''
+          description='Issue credits as support allowance they can spend to receive support from you.'
           buttonTitle='Learn more'
           buttonLink='/solutions/commercial-support-management'
         />
       </HorizontalPanels>
       <Block
-        title='Advertise value-added credits'
-        description=''
+        alignItems='center'
+        title='Credits as a selling point'
+        description='Include credits as value-added to your paid plan or product. Let them know your product is driven by paying customers.'
+        mirror
+        imagePath='/img/landing/demo-advertise-credits.png'
+        imageStyle={{ width: 'unset' }}
       />
       <Block
-        title='Option to purchase additional credits'
-        description='Entice your users to support'
+        title='Allow purchasing additional credits'
+        description='Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general.'
       />
       <Block
         title='Transparency in feature prioritization'
-        description='Ensures it is clear that the highest paying customer voices are heard. Encourages users'
+        description='Make it clear your product is actively supported and shaped by paying customers.'
+        mirror
+        imagePath='/img/landing/demo-funding-roadmap.png'
+        imageStyle={{ width: 'unset' }}
       />
     </React.Fragment>
   );

@@ -1,4 +1,4 @@
-import { Button, Slider, Typography } from '@material-ui/core';
+import { Button, Link as MuiLink, Slider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -63,6 +63,14 @@ const styles = (theme: Theme) => createStyles({
     position: 'absolute',
     left: 0,
     top: 0,
+  },
+  link: {
+    color: 'unset',
+    borderBottom: '1px dashed',
+    textDecoration: 'none',
+    '&:hover': {
+      borderBottomStyle: 'solid',
+    },
   },
 });
 
@@ -219,7 +227,21 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
             className={classNames(this.props.classes.msg, this.props.classes.msgHover)}
             variant='overline'
             component='div'
-          >You have no balance</Typography>
+          >
+            You have no balance.&nbsp;
+            {!!this.props.credits?.creditPurchase?.redirectUrl && (
+              <MuiLink
+                className={this.props.classes.link}
+                color='inherit'
+                href={this.props.credits.creditPurchase.redirectUrl}
+                target='_blank'
+                underline='none'
+                rel='noopener nofollow'
+              >
+                {this.props.credits.creditPurchase.buttonTitle || 'Get more'}
+              </MuiLink>
+            )}
+          </Typography>
         )}
         <Slider
           className={classNames(this.props.classes.slider, (min === max) && this.props.classes.sliderHide)}

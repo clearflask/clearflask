@@ -80,8 +80,20 @@ components:
             summary:
               x-clearflask-prop: { order: 2, name: 'Transaction summary', description: 'Description to show to the user as part of this transaction' }
               type: string
+        creditPurchase:
+          x-clearflask-prop: { order: 10, name: 'Credits purchase', description: 'Direct your users to your website to purchase or claim more credits.' }
+          type: object
+          required:
+            - redirectUrl
+          properties:
+            redirectUrl:
+              x-clearflask-prop: { order: 1, name: 'Redirect link', placeholder: 'https://example.com/purchase', description: 'Specify a link where your users can get more credits.' }
+              type: string
+            buttonTitle:
+              x-clearflask-prop: { order: 2, name: 'Redirect button title', placeholder: 'Get more', description: 'Optionally set the button title such as "Buy more", "Claim more"' }
+              type: string
         formats:
-          x-clearflask-prop: { order: 1, name: 'Display rules', description: '
+          x-clearflask-prop: { order: 20, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
             1/ "Range" matching a value.
             2/ The credits will be multiplied by the Multiplier.
