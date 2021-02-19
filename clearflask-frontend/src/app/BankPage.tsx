@@ -1,5 +1,6 @@
-import { Typography } from '@material-ui/core';
+import { Button, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
@@ -24,6 +25,10 @@ const styles = (theme: Theme) => createStyles({
   },
   section: {
     marginTop: theme.spacing(3),
+  },
+  linkGetMore: {
+    marginLeft: theme.spacing(1),
+    display: 'flex',
   },
 });
 interface Props {
@@ -50,13 +55,26 @@ class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles
                 <CreditView val={this.props.balance} credits={this.props.credits} />
               </Typography>
             )}
+            {!!this.props.credits?.creditPurchase?.redirectUrl && (
+              <Button
+                component={MuiLink}
+                className={classNames(this.props.classes.spacing, this.props.classes.linkGetMore)}
+                color='primary'
+                href={this.props.credits.creditPurchase.redirectUrl}
+                target='_blank'
+                underline='none'
+                rel='noopener nofollow'
+              >
+                {this.props.credits.creditPurchase.buttonTitle || 'Get more'}
+              </Button>
+            )}
           </DividerCorner>
           <div className={this.props.classes.spacing} />
           <DividerCorner title='Funded' className={this.props.classes.section}>
             <FundingControl server={this.props.server} className={this.props.classes.spacing} />
           </DividerCorner>
         </div>
-        <TransactionList server={this.props.server} />
+        <TransactionList className={this.props.classes.section} server={this.props.server} />
       </div>
     );
   }

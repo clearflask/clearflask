@@ -14,6 +14,7 @@ import FeedbackIcon from '@material-ui/icons/Feedback';
 import BackupIcon from '@material-ui/icons/FileCopy';
 import KnowledgeIcon from '@material-ui/icons/Help';
 import EncryptionIcon from '@material-ui/icons/Https';
+import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationIcon from '@material-ui/icons/Notifications';
 import CommunityIcon from '@material-ui/icons/People';
@@ -1227,7 +1228,7 @@ export function LandingCrowdFunding() {
   return (
     <React.Fragment>
       <Hero
-        title='Transparent Feature Crowdfunding'
+        title='Feature Crowdfunding'
         description='Credit-system to reward your paying customers with a voice to shape your product.'
         imagePath='/img/landing/crowdfund.svg'
       />
@@ -1274,7 +1275,7 @@ export function LandingCrowdFunding() {
       <Block
         alignItems='center'
         title='Let them prioritize'
-        description='Let your users decide where to spend their credits.'
+        description='Sit back and watch your users prioritize your roadmap.'
         mirror
         imagePath='/img/landing/demo-crowdfund.png'
         imageStyle={{ width: 'unset' }}
@@ -1285,18 +1286,30 @@ export function LandingCrowdFunding() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
+          icon={(<ApiIcon />)}
           title='SAAS Products'
           description='Most common use case is to give SAAS customers credits based on their subscription'
         />
         <BlockContent
+          icon={(<DonationIcon />)}
           title='Donation-based / Freemium'
           description='Let users with the highest contributions dictate where your product should go.'
+        />
+        <div />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <div />
+        <BlockContent
+          icon={(<ContentCreatorIcon />)}
+          title='Content Creator'
+          description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
           buttonTitle='Learn more'
           buttonLink='/solutions/content-creator-forum'
         />
         <BlockContent
+          icon={(<PaymentIcon />)}
           title='Commercial Support'
-          description='Issue credits as support allowance they can spend to receive support from you.'
+          description='Issue credits as support allowance your customers can spend to receive support.'
           buttonTitle='Learn more'
           buttonLink='/solutions/commercial-support-management'
         />
@@ -1310,10 +1323,14 @@ export function LandingCrowdFunding() {
         imageStyle={{ width: 'unset' }}
       />
       <Block
-        title='Allow purchasing additional credits'
+        alignItems='center'
+        title='Purchase additional credits'
         description='Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general.'
+        imagePath='/img/landing/demo-no-balance.png'
+        imageStyle={{ width: 'unset' }}
       />
       <Block
+        alignItems='center'
         title='Transparency in feature prioritization'
         description='Make it clear your product is actively supported and shaped by paying customers.'
         mirror

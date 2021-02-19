@@ -64,8 +64,10 @@ const styles = (theme: Theme) => createStyles({
     left: 0,
     top: 0,
   },
+  linkGetMore: {
+    color: theme.palette.text.primary,
+  },
   link: {
-    color: 'unset',
     borderBottom: '1px dashed',
     textDecoration: 'none',
     '&:hover': {
@@ -231,7 +233,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
             You have no balance.&nbsp;
             {!!this.props.credits?.creditPurchase?.redirectUrl && (
               <MuiLink
-                className={this.props.classes.link}
+                className={classNames(this.props.classes.link, this.props.classes.linkGetMore)}
                 color='inherit'
                 href={this.props.credits.creditPurchase.redirectUrl}
                 target='_blank'

@@ -50,7 +50,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
       <div className={this.props.className}>
         <DividerCorner title='Transaction history' height='100%'>
           <div className={this.props.classes.transactionsTable}>
-            <Table size='small'>
+            <Table>
               <TableHead>
                 <TableRow>
                   <TableCell key='date'>Date</TableCell>
