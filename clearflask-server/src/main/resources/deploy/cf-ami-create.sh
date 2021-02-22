@@ -41,10 +41,11 @@ Description=ClearFlask Connect
 After=syslog.target
 After=network.target
 [Service]
+Environment=ENV=production
 Environment=NODE_ENV=production
 Environment=NODE_VERSION=14.15.1
 Environment=PATH=/usr/bin:/usr/local/bin
-ExecStart=/home/connect/.nvm/nvm-exec npm start --prefix /srv/clearflask-connect
+ExecStart=/home/connect/.nvm/nvm-exec ./start.sh
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=Connect

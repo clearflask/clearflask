@@ -1,3 +1,4 @@
+const fs = require('fs');
 
 export interface ConnectConfig {
   listenPort: number;
@@ -10,9 +11,9 @@ export interface ConnectConfig {
 
 var configLoaded;
 if (process.env.ENV === 'production') {
-  const configFile = '/opt/clearflask/connect.config.js';
+  const configFile = '/opt/clearflask/connect.config.json';
   try {
-    configLoaded = require(configFile).default;
+    configLoaded = JSON.parse(fs.readFileSync(configFile));
   }
   catch (e) {
     console.info('Failed to load config file', configFile, e);

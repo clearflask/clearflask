@@ -45,7 +45,6 @@ connect-run-dev:
 	docker run --rm --name clearflask-connect \
 	-p 80:9080 \
 	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
-	-v `pwd -P`/clearflask-frontend/connect.config.dev.js:/opt/clearflask/connect.config.js \
 	-w /srv/clearflask-connect \
 	--add-host=localhost.com:172.17.0.1 \
 	--add-host=acme.staging.localhost:172.17.0.1 \
@@ -165,26 +164,18 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	nginx
 
 deploy:
-	make deploy-files
 	make deploy-server
 	make deploy-connect
 	make deploy-rotate-instances
-	make deploy-manifest
 	make deploy-cloudfront-invalidate
 
 deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
 
-deploy-connect: ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz
-	aws s3 cp ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz s3://clearflask-secret/clearflask-connect-0.1-connect.tar.gz
+deploy-connect: ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz
+	aws s3 cp ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz s3://clearflask-secret/clearflask-frontend-0.1-connect.tar.gz
 
 deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deploy-files
-
-deploy-manifest: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=0" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
-
-deploy-files: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
 
 deploy-rotate-instances:
 	./instance-refresh-and-wait.sh clearflask-server
