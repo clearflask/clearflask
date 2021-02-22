@@ -24,17 +24,24 @@ run-it-services:
 _run-dev: elastic-run killbill-run
 
 npm-run-dev-frontend:
-	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js start
+	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js run start:frontend
 
-npm-run-dev-connect:
-	cd clearflask-connect && node/node_modules/npm/bin/npm-cli.js run dev
-
-connect-run-dev:
+connect-extract:
 	rm -fr `pwd`/clearflask-frontend/target/ROOT
 	mkdir `pwd`/clearflask-frontend/target/ROOT
 	tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
 	LANG=C find `pwd`/clearflask-frontend/target/ROOT -type f -exec \
 	sed -i '' -e 's/clearflask\.com/localhost\.com/g' {} +
+
+npm-run-dev-connect:
+	@$(MAKE) _npm-run-dev-connect -j 50
+_npm-run-dev-connect: nginx-run __npm-run-dev-connect
+__npm-run-dev-connect:
+	make connect-extract
+	cd `pwd`/clearflask-frontend/target/ROOT && DEBUG=express:query NODE_ENV=production ENV=development ./start.sh
+
+connect-run-dev:
+	make connect-extract
 	docker run --rm --name clearflask-connect \
 	-p 80:9080 \
 	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \

@@ -45,7 +45,7 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   if (state.legal.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.legalGet());
+    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.legalGet());
   }
   return {
     legal: state.legal.legal,
