@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import CategorySelect from '../../app/comps/CategorySelect';
 import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
@@ -183,7 +182,7 @@ class CategoryStats extends Component<Props & ConnectProps & WithStyles<typeof s
   }
 
   searchCategory(categoryId: string) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.ideaCategoryAggregateAdmin({
+    this.props.server.dispatchAdmin().then(d => d.ideaCategoryAggregateAdmin({
       projectId: this.props.server.getProjectId(),
       categoryId,
     })

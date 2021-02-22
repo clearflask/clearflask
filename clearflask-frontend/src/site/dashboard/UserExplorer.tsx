@@ -12,7 +12,6 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import { MaxContentWidth } from '../../app/comps/Post';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
@@ -283,7 +282,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
               onClick={e => {
                 if (!enableSubmit) return;
                 this.setState({ newUserIsSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.userCreateAdmin({
+                this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
                   projectId: this.props.server.getProjectId(),
                   userCreateAdmin: {
                     name: this.state.newUserName,
@@ -355,7 +354,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
   }
 
   search(name?: string, email?: string, cursor?: string) {
-    ServerAdmin.get().dispatchAdmin()
+    this.props.server.dispatchAdmin()
       .then(d => d.userSearchAdmin({
         projectId: this.props.server.getProjectId(),
         cursor: cursor,

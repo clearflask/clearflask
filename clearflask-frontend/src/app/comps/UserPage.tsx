@@ -6,7 +6,6 @@ import TimeAgo from 'react-timeago';
 import * as Admin from "../../api/admin";
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import ModStar from '../../common/ModStar';
 import UserContributions from '../../common/UserContributions';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
@@ -58,7 +57,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
     var overview: React.ReactNode | undefined;
     if (this.props.server.isModOrAdminLoggedIn()) {
       if (this.userAdminFetchedForUserId !== this.props.userId) {
-        ServerAdmin.get().dispatchAdmin().then(d => d.userGetAdmin({
+        this.props.server.dispatchAdmin().then(d => d.userGetAdmin({
           projectId: this.props.server.getProjectId(),
           userId: this.props.userId,
         }))

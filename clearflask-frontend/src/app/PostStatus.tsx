@@ -50,25 +50,36 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   constructor(props) {
     super(props);
 
-    this.dataPromise = this.fetchData(props);
-    if (windowIso.isSsr) windowIso.awaitPromises.push(this.dataPromise);
-  }
 
-  async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
-    var server: Server | undefined;
+    var ssrWait = false;
+    var serverPromise: Promise<Server>;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const DemoApp = await import(/* webpackChunkName: "demoApp" */'../site/DemoApp');
-      const project = await DemoApp.getProject(
-        templater => templater.workflowFeatures(templater.demoCategory()),
-        mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
-          statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
-        })),
-        { suppressSetTitle: true });
-      server = project.server;
+      serverPromise = this.mockData(props);
     } else {
-      server = new Server();
+      const server = new Server();
+      if (windowIso.isSsr && server.getStore().getState().conf.status === undefined) {
+        ssrWait = true;
+      }
+      serverPromise = Promise.resolve(server);
     }
 
+    this.dataPromise = this.fetchData(props, serverPromise);
+    if (windowIso.isSsr && ssrWait) windowIso.awaitPromises.push(this.dataPromise);
+  }
+
+  async mockData(props: Props): Promise<Server> {
+    const DemoApp = await import(/* webpackChunkName: "demoApp" */'../site/DemoApp');
+    const project = await DemoApp.getProject(
+      templater => templater.workflowFeatures(templater.demoCategory()),
+      mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
+        statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
+      })),
+      { suppressSetTitle: true });
+    return project.server;
+  }
+
+  async fetchData(props: Props, serverPromise: Promise<Server>): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
+    const server = await serverPromise;
     const subscriptionResult = await WebNotification.getInstance().getPermission();
     const configAndUserBind = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
       slug: windowIso.location.hostname,

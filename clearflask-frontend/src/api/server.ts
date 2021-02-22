@@ -37,6 +37,7 @@ export class Server {
 
   readonly store: Store<ReduxState, AllActions>;
   readonly dispatcherClient: Client.Dispatcher;
+  readonly dispatcherAdmin: Admin.Dispatcher;
 
   // NOTE: If creating multiple projects, only one project can have projectId undefined
   // and is conside
@@ -74,6 +75,11 @@ export class Server {
     this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
       new Client.Api(new Client.Configuration(apiConf), apiOverride));
+    this.dispatcherAdmin = apiOverride
+      ? new Admin.Dispatcher(
+        msg => Server._dispatch(msg, this.store),
+        new Admin.Api(new Admin.Configuration(apiConf), apiOverride))
+      : ServerAdmin.get().dispatcherAdmin
   }
 
   static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
@@ -178,6 +184,10 @@ export class Server {
 
   dispatch(props: DispatchProps = {}): Promise<Client.Dispatcher> {
     return Server.__dispatch(props, this.dispatcherClient);
+  }
+
+  dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherAdmin);
   }
 
   static __dispatch<D>(props: DispatchProps = {}, dispatcher: D): Promise<D> {

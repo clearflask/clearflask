@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, Status } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import UserDisplay from '../../common/UserDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
@@ -57,7 +56,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
       this.props.onChange && this.props.onChange(selectedUserLabel);
     }
     const searchDebounced = debounce(
-      (newValue: string) => ServerAdmin.get().dispatchAdmin()
+      (newValue: string) => this.props.server.dispatchAdmin()
         .then(d => d.userSearchAdmin({
           projectId: this.props.server.getProjectId(),
           userSearchAdmin: { searchText: newValue },
@@ -150,7 +149,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         }}
         formatCreateLabel={this.props.allowCreate ? inputValue => `Add user '${inputValue}'` : undefined}
         onValueCreate={this.props.allowCreate ? name => {
-          ServerAdmin.get().dispatchAdmin()
+          this.props.server.dispatchAdmin()
             .then(d => d.userCreateAdmin({
               projectId: this.props.server.getProjectId(),
               userCreateAdmin: { name },

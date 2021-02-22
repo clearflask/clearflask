@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import Comment from '../../app/comps/Comment';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import LogIn from '../../app/comps/LogIn';
@@ -171,7 +170,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
 
   // TODO Use the redux state here instead of react state
   search(text?: string, cursor?: string) {
-    ServerAdmin.get().dispatchAdmin()
+    this.props.server.dispatchAdmin()
       .then(d => d.commentSearchAdmin({
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
