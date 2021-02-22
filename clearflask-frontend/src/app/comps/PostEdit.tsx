@@ -1,8 +1,10 @@
+import loadable from '@loadable/component';
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
@@ -12,7 +14,7 @@ import Loading from '../utils/Loading';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -100,40 +102,36 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 </Grid>
               )}
               <Grid item xs={12} className={this.props.classes.row}>
-                <Suspense fallback={<Loading />}>
-                  <RichEditor
-                    variant='outlined'
-                    size='small'
-                    disabled={this.state.isSubmitting}
-                    label='Description'
-                    fullWidth
-                    iAgreeInputIsSanitized
-                    value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
-                    onChange={e => this.setState({ description: e.target.value })}
-                    multiline
-                    rows={1}
-                    rowsMax={15}
-                  />
-                </Suspense>
+                <RichEditor
+                  variant='outlined'
+                  size='small'
+                  disabled={this.state.isSubmitting}
+                  label='Description'
+                  fullWidth
+                  iAgreeInputIsSanitized
+                  value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
+                  onChange={e => this.setState({ description: e.target.value })}
+                  multiline
+                  rows={1}
+                  rowsMax={15}
+                />
               </Grid>
               {isModOrAdminLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
-                    <Suspense fallback={<Loading />}>
-                      <RichEditor
-                        variant='outlined'
-                        size='small'
-                        disabled={this.state.isSubmitting}
-                        label='Response'
-                        fullWidth
-                        iAgreeInputIsSanitized
-                        value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
-                        onChange={e => this.setState({ response: e.target.value })}
-                        multiline
-                        rows={1}
-                        rowsMax={3}
-                      />
-                    </Suspense>
+                    <RichEditor
+                      variant='outlined'
+                      size='small'
+                      disabled={this.state.isSubmitting}
+                      label='Response'
+                      fullWidth
+                      iAgreeInputIsSanitized
+                      value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
+                      onChange={e => this.setState({ response: e.target.value })}
+                      multiline
+                      rows={1}
+                      rowsMax={3}
+                    />
                   </Grid>
                   {(isModOrAdminLoggedIn && this.props.category.workflow.statuses.length > 0) && (
                     <Grid item xs={12} sm={4} className={this.props.classes.row}>
@@ -217,7 +215,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
               this.setState({ isSubmitting: true });
               (isModOrAdminLoggedIn
-                ? this.props.server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
+                ? ServerAdmin.get().dispatchAdmin().then(d => d.ideaUpdateAdmin({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
                   ideaUpdateAdmin: {
@@ -230,14 +228,14 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     suppressNotifications: this.state.suppressNotifications,
                   },
                 }))
-                : this.props.server.dispatch().ideaUpdate({
+                : this.props.server.dispatch().then(d => d.ideaUpdate({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
                   ideaUpdate: {
                     title: this.state.title,
                     description: this.state.description,
                   },
-                }))
+                })))
                 .then(idea => {
                   this.setState({
                     isSubmitting: false,
@@ -271,14 +269,14 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               onClick={() => {
                 this.setState({ isSubmitting: true });
                 (isModOrAdminLoggedIn
-                  ? this.props.server.dispatchAdmin().then(d => d.ideaDeleteAdmin({
+                  ? ServerAdmin.get().dispatchAdmin().then(d => d.ideaDeleteAdmin({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
                   }))
-                  : this.props.server.dispatch().ideaDelete({
+                  : this.props.server.dispatch().then(d => d.ideaDelete({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
-                  }))
+                  })))
                   .then(() => {
                     this.setState({
                       isSubmitting: false,

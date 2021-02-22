@@ -83,27 +83,27 @@ const styles = (theme: Theme) => createStyles({
       lineHeight: 1.6,
     },
     '& h1': {
-      ...theme.typography.h2,
+      ...theme.typography.h2 as any,
       margin: '32px 0 16px',
     },
     '& .description': {
-      ...theme.typography.h5,
+      ...theme.typography.h5 as any,
       margin: '0 0 40px',
     },
     '& h2': {
-      ...theme.typography.h4,
+      ...theme.typography.h4 as any,
       margin: '32px 0 24px',
     },
     '& h3': {
-      ...theme.typography.h5,
+      ...theme.typography.h5 as any,
       margin: '32px 0 24px',
     },
     '& h4': {
-      ...theme.typography.h6,
+      ...theme.typography.h6 as any,
       margin: '24px 0 16px',
     },
     '& h5': {
-      ...theme.typography.subtitle2,
+      ...theme.typography.subtitle2 as any,
       margin: '24px 0 16px',
     },
     '& p, & ul, & ol': {

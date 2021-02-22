@@ -2,6 +2,8 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.SniConnectApi;
 import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
@@ -26,6 +28,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -33,8 +36,15 @@ import java.util.Optional;
 @Path(Application.RESOURCE_VERSION)
 public class ConnectResource extends AbstractResource implements SniConnectApi {
 
+    public interface Config {
+        @DefaultValue("^(.+\\.)?clearflask\\.com$")
+        String domainWhitelist();
+    }
+
     @Context
     private HttpHeaders headers;
+    @Inject
+    private Config config;
     @Inject
     private CertStore certStore;
     @Inject
@@ -99,7 +109,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
                 .map(CertModel::toCert);
         if (certOpt.isPresent()) {
             return certOpt.get();
-        } else if (projectStore.getProjectBySlug(domain, true).isPresent()) {
+        } else if (domain.matches(config.domainWhitelist())
+            || projectStore.getProjectBySlug(domain, true).isPresent()) {
             throw new ClientErrorException(Response.Status.NOT_FOUND);
         } else {
             throw new ClientErrorException(Response.Status.UNAUTHORIZED);
@@ -148,6 +159,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
             @Override
             protected void configure() {
                 bind(ConnectResource.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

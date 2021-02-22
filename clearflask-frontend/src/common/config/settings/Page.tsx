@@ -1,6 +1,7 @@
+import loadable from '@loadable/component';
 import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import Loading from '../../../app/utils/Loading';
@@ -11,7 +12,7 @@ import PresetWidget from './PresetWidget';
 import Property from './Property';
 import { RestrictedProperties } from './UpgradeWrapper';
 
-const WorkflowPreview = React.lazy(() => import('./injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'./injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -41,9 +42,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
     var workflowPreview;
     if (this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
       workflowPreview = (
-        <Suspense fallback={<Loading />}>
-          <WorkflowPreview editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />
-        </Suspense>
+        <WorkflowPreview editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />
       );
     }
 

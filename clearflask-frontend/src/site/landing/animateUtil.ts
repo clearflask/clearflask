@@ -13,14 +13,14 @@ export function animateWrapper<StateUpdate>(
   setState?: StateUpdate;
 }) => Promise<boolean>) {
   return async opts => {
-    if (opts?.sleepInMs && opts.sleepInMs > 0) await new Promise(resolve => setTimeout(resolve, opts.sleepInMs));
+    if (opts?.sleepInMs && opts.sleepInMs > 0) await new Promise<void>(resolve => setTimeout(resolve, opts.sleepInMs));
     await inViewObserverRef.current?.get();
     if (!isPageVisible()) await waitUntilPageVisible();
     if (!isMountedGetter()) return true;
     if (!!settingsGetter().demoUserIsInteracting) return true;
     const newState = opts?.setState;
     try {
-      if (newState !== undefined) await new Promise(resolve => {
+      if (newState !== undefined) await new Promise<void>(resolve => {
         setState(newState, resolve)
       });
     } catch (er) {

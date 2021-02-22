@@ -118,18 +118,18 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   const searchKey: string = getSearchKey(search);
   var getNextTransactions;
   if (userId && (state.credits.transactionSearch.status === undefined || state.credits.transactionSearch.searchKey !== searchKey)) {
-    ownProps.server.dispatch().transactionSearch({
+    ownProps.server.dispatch().then(d => d.transactionSearch({
       projectId: ownProps.server.getProjectId(),
       userId: userId,
       transactionSearch: search,
-    });
+    }));
   } else if (userId && state.credits.transactionSearch.cursor && state.credits.transactionSearch.searchKey === searchKey) {
-    getNextTransactions = () => ownProps.server.dispatch().transactionSearch({
+    getNextTransactions = () => ownProps.server.dispatch().then(d => d.transactionSearch({
       projectId: ownProps.server.getProjectId(),
       userId: userId,
       transactionSearch: search,
       cursor: state.credits.transactionSearch.cursor,
-    });
+    }));
   }
   const connectProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change

@@ -1,3 +1,4 @@
+import { NoSsr } from '@material-ui/core';
 import React, { Component } from 'react';
 import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
@@ -18,16 +19,18 @@ interface ConnectProps {
 class TemplateLiquid extends Component<Props & ConnectProps> {
   render() {
     return (
-      <ReactLiquid
-        html
-        template={this.props.template}
-        data={{
-          config: this.props.config,
-          page: this.props.page,
-          loggedInUser: this.props.loggedInUser,
-          core: this.props.state,
-        }}
-      />
+      <NoSsr>
+        <ReactLiquid
+          html
+          template={this.props.template}
+          data={{
+            config: this.props.config,
+            page: this.props.page,
+            loggedInUser: this.props.loggedInUser,
+            core: this.props.state,
+          }}
+        />
+      </NoSsr>
     );
   }
 }

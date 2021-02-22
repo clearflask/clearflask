@@ -4,7 +4,9 @@ import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { htmlDataRetrieve } from '../common/util/htmlData';
 import randomUuid from '../common/util/uuid';
+import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
@@ -17,6 +19,10 @@ export const errorSubscribers: ErrorSubscribers = {}
 export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 export type ChallengeSubscribers = { [subscriberId: string]: ChallengeSubscriber };
 export const challengeSubscribers: ChallengeSubscribers = {}
+export interface DispatchProps {
+  ssr?: boolean;
+  ssrStatusPassthrough?: boolean;
+}
 
 export enum Status {
   PENDING = 'PENDING',
@@ -27,33 +33,47 @@ export enum Status {
 type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
 
 export class Server {
-  readonly store: Store<ReduxState, AllActions>;
-  readonly mockServer: ServerMock | undefined;
-  readonly dispatcherClient: Client.Dispatcher;
-  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
+  static storesState: StoresState | undefined;
 
+  readonly store: Store<ReduxState, AllActions>;
+  readonly dispatcherClient: Client.Dispatcher;
+
+  // NOTE: If creating multiple projects, only one project can have projectId undefined
+  // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
-        typeof window === 'object' &&
-          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
-    this.store = createStore(
-      reducers,
-      Server.initialState(projectId, settings),
-      storeMiddleware);
 
-    const dispatchers = Server.getDispatchers(
+    const projectStoreId = projectId || windowIso.location.hostname;
+    if (windowIso.isSsr) {
+      windowIso.storesState.serverStores = windowIso.storesState.serverStores || {};
+      windowIso.storesState.serverStores[projectStoreId] = windowIso.storesState.serverStores[projectStoreId]
+        || createStore(reducers, Server.initialState(projectId, settings), storeMiddleware);
+      this.store = windowIso.storesState.serverStores[projectStoreId];
+    } else {
+      const preloadedState = (htmlDataRetrieve('__SSR_STORE_INITIAL_STATE__') as StoresStateSerializable | undefined)?.serverStores?.[projectStoreId]
+        || Server.initialState(projectId, settings);
+      this.store = createStore(reducers, preloadedState, storeMiddleware);
+    }
+
+    const apiConf: Client.ConfigurationParameters = {
+      fetchApi: windowIso.fetch.bind(windowIso),
+      basePath: Server.augmentApiBasePath(Client.BASE_PATH),
+    };
+    if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      apiOverride = ServerMock.get();
+    }
+    this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
-      apiOverride);
-    this.dispatcherClient = dispatchers.client;
-    this.dispatcherAdmin = dispatchers.adminPromise;
+      new Client.Api(new Client.Configuration(apiConf), apiOverride));
   }
 
   static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
@@ -114,27 +134,6 @@ export class Server {
     return result.value;
   }
 
-  static getDispatchers(
-    dispatcherDelegate: (msg: any) => Promise<any>,
-    apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
-
-    const apiConf: Client.ConfigurationParameters = {};
-    if (!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      apiOverride = ServerMock.get();
-    } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
-    }
-
-    const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
-      new Client.Api(new Client.Configuration(apiConf), apiOverride));
-    const dispatcherAdminPromise = Promise.resolve(new Admin.Dispatcher(dispatcherDelegate,
-      new Admin.Api(new Admin.Configuration(apiConf), apiOverride)));
-    return {
-      client: dispatcherClient,
-      adminPromise: dispatcherAdminPromise,
-    };
-  }
-
   static initialState(projectId?: string, settings?: StateSettings): any {
     const state: ReduxState = {
       projectId: projectId || stateProjectIdDefault,
@@ -149,6 +148,17 @@ export class Server {
       notifications: stateNotificationsDefault,
     };
     return state;
+  }
+
+  static augmentApiBasePath(basePath: string): string {
+    switch (detectEnv()) {
+      case Environment.DEVELOPMENT_FRONTEND:
+        break;
+      default:
+        basePath = basePath.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
+        break;
+    }
+    return basePath;
   }
 
   getProjectId(): string {
@@ -166,13 +176,38 @@ export class Server {
       && !!state.users.loggedIn.user?.isMod;
   }
 
-  dispatch(): Client.Dispatcher {
-    return this.dispatcherClient;
+  dispatch(props: DispatchProps = {}): Promise<Client.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherClient);
   }
 
-  async dispatchAdmin(): Promise<Admin.Dispatcher> {
-    // TODO load as async webpack here. remove all references to Admin.*
-    return this.dispatcherAdmin;
+  static __dispatch<D>(props: DispatchProps = {}, dispatcher: D): Promise<D> {
+    if (!props.ssr && windowIso.isSsr) {
+      return new Promise(() => { }); // Promise that never resolves
+    }
+    const dispatchPromise = Promise.resolve(dispatcher);
+    if (props.ssr && windowIso.isSsr) {
+      windowIso.awaitPromises.push(dispatchPromise);
+      // Extend the 'then' method and add any API calls
+      // to the list of promises to wait for in SSR
+      dispatchPromise.then = (function (_super) {
+        return function (this: any) {
+          var apiPromise = _super.apply(this, arguments as any);
+          if (props.ssrStatusPassthrough) {
+            apiPromise = apiPromise.catch(err => {
+              if (!windowIso.isSsr) return;
+              if (isNaN(err?.status)) {
+                windowIso.staticRouterContext.statusCode = 500;
+              } else {
+                windowIso.staticRouterContext.statusCode = err.status;
+              }
+            })
+          }
+          if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
+          return apiPromise;
+        };
+      })(dispatchPromise.then) as any;
+    }
+    return dispatchPromise;
   }
 
   subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {
@@ -290,12 +325,16 @@ export interface StateConf {
   conf?: Client.Config;
   onboardBefore?: Client.Onboarding;
   ver?: string;
+  rejectionMessage?: string;
 }
 const stateConfDefault = {};
 function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
-      return { status: Status.PENDING };
+      return {
+        status: Status.PENDING,
+        rejectionMessage: undefined,
+      };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
     case Admin.configGetAdminActionStatus.Fulfilled:
       const versionedConfigAdmin = action.type === Admin.projectCreateAdminActionStatus.Fulfilled
@@ -303,18 +342,23 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
         : action.payload;
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: versionedConfigAdmin.config,
         ver: versionedConfigAdmin.version,
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: action.payload.config?.config,
         onboardBefore: action.payload.onboardBefore,
         ver: action.payload.config?.version,
       };
     case Client.configGetAndUserBindActionStatus.Rejected:
-      return { status: Status.REJECTED };
+      return {
+        status: Status.REJECTED,
+        rejectionMessage: action.payload.userFacingMessage,
+      };
     default:
       return state;
   }
@@ -653,9 +697,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId],
           status: Status.FULFILLED,
           commentIds: new Set([
-            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]
-              ? newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId].commentIds || []
-              : []),
+            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]?.commentIds || []),
             comment.commentId,
           ]),
         }

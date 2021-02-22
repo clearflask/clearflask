@@ -3,9 +3,11 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { htmlDataRetrieve } from '../common/util/htmlData';
+import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import { Server, Status } from './server';
+import { DispatchProps, Server, Status } from './server';
 import ServerMock from './serverMock';
 
 export const DemoUpdateDelay = 300;
@@ -22,57 +24,53 @@ export interface Project {
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
-  static mockInstance: ServerAdmin | undefined;
 
-  readonly apiOverride?: Client.ApiInterface & Admin.ApiInterface;
   readonly projects: { [projectId: string]: Project } = {};
-  readonly dispatcherClient: Client.Dispatcher;
-  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
+  readonly dispatcherAdmin: Admin.Dispatcher;
   readonly store: Store<ReduxStateAdmin, Admin.Actions>;
 
-  constructor(apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
+  constructor() {
     if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
-    this.apiOverride = apiOverride;
-    const dispatchers = Server.getDispatchers(
+
+    const apiConf: Admin.ConfigurationParameters = {
+      fetchApi: windowIso.fetch.bind(windowIso),
+      basePath: Server.augmentApiBasePath(Admin.BASE_PATH),
+    };
+    var apiOverride: Client.ApiInterface & Admin.ApiInterface | undefined;
+    if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      apiOverride = ServerMock.get();
+    }
+    this.dispatcherAdmin = new Admin.Dispatcher(
       msg => Server._dispatch(msg, this.store),
-      apiOverride);
-    this.dispatcherClient = dispatchers.client;
-    this.dispatcherAdmin = dispatchers.adminPromise;
+      new Admin.Api(new Admin.Configuration(apiConf), apiOverride));
 
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
-        typeof window === 'object' &&
-          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
-    this.store = createStore(
-      reducersAdmin,
-      ServerAdmin._initialState(),
-      storeMiddleware);
+
+    if (windowIso.isSsr) {
+      windowIso.storesState.serverAdminStore = windowIso.storesState.serverAdminStore
+        || createStore(reducersAdmin, ServerAdmin._initialState(), storeMiddleware);
+      this.store = windowIso.storesState.serverAdminStore;
+    } else {
+      const preloadedState = (htmlDataRetrieve('__SSR_STORE_INITIAL_STATE__') as StoresStateSerializable | undefined)?.serverAdminStore
+        || ServerAdmin._initialState();
+      this.store = createStore(reducersAdmin, preloadedState, storeMiddleware);
+    }
   }
 
-  static get(forceMock: boolean = false): ServerAdmin {
-    if (forceMock) {
-      if (ServerAdmin.mockInstance === undefined) {
-        ServerAdmin.mockInstance = new ServerAdmin(ServerMock.get());
-      }
-      return ServerAdmin.mockInstance;
-    } else {
-      if (ServerAdmin.instance === undefined) {
-        if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-          ServerAdmin.mockInstance = new ServerAdmin(ServerMock.get())
-          ServerAdmin.instance = ServerAdmin.mockInstance;
-        } else {
-          ServerAdmin.instance = new ServerAdmin();
-        }
-      }
-      return ServerAdmin.instance;
+  static get(): ServerAdmin {
+    if (ServerAdmin.instance === undefined) {
+      ServerAdmin.instance = new ServerAdmin();
     }
+    return ServerAdmin.instance;
   }
 
   getStore(): Store<ReduxStateAdmin, Admin.Actions> {
@@ -82,13 +80,8 @@ export default class ServerAdmin {
   getServers(): Server[] {
     return Object.values(this.projects).map(p => p.server);
   }
-
-  dispatch(projectId?: string): Client.Dispatcher {
-    return projectId === undefined ? this.dispatcherClient : this.projects[projectId].server.dispatch();
-  }
-
-  dispatchAdmin(projectId?: string): Promise<Admin.Dispatcher> {
-    return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
+  dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherAdmin);
   }
 
   getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {
@@ -97,8 +90,7 @@ export default class ServerAdmin {
     if (!project) {
       const server = new Server(
         projectId,
-        { suppressSetTitle: true },
-        this.apiOverride);
+        { suppressSetTitle: true });
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, DemoUpdateDelay);

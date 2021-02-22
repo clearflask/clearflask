@@ -2,7 +2,8 @@ import { Button, Grid, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { vh } from '../../common/util/vhUtil';
+import ImgIso from '../../common/ImgIso';
+import { vh } from '../../common/util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   hero: {
@@ -50,6 +51,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   title?: string;
   description?: string;
+  image?: Img;
   imagePath?: string;
   mirror?: boolean;
   buttonTitle?: string;
@@ -59,6 +61,8 @@ interface Props {
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
+    const imageSrc = this.props.image?.src || this.props.imagePath;
+    const imageAspectRatio = this.props.image?.aspectRatio
     return (
       <div className={this.props.classes.hero}>
         <Grid container
@@ -67,12 +71,13 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
           alignItems='center'
           direction={!!this.props.mirror ? 'row-reverse' : undefined}
         >
-          {this.props.imagePath && (
+          {imageSrc && (
             <Grid item xs={12} md={6}>
-              <img
+              <ImgIso
                 alt=''
                 className={this.props.classes.image}
-                src={this.props.imagePath}
+                src={imageSrc}
+                aspectRatio={imageAspectRatio}
               />
             </Grid>
           )}

@@ -1,26 +1,30 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
+import loadable from '@loadable/component';
 import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
+import LogoImg from '../../public/img/clearflask-logo.png';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
+import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
-import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 
-const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const LandingPage = React.lazy(() => import('./LandingPage'/* webpackChunkName: "LandingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed));
-const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const SsoSuccessDemoPage = React.lazy(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed));
+const SigninPage = loadable(() => import(/* webpackChunkName: "SigninPage", webpackPrefetch: true */'./SigninPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const LandingPage = loadable(() => import(/* webpackChunkName: "LandingPage", webpackPrefetch: true */'./LandingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/SsoSuccessDemoPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -175,9 +179,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 to='/'
               >
                 <img
-                  alt='logo'
+                  alt=''
                   className={this.props.classes.logo}
-                  src='/img/clearflask-logo.png' />
+                  src={LogoImg.src}
+                  width={LogoImg.width}
+                  height={LogoImg.height}
+                />
                 ClearFlask
               </Link>
               <Hidden xsDown implementation='css'>
@@ -224,50 +231,54 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         </AppBar>
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
-          <Suspense fallback={<Loading />}>
-            <MuiAnimatedSwitch>
-              <Route exact path='/login'>
-                <SetTitle title='Login' />
-                <SigninPage />
-              </Route>
-              <Route path='/contact'>
-                <SetTitle title='Contact' />
-                <ContactPage />
-              </Route>
-              <Route exact path='/pricing'>
-                <SetTitle title='Pricing' />
-                <PricingPage />
-              </Route>
-              <Route exact path='/signup'>
-                <SetTitle title='Sign up' />
-                <TrialSignupPage />
-              </Route>
-              <Route exact path='/sso'>
-                <SetTitle title='Single sign-on' />
-                <SsoSuccessDemoPage type='sso' />
-              </Route>
-              <Route path='/oauth'>
-                <SetTitle title='OAuth' />
-                <SsoSuccessDemoPage type='oauth' />
-              </Route>
-              <Route exact path='/(tos|terms|terms-of-service)'>
-                <SetTitle title='Terms of Service' />
-                <LegalPage type='terms' />
-              </Route>
-              <Route exact path='/(privacy|policy|privacy-policy)'>
-                <SetTitle title='Terms of Service' />
-                <LegalPage type='privacy' />
-              </Route>
-              <Route exact path='/'>
-                <SetTitle />
-                <LandingPage />
-              </Route>
-              <Route>
-                <SetTitle title='Page not found' />
-                <ErrorPage msg='Page not found' variant='error' />
-              </Route>
-            </MuiAnimatedSwitch>
-          </Suspense>
+          <MuiAnimatedSwitch>
+            <Route exact path='/login'>
+              <SetTitle title='Login' />
+              <SigninPage />
+            </Route>
+            <Route path='/contact'>
+              <SetTitle title='Contact' />
+              <ContactPage />
+            </Route>
+            <Route exact path='/pricing'>
+              <SetTitle title='Pricing' />
+              <PricingPage />
+            </Route>
+            <Route exact path='/signup'>
+              <SetTitle title='Sign up' />
+              <TrialSignupPage />
+            </Route>
+            <Route exact path='/sso'>
+              <SetTitle title='Single sign-on' />
+              <SsoSuccessDemoPage type='sso' />
+            </Route>
+            <Route path='/oauth'>
+              <SetTitle title='OAuth' />
+              <SsoSuccessDemoPage type='oauth' />
+            </Route>
+            <Route exact path='/terms-of-service'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='terms' />
+            </Route>
+            <Route exact path='/(tos|terms)'>
+              <RedirectIso to='/terms-of-service' />
+            </Route>
+            <Route exact path='/privacy-policy'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='privacy' />
+            </Route>
+            <Route exact path='/(privacy|policy)'>
+              <RedirectIso to='/privacy-policy' />
+            </Route>
+            <Route exact path='/'>
+              <SetTitle />
+              <LandingPage />
+            </Route>
+            <RouteWithStatus httpCode={404} >
+              <SetTitle title='Page not found' />
+              <ErrorPage msg='Page not found' variant='error' />
+            </RouteWithStatus>
+          </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>

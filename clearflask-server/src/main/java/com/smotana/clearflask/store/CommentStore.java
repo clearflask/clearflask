@@ -22,6 +22,7 @@ import lombok.NonNull;
 import lombok.Value;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -46,7 +47,7 @@ public interface CommentStore {
 
     double computeCommentScore(int upvotes, int downvotes);
 
-    CommentAndIndexingFuture<List<DocWriteResponse>> createComment(CommentModel comment);
+    CommentAndIndexingFuture<List<WriteResponse>> createComment(CommentModel comment);
 
     Optional<CommentModel> getComment(String projectId, String ideaId, String commentId);
 
@@ -58,11 +59,11 @@ public interface CommentStore {
 
     void exportAllForProject(String projectId, Consumer<CommentModel> consumer);
 
-    CommentAndIndexingFuture<UpdateResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
+    CommentAndIndexingFuture<WriteResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
 
-    CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote);
+    CommentAndIndexingFuture<WriteResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote);
 
-    CommentAndIndexingFuture<UpdateResponse> markAsDeletedComment(String projectId, String ideaId, String commentId);
+    CommentAndIndexingFuture<WriteResponse> markAsDeletedComment(String projectId, String ideaId, String commentId);
 
     ListenableFuture<DeleteResponse> deleteComment(String projectId, String ideaId, String commentId);
 

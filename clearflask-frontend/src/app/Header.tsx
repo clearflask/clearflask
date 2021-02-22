@@ -83,6 +83,7 @@ const styles = (theme: Theme) => createStyles({
     maxHeight: '48px',
     height: 'auto',
     width: 'auto',
+    minWidth: 48, // Minimize reflow for square images
     padding: theme.spacing(1),
   },
   logoTextContainer: {

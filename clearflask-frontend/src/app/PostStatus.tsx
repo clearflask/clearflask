@@ -8,6 +8,7 @@ import { Server } from '../api/server';
 import WebNotification from '../common/notification/webNotification';
 import Promised from '../common/Promised';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 
 export class PostStatusConfigDef {
   fontSize?: number | string;
@@ -50,12 +51,13 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     super(props);
 
     this.dataPromise = this.fetchData(props);
+    if (windowIso.isSsr) windowIso.awaitPromises.push(this.dataPromise);
   }
 
   async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
     var server: Server | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const DemoApp = await import('../site/DemoApp'/* webpackChunkName: "demoApp" */);
+      const DemoApp = await import(/* webpackChunkName: "demoApp" */'../site/DemoApp');
       const project = await DemoApp.getProject(
         templater => templater.workflowFeatures(templater.demoCategory()),
         mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
@@ -67,24 +69,24 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       server = new Server();
     }
 
-    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
-      slug: window.location.hostname,
+    const subscriptionResult = await WebNotification.getInstance().getPermission();
+    const configAndUserBind = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
+      slug: windowIso.location.hostname,
       userBind: {
+        skipBind: windowIso.isSsr,
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
       },
-    }));
-
-    const postPromise = server.dispatch().ideaGet({
-      projectId: server.getProjectId(),
-      ideaId: props.postId,
     });
-
-    const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
+
+    const post = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
+      projectId: configAndUserBind.config?.config.projectId,
+      ideaId: props.postId,
+    });
 
     return [configAndUserBind.config, configAndUserBind.user, post];
   }
@@ -123,7 +125,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             return null;
           };
 
-          const src = `${window.location.origin}/post/${post.ideaId}`;
+          const src = `${windowIso.location.origin}/post/${post.ideaId}`;
 
           return (
             <div
@@ -139,9 +141,9 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 textTransform: statusConfig.textTransform as any,
               }}
             >
-              <a
+              <a // eslint-disable-line react/jsx-no-target-blank
                 href={src}
-                target='_blank' // eslint-disable-line react/jsx-no-target-blank
+                target='_blank'
                 rel='noopener nofollow'
                 className={this.props.classes.link}
               >

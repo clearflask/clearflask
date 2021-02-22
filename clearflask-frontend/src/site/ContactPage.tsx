@@ -12,7 +12,7 @@ import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import SubmitButton from '../common/SubmitButton';
 import preloadImage from '../common/util/imageUtil';
-import { vh } from '../common/util/vhUtil';
+import { vh } from '../common/util/screenUtil';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -196,11 +196,11 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                         ) : (field.type === 'datetime' ? (
                           <Promised
                             promise={Promise.all<unknown, unknown, unknown, unknown>([
-                              import('@material-ui/pickers/DateTimePicker'/* webpackChunkName: "DateTimePicker", webpackPrefetch: true */),
-                              import('@material-ui/pickers/MuiPickersUtilsProvider'/* webpackChunkName: "MuiPickersUtilsProvider", webpackPrefetch: true */),
-                              import('@date-io/moment'/* webpackChunkName: "moment", webpackPrefetch: true */),
+                              import(/* webpackChunkName: "DateTimePicker", webpackPrefetch: true */'@material-ui/pickers/DateTimePicker'),
+                              import(/* webpackChunkName: "MuiPickersUtilsProvider", webpackPrefetch: true */'@material-ui/pickers/MuiPickersUtilsProvider'),
+                              import(/* webpackChunkName: "moment", webpackPrefetch: true */'@date-io/moment'),
                               /** Add timezone to dates */
-                              import('moment-timezone'/* webpackChunkName: "moment-timezone", webpackPrefetch: true */),
+                              import(/* webpackChunkName: "moment-timezone", webpackPrefetch: true */'moment-timezone'),
                             ])}
                             render={(libs: any) => {
                               const DateTimePicker = libs[0].DateTimePicker;

@@ -556,26 +556,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>clean-unpack</id>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${project.build.directory}/war-include</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.1.1</version>
@@ -589,14 +569,6 @@
                         <configuration>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.smotana.clearflask</groupId>
-                                    <artifactId>clearflask-frontend</artifactId>
-                                    <version>${project.version}</version>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/war-include/</outputDirectory>
-                                    <includes>ROOT/**</includes>
-                                </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
                                     <artifactId>clearflask-legal</artifactId>
@@ -749,15 +721,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.2</version>
-                <configuration>
-                    <webResources>
-                        <resource>
-                            <directory>${project.build.directory}/war-include/ROOT/</directory>
-                            <includes>**</includes>
-                            <targetPath>/</targetPath>
-                        </resource>
-                    </webResources>
-                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>

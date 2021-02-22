@@ -4,11 +4,12 @@ import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Route } from 'react-router-dom';
 import * as Client from '../api/client';
-import { Server, StateSettings } from '../api/server';
+import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
-import WebNotification, { Status } from '../common/notification/webNotification';
+import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
+import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
@@ -24,6 +25,7 @@ import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
 import CustomerExternalTrackers from './utils/CustomerExternalTrackers';
+import Loading from './utils/Loading';
 import PrivateProjectLogin from './utils/PrivateProjectLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
@@ -50,21 +52,25 @@ interface Props {
   history: History;
   location: Location;
 }
-interface State {
-  notFound?: boolean;
-  server?: Server;
-}
-class App extends Component<Props, State> {
-  state: State = {};
+class App extends Component<Props> {
   readonly uniqId = randomUuid();
+  readonly server;
 
   constructor(props) {
     super(props);
 
-    this.init();
+    this.server = this.getOrCreateServer();
+
+    if (this.server.getStore().getState().conf.status === undefined) {
+      if (windowIso.isSsr) {
+        windowIso.awaitPromises.push(this.initSsr());
+      } else {
+        this.init();
+      }
+    }
   }
 
-  async init() {
+  getOrCreateServer(): Server {
     var server: Server | undefined;
     if (this.props.serverOverride) {
       server = this.props.serverOverride;
@@ -73,8 +79,20 @@ class App extends Component<Props, State> {
     } else {
       server = new Server(undefined, this.props.settings);
     }
+    return server;
+  }
 
-    const params = new URL(window.location.href).searchParams;
+  async initSsr() {
+    await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
+      slug: this.props.slug,
+      userBind: {
+        skipBind: windowIso.isSsr,
+      },
+    });
+  }
+
+  async init() {
+    const params = new URL(windowIso.location.href).searchParams;
     // Used for links within emails
     const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
     // Used for SSO
@@ -114,26 +132,15 @@ class App extends Component<Props, State> {
       }
     }
 
-    var configResult: Client.ConfigAndBindResult | undefined;
-    var user: Client.UserMeWithBalance | undefined;
-    try {
-      configResult = await server.dispatch().configGetAndUserBind({
-        slug: this.props.slug,
-        userBind: {
-          ssoToken: token || undefined,
-          authToken: authToken || undefined,
-          oauthToken: oauthToken || undefined,
-        },
-      });
-      user = configResult.user;
-    } catch (err) {
-      if (err?.status === 404) {
-        this.setState({ notFound: true });
-        return;
-      } else {
-        throw err;
-      }
-    }
+    var configResult = await (await this.server.dispatch()).configGetAndUserBind({
+      slug: this.props.slug,
+      userBind: {
+        ssoToken: token || undefined,
+        authToken: authToken || undefined,
+        oauthToken: oauthToken || undefined,
+      },
+    });
+    var user = configResult.user;
 
     // If no user is logged in, check if Web Push is enabled
     // It's possible user cleared cookies and we can log in using the Web Push result
@@ -143,7 +150,7 @@ class App extends Component<Props, State> {
     const loggedIn = !!configResult?.user;
     if (!loggedIn) {
       var subscriptionResult;
-      if (WebNotification.getInstance().getStatus() === Status.Granted) {
+      if (WebNotification.getInstance().getStatus() === WebNotificationStatus.Granted) {
         subscriptionResult = await WebNotification.getInstance().getPermission();
       }
 
@@ -151,7 +158,7 @@ class App extends Component<Props, State> {
         if (!projectId) {
           // projectId missing, meaning project is private and requires login
           try {
-            configResult = await server.dispatch().configGetAndUserBind({
+            configResult = await (await this.server.dispatch()).configGetAndUserBind({
               slug: this.props.slug,
               userBind: {
                 browserPushToken: subscriptionResult.token,
@@ -166,7 +173,7 @@ class App extends Component<Props, State> {
             }
           }
         } else {
-          user = (await server.dispatch().userBind({
+          user = (await (await this.server.dispatch()).userBind({
             projectId: projectId,
             userBind: {
               browserPushToken: subscriptionResult.token,
@@ -177,7 +184,7 @@ class App extends Component<Props, State> {
     }
 
     // Start render since we received our configuration
-    this.setState({ server });
+    this.forceUpdate();
 
     if (!!user) {
       // Broadcast to other tabs of successful bind
@@ -187,20 +194,23 @@ class App extends Component<Props, State> {
   }
 
   render() {
-    if (this.state.notFound) {
+    const confStatus = this.server.getStore().getState().conf.status;
+    if (!confStatus || confStatus === Status.PENDING) {
+      return (<Loading />);
+    } else if (confStatus === Status.REJECTED) {
       return (
-        <ErrorPage msg='Project does not exist or was deleted by owner' />
+        <ErrorPage msg={this.server.getStore().getState().conf.rejectionMessage || 'Failed to load'} />
       );
-    } else if (!this.state.server) {
-      return null;
     }
-    const server = this.state.server;
 
-    const appRootId = `appRoot-${this.state.server.getProjectId()}-${this.uniqId}`;
+    const projectId = this.server.getProjectId();
+    const appRootId = `appRoot-${projectId}-${this.uniqId}`;
+
     return (
-      <Provider store={server.getStore()}>
+      <Provider store={this.server.getStore()}>
         <AppThemeProvider
           appRootId={appRootId}
+          seed={projectId}
           isInsideContainer={this.props.isInsideContainer}
           supressCssBaseline={this.props.supressCssBaseline}
           containerStyle={{
@@ -210,7 +220,7 @@ class App extends Component<Props, State> {
             overflowY: this.props.settings?.demoScrollY ? 'scroll' : undefined,
           }}
         >
-          <PushNotificationListener server={server} />
+          <PushNotificationListener server={this.server} />
           <ServerErrorNotifier />
           <CaptchaChallenger />
           <div
@@ -227,13 +237,13 @@ class App extends Component<Props, State> {
               } : {}),
             }}
           >
-            <PrivateProjectLogin server={server}>
+            <PrivateProjectLogin server={this.server}>
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
               <Route key='header' path='/:page?' render={props => ['embed', 'sso', 'oauth'].includes(props.match.params['page']) ? null : (
                 <Header
                   pageSlug={props.match.params['page'] || ''}
-                  server={server}
+                  server={this.server}
                   pageChanged={this.pageChanged.bind(this)}
                 />
               )} />
@@ -244,24 +254,24 @@ class App extends Component<Props, State> {
                     <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
                       <CustomPage
                         pageSlug={pageSlug}
-                        server={server}
+                        server={this.server}
                       />
                     </BasePage>
                   )} />
                 )} >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
-                    <UserPage server={server} userId={props.match.params.userId} />
+                    <UserPage server={this.server} userId={props.match.params.userId} />
                   </BasePage>
                 )} />
                 <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
                   <BasePage pageTitle='Bank' showFooter={!props.match.params['embed']}>
-                    <BankPage server={server} />
+                    <BankPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (
                   <BasePage pageTitle='Account' showFooter={!props.match.params['embed']}>
-                    <AccountPage server={server} />
+                    <AccountPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='sso' path='/:type(sso|oauth)' render={props => (
@@ -276,7 +286,7 @@ class App extends Component<Props, State> {
                     <PostPage
                       key={'postpage=' + props.match.params['postId']}
                       postId={props.match.params['postId'] || ''}
-                      server={server}
+                      server={this.server}
                     />
                   </BasePage>
                 )} />

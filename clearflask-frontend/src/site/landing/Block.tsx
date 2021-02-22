@@ -1,11 +1,11 @@
 import { Grid, GridItemsAlignment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
-import { vh } from '../../common/util/vhUtil';
+import ImgIso from '../../common/ImgIso';
+import { vh } from '../../common/util/screenUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
@@ -73,9 +73,10 @@ export interface Props extends BlockContentProps {
   type?: 'largeDemo' | 'hero' | 'column' | 'demoOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
+  image?: Img;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
-  imageStyle?: CSSProperties;
+  imageStyle?: React.CSSProperties;
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
@@ -88,11 +89,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
   render() {
     const isHero = this.props.type === 'hero';
 
-    var image = this.props.imagePath && (
-      <img
+    const imageSrc = this.props.image?.src || this.props.imagePath;
+    const imageAspectRatio = this.props.image?.aspectRatio
+    var image = imageSrc && (
+      <ImgIso
         alt=''
         className={this.props.classes.image}
-        src={this.props.imagePath}
+        src={imageSrc}
+        aspectRatio={imageAspectRatio}
         style={this.props.imageStyle}
       />
     );

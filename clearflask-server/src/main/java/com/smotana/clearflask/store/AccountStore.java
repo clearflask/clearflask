@@ -19,6 +19,7 @@ import lombok.ToString;
 import lombok.Value;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 
 import java.time.Instant;
@@ -33,7 +34,7 @@ public interface AccountStore {
         return IdUtil.randomId();
     }
 
-    AccountAndIndexingFuture<IndexResponse> createAccount(Account account);
+    AccountAndIndexingFuture createAccount(Account account);
 
     Optional<Account> getAccountByAccountId(String accountId);
 
@@ -43,21 +44,21 @@ public interface AccountStore {
 
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
-    AccountAndIndexingFuture<UpdateResponse> setPlan(String accountId, String planid);
+    AccountAndIndexingFuture setPlan(String accountId, String planid);
 
-    AccountAndIndexingFuture<UpdateResponse> addProject(String accountId, String projectId);
+    AccountAndIndexingFuture addProject(String accountId, String projectId);
 
-    AccountAndIndexingFuture<UpdateResponse> removeProject(String accountId, String projectId);
+    AccountAndIndexingFuture removeProject(String accountId, String projectId);
 
-    AccountAndIndexingFuture<UpdateResponse> updateName(String accountId, String name);
+    AccountAndIndexingFuture updateName(String accountId, String name);
 
     Account updatePassword(String accountId, String password, String sessionIdToLeave);
 
-    AccountAndIndexingFuture<UpdateResponse> updateEmail(String accountId, String emailNew, String sessionIdToLeave);
+    AccountAndIndexingFuture updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
     Account updateApiKey(String accountId, String apiKey);
 
-    AccountAndIndexingFuture<UpdateResponse> updateStatus(String accountId, SubscriptionStatus status);
+    AccountAndIndexingFuture updateStatus(String accountId, SubscriptionStatus status);
 
     ListenableFuture<DeleteResponse> deleteAccount(String accountId);
 
@@ -85,9 +86,9 @@ public interface AccountStore {
     }
 
     @Value
-    class AccountAndIndexingFuture<T> {
+    class AccountAndIndexingFuture {
         Account account;
-        ListenableFuture<T> indexingFuture;
+        ListenableFuture<WriteResponse> indexingFuture;
     }
 
     @Value

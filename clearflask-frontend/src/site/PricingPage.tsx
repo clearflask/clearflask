@@ -1,3 +1,4 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
@@ -6,10 +7,12 @@ import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import PricingImg from '../../public/img/landing/pricing.svg';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
+import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
@@ -128,10 +131,11 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               <Typography component="div" variant="h6" color="textSecondary">Only pay for users that actively provide value.</Typography>
             </div>
             <Container maxWidth='md'>
-              <img
+              <ImgIso
                 alt=''
                 className={this.props.classes.image}
-                src='/img/landing/pricing.svg'
+                src={PricingImg.pathname}
+                aspectRatio={PricingImg.aspectRatio}
               />
             </Container>
           </div>
@@ -140,7 +144,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
         <br />
         <br />
         <Container maxWidth='md'>
-          <Loader loaded={!!this.props.plans}>
+          <Loader loaded={!!this.props.plans} skipFade>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
               {this.props.plans && this.props.plans.map((plan, index) => (
                 <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
@@ -296,7 +300,7 @@ const FeatureListItem = (props: {
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
+    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
   }
   return {
     plans: state.plans.plans.plans,

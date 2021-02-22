@@ -60,6 +60,7 @@
                     <descriptors>
                         <descriptor>${project.basedir}/src/main/assembly/standalone.xml</descriptor>
                     </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>

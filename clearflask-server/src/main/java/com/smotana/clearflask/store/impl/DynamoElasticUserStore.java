@@ -102,6 +102,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -110,6 +112,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -312,7 +315,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public UserAndIndexingFuture<IndexResponse> createUser(UserModel user) {
+    public UserAndIndexingFuture createUser(UserModel user) {
         try {
             dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
                     .add(new TransactWriteItem().withPut(new Put()
@@ -339,24 +342,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             throw ex;
         }
 
-        SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .id(user.getUserId())
-                        .source(gson.toJson(ImmutableMap.of(
-                                "name", orNull(user.getName()),
-                                "email", orNull(user.getEmail()),
-                                "balance", orNull(user.getBalance()),
-                                "created", orNull(user.getCreated().getEpochSecond()),
-                                "isMod", user.getIsMod() == Boolean.TRUE
-                        )), XContentType.JSON),
-                RequestOptions.DEFAULT,
-                ActionListeners.fromFuture(indexingFuture));
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
+        indexUser(indexingFuture, user);
 
         // This should really be in the IdeaResource, but there are too many references to create a user
         webhookService.eventUserNew(user);
 
-        return new UserAndIndexingFuture<>(user, indexingFuture);
+        return new UserAndIndexingFuture(user, indexingFuture);
     }
 
     @Extern
@@ -482,7 +474,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin) {
+    public UserAndIndexingFuture updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin) {
         return updateUser(projectId, userId, updatesAdmin, null, null, null);
     }
 
@@ -492,7 +484,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
+    public UserAndIndexingFuture updateUser(String projectId, String userId, UserUpdate updates) {
         return updateUser(projectId, userId, new UserUpdateAdmin(
                         updates.getName(),
                         updates.getEmail(),
@@ -508,7 +500,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 updates.getBrowserPushToken());
     }
 
-    private UserAndIndexingFuture<UpdateResponse> updateUser(
+    private UserAndIndexingFuture updateUser(
             String projectId,
             String userId,
             UserUpdateAdmin updates,
@@ -661,7 +653,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         nameMap.put("#partitionKey", userSchema.partitionKeyName());
         if (Strings.isNullOrEmpty(updateExpression)) {
             // Nothing to update
-            return new UserAndIndexingFuture<>(user, Futures.immediateFuture(null));
+            return new UserAndIndexingFuture(user, Futures.immediateFuture(null));
         }
         log.trace("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
 
@@ -689,14 +681,15 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         UserModel userUpdated = userUpdatedBuilder.build();
         if (!indexUpdates.isEmpty()) {
-            SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+            SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new UserAndIndexingFuture<>(userUpdated, indexingFuture);
+                    RequestOptions.DEFAULT,
+                    ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId)));
+            return new UserAndIndexingFuture(userUpdated, indexingFuture);
         } else {
-            return new UserAndIndexingFuture<>(userUpdated, Futures.immediateFuture(null));
+            return new UserAndIndexingFuture(userUpdated, Futures.immediateFuture(null));
         }
     }
 
@@ -758,7 +751,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt) {
+    public UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt) {
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valMap = Maps.newHashMap();
         List<String> conditions = Lists.newArrayList();
@@ -811,12 +804,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             throw new ApiException(Response.Status.BAD_REQUEST, "Not enough credits");
         }
 
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
                         .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-        return new UserAndIndexingFuture<>(userModel, indexingFuture);
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId)));
+        return new UserAndIndexingFuture(userModel, indexingFuture);
     }
 
     @Override
@@ -1304,6 +1298,30 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         log.trace("User {} was inactive", userId);
         userActivityCache.put(cacheKey, cacheKey);
         return false;
+    }
+
+    private void indexUser(SettableFuture<WriteResponse> indexingFuture, String projectId, String userId) {
+        Optional<UserModel> userOpt = getUser(projectId, userId);
+        if (!userOpt.isPresent()) {
+            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        } else {
+            indexUser(indexingFuture, userOpt.get());
+        }
+    }
+
+    private void indexUser(SettableFuture<WriteResponse> indexingFuture, UserModel user) {
+        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                        .id(user.getUserId())
+                        .source(gson.toJson(ImmutableMap.of(
+                                "name", orNull(user.getName()),
+                                "email", orNull(user.getEmail()),
+                                "created", orNull(user.getCreated().getEpochSecond()),
+                                "balance", orNull(user.getBalance()),
+                                "isMod", user.getIsMod() == Boolean.TRUE
+                        )), XContentType.JSON),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
     }
 
     private String hashIdentifier(String identifier) {

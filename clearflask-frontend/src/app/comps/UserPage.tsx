@@ -87,10 +87,10 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       }
     } else {
       if (!this.props.userStatus) {
-        this.props.server.dispatch().userGet({
+        this.props.server.dispatch().then(d => d.userGet({
           projectId: this.props.server.getProjectId(),
           userId: this.props.userId,
-        });
+        }));
       }
       user = this.props.user;
       userStatus = this.props.userStatus;

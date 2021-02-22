@@ -1,3 +1,5 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
+import loadable from '@loadable/component';
 import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
@@ -18,7 +20,7 @@ import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
@@ -39,7 +41,7 @@ import RoadmapControls from './landing/RoadmapControls';
 import TemplateDemoWithControls from './landing/TemplateDemo';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
-const WorkflowPreview = React.lazy(() => import('../common/config/settings/injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -571,7 +573,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             .then(() => mocker.mockLoggedIn())}
           demo={project => (
             <Provider store={project.server.getStore()}>
-              <AppThemeProvider isInsideContainer>
+              <AppThemeProvider
+                seed='demo-community'
+                isInsideContainer
+              >
                 <CommentList
                   server={project.server}
                   ideaId='ideaId'
@@ -715,15 +720,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           demoFixedHeight={400}
           demoPreventInteraction
           demo={project => (
-            <Suspense fallback={<Loading />}>
-              <WorkflowPreview
-                editor={project.editor}
-                categoryIndex={0}
-                isVertical
-                hideCorner
-                height='100%'
-              />
-            </Suspense>
+            <WorkflowPreview
+              editor={project.editor}
+              categoryIndex={0}
+              isVertical
+              hideCorner
+              height='100%'
+            />
           )}
         />
       </Container>

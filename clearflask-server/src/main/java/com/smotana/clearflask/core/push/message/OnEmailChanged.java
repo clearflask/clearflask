@@ -46,26 +46,26 @@ public class OnEmailChanged {
         String content = config.contentTemplate();
 
         String projectName = emailTemplates.sanitize(configAdmin.getName());
-        subject = subject.replaceAll("__project_name__", projectName);
-        content = content.replaceAll("__project_name__", projectName);
+        subject = subject.replace("__project_name__", projectName);
+        content = content.replace("__project_name__", projectName);
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
         String buttonText = "Account settings";
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", buttonText);
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", buttonText);
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);
+        templateText = templateText.replace("__BUTTON_TEXT__", buttonText);
 
         link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
-        templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateHtml = templateHtml.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateText = templateText.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
         return new Email(
                 oldEmail,

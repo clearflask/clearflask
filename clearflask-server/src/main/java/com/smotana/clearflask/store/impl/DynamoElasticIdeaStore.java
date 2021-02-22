@@ -14,6 +14,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -62,6 +63,7 @@ import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -71,6 +73,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -230,7 +233,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<IndexResponse> createIdeaAndUpvote(IdeaModel idea) {
+    public IdeaAndIndexingFuture createIdeaAndUpvote(IdeaModel idea) {
         voteStore.vote(idea.getProjectId(), idea.getAuthorUserId(), idea.getIdeaId(), VoteValue.Upvote);
 
         IdeaModel ideaUpvoted = idea.toBuilder()
@@ -245,7 +248,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         ListenableFuture<IndexResponse> indexingFuture = this.createIdea(ideaUpvoted);
 
-        return new IdeaAndIndexingFuture<>(ideaUpvoted, indexingFuture);
+        return new IdeaAndIndexingFuture(ideaUpvoted, indexingFuture);
     }
 
     @Override
@@ -551,7 +554,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
+    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
                         ideaUpdate.getTitle(),
                         ideaUpdate.getDescription(),
@@ -565,7 +568,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor) {
+    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -640,22 +643,23 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 
         if (!indexUpdates.isEmpty()) {
-            SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+            SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+                    RequestOptions.DEFAULT,
+                    ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, ideaId)));
+            return new IdeaAndIndexingFuture(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
         }
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
+    public IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         if (vote == votePrev) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         HashMap<String, String> nameMap = Maps.newHashMap();
@@ -704,7 +708,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             indexUpdates.put("votersCount", orNull(idea.getVotersCount()));
         }
         if (!indexUpdates.isEmpty() || updateTrend) {
-            SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+            SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
             UpdateRequest updateRequest = new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId());
             if (updateTrend) {
                 updateRequest.script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
@@ -715,10 +719,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateRequest.doc(gson.toJson(indexUpdates), XContentType.JSON);
             }
             elastic.updateAsync(updateRequest.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+                    RequestOptions.DEFAULT,
+                    ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, userId)));
+            return new IdeaAndIndexingFuture(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
         }
     }
 
@@ -786,14 +791,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (expressionsValueDiff != 0d) {
             indexUpdates.put("expressionsValue", idea.getExpressionsValue());
         }
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                         .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                 "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                 "timeInMillis", System.currentTimeMillis(),
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, userId)));
         return new IdeaAndExpressionsAndIndexingFuture(expressions, idea, indexingFuture);
     }
 
@@ -823,14 +829,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("expressions", idea.getExpressions().keySet());
         indexUpdates.put("expressionsValue", idea.getExpressionsValue());
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                         .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                 "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                 "timeInMillis", System.currentTimeMillis(),
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, userId)));
         return new IdeaAndExpressionsAndIndexingFuture(
                 ImmutableSet.<String>builder()
                         .addAll(expressionsPrev)
@@ -865,14 +872,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("expressions", idea.getExpressions().keySet());
         indexUpdates.put("expressionsValue", idea.getExpressionsValue());
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                         .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                 "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                 "timeInMillis", System.currentTimeMillis(),
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, userId)));
         return new IdeaAndExpressionsAndIndexingFuture(
                 ImmutableSet.copyOf(Sets.difference(expressionsPrev, ImmutableSet.of(expression))),
                 idea, indexingFuture);
@@ -936,11 +944,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
         scriptParamsBuilder.put("extraUpdates", indexUpdates);
 
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                         .script(ElasticScript.EXP_DECAY.toScript(scriptParamsBuilder.build()))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, userId)));
         return new IdeaTransactionAndIndexingFuture(
                 resultingFundAmount,
                 idea,
@@ -950,7 +959,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Extern
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
+    public IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
         ImmutableList.Builder<AttributeUpdate> attrUpdates = ImmutableList.builder();
         attrUpdates.add(new AttributeUpdate("commentCount").addNumeric(1));
         if (incrementChildCount) {
@@ -969,13 +978,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (incrementChildCount) {
             updates.put("childCommentCount", idea.getChildCommentCount());
         }
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                         .doc(gson.toJson(updates.build()), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, ideaId)));
 
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaAndIndexingFuture(idea, indexingFuture);
     }
 
     @Extern
@@ -1046,6 +1056,17 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
 
         return deleteFuture;
+    }
+
+    private void indexIdea(SettableFuture<WriteResponse> indexingFuture, String projectId, String ideaId) {
+        Optional<IdeaModel> ideaOpt = getIdea(projectId, ideaId);
+        if (!ideaOpt.isPresent()) {
+            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        } else {
+            elastic.indexAsync(ideaToEsIndexRequest(ideaOpt.get(), true),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        }
     }
 
     public static Module module() {

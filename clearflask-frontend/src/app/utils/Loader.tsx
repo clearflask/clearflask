@@ -17,9 +17,8 @@ interface Props extends WithStyles<typeof styles, true> {
   loaded?: boolean;
   error?: string;
   status?: Status;
-  inline?: boolean;
+  skipFade?: boolean;
 }
-
 class Loader extends Component<Props> {
   render() {
     if (this.props.status === Status.REJECTED || this.props.error) {
@@ -28,13 +27,18 @@ class Loader extends Component<Props> {
     if (this.props.status !== Status.FULFILLED && !this.props.loaded) {
       return (<Loading />);
     }
-    return this.props.inline ? this.props.children : (
+    var result = this.props.children;
+    if (this.props.className || !this.props.skipFade) result = (
+      <div className={this.props.className}>
+        {result}
+      </div>
+    );
+    if (!this.props.skipFade) result = (
       <Fade in={this.props.status === Status.FULFILLED || this.props.loaded}>
-        <div className={this.props.className}>
-          {this.props.children}
-        </div>
+        {result as any}
       </Fade>
     );
+    return result;
   }
 }
 

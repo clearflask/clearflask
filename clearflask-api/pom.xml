@@ -112,6 +112,7 @@
                         <descriptor>${project.basedir}/src/main/assembly/connect.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/docs.xml</descriptor>
                     </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>

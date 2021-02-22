@@ -42,7 +42,6 @@
         <module>clearflask-legal</module>
         <module>clearflask-api</module>
         <module>clearflask-frontend</module>
-        <module>clearflask-connect</module>
         <module>clearflask-logging</module>
         <module>clearflask-server</module>
     </modules>

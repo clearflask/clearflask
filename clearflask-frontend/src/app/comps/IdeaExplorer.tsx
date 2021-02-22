@@ -1,21 +1,34 @@
+// import {
+//   withQueryParams,
+//   StringParam,
+//   NumberParam,
+//   ArrayParam,
+//   withDefault,
+//   DecodedValueMap,
+//   SetQuery,
+//   QueryParamConfig,
+// } from 'use-query-params';
+import loadable from '@loadable/component';
 import { Grid, isWidthUp, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
-import ReactQuill from 'react-quill';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
+import { initialWidth } from '../../common/util/screenUtil';
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -29,21 +42,11 @@ import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
-// import {
-//   withQueryParams,
-//   StringParam,
-//   NumberParam,
-//   ArrayParam,
-//   withDefault,
-//   DecodedValueMap,
-//   SetQuery,
-//   QueryParamConfig,
-// } from 'use-query-params';
 
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -127,10 +130,16 @@ interface State {
 //     decode: () => ;
 //   };
 // }
+
+
+// const styles: (theme: Theme) => Record<"tab              Root", CSSProperties | CreateCSSProperties<{}> | PropsFunc<{}, CreateCSSProperties<{}>>>
+// const styles: (theme: Theme) => Record<"createButtonClickable", CSSProperties | CreateCSSProperties<(value: JSSFontface, index: number, array: JSSFontface[]) => unknown> | PropsFunc<...>>
+
+
+
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
-  readonly descriptionInputRef: React.RefObject<ReactQuill> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
@@ -344,33 +353,30 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           />
         </Grid>
         <Grid item xs={12} className={this.props.classes.createGridItem}>
-          <Suspense fallback={<Loading />}>
-            <RichEditor
-              variant='outlined'
-              size='small'
-              id='createDescription'
-              inputRef={this.descriptionInputRef}
-              multiline
-              disabled={this.state.newItemIsSubmitting}
-              className={this.props.classes.createFormField}
-              label='Details'
-              iAgreeInputIsSanitized
-              value={this.state.newItemDescription || ''}
-              onChange={(e, delta, source, editor) => {
-                const value = e.target.value;
-                if (this.state.newItemDescription === value
-                  || (!this.state.newItemDescription && !value)) {
-                  return;
-                }
-                const descriptionTextOnly = editor.getText();
-                this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
-                this.setState({
-                  newItemDescription: value,
-                  newItemDescriptionTextOnly: descriptionTextOnly,
-                })
-              }}
-            />
-          </Suspense>
+          <RichEditor
+            variant='outlined'
+            size='small'
+            id='createDescription'
+            multiline
+            disabled={this.state.newItemIsSubmitting}
+            className={this.props.classes.createFormField}
+            label='Details'
+            iAgreeInputIsSanitized
+            value={this.state.newItemDescription || ''}
+            onChange={(e, delta, source, editor) => {
+              const value = e.target.value;
+              if (this.state.newItemDescription === value
+                || (!this.state.newItemDescription && !value)) {
+                return;
+              }
+              const descriptionTextOnly = editor.getText();
+              this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
+              this.setState({
+                newItemDescription: value,
+                newItemDescriptionTextOnly: descriptionTextOnly,
+              })
+            }}
+          />
         </Grid>
         {categoryOptions.length > 1 && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>
@@ -478,7 +484,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     this.setState({ newItemIsSubmitting: true });
     var createPromise: Promise<Client.Idea | Admin.Idea>;
     if (this.props.server.isModOrAdminLoggedIn()) {
-      createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
+      createPromise = ServerAdmin.get().dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
           authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
@@ -490,7 +496,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         },
       }))
     } else {
-      createPromise = this.props.server.dispatch().ideaCreate({
+      createPromise = this.props.server.dispatch().then(d => d.ideaCreate({
         projectId: this.props.server.getProjectId(),
         ideaCreate: {
           authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
@@ -499,7 +505,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           categoryId: this.state.newItemChosenCategoryId!,
           tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
         },
-      })
+      }));
     }
     createPromise.then(idea => {
       this.setState({
@@ -593,10 +599,12 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({
+    ownProps.server.dispatch({ ssr: true }).then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      userBind: {}
-    });
+      userBind: {
+        skipBind: windowIso.isSsr,
+      }
+    }));
   }
   return {
     configver: state.conf.ver, // force rerender on config change
@@ -606,6 +614,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   }
 }, null, null, { forwardRef: true })(
   // withQueryParams(QueryState, 
-  withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))))
+  withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(IdeaExplorer))))
   // )
   ;
