@@ -167,7 +167,7 @@ deploy:
 	make deploy-server
 	make deploy-connect
 	make deploy-rotate-instances
-	make deploy-cloudfront-invalidate
+	make deploy-cloudfront-invalidate-all
 
 deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
