@@ -90,13 +90,13 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     const isHero = this.props.type === 'hero';
 
     const imageSrc = this.props.image?.src || this.props.imagePath;
-    const imageAspectRatio = this.props.image?.aspectRatio
     var image = imageSrc && (
       <ImgIso
         alt=''
         className={this.props.classes.image}
         src={imageSrc}
-        aspectRatio={imageAspectRatio}
+        aspectRatio={this.props.image?.aspectRatio}
+        width={!this.props.image?.aspectRatio ? '100%' : undefined}
         style={this.props.imageStyle}
       />
     );
