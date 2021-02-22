@@ -8,6 +8,7 @@ import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.Filter;
@@ -16,6 +17,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 @Slf4j
@@ -45,7 +47,21 @@ public class ApiExceptionMapperFilter implements Filter {
             filterChain.doFilter(request, response);
         } catch (ServletException ex) {
             String ignoreMessageRegex = config.ignoreMessageRegex();
-            if (Strings.isNullOrEmpty(ignoreMessageRegex)
+            if (ex.getRootCause().getCause() instanceof ApiException) {
+                Response.Status status = ((ApiException) ex.getRootCause()).getStatus();
+                switch (status.getFamily()) {
+                    case INFORMATIONAL:
+                    case SUCCESSFUL:
+                    case REDIRECTION:
+                    case CLIENT_ERROR:
+                        log.trace("Thrown API exception", ex);
+                        break;
+                    case SERVER_ERROR:
+                    case OTHER:
+                        log.warn("Thrown API exception", ex);
+                        break;
+                }
+            } else if (Strings.isNullOrEmpty(ignoreMessageRegex)
                     || ex.getRootCause() == null
                     || ex.getRootCause().getMessage() == null
                     || !ex.getRootCause().getMessage().matches(ignoreMessageRegex)) {

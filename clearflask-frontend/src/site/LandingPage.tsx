@@ -22,6 +22,7 @@ import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Provider } from 'react-redux';
+import HeroImg from '../../public/img/landing/hero.svg';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
@@ -181,7 +182,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       <Hero
         title='Listen to your users during product development'
         description='Feedback Management Tool with voting or crowd-funding to prioritize your roadmap'
-        imagePath='/img/landing/hero.svg'
+        image={HeroImg}
         mirror
         buttonTitle='Get started'
         buttonLink='/signup'

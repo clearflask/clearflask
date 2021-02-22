@@ -62,7 +62,6 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     const imageSrc = this.props.image?.src || this.props.imagePath;
-    const imageAspectRatio = this.props.image?.aspectRatio
     return (
       <div className={this.props.classes.hero}>
         <Grid container
@@ -77,7 +76,8 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                 alt=''
                 className={this.props.classes.image}
                 src={imageSrc}
-                aspectRatio={imageAspectRatio}
+                aspectRatio={this.props.image?.aspectRatio}
+                width={!this.props.image?.aspectRatio ? '100%' : undefined}
               />
             </Grid>
           )}

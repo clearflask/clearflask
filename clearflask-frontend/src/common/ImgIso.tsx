@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
@@ -8,7 +9,7 @@ const styles = (theme: Theme) => createStyles({
     height: 0,
     overflow: 'hidden',
   },
-  image: {
+  imageAspectRatio: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -21,32 +22,36 @@ export interface Props {
   alt: string;
   className?: string;
   src: string;
-  height?: number;
-  width?: number;
+  height?: number | string;
+  width?: number | string;
   style?: React.CSSProperties;
   aspectRatio?: number;
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    return (
+    var img = (
+      <img
+        alt={this.props.alt}
+        className={classNames(!!this.props.aspectRatio && this.props.classes.imageAspectRatio)}
+        src={this.props.src}
+        height={this.props.height}
+        width={this.props.width}
+        style={this.props.style}
+      />
+    );
+    if (this.props.aspectRatio) img = (
       <div className={this.props.className}>
         <div
           className={this.props.classes.container}
           style={{
-            paddingBottom: this.props.aspectRatio ? `${100 / this.props.aspectRatio}%` : undefined,
+            paddingBottom: `${100 / this.props.aspectRatio}%`,
           }}
         >
-          <img
-            alt={this.props.alt}
-            className={this.props.classes.image}
-            src={this.props.src}
-            height={this.props.height}
-            width={this.props.width}
-            style={this.props.style}
-          />
+          {img}
         </div>
       </div>
     );
+    return img;
   }
 }
 
