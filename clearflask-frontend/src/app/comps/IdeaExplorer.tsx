@@ -27,7 +27,6 @@ import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
 import { initialWidth } from '../../common/util/screenUtil';
-import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -598,7 +597,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch({ ssr: true }).then(d => d.configGetAndUserBind({
+    ownProps.server.dispatch({ ssr: true }).then(d => d.bindConfig({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
       userBind: {
         skipBind: windowIso.isSsr,

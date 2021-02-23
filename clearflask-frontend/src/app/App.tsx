@@ -61,12 +61,12 @@ class App extends Component<Props> {
 
     this.server = this.getOrCreateServer();
 
-    if (this.server.getStore().getState().conf.status === undefined) {
-      if (windowIso.isSsr) {
+    if (windowIso.isSsr) {
+      if (this.server.getStore().getState().conf.status === undefined) {
         windowIso.awaitPromises.push(this.initSsr());
-      } else {
-        this.init();
       }
+    } else {
+      this.init();
     }
   }
 
@@ -158,7 +158,7 @@ class App extends Component<Props> {
         if (!projectId) {
           // projectId missing, meaning project is private and requires login
           try {
-            configResult = await (await this.server.dispatch()).configGetAndUserBind({
+            configResult = await (await this.server.dispatch()).bind({
               slug: this.props.slug,
               userBind: {
                 browserPushToken: subscriptionResult.token,

@@ -907,8 +907,87 @@ components:
         version:
           type: string
 
+/slug/{slug}/bind/config:
+  post:
+    operationId: bindConfig
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigAndBindResult
+              type: object
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore: # For private projects, you have to first onboard before receiving config
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+/slug/{slug}/bind/user:
+  post:
+    operationId: bindUser
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigAndBindResult
+              type: object
+              properties:
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/slug/{slug}/bind:
+  post:
+    operationId: bind
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigAndBindResult
+              type: object
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore: # For private projects, you have to first onboard before receiving config
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /slug/{slug}/config:
   post:
+    # Deprecated, use "bind". Delete in next version
     operationId: configGetAndUserBind
     tags: [Project]
     parameters:

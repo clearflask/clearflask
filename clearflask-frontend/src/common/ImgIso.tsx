@@ -11,11 +11,11 @@ const styles = (theme: Theme) => createStyles({
   },
   imageAspectRatio: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    maxWidth: 'inherit',
+    top: '50%',
+    left: '50%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+    transform: 'translate(-50%,-50%)',
   },
 });
 export interface Props {

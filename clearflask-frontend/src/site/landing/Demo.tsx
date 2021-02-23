@@ -62,7 +62,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-          <Loading showImmediately />
+          <Loading />
         </div>
       )} render={project => {
         var demo = this.props.demo

@@ -1526,7 +1526,6 @@ export function LandingGrowWithUs() {
           variant='content'
           title='Server-Side Rendering'
           description='Web pages are pre-rendered server-side to minimize the first page load on the client and improve SEO.'
-          postStatusId='serverside-rendering-vni'
         />
       </HorizontalPanels>
       <Block
