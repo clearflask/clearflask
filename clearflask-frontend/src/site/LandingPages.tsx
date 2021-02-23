@@ -34,7 +34,24 @@ import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
 import React, { useRef } from 'react';
 import { Provider } from 'react-redux';
+import ArchitectureImg from '../../public/img/landing/architecture.svg';
+import CommunityImg from '../../public/img/landing/community.svg';
+import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
+import CustomizeImg from '../../public/img/landing/customize.svg';
+import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
+import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
+import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
+import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HeroImg from '../../public/img/landing/hero.svg';
+import IdeasImg from '../../public/img/landing/ideas.svg';
+import IntegrationImg from '../../public/img/landing/integration.svg';
+import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
+import ListenImg from '../../public/img/landing/listen.svg';
+import RoadmapImg from '../../public/img/landing/roadmap.svg';
+import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
+import ValueImg from '../../public/img/landing/value.svg';
+import SalesImg from '../../public/img/support/sales.svg';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
@@ -190,24 +207,6 @@ export function LandingHero() {
       title='Listen to your users during product development'
       description='Feedback Management Tool with voting or crowd-funding to prioritize your roadmap'
       image={HeroImg}
-      imageHeight={588}
-      mirror
-      buttonTitle='Get started'
-      buttonLink='/signup'
-      buttonRemark={(
-        <TrialInfoText />
-      )}
-    />
-  );
-}
-
-export function PageHero(props: { title: string, description: string, imagePath: string }) {
-  return (
-    <Hero
-      title={props.title}
-      description={props.description}
-      imagePath={props.imagePath}
-      imageHeight={588}
       mirror
       buttonTitle='Get started'
       buttonLink='/signup'
@@ -345,7 +344,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
       title='Ask your customers what they need'
       description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
       alignItems='flex-start'
-      imagePath='/img/landing/listen.svg'
+      image={ListenImg}
       imageLocation='above'
       displayAlign='flex-start'
       demoWrap='browser'
@@ -486,7 +485,7 @@ export function LandingPrioritizationHero(props: { isHero?: boolean }) {
       alignItems='center'
       demoWrap='browser'
       demoWrapPadding='40px 40px 40px 20px'
-      imagePath='/img/landing/value.svg'
+      image={ValueImg}
       imageLocation='above'
       initialSubPath='/embed/demo'
       template={templater => templater.demoPrioritization('all')}
@@ -689,7 +688,7 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
       alignItems='baseline'
       initialSubPath='/embed/demo'
       demoFixedHeight={520}
-      imagePath='/img/landing/community.svg'
+      image={CommunityImg}
       imageLocation='above'
       // scale={0.7}
       template={templater => {
@@ -735,7 +734,7 @@ export function LandingEngagementRoadmap() {
       mirror
       initialSubPath='/embed/demo'
       alignItems='flex-start'
-      imagePath='/img/landing/roadmap.svg'
+      image={RoadmapImg}
       imageLocation='above'
       imageStyle={{ maxWidth: 500, padding: 0, }}
       type='largeDemo'
@@ -819,7 +818,7 @@ export function LandingCustomizeHero(props: { isHero?: boolean }) {
   return (
     <Block
       title='Make it your own'
-      imagePath='/img/landing/customize.svg'
+      image={CustomizeImg}
       mirror
       imageStyle={{ paddingBottom: 0, maxWidth: 700 }}
       variant={props.isHero ? 'hero' : 'heading-main'}
@@ -925,7 +924,7 @@ export function LandingIntegrations() {
       <Hero
         title='Integrate with your tools'
         description=''
-        imagePath='/img/landing/integration.svg'
+        image={IntegrationImg}
       />
       <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
         <BlockContent
@@ -1148,7 +1147,7 @@ export function LandingFeatureRequestTracking() {
       <Hero
         title='Feature Request Tracking'
         description='Tool to keep organized and drive your product forward'
-        imagePath='/img/landing/featurerequest.svg'
+        image={FeatureRequestImg}
       />
       <Block
         title='Centralize all your feature requests'
@@ -1204,7 +1203,7 @@ export function LandingPublicRoadmap() {
       <Hero
         title='Public Roadmap'
         description='Transparency between development and customers for stronger ties with your community.'
-        imagePath='/img/landing/roadmap2.svg'
+        image={Roadmap2Img}
       />
       <Block
         title='Clear and concise'
@@ -1234,7 +1233,7 @@ export function LandingCrowdFunding() {
       <Hero
         title='Feature Crowdfunding'
         description='Credit-system to reward your paying customers with a voice to shape your product.'
-        imagePath='/img/landing/crowdfund.svg'
+        image={CrowdfundImg}
       />
       <Block
         title='Issue credits'
@@ -1281,7 +1280,7 @@ export function LandingCrowdFunding() {
         title='Let them prioritize'
         description='Sit back and watch your users prioritize your roadmap.'
         mirror
-        imagePath='/img/landing/demo-crowdfund.png'
+        image={DemoCrowdfundImg}
         imageStyle={{ width: 'unset' }}
       />
       <Block
@@ -1323,14 +1322,14 @@ export function LandingCrowdFunding() {
         title='Credits as a selling point'
         description='Include credits as value-added to your paid plan or product. Let them know your product is driven by paying customers.'
         mirror
-        imagePath='/img/landing/demo-advertise-credits.png'
+        image={DemoAdvertiseCreditsImg}
         imageStyle={{ width: 'unset' }}
       />
       <Block
         alignItems='center'
         title='Purchase additional credits'
         description='Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general.'
-        imagePath='/img/landing/demo-no-balance.png'
+        image={DemoNoBalanceImg}
         imageStyle={{ width: 'unset' }}
       />
       <Block
@@ -1338,7 +1337,7 @@ export function LandingCrowdFunding() {
         title='Transparency in feature prioritization'
         description='Make it clear your product is actively supported and shaped by paying customers.'
         mirror
-        imagePath='/img/landing/demo-funding-roadmap.png'
+        image={DemoFundingRoadmapImg}
         imageStyle={{ width: 'unset' }}
       />
     </React.Fragment>
@@ -1351,7 +1350,7 @@ export function LandingInternalFeedback() {
       <Hero
         title='Internal Feedback'
         description='Collect feedback from within your organization or customer-base'
-        imagePath='/img/landing/internalfeedback.svg'
+        image={InternalFeedbackImg}
       />
       <Block
         title='Keep all your data private'
@@ -1376,7 +1375,7 @@ export function LandingIdeaManagement() {
       <Hero
         title='Idea Management'
         description=''
-        imagePath='/img/landing/ideas.svg'
+        image={IdeasImg}
       />
       <Block
         title='Embrace transparency'
@@ -1468,7 +1467,7 @@ export function LandingGrowWithUs() {
       <Hero
         title='Grow With Us'
         description='Built on scalable infrastructure to grow with your needs.'
-        imagePath='/img/landing/architecture.svg'
+        image={ArchitectureImg}
       />
       <Block
         title='Reliability and scalability'
@@ -1599,7 +1598,7 @@ export function LandingSales() {
       description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
       buttonTitle='Get in touch'
       buttonLink='/contact/sales'
-      imagePath='/img/support/sales.svg'
+      image={SalesImg}
       mirror
     />
   );

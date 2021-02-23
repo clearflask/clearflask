@@ -104,7 +104,7 @@ interface Props extends PopperProps {
   clickAway?: boolean;
   clickAwayProps?: Partial<React.ComponentProps<typeof ClickAwayListener>>;
   arrow?: boolean;
-  transitionCmpt?: React.ElementType<TransitionProps>;
+  transitionCmpt?: (props: TransitionProps) => any;
   transitionProps?: any;
   placement?: PopperPlacementType;
 }
