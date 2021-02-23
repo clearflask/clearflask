@@ -1,3 +1,5 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
+import loadable from '@loadable/component';
 import { Container, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
@@ -30,8 +32,9 @@ import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
 import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
-import React, { Suspense, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Provider } from 'react-redux';
+import HeroImg from '../../public/img/landing/hero.svg';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
@@ -55,7 +58,7 @@ import RoadmapControls from './landing/RoadmapControls';
 import TemplateDemoWithControls from './landing/TemplateDemo';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
-const WorkflowPreview = React.lazy(() => import('../common/config/settings/injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   marker: {
@@ -186,7 +189,7 @@ export function LandingHero() {
     <Hero
       title='Listen to your users during product development'
       description='Feedback Management Tool with voting or crowd-funding to prioritize your roadmap'
-      imagePath='/img/landing/hero.svg'
+      image={HeroImg}
       imageHeight={588}
       mirror
       buttonTitle='Get started'
@@ -700,7 +703,10 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
         .then(() => mocker.mockLoggedIn())}
       demo={project => (
         <Provider store={project.server.getStore()}>
-          <AppThemeProvider isInsideContainer>
+          <AppThemeProvider
+            seed='demo-community'
+            isInsideContainer
+          >
             <CommentList
               server={project.server}
               ideaId='ideaId'
@@ -1077,15 +1083,13 @@ export function LandingCustomizeWorkflow() {
         demoFixedHeight={400}
         demoPreventInteraction
         demo={project => (
-          <Suspense fallback={<Loading />}>
-            <WorkflowPreview
-              editor={project.editor}
-              categoryIndex={0}
-              isVertical
-              hideCorner
-              height='100%'
-            />
-          </Suspense>
+          <WorkflowPreview
+            editor={project.editor}
+            categoryIndex={0}
+            isVertical
+            hideCorner
+            height='100%'
+          />
         )}
       />
     </Container>

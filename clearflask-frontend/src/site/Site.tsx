@@ -1,7 +1,5 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { AppBar, Button, Container, Divider, Drawer, Grid, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar, Zoom } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -29,7 +27,7 @@ import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
+import { RedirectIso } from '../common/util/routerUtil';
 import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
@@ -325,27 +323,27 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         </AppBar>
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
-            <MuiAnimatedSwitch>
-              <Route exact path='/login'>
-                <SetTitle title='Login' />
-                <SigninPage />
-              </Route>
-              <Route path='/contact'>
-                <SetTitle title='Contact' />
-                <ContactPage />
-              </Route>
-              <Route exact path='/signup'>
-                <SetTitle title='Sign up' />
-                <TrialSignupPage />
-              </Route>
-              <Route exact path='/sso'>
-                <SetTitle title='Single sign-on' />
-                <SsoSuccessDemoPage type='sso' />
-              </Route>
-              <Route path='/oauth'>
-                <SetTitle title='OAuth' />
-                <SsoSuccessDemoPage type='oauth' />
-              </Route>
+          <MuiAnimatedSwitch>
+            <Route exact path='/login'>
+              <SetTitle title='Login' />
+              <SigninPage />
+            </Route>
+            <Route path='/contact'>
+              <SetTitle title='Contact' />
+              <ContactPage />
+            </Route>
+            <Route exact path='/signup'>
+              <SetTitle title='Sign up' />
+              <TrialSignupPage />
+            </Route>
+            <Route exact path='/sso'>
+              <SetTitle title='Single sign-on' />
+              <SsoSuccessDemoPage type='sso' />
+            </Route>
+            <Route path='/oauth'>
+              <SetTitle title='OAuth' />
+              <SsoSuccessDemoPage type='oauth' />
+            </Route>
             <Route exact path='/terms-of-service'>
               <SetTitle title='Terms of Service' />
               <LegalPage type='terms' />
@@ -361,80 +359,80 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <RedirectIso to='/privacy-policy' />
             </Route>
 
-              <Route exact path='/'>
-                <SetTitle />
-                <LandingHero />
-                <LandingClearFlaskDemo />
-                <LandingLoop />
-                <LandingCollectFeedbackHero />
-                <LandingPrioritizationHero />
-                <LandingEngagementHero />
-                <LandingSales />
-              </Route>
+            <Route exact path='/'>
+              <SetTitle />
+              <LandingHero />
+              <LandingClearFlaskDemo />
+              <LandingLoop />
+              <LandingCollectFeedbackHero />
+              <LandingPrioritizationHero />
+              <LandingEngagementHero />
+              <LandingSales />
+            </Route>
 
-              <Route exact path='/product/collect'>
-                <SetTitle title='Collect' />
-                <LandingCollectFeedback />
-              </Route>
-              <Route exact path='/product/analyze'>
-                <SetTitle title='Analyze' />
-                <LandingPrioritization />
-              </Route>
-              <Route exact path='/product/activate'>
-                <SetTitle title='Activate' />
-                <LandingEngagement />
-              </Route>
-              <Route exact path='/product/customize'>
-                <SetTitle title='Customize' />
-                <LandingCustomize />
-              </Route>
-              <Route exact path='/product/integrations'>
-                <SetTitle title='Integrations' />
-                <LandingIntegrations />
-              </Route>
-              <Route exact path='/product/grow-with-us'>
-                <SetTitle title='Grow with us' />
-                <LandingGrowWithUs />
-              </Route>
+            <Route exact path='/product/collect'>
+              <SetTitle title='Collect' />
+              <LandingCollectFeedback />
+            </Route>
+            <Route exact path='/product/analyze'>
+              <SetTitle title='Analyze' />
+              <LandingPrioritization />
+            </Route>
+            <Route exact path='/product/activate'>
+              <SetTitle title='Activate' />
+              <LandingEngagement />
+            </Route>
+            <Route exact path='/product/customize'>
+              <SetTitle title='Customize' />
+              <LandingCustomize />
+            </Route>
+            <Route exact path='/product/integrations'>
+              <SetTitle title='Integrations' />
+              <LandingIntegrations />
+            </Route>
+            <Route exact path='/product/grow-with-us'>
+              <SetTitle title='Grow with us' />
+              <LandingGrowWithUs />
+            </Route>
 
-              <Route exact path='/solutions/feature-request-tracking'>
-                <SetTitle title='Feature Request Tracking' />
-                <LandingFeatureRequestTracking />
-              </Route>
-              <Route exact path='/solutions/public-roadmap'>
-                <SetTitle title='Public Roadmap' />
-                <LandingPublicRoadmap />
-              </Route>
-              <Route exact path='/solutions/feature-crowdfunding'>
-                <SetTitle title='Feature Crowdfunding' />
-                <LandingCrowdFunding />
-              </Route>
-              <Route exact path='/solutions/idea-management'>
-                <SetTitle title='Idea Management' />
-                <LandingIdeaManagement />
-              </Route>
-              <Route exact path='/solutions/content-creator-forum'>
-                <SetTitle title='Content Creator Forum' />
-                <LandingContentCreator />
-              </Route>
-              <Route exact path='/solutions/internal-feedback'>
-                <SetTitle title='Internal Feedback' />
-                <LandingInternalFeedback />
-              </Route>
-              <Route exact path='/solutions/commercial-support-management'>
-                <SetTitle title='Commercial Support Management' />
-                <LandingCommercialSupportManagement />
-              </Route>
-              <Route exact path='/pricing'>
-                <SetTitle title='Pricing' />
-                <PricingPage />
-              </Route>
+            <Route exact path='/solutions/feature-request-tracking'>
+              <SetTitle title='Feature Request Tracking' />
+              <LandingFeatureRequestTracking />
+            </Route>
+            <Route exact path='/solutions/public-roadmap'>
+              <SetTitle title='Public Roadmap' />
+              <LandingPublicRoadmap />
+            </Route>
+            <Route exact path='/solutions/feature-crowdfunding'>
+              <SetTitle title='Feature Crowdfunding' />
+              <LandingCrowdFunding />
+            </Route>
+            <Route exact path='/solutions/idea-management'>
+              <SetTitle title='Idea Management' />
+              <LandingIdeaManagement />
+            </Route>
+            <Route exact path='/solutions/content-creator-forum'>
+              <SetTitle title='Content Creator Forum' />
+              <LandingContentCreator />
+            </Route>
+            <Route exact path='/solutions/internal-feedback'>
+              <SetTitle title='Internal Feedback' />
+              <LandingInternalFeedback />
+            </Route>
+            <Route exact path='/solutions/commercial-support-management'>
+              <SetTitle title='Commercial Support Management' />
+              <LandingCommercialSupportManagement />
+            </Route>
+            <Route exact path='/pricing'>
+              <SetTitle title='Pricing' />
+              <PricingPage />
+            </Route>
 
-              <Route>
-                <SetTitle title='Page not found' />
-                <ErrorPage msg='Page not found' variant='error' />
-              </Route>
-            </MuiAnimatedSwitch>
+            <Route>
+              <SetTitle title='Page not found' />
+              <ErrorPage msg='Page not found' variant='error' />
+            </Route>
+          </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>
