@@ -1,6 +1,7 @@
+import loadable from '@loadable/component';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
-import React, { Component, Suspense, useState } from 'react';
+import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
@@ -9,7 +10,7 @@ import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -45,21 +46,19 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           <DialogContent>
             <Grid container alignItems='baseline'>
               <Grid item xs={12}>
-                <Suspense fallback={<Loading />}>
-                  <RichEditor
-                    variant='outlined'
-                    size='small'
-                    disabled={this.state.isSubmitting}
-                    label='Content'
-                    fullWidth
-                    iAgreeInputIsSanitized
-                    value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
-                    onChange={e => this.setState({ content: e.target.value })}
-                    multiline
-                    rows={1}
-                    rowsMax={15}
-                  />
-                </Suspense>
+                <RichEditor
+                  variant='outlined'
+                  size='small'
+                  disabled={this.state.isSubmitting}
+                  label='Content'
+                  fullWidth
+                  iAgreeInputIsSanitized
+                  value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
+                  onChange={e => this.setState({ content: e.target.value })}
+                  multiline
+                  rows={1}
+                  rowsMax={15}
+                />
               </Grid>
             </Grid>
           </DialogContent>
@@ -72,14 +71,14 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             >Delete</Button>
             <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
               this.setState({ isSubmitting: true });
-              this.props.server.dispatch().commentUpdate({
+              this.props.server.dispatch().then(d => d.commentUpdate({
                 projectId: this.props.server.getProjectId(),
                 ideaId: this.props.comment.ideaId,
                 commentId: this.props.comment.commentId,
                 commentUpdate: {
                   content: this.state.content,
                 },
-              })
+              }))
                 .then(idea => {
                   this.setState({
                     isSubmitting: false,
@@ -139,11 +138,11 @@ export const CommentDelete = withTheme((props: {
                 ideaId: props.comment.ideaId,
                 commentId: props.comment.commentId,
               }))
-              : props.server.dispatch().commentDelete({
+              : props.server.dispatch().then(d => d.commentDelete({
                 projectId: props.server.getProjectId(),
                 ideaId: props.comment.ideaId,
                 commentId: props.comment.commentId,
-              }))
+              })))
               .then(() => {
                 setSubmitting(false);
                 props.onDelete();

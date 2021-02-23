@@ -2,6 +2,7 @@ import { Container, isWidthUp, withWidth, WithWidthProps } from '@material-ui/co
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import React, { Component } from 'react';
+import { initialWidth } from '../../common/util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -61,10 +62,10 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
               {[...Array(rightPads)].map((u, i) => (<div key={`right-${i}`} />))}
             </div>
           )
-        })}
+        }) || {}}
       </Container>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withWidth()(HorizontalPanels));
+export default withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(HorizontalPanels));

@@ -1,3 +1,4 @@
+import loadable from '@loadable/component';
 import { Button, Chip, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -8,7 +9,7 @@ import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,7 @@ import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
-const EmojiPicker = React.lazy(() => import('../../common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export type PostVariant = 'list' | 'page';
 export const MaxContentWidth = 600;
@@ -437,14 +438,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   render() {
     if (!this.props.idea) return (
-      <Loader loaded={false}>
+      <Loader skipFade loaded={false}>
       </Loader>
     );
 
     const variant = this.state.currentVariant;
 
     return (
-      <Loader className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
+      <Loader skipFade className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
           <div className={this.props.classes.post}>
             <div className={this.props.classes.postVoting}>
@@ -992,13 +993,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         expressionAllowed ? () => clickExpression(expressionDisplay) : undefined,
         0));
     const picker = limitEmojiSet ? undefined : (
-      <Suspense fallback={<Loading />}>
-        <EmojiPicker
-          key='picker'
-          inline
-          onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
-        />
-      </Suspense>
+      <EmojiPicker
+        key='picker'
+        inline
+        onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
+      />
     );
 
     const maxItems = 3;
@@ -1164,7 +1163,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     for (; ;) {
       if (await animate({ sleepInMs: 500 })) return;
-      await new Promise(resolve => this.fundingExpand(resolve));
+      await new Promise<void>(resolve => this.fundingExpand(resolve));
 
       if (!this.fundingControlRef.current) return;
       await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
@@ -1201,7 +1200,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             }
             break;
           case 'express':
-            await new Promise(resolve => this.expressExpand(resolve));
+            await new Promise<void>(resolve => this.expressExpand(resolve));
 
             if (await animate({ sleepInMs: 1000 })) return;
 
@@ -1227,12 +1226,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       if (ownProps.variant === 'page'
         && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user) {
-        ownProps.server.dispatch().ideaVoteGetOwn({
+        ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
           projectId: state.projectId!,
-          ideaIds: [ownProps.idea.ideaId],
-          myOwnIdeaIds: ownProps.idea.authorUserId === state.users.loggedIn.user?.userId
-            ? [ownProps.idea.ideaId] : [],
-        });
+          ideaIds: [ownProps.idea!.ideaId],
+          myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
+            ? [ownProps.idea!.ideaId] : [],
+        }));
       }
     } else {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
@@ -1253,10 +1252,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
+    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
       projectId: state.projectId!,
       ideaId: ownProps.idea!.ideaId,
       ideaVoteUpdate,
-    }),
+    })),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

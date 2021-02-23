@@ -64,52 +64,52 @@ public class OnCommentReply {
         String subject = config.subjectTemplate();
         String content = config.template();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
-        content = content.replaceAll("__reply_type__", userAuthorType.getReplyString());
+        subject = subject.replace("__reply_type__", userAuthorType.getReplyString());
+        content = content.replace("__reply_type__", userAuthorType.getReplyString());
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        templateHtml = templateHtml.replaceAll("__title__",
+        templateHtml = templateHtml.replace("__title__",
                 "<span style=\"font-weight: bold\">" +
                         title +
                         "</span>");
-        templateText = templateText.replaceAll("__title__", title);
+        templateText = templateText.replace("__title__", title);
         title = StringUtils.abbreviate(title, 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContentAsText(sanitizer)), 50);
-        templateHtml = templateHtml.replaceAll("__reply__",
+        templateHtml = templateHtml.replace("__reply__",
                 "<span style=\"font-weight: bold\">" +
                         reply +
                         "</span>");
-        templateText = templateText.replaceAll("__reply__", reply);
+        templateText = templateText.replace("__reply__", reply);
 
         String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
-        subject = subject.replaceAll("__sender__", senderName);
-        templateText = templateText.replaceAll("__sender__", senderName);
-        templateHtml = templateHtml.replaceAll("__sender__",
+        subject = subject.replace("__sender__", senderName);
+        templateText = templateText.replace("__sender__", senderName);
+        templateHtml = templateHtml.replace("__sender__",
                 "<span style=\"font-weight: bold\">" +
                         senderName +
                         "</span>");
 
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW REPLY");
+        templateText = templateText.replace("__BUTTON_TEXT__", "VIEW REPLY");
 
         link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
-        templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateHtml = templateHtml.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateText = templateText.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
         return new Email(
                 user.getEmail(),
@@ -126,16 +126,16 @@ public class OnCommentReply {
 
         String subject = config.subjectTemplate();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
+        subject = subject.replace("__reply_type__", userAuthorType.getReplyString());
 
         String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
-        subject = subject.replaceAll("__sender__", senderName);
+        subject = subject.replace("__sender__", senderName);
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         String content = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContentAsText(sanitizer)), 50);
 
@@ -152,16 +152,16 @@ public class OnCommentReply {
     public String inAppDescription(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link) {
         String subject = config.subjectTemplate();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
+        subject = subject.replace("__reply_type__", userAuthorType.getReplyString());
 
         String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
-        subject = subject.replaceAll("__sender__", senderName);
+        subject = subject.replace("__sender__", senderName);
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         return subject;
     }

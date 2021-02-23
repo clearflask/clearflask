@@ -10,7 +10,7 @@ import PanelPost from '../../app/comps/PanelPost';
 import PanelSearch from '../../app/comps/PanelSearch';
 import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
-import { vh } from '../../common/util/vhUtil';
+import { initialWidth, vh } from '../../common/util/screenUtil';
 import CategoryStats from './CategoryStats';
 import UserExplorer from './UserExplorer';
 
@@ -260,10 +260,10 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({
+    ownProps.server.dispatch().then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
       userBind: {}
-    });
+    }));
   }
   return {
     configver: state.conf.ver, // force rerender on config change
@@ -271,4 +271,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(DashboardHome))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(DashboardHome))));

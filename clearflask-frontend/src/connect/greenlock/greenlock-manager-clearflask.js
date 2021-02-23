@@ -18,7 +18,7 @@ Manager.create = function (opts) {
                 .certGetConnect(
                     { domain: opts.servername },
                     undefined,
-                    {'x-cf-connect-token': connectConfig.connectToken});
+                    { 'x-cf-connect-token': connectConfig.connectToken });
             console.log('Manager get found for servername', opts.servername);
             return result;
         } catch (response) {
@@ -56,8 +56,8 @@ Manager.create = function (opts) {
                         expiresAt: opts.expiresAt,
                     }
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
         return null;
     };
 
@@ -67,7 +67,7 @@ Manager.create = function (opts) {
     manager.find = async function (opts) {
         console.log('manager.find', opts);
         if (opts.servername) return [await manager.get({ servername: opts.servername })];
-        if (opts.servernames) return await Promise.all(opts.servernames.map(servername => manager.get({ servername })))
+        if (opts.servernames) return await Promise.all(opts.servernames.map(servername => manager.get({ servername })));
         return []; // TODO implement warming up cache
 
         // return [{ subject, altnames, renewAt, deletedAt }];
@@ -77,7 +77,7 @@ Manager.create = function (opts) {
     // Optional (Special Remove Functionality)
     // The default behavior is to set `deletedAt`
     //
-    manager.remove = async function(opts) {
+    manager.remove = async function (opts) {
         console.log('manager.remove', opts.subject);
         await ServerConnect.get()
             .dispatch()
@@ -85,8 +85,8 @@ Manager.create = function (opts) {
                 {
                     domain: opts.subject,
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
         return null;
     };
 
@@ -94,14 +94,18 @@ Manager.create = function (opts) {
     // Optional (special settings save)
     // Implemented here because this module IS the fallback
     //
-    /*
-    manager.defaults = async function(opts) {
-        if (opts) {
-            return setDefaults(opts);
-        }
-        return getDefaults();
+    var mconf = {
+        directoryUrl: connectConfig.acmeDirectoryUrl,
     };
-    //*/
+    manager.defaults = async function (conf) {
+        if (conf) {
+            mconf = {
+                ...mconf,
+                ...conf,
+            };
+        }
+        return mconf;
+    };
 
     //
     // Optional (for common deps and/or async initialization)

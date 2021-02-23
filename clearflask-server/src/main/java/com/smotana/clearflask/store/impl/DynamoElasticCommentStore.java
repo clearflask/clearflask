@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -57,6 +58,7 @@ import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -66,6 +68,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -230,11 +233,11 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public CommentAndIndexingFuture<List<DocWriteResponse>> createComment(CommentModel comment) {
+    public CommentAndIndexingFuture<List<WriteResponse>> createComment(CommentModel comment) {
         checkArgument(comment.getParentCommentIds().size() == comment.getLevel());
 
         commentSchema.table().putItem(commentSchema.toItem(comment));
-        Optional<SettableFuture<UpdateResponse>> parentIndexingFutureOpt = Optional.empty();
+        Optional<SettableFuture<WriteResponse>> parentIndexingFutureOpt = Optional.empty();
         if (comment.getLevel() > 0) {
             String parentCommentId = comment.getParentCommentIds().get(comment.getParentCommentIds().size() - 1);
             long parentChildCommentCount = commentSchema.table().updateItem(new UpdateItemSpec()
@@ -248,46 +251,28 @@ public class DynamoElasticCommentStore implements CommentStore {
                     .getItem()
                     .getLong("childCommentCount");
 
-            SettableFuture<UpdateResponse> parentIndexingFuture = SettableFuture.create();
+            SettableFuture<WriteResponse> parentIndexingFuture = SettableFuture.create();
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()), parentCommentId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "childCommentCount", parentChildCommentCount
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(parentIndexingFuture));
+                    RequestOptions.DEFAULT,
+                    ActionListeners.onFailureRetry(parentIndexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
 
             parentIndexingFutureOpt = Optional.of(parentIndexingFuture);
         }
 
         IdeaAndIndexingFuture incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId(), comment.getLevel() == 0);
 
-        SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .id(comment.getCommentId())
-                        .source(gson.toJson(ImmutableMap.builder()
-                                .put("ideaId", comment.getIdeaId())
-                                .put("parentCommentIds", comment.getParentCommentIds())
-                                .put("level", comment.getLevel())
-                                .put("childCommentCount", comment.getChildCommentCount())
-                                .put("authorUserId", orNull(comment.getAuthorUserId()))
-                                .put("authorName", orNull(comment.getAuthorName()))
-                                .put("authorIsMod", orNull(comment.getAuthorIsMod()))
-                                .put("created", comment.getCreated().getEpochSecond())
-                                .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
-                                .put("content", orNull(comment.getContentAsText(sanitizer)))
-                                .put("upvotes", comment.getUpvotes())
-                                .put("downvotes", comment.getDownvotes())
-                                .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
-                                .build()), XContentType.JSON),
-                RequestOptions.DEFAULT,
-                ActionListeners.fromFuture(indexingFuture));
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
+        indexComment(indexingFuture, comment);
 
-        ImmutableList.Builder<ListenableFuture<? extends DocWriteResponse>> builder = ImmutableList.builder();
+        ImmutableList.Builder<ListenableFuture<? extends WriteResponse>> builder = ImmutableList.builder();
         builder.add(indexingFuture);
         builder.add(incrementResponse.getIndexingFuture());
         parentIndexingFutureOpt.ifPresent(builder::add);
-        return new CommentAndIndexingFuture<>(comment, Futures.allAsList(builder.build()));
+        return new CommentAndIndexingFuture(comment, Futures.allAsList(builder.build()));
     }
 
     @Extern
@@ -510,7 +495,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public CommentAndIndexingFuture<UpdateResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate) {
+    public CommentAndIndexingFuture<WriteResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate) {
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(commentSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -521,19 +506,20 @@ public class DynamoElasticCommentStore implements CommentStore {
                         .put(commentSchema.toDynamoValue("content", commentUpdate.getContent()))))
                 .getItem());
 
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(ImmutableMap.of(
                                 "content", sanitizer.richHtmlToPlaintext(comment.getContentAsText(sanitizer))
                         )), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
 
         return new CommentAndIndexingFuture<>(comment, indexingFuture);
     }
 
     @Override
-    public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote) {
+    public CommentAndIndexingFuture<WriteResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote) {
         VoteValue votePrev = voteStore.vote(projectId, userId, commentId, vote);
         if (vote == votePrev) {
             return new CommentAndIndexingFuture<>(getComment(projectId, ideaId, commentId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Comment not found")), Futures.immediateFuture(null));
@@ -584,21 +570,22 @@ public class DynamoElasticCommentStore implements CommentStore {
             userStore.userCommentVoteUpdateBloom(projectId, userId, commentId);
         }
 
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .script(ElasticScript.WILSON.toScript(ImmutableMap.of(
                                 "upvoteDiff", upvoteDiff,
                                 "downvoteDiff", downvoteDiff,
                                 "z", wilsonScoreInterval.getZ())))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
 
         return new CommentAndIndexingFuture<>(comment, indexingFuture);
     }
 
     @Extern
     @Override
-    public CommentAndIndexingFuture<UpdateResponse> markAsDeletedComment(String projectId, String ideaId, String commentId) {
+    public CommentAndIndexingFuture<WriteResponse> markAsDeletedComment(String projectId, String ideaId, String commentId) {
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
                         "projectId", projectId,
@@ -617,11 +604,12 @@ public class DynamoElasticCommentStore implements CommentStore {
         updates.put("authorName", null);
         updates.put("content", null);
         updates.put("edited", comment.getEdited().getEpochSecond());
-        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(updates), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
 
         return new CommentAndIndexingFuture<>(comment, indexingFuture);
     }
@@ -709,6 +697,39 @@ public class DynamoElasticCommentStore implements CommentStore {
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
 
         return deleteFuture;
+    }
+
+
+    private void indexComment(SettableFuture<WriteResponse> indexingFuture, String projectId, String ideaId, String commentId) {
+        Optional<CommentModel> commentOpt = getComment(projectId, ideaId, commentId);
+        if(!commentOpt.isPresent()) {
+            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        } else {
+            indexComment(indexingFuture, commentOpt.get());
+        }
+    }
+
+    private void indexComment(SettableFuture<WriteResponse> indexingFuture, CommentModel comment) {
+        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                        .id(comment.getCommentId())
+                        .source(gson.toJson(ImmutableMap.builder()
+                                .put("ideaId", comment.getIdeaId())
+                                .put("parentCommentIds", comment.getParentCommentIds())
+                                .put("level", comment.getLevel())
+                                .put("childCommentCount", comment.getChildCommentCount())
+                                .put("authorUserId", orNull(comment.getAuthorUserId()))
+                                .put("authorName", orNull(comment.getAuthorName()))
+                                .put("authorIsMod", orNull(comment.getAuthorIsMod()))
+                                .put("created", comment.getCreated().getEpochSecond())
+                                .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
+                                .put("content", orNull(comment.getContentAsText(sanitizer)))
+                                .put("upvotes", comment.getUpvotes())
+                                .put("downvotes", comment.getDownvotes())
+                                .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
+                                .build()), XContentType.JSON),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
     }
 
     public static Module module() {

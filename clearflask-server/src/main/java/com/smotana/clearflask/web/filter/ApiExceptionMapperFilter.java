@@ -17,6 +17,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 @Slf4j
@@ -45,18 +46,28 @@ public class ApiExceptionMapperFilter implements Filter {
         try {
             filterChain.doFilter(request, response);
         } catch (ServletException ex) {
-            if (ex.getCause() instanceof ApiException) {
-                log.trace("ApiException passing through", ex);
-            } else {
-                String ignoreMessageRegex = config.ignoreMessageRegex();
-                if (Strings.isNullOrEmpty(ignoreMessageRegex)
-                        || ex.getRootCause() == null
-                        || ex.getRootCause().getMessage() == null
-                        || !ex.getRootCause().getMessage().matches(ignoreMessageRegex)) {
-                    log.warn("Uncaught exception", ex);
-                } else {
-                    log.trace("Uncaught exception", ex);
+            String ignoreMessageRegex = config.ignoreMessageRegex();
+            if (ex.getRootCause().getCause() instanceof ApiException) {
+                Response.Status status = ((ApiException) ex.getRootCause()).getStatus();
+                switch (status.getFamily()) {
+                    case INFORMATIONAL:
+                    case SUCCESSFUL:
+                    case REDIRECTION:
+                    case CLIENT_ERROR:
+                        log.trace("Thrown API exception", ex);
+                        break;
+                    case SERVER_ERROR:
+                    case OTHER:
+                        log.warn("Thrown API exception", ex);
+                        break;
                 }
+            } else if (Strings.isNullOrEmpty(ignoreMessageRegex)
+                    || ex.getRootCause() == null
+                    || ex.getRootCause().getMessage() == null
+                    || !ex.getRootCause().getMessage().matches(ignoreMessageRegex)) {
+                log.warn("Uncaught exception", ex);
+            } else {
+                log.trace("Uncaught exception", ex);
             }
             throw ex;
         } catch (IOException ex) {

@@ -1,11 +1,11 @@
 import { FormControl, MenuItem, Select } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { CSSProperties } from '@material-ui/styles/withStyles';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component, Key } from 'react';
 import { Link } from 'react-router-dom';
 
-export const tabHoverApplyStyles = (theme: Theme): CSSProperties => ({
+export const tabHoverApplyStyles = (theme: Theme): Record<string, string | CSSProperties> => ({
   position: 'relative',
   '&::before': {
     position: 'absolute',

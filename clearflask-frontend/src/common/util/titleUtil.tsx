@@ -1,3 +1,4 @@
+import windowIso from "../windowIso"
 import { detectEnv, isProd } from "./detectEnv"
 
 const defaultText = 'Feedback Management Tool | ClearFlask'
@@ -15,7 +16,7 @@ function setTitle(text?: string, forceShort?: boolean) {
   } else {
     title += defaultText
   }
-  document.title = title;
+  setTitleIso(title);
 }
 
 export function setAppTitle(projectName: string, text?: string) {
@@ -25,12 +26,21 @@ export function setAppTitle(projectName: string, text?: string) {
   } else {
     title += projectName;
   }
-  document.title = title;
+  setTitleIso(title);
 }
 
 export const SetTitle = (props: { title?: string, forceShort?: boolean }) => {
   setTitle(props.title, props.forceShort);
   return null;
 };
+
+const setTitleIso = (title: string) => {
+  if (windowIso.isSsr) {
+    windowIso.setTitle(title);
+  } else {
+    windowIso.document.title = title;
+  }
+
+}
 
 export default setTitle;

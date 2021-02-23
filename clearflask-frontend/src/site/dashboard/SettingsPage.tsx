@@ -41,20 +41,24 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
       <React.Fragment>
         <DividerCorner title='Account details' className={this.props.classes.details}>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography>{this.props.account.email}</Typography>
+              {/* TODO Fix bug in email update requires password to be rehashed
+              <UpdatableField
+                value={this.props.account.email}
+                onSave={newEmail => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: { email: newEmail }
+                }))}
+              /> */}
+            </Grid>
+          </Grid>
+          <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Name</Typography></Grid>
             <Grid item xs={12} sm={6}><UpdatableField
               value={this.props.account.name}
               onSave={newName => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                 accountUpdateAdmin: { name: newName }
-              }))}
-            /></Grid>
-          </Grid>
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
-            <Grid item xs={12} sm={6}><UpdatableField
-              value={this.props.account.email}
-              onSave={newEmail => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                accountUpdateAdmin: { email: newEmail }
               }))}
             /></Grid>
           </Grid>

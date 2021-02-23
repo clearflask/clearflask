@@ -1,10 +1,11 @@
+import windowIso from "../windowIso";
 
 export function isPageVisible(): boolean {
-  return !document.hidden;
+  return windowIso.isSsr || !windowIso.document.hidden;
 }
 
 export function waitUntilPageVisible(): Promise<void> {
-  if (!document.hidden) {
+  if (windowIso.isSsr || !document.hidden) {
     return Promise.resolve();
   }
   return new Promise(resolve => {

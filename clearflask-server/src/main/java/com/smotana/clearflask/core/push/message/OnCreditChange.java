@@ -45,31 +45,31 @@ public class OnCreditChange {
         String subject = config.subjectTemplate();
         String content = config.template();
 
-        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
-        content = content.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        subject = subject.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        content = content.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
 
         String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
-        subject = subject.replaceAll("__amount__", amountFormatted);
-        content = content.replaceAll("__amount__", amountFormatted);
+        subject = subject.replace("__amount__", amountFormatted);
+        content = content.replace("__amount__", amountFormatted);
 
-        content = content.replaceAll("__summary__", emailTemplates.sanitize(transaction.getSummary()));
+        content = content.replace("__summary__", emailTemplates.sanitize(transaction.getSummary()));
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW BALANCE");
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW BALANCE");
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW BALANCE");
+        templateText = templateText.replace("__BUTTON_TEXT__", "VIEW BALANCE");
 
         link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
-        templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateHtml = templateHtml.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateText = templateText.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
         return new Email(
                 user.getEmail(),
@@ -87,14 +87,14 @@ public class OnCreditChange {
         String subject = config.subjectTemplate();
         String content = config.template();
 
-        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
-        content = content.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        subject = subject.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        content = content.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
 
         String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
-        subject = subject.replaceAll("__amount__", amountFormatted);
-        content = content.replaceAll("__amount__", amountFormatted);
+        subject = subject.replace("__amount__", amountFormatted);
+        content = content.replace("__amount__", amountFormatted);
 
-        content = content.replaceAll("__summary__", emailTemplates.sanitize(transaction.getSummary()));
+        content = content.replace("__summary__", emailTemplates.sanitize(transaction.getSummary()));
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
@@ -109,10 +109,10 @@ public class OnCreditChange {
     public String inAppDescription(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction) {
         String subject = config.subjectTemplate();
 
-        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        subject = subject.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
 
         String amountFormatted = CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits());
-        subject = subject.replaceAll("__amount__", amountFormatted + "");
+        subject = subject.replace("__amount__", amountFormatted + "");
 
         return subject;
     }

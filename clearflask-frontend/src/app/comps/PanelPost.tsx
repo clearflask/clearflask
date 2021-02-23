@@ -1,4 +1,4 @@
-import { Fade, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -70,7 +70,7 @@ interface ConnectProps {
   searchResult: SearchResult;
   searchMerged: Client.IdeaSearch;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps> {
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
@@ -140,13 +140,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         {content}
       </Panel>
     );
-    return (
-      <Fade in={true} appear>
-        <div>
-          {content}
-        </div>
-      </Fade>
-    );
+    return content;
   }
 }
 
@@ -168,10 +162,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch().ideaSearch({
+    ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
       projectId: state.projectId!,
       ideaSearch: newProps.searchMerged,
-    });
+    }));
   } else {
     const missingVotesByIdeaIds: string[] = [];
     newProps.searchResult.status = bySearch.status;
@@ -185,7 +179,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     if (state.users.loggedIn.status === Status.FULFILLED
       && state.users.loggedIn.user
       && missingVotesByIdeaIds.length > 0) {
-      ownProps.server.dispatch().ideaVoteGetOwn({
+      ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
         projectId: state.projectId!,
         ideaIds: missingVotesByIdeaIds,
         myOwnIdeaIds: missingVotesByIdeaIds
@@ -193,9 +187,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
           .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
           .map(idea => idea?.idea?.ideaId)
           .filter(notEmpty),
-      });
+      }));
     }
   }
 
   return newProps;
-})(withWidth()(withStyles(styles, { withTheme: true })(PanelPost)));
+})(withStyles(styles, { withTheme: true })(PanelPost));

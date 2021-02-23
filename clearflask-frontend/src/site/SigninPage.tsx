@@ -4,7 +4,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Redirect, RouteComponentProps, withRouter } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -13,6 +13,8 @@ import ErrorPage from '../app/ErrorPage';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
+import { RedirectIso } from '../common/util/routerUtil';
+import windowIso from '../common/windowIso';
 import { SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
@@ -51,8 +53,8 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
     super(props);
 
     try {
-      const paramCfr = new URL(window.location.href).searchParams.get('cfr');
-      if (paramCfr && new URL(paramCfr).host.endsWith(window.location.host)) {
+      const paramCfr = new URL(windowIso.location.href).searchParams.get('cfr');
+      if (paramCfr && new URL(paramCfr).host.endsWith(windowIso.location.host)) {
         this.cfReturnUrl = paramCfr;
       }
     } catch (er) { }
@@ -68,10 +70,10 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
       if (this.props.cfJwt && this.cfReturnUrl) {
-        window.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
+        windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
       }
-      return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
+      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
     return (

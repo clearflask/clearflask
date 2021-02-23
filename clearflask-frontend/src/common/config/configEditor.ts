@@ -161,6 +161,7 @@ export interface Setting<T extends PageType | PageGroupType | PropertyType, R> {
 }
 
 export type PageType = 'page';
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PageType: PageType = 'page';
 export interface Page extends Setting<PageType, true | undefined>, xCfPage {
   name: string;
@@ -180,6 +181,7 @@ export interface PageChildren {
 }
 
 export type PageGroupType = 'pagegroup';
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PageGroupType: PageGroupType = 'pagegroup';
 export interface PageGroup extends Setting<PageGroupType, true | undefined>, xCfPageGroup {
   name: string;

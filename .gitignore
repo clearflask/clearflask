@@ -60,7 +60,6 @@ clearflask-frontend/src/api/admin
 clearflask-frontend/src/api/schema
 clearflask-frontend/src/api/connect
 clearflask-frontend/src/docs/api
-clearflask-connect/src/api/connect
 clearflask-resources/*.png
 clearflask-resources/*.ico
 
@@ -71,3 +70,5 @@ builds/
 ### Connect
 greenlock.d/
 .greenlockrc
+clearflask-frontend/dist
+clearflask-frontend/dist-*

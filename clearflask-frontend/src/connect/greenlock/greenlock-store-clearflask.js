@@ -28,8 +28,8 @@ module.exports.create = function (opts) {
                         privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
                     },
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
 
         return null;
     };
@@ -44,7 +44,7 @@ module.exports.create = function (opts) {
                 .accountKeypairGetConnect(
                     { id },
                     undefined,
-                    {'x-cf-connect-token': connectConfig.connectToken});
+                    { 'x-cf-connect-token': connectConfig.connectToken });
             return {
                 privateKeyPem: keypair.privateKeyPem,
                 privateKeyJwk: JSON.parse(keypair.privateKeyJwkJson),
@@ -84,15 +84,15 @@ module.exports.create = function (opts) {
         await ServerConnect.get()
             .dispatch()
             .certKeypairPutConnect(
-                    {
+                {
                     id,
                     keypair: {
                         privateKeyPem: keypair.privateKeyPem,
                         privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
                     },
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
 
         return null;
     };
@@ -108,7 +108,7 @@ module.exports.create = function (opts) {
                 .certKeypairGetConnect(
                     { id },
                     undefined,
-                    {'x-cf-connect-token': connectConfig.connectToken});
+                    { 'x-cf-connect-token': connectConfig.connectToken });
             return {
                 privateKeyPem: keypair.privateKeyPem,
                 privateKeyJwk: JSON.parse(keypair.privateKeyJwkJson),
@@ -144,8 +144,8 @@ module.exports.create = function (opts) {
                         expiresAt: pems.expiresAt,
                     },
                 },
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+                undefined,
+                { 'x-cf-connect-token': connectConfig.connectToken });
 
         return null;
     };
@@ -163,7 +163,7 @@ module.exports.create = function (opts) {
                 .certGetConnect(
                     { domain: id },
                     undefined,
-                    {'x-cf-connect-token': connectConfig.connectToken});
+                    { 'x-cf-connect-token': connectConfig.connectToken });
             return {
                 cert: cert.cert,
                 chain: cert.chain,

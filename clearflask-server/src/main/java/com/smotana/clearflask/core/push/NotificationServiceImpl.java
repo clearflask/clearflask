@@ -419,7 +419,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         if (Strings.isNullOrEmpty(user.getEmail())) {
-            log.warn("On admin invite with user having no email {}", user);
+            log.trace("On admin invite with user having no email {}", user);
             return;
         }
         submit(() -> {

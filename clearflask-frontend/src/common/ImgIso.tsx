@@ -1,0 +1,58 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
+import React, { Component } from 'react';
+
+const styles = (theme: Theme) => createStyles({
+  container: {
+    display: 'block',
+    position: 'relative',
+    height: 0,
+    overflow: 'hidden',
+  },
+  imageAspectRatio: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    maxWidth: 'inherit',
+  },
+});
+export interface Props {
+  alt: string;
+  className?: string;
+  src: string;
+  height?: number | string;
+  width?: number | string;
+  style?: React.CSSProperties;
+  aspectRatio?: number;
+}
+class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
+  render() {
+    var img = (
+      <img
+        alt={this.props.alt}
+        className={classNames(!!this.props.aspectRatio && this.props.classes.imageAspectRatio)}
+        src={this.props.src}
+        height={this.props.height}
+        width={this.props.width}
+        style={this.props.style}
+      />
+    );
+    if (this.props.aspectRatio) img = (
+      <div className={this.props.className}>
+        <div
+          className={this.props.classes.container}
+          style={{
+            paddingBottom: `${100 / this.props.aspectRatio}%`,
+          }}
+        >
+          {img}
+        </div>
+      </div>
+    );
+    return img;
+  }
+}
+
+export default withStyles(styles, { withTheme: true })(ImgIso);

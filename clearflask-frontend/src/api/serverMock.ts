@@ -5,6 +5,7 @@ import notEmpty from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
+import { mock } from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
 
@@ -518,15 +519,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   async configGet(request: Omit<Client.ConfigGetAndUserBindRequest, 'userBind'>): Promise<Omit<Client.ConfigAndBindResult, 'user'>> {
-    const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
     return this.returnLater({
       config: project.config,
     });
   }
   async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
-    const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
 
     const configGet = await this.configGet(request);
     const userBind = await this.userBind({
@@ -811,7 +812,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
+    const projectId = request.configAdmin.projectId || `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
     request.configAdmin.projectId = projectId;
     this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({
@@ -1167,11 +1168,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return project;
   }
 
-  getProjectBySlug(slug: string) {
+  async getProjectBySlug(slug: string) {
     const last = slug.split('.')[0];
-    return Object.values(this.db).find(p =>
+    const project = Object.values(this.db).find(p =>
       p.config.config.slug === last
       || p.config.config.domain === slug);
+
+    if (project) return project;
+
+    return this.getProject((await mock(slug)).config.projectId);
   }
 
   deleteProject(projectId: string) {
@@ -1276,7 +1281,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async wait(latency: number): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, latency));
+    await new Promise<void>(resolve => setTimeout(resolve, latency));
   }
 
   generateId(): string {

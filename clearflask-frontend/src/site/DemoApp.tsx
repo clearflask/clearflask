@@ -22,19 +22,19 @@ export async function getProject(
   mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>) | undefined = undefined,
   settings?: StateSettings,
 ): Promise<Project> {
-  await new Promise(resolve => setTimeout(resolve, 1));
+  await new Promise<void>(resolve => setTimeout(resolve, 1));
+  const slug = `demo-${randomUuid().substring(0, 5)}`;
+  const projectId = `${slug}-${randomUuid().substring(0, 3)}`
+  const server = new Server(projectId, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
-  const slug = `demo${randomUuid().substring(0, 5)}`;
+  editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   template && template(templater);
-  const config = editor.getConfig();
-  const server = new Server(config.projectId, settings, ServerMock.get());
   const d = await server.dispatchAdmin();
-  const projectCreateResult = await d.projectCreateAdmin({
-    configAdmin: config,
+  await d.projectCreateAdmin({
+    configAdmin: editor.getConfig(),
   });
-  const projectId = projectCreateResult.config.config.projectId
   server.subscribeToChanges(editor);
   const saveEdits = async (): Promise<Admin.VersionedConfigAdmin> => {
     return await d.configSetAdmin({
@@ -45,10 +45,10 @@ export async function getProject(
   await saveEdits();
   const mocker = DataMock.get(projectId);
   mock && await mock(mocker, editor.getConfig());
-  await server.dispatch().configGetAndUserBind({
+  await server.dispatch().then(d => d.configGetAndUserBind({
     slug,
     userBind: {},
-  });
+  }));
   const project = { server, templater, editor, mocker, saveEdits };
   return project;
 }

@@ -6,6 +6,7 @@ import React from 'react';
 import DividerVertical from '../app/utils/DividerVertical';
 import MobileNotification, { Device, Device as MobileDevice, Status as MobileStatus } from './notification/mobileNotification';
 import WebNotification, { Status as WebStatus } from './notification/webNotification';
+import windowIso from './windowIso';
 
 export enum PushDialogPlatform {
   Browser = 'browser',
@@ -108,7 +109,7 @@ class DemoPushPermissionDialog extends React.Component<Props & WithStyles<typeof
   onAccept: undefined | (() => void);
   onBlock: undefined | (() => void);
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.mobileNotification.mockSetStatus(MobileStatus.Available);
     this.props.mobileNotification.mockSetDevice(MobileDevice.Ios);
     this.props.mobileNotification.mockSetAskPermission(() => new Promise((resolve, reject) => {
@@ -171,7 +172,7 @@ class DemoPushPermissionDialog extends React.Component<Props & WithStyles<typeof
               display: 'flex',
               flexDirection: 'column',
             }}>
-              <div className='wantsTo'>{`${window.location} wants to`}</div>
+              <div className='wantsTo'>{`${windowIso.location} wants to`}</div>
               <div className='showNotifications' style={{
                 display: 'flex',
                 alignItems: 'center',

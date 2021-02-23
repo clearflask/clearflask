@@ -67,14 +67,7 @@ import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
-import com.smotana.clearflask.web.resource.AccountResource;
-import com.smotana.clearflask.web.resource.HealthResource;
-import com.smotana.clearflask.web.resource.IdeaResource;
-import com.smotana.clearflask.web.resource.KillBillResource;
-import com.smotana.clearflask.web.resource.ProjectResource;
-import com.smotana.clearflask.web.resource.SupportResource;
-import com.smotana.clearflask.web.resource.UserResource;
-import com.smotana.clearflask.web.resource.VoteResource;
+import com.smotana.clearflask.web.resource.*;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -218,6 +211,7 @@ public enum ServiceInjector {
                 install(VoteResource.module());
                 install(ProjectResource.module());
                 install(SupportResource.module());
+                install(ConnectResource.module());
 
                 // Billing
                 install(KillBillClientProvider.module());

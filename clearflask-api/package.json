@@ -1,4 +1,7 @@
 {
+  "name": "clearflask-api",
+  "version": "1.0.0",
+  "homepage": "https://clearflask.com/",
   "private": true,
   "dependencies": {
     "@openapitools/openapi-generator-cli": "cli-4.1.3",

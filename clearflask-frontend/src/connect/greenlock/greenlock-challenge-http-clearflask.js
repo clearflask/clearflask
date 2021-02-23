@@ -38,8 +38,8 @@ module.exports.create = function (config) {
 						result: ch.keyAuthorization,
 					},
 				},
-				undefined,
-				{'x-cf-connect-token': connectConfig.connectToken});
+					undefined,
+					{ 'x-cf-connect-token': connectConfig.connectToken });
 
 			return null;
 		},
@@ -63,7 +63,7 @@ module.exports.create = function (config) {
 					.certChallengeGetConnect(
 						{ key },
 						undefined,
-						{'x-cf-connect-token': connectConfig.connectToken});
+						{ 'x-cf-connect-token': connectConfig.connectToken });
 				console.log('Challenge found for key', key);
 				return {
 					keyAuthorization: challenge.result,
@@ -101,7 +101,7 @@ module.exports.create = function (config) {
 				.certChallengeDeleteConnect(
 					{ key },
 					undefined,
-					{'x-cf-connect-token': connectConfig.connectToken});
+					{ 'x-cf-connect-token': connectConfig.connectToken });
 			return null;
 		}
 	};

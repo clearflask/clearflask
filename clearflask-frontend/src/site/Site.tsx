@@ -1,3 +1,7 @@
+/// <reference path="../@types/transform-media-imports.d.ts"/>
+import loadable from '@loadable/component';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { AppBar, Button, Container, Divider, Drawer, Grid, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar, Zoom } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -17,46 +21,48 @@ import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import WidgetIcon from '@material-ui/icons/Widgets';
 // import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
+import LogoImg from '../../public/img/clearflask-logo.png';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
+import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
-import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 
-const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed));
-const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
-const SsoSuccessDemoPage = React.lazy(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed));
+const SigninPage = loadable(() => import(/* webpackChunkName: "SigninPage", webpackPrefetch: true */'./SigninPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/SsoSuccessDemoPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
-const LandingClearFlaskDemo = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingClearFlaskDemo" */).then((module) => importSuccess({ default: module.LandingClearFlaskDemo })).catch(importFailed));
-const LandingCollectFeedback = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCollectFeedback" */).then((module) => importSuccess({ default: module.LandingCollectFeedback })).catch(importFailed));
-const LandingCollectFeedbackHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCollectFeedbackHero" */).then((module) => importSuccess({ default: module.LandingCollectFeedbackHero })).catch(importFailed));
-const LandingCommercialSupportManagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCommercialSupportManagement" */).then((module) => importSuccess({ default: module.LandingCommercialSupportManagement })).catch(importFailed));
-const LandingContentCreator = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingContentCreator" */).then((module) => importSuccess({ default: module.LandingContentCreator })).catch(importFailed));
-const LandingCrowdFunding = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCrowdFunding" */).then((module) => importSuccess({ default: module.LandingCrowdFunding })).catch(importFailed));
-const LandingCustomize = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingCustomize" */).then((module) => importSuccess({ default: module.LandingCustomize })).catch(importFailed));
-const LandingEngagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingEngagement" */).then((module) => importSuccess({ default: module.LandingEngagement })).catch(importFailed));
-const LandingEngagementHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingEngagementHero" */).then((module) => importSuccess({ default: module.LandingEngagementHero })).catch(importFailed));
-const LandingFeatureRequestTracking = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingFeatureRequestTracking" */).then((module) => importSuccess({ default: module.LandingFeatureRequestTracking })).catch(importFailed));
-const LandingGrowWithUs = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingGrowWithUs" */).then((module) => importSuccess({ default: module.LandingGrowWithUs })).catch(importFailed));
-const LandingHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingHero" */).then((module) => importSuccess({ default: module.LandingHero })).catch(importFailed));
-const LandingIdeaManagement = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingIdeaManagement" */).then((module) => importSuccess({ default: module.LandingIdeaManagement })).catch(importFailed));
-const LandingIntegrations = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingIntegrations" */).then((module) => importSuccess({ default: module.LandingIntegrations })).catch(importFailed));
-const LandingInternalFeedback = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingInternalFeedback" */).then((module) => importSuccess({ default: module.LandingInternalFeedback })).catch(importFailed));
-const LandingLoop = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingLoop" */).then((module) => importSuccess({ default: module.LandingLoop })).catch(importFailed));
-const LandingPrioritization = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPrioritization" */).then((module) => importSuccess({ default: module.LandingPrioritization })).catch(importFailed));
-const LandingPrioritizationHero = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPrioritizationHero" */).then((module) => importSuccess({ default: module.LandingPrioritizationHero })).catch(importFailed));
-const LandingPublicRoadmap = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingPublicRoadmap" */).then((module) => importSuccess({ default: module.LandingPublicRoadmap })).catch(importFailed));
-const LandingSales = React.lazy(() => import('./LandingPages'/* webpackChunkName: "LandingSales" */).then((module) => importSuccess({ default: module.LandingSales })).catch(importFailed));
+const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then((module) => importSuccess({ default: module.LandingClearFlaskDemo })).catch(importFailed), { fallback: (<Loading />) });
+const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCollectFeedback })).catch(importFailed), { fallback: (<Loading />) });
+const LandingCollectFeedbackHero = loadable(() => import(/* webpackChunkName: "LandingCollectFeedbackHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCollectFeedbackHero })).catch(importFailed), { fallback: (<Loading />) });
+const LandingCommercialSupportManagement = loadable(() => import(/* webpackChunkName: "LandingCommercialSupportManagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCommercialSupportManagement })).catch(importFailed), { fallback: (<Loading />) });
+const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then((module) => importSuccess({ default: module.LandingContentCreator })).catch(importFailed), { fallback: (<Loading />) });
+const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCrowdFunding })).catch(importFailed), { fallback: (<Loading />) });
+const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCustomize })).catch(importFailed), { fallback: (<Loading />) });
+const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingEngagement })).catch(importFailed), { fallback: (<Loading />) });
+const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingEngagementHero })).catch(importFailed), { fallback: (<Loading />) });
+const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then((module) => importSuccess({ default: module.LandingFeatureRequestTracking })).catch(importFailed), { fallback: (<Loading />) });
+const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then((module) => importSuccess({ default: module.LandingGrowWithUs })).catch(importFailed), { fallback: (<Loading />) });
+const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingHero })).catch(importFailed), { fallback: (<Loading />) });
+const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingIdeaManagement })).catch(importFailed), { fallback: (<Loading />) });
+const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingIntegrations" */'./LandingPages').then((module) => importSuccess({ default: module.LandingIntegrations })).catch(importFailed), { fallback: (<Loading />) });
+const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then((module) => importSuccess({ default: module.LandingInternalFeedback })).catch(importFailed), { fallback: (<Loading />) });
+const LandingLoop = loadable(() => import(/* webpackChunkName: "LandingLoop" */'./LandingPages').then((module) => importSuccess({ default: module.LandingLoop })).catch(importFailed), { fallback: (<Loading />) });
+const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPrioritization })).catch(importFailed), { fallback: (<Loading />) });
+const LandingPrioritizationHero = loadable(() => import(/* webpackChunkName: "LandingPrioritizationHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPrioritizationHero })).catch(importFailed), { fallback: (<Loading />) });
+const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPublicRoadmap })).catch(importFailed), { fallback: (<Loading />) });
+const LandingSales = loadable(() => import(/* webpackChunkName: "LandingSales" */'./LandingPages').then((module) => importSuccess({ default: module.LandingSales })).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -290,9 +296,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 to='/'
               >
                 <img
-                  alt='logo'
+                  alt=''
                   className={this.props.classes.logo}
-                  src='/img/clearflask-logo.png' />
+                  src={LogoImg.src}
+                  width={LogoImg.width}
+                  height={LogoImg.height}
+                />
                 ClearFlask
               </Link>
               <Hidden smDown implementation='css'>
@@ -316,7 +325,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         </AppBar>
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
-          <Suspense fallback={<Loading />}>
             <MuiAnimatedSwitch>
               <Route exact path='/login'>
                 <SetTitle title='Login' />
@@ -338,14 +346,20 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <SetTitle title='OAuth' />
                 <SsoSuccessDemoPage type='oauth' />
               </Route>
-              <Route exact path='/(tos|terms|terms-of-service)'>
-                <SetTitle title='Terms of Service' />
-                <LegalPage type='terms' />
-              </Route>
-              <Route exact path='/(privacy|policy|privacy-policy)'>
-                <SetTitle title='Terms of Service' />
-                <LegalPage type='privacy' />
-              </Route>
+            <Route exact path='/terms-of-service'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='terms' />
+            </Route>
+            <Route exact path='/(tos|terms)'>
+              <RedirectIso to='/terms-of-service' />
+            </Route>
+            <Route exact path='/privacy-policy'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='privacy' />
+            </Route>
+            <Route exact path='/(privacy|policy)'>
+              <RedirectIso to='/privacy-policy' />
+            </Route>
 
               <Route exact path='/'>
                 <SetTitle />
@@ -421,7 +435,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <ErrorPage msg='Page not found' variant='error' />
               </Route>
             </MuiAnimatedSwitch>
-          </Suspense>
         </div>
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>

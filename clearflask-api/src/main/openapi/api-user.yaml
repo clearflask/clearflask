@@ -3,6 +3,8 @@ components:
     UserBind:
       type: object
       properties:
+        skipBind:
+          type: boolean
         ssoToken:
           type: string
         authToken:

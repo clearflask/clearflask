@@ -142,10 +142,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(ownProps.search);
   const bySearch = state.comments.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch().commentSearch({
+    ownProps.server.dispatch().then(d => d.commentSearch({
       projectId: state.projectId!,
       commentSearch: ownProps.search,
-    });
+    }));
   } else {
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;

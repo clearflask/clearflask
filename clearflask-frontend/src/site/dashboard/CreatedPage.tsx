@@ -1,8 +1,9 @@
+import loadable from '@loadable/component';
 import { Container, Grid, Link as MuiLink, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import OpenIcon from '@material-ui/icons/OpenInNew';
 import classNames from 'classnames';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -10,11 +11,12 @@ import ServerAdmin from '../../api/serverAdmin';
 import { PostTitleMaxLength } from '../../app/comps/IdeaExplorer';
 import Loading from '../../app/utils/Loading';
 import SubmitButton from '../../common/SubmitButton';
+import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
 
 export const CreatedImagePath = '/img/dashboard/created.svg';
 
-const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -93,7 +95,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const expandedProp = (isExpanded: boolean) => ({ expanded: isExpanded });
     const isLoggedIn = !!this.props.loggedInUser;
     const slug = this.props.slug || this.props.server.getProjectId();
-    const projectUrl = `${window.location.protocol}//${slug}.${window.location.host}`;
+    const projectUrl = `${windowIso.location.protocol}//${slug}.${windowIso.location.host}`;
     return (
       <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
         <Container maxWidth='md'>
@@ -137,7 +139,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         isSubmitting={this.state.isSubmitting}
                         onClick={e => {
                           this.setState({ isSubmitting: true });
-                          this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
+                          ServerAdmin.get().dispatchAdmin().then(d => d.userCreateAdmin({
                             projectId: this.props.server.getProjectId(),
                             userCreateAdmin: {
                               name: this.state.newModName,
@@ -176,21 +178,19 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             maxLength: PostTitleMaxLength,
                           }}
                         />
-                        <Suspense fallback={<Loading />}>
-                          <RichEditor
-                            variant='outlined'
-                            size='small'
-                            disabled={this.state.isSubmitting}
-                            className={this.props.classes.field}
-                            placeholder='Description'
-                            iAgreeInputIsSanitized
-                            value={this.state.newItemDescription || ''}
-                            onChange={e => this.setState({ newItemDescription: e.target.value })}
-                            multiline
-                            rows={1}
-                            rowsMax={5}
-                          />
-                        </Suspense>
+                        <RichEditor
+                          variant='outlined'
+                          size='small'
+                          disabled={this.state.isSubmitting}
+                          className={this.props.classes.field}
+                          placeholder='Description'
+                          iAgreeInputIsSanitized
+                          value={this.state.newItemDescription || ''}
+                          onChange={e => this.setState({ newItemDescription: e.target.value })}
+                          multiline
+                          rows={1}
+                          rowsMax={5}
+                        />
                         <SubmitButton
                           wrapperClassName={this.props.classes.button}
                           color='primary'
@@ -198,7 +198,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           disabled={!isLoggedIn || !this.state.newItemTitle}
                           onClick={e => {
                             this.setState({ isSubmitting: true });
-                            this.props.server.dispatch().ideaCreate({
+                            this.props.server.dispatch().then(d => d.ideaCreate({
                               projectId: this.props.server.getProjectId(),
                               ideaCreate: {
                                 authorUserId: this.props.loggedInUser!.userId,
@@ -207,7 +207,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                                 categoryId: this.props.ideaCategoryId!,
                                 tagIds: [],
                               },
-                            })
+                            }))
                               .then(() => this.setState({
                                 isSubmitting: false,
                                 newItemSubmitted: true,

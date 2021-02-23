@@ -41,20 +41,20 @@ public class OnAccountSignup {
 
         String subject = config.subject();
         String content = config.content();
-        content = content.replaceAll("__NAME__", emailTemplates.sanitize(account.getName()));
+        content = content.replace("__NAME__", emailTemplates.sanitize(account.getName()));
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
         String buttonText = "Dashboard";
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", buttonText);
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", buttonText);
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);
+        templateText = templateText.replace("__BUTTON_TEXT__", buttonText);
 
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         return new Email(
                 account.getEmail(),

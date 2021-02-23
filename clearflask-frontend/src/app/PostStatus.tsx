@@ -8,6 +8,7 @@ import { Server } from '../api/server';
 import WebNotification from '../common/notification/webNotification';
 import Promised from '../common/Promised';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 
 export class PostStatusConfigDef {
   fontSize?: number | string;
@@ -49,25 +50,37 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   constructor(props) {
     super(props);
 
-    this.dataPromise = this.fetchData(props);
-  }
 
-  async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
-    var server: Server | undefined;
+    var ssrWait = false;
+    var serverPromise: Promise<Server>;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const mocker = await import('../mocker'/* webpackChunkName: "mocker" */)
-      const serverMock = await import('../api/serverMock'/* webpackChunkName: "serverMock" */)
-      const projectId = await mocker.mockIdeaGetProjectId(props.postId);
-      server = new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
+      serverPromise = this.mockData(props);
     } else {
-      server = new Server();
+      const server = new Server();
+      if (windowIso.isSsr && server.getStore().getState().conf.status === undefined) {
+        ssrWait = true;
+      }
+      serverPromise = Promise.resolve(server);
     }
 
-    const subscriptionResult = await WebNotification.getInstance().getPermission();
+    this.dataPromise = this.fetchData(props, serverPromise);
+    if (windowIso.isSsr && ssrWait) windowIso.awaitPromises.push(this.dataPromise);
+  }
 
-    const configAndUserBind = await server.dispatch().configGetAndUserBind({
-      slug: window.location.hostname,
+  async mockData(props: Props): Promise<Server> {
+      const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
+      const serverMock = await import(/* webpackChunkName: "serverMock" */'../api/serverMock')
+      const projectId = await mocker.mockIdeaGetProjectId(props.postId);
+      return new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
+  }
+
+  async fetchData(props: Props, serverPromise: Promise<Server>): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
+    const server = await serverPromise;
+    const subscriptionResult = await WebNotification.getInstance().getPermission();
+    const configAndUserBind = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
+      slug: windowIso.location.hostname,
       userBind: {
+        skipBind: windowIso.isSsr,
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
       },
@@ -77,9 +90,8 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       throw new Error('Permission denied');
     }
 
-    console.log('debugdebug', server.getProjectId());
-    const post = await server.dispatch().ideaGet({
-      projectId: configAndUserBind.config.config.projectId,
+    const post = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
+      projectId: configAndUserBind.config?.config.projectId,
       ideaId: props.postId,
     });
 
@@ -120,7 +132,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             return null;
           };
 
-          const src = `${window.location.origin}/post/${post.ideaId}`;
+          const src = `${windowIso.location.origin}/post/${post.ideaId}`;
 
           return (
             <div
@@ -136,9 +148,9 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 textTransform: statusConfig.textTransform as any,
               }}
             >
-              <a
+              <a // eslint-disable-line react/jsx-no-target-blank
                 href={src}
-                target='_blank' // eslint-disable-line react/jsx-no-target-blank
+                target='_blank'
                 rel='noopener nofollow'
                 className={this.props.classes.link}
               >

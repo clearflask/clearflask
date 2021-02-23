@@ -91,56 +91,56 @@ public class OnStatusOrResponseChange {
             type = "RESPONSE_AND_STATUS_CHANGED";
         }
 
-        content = content.replaceAll("__subscription_action__", subscriptionAction.getActionString());
+        content = content.replace("__subscription_action__", subscriptionAction.getActionString());
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        templateHtml = templateHtml.replaceAll("__title__",
+        templateHtml = templateHtml.replace("__title__",
                 "<span style=\"font-weight: bold\">" +
                         title +
                         "</span>");
-        templateText = templateText.replaceAll("__title__", title);
+        templateText = templateText.replace("__title__", title);
         title = StringUtils.abbreviate(title, 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         if (changedStatus.isPresent()) {
             String statusName = StringUtils.abbreviate(emailTemplates.sanitize(changedStatus.get().getName()), 50);
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
-            templateHtml = templateHtml.replaceAll("__status__",
+            templateHtml = templateHtml.replace("__status__",
                     "<span style=\"color: " + changedStatus.get().getColor() + ";font-weight: bold\">" +
                             statusName +
                             "</span>");
-            templateText = templateText.replaceAll("__status__", statusName);
+            templateText = templateText.replace("__status__", statusName);
             statusName = StringUtils.abbreviate(statusName, 15);
-            subject = subject.replaceAll("__status__", statusName);
+            subject = subject.replace("__status__", statusName);
         }
 
         if (changedResponse.isPresent()) {
             String response = StringUtils.abbreviate(emailTemplates.sanitize(changedResponse.get()), 50);
-            templateHtml = templateHtml.replaceAll("__response__",
+            templateHtml = templateHtml.replace("__response__",
                     "<span style=\"font-weight: bold\">" +
                             response +
                             "</span>");
-            templateText = templateText.replaceAll("__response__", response);
+            templateText = templateText.replace("__response__", response);
         }
 
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW POST");
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW POST");
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW POST");
+        templateText = templateText.replace("__BUTTON_TEXT__", "VIEW POST");
 
         link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
-        templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateHtml = templateHtml.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
+        templateText = templateText.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
         return new Email(
                 user.getEmail(),
@@ -168,7 +168,7 @@ public class OnStatusOrResponseChange {
         String content = "";
         if (changedResponse.isPresent()) {
             String response = StringUtils.abbreviate(emailTemplates.sanitize(changedResponse.get()), 65);
-            content = content.replaceAll("__response__", response);
+            content = content.replace("__response__", response);
         }
 
         if (changedStatus.isPresent()) {
@@ -176,13 +176,13 @@ public class OnStatusOrResponseChange {
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
-            subject = subject.replaceAll("__status__", statusName);
+            subject = subject.replace("__status__", statusName);
         }
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        content = content.replaceAll("__title__", title);
+        content = content.replace("__title__", title);
         title = StringUtils.abbreviate(title, 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
@@ -211,11 +211,11 @@ public class OnStatusOrResponseChange {
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
-            subject = subject.replaceAll("__status__", statusName);
+            subject = subject.replace("__status__", statusName);
         }
 
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replace("__title__", title);
 
         return subject;
     }

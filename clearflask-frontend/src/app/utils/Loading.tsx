@@ -16,7 +16,12 @@ class Loading extends Component<Props> {
   render() {
     return (
       <Fade in={true} timeout={this.props.showImmediately ? 0 : 3000}>
-        <CircularProgress style={this.styles.progress} />
+        <CircularProgress style={{
+          ...this.styles.progress,
+          // This is just a patch, circular progress flashes unstyled with SSR taking up whole page.
+          // Just at least don't cover the whole page...
+          maxWidth: 40, maxHeight: 40,
+        }} />
       </Fade>
     );
   }

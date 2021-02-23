@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import QueryString from 'query-string';
 import React, { Component } from 'react';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 import { PostStatusConfig } from './PostStatus';
 
 const styles = (theme: Theme) => createStyles({
@@ -14,6 +15,7 @@ const styles = (theme: Theme) => createStyles({
     width: 160,
     height: 32,
     overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
 });
 interface Props {
@@ -27,7 +29,7 @@ interface Props {
 class PostStatusIframe extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     const query = this.props.config ? '?' + QueryString.stringify(this.props.config) : '';
-    const src = `${window.location.protocol}//${this.props.projectId || detectEnv() === Environment.DEVELOPMENT_FRONTEND ? 'mock' : 'clearflask'}.${window.location.host}/embed-status/post/${this.props.postId}${query}`;
+    const src = `${windowIso.location.protocol}//${this.props.projectId || detectEnv() === Environment.DEVELOPMENT_FRONTEND ? 'mock' : 'clearflask'}.${windowIso.location.host}/embed-status/post/${this.props.postId}${query}`;
     return (
       <iframe
         className={classNames(this.props.className, this.props.classes.iframe)}
@@ -35,7 +37,6 @@ class PostStatusIframe extends Component<Props & WithStyles<typeof styles, true>
           width: this.props.width,
           height: this.props.height,
         }}
-        allowTransparency={true}
         scrolling='no'
         src={src}
         title='Status frame'

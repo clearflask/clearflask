@@ -1,6 +1,7 @@
 import { Paper, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { initialWidth } from './util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -78,4 +79,4 @@ class Stack extends Component<Props & WithStyles<typeof styles, true> & WithWidt
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withWidth()(Stack));
+export default withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(Stack));

@@ -18,18 +18,25 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "sourceMap": true,
     "jsx": "react",
     "noImplicitReturns": true,
     "noImplicitAny": false,
     "noUnusedLocals": false,
+    "downlevelIteration": true,
+    "outDir": "./target/build",
+    "rootDir": "./src",
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "src",
-    "public/sw.ts"
-  ],
   "exclude": [
+    "**/node_modules/*",
     "node_modules",
-    "**/node_modules/*"
+    "dist/*",
+    "dist-dev/*",
+    "public/*"
+  ],
+  "include": [
+    "src/**/*",
+    "public/sw.ts"
   ]
 }

@@ -85,11 +85,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         || this.state.displayName === this.props.userMe.name) {
                         return;
                       }
-                      this.props.server.dispatch().userUpdate({
+                      this.props.server.dispatch().then(d => d.userUpdate({
                         projectId: this.props.server.getProjectId(),
-                        userId: this.props.userMe.userId,
+                        userId: this.props.userMe!.userId,
                         userUpdate: { name: this.state.displayName },
-                      });
+                      }));
                     }}>Save</Button>
                   </React.Fragment>
                 )}
@@ -120,11 +120,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         || this.state.email === this.props.userMe.email) {
                         return;
                       }
-                      this.props.server.dispatch().userUpdate({
+                      this.props.server.dispatch().then(d => d.userUpdate({
                         projectId: this.props.server.getProjectId(),
-                        userId: this.props.userMe.userId,
+                        userId: this.props.userMe!.userId,
                         userUpdate: { email: this.state.email },
-                      });
+                      }));
                     }}>Save</Button>
                   </React.Fragment>
                 )}
@@ -164,11 +164,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     || !this.props.userMe) {
                     return;
                   }
-                  this.props.server.dispatch().userUpdate({
+                  this.props.server.dispatch().then(d => d.userUpdate({
                     projectId: this.props.server.getProjectId(),
-                    userId: this.props.userMe.userId,
+                    userId: this.props.userMe!.userId,
                     userUpdate: { password: this.state.password },
-                  }).then(() => this.setState({ password: undefined }));
+                  })).then(() => this.setState({ password: undefined }));
                 }}>Save</Button>
               </Grid>
             </Grid>
@@ -194,7 +194,9 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   if (isPushOrAnon) {
                     this.setState({ signoutWarnNoEmail: true });
                   } else {
-                    this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })
+                    this.props.server.dispatch().then(d => d.userLogout({
+                      projectId: this.props.server.getProjectId(),
+                    }));
                   }
                 }}
               >Sign out</Button>
@@ -216,10 +218,10 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
-                  <Button style={{ color: this.props.theme.palette.error.main }} onClick={() => this.props.server.dispatch().userDelete({
+                  <Button style={{ color: this.props.theme.palette.error.main }} onClick={() => this.props.server.dispatch().then(d => d.userDelete({
                     projectId: this.props.server.getProjectId(),
                     userId: this.props.userMe!.userId,
-                  })}>Delete</Button>
+                  }))}>Delete</Button>
                 </DialogActions>
               </Dialog>
             </Grid>
@@ -304,11 +306,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 WebNotification.getInstance().askPermission()
                   .then(r => {
                     if (r.type === 'success') {
-                      this.props.server.dispatch().userUpdate({
+                      this.props.server.dispatch().then(d => d.userUpdate({
                         projectId: this.props.server.getProjectId(),
                         userId: this.props.userMe!.userId,
                         userUpdate: { browserPushToken: r.token },
-                      });
+                      }));
                     } else if (r.type === 'error') {
                       if (r.userFacingMsg) {
                         this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup browser notifications', { variant: 'error', preventDuplicate: true });
@@ -317,11 +319,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     }
                   });
               } else {
-                this.props.server.dispatch().userUpdate({
+                this.props.server.dispatch().then(d => d.userUpdate({
                   projectId: this.props.server.getProjectId(),
                   userId: this.props.userMe!.userId,
                   userUpdate: { browserPushToken: '' },
-                });
+                }));
               }
             }}
           />
@@ -444,11 +446,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             disabled={controlDisabled}
             checked={enabled}
             onChange={(e, checked) => {
-              this.props.server.dispatch().userUpdate({
+              this.props.server.dispatch().then(d => d.userUpdate({
                 projectId: this.props.server.getProjectId(),
                 userId: this.props.userMe!.userId,
                 userUpdate: { emailNotify: checked },
-              });
+              }));
             }}
           />
         )}

@@ -8,6 +8,7 @@ import { ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
 import { SearchTypeDebounceTime } from '../../common/util/debounce';
 import minmax from '../../common/util/mathutil';
+import { initialWidth } from '../../common/util/screenUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import SelectionPicker, { Label } from './SelectionPicker';
 
@@ -352,4 +353,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withWidth()(withStyles(styles, { withTheme: true })(PanelSearch)));
+}, null, null, { forwardRef: true })(withWidth({ initialWidth })(withStyles(styles, { withTheme: true })(PanelSearch)));

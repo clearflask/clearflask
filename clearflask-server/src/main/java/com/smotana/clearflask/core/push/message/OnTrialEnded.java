@@ -47,15 +47,15 @@ public class OnTrialEnded {
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replaceAll("__CONTENT__", content);
-        templateText = templateText.replaceAll("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateText = templateText.replace("__CONTENT__", content);
 
         String buttonText = hasPaymentMethod ? "Dashboard" : "Billing";
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", buttonText);
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", buttonText);
+        templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);
+        templateText = templateText.replace("__BUTTON_TEXT__", buttonText);
 
-        templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
-        templateText = templateText.replaceAll("__BUTTON_URL__", link);
+        templateHtml = templateHtml.replace("__BUTTON_URL__", link);
+        templateText = templateText.replace("__BUTTON_URL__", link);
 
         return new Email(
                 accountEmail,

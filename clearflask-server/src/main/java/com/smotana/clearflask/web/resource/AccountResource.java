@@ -286,11 +286,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateApiKey(account.getAccountId(), accountUpdateAdmin.getApiKey());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
-            account = accountStore.updatePassword(account.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
+            String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, accountUpdateAdmin.getPassword(), account.getEmail());
+            account = accountStore.updatePassword(account.getAccountId(), passwordHashed, accountSession.getSessionId());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
-            sanitizer.email(accountUpdateAdmin.getEmail());
-            account = accountStore.updateEmail(account.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
+            throw new ApiException(Response.Status.BAD_REQUEST, "Email cannot be changed, please contact support");
+            // TODO Fix bug in email update requires password to be rehashed
+//            sanitizer.email(accountUpdateAdmin.getEmail());
+//            account = accountStore.updateEmail(account.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
         boolean alsoResume = false;
         if (accountUpdateAdmin.getPaymentToken() != null) {

@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { initialWidth } from '../../common/util/screenUtil';
 import DividerCorner from '../utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
@@ -188,4 +189,4 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(withWidth()(ExplorerTemplate)));
+export default withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(ExplorerTemplate)));

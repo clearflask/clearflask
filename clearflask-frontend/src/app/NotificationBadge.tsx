@@ -45,9 +45,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     notifications: state.notifications.notificationSearch.notifications,
     hasMore: !!state.notifications.notificationSearch.cursor,
     callOnMount: (userId && state.notifications.notificationSearch.status === undefined) ? () => {
-      ownProps.server.dispatch().notificationSearch({
+      ownProps.server.dispatch().then(d => d.notificationSearch({
         projectId: ownProps.server.getProjectId(),
-      });
+      }));
     } : undefined,
   };
 })(NotificationBadge);
