@@ -19,6 +19,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 public class ApiExceptionMapperFilter implements Filter {
@@ -47,7 +48,7 @@ public class ApiExceptionMapperFilter implements Filter {
             filterChain.doFilter(request, response);
         } catch (ServletException ex) {
             String ignoreMessageRegex = config.ignoreMessageRegex();
-            if (ex.getRootCause().getCause() instanceof ApiException) {
+            if (ex.getRootCause() instanceof ApiException) {
                 Response.Status status = ((ApiException) ex.getRootCause()).getStatus();
                 switch (status.getFamily()) {
                     case INFORMATIONAL:
