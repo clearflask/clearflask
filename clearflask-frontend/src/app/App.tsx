@@ -65,7 +65,7 @@ class App extends Component<Props> {
     const hasConfig = storeState.conf.status !== undefined;
     const isLoggedIn = storeState.users.loggedIn !== undefined;
     if (windowIso.isSsr && !hasConfig) {
-      windowIso.awaitPromises.push(this.initSsr());
+      this.initSsr();
     } else if (!hasConfig || !isLoggedIn) {
       this.init();
     }

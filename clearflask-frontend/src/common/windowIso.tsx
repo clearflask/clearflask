@@ -37,6 +37,7 @@ export const WindowIsoSsrProvider = (props: {
   env: 'development' | 'production' | 'local' | 'test';
   url: string;
   setTitle: (title: string) => void;
+  setMaxAge: (maxAge: number) => void;
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;
@@ -46,6 +47,7 @@ export const WindowIsoSsrProvider = (props: {
   const url = new URL(props.url);
   win['location'] = url;
   win['setTitle'] = props.setTitle;
+  win['setMaxAge'] = props.setMaxAge;
   win['storesState'] = props.storesState;
   win['awaitPromises'] = props.awaitPromises;
   win['staticRouterContext'] = props.staticRouterContext;
@@ -58,6 +60,7 @@ export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.G
   ENV: 'development' | 'production' | 'local' | 'test';
   location: URL;
   setTitle: (title: string) => void;
+  setMaxAge: (maxAge: number) => void;
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;

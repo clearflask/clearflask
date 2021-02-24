@@ -16,6 +16,7 @@ interface RenderResult {
   extractor: ChunkExtractor;
   muiSheets: ServerStyleSheets;
   renderedScreen: string;
+  maxAge?: number;
 }
 
 const statsFile = path.resolve(__dirname, 'public', 'loadable-stats.json')
@@ -101,6 +102,7 @@ export default function render() {
                   fetch={fetch}
                   url={requested_url}
                   setTitle={newTitle => rr.title = newTitle}
+                  setMaxAge={maxAge => rr.maxAge = maxAge}
                   storesState={storesState}
                   awaitPromises={awaitPromises}
                   staticRouterContext={staticRouterContext}
@@ -170,19 +172,21 @@ export default function render() {
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',
+        ...(renderResult.maxAge !== undefined && { 'Cache-Control': 'public, max-age=' + renderResult.maxAge }),
         ...(staticRouterContext.url && { Location: staticRouterContext.url }),
       });
       res.end(html);
     } catch (e) {
       console.error('Failed to get page', e);
-      if (process.env.ENV !== 'production') {
-        res.status(500).end();
-      } else {
-        // fallback to client-side rendering but still throw 500
-        res.status(500);
+      res.header('Cache-Control', 'public, max-age=10');
+      res.status(500);
+      if (process.env.ENV === 'production') {
+        // fallback to client-side rendering (still throwing 500)
         // This is not exactly necessary for CloudFront as it is configured to get index.html on http 500
         // It is necessary for custom domains bypassing CloudFront
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
+      } else {
+        res.end();
       }
     }
   };

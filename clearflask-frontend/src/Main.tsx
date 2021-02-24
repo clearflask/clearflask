@@ -108,6 +108,10 @@ class Main extends Component<Props> {
         </Router>);
     }
     const isProject = this.isProject();
+    windowIso.isSsr && windowIso.setMaxAge(isProject
+      ? 60 // Note that app caches Config as well as content in SSR
+      : (24 * 60 * 60) // Landing page can be cached for a long time
+    );
     return (
       // <React.StrictMode>
       <StylesProvider injectFirst generateClassName={createGenerateClassName({
