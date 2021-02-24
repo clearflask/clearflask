@@ -1,3 +1,4 @@
+import { NoSsr } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -36,7 +37,9 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
     return (
       <div className={this.props.classes.page}>
         <Loader status={this.props.legalStatus}>
-          <MarkdownElement text={doc} />
+          <NoSsr>
+            <MarkdownElement text={doc} />
+          </NoSsr>
         </Loader>
       </div>
     );

@@ -68,55 +68,58 @@ export default function render() {
       var renderResult: RenderResult | undefined;
       var isFinished = false;
       var renderCounter = 0;
-      const renderPromise = new Promise<void>(async resolve => {
-        do {
-          if (++renderCounter > 10) {
-            console.warn(`Render give up after too many passes ${renderCounter} on ${requested_url}`);
-            resolve();
-            return;
-          }
-          console.debug(`Rendering ${requested_url} pass #${renderCounter} with ${awaitPromises.length} promises`);
-          const rr: RenderResult = {
-            title: 'ClearFlask',
-            extractor: renderResult?.extractor || new ChunkExtractor({
-              statsFile,
-              entrypoints: ['main'],
-              outputPath: path.resolve(__dirname, '..', '..', 'build'),
-              publicPath: process.env.ENV !== 'production' ? '/' : undefined,
-            }),
-            muiSheets: new ServerStyleSheets(),
-            renderedScreen: '',
-          };
+      const renderPromise = new Promise<void>(async (resolve, reject) => {
+        try {
+          do {
+            if (++renderCounter > 10) {
+              console.warn(`Render give up after too many passes ${renderCounter} on ${requested_url}`);
+              resolve();
+              return;
+            }
+            // console.debug(`Rendering ${requested_url} pass #${renderCounter} with ${awaitPromises.length} promises`);
+            const rr: RenderResult = {
+              title: 'ClearFlask',
+              extractor: renderResult?.extractor || new ChunkExtractor({
+                statsFile,
+                entrypoints: ['main'],
+                outputPath: path.resolve(__dirname, '..', '..', 'build'),
+                publicPath: process.env.ENV !== 'production' ? '/' : undefined,
+              }),
+              muiSheets: new ServerStyleSheets(),
+              renderedScreen: '',
+            };
+            try {
+              await Promise.allSettled(awaitPromises);
+            } catch (e) { }
+            awaitPromises.length = 0;
+            if (isFinished) return; // Request timed out
 
-          try {
-            await Promise.allSettled(awaitPromises);
-          } catch (e) { }
-          awaitPromises.length = 0;
-          if (isFinished) return; // Request timed out
-
-          rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
-            <ChunkExtractorManager extractor={rr.extractor}>
-              <WindowIsoSsrProvider
-                env={process.env.ENV || process.env.NODE_ENV as any}
-                fetch={fetch}
-                url={requested_url}
-                setTitle={newTitle => rr.title = newTitle}
-                storesState={storesState}
-                awaitPromises={awaitPromises}
-                staticRouterContext={staticRouterContext}
-              >
-                <Main
-                  ssrLocation={req.url}
-                  ssrStaticRouterContext={staticRouterContext}
-                />
-              </WindowIsoSsrProvider>
-            </ChunkExtractorManager>
-          ));
-          if (isFinished) return; // Request timed out
-          renderResult = rr;
-        } while (awaitPromises.length > 0);
-        console.info(`Rendered ${requested_url} in ${renderCounter} pass(es)`);
-        resolve();
+            rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
+              <ChunkExtractorManager extractor={rr.extractor}>
+                <WindowIsoSsrProvider
+                  env={process.env.ENV || process.env.NODE_ENV as any}
+                  fetch={fetch}
+                  url={requested_url}
+                  setTitle={newTitle => rr.title = newTitle}
+                  storesState={storesState}
+                  awaitPromises={awaitPromises}
+                  staticRouterContext={staticRouterContext}
+                >
+                  <Main
+                    ssrLocation={req.url}
+                    ssrStaticRouterContext={staticRouterContext}
+                  />
+                </WindowIsoSsrProvider>
+              </ChunkExtractorManager>
+            ));
+            if (isFinished) return; // Request timed out
+            renderResult = rr;
+          } while (awaitPromises.length > 0);
+          console.info(`Rendered ${requested_url} in ${renderCounter} pass(es)`);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
       });
       const timeoutPromise = new Promise<void>(resolve => setTimeout(() => {
         !isFinished && console.warn(`Render timeout on ${requested_url} after ${renderCounter} pass(es)`);
@@ -177,6 +180,8 @@ export default function render() {
       } else {
         // fallback to client-side rendering but still throw 500
         res.status(500);
+        // This is not exactly necessary for CloudFront as it is configured to get index.html on http 500
+        // It is necessary for custom domains bypassing CloudFront
         res.sendFile(path.join(__dirname, 'public', 'index.html'));
       }
     }

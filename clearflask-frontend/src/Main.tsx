@@ -99,7 +99,7 @@ class Main extends Component<Props> {
   // }
 
   render() {
-    if (!windowIso.isSsr && windowIso.location.hostname === 'www.clearflask.com') {
+    if (windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
       return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
     }
