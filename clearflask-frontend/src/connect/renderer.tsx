@@ -88,7 +88,9 @@ export default function render() {
               muiSheets: new ServerStyleSheets(),
               renderedScreen: '',
             };
-            await Promise.allSettled(awaitPromises);
+            try {
+              await Promise.allSettled(awaitPromises);
+            } catch (e) { }
             awaitPromises.length = 0;
             if (isFinished) return; // Request timed out
 
