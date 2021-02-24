@@ -60,6 +60,7 @@ import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
+import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
@@ -230,7 +231,7 @@ export function LandingClearFlaskDemo() {
           >
             <iframe
               title='Demo: ClearFlask Feedback'
-              src={`${window.location.protocol}//feedback.${window.location.host}`}
+              src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}`}
               width='100%'
               height='100%'
               frameBorder={0}
@@ -936,7 +937,7 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='See docs'
-          buttonLinkExt={`${window.location.protocol}//${window.location.host}/api`}
+          buttonLinkExt={`${windowIso.location.protocol}//${windowIso.location.host}/api`}
         />
         <BlockContent
           variant='content'

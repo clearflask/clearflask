@@ -31,6 +31,7 @@ import { RedirectIso } from '../common/util/routerUtil';
 import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
+import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 
@@ -41,26 +42,26 @@ const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", we
 const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/SsoSuccessDemoPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
-const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then((module) => importSuccess({ default: module.LandingClearFlaskDemo })).catch(importFailed), { fallback: (<Loading />) });
-const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCollectFeedback })).catch(importFailed), { fallback: (<Loading />) });
-const LandingCollectFeedbackHero = loadable(() => import(/* webpackChunkName: "LandingCollectFeedbackHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCollectFeedbackHero })).catch(importFailed), { fallback: (<Loading />) });
-const LandingCommercialSupportManagement = loadable(() => import(/* webpackChunkName: "LandingCommercialSupportManagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCommercialSupportManagement })).catch(importFailed), { fallback: (<Loading />) });
-const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then((module) => importSuccess({ default: module.LandingContentCreator })).catch(importFailed), { fallback: (<Loading />) });
-const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCrowdFunding })).catch(importFailed), { fallback: (<Loading />) });
-const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then((module) => importSuccess({ default: module.LandingCustomize })).catch(importFailed), { fallback: (<Loading />) });
-const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingEngagement })).catch(importFailed), { fallback: (<Loading />) });
-const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingEngagementHero })).catch(importFailed), { fallback: (<Loading />) });
-const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then((module) => importSuccess({ default: module.LandingFeatureRequestTracking })).catch(importFailed), { fallback: (<Loading />) });
-const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then((module) => importSuccess({ default: module.LandingGrowWithUs })).catch(importFailed), { fallback: (<Loading />) });
-const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingHero })).catch(importFailed), { fallback: (<Loading />) });
-const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then((module) => importSuccess({ default: module.LandingIdeaManagement })).catch(importFailed), { fallback: (<Loading />) });
-const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingIntegrations" */'./LandingPages').then((module) => importSuccess({ default: module.LandingIntegrations })).catch(importFailed), { fallback: (<Loading />) });
-const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then((module) => importSuccess({ default: module.LandingInternalFeedback })).catch(importFailed), { fallback: (<Loading />) });
-const LandingLoop = loadable(() => import(/* webpackChunkName: "LandingLoop" */'./LandingPages').then((module) => importSuccess({ default: module.LandingLoop })).catch(importFailed), { fallback: (<Loading />) });
-const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPrioritization })).catch(importFailed), { fallback: (<Loading />) });
-const LandingPrioritizationHero = loadable(() => import(/* webpackChunkName: "LandingPrioritizationHero" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPrioritizationHero })).catch(importFailed), { fallback: (<Loading />) });
-const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then((module) => importSuccess({ default: module.LandingPublicRoadmap })).catch(importFailed), { fallback: (<Loading />) });
-const LandingSales = loadable(() => import(/* webpackChunkName: "LandingSales" */'./LandingPages').then((module) => importSuccess({ default: module.LandingSales })).catch(importFailed), { fallback: (<Loading />) });
+const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingClearFlaskDemo, fallback: (<Loading />) });
+const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
+const LandingCollectFeedbackHero = loadable(() => import(/* webpackChunkName: "LandingCollectFeedbackHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedbackHero, fallback: (<Loading />) });
+const LandingCommercialSupportManagement = loadable(() => import(/* webpackChunkName: "LandingCommercialSupportManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCommercialSupportManagement, fallback: (<Loading />) });
+const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingContentCreator, fallback: (<Loading />) });
+const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCrowdFunding, fallback: (<Loading />) });
+const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomize, fallback: (<Loading />) });
+const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagement, fallback: (<Loading />) });
+const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagementHero, fallback: (<Loading />) });
+const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
+const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
+const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingHero, fallback: (<Loading />) });
+const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIdeaManagement, fallback: (<Loading />) });
+const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingIntegrations" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIntegrations, fallback: (<Loading />) });
+const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInternalFeedback, fallback: (<Loading />) });
+const LandingLoop = loadable(() => import(/* webpackChunkName: "LandingLoop" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingLoop, fallback: (<Loading />) });
+const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
+const LandingPrioritizationHero = loadable(() => import(/* webpackChunkName: "LandingPrioritizationHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritizationHero, fallback: (<Loading />) });
+const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
+const LandingSales = loadable(() => import(/* webpackChunkName: "LandingSales" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingSales, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -228,12 +229,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: `${window.location.protocol}//blog.${window.location.host}`, linkIsExternal: true, title: 'Blog' },
-          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/docs`, linkIsExternal: true, title: 'Docs' },
-          { type: 'button', link: `${window.location.protocol}//${window.location.host}/api`, linkIsExternal: true, title: 'API' },
+          { type: 'button', link: `${windowIso.location.protocol}//blog.${windowIso.location.host}`, linkIsExternal: true, title: 'Blog' },
+          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`, linkIsExternal: true, title: 'Docs' },
+          { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API' },
           { type: 'divider' },
-          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/roadmap`, linkIsExternal: true, title: 'Roadmap' },
-          { type: 'button', link: `${window.location.protocol}//feedback.${window.location.host}/feedback`, linkIsExternal: true, title: 'Feedback' },
+          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/roadmap`, linkIsExternal: true, title: 'Roadmap' },
+          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/feedback`, linkIsExternal: true, title: 'Feedback' },
         ]
       },
     ];
