@@ -61,12 +61,13 @@ class App extends Component<Props> {
 
     this.server = this.getOrCreateServer();
 
-    if (this.server.getStore().getState().conf.status === undefined) {
-      if (windowIso.isSsr) {
-        windowIso.awaitPromises.push(this.initSsr());
-      } else {
-        this.init();
-      }
+    const storeState = this.server.getStore().getState();
+    const hasConfig = storeState.conf.status !== undefined;
+    const isLoggedIn = storeState.users.loggedIn !== undefined;
+    if (windowIso.isSsr && !hasConfig) {
+      windowIso.awaitPromises.push(this.initSsr());
+    } else if (!hasConfig || !isLoggedIn) {
+      this.init();
     }
   }
 
