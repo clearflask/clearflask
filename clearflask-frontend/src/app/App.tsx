@@ -64,7 +64,7 @@ class App extends Component<Props> {
     const storeState = this.server.getStore().getState();
     const hasConfig = storeState.conf.status !== undefined;
     if (windowIso.isSsr && !hasConfig) {
-      this.initSsr();
+      windowIso.awaitPromises.push(this.initSsr());
     } else {
       this.init().finally(() => {
         // Start render since we received our configuration
