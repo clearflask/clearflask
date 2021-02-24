@@ -597,7 +597,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch({ ssr: true }).then(d => d.bindConfig({
+    ownProps.server.dispatch({ ssr: true }).then(d => d.configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
       userBind: {
         skipBind: windowIso.isSsr,

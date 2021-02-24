@@ -160,7 +160,7 @@ class App extends Component<Props> {
         if (!projectId) {
           // projectId missing, meaning project is private and requires login
           try {
-            configResult = await (await this.server.dispatch()).bind({
+            configResult = await (await this.server.dispatch()).configGetAndUserBind({
               slug: this.props.slug,
               userBind: {
                 browserPushToken: subscriptionResult.token,

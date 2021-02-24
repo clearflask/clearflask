@@ -30,7 +30,7 @@ class PrivateProjectLogin extends Component<Props & ConnectProps> {
           actionTitle='Project is private'
           server={this.props.server}
           open={showLogin}
-          onLoggedInAndClose={() => this.props.server.dispatch().then(d => d.bind({
+          onLoggedInAndClose={() => this.props.server.dispatch().then(d => d.configGetAndUserBind({
             slug: this.props.server.getStore().getState().conf.conf?.slug!,
             userBind: {},
           }))}
