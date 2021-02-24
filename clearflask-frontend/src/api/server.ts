@@ -86,8 +86,10 @@ export class Server {
     try {
       var result = await store.dispatch(msg);
     } catch (response) {
-      console.log("Dispatch error: ", msg, response);
-      console.trace();
+      if (detectEnv() !== Environment.PRODUCTION) {
+        console.log("Dispatch error: ", msg, response);
+        console.trace();
+      }
       try {
         if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
           const challengeSubscriber = Object.values(challengeSubscribers)[0];

@@ -65,10 +65,12 @@ class App extends Component<Props> {
     const hasConfig = storeState.conf.status !== undefined;
     const isLoggedIn = storeState.users.loggedIn !== undefined;
     if (windowIso.isSsr && !hasConfig) {
-      windowIso.awaitPromises.push(this.initSsr());
+      this.initSsr();
     } else if (!hasConfig || !isLoggedIn) {
-    } else {
-      this.init();
+      this.init().finally(() => {
+        // Start render since we received our configuration
+        this.forceUpdate();
+      });
     }
   }
 
@@ -184,9 +186,6 @@ class App extends Component<Props> {
         }
       }
     }
-
-    // Start render since we received our configuration
-    this.forceUpdate();
 
     if (!!user) {
       // Broadcast to other tabs of successful bind

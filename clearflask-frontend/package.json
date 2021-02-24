@@ -117,6 +117,7 @@
     "redux": "4.0.5",
     "redux-promise-middleware": "6.1.2",
     "redux-thunk": "2.3.0",
+    "serve-static": "1.14.1",
     "source-map-explorer": "2.5.0",
     "superagent": "6.1.0",
     "typescript": "4.1.3",

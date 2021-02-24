@@ -99,12 +99,19 @@ class Main extends Component<Props> {
   // }
 
   render() {
+    const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     if (windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
-      return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
+      return (
+        <Router>
+          <RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />
+        </Router>);
     }
     const isProject = this.isProject();
-    const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
+    windowIso.isSsr && windowIso.setMaxAge(isProject
+      ? 60 // Note that app caches Config as well as content in SSR
+      : (24 * 60 * 60) // Landing page can be cached for a long time
+    );
     return (
       <React.StrictMode>
         <StylesProvider injectFirst generateClassName={createGenerateClassName({

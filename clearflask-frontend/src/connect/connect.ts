@@ -3,10 +3,18 @@ import fs from 'fs';
 import greenlockExpress, { glx } from 'greenlock-express';
 import httpp from 'http-proxy';
 import path from 'path';
+import serveStatic from 'serve-static';
 import connectConfig from './config';
 import GreenlockClearFlaskManager from './greenlock/greenlock-manager-clearflask';
 import httpx from './httpx';
 import reactRenderer from './renderer';
+
+const urlsSkipCache = new Set([
+  '/index.html',
+  '/service-worker.js',
+  '/sw.js',
+  '/asset-manifest.json',
+]);
 
 function createProxy() {
   const serverHttpp = httpp.createProxyServer({ xfwd: true });
@@ -34,8 +42,14 @@ function createApp(serverHttpp) {
     });
   }
 
-  serverApp.use(express.static(path.resolve(__dirname, 'public'), {
+  serverApp.use(serveStatic(path.resolve(__dirname, 'public'), {
     index: false,
+    maxAge: '7d',
+    setHeaders: (res, path, stat) => {
+      if (urlsSkipCache.has(path)) {
+        res.header('Cache-Control', 'public, max-age=0');
+      }
+    },
   }));
 
   serverApp.all('/api/*', function (req, res) {
