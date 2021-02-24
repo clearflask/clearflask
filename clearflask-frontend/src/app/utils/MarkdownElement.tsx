@@ -1,6 +1,6 @@
 // Originally from: https://raw.githubusercontent.com/mui-org/material-ui/2f6a982aa74ffa46680798089ad20ed67ed0c5ae/docs/src/modules/components/MarkdownElement.js
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify from 'dompurify';
 import marked from 'marked';
 import React, { Component } from 'react';
 import { highlight } from './prism';
