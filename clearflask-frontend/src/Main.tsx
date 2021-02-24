@@ -99,12 +99,15 @@ class Main extends Component<Props> {
   // }
 
   render() {
+    const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     if (windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
-      return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
+      return (
+        <Router>
+          <RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />
+        </Router>);
     }
     const isProject = this.isProject();
-    const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     return (
       // <React.StrictMode>
       <StylesProvider injectFirst generateClassName={createGenerateClassName({
