@@ -67,7 +67,10 @@ class App extends Component<Props> {
     if (windowIso.isSsr && !hasConfig) {
       this.initSsr();
     } else if (!hasConfig || !isLoggedIn) {
-      this.init();
+      this.init().finally(() => {
+        // Start render since we received our configuration
+        this.forceUpdate();
+      });
     }
   }
 
@@ -183,9 +186,6 @@ class App extends Component<Props> {
         }
       }
     }
-
-    // Start render since we received our configuration
-    this.forceUpdate();
 
     if (!!user) {
       // Broadcast to other tabs of successful bind
