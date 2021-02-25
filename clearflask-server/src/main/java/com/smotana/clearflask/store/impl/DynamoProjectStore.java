@@ -147,10 +147,20 @@ public class DynamoProjectStore implements ProjectStore {
     @Extern
     @Override
     public Optional<Project> getProjectBySlug(String slug, boolean useCache) {
+        Optional<String> slugAltOpt = Optional.empty();
+        if (slug.endsWith("." + configApp.domain())) {
+            slugAltOpt = Optional.of(slug.substring(0, slug.indexOf('.')));
+        }
         if (config.enableSlugCacheRead() && useCache) {
-            final String projectId = slugCache.getIfPresent(slug);
+            String projectId = slugCache.getIfPresent(slug);
             if (projectId != null) {
                 return getProject(projectId, useCache);
+            }
+            if (slugAltOpt.isPresent()) {
+                projectId = slugCache.getIfPresent(slugAltOpt.get());
+                if (projectId != null) {
+                    return getProject(projectId, useCache);
+                }
             }
         }
         Optional<String> projectIdOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
@@ -159,6 +169,14 @@ public class DynamoProjectStore implements ProjectStore {
                                 .primaryKey(Map.of("slug", slug))))))
                 .map(SlugModel::getProjectId);
         projectIdOpt.ifPresent(projectId -> slugCache.put(slug, projectId));
+        if (!projectIdOpt.isPresent() && slugAltOpt.isPresent()) {
+            projectIdOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
+                    .getItem(new GetItemSpec()
+                            .withPrimaryKey(slugSchema
+                                    .primaryKey(Map.of("slug", slugAltOpt.get()))))))
+                    .map(SlugModel::getProjectId);
+            projectIdOpt.ifPresent(projectId -> slugCache.put(slug, projectId));
+        }
         return projectIdOpt.flatMap(projectId -> getProject(projectId, useCache));
     }
 

@@ -127,7 +127,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigBindSlugResult configBindSlug(String slug) {
-        Project project = this.getProjectBySlug(slug);
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         if (!Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()
                 .getConfig()
                 .getUsers()
@@ -148,7 +149,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public UserBindResponse userBindSlug(String slug, UserBind userBind) {
-        Project project = this.getProjectBySlug(slug);
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
                 request,
                 response,
@@ -168,7 +170,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndUserBindSlugResult configAndUserBindSlug(String slug, UserBind userBind) {
-        Project project = this.getProjectBySlug(slug);
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserModel> loggedInUserOpt = userBindUtil.userBind(
                 request,
                 response,
@@ -196,20 +199,6 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 null,
                 loggedInUserOpt.map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
                         .orElse(null));
-    }
-
-    private Project getProjectBySlug(String slug) {
-        Optional<Project> projectOpt = Optional.empty();
-        if (slug.endsWith("." + configApp.domain())) {
-            projectOpt = projectStore.getProjectBySlug(slug.substring(0, slug.indexOf('.')), true);
-        }
-        if (!projectOpt.isPresent()) {
-            projectOpt = projectStore.getProjectBySlug(slug, true);
-        }
-        if (!projectOpt.isPresent()) {
-            throw new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner");
-        }
-        return projectOpt.get();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
