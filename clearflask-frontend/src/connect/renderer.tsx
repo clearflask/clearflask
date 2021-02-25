@@ -48,7 +48,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
   $('head').append(PH_STYLE_TAGS);
-  $('head').append(`<style>${PH_MUI_STYLE_TAGS}</style>`);
+  $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_ENV);
   $('body').append(PH_SCRIPT_TAGS);

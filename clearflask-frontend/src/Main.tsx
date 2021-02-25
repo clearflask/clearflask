@@ -1,7 +1,7 @@
 import loadable from '@loadable/component';
 import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { ProviderContext } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -88,16 +88,6 @@ class Main extends Component<Props> {
     }
   }
 
-  // TODO why is this unnecessary? MUI recommends pulling out the SSR generated CSS,
-  //      but it seems like it doesn't work without it.
-  //      Before re-enabling, set id="ssr-jss" in renderer.tsx
-  // componentDidMount() {
-  //   if (!windowIso.isSsr) {
-  //     const ssrJssEl = document.getElementById('ssr-jss');
-  //     ssrJssEl?.parentNode?.removeChild(ssrJssEl);
-  //   }
-  // }
-
   render() {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     if (windowIso.location.hostname === 'www.clearflask.com') {
@@ -108,14 +98,13 @@ class Main extends Component<Props> {
     const isProject = this.isProject();
     return (
       // <React.StrictMode>
-      <StylesProvider injectFirst generateClassName={createGenerateClassName({
-        seed: 'main',
-      })}>
+      <StylesProvider injectFirst>
         <MuiThemeProvider theme={theme}>
           <MuiSnackbarProvider notistackRef={notistackRef}>
             <CssBaseline />
             <ServerErrorNotifier />
             <CaptchaChallenger />
+            <RemoveSsrCss />
             <div style={{
               minHeight: vh(100),
               display: 'flex',
@@ -204,6 +193,16 @@ class Main extends Component<Props> {
     }
   }
 }
+
+const RemoveSsrCss = () => {
+  React.useEffect(() => {
+    // useEffect is called after screen is committed, as oppose to componentDidMount
+    // The CSR CSS should already be present and SSR CSS can be safely removed
+    const ssrJssEl = document.getElementById('ssr-jss');
+    ssrJssEl?.parentNode?.removeChild(ssrJssEl);
+  }, []);
+  return null;
+};
 
 const SetMaxAge = (props: { val: number }) => {
   windowIso.isSsr && windowIso.setMaxAge(props.val);
