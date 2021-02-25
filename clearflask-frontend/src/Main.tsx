@@ -1,5 +1,5 @@
 import loadable from '@loadable/component';
-import { createMuiTheme, Theme } from '@material-ui/core';
+import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { ProviderContext } from 'notistack';
@@ -108,10 +108,6 @@ class Main extends Component<Props> {
         </Router>);
     }
     const isProject = this.isProject();
-    windowIso.isSsr && windowIso.setMaxAge(isProject
-      ? 60 // Note that app caches Config as well as content in SSR
-      : (24 * 60 * 60) // Landing page can be cached for a long time
-    );
     return (
       // <React.StrictMode>
       <StylesProvider injectFirst generateClassName={createGenerateClassName({
@@ -148,10 +144,13 @@ class Main extends Component<Props> {
                 <Switch>
                   {isProject ? ([(
                     <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                      <PostStatus
-                        {...props}
-                        postId={props.match.params['postId'] || ''}
-                      />
+                      <React.Fragment>
+                        <SetMaxAge val={24 * 60 * 60} />
+                        <PostStatus
+                          {...props}
+                          postId={props.match.params['postId'] || ''}
+                        />
+                      </React.Fragment>
                     )} />
                   ), (
                     <Route key='app' path="/" render={props => (
@@ -160,7 +159,10 @@ class Main extends Component<Props> {
                   )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
-                        <Dashboard {...props} />
+                        <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
+                        <NoSsr>
+                          <Dashboard {...props} />
+                        </NoSsr>
                         <IntercomWrapperMain />
                         <HotjarWrapperMain />
                       </Provider>
@@ -168,12 +170,14 @@ class Main extends Component<Props> {
                   ), (
                     <Route key='invoice' path="/invoice/:invoiceId" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
+                        <SetMaxAge val={0} />
                         <Invoice invoiceId={props.match.params['invoiceId']} />
                       </Provider>
                     )} />
                   ), (
                     <Route key='site' render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
+                        <SetMaxAge val={24 * 60 * 60} />
                         <Site {...props} />
                         <IntercomWrapperMain />
                         <HotjarWrapperMain />
@@ -202,5 +206,10 @@ class Main extends Component<Props> {
     }
   }
 }
+
+const SetMaxAge = (props: { val: number }) => {
+  windowIso.isSsr && windowIso.setMaxAge(props.maxAge);
+  return null;
+};
 
 export default Main;

@@ -16,7 +16,9 @@ interface ConnectProps {
 }
 class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if (!this.props.userMe) {
+    if (windowIso.isSsr) {
+      return null; // prevent a flash of "Failed to log in"
+    } else if (!this.props.userMe) {
       return (<ErrorPage msg='Failed to log in' variant='error' />);
     } else {
       !windowIso.isSsr && setTimeout(() => !windowIso.isSsr && windowIso.self.close(), 500);
