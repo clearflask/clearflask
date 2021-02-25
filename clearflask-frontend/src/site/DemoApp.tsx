@@ -45,7 +45,7 @@ export async function getProject(
   await saveEdits();
   const mocker = DataMock.get(projectId);
   mock && await mock(mocker, editor.getConfig());
-  await server.dispatch().then(d => d.configGetAndUserBind({
+  await server.dispatch().then(d => d.configAndUserBindSlug({
     slug,
     userBind: {},
   }));

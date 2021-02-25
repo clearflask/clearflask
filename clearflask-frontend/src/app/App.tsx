@@ -86,11 +86,8 @@ class App extends Component<Props> {
   }
 
   async initSsr() {
-    await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
+    await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configBindSlug({
       slug: this.props.slug,
-      userBind: {
-        skipBind: windowIso.isSsr,
-      },
     });
   }
 
@@ -134,59 +131,45 @@ class App extends Component<Props> {
         }
       }
     }
-
-    var configResult = await (await this.server.dispatch()).configGetAndUserBind({
-      slug: this.props.slug,
-      userBind: {
-        ssoToken: token || undefined,
-        authToken: authToken || undefined,
-        oauthToken: oauthToken || undefined,
-      },
-    });
-    var user = configResult.user;
-
-    // If no user is logged in, check if Web Push is enabled
-    // It's possible user cleared cookies and we can log in using the Web Push result
-    // We didn't try it in the first call since getting permission may take time
-    // and this is a corner case
-    const projectId = configResult.config?.config.projectId;
-    const loggedIn = !!configResult?.user;
-    if (!loggedIn) {
-      var subscriptionResult;
-      if (WebNotification.getInstance().getStatus() === WebNotificationStatus.Granted) {
-        subscriptionResult = await WebNotification.getInstance().getPermission();
-      }
-
-      if (subscriptionResult?.type === 'success' && !!subscriptionResult.token) {
-        if (!projectId) {
-          // projectId missing, meaning project is private and requires login
-          try {
-            configResult = await (await this.server.dispatch()).configGetAndUserBind({
-              slug: this.props.slug,
-              userBind: {
-                browserPushToken: subscriptionResult.token,
-              },
-            });
-            user = configResult.user;
-          } catch (err) {
-            if (err?.status === 404) {
-              // Continue
-            } else {
-              throw err;
-            }
-          }
-        } else {
-          user = (await (await this.server.dispatch()).userBind({
-            projectId: projectId,
-            userBind: {
-              browserPushToken: subscriptionResult.token,
-            },
-          })).user;
-        }
+    // Used for logging in via web notification permission
+    var browserPushToken;
+    if (WebNotification.getInstance().getStatus() === WebNotificationStatus.Granted) {
+      const subscriptionResult = await WebNotification.getInstance().getPermission();
+      if (subscriptionResult?.type === 'success') {
+        browserPushToken = subscriptionResult.token;
       }
     }
 
-    if (!!user) {
+    var result;
+    if (this.server.getStore().getState().conf.status !== Status.FULFILLED) {
+      try {
+        result = await (await this.server.dispatch()).configAndUserBindSlug({
+          slug: this.props.slug,
+          userBind: {
+            ssoToken: token || undefined,
+            authToken: authToken || undefined,
+            oauthToken: oauthToken || undefined,
+            browserPushToken,
+          },
+        });
+      } catch (err) {
+        if (err?.status !== 404) {
+          throw err;
+        }
+      }
+    } else {
+      result = await (await this.server.dispatch()).userBindSlug({
+        slug: this.props.slug,
+        userBind: {
+          ssoToken: token || undefined,
+          authToken: authToken || undefined,
+          oauthToken: oauthToken || undefined,
+          browserPushToken,
+        },
+      });
+    }
+
+    if (!!result?.user) {
       // Broadcast to other tabs of successful bind
       localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
       localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);

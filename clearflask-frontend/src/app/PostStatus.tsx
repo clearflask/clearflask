@@ -81,13 +81,18 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   async fetchData(props: Props, serverPromise: Promise<Server>): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
     const server = await serverPromise;
     const subscriptionResult = await WebNotification.getInstance().getPermission();
-    const configAndUserBind = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configGetAndUserBind({
-      slug: windowIso.location.hostname,
-      userBind: {
-        skipBind: windowIso.isSsr,
-        browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-          ? subscriptionResult.token : undefined,
-      },
+    const configAndUserBind = await server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => {
+      if (windowIso.isSsr) {
+        return d.configBindSlug({ slug: windowIso.location.hostname });
+      } else {
+        return d.configAndUserBindSlug({
+          slug: windowIso.location.hostname,
+          userBind: {
+            browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+              ? subscriptionResult.token : undefined,
+          },
+        });
+      }
     });
 
     if (!configAndUserBind.config) {
@@ -99,7 +104,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       ideaId: props.postId,
     });
 
-    return [configAndUserBind.config, configAndUserBind.user, post];
+    return [configAndUserBind.config, configAndUserBind['user'], post];
   }
 
   render() {

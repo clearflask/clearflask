@@ -518,22 +518,27 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
-  async configGet(request: Omit<Client.ConfigGetAndUserBindRequest, 'userBind'>): Promise<Omit<Client.ConfigAndBindResult, 'user'>> {
+  async configBindSlug(request: Client.ConfigBindSlugRequest): Promise<Client.ConfigBindSlugResult> {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
     return this.returnLater({
       config: project.config,
     });
   }
-  async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
+  async userBindSlug(request: Client.UserBindSlugRequest): Promise<Client.UserBindResponse> {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
-
-    const configGet = await this.configGet(request);
-    const userBind = await this.userBind({
+    return this.userBind({
       projectId: project.config.config.projectId,
       ...request,
     });
+  }
+  async configAndUserBindSlug(request: Client.ConfigAndUserBindSlugRequest): Promise<Client.ConfigAndUserBindSlugResult> {
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
+
+    const configGet = await this.configBindSlug(request);
+    const userBind = await this.userBindSlug(request);
 
     return this.returnLater({
       config: configGet.config,

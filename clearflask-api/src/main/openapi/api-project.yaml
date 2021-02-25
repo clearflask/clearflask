@@ -895,9 +895,9 @@ components:
         version:
           type: string
 
-/slug/{slug}/config:
+/slug/{slug}/bind/configAndUser:
   post:
-    operationId: configGetAndUserBind
+    operationId: configAndUserBindSlug
     tags: [Project]
     parameters:
     - name: slug
@@ -916,13 +916,61 @@ components:
         content:
           application/json:
             schema:
-              title: ConfigAndBindResult
+              title: ConfigAndUserBindSlugResult
               type: object
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 onboardBefore: # For private projects, you have to first onboard before receiving config
                   $ref: 'api-project.yaml#/components/schemas/onboarding'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/slug/{slug}/bind/config:
+  post:
+    operationId: configBindSlug
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigBindSlugResult
+              type: object
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore:
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+/slug/{slug}/bind/user:
+  post:
+    operationId: userBindSlug
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: UserBindSlugResult
+              type: object
+              properties:
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:
