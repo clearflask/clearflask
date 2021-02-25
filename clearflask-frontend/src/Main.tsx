@@ -206,7 +206,7 @@ class Main extends Component<Props> {
 }
 
 const SetMaxAge = (props: { val: number }) => {
-  windowIso.isSsr && windowIso.setMaxAge(props.maxAge);
+  windowIso.isSsr && windowIso.setMaxAge(props.val);
   return null;
 };
 
