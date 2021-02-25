@@ -14,6 +14,7 @@ export function RouteWithStatus(props: { httpCode: number, children }) {
   );
 }
 
+// React-Router Redirect component (within domain)
 export function RedirectIso(props: { to: string, httpCode?: number }) {
   return (
     <Route
@@ -26,4 +27,14 @@ export function RedirectIso(props: { to: string, httpCode?: number }) {
       }}
     />
   );
+}
+
+// Redirect now (supports cross domain)
+export function redirectIso(url: string, httpCode: number = 302) {
+  if (windowIso.isSsr) {
+    windowIso.staticRouterContext.statusCode = httpCode;
+    windowIso.staticRouterContext.url = url;
+  } else {
+    windowIso.open(url);
+  }
 }

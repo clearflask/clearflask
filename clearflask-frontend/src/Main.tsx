@@ -17,7 +17,7 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
-import { RedirectIso } from './common/util/routerUtil';
+import { redirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import windowIso from './common/windowIso';
@@ -102,10 +102,8 @@ class Main extends Component<Props> {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
     if (windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
-      return (
-        <Router>
-          <RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />
-        </Router>);
+      redirectIso(windowIso.location.origin.replace(`www.`, ''));
+      return null;
     }
     const isProject = this.isProject();
     return (

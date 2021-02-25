@@ -8,5 +8,9 @@ export function htmlDataRetrieve(id: string): any {
   if (windowIso.isSsr) return undefined;
   const el = windowIso.document.getElementById(id);
   if (!el) return undefined;
-  return JSON.parse(el.innerHTML);
+  try {
+    return JSON.parse(el.innerHTML);
+  } catch (e) {
+    return undefined;
+  }
 }
