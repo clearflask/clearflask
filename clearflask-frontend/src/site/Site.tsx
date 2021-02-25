@@ -1,6 +1,6 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { AppBar, Button, Container, Divider, Drawer, Grid, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar, Zoom } from '@material-ui/core';
+import { AppBar, Button, Container, Divider, Drawer, Grid, Grow, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
@@ -51,6 +51,7 @@ const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingC
 const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomize, fallback: (<Loading />) });
 const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagement, fallback: (<Loading />) });
 const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagementHero, fallback: (<Loading />) });
+const LandingCustomizeHero = loadable(() => import(/* webpackChunkName: "LandingCustomizeHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomizeHero, fallback: (<Loading />) });
 const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
 const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
 const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingHero, fallback: (<Loading />) });
@@ -368,6 +369,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <LandingCollectFeedbackHero />
               <LandingPrioritizationHero />
               <LandingEngagementHero />
+              <LandingCustomizeHero />
               <LandingSales />
             </Route>
 
@@ -504,7 +506,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
       const lastEventId = ++this.lastEventId;
       setTimeout(() => lastEventId === this.lastEventId
         && !this.state.hover
-        && this.setState({ open: false }), 1);
+        && this.setState({ open: false }), 10);
     };
     return (
       <div className={this.props.classes.dropdownContainer}>
@@ -528,11 +530,11 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
           open={!!this.state.open}
           onClose={() => {
             ++this.lastEventId;
-            this.setState({ open: false })
+            if (!this.state.open) this.setState({ open: false });
           }}
           onMouseOver={onMouseOverPopper}
           onMouseOut={onMouseOut}
-          transitionCmpt={Zoom}
+          transitionCmpt={Grow}
           transitionProps={{
             style: { transformOrigin: '50% 0 0' },
             timeout: this.props.theme.transitions.duration.shortest,

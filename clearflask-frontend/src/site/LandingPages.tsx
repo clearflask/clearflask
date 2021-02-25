@@ -823,8 +823,8 @@ export function LandingCustomizeHero(props: { isHero?: boolean }) {
       mirror
       imageStyle={{ paddingBottom: 0, maxWidth: 700 }}
       variant={props.isHero ? 'hero' : 'heading-main'}
-      description='Our product is based on customizability to fit your specific needs. We are happy to meet your needs if a specific use case is not yet covered.'
-      alignItems='flex-start'
+      description='Our product is highly customizable out of the box to fit your specific needs. If a specific use-case is not covered, we would love to hear from you.'
+      alignItems={props.isHero ? 'flex-start' : 'center'}
       {...(props.isHero ? {} : {
         buttonTitle: 'Learn more',
         buttonLink: '/product/customize',
@@ -1075,7 +1075,7 @@ export function LandingCustomizeWorkflow() {
         type='column'
         variant='heading'
         title='Match your product Workflow'
-        description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can have different behavior and accessibility by users and moderators.'
+        description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
         template={templater => {
           templater.workflowFeatures(templater.demoCategory(), false, false);
           templater.styleWhite();
@@ -1192,7 +1192,7 @@ export function LandingFeatureRequestTracking() {
         title='Internal feedback'
         description=''
         buttonTitle='See how'
-        buttonLink='/solutions/interal-feedback'
+        buttonLink='/solutions/internal-feedback'
       />
     </React.Fragment>
   );
@@ -1599,7 +1599,6 @@ export function LandingSales() {
       buttonTitle='Get in touch'
       buttonLink='/contact/sales'
       image={SalesImg}
-      mirror
     />
   );
 }
