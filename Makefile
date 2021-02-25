@@ -38,7 +38,16 @@ npm-run-dev-connect:
 _npm-run-dev-connect: nginx-run __npm-run-dev-connect
 __npm-run-dev-connect:
 	make connect-extract
-	cd `pwd`/clearflask-frontend/target/ROOT && DEBUG=express:query NODE_ENV=production ENV=development ./start.sh
+	docker run --rm --name clearflask-connect \
+	-p 80:3000 \
+	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
+	-w /srv/clearflask-connect \
+	--add-host=localhost.com:172.17.0.1 \
+	--add-host=acme.staging.localhost:172.17.0.1 \
+	-e DEBUG=express:query \
+	-e ENV=development \
+	node:14.15.1-slim \
+	./start.sh
 
 connect-run-dev:
 	make connect-extract
@@ -214,6 +223,7 @@ deploy-cloudfront-invalidate-all:
 	  ssl_certificate_key /etc/nginx/conf.d/key.pem;
 	  location / {
 	     proxy_pass http://host.docker.internal:3000;
+	     proxy_set_header Host \$$host;
 	  }
 	}
 	EOF

@@ -133,7 +133,7 @@ if (process.env.ENV === 'production' || process.env.ENV === 'test') {
       console.log('Master Started');
     });
 } else {
-  createApp(createProxy()).listen(80, "0.0.0.0", function () {
-    console.info("App on", 80);
+  createApp(createProxy()).listen(3000, "0.0.0.0", function () {
+    console.info("App on", 3000);
   });
 }

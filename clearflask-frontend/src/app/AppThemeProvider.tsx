@@ -1,5 +1,5 @@
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
-import { createGenerateClassName, MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import { ComponentsProps } from '@material-ui/core/styles/props';
 import React, { Component } from 'react';
@@ -125,9 +125,7 @@ class AppThemeProvider extends Component<Props> {
     }
 
     return (
-      <StylesProvider injectFirst generateClassName={createGenerateClassName({
-        seed: this.props.seed,
-      })}>
+      <StylesProvider injectFirst>
         <MuiThemeProvider theme={theme}>
           {!this.props.supressCssBaseline && (<CssBaseline />)}
           <div style={{
