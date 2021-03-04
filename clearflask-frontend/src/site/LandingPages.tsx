@@ -31,6 +31,7 @@ import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
 import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import WidgetIcon from '@material-ui/icons/Widgets';
+import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { useRef } from 'react';
 import { Provider } from 'react-redux';
@@ -40,10 +41,14 @@ import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
+import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
+import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HeroImg from '../../public/img/landing/hero.svg';
+import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
@@ -834,87 +839,161 @@ export function LandingCustomizeHero(props: { isHero?: boolean }) {
 }
 
 export function LandingCustomize() {
+  const classes = useStyles();
   return (
     <React.Fragment>
       <LandingCustomizeHero isHero />
       <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
-        <LandingCustomizeContent />
-        <LandingCustomizeWorkflow />
-        <LandingCustomizeLayout />
+        <Container maxWidth='xs'>
+          <Block
+            type='column'
+            variant='heading'
+            title='Define Custom content'
+            description='Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators.'
+          />
+          <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
+            <div className={classes.pointSmall}>
+              <FeedbackIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <div>User feedback</div>
+            </div>
+            <div className={classes.pointSmall}>
+              <BlogIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <div>Blog entry</div>
+            </div>
+            <div className={classes.pointSmall}>
+              <QuestionIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <div>Question &amp; Answer</div>
+            </div>
+            <div className={classes.pointSmall}>
+              <KnowledgeIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <div>Knowledge Base article</div>
+            </div>
+            <div className={classes.pointSmall}>
+              <CareersIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <div>Job postings</div>
+            </div>
+            <div className={classes.pointSmall}>
+              <MoreIcon fontSize='inherit' className={classes.pointIconSmall} />
+            </div>
+          </div>
+        </Container>
+        <Container maxWidth='xs'>
+          <Demo
+            type='column'
+            variant='heading'
+            title='Match your product Workflow'
+            description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
+            template={templater => {
+              templater.workflowFeatures(templater.demoCategory(), false, false);
+              templater.styleWhite();
+            }}
+            demoFixedHeight={400}
+            demoPreventInteraction
+            demo={project => (
+              <WorkflowPreview
+                editor={project.editor}
+                categoryIndex={0}
+                isVertical
+                hideCorner
+                height='100%'
+              />
+            )}
+          />
+        </Container>
+        <Container maxWidth='xs'>
+          <Block
+            title='Customize each page'
+            description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid template engine.'
+            imageStyleOuter={{ padding: 'unset' }}
+            image={HtmlImg}
+            type='column'
+            variant='heading'
+          />
+        </Container>
         {/* {this.renderCustomizeOther()} */}
       </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg'>
+        <Container maxWidth='xs'>
+          <Demo
+            title='Prioritization'
+            description='Choose between voting, emoji expressions and crowd-funding for each of your content types.'
+            type='column'
+            variant='heading'
+            alignItems='center'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('all')}
+            mock={mocker => mocker.demoPrioritization()}
+            settings={{
+              demoFlashPostVotingControls: true,
+              demoBlurryShadow: true,
+              demoDisablePostOpen: true,
+            }}
+          />
+        </Container>
+        <Container maxWidth='xs'>
+          <Block
+            title='Tagging'
+            description='Organize content into defined set of tags. Create tag groups and define rules how tags can be used.'
+            imageStyleOuter={{ padding: 'unset' }}
+            image={DemoTaggingImg}
+            type='column'
+            variant='heading'
+          />
+        </Container>
+        <Container maxWidth='xs'>
+          <Demo
+            type='column'
+            variant='heading'
+            title='Look and feel'
+            description='Match your product style with a custom palette, typography and branding.'
+            initialSubPath='/embed/demo'
+            demoWrap='browser-dark'
+            demoPreventInteraction
+            template={templater => {
+              templater.demoPrioritization('none');
+              templater.styleDark();
+              templater.setFontFamily('serif');
+            }}
+            mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={180}
+            demoFixedWidth={250}
+            containerPortal
+          />
+        </Container>
+      </HorizontalPanels>
       <Block
-        title='Define custom content'
-        description=''
-        mirror
+        title='Page elements'
+        description='Each page can consist of several display elements. Choose between simple horizontal panels, Explorer or Board to present your content.'
       />
+      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg'>
+        <Block
+          title='Explorer'
+          description="Interactive vertical panel of content with a 'Create' and/or 'Search' corner. The Create corner allows users to add content while viewing similar content to minimize duplicates."
+          image={DemoExplorerImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          type='column'
+        />
+        <Block
+          title='Board'
+          description='Series of vertical panels allowing a Kanban style of content display. Typically used for a Roadmap view or state progression.'
+          image={DemoRoadmapImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          type='column'
+        />
+        {/* <Block
+          title='Vertical Panels'
+          description=''
+          image={DemoVerticalPanelImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          type='column'
+        /> */}
+      </HorizontalPanels>
       <Block
-        title='Prioritization'
-        description=''
-        mirror
-      />
-      <LandingPrioritizationTypes />
-      <Block
-        title='Workflow'
-        description=''
-        mirror
-      />
-      <Block
-        title='Tagging'
-        description=''
-        mirror
-      />
-      <Block
-        title='Pages and Menu'
-        description='Panel Board Explorer'
-        mirror
-      />
-      <Block
-        title='Page layout'
-        description='Panel Board Explorer'
-        mirror
-      />
-      <Block
-        title='Look and feel, style'
-        description=''
+        title='And a lot more...'
+        description="Sign up to see all the customizations. Remember if you don't find what you're looking for, we are here to help."
         mirror
       />
     </React.Fragment>
-  );
-}
-
-export function LandingCustomizeContent() {
-  const classes = useStyles();
-  return (
-    <Container maxWidth='xs'>
-      <Block
-        type='column'
-        variant='heading'
-        title='Define Custom content'
-        description='Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators.'
-      />
-      <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
-        <div className={classes.pointSmall}>
-          <FeedbackIcon fontSize='inherit' className={classes.pointIconSmall} />
-          <div>User feedback</div>
-        </div>
-        <div className={classes.pointSmall}>
-          <BlogIcon fontSize='inherit' className={classes.pointIconSmall} />
-          <div>Blog entry</div>
-        </div>
-        <div className={classes.pointSmall}>
-          <QuestionIcon fontSize='inherit' className={classes.pointIconSmall} />
-          <div>Question &amp; Answer</div>
-        </div>
-        <div className={classes.pointSmall}>
-          <KnowledgeIcon fontSize='inherit' className={classes.pointIconSmall} />
-          <div>Knowledge Base article</div>
-        </div>
-        <div className={classes.pointSmall}>
-          <MoreIcon fontSize='inherit' className={classes.pointIconSmall} />
-        </div>
-      </div>
-    </Container>
   );
 }
 
@@ -1068,58 +1147,6 @@ export function LandingIntegrations() {
   );
 }
 
-export function LandingCustomizeWorkflow() {
-  return (
-    <Container maxWidth='xs'>
-      <Demo
-        type='column'
-        variant='heading'
-        title='Match your product Workflow'
-        description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
-        template={templater => {
-          templater.workflowFeatures(templater.demoCategory(), false, false);
-          templater.styleWhite();
-        }}
-        demoFixedHeight={400}
-        demoPreventInteraction
-        demo={project => (
-          <WorkflowPreview
-            editor={project.editor}
-            categoryIndex={0}
-            isVertical
-            hideCorner
-            height='100%'
-          />
-        )}
-      />
-    </Container>
-  );
-}
-
-export function LandingCustomizeLayout() {
-  return (
-    <Container maxWidth='xs'>
-      <Demo
-        type='column'
-        variant='heading'
-        title='Customize each page'
-        description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid template engine.'
-        initialSubPath='/embed/demo'
-        demoWrap='browser-dark'
-        demoPreventInteraction
-        template={templater => {
-          templater.demoPrioritization('none');
-          templater.styleDark();
-        }}
-        mock={mocker => mocker.demoPrioritization()}
-        demoFixedHeight={180}
-        demoFixedWidth={250}
-        containerPortal
-      />
-    </Container>
-  );
-}
-
 export function LandingCustomizeOther() {
   const onboardingDemoRef = useRef(null);
   return (
@@ -1170,16 +1197,17 @@ export function LandingFeatureRequestTracking() {
         />
         <BlockContent
           title='Just talk'
-          description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind a product.'
+          description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind the product.'
         />
       </HorizontalPanels>
       <Block
         title='Close the loop with customers'
+        description='The important part of collecting feedback is responding back to your customer ideas.'
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
         <BlockContent
           title='Keep users engaged'
-          description=''
+          description="An update to customer's feedback shows good customer relations and may even bring back churned customers."
         />
         <BlockContent
           title='Visualize with a Roadmap'
@@ -1190,7 +1218,7 @@ export function LandingFeatureRequestTracking() {
       </HorizontalPanels>
       <Block
         title='Internal feedback'
-        description=''
+        description='Collect feedback from a closed-group of people within your organization or customer-base'
         buttonTitle='See how'
         buttonLink='/solutions/internal-feedback'
       />

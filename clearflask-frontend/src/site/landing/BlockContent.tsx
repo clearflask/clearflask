@@ -18,7 +18,7 @@ const styles = (theme: Theme) => createStyles({
   },
   icon: {
     marginBottom: theme.spacing(2),
-    marginLeft: 'auto',
+    // marginLeft: 'auto',
     marginRight: 'auto',
   },
   button: {

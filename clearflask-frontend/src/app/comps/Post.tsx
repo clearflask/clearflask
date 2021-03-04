@@ -1131,7 +1131,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (variant === 'page'
       || !this.props.expandable
       || !!this.props.onClickPost
-      || !this.props.idea) return (
+      || !this.props.idea
+      || !!this.props.settings.demoDisablePostOpen) return (
         <div
           className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.expandable)}
           onClick={this.props.onClickPost ? () => this.props.onClickPost && this.props.idea

@@ -77,6 +77,7 @@ export interface Props extends BlockContentProps {
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
   imageStyle?: React.CSSProperties;
+  imageStyleOuter?: React.CSSProperties;
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
@@ -98,6 +99,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         aspectRatio={this.props.image?.aspectRatio}
         width={!this.props.image?.aspectRatio ? '100%' : undefined}
         style={this.props.imageStyle}
+        styleOuter={this.props.imageStyleOuter}
       />
     );
 

@@ -280,7 +280,7 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
 export const cssBlurry = {
   blurry: {
     color: 'transparent',
-    textShadow: '0px 0px 6px rgba(0,0,0,0.8)',
+    textShadow: '3px 0px 6px rgba(0,0,0,0.8)',
   }
 };
 interface updateSettingsAction {
@@ -318,6 +318,7 @@ export interface StateSettings {
   }>;
   demoDisableExplorerExpanded?: boolean;
   demoScrollY?: boolean;
+  demoDisablePostOpen?: boolean;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {
