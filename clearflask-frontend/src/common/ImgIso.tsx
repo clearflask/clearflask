@@ -8,6 +8,7 @@ const styles = (theme: Theme) => createStyles({
     position: 'relative',
     height: 0,
     overflow: 'hidden',
+    margin: 'auto',
   },
   imageAspectRatio: {
     position: 'absolute',
@@ -24,14 +25,16 @@ export interface Props {
   src: string;
   height?: number | string;
   width?: number | string;
-  maxHeight?: number | string;
-  maxWidth?: number | string;
+  maxHeight?: number;
+  maxWidth?: number;
   styleOuter?: React.CSSProperties;
   style?: React.CSSProperties;
   aspectRatio?: number;
+  scale?: number;
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    const scale = this.props.scale || 1;
     var img = (
       <img
         alt={this.props.alt}
@@ -47,14 +50,16 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
         className={this.props.className}
         style={{
           ...this.props.styleOuter,
-          maxWidth: this.props.maxWidth,
-          maxHeight: this.props.maxHeight,
         }}
       >
         <div
           className={this.props.classes.container}
           style={{
-            paddingBottom: `${100 / this.props.aspectRatio}%`,
+            paddingBottom: !!this.props.maxHeight
+              ? `min(${this.props.maxHeight * scale}px, ${100 / this.props.aspectRatio}%)`
+              : `${100 / this.props.aspectRatio}%`,
+            maxWidth: this.props.maxWidth ? this.props.maxWidth * scale : undefined,
+            maxHeight: this.props.maxHeight ? this.props.maxHeight * scale : undefined,
           }}
         >
           {img}

@@ -139,27 +139,26 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.board) {
         const board = this.props.page.board;
         var panels: any = board.panels.map((panel, panelIndex) => (
-          <div key={panelIndex} className={this.props.classes.boardPanel}>
-            <PanelPost
-              key={getSearchKey(panel.search)}
-              maxHeight={vh(80)}
-              direction={Direction.Vertical}
-              panel={panel}
-              server={this.props.server}
-              displayDefaults={{
-                titleTruncateLines: 1,
-                descriptionTruncateLines: 0,
-                showCommentCount: false,
-                showCategoryName: false,
-                showCreated: false,
-                showAuthor: false,
-                showStatus: false,
-                showTags: false,
-                showVoting: false,
-                showFunding: false,
-                showExpression: false,
-              }} />
-          </div>
+          <PanelPost
+            key={`${panelIndex}-${getSearchKey(panel.search)}`}
+            className={this.props.classes.boardPanel}
+            maxHeight={vh(80)}
+            direction={Direction.Vertical}
+            panel={panel}
+            server={this.props.server}
+            displayDefaults={{
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 0,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            }} />
         ));
         boardCmpt = (
           <div className={this.props.classes.board}>

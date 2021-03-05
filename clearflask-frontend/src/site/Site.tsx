@@ -207,7 +207,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
-          { type: 'button', link: '/product/collect', title: 'Ask', icon: CollectIcon },
+          { type: 'button', link: '/product/ask', title: 'Ask', icon: CollectIcon },
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/activate', title: 'Activate', icon: ActivateIcon },
           { type: 'divider' },
@@ -373,7 +373,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <LandingSales />
             </Route>
 
-            <Route exact path='/product/collect'>
+            <Route exact path='/product/ask'>
               <SetTitle title='Collect' />
               <LandingCollectFeedback />
             </Route>

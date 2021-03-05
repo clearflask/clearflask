@@ -4,20 +4,25 @@ import { Container, IconButton, Table, TableBody, TableCell, TableHead, TableRow
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
+import BuildIcon from '@material-ui/icons/Build';
 import ContentDeliveryIcon from '@material-ui/icons/Cached';
 import ApiIcon from '@material-ui/icons/Code';
 import BlogIcon from '@material-ui/icons/Description';
 import ClientIcon from '@material-ui/icons/Devices';
 import ServerIcon from '@material-ui/icons/Dns';
+import LightbulbIcon from '@material-ui/icons/EmojiObjectsOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import BackupIcon from '@material-ui/icons/FileCopy';
+import ForumIcon from '@material-ui/icons/Forum';
+import EngageIcon from '@material-ui/icons/Hearing';
 import KnowledgeIcon from '@material-ui/icons/Help';
 import EncryptionIcon from '@material-ui/icons/Https';
 import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
+import UpcomingFeaturesIcon from '@material-ui/icons/NewReleasesOutlined';
 import NotificationIcon from '@material-ui/icons/Notifications';
 import CommunityIcon from '@material-ui/icons/People';
 import QuestionIcon from '@material-ui/icons/QuestionAnswer';
@@ -30,18 +35,21 @@ import StorageIcon from '@material-ui/icons/Storage';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
 import PrivacyIcon from '@material-ui/icons/VisibilityOff';
+import TransparentIcon from '@material-ui/icons/VisibilityOutlined';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
 import { Provider } from 'react-redux';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
+import CentralizeImg from '../../public/img/landing/centralize.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
+import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
-import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notification.png';
+import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
@@ -54,6 +62,7 @@ import IdeasImg from '../../public/img/landing/ideas.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
+import LoopImg from '../../public/img/landing/loop.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
 import ValueImg from '../../public/img/landing/value.svg';
@@ -409,7 +418,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
       image={ListenImg}
       imageLocation='above'
       displayAlign='flex-start'
-      demoWrap='browser'
+      // demoWrap='browser'
       demoFixedHeight={350}
       initialSubPath='/embed/demo'
       template={templater => templater.demoExplorer({
@@ -440,7 +449,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
       }}
       {...(props.isHero ? {} : {
         buttonTitle: 'Learn more',
-        buttonLink: '/product/collect',
+        buttonLink: '/product/ask',
       })}
     />
   );
@@ -546,7 +555,7 @@ export function LandingPrioritizationHero(props: { isHero?: boolean }) {
       description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
       mirror
       alignItems='center'
-      demoWrap='browser'
+      // demoWrap='browser'
       demoWrapPadding='40px 40px 40px 20px'
       image={ValueImg}
       imageLocation='above'
@@ -565,65 +574,13 @@ export function LandingPrioritizationHero(props: { isHero?: boolean }) {
 }
 
 export function LandingPrioritization() {
-  const classes = useStyles();
   return (
     <React.Fragment>
       <LandingPrioritizationHero isHero />
       <LandingPrioritizationTypes />
       <Block
-        // variant='content'
         title='Give credits based on customer value'
         description='Decide which customers deserve your attention. Typically credits are issued based on monetary contribution and can be automatically issued with our API.'
-        alignItems='center'
-        demo={(
-          <div className={classes.pointsContainer}>
-            <div className={classes.point}>
-              <PaymentIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Payment provider
-                  &nbsp;
-                    <PostStatusIframe
-                    postId='payment-providers-integration-bgu'
-                    height={14}
-                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
-                  />
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Stripe, Apple Store, Play Store
-                  </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <DonationIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Donation Framework
-                  &nbsp;
-                    <PostStatusIframe
-                    postId='donation-frameworks-integration-hvn'
-                    height={14}
-                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
-                  />
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Patreon, OpenCollective
-                  </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <ApiIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Custom source
-                  </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Integrate via our API
-                  </Typography>
-              </div>
-            </div>
-          </div>
-        )}
       />
       <Block
         title="Gauge users's reactions to features"
@@ -763,24 +720,7 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
       }}
       mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
         .then(() => mocker.mockLoggedIn())}
-      demo={project => (
-        <Provider store={project.server.getStore()}>
-          <AppThemeProvider
-            seed='demo-community'
-            isInsideContainer
-          >
-            <CommentList
-              server={project.server}
-              ideaId='ideaId'
-              expectedCommentCount={1}
-              logIn={() => Promise.resolve()}
-              newCommentsAllowed
-              loggedInUser={project.server.getStore().getState().users.loggedIn.user}
-              onAuthorClick={(c, u) => { console.log("AHA clicked", c, u) }}
-            />
-          </AppThemeProvider>
-        </Provider>
-      )}
+      demo={LandingCommentListDemo}
       {...(props.isHero ? {} : {
         buttonTitle: 'Learn more',
         buttonLink: '/product/activate',
@@ -788,6 +728,28 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
     />
   );
 }
+
+function LandingCommentListDemo(project) {
+  return (
+    <Provider store={project.server.getStore()}>
+      <AppThemeProvider
+        seed='demo-community'
+        isInsideContainer
+      >
+        <CommentList
+          server={project.server}
+          ideaId='ideaId'
+          expectedCommentCount={1}
+          logIn={() => Promise.resolve()}
+          newCommentsAllowed
+          loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+          onAuthorClick={(c, u) => { console.log("AHA clicked", c, u) }}
+        />
+      </AppThemeProvider>
+    </Provider>
+  );
+}
+
 
 export function LandingEngagementRoadmap() {
   return (
@@ -817,6 +779,7 @@ export function LandingEngagementRoadmap() {
       ])}
       settings={{
         demoBlurryShadow: true,
+        demoDisablePostOpen: true,
       }}
       controls={project => (<RoadmapControls templater={project.templater} />)}
     />
@@ -1237,22 +1200,30 @@ export function LandingFeatureRequestTracking() {
       <Block
         title='Centralize all your feature requests'
         description='A dedicated portal for users to share and discuss new and upcoming product features. Easily collect feedback on-behalf of your users arriving from other channels.'
+        image={CentralizeImg}
+        alignItems='center'
       />
       <Block
         title='Prioritize features'
         description='Give customers a voice to tell you the importance of a particular feature.'
+        image={ValueImg}
+        imageStyleOuter={{ paddingBottom: 'unset' }}
+        alignItems='flex-start'
         mirror
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
+          icon={(<LightbulbIcon />)}
           title='Idea validation'
           description='Get a sense of how successful a feature will be prior to any development work.'
         />
         <BlockContent
+          icon={(<BuildIcon />)}
           title='Recruit Beta users'
           description='Easily find users that are willing to test out your upcoming feature before you roll it out.'
         />
         <BlockContent
+          icon={(<ForumIcon />)}
           title='Just talk'
           description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind the product.'
         />
@@ -1260,13 +1231,18 @@ export function LandingFeatureRequestTracking() {
       <Block
         title='Close the loop with customers'
         description='The important part of collecting feedback is responding back to your customer ideas.'
+        image={LoopImg}
+        imageStyleOuter={{ paddingBottom: 'unset' }}
+        alignItems='flex-start'
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
         <BlockContent
+          icon={(<EngageIcon />)}
           title='Keep users engaged'
           description="An update to customer's feedback shows good customer relations and may even bring back churned customers."
         />
         <BlockContent
+          icon={(<RoadmapIcon style={{ transform: 'rotate(180deg)' }} />)}
           title='Visualize with a Roadmap'
           description='High-level overview of the features currently in your pipeline for users to get an idea of what is going on.'
           buttonTitle='See a Roadmap'
@@ -1291,31 +1267,89 @@ export function LandingPublicRoadmap() {
         description='Transparency between development and customers for stronger ties with your community.'
         image={Roadmap2Img}
       />
-      <Block
-        title='Clear and concise'
-        description='Minimalistic view of your current progress and plan. Show off that your project is actively maintained'
+      <Demo
+        title='Include a public roadmap for your product'
+        initialSubPath='/embed/demo'
+        type='largeDemo'
+        template={templater => templater.demoBoardPreset('development')}
+        mock={mocker => mocker.demoBoard([
+          { status: '0' }, { status: '0' }, { status: '0' }, { status: '0' },
+          { status: '1' }, { status: '1' },
+          { status: '2' }, { status: '2' }, { status: '2' },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
       />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+        <BlockContent
+          variant='content'
+          icon={(<LightbulbIcon />)}
+          title='Clear and concise'
+          description="Simple view of your current progress and future plans. That's it!"
+        />
+        <BlockContent
+          variant='content'
+          icon={(<TransparentIcon />)}
+          title='Transparency for customers and stakeholders'
+          description='Commit to a customer-driven product development and keep your audience informed.'
+        />
+        <BlockContent
+          variant='content'
+          icon={(<UpcomingFeaturesIcon />)}
+          title='Upcoming features'
+          description='Let your community get excited about what you are working on. Keep them in-the-know of your hard work behind the scenes.'
+        />
+      </HorizontalPanels>
       <Block
-        title='Asking for feature requests'
-        description=''
-        mirror
-      />
-      <Block
+        variant='content'
         title='Subscribe to updates'
-        description='Let customers know when their feature transitions to completed.'
+        description='Keep users engaged with feature updates.'
         image={DemoEmailNotificationImg}
+        imageScale={0.4}
+        mirror
         alignItems='center'
       />
-      <Block
+      <Demo
         title='Embrace discussions'
-        description='<Show threaded comments>'
-        mirror
+        description='Shape your features by directly communicating with your customer base.'
+        alignItems='center'
+        initialSubPath='/embed/demo'
+        demoFixedHeight={520}
+        template={templater => {
+          templater.demoCategory();
+          templater.styleWhite();
+        }}
+        settings={{
+          // demoBlurryShadow: true,
+        }}
+        mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+          .then(() => mocker.mockLoggedIn())}
+        demo={LandingCommentListDemo}
+      />
+      <Demo
+        title='Customize'
+        description='Change the columns, content, and labels. You can even create multiple roadmaps for different stakeholders.'
+        initialSubPath='/embed/demo'
+        type='largeDemo'
+        template={templater => templater.demoBoardPreset('design')}
+        mock={mocker => mocker.demoBoard([
+          { status: '1' }, { status: '1' }, { status: '1' }, { status: '1' },
+          { status: '2', extra: { expressions: { '👍': 7, '❤️': 4 } } },
+          { status: '2', extra: { expressions: { '👍': 2, } } },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
       />
     </React.Fragment>
   );
 }
 
 export function LandingCrowdFunding() {
+  const classes = useStyles();
   return (
     <React.Fragment>
       <Hero
@@ -1324,9 +1358,65 @@ export function LandingCrowdFunding() {
         image={CrowdfundImg}
       />
       <Block
-        title='Issue credits'
-        description='When a customer makes a payment on your site, issue them ClearFlask credits to spend on ideas.'
+        // variant='content'
+        title='Link with your credit system'
+        description='You can continue to use your existing payment platform. Link it with our system and decide when users will be issued credits.'
         alignItems='center'
+        demo={(
+          <div className={classes.pointsContainer}>
+            <div className={classes.point}>
+              <PaymentIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Payment processor
+                  &nbsp;
+                    <PostStatusIframe
+                    postId='payment-providers-integration-bgu'
+                    height={14}
+                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+                  />
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Stripe, Apple Store, Play Store
+                  </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <DonationIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Donation Framework
+                  &nbsp;
+                    <PostStatusIframe
+                    postId='donation-frameworks-integration-hvn'
+                    height={14}
+                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+                  />
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Patreon, OpenCollective
+                  </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <ApiIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Custom source
+                  </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Integrate via API, Zapier
+                  </Typography>
+              </div>
+            </div>
+          </div>
+        )}
+      />
+      <Block
+        title='Receive credits and spend'
+        description='When a customer makes a payment on your site, issue them ClearFlask credits. They will be able to spend those credits on feature requests.'
+        alignItems='center'
+        mirror
         demo={(
           <DividerCorner title='Transaction history' height='100%'>
             <Table>
@@ -1365,14 +1455,17 @@ export function LandingCrowdFunding() {
       />
       <Block
         title='Let them prioritize'
-        description='Sit back and watch your users prioritize your roadmap.'
-        mirror
+        description='Sit back and watch your users fund your ideas and decide where to spend their credits.'
         alignItems='center'
         image={DemoCrowdfundImg}
       />
       <Block
         title='Works best with'
         description='Products with a paid subscription are most suitable for using a credit-system.'
+        image={ComparisonImg}
+        imageStyleOuter={{ paddingBottom: 'unset' }}
+        alignItems='flex-start'
+        mirror
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent

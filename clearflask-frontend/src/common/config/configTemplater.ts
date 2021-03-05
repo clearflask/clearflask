@@ -268,7 +268,7 @@ export default class Templater {
         break;
       case 'design':
         this.demoBoard('Design process', [
-          { title: 'Ideas' },
+          { title: 'Ideas', hideIfEmpty: true, },
           { title: 'Concept' },
           { title: 'Approved', display: { showExpression: true } },
         ]);
@@ -280,6 +280,7 @@ export default class Templater {
     title?: string;
     status?: Partial<Admin.IdeaStatus>;
     display?: Partial<Admin.PostDisplay>;
+    hideIfEmpty?: boolean;
   }>) {
     this.styleWhite();
     this.creditsCurrency();
@@ -318,7 +319,7 @@ export default class Templater {
             showExpression: false,
             ...panel.display,
           }),
-          hideIfEmpty: false,
+          hideIfEmpty: panel.hideIfEmpty || false,
         })),
       }),
     });

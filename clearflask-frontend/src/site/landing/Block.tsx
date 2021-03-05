@@ -74,6 +74,7 @@ export interface Props extends BlockContentProps {
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   image?: Img;
+  imageScale?: number;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
   imageStyle?: React.CSSProperties;
@@ -91,12 +92,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     const isHero = this.props.type === 'hero';
 
     const imageSrc = this.props.image?.src || this.props.imagePath;
+    console.log('DEBUG', this.props.image);
     var image = imageSrc && (
       <ImgIso
         alt=''
         className={this.props.classes.image}
         src={imageSrc}
         aspectRatio={this.props.image?.aspectRatio}
+        scale={this.props.imageScale}
         width={!this.props.image?.aspectRatio ? '100%' : undefined}
         maxWidth={this.props.image?.width}
         maxHeight={this.props.image?.height}
