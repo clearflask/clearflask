@@ -25,6 +25,14 @@ const styles = (theme: Theme) => createStyles({
       padding: `${vh(10)}px 1vw ${vh(10)}px`,
     },
   },
+  spacingMediumDemo: {
+    [theme.breakpoints.up('lg')]: {
+      padding: `${vh(10)}px 10vw ${vh(10)}px`,
+    },
+    [theme.breakpoints.down('md')]: {
+      padding: `${vh(10)}px 1vw ${vh(10)}px`,
+    },
+  },
   grid: {
     padding: theme.spacing(4),
     display: 'flex',
@@ -70,7 +78,7 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props extends BlockContentProps {
   className?: string;
-  type?: 'largeDemo' | 'hero' | 'column' | 'demoOnly';
+  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'demoOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   image?: Img;
@@ -179,9 +187,10 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       );
     } else {
       const isLargeDemo = this.props.type === 'largeDemo';
+      const isMediumDemo = this.props.type === 'mediumDemo';
       return (
         <Grid
-          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : this.props.classes.spacing), this.props.className)}
+          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : (isMediumDemo ? this.props.classes.spacingMediumDemo : this.props.classes.spacing)), this.props.className)}
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}
@@ -189,10 +198,10 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
           justify='center'
         >
-          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 12 : 6} className={classNames(this.props.classes.grid)}>
+          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)} lg={isMediumDemo ? 8 : 6} xl={isMediumDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
             {display}
           </Grid>
-          <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+          <Grid alignItems='center' item xs={12} sm={8} md={isMediumDemo ? 3 : 6} lg={isMediumDemo ? 4 : 5} xl={4} className={this.props.classes.grid}>
             {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
             {content}
           </Grid>

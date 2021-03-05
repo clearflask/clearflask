@@ -250,7 +250,7 @@ export default class Templater {
     });
   }
 
-  demoBoardPreset(preset: 'development' | 'funding' | 'design') {
+  demoBoardPreset(preset: 'development' | 'funding' | 'design' | 'ideas') {
     switch (preset) {
       case 'development':
         this.demoBoard('Roadmap', [
@@ -271,6 +271,12 @@ export default class Templater {
           { title: 'Ideas', hideIfEmpty: true, },
           { title: 'Concept' },
           { title: 'Approved', display: { showExpression: true } },
+        ]);
+        break;
+      case 'ideas':
+        this.demoBoard('Ideas', [
+          { title: 'Considering' },
+          { title: 'Planned' },
         ]);
         break;
     }
@@ -802,6 +808,14 @@ export default class Templater {
     }
     const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...((withFunding && withStandaloneFunding) ? [funding.statusId] : []), closed.statusId, planned.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...((withFunding && withStandaloneFunding) ? [funding] : [])]);
+  }
+  workflowIdea(categoryIndex: number): Admin.IdeaStatus[] {
+    const discarded = Admin.IdeaStatusToJSON({ name: 'Discarded', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [discarded.statusId, completed.statusId], color: this.workflowColorProgress, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [discarded.statusId, inProgress.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const newNew = Admin.IdeaStatusToJSON({ name: 'New', nextStatusIds: [discarded.statusId, underReview.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    return this.workflow(categoryIndex, newNew.statusId, [discarded, completed, inProgress, underReview, newNew]);
   }
   workflowBug(categoryIndex: number): Admin.IdeaStatus[] {
     const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });

@@ -4,12 +4,15 @@ import { Container, IconButton, Table, TableBody, TableCell, TableHead, TableRow
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
+import LifecycleIcon from '@material-ui/icons/Autorenew';
 import BuildIcon from '@material-ui/icons/Build';
 import ContentDeliveryIcon from '@material-ui/icons/Cached';
+import CategoryIcon from '@material-ui/icons/Category';
 import ApiIcon from '@material-ui/icons/Code';
 import BlogIcon from '@material-ui/icons/Description';
 import ClientIcon from '@material-ui/icons/Devices';
 import ServerIcon from '@material-ui/icons/Dns';
+import EditIcon from '@material-ui/icons/Edit';
 import LightbulbIcon from '@material-ui/icons/EmojiObjectsOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
@@ -48,6 +51,7 @@ import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
+import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
@@ -55,6 +59,7 @@ import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
 import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
+import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HeroImg from '../../public/img/landing/hero.svg';
 import HtmlImg from '../../public/img/landing/html.png';
@@ -705,9 +710,9 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
       title='Build a community around your product'
       description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
       variant={props.isHero ? 'hero' : 'heading-main'}
-      alignItems='baseline'
+      alignItems='flex-start'
       initialSubPath='/embed/demo'
-      demoFixedHeight={520}
+      demoFixedHeight={420}
       image={CommunityImg}
       imageLocation='above'
       // scale={0.7}
@@ -1316,7 +1321,7 @@ export function LandingPublicRoadmap() {
         description='Shape your features by directly communicating with your customer base.'
         alignItems='center'
         initialSubPath='/embed/demo'
-        demoFixedHeight={520}
+        demoFixedHeight={420}
         template={templater => {
           templater.demoCategory();
           templater.styleWhite();
@@ -1554,27 +1559,97 @@ export function LandingIdeaManagement() {
         description=''
         image={IdeasImg}
       />
-      <Block
+      <Demo
         title='Embrace transparency'
-        description=''
+        description="Allow your contributors to see each others' ideas and discuss in an open forum. Let them see what you're working on and see your prioritized backlog."
+        initialSubPath='/embed/demo'
+        type='mediumDemo'
+        alignItems='center'
+        template={templater => templater.demoBoardPreset('ideas')}
+        mock={mocker => mocker.demoBoard([
+          { status: '0' }, { status: '0' }, { status: '0' }, { status: '0' },
+          { status: '1' }, { status: '1' },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
+        buttonTitle='See a Roadmap'
+        buttonLink='/solutions/public-roadmap'
       />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+        <Block
+          variant='content'
+          type='column'
+          title='Keep all ideas in one place'
+          description='Keep forgetting what people asked you in-person or over email? Combine all your feedback channels into a single place to keep tidy and organized.'
+          image={CentralizeImg}
+          alignItems='center'
+          mirror
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Vote or submit an idea on behalf'
+          description='Received an idea from a customer? Quickly create an account for them and vote/create the idea on behalf of them. They will be automatically notified when the idea is resolved.'
+          image={DemoAsUserImg}
+          imageScale={0.5}
+          alignItems='center'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+        <Block
+          variant='content'
+          type='column'
+          icon={(<CategoryIcon />)}
+          title='Organize ideas into buckets'
+          description='With custom tags, organize ideas and assign to different teammates. You can also allow users to directly select the relevant tags themselves.'
+          image={DemoTagging2Img}
+          imageScale={0.4}
+          mirror
+          alignItems='center'
+        />
+        <Demo
+          variant='content'
+          type='column'
+          icon={(<LifecycleIcon />)}
+          title='Give your ideas a life cycle'
+          description='Define custom stages for your ideas and transitions between them.'
+          alignItems='center'
+          template={templater => {
+            templater.workflowIdea(templater.demoCategory());
+            templater.styleWhite();
+          }}
+          demoFixedHeight={400}
+          demoPreventInteraction
+          demo={project => (
+            <WorkflowPreview
+              editor={project.editor}
+              categoryIndex={0}
+              isVertical
+              hideCorner
+              height='100%'
+            />
+          )}
+        />
+        <Block
+          variant='content'
+          type='column'
+          icon={(<EditIcon />)}
+          title='Make it your own'
+          description="our tool can be customized to your needs whether you are collecting students' opinions, employee suggestion box, or product feedback."
+          buttonTitle='See more customizations'
+          buttonLink='/product/customize'
+        />
+      </HorizontalPanels>
       <Block
-        title='Merge all channels into one place'
-        description=''
+        title='Keep your contributors engaged'
+        description='Notify your contributors when you have made progress to keep them in the loop and engaged.'
+        image={LoopImg}
         mirror
-      />
-      <Block
-        title='Submit idea on behalf of others'
-        description=''
-      />
-      <Block
-        title='Shape ideas from others'
-        description=''
-        mirror
-      />
-      <Block
-        title='Give back feedback to the idea creator'
-        description=''
+        alignItems='center'
+        buttonTitle='See how'
+        buttonLink='/product/activate'
       />
     </React.Fragment>
   );
