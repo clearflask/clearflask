@@ -270,7 +270,8 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
       return action.payload.config.projectId || projectId;
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.configBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       return action.payload.config?.config.projectId || projectId;
     default:
       return projectId;
@@ -343,7 +344,8 @@ export interface StateConf {
 const stateConfDefault = {};
 function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
-    case Client.configGetAndUserBindActionStatus.Pending:
+    case Client.configBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
       return {
         status: Status.PENDING,
         rejectionMessage: undefined,
@@ -359,7 +361,8 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
         conf: versionedConfigAdmin.config,
         ver: versionedConfigAdmin.version,
       };
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.configBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
         rejectionMessage: undefined,
@@ -367,7 +370,8 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
         onboardBefore: action.payload.onboardBefore,
         ver: action.payload.config?.version,
       };
-    case Client.configGetAndUserBindActionStatus.Rejected:
+    case Client.configBindSlugActionStatus.Rejected:
+    case Client.configAndUserBindSlugActionStatus.Rejected:
       return {
         status: Status.REJECTED,
         rejectionMessage: action.payload.userFacingMessage,
@@ -959,8 +963,27 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           },
         } : {}),
       };
+    case Client.userBindActionStatus.Pending:
+    case Client.userBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
+      return {
+        ...state,
+        loggedIn: {
+          status: Status.PENDING,
+        },
+      };
+    case Client.userBindActionStatus.Pending:
+    case Client.userBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
+      return {
+        ...state,
+        loggedIn: {
+          status: Status.REJECTED,
+        },
+      };
     case Client.userBindActionStatus.Fulfilled:
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.userBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {
         ...state,
@@ -1439,7 +1462,8 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         } : {}),
       };
     case Client.userBindActionStatus.Fulfilled:
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.userBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {
         ...state,

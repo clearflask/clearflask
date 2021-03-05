@@ -598,12 +598,14 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch({ ssr: true }).then(d => d.configGetAndUserBind({
-      slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      userBind: {
-        skipBind: windowIso.isSsr,
+    ownProps.server.dispatch({ ssr: true }).then(d => {
+      const slug = ownProps.server.getStore().getState().conf.conf?.slug!;
+      if (windowIso.isSsr) {
+        d.configBindSlug({ slug });
+      } else {
+        d.configAndUserBindSlug({ slug, userBind: {} });
       }
-    }));
+    });
   }
   return {
     configver: state.conf.ver, // force rerender on config change

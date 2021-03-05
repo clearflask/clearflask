@@ -78,14 +78,18 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     const server = await serverPromise;
     const subscriptionResult = await WebNotification.getInstance().getPermission();
     const dispatcher = await server.dispatch({ ssr: true, ssrStatusPassthrough: true });
-    const configAndUserBind = await dispatcher.configGetAndUserBind({
-      slug: windowIso.location.hostname,
-      userBind: {
-        skipBind: windowIso.isSsr,
-        browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-          ? subscriptionResult.token : undefined,
-      },
-    });
+    var configAndUserBind;
+    if (windowIso.isSsr) {
+      configAndUserBind = await dispatcher.configBindSlug({ slug: windowIso.location.hostname });
+    } else {
+      configAndUserBind = await dispatcher.configAndUserBindSlug({
+        slug: windowIso.location.hostname,
+        userBind: {
+          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+            ? subscriptionResult.token : undefined,
+        },
+      });
+    }
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
@@ -96,7 +100,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       ideaId: props.postId,
     });
 
-    return [configAndUserBind.config, configAndUserBind.user, post];
+    return [configAndUserBind.config, configAndUserBind['user'], post];
   }
 
   render() {

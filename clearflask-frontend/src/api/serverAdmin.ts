@@ -123,15 +123,15 @@ export default class ServerAdmin {
       this.projects[projectId] = project;
 
       // Simulate config get and bind
-      const configGetAndUserBindAction: Client.configGetAndUserBindActionFulfilled = {
-        type: Client.configGetAndUserBindActionStatus.Fulfilled,
-        meta: { action: Client.Action.configGetAndUserBind, request: { slug: versionedConfig.config.slug, userBind: {} } },
+      const action: Client.configAndUserBindSlugActionFulfilled = {
+        type: Client.configAndUserBindSlugActionStatus.Fulfilled,
+        meta: { action: Client.Action.configAndUserBindSlug, request: { slug: versionedConfig.config.slug, userBind: {} } },
         payload: {
           config: versionedConfig,
           user: loggedInUser,
         },
       };
-      project.server.getStore().dispatch(configGetAndUserBindAction);
+      project.server.getStore().dispatch(action);
     }
 
     return project;
