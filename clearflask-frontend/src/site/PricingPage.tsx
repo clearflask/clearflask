@@ -136,6 +136,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 className={this.props.classes.image}
                 src={PricingImg.pathname}
                 aspectRatio={PricingImg.aspectRatio}
+                maxWidth={PricingImg.width}
+                maxHeight={PricingImg.height}
               />
             </Container>
           </div>

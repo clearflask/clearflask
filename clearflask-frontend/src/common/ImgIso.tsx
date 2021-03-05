@@ -24,6 +24,8 @@ export interface Props {
   src: string;
   height?: number | string;
   width?: number | string;
+  maxHeight?: number | string;
+  maxWidth?: number | string;
   styleOuter?: React.CSSProperties;
   style?: React.CSSProperties;
   aspectRatio?: number;
@@ -43,7 +45,11 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
     if (this.props.aspectRatio) img = (
       <div
         className={this.props.className}
-        style={this.props.styleOuter}
+        style={{
+          ...this.props.styleOuter,
+          maxWidth: this.props.maxWidth,
+          maxHeight: this.props.maxHeight,
+        }}
       >
         <div
           className={this.props.classes.container}

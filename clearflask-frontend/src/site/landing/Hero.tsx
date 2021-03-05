@@ -79,6 +79,8 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                 src={imageSrc}
                 aspectRatio={this.props.image?.aspectRatio}
                 width={!this.props.image?.aspectRatio ? '100%' : undefined}
+                maxWidth={this.props.image?.width}
+                maxHeight={this.props.image?.height}
               />
             </Grid>
           )}

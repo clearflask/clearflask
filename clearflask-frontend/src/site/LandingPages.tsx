@@ -1,6 +1,6 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { Container, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Container, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
@@ -33,7 +33,7 @@ import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Provider } from 'react-redux';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
@@ -41,6 +41,7 @@ import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
+import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notification.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
@@ -63,8 +64,11 @@ import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
 import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
+import ClosablePopper from '../common/ClosablePopper';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
+import Hr from '../common/Hr';
+import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Block from './landing/Block';
@@ -78,7 +82,6 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
-import TemplateDemoWithControls from './landing/TemplateDemo';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -204,6 +207,17 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   integrationImage: {
     maxHeight: 50,
   },
+  demoEmbedButtons: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  demoEmbedPopper: {
+    height: 400,
+    maxHeight: vh(90),
+    width: 400,
+    maxWidth: '90vw',
+  },
 }));
 
 
@@ -244,15 +258,57 @@ export function LandingClearFlaskDemo() {
           </FakeBrowser>
         )}
       />
+      <Hr margins='50px' length='200px'>OR</Hr>
+      <LandingDemoEmbed />
     </div>
   );
 }
 
-export function LandingDemo() {
+export function LandingDemoEmbed() {
+  const [demoOpen, setDemoOpen] = useState<{
+    anchor: React.RefObject<HTMLButtonElement>,
+    page: string,
+  } | undefined>(undefined);
+  const feedbackBtnRef = useRef<HTMLButtonElement>(null);
+  const roadmapBtnRef = useRef<HTMLButtonElement>(null);
   const classes = useStyles();
   return (
-    <div className={classes.demo}>
-      <TemplateDemoWithControls />
+    <div className={classes.demoEmbedButtons}>
+      <IconButton
+        onClick={() => setDemoOpen({
+          anchor: feedbackBtnRef,
+          page: 'feedback',
+        })}
+        ref={feedbackBtnRef}
+      >
+        <FeedbackIcon />
+      </IconButton>
+      <IconButton
+        onClick={() => setDemoOpen({
+          anchor: roadmapBtnRef,
+          page: 'roadmap',
+        })}
+        ref={roadmapBtnRef}
+      >
+        <RoadmapIcon style={{ transform: 'rotate(180deg)' }} />
+      </IconButton>
+      <ClosablePopper
+        open={!!demoOpen}
+        onClose={() => setDemoOpen(undefined)}
+        placement='top'
+        anchorEl={demoOpen?.anchor.current}
+        arrow
+        clickAway
+        paperClassName={classes.demoEmbedPopper}
+      >
+        <iframe
+          title='Demo: ClearFlask Feedback'
+          src={demoOpen ? `${windowIso.location.protocol}//feedback.${windowIso.location.host}/embed/${demoOpen.page}` : 'about:blank'}
+          width='100%'
+          height='100%'
+          frameBorder={0}
+        />
+      </ClosablePopper>
     </div>
   );
 }
@@ -410,6 +466,7 @@ export function LandingCollectFeedback() {
           title='Customer segmentation and Analytics'
           description='Analyze your data with search, segment and filter to summarize feedback from target customers.'
           icon={(<AnalyticsIcon />)}
+          postStatusId='customer-segmentation-and-analytics-pgi'
         />
         {/* <Demo
             variant='content'
@@ -1236,7 +1293,7 @@ export function LandingPublicRoadmap() {
       />
       <Block
         title='Clear and concise'
-        description='Show that your project is active'
+        description='Minimalistic view of your current progress and plan. Show off that your project is actively maintained'
       />
       <Block
         title='Asking for feature requests'
@@ -1244,8 +1301,10 @@ export function LandingPublicRoadmap() {
         mirror
       />
       <Block
-        title='Let customers be notified'
-        description=''
+        title='Subscribe to updates'
+        description='Let customers know when their feature transitions to completed.'
+        image={DemoEmailNotificationImg}
+        alignItems='center'
       />
       <Block
         title='Embrace discussions'
@@ -1305,12 +1364,11 @@ export function LandingCrowdFunding() {
         )}
       />
       <Block
-        alignItems='center'
         title='Let them prioritize'
         description='Sit back and watch your users prioritize your roadmap.'
         mirror
+        alignItems='center'
         image={DemoCrowdfundImg}
-        imageStyle={{ width: 'unset' }}
       />
       <Block
         title='Works best with'
@@ -1352,14 +1410,12 @@ export function LandingCrowdFunding() {
         description='Include credits as value-added to your paid plan or product. Let them know your product is driven by paying customers.'
         mirror
         image={DemoAdvertiseCreditsImg}
-        imageStyle={{ width: 'unset' }}
       />
       <Block
         alignItems='center'
         title='Purchase additional credits'
         description='Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general.'
         image={DemoNoBalanceImg}
-        imageStyle={{ width: 'unset' }}
       />
       <Block
         alignItems='center'
@@ -1367,7 +1423,6 @@ export function LandingCrowdFunding() {
         description='Make it clear your product is actively supported and shaped by paying customers.'
         mirror
         image={DemoFundingRoadmapImg}
-        imageStyle={{ width: 'unset' }}
       />
     </React.Fragment>
   );

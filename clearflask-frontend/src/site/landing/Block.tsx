@@ -98,6 +98,8 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         src={imageSrc}
         aspectRatio={this.props.image?.aspectRatio}
         width={!this.props.image?.aspectRatio ? '100%' : undefined}
+        maxWidth={this.props.image?.width}
+        maxHeight={this.props.image?.height}
         style={this.props.imageStyle}
         styleOuter={this.props.imageStyleOuter}
       />
