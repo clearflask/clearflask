@@ -70,7 +70,8 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   async mockData(props: Props): Promise<Server> {
     const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
     const serverMock = await import(/* webpackChunkName: "serverMock" */'../api/serverMock')
-    const projectId = await mocker.mockIdeaGetProjectId(props.postId);
+    const projectId = (await mocker.mock()).config.projectId;
+    await mocker.mockIdea(projectId, props.postId);
     return new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
   }
 

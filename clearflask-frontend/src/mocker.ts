@@ -6,8 +6,7 @@ import * as ConfigEditor from './common/config/configEditor';
 import Templater, { createTemplateOptionsDefault } from './common/config/configTemplater';
 import windowIso from './common/windowIso';
 
-var mockedProjectId: string | undefined;
-export function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin> {
+export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin> {
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
@@ -19,30 +18,24 @@ export function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin> {
   });
 
   templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
-  return ServerAdmin.get().dispatchAdmin({ ssr: true })
-    .then(d => d.projectCreateAdmin({
-      configAdmin: editor.getConfig(),
-    }).then(project => {
-      mockedProjectId = project.projectId;
-      return project;
-    }).then(project => d.configSetAdmin({
-      projectId: project.projectId,
-      versionLast: project.config.version,
-      configAdmin: editor.getConfig(),
-    }).then(config => {
-      DataMock.get(project.projectId).mockAll();
-      return config;
-    }).then(config => {
-      if (windowIso.location.hash && windowIso.location.hash.substring(1) === 'latency') {
-        ServerMock.get().setLatency(true);
-      }
-      return config;
-    })));
+  const dispatcher = await ServerAdmin.get().dispatchAdmin({ ssr: true });
+  const project = await dispatcher.projectCreateAdmin({
+    configAdmin: editor.getConfig(),
+  });
+  const config = await dispatcher.configSetAdmin({
+    projectId: project.projectId,
+    versionLast: project.config.version,
+    configAdmin: editor.getConfig(),
+  });
+  await DataMock.get(project.projectId).mockAll();
+  if (windowIso.location.hash && windowIso.location.hash.substring(1) === 'latency') {
+    ServerMock.get().setLatency(true);
+  }
+  return config;
 }
 
-export async function mockIdeaGetProjectId(postId: string): Promise<string> {
-  await DataMock.get(mockedProjectId!).mockFakeIdeaWithComments(postId, config => ({
+export async function mockIdea(projectId: string, postId: string) {
+  return await DataMock.get(projectId).mockFakeIdeaWithComments(postId, config => ({
     statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
   }));
-  return mockedProjectId!;
 }
