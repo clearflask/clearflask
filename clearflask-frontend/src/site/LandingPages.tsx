@@ -48,6 +48,7 @@ import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
+import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
@@ -1661,14 +1662,11 @@ export function LandingContentCreator() {
       <Hero
         title='Content Creator Forum'
         description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
-      />
-      <Block
-        title='Threaded conversations'
-        description=''
+        image={CreatorImg}
       />
       <Block
         title='Idea bucket'
-        description=''
+        description='Let your fans brainstorm'
       />
       <Block
         title='Feedback from your most valued fans, Credit based prioritization'
@@ -1679,7 +1677,15 @@ export function LandingContentCreator() {
         description='Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
       />
       <Block
-        title='Single Sign-On'
+        title='Fans-only'
+        description='You can choose to only allow fans to view and/or contribute ideas. Ask them to sign in using your existing service such as Patreon.'
+      />
+      <Block
+        title='Threaded conversations'
+        description=''
+      />
+      <Block
+        title='Threaded conversations'
         description=''
       />
     </React.Fragment>
