@@ -59,6 +59,7 @@ clearflask-frontend/src/api/client
 clearflask-frontend/src/api/admin
 clearflask-frontend/src/api/schema
 clearflask-frontend/src/api/connect
+clearflask-frontend/src/connect/api/connects
 clearflask-frontend/src/docs/api
 clearflask-resources/*.png
 clearflask-resources/*.ico

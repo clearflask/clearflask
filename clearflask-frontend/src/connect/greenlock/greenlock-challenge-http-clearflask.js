@@ -8,7 +8,7 @@ module.exports.create = function (config) {
 
 	return {
 		init: function (opts) {
-			console.log('challenge.init', opts);
+			console.log('challenge.http.init', opts);
 			return Promise.resolve(null);
 		},
 
@@ -28,11 +28,11 @@ module.exports.create = function (config) {
 		set: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
-			console.log('challenge.set', key);
+			console.log('challenge.http.set', key);
 
 			await ServerConnect.get()
 				.dispatch()
-				.certChallengePutConnect({
+				.certChallengeHttpPutConnect({
 					key,
 					challenge: {
 						result: ch.keyAuthorization,
@@ -55,12 +55,12 @@ module.exports.create = function (config) {
 		get: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
-			console.log('challenge.get', key);
+			console.log('challenge.http.get', key);
 
 			try {
 				const challenge = await ServerConnect.get()
 					.dispatch()
-					.certChallengeGetConnect(
+					.certChallengeHttpGetConnect(
 						{ key },
 						undefined,
 						{ 'x-cf-connect-token': connectConfig.connectToken });
@@ -94,11 +94,11 @@ module.exports.create = function (config) {
 		remove: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
-			console.log('challenge.remove', key);
+			console.log('challenge.http.remove', key);
 
 			await ServerConnect.get()
 				.dispatch()
-				.certChallengeDeleteConnect(
+				.certChallengeHttpDeleteConnect(
 					{ key },
 					undefined,
 					{ 'x-cf-connect-token': connectConfig.connectToken });

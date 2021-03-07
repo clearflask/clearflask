@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import * as Connect from './api/connect';
+import * as Connect from '../api/connect';
 import connectConfig from './config';
 
 class ServerConnect {

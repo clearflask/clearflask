@@ -140,9 +140,9 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
-/connect/cert/challenge:
+/connect/cert/challenge/http:
   get:
-    operationId: certChallengeGetConnect
+    operationId: certChallengeHttpGetConnect
     tags: [SniConnect]
     parameters:
     - name: key
@@ -159,7 +159,7 @@ components:
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   put:
-    operationId: certChallengePutConnect
+    operationId: certChallengeHttpPutConnect
     tags: [SniConnect]
     parameters:
     - name: key
@@ -177,10 +177,58 @@ components:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
   delete:
-    operationId: certChallengeDeleteConnect
+    operationId: certChallengeHttpDeleteConnect
     tags: [SniConnect]
     parameters:
     - name: key
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/connect/cert/challenge/dns:
+  get:
+    operationId: certChallengeDnsGetConnect
+    tags: [SniConnect]
+    parameters:
+    - name: host
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Challenge'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: certChallengeDnsPutConnect
+    tags: [SniConnect]
+    parameters:
+    - name: host
+      in: query
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-sni.yaml#/components/schemas/Challenge'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: certChallengeDnsDeleteConnect
+    tags: [SniConnect]
+    parameters:
+    - name: host
       in: query
       required: true
       schema:

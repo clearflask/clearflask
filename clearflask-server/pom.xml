@@ -149,6 +149,10 @@
             <artifactId>aws-java-sdk-ses</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-route53</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
             <artifactId>sqlite4java</artifactId>
             <scope>test</scope>

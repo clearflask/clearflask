@@ -89,6 +89,9 @@ if (process.env.ENV === 'production' || process.env.ENV === 'test') {
         "http-01": {
           module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js`,
         },
+        "dns-01": {
+          module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js`,
+        },
       },
       notify: (event, details) => {
         console.log('EVENT:', event, details);

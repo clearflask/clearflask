@@ -133,7 +133,7 @@ export interface ConfigurationParameters {
 }
 
 export class Configuration {
-    constructor(private configuration: ConfigurationParameters) { }
+    constructor(private configuration: ConfigurationParameters) {}
 
     get basePath(): string {
         return this.configuration.basePath || BASE_PATH;
@@ -243,7 +243,7 @@ export interface ResponseTransformer<T> {
 }
 
 export class JSONApiResponse<T> {
-    constructor(public raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue) { }
+    constructor(public raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue) {}
 
     async value() {
         return this.transformer(await this.raw.json());
@@ -251,7 +251,7 @@ export class JSONApiResponse<T> {
 }
 
 export class VoidApiResponse {
-    constructor(public raw: Response) { }
+    constructor(public raw: Response) {}
 
     async value() {
         return undefined;
@@ -259,7 +259,7 @@ export class VoidApiResponse {
 }
 
 export class BlobApiResponse {
-    constructor(public raw: Response) { }
+    constructor(public raw: Response) {}
 
     async value() {
         return await this.raw.blob();
@@ -267,7 +267,7 @@ export class BlobApiResponse {
 }
 
 export class TextApiResponse {
-    constructor(public raw: Response) { }
+    constructor(public raw: Response) {}
 
     async value() {
         return await this.raw.text();
@@ -280,7 +280,7 @@ export type FileDownload = {
     filename?: string;
 }
 export class FileDownloadApiResponse {
-    constructor(public raw: Response) { }
+    constructor(public raw: Response) {}
 
     async value() {
         const result: FileDownload = {
@@ -292,7 +292,7 @@ export class FileDownloadApiResponse {
         if (disposition && disposition.indexOf('attachment') !== -1) {
             var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             var matches = filenameRegex.exec(disposition);
-            if (matches != null && matches[1]) {
+            if (matches != null && matches[1]) { 
                 result.filename = matches[1].replace(/['"]/g, '');
             }
         }

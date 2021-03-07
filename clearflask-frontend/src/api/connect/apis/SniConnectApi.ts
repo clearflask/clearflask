@@ -43,15 +43,28 @@ export interface AccountKeypairPutConnectRequest {
     keypair: Keypair;
 }
 
-export interface CertChallengeDeleteConnectRequest {
+export interface CertChallengeDnsDeleteConnectRequest {
+    host: string;
+}
+
+export interface CertChallengeDnsGetConnectRequest {
+    host: string;
+}
+
+export interface CertChallengeDnsPutConnectRequest {
+    host: string;
+    challenge: Challenge;
+}
+
+export interface CertChallengeHttpDeleteConnectRequest {
     key: string;
 }
 
-export interface CertChallengeGetConnectRequest {
+export interface CertChallengeHttpGetConnectRequest {
     key: string;
 }
 
-export interface CertChallengePutConnectRequest {
+export interface CertChallengeHttpPutConnectRequest {
     key: string;
     challenge: Challenge;
 }
@@ -101,15 +114,27 @@ export interface SniConnectApiInterface {
 
     /**
      */
-    certChallengeDeleteConnect(requestParameters: CertChallengeDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
+    certChallengeDnsDeleteConnect(requestParameters: CertChallengeDnsDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
 
     /**
      */
-    certChallengeGetConnect(requestParameters: CertChallengeGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge>;
+    certChallengeDnsGetConnect(requestParameters: CertChallengeDnsGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge>;
 
     /**
      */
-    certChallengePutConnect(requestParameters: CertChallengePutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
+    certChallengeDnsPutConnect(requestParameters: CertChallengeDnsPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
+
+    /**
+     */
+    certChallengeHttpDeleteConnect(requestParameters: CertChallengeHttpDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
+
+    /**
+     */
+    certChallengeHttpGetConnect(requestParameters: CertChallengeHttpGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge>;
+
+    /**
+     */
+    certChallengeHttpPutConnect(requestParameters: CertChallengeHttpPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void>;
 
     /**
      */
@@ -244,21 +269,21 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
 
     /**
      */
-    async certChallengeDeleteConnectRaw(requestParameters: CertChallengeDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.key === null || requestParameters.key === undefined) {
-            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengeDeleteConnect.');
+    async certChallengeDnsDeleteConnectRaw(requestParameters: CertChallengeDnsDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.host === null || requestParameters.host === undefined) {
+            throw new runtime.RequiredError('host','Required parameter requestParameters.host was null or undefined when calling certChallengeDnsDeleteConnect.');
         }
 
         const queryParameters: runtime.HTTPQuery = {};
 
-        if (requestParameters.key !== undefined) {
-            queryParameters['key'] = requestParameters.key;
+        if (requestParameters.host !== undefined) {
+            queryParameters['host'] = requestParameters.host;
         }
 
         const headerParameters: runtime.HTTPHeaders = headerExtra || {};
 
         const response = await this.request({
-            path: `/connect/cert/challenge`,
+            path: `/connect/cert/challenge/dns`,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -269,15 +294,85 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
 
     /**
      */
-    async certChallengeDeleteConnect(requestParameters: CertChallengeDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
-        await this.certChallengeDeleteConnectRaw(requestParameters, headerExtra);
+    async certChallengeDnsDeleteConnect(requestParameters: CertChallengeDnsDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
+        await this.certChallengeDnsDeleteConnectRaw(requestParameters, headerExtra);
     }
 
     /**
      */
-    async certChallengeGetConnectRaw(requestParameters: CertChallengeGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<Challenge>> {
+    async certChallengeDnsGetConnectRaw(requestParameters: CertChallengeDnsGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<Challenge>> {
+        if (requestParameters.host === null || requestParameters.host === undefined) {
+            throw new runtime.RequiredError('host','Required parameter requestParameters.host was null or undefined when calling certChallengeDnsGetConnect.');
+        }
+
+        const queryParameters: runtime.HTTPQuery = {};
+
+        if (requestParameters.host !== undefined) {
+            queryParameters['host'] = requestParameters.host;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = headerExtra || {};
+
+        const response = await this.request({
+            path: `/connect/cert/challenge/dns`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        });
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ChallengeFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async certChallengeDnsGetConnect(requestParameters: CertChallengeDnsGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge> {
+        const response = await this.certChallengeDnsGetConnectRaw(requestParameters, headerExtra);
+        return await response.value();
+    }
+
+    /**
+     */
+    async certChallengeDnsPutConnectRaw(requestParameters: CertChallengeDnsPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.host === null || requestParameters.host === undefined) {
+            throw new runtime.RequiredError('host','Required parameter requestParameters.host was null or undefined when calling certChallengeDnsPutConnect.');
+        }
+
+        if (requestParameters.challenge === null || requestParameters.challenge === undefined) {
+            throw new runtime.RequiredError('challenge','Required parameter requestParameters.challenge was null or undefined when calling certChallengeDnsPutConnect.');
+        }
+
+        const queryParameters: runtime.HTTPQuery = {};
+
+        if (requestParameters.host !== undefined) {
+            queryParameters['host'] = requestParameters.host;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = headerExtra || {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/connect/cert/challenge/dns`,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ChallengeToJSON(requestParameters.challenge),
+        });
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     */
+    async certChallengeDnsPutConnect(requestParameters: CertChallengeDnsPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
+        await this.certChallengeDnsPutConnectRaw(requestParameters, headerExtra);
+    }
+
+    /**
+     */
+    async certChallengeHttpDeleteConnectRaw(requestParameters: CertChallengeHttpDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
         if (requestParameters.key === null || requestParameters.key === undefined) {
-            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengeGetConnect.');
+            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengeHttpDeleteConnect.');
         }
 
         const queryParameters: runtime.HTTPQuery = {};
@@ -289,7 +384,38 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
         const headerParameters: runtime.HTTPHeaders = headerExtra || {};
 
         const response = await this.request({
-            path: `/connect/cert/challenge`,
+            path: `/connect/cert/challenge/http`,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        });
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     */
+    async certChallengeHttpDeleteConnect(requestParameters: CertChallengeHttpDeleteConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
+        await this.certChallengeHttpDeleteConnectRaw(requestParameters, headerExtra);
+    }
+
+    /**
+     */
+    async certChallengeHttpGetConnectRaw(requestParameters: CertChallengeHttpGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<Challenge>> {
+        if (requestParameters.key === null || requestParameters.key === undefined) {
+            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengeHttpGetConnect.');
+        }
+
+        const queryParameters: runtime.HTTPQuery = {};
+
+        if (requestParameters.key !== undefined) {
+            queryParameters['key'] = requestParameters.key;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = headerExtra || {};
+
+        const response = await this.request({
+            path: `/connect/cert/challenge/http`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -300,20 +426,20 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
 
     /**
      */
-    async certChallengeGetConnect(requestParameters: CertChallengeGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge> {
-        const response = await this.certChallengeGetConnectRaw(requestParameters, headerExtra);
+    async certChallengeHttpGetConnect(requestParameters: CertChallengeHttpGetConnectRequest, headerExtra?:{[key:string]:string}): Promise<Challenge> {
+        const response = await this.certChallengeHttpGetConnectRaw(requestParameters, headerExtra);
         return await response.value();
     }
 
     /**
      */
-    async certChallengePutConnectRaw(requestParameters: CertChallengePutConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
+    async certChallengeHttpPutConnectRaw(requestParameters: CertChallengeHttpPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<void>> {
         if (requestParameters.key === null || requestParameters.key === undefined) {
-            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengePutConnect.');
+            throw new runtime.RequiredError('key','Required parameter requestParameters.key was null or undefined when calling certChallengeHttpPutConnect.');
         }
 
         if (requestParameters.challenge === null || requestParameters.challenge === undefined) {
-            throw new runtime.RequiredError('challenge','Required parameter requestParameters.challenge was null or undefined when calling certChallengePutConnect.');
+            throw new runtime.RequiredError('challenge','Required parameter requestParameters.challenge was null or undefined when calling certChallengeHttpPutConnect.');
         }
 
         const queryParameters: runtime.HTTPQuery = {};
@@ -327,7 +453,7 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/connect/cert/challenge`,
+            path: `/connect/cert/challenge/http`,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
@@ -339,8 +465,8 @@ export class SniConnectApi extends runtime.BaseAPI implements SniConnectApiInter
 
     /**
      */
-    async certChallengePutConnect(requestParameters: CertChallengePutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
-        await this.certChallengePutConnectRaw(requestParameters, headerExtra);
+    async certChallengeHttpPutConnect(requestParameters: CertChallengeHttpPutConnectRequest, headerExtra?:{[key:string]:string}): Promise<void> {
+        await this.certChallengeHttpPutConnectRaw(requestParameters, headerExtra);
     }
 
     /**

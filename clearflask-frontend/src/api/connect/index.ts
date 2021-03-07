@@ -16,9 +16,12 @@ export enum Action {
   accountKeypairDeleteConnect = 'accountKeypairDeleteConnect',
   accountKeypairGetConnect = 'accountKeypairGetConnect',
   accountKeypairPutConnect = 'accountKeypairPutConnect',
-  certChallengeDeleteConnect = 'certChallengeDeleteConnect',
-  certChallengeGetConnect = 'certChallengeGetConnect',
-  certChallengePutConnect = 'certChallengePutConnect',
+  certChallengeDnsDeleteConnect = 'certChallengeDnsDeleteConnect',
+  certChallengeDnsGetConnect = 'certChallengeDnsGetConnect',
+  certChallengeDnsPutConnect = 'certChallengeDnsPutConnect',
+  certChallengeHttpDeleteConnect = 'certChallengeHttpDeleteConnect',
+  certChallengeHttpGetConnect = 'certChallengeHttpGetConnect',
+  certChallengeHttpPutConnect = 'certChallengeHttpPutConnect',
   certDeleteConnect = 'certDeleteConnect',
   certGetConnect = 'certGetConnect',
   certKeypairDeleteConnect = 'certKeypairDeleteConnect',
@@ -38,15 +41,24 @@ export type Actions =
   | accountKeypairPutConnectActionFulfilled
   | accountKeypairPutConnectActionPending
   | accountKeypairPutConnectActionRejected
-  | certChallengeDeleteConnectActionFulfilled
-  | certChallengeDeleteConnectActionPending
-  | certChallengeDeleteConnectActionRejected
-  | certChallengeGetConnectActionFulfilled
-  | certChallengeGetConnectActionPending
-  | certChallengeGetConnectActionRejected
-  | certChallengePutConnectActionFulfilled
-  | certChallengePutConnectActionPending
-  | certChallengePutConnectActionRejected
+  | certChallengeDnsDeleteConnectActionFulfilled
+  | certChallengeDnsDeleteConnectActionPending
+  | certChallengeDnsDeleteConnectActionRejected
+  | certChallengeDnsGetConnectActionFulfilled
+  | certChallengeDnsGetConnectActionPending
+  | certChallengeDnsGetConnectActionRejected
+  | certChallengeDnsPutConnectActionFulfilled
+  | certChallengeDnsPutConnectActionPending
+  | certChallengeDnsPutConnectActionRejected
+  | certChallengeHttpDeleteConnectActionFulfilled
+  | certChallengeHttpDeleteConnectActionPending
+  | certChallengeHttpDeleteConnectActionRejected
+  | certChallengeHttpGetConnectActionFulfilled
+  | certChallengeHttpGetConnectActionPending
+  | certChallengeHttpGetConnectActionRejected
+  | certChallengeHttpPutConnectActionFulfilled
+  | certChallengeHttpPutConnectActionPending
+  | certChallengeHttpPutConnectActionRejected
   | certDeleteConnectActionFulfilled
   | certDeleteConnectActionPending
   | certDeleteConnectActionRejected
@@ -138,69 +150,138 @@ export interface accountKeypairPutConnectActionRejected {
   };
 }
 
-export enum certChallengeDeleteConnectActionStatus {
-  Pending = 'certChallengeDeleteConnect_PENDING',
-  Fulfilled = 'certChallengeDeleteConnect_FULFILLED',
-  Rejected = 'certChallengeDeleteConnect_REJECTED',
+export enum certChallengeDnsDeleteConnectActionStatus {
+  Pending = 'certChallengeDnsDeleteConnect_PENDING',
+  Fulfilled = 'certChallengeDnsDeleteConnect_FULFILLED',
+  Rejected = 'certChallengeDnsDeleteConnect_REJECTED',
 }
-export interface certChallengeDeleteConnectActionFulfilled {
-  type: certChallengeDeleteConnectActionStatus.Fulfilled;
-  meta: { action: Action.certChallengeDeleteConnect; request: SniConnectApi.CertChallengeDeleteConnectRequest; };
+export interface certChallengeDnsDeleteConnectActionFulfilled {
+  type: certChallengeDnsDeleteConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeDnsDeleteConnect; request: SniConnectApi.CertChallengeDnsDeleteConnectRequest; };
   payload: void;
 }
-export interface certChallengeDeleteConnectActionPending {
-  type: certChallengeDeleteConnectActionStatus.Pending;
-  meta: { action: Action.certChallengeDeleteConnect; request: SniConnectApi.CertChallengeDeleteConnectRequest; };
+export interface certChallengeDnsDeleteConnectActionPending {
+  type: certChallengeDnsDeleteConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeDnsDeleteConnect; request: SniConnectApi.CertChallengeDnsDeleteConnectRequest; };
 }
-export interface certChallengeDeleteConnectActionRejected {
-  type: certChallengeDeleteConnectActionStatus.Rejected;
-  meta: { action: Action.certChallengeDeleteConnect; request: SniConnectApi.CertChallengeDeleteConnectRequest; };
+export interface certChallengeDnsDeleteConnectActionRejected {
+  type: certChallengeDnsDeleteConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeDnsDeleteConnect; request: SniConnectApi.CertChallengeDnsDeleteConnectRequest; };
   error: true;
   payload: {
     userFacingMessage?:string
   };
 }
 
-export enum certChallengeGetConnectActionStatus {
-  Pending = 'certChallengeGetConnect_PENDING',
-  Fulfilled = 'certChallengeGetConnect_FULFILLED',
-  Rejected = 'certChallengeGetConnect_REJECTED',
+export enum certChallengeDnsGetConnectActionStatus {
+  Pending = 'certChallengeDnsGetConnect_PENDING',
+  Fulfilled = 'certChallengeDnsGetConnect_FULFILLED',
+  Rejected = 'certChallengeDnsGetConnect_REJECTED',
 }
-export interface certChallengeGetConnectActionFulfilled {
-  type: certChallengeGetConnectActionStatus.Fulfilled;
-  meta: { action: Action.certChallengeGetConnect; request: SniConnectApi.CertChallengeGetConnectRequest; };
+export interface certChallengeDnsGetConnectActionFulfilled {
+  type: certChallengeDnsGetConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeDnsGetConnect; request: SniConnectApi.CertChallengeDnsGetConnectRequest; };
   payload: Model.Challenge;
 }
-export interface certChallengeGetConnectActionPending {
-  type: certChallengeGetConnectActionStatus.Pending;
-  meta: { action: Action.certChallengeGetConnect; request: SniConnectApi.CertChallengeGetConnectRequest; };
+export interface certChallengeDnsGetConnectActionPending {
+  type: certChallengeDnsGetConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeDnsGetConnect; request: SniConnectApi.CertChallengeDnsGetConnectRequest; };
 }
-export interface certChallengeGetConnectActionRejected {
-  type: certChallengeGetConnectActionStatus.Rejected;
-  meta: { action: Action.certChallengeGetConnect; request: SniConnectApi.CertChallengeGetConnectRequest; };
+export interface certChallengeDnsGetConnectActionRejected {
+  type: certChallengeDnsGetConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeDnsGetConnect; request: SniConnectApi.CertChallengeDnsGetConnectRequest; };
   error: true;
   payload: {
     userFacingMessage?:string
   };
 }
 
-export enum certChallengePutConnectActionStatus {
-  Pending = 'certChallengePutConnect_PENDING',
-  Fulfilled = 'certChallengePutConnect_FULFILLED',
-  Rejected = 'certChallengePutConnect_REJECTED',
+export enum certChallengeDnsPutConnectActionStatus {
+  Pending = 'certChallengeDnsPutConnect_PENDING',
+  Fulfilled = 'certChallengeDnsPutConnect_FULFILLED',
+  Rejected = 'certChallengeDnsPutConnect_REJECTED',
 }
-export interface certChallengePutConnectActionFulfilled {
-  type: certChallengePutConnectActionStatus.Fulfilled;
-  meta: { action: Action.certChallengePutConnect; request: SniConnectApi.CertChallengePutConnectRequest; };
+export interface certChallengeDnsPutConnectActionFulfilled {
+  type: certChallengeDnsPutConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeDnsPutConnect; request: SniConnectApi.CertChallengeDnsPutConnectRequest; };
   payload: void;
 }
-export interface certChallengePutConnectActionPending {
-  type: certChallengePutConnectActionStatus.Pending;
-  meta: { action: Action.certChallengePutConnect; request: SniConnectApi.CertChallengePutConnectRequest; };
+export interface certChallengeDnsPutConnectActionPending {
+  type: certChallengeDnsPutConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeDnsPutConnect; request: SniConnectApi.CertChallengeDnsPutConnectRequest; };
 }
-export interface certChallengePutConnectActionRejected {
-  type: certChallengePutConnectActionStatus.Rejected;
-  meta: { action: Action.certChallengePutConnect; request: SniConnectApi.CertChallengePutConnectRequest; };
+export interface certChallengeDnsPutConnectActionRejected {
+  type: certChallengeDnsPutConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeDnsPutConnect; request: SniConnectApi.CertChallengeDnsPutConnectRequest; };
+  error: true;
+  payload: {
+    userFacingMessage?:string
+  };
+}
+
+export enum certChallengeHttpDeleteConnectActionStatus {
+  Pending = 'certChallengeHttpDeleteConnect_PENDING',
+  Fulfilled = 'certChallengeHttpDeleteConnect_FULFILLED',
+  Rejected = 'certChallengeHttpDeleteConnect_REJECTED',
+}
+export interface certChallengeHttpDeleteConnectActionFulfilled {
+  type: certChallengeHttpDeleteConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeHttpDeleteConnect; request: SniConnectApi.CertChallengeHttpDeleteConnectRequest; };
+  payload: void;
+}
+export interface certChallengeHttpDeleteConnectActionPending {
+  type: certChallengeHttpDeleteConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeHttpDeleteConnect; request: SniConnectApi.CertChallengeHttpDeleteConnectRequest; };
+}
+export interface certChallengeHttpDeleteConnectActionRejected {
+  type: certChallengeHttpDeleteConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeHttpDeleteConnect; request: SniConnectApi.CertChallengeHttpDeleteConnectRequest; };
+  error: true;
+  payload: {
+    userFacingMessage?:string
+  };
+}
+
+export enum certChallengeHttpGetConnectActionStatus {
+  Pending = 'certChallengeHttpGetConnect_PENDING',
+  Fulfilled = 'certChallengeHttpGetConnect_FULFILLED',
+  Rejected = 'certChallengeHttpGetConnect_REJECTED',
+}
+export interface certChallengeHttpGetConnectActionFulfilled {
+  type: certChallengeHttpGetConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeHttpGetConnect; request: SniConnectApi.CertChallengeHttpGetConnectRequest; };
+  payload: Model.Challenge;
+}
+export interface certChallengeHttpGetConnectActionPending {
+  type: certChallengeHttpGetConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeHttpGetConnect; request: SniConnectApi.CertChallengeHttpGetConnectRequest; };
+}
+export interface certChallengeHttpGetConnectActionRejected {
+  type: certChallengeHttpGetConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeHttpGetConnect; request: SniConnectApi.CertChallengeHttpGetConnectRequest; };
+  error: true;
+  payload: {
+    userFacingMessage?:string
+  };
+}
+
+export enum certChallengeHttpPutConnectActionStatus {
+  Pending = 'certChallengeHttpPutConnect_PENDING',
+  Fulfilled = 'certChallengeHttpPutConnect_FULFILLED',
+  Rejected = 'certChallengeHttpPutConnect_REJECTED',
+}
+export interface certChallengeHttpPutConnectActionFulfilled {
+  type: certChallengeHttpPutConnectActionStatus.Fulfilled;
+  meta: { action: Action.certChallengeHttpPutConnect; request: SniConnectApi.CertChallengeHttpPutConnectRequest; };
+  payload: void;
+}
+export interface certChallengeHttpPutConnectActionPending {
+  type: certChallengeHttpPutConnectActionStatus.Pending;
+  meta: { action: Action.certChallengeHttpPutConnect; request: SniConnectApi.CertChallengeHttpPutConnectRequest; };
+}
+export interface certChallengeHttpPutConnectActionRejected {
+  type: certChallengeHttpPutConnectActionStatus.Rejected;
+  meta: { action: Action.certChallengeHttpPutConnect; request: SniConnectApi.CertChallengeHttpPutConnectRequest; };
   error: true;
   payload: {
     userFacingMessage?:string
@@ -392,42 +473,81 @@ export class Dispatcher implements ApiInterface {
     });
   }
 
-  certChallengeDeleteConnect(request: SniConnectApi.CertChallengeDeleteConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
+  certChallengeDnsDeleteConnect(request: SniConnectApi.CertChallengeDnsDeleteConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
     return this.dispatcherDelegate({
-      type: Action.certChallengeDeleteConnect,
+      type: Action.certChallengeDnsDeleteConnect,
       meta: {
         ...metaExtra,
-        action: Action.certChallengeDeleteConnect,
+        action: Action.certChallengeDnsDeleteConnect,
         request: request,
-        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeDeleteConnect(request, metaExtra, headerExtraOverride || headerExtra),
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeDnsDeleteConnect(request, metaExtra, headerExtraOverride || headerExtra),
       },
-      payload: this.apiDelegate.getSniConnectApi().certChallengeDeleteConnect(request, headerExtra),
+      payload: this.apiDelegate.getSniConnectApi().certChallengeDnsDeleteConnect(request, headerExtra),
     });
   }
 
-  certChallengeGetConnect(request: SniConnectApi.CertChallengeGetConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<Model.Challenge> {
+  certChallengeDnsGetConnect(request: SniConnectApi.CertChallengeDnsGetConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<Model.Challenge> {
     return this.dispatcherDelegate({
-      type: Action.certChallengeGetConnect,
+      type: Action.certChallengeDnsGetConnect,
       meta: {
         ...metaExtra,
-        action: Action.certChallengeGetConnect,
+        action: Action.certChallengeDnsGetConnect,
         request: request,
-        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeGetConnect(request, metaExtra, headerExtraOverride || headerExtra),
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeDnsGetConnect(request, metaExtra, headerExtraOverride || headerExtra),
       },
-      payload: this.apiDelegate.getSniConnectApi().certChallengeGetConnect(request, headerExtra),
+      payload: this.apiDelegate.getSniConnectApi().certChallengeDnsGetConnect(request, headerExtra),
     });
   }
 
-  certChallengePutConnect(request: SniConnectApi.CertChallengePutConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
+  certChallengeDnsPutConnect(request: SniConnectApi.CertChallengeDnsPutConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
     return this.dispatcherDelegate({
-      type: Action.certChallengePutConnect,
+      type: Action.certChallengeDnsPutConnect,
       meta: {
         ...metaExtra,
-        action: Action.certChallengePutConnect,
+        action: Action.certChallengeDnsPutConnect,
         request: request,
-        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengePutConnect(request, metaExtra, headerExtraOverride || headerExtra),
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeDnsPutConnect(request, metaExtra, headerExtraOverride || headerExtra),
       },
-      payload: this.apiDelegate.getSniConnectApi().certChallengePutConnect(request, headerExtra),
+      payload: this.apiDelegate.getSniConnectApi().certChallengeDnsPutConnect(request, headerExtra),
+    });
+  }
+
+  certChallengeHttpDeleteConnect(request: SniConnectApi.CertChallengeHttpDeleteConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
+    return this.dispatcherDelegate({
+      type: Action.certChallengeHttpDeleteConnect,
+      meta: {
+        ...metaExtra,
+        action: Action.certChallengeHttpDeleteConnect,
+        request: request,
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeHttpDeleteConnect(request, metaExtra, headerExtraOverride || headerExtra),
+      },
+      payload: this.apiDelegate.getSniConnectApi().certChallengeHttpDeleteConnect(request, headerExtra),
+    });
+  }
+
+  certChallengeHttpGetConnect(request: SniConnectApi.CertChallengeHttpGetConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<Model.Challenge> {
+    return this.dispatcherDelegate({
+      type: Action.certChallengeHttpGetConnect,
+      meta: {
+        ...metaExtra,
+        action: Action.certChallengeHttpGetConnect,
+        request: request,
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeHttpGetConnect(request, metaExtra, headerExtraOverride || headerExtra),
+      },
+      payload: this.apiDelegate.getSniConnectApi().certChallengeHttpGetConnect(request, headerExtra),
+    });
+  }
+
+  certChallengeHttpPutConnect(request: SniConnectApi.CertChallengeHttpPutConnectRequest, metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<void> {
+    return this.dispatcherDelegate({
+      type: Action.certChallengeHttpPutConnect,
+      meta: {
+        ...metaExtra,
+        action: Action.certChallengeHttpPutConnect,
+        request: request,
+        retry: (headerExtraOverride?:{[key:string]:string}) => this.certChallengeHttpPutConnect(request, metaExtra, headerExtraOverride || headerExtra),
+      },
+      payload: this.apiDelegate.getSniConnectApi().certChallengeHttpPutConnect(request, headerExtra),
     });
   }
 

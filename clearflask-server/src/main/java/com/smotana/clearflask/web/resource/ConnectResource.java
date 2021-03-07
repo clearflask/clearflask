@@ -28,7 +28,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -76,22 +75,42 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public void certChallengeDeleteConnect(String key) {
-        certStore.deleteChallenge(key);
+    public void certChallengeDnsDeleteConnect(String host) {
+        certStore.deleteDnsChallenge(host);
     }
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public Challenge certChallengeGetConnect(String key) {
-        return certStore.getChallenge(key)
+    public Challenge certChallengeDnsGetConnect(String host) {
+        return certStore.getDnsChallenge(host)
+                .map(Challenge::new)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public void certChallengeDnsPutConnect(String host, Challenge challenge) {
+        certStore.setDnsChallenge(host, challenge.getResult());
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public void certChallengeHttpDeleteConnect(String key) {
+        certStore.deleteHttpChallenge(key);
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public Challenge certChallengeHttpGetConnect(String key) {
+        return certStore.getHttpChallenge(key)
                 .map(ChallengeModel::toChallenge)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public void certChallengePutConnect(String key, Challenge challenge) {
-        certStore.setChallenge(new ChallengeModel(
+    public void certChallengeHttpPutConnect(String key, Challenge challenge) {
+        certStore.setHttpChallenge(new ChallengeModel(
                 key,
                 challenge.getResult()));
     }
@@ -110,7 +129,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
         if (certOpt.isPresent()) {
             return certOpt.get();
         } else if (domain.matches(config.domainWhitelist())
-            || projectStore.getProjectBySlug(domain, true).isPresent()) {
+                || projectStore.getProjectBySlug(domain, true).isPresent()) {
             throw new ClientErrorException(Response.Status.NOT_FOUND);
         } else {
             throw new ClientErrorException(Response.Status.UNAUTHORIZED);
