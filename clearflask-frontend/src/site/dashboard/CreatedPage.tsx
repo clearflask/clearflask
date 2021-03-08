@@ -85,7 +85,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       newModName: account?.name,
       newModEmail: account?.email,
       // newItemTitle: 'Add dark mode',
-      // newItemDescription: textToRaw('To reduce eye-strain, please add a low-light option'),
+      // newItemDescription: textToRaw('To reduce eye-strain, please add a low-light option. '),
     };
   }
 

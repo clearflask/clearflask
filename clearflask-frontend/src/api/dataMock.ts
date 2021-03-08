@@ -274,15 +274,17 @@ class DataMock {
   demoBoard(ideas: Array<{
     status: string,
     title?: string,
+    titleWords?: number,
     description?: string,
+    descriptionWords?: number,
     extra?: Partial<Admin.Idea>
   }>) {
     return this.demoPage((config, user) => Promise.all(ideas.map(idea => ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: user.userId,
-        title: idea.title || loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }),
-        description: idea.description ? textToHtml(idea.description) : undefined,
+        title: idea.title || loremIpsum({ units: 'words', count: idea.titleWords || Math.round(Math.random() * 10 + 3) }),
+        description: idea.description ? textToHtml(idea.description) : (idea.descriptionWords ? textToHtml(loremIpsum({ units: 'words', count: idea.descriptionWords })) : undefined),
         categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         statusId: idea.status,
@@ -378,14 +380,14 @@ class DataMock {
     ]));
   }
 
-  demoPrioritization() {
+  demoPrioritization(numIdeas: 1 | 2 | 3 = 3) {
     return this.demoPage(async (config, user) => {
       await ServerMock.get().ideaCreateAdmin({
         projectId: this.projectId,
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Add Dark Mode',
-          description: textToHtml('To reduce eye-strain, please add a low-light option'),
+          description: textToHtml('To reduce eye-strain, please add a low-light option. '),
           categoryId: 'demoCategoryId', // From configTemplater.demoCategory
           tagIds: [],
           ...{ // Fake data
@@ -402,62 +404,66 @@ class DataMock {
           },
         },
       });
-      const idea2 = await ServerMock.get().ideaCreateAdmin({
-        projectId: this.projectId,
-        ideaCreateAdmin: {
-          authorUserId: user.userId,
-          title: 'Support Jira Integration',
-          description: textToHtml('I would like to be able to synchronize user ideas with my Jira board'),
-          categoryId: config.content.categories[0].categoryId,
-          tagIds: [],
-          ...{ // Fake data
-            ideaId: 'support-jira-integration',
-            funded: 80,
-            fundersCount: 5,
-            fundGoal: 200,
-            voteValue: 42,
-            expressionsValue: 56,
-            expressions: {
-              '👍': 34,
-              '❤️': 5,
+      if (numIdeas >= 2) {
+        const idea2 = await ServerMock.get().ideaCreateAdmin({
+          projectId: this.projectId,
+          ideaCreateAdmin: {
+            authorUserId: user.userId,
+            title: 'Support Jira Integration',
+            description: textToHtml('I would like to be able to synchronize user ideas with my Jira board'),
+            categoryId: config.content.categories[0].categoryId,
+            tagIds: [],
+            ...{ // Fake data
+              ideaId: 'support-jira-integration',
+              funded: 80,
+              fundersCount: 5,
+              fundGoal: 200,
+              voteValue: 42,
+              expressionsValue: 56,
+              expressions: {
+                '👍': 34,
+                '❤️': 5,
+              },
             },
           },
-        },
-      });
-      await ServerMock.get().ideaVoteUpdate({
-        projectId: this.projectId,
-        ideaId: idea2.ideaId,
-        ideaVoteUpdate: {
-          fundDiff: 40,
-        },
-      });
-      const idea3 = await ServerMock.get().ideaCreateAdmin({
-        projectId: this.projectId,
-        ideaCreateAdmin: {
-          authorUserId: user.userId,
-          title: 'Customize order of options',
-          description: textToHtml('I want to be able to re-order the options we have in the main settings page.'),
-          categoryId: config.content.categories[0].categoryId,
-          tagIds: [],
-          ...{ // Fake data
-            funded: 20,
-            fundersCount: 5,
-            fundGoal: 20,
-            voteValue: 12,
-            expressionsValue: 4,
-            expressions: {
-              '👍': 4,
+        });
+        await ServerMock.get().ideaVoteUpdate({
+          projectId: this.projectId,
+          ideaId: idea2.ideaId,
+          ideaVoteUpdate: {
+            fundDiff: 40,
+          },
+        });
+      }
+      if (numIdeas >= 3) {
+        const idea3 = await ServerMock.get().ideaCreateAdmin({
+          projectId: this.projectId,
+          ideaCreateAdmin: {
+            authorUserId: user.userId,
+            title: 'Customize order of options',
+            description: textToHtml('I want to be able to re-order the options we have in the main settings page.'),
+            categoryId: config.content.categories[0].categoryId,
+            tagIds: [],
+            ...{ // Fake data
+              funded: 20,
+              fundersCount: 5,
+              fundGoal: 20,
+              voteValue: 12,
+              expressionsValue: 4,
+              expressions: {
+                '👍': 4,
+              },
             },
           },
-        },
-      });
-      await ServerMock.get().ideaVoteUpdate({
-        projectId: this.projectId,
-        ideaId: idea3.ideaId,
-        ideaVoteUpdate: {
-          fundDiff: 20,
-        },
-      });
+        });
+        await ServerMock.get().ideaVoteUpdate({
+          projectId: this.projectId,
+          ideaId: idea3.ideaId,
+          ideaVoteUpdate: {
+            fundDiff: 20,
+          },
+        });
+      }
     });
   }
 
@@ -670,7 +676,7 @@ class DataMock {
       ideaCreateAdmin: {
         authorUserId: user.userId,
         title: 'Add Dark Mode',
-        description: textToHtml('To reduce eye-strain, please add a low-light option'),
+        description: textToHtml('To reduce eye-strain, please add a low-light option. '),
         response: textToHtml('Added to our backlog, thanks!'),
         categoryId: config.content.categories[0].categoryId,
         statusId: config.content.categories[0].workflow.entryStatus,

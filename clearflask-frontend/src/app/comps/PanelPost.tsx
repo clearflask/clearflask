@@ -50,7 +50,6 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props {
   className?: string;
-  innerClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   widthExpand?: boolean;
@@ -132,7 +131,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     content = this.props.suppressPanel ? content : (
       <Panel
         className={this.props.className}
-        innerClassName={this.props.innerClassName}
         title={this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}

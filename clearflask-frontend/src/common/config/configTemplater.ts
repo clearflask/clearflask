@@ -114,7 +114,7 @@ export default class Templater {
             this.creditsTime();
             break;
           case 'beer':
-            this.creditsBeer();
+            this.creditsEmoji('🍺');
             break;
         }
       }
@@ -896,16 +896,16 @@ export default class Templater {
   //     Admin.CreditFormatterEntryToJSON({suffix: 'Low', multiplier: 100, lessOrEqual: 0.1}),
   //   ]);
   // }
-  creditsBeer() {
+  creditsEmoji(emoji: string) {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' 🍺', lessOrEqual: 999 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' ' + emoji, lessOrEqual: 999 }),
     ]);
   }
 

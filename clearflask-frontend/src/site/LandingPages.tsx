@@ -30,7 +30,7 @@ import NotificationIcon from '@material-ui/icons/Notifications';
 import CommunityIcon from '@material-ui/icons/People';
 import QuestionIcon from '@material-ui/icons/QuestionAnswer';
 import BillingIcon from '@material-ui/icons/Receipt';
-import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
+import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
 import RespondIcon from '@material-ui/icons/ReplyAll';
 import SearchIcon from '@material-ui/icons/Search';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
@@ -54,7 +54,9 @@ import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
+import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
+import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif2.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
@@ -451,7 +453,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
         // demoBlurryShadow: true,
         demoCreateAnimate: {
           title: 'Add Dark Mode',
-          description: 'To reduce eye-strain, please add a low-light option',
+          description: 'To reduce eye-strain, please add a low-light option. ',
           similarSearchTerm: 'theme',
         },
       }}
@@ -476,7 +478,7 @@ export function LandingCollectFeedback() {
           variant='content'
           title='Capture feedback publicly, internally, or on-behalf'
           description='Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels.'
-          icon={(<VisibilityIcon />)}
+          icon={(<IdeasIcon />)}
         />
         <BlockContent
           variant='content'
@@ -628,6 +630,7 @@ export function LandingPrioritizationTypes() {
         controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
         mock={mocker => mocker.demoPrioritization()}
         settings={{
+          demoDisablePostOpen: true,
           demoBlurryShadow: true,
           demoVotingExpressionsAnimate: [
             { type: 'vote', upvote: true },
@@ -646,6 +649,7 @@ export function LandingPrioritizationTypes() {
         controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
         mock={mocker => mocker.demoPrioritization()}
         settings={{
+          demoDisablePostOpen: true,
           demoBlurryShadow: true,
           demoVotingExpressionsAnimate: [
             { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
@@ -667,6 +671,7 @@ export function LandingPrioritizationTypes() {
         demoFixedHeight={450}
         containerPortal
         settings={{
+          demoDisablePostOpen: true,
           demoBlurryShadow: true,
           demoFundingControlAnimate: [
             { index: 0, fundDiff: 20 },
@@ -1464,7 +1469,6 @@ function LandingTransactionHistory(props: {
   const credits = Client.CreditsToJSON({ formats: Templater.creditsCurrencyFormat() });
   var currAmt = props.initialAmount || 0;
   var transactions = props.items.map(item => {
-    console.log('DEBUG', currAmt, item.amount);
     currAmt += item.amount;
     return (
       <TableRow>
@@ -1701,18 +1705,21 @@ export function LandingContentCreator() {
         <Block
           variant='content'
           type='column'
+          icon={<IdeasIcon />}
           title='Idea brainstorm'
           description='Let your fans brainstorm'
         />
         <Block
           variant='content'
           type='column'
+          icon={<ForumIcon />}
           title='Discussion forum'
           description='Forum categories, Threaded comments'
         />
         <Block
           variant='content'
           type='column'
+          icon={<PrivacyIcon />}
           title='Fans-only'
           description='You can choose to only allow fans to view and/or contribute ideas. Ask them to sign in using your existing service such as Patreon.'
         />
@@ -1721,38 +1728,54 @@ export function LandingContentCreator() {
         title='Prioritize your work'
       />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' staggerHeight={100}>
-        <Block
+        <Demo
           variant='content'
           type='column'
           title='Simple vote'
           description='Let your fans vote up or down which ideas they like so you can concentrate on what your fanbase wants.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('vote')}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoBlurryShadow: true,
+            demoDisablePostOpen: true,
+            demoVotingExpressionsAnimate: [
+              { type: 'vote', upvote: true },
+            ],
+          }}
+          demoFixedHeight={150}
+          containerPortal
         />
-        <Block
+        <Demo
           variant='content'
           type='column'
           title='Feedback from your most valued fans, Credit based prioritization'
           description='Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas. Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('fund')}
+          controls={project => (<PrioritizationControlsCredits forContentCreator templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={200}
+          containerPortal
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+          }}
         />
       </HorizontalPanels>
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
         <Block
           variant='content'
           type='column'
-          title='1. Link with Patreon, OpenCollective, ...'
+          title='1# Link with Patreon, OpenCollective, ...'
           description='Link and issue credits'
           demo={(<LandingCreditSystemLinkOptions donationFirst />)}
         />
         <Block
           variant='content'
           type='column'
-          title='2. Choose your currency'
-          description=''
-        />
-        <Block
-          variant='content'
-          type='column'
-          title='3. Let them spend'
-          description=''
+          title='2# Issue credits'
+          description='When a donation is made or a user completes an action, give them credits proportional to their loyalty.'
           demo={(
             <LandingTransactionHistory size='small' items={[
               { description: 'Credits for donation', amount: 5000 },
@@ -1761,24 +1784,45 @@ export function LandingContentCreator() {
             ]} />
           )}
         />
+        <Block
+          variant='content'
+          type='column'
+          title='3# Let them spend it'
+          description=''
+          image={DemoCrowdfund2Img}
+          imageStyleOuter={{ padding: 'unset' }}
+        />
       </HorizontalPanels>
-      <Block
-        title='Keep your fans updated'
+      <Demo
+        type='mediumDemo'
+        title='Roadmap'
+        description=''
+        initialSubPath='/embed/demo'
+        alignItems='center'
+        template={templater => templater.demoBoard('Plan', [
+          { title: 'Funding', display: { showFunding: true } },
+          { title: 'Up next', status: { disableFunding: true } },
+        ])}
+        mock={mocker => mocker.demoBoard([
+          { status: '0', extra: { fundGoal: 10000, funded: 7800 } },
+          { status: '0', extra: { fundGoal: 7000, funded: 2100 } },
+          { status: '1' }, { status: '1' }, { status: '1' },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
+        buttonTitle='See a Roadmap'
+        buttonLink='/solutions/public-roadmap'
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' staggerHeight={100}>
-        <Block
-          variant='content'
-          type='column'
-          title='Roadmap'
-          description=''
-        />
-        <Block
-          variant='content'
-          type='column'
-          title='Announcements'
-          description=''
-        />
-      </HorizontalPanels>
+      <Block
+        title='Let your fans know'
+        description='Your fans will be thrilled their particular idea came to life.'
+        image={DemoEmailNotification2Img}
+        imageScale={0.4}
+        mirror
+        alignItems='center'
+      />
     </React.Fragment>
   );
 }

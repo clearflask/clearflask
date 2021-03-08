@@ -365,17 +365,21 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     for (const change of (isReverse ? [...changes].reverse() : changes)) {
       const fundDiff = change.fundDiff * (isReverse ? -1 : 1)
 
-      const idea = (change.index === 0 && !!this.props.idea)
+      const idea: Client.Idea | Client.IdeaWithVote | undefined = (change.index === 0 && !!this.props.idea)
         ? this.props.idea
         : this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
       if (!idea) continue;
 
+      const fundAmount = change.index === 0
+        ? this.props.fundAmount
+        : (idea as Client.IdeaWithVote).vote.fundAmount;
+
       const increment = fundDiff >= 0 ? 1 : -1;
 
-      while (this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId
+      while ((this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId)
         && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
         && this.props.balance >= ((this.state.sliderFundAmountDiff || 0) + increment)
-        && ((idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment) >= 0) {
+        && ((fundAmount || 0) + (this.state.sliderFundAmountDiff || 0) + increment) >= 0) {
 
         if (await animate({
           setState: {

@@ -100,7 +100,6 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     const isHero = this.props.type === 'hero';
 
     const imageSrc = this.props.image?.src || this.props.imagePath;
-    console.log('DEBUG', this.props.image);
     var image = imageSrc && (
       <ImgIso
         alt=''
@@ -198,15 +197,41 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
           justify='center'
         >
-          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)} lg={isMediumDemo ? 8 : 6} xl={isMediumDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
+          <Grid
+            item
+            className={classNames(this.props.classes.grid)}
+            alignItems={this.props.displayAlign || 'center'}
+            xs={12}
+            md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)}
+            lg={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+            xl={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+          >
             {display}
           </Grid>
-          <Grid alignItems='center' item xs={12} sm={8} md={isMediumDemo ? 3 : 6} lg={isMediumDemo ? 4 : 5} xl={4} className={this.props.classes.grid}>
+          <Grid
+            item
+            className={this.props.classes.grid}
+            alignItems='center'
+            xs={12}
+            sm={8}
+            md={isMediumDemo ? 3 : 6}
+            lg={isMediumDemo ? 4 : 5}
+            xl={4}
+          >
             {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
             {content}
           </Grid>
           {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
-            <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+            <Grid
+              item
+              className={this.props.classes.grid}
+              alignItems='center'
+              xs={12}
+              sm={8}
+              md={6}
+              lg={5}
+              xl={4}
+            >
               {image}
             </Grid>
           )}

@@ -160,11 +160,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               showExpression: false,
             }} />
         ));
-        boardCmpt = (
-          <div className={this.props.classes.board}>
-            {panels}
-          </div>
-        );
         if (board.title) {
           boardCmpt = (
             <DividerCorner

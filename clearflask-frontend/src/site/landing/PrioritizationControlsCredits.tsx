@@ -1,4 +1,4 @@
-import { FormControlLabel, Radio, RadioGroup, FormHelperText } from '@material-ui/core';
+import { FormControlLabel, FormHelperText, Radio, RadioGroup } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import Templater from '../../common/config/configTemplater';
@@ -14,6 +14,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   templater: Templater;
+  forContentCreator?: boolean;
 }
 
 interface State {
@@ -35,8 +36,8 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
         <FormControlLabel value='currency' control={<Radio color='primary' />}
           label={<FormHelperText component='span'>Currency</FormHelperText>} />
         <FormControlLabel value='time' control={<Radio color='primary' />}
-          label={<FormHelperText component='span'>Development time</FormHelperText>} />
-        <FormControlLabel value='beer' control={<Radio color='primary' />}
+          label={<FormHelperText component='span'>{this.props.forContentCreator ? 'Time' : 'Development time'}</FormHelperText>} />
+        <FormControlLabel value={this.props.forContentCreator ? 'heart' : 'beer'} control={<Radio color='primary' />}
           label={<FormHelperText component='span'>Customize</FormHelperText>} />
       </RadioGroup>
     );
@@ -54,7 +55,11 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
         break;
       case 'beer':
         this.setState({ fundingType: val });
-        this.props.templater.creditsBeer();
+        this.props.templater.creditsEmoji('🍺');
+        break;
+      case 'heart':
+        this.setState({ fundingType: val });
+        this.props.templater.creditsEmoji('❤️');
         break;
     }
   }

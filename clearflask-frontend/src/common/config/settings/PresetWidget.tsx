@@ -93,7 +93,7 @@ class PresetWidget extends Component<Props> {
       },
       {
         title: 'Beer', body: 'Tip jars may decide to use a currency such as tipping a beer, coffee, or lunch.',
-        actionTitle: 'Set', action: (templater, path) => templater.creditsBeer()
+        actionTitle: 'Set', action: (templater, path) => templater.creditsEmoji('🍺')
       },
     ],
   }
