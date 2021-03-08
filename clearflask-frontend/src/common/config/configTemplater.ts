@@ -846,12 +846,15 @@ export default class Templater {
       this._get<ConfigEditor.ObjectProperty>(['users', 'credits', 'creditOnSignup']).setRaw(
         Admin.CreditsCreditOnSignupToJSON({ amount: creditOnSignup }));
     }
-    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw(Templater.creditsCurrencyFormat());
+  }
+  static creditsCurrencyFormat(): Admin.CreditFormatterEntry[] {
+    return [
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', lessOrEqual: 0 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '¢' }),
-    ]);
+    ];
   }
   creditsTime() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);

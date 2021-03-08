@@ -1,6 +1,6 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { Container, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
@@ -80,6 +80,8 @@ import PostStatusIframe from '../app/PostStatusIframe';
 import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
+import Templater from '../common/config/configTemplater';
+import CreditView from '../common/config/CreditView';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
@@ -1355,7 +1357,6 @@ export function LandingPublicRoadmap() {
 }
 
 export function LandingCrowdFunding() {
-  const classes = useStyles();
   return (
     <React.Fragment>
       <Hero
@@ -1368,55 +1369,7 @@ export function LandingCrowdFunding() {
         title='Link with your credit system'
         description='You can continue to use your existing payment platform. Link it with our system and decide when users will be issued credits.'
         alignItems='center'
-        demo={(
-          <div className={classes.pointsContainer}>
-            <div className={classes.point}>
-              <PaymentIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Payment processor
-                  &nbsp;
-                    <PostStatusIframe
-                    postId='payment-providers-integration-bgu'
-                    height={14}
-                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
-                  />
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Stripe, Apple Store, Play Store
-                  </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <DonationIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Donation Framework
-                  &nbsp;
-                    <PostStatusIframe
-                    postId='donation-frameworks-integration-hvn'
-                    height={14}
-                    config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
-                  />
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Patreon, OpenCollective
-                  </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <ApiIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Custom source
-                  </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Integrate via API, Zapier
-                  </Typography>
-              </div>
-            </div>
-          </div>
-        )}
+        demo={(<LandingCreditSystemLinkOptions />)}
       />
       <Block
         title='Receive credits and spend'
@@ -1424,39 +1377,12 @@ export function LandingCrowdFunding() {
         alignItems='center'
         mirror
         demo={(
-          <DividerCorner title='Transaction history' height='100%'>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell key='description'>Description</TableCell>
-                  <TableCell key='amount' align='right'>Amount</TableCell>
-                  <TableCell key='balance' align='right'>Account balance</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow>
-                  <TableCell key='description'>Credits for July 2021</TableCell>
-                  <TableCell key='amount'>$50.00</TableCell>
-                  <TableCell key='balance'>$70.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell key='description'>Fund 'Jira Integration'</TableCell>
-                  <TableCell key='amount' style={{ color: '#d50000' }}>($80.00)</TableCell>
-                  <TableCell key='balance'>$20.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell key='description'>Credits for June 2021</TableCell>
-                  <TableCell key='amount'>$50.00</TableCell>
-                  <TableCell key='balance'>$100.00</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell key='description'>Credits for May 2021</TableCell>
-                  <TableCell key='amount'>$50.00</TableCell>
-                  <TableCell key='balance'>$50.00</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </DividerCorner>
+          <LandingTransactionHistory items={[
+            { description: 'Credits for May 2021', amount: 5000 },
+            { description: 'Credits for June 2021', amount: 5000 },
+            { description: "Fund 'Jira Integration'", amount: -8000 },
+            { description: 'Credits for July 2021', amount: 5000 },
+          ]} />
         )}
       />
       <Block
@@ -1524,6 +1450,110 @@ export function LandingCrowdFunding() {
         image={DemoFundingRoadmapImg}
       />
     </React.Fragment>
+  );
+}
+
+function LandingTransactionHistory(props: {
+  reverse?: boolean;
+  size?: Size,
+  initialAmount?: number, items: Array<{
+    description: string;
+    amount: number;
+  }>
+}) {
+  const credits = Client.CreditsToJSON({ formats: Templater.creditsCurrencyFormat() });
+  var currAmt = props.initialAmount || 0;
+  var transactions = props.items.map(item => {
+    console.log('DEBUG', currAmt, item.amount);
+    currAmt += item.amount;
+    return (
+      <TableRow>
+        <TableCell key='description'>{item.description}</TableCell>
+        <TableCell key='amount'><CreditView val={item.amount} credits={credits} /></TableCell>
+        <TableCell key='balance'><CreditView val={currAmt} credits={credits} /></TableCell>
+      </TableRow>
+    );
+  });
+  if (props.reverse) {
+    transactions = transactions.reverse();
+  }
+  return (
+    <DividerCorner title='Transaction history' height='100%'>
+      <Table size={props.size}>
+        <TableHead>
+          <TableRow>
+            <TableCell key='description'>Description</TableCell>
+            <TableCell key='amount' align='right'>Amount</TableCell>
+            <TableCell key='balance' align='right'>Account balance</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {transactions}
+        </TableBody>
+      </Table>
+    </DividerCorner>
+  );
+}
+
+function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
+  const classes = useStyles();
+  const paymentProcessor = (
+    <div className={classes.point}>
+      <PaymentIcon fontSize='inherit' className={classes.pointIcon} />
+      <div>
+        <Typography variant='h6' component='div'>
+          Payment processor
+          &nbsp;
+            <PostStatusIframe
+            postId='payment-providers-integration-bgu'
+            height={14}
+            config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+          />
+        </Typography>
+        <Typography variant='body1' component='div' color='textSecondary'>
+          Stripe, Apple Store, Play Store
+          </Typography>
+      </div>
+    </div>
+  );
+  const donationFramework = (
+    <div className={classes.point}>
+      <DonationIcon fontSize='inherit' className={classes.pointIcon} />
+      <div>
+        <Typography variant='h6' component='div'>
+          Donation Framework
+          &nbsp;
+            <PostStatusIframe
+            postId='donation-frameworks-integration-hvn'
+            height={14}
+            config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+          />
+        </Typography>
+        <Typography variant='body1' component='div' color='textSecondary'>
+          Patreon, OpenCollective
+          </Typography>
+      </div>
+    </div>
+  );
+  const apiZapier = (
+    <div className={classes.point}>
+      <ApiIcon fontSize='inherit' className={classes.pointIcon} />
+      <div>
+        <Typography variant='h6' component='div'>
+          Custom source
+          </Typography>
+        <Typography variant='body1' component='div' color='textSecondary'>
+          Integrate via API, Zapier
+          </Typography>
+      </div>
+    </div>
+  );
+  return (
+    <div className={classes.pointsContainer}>
+      {props.donationFirst ? donationFramework : paymentProcessor}
+      {props.donationFirst ? paymentProcessor : donationFramework}
+      {apiZapier}
+    </div>
   );
 }
 
@@ -1665,29 +1695,90 @@ export function LandingContentCreator() {
         image={CreatorImg}
       />
       <Block
-        title='Idea bucket'
-        description='Let your fans brainstorm'
+        title='Create a community'
       />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={100}>
+        <Block
+          variant='content'
+          type='column'
+          title='Idea brainstorm'
+          description='Let your fans brainstorm'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Discussion forum'
+          description='Forum categories, Threaded comments'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Fans-only'
+          description='You can choose to only allow fans to view and/or contribute ideas. Ask them to sign in using your existing service such as Patreon.'
+        />
+      </HorizontalPanels>
       <Block
-        title='Feedback from your most valued fans, Credit based prioritization'
-        description='Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas.'
+        title='Prioritize your work'
       />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' staggerHeight={100}>
+        <Block
+          variant='content'
+          type='column'
+          title='Simple vote'
+          description='Let your fans vote up or down which ideas they like so you can concentrate on what your fanbase wants.'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Feedback from your most valued fans, Credit based prioritization'
+          description='Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas. Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
+        <Block
+          variant='content'
+          type='column'
+          title='1. Link with Patreon, OpenCollective, ...'
+          description='Link and issue credits'
+          demo={(<LandingCreditSystemLinkOptions donationFirst />)}
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='2. Choose your currency'
+          description=''
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='3. Let them spend'
+          description=''
+          demo={(
+            <LandingTransactionHistory size='small' items={[
+              { description: 'Credits for donation', amount: 5000 },
+              { description: "Fund 'Microphone upgrade'", amount: -2000 },
+              { description: "Fund 'Upcoming album'", amount: -2500 },
+            ]} />
+          )}
+        />
+      </HorizontalPanels>
       <Block
-        title='How it works'
-        description='Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
+        title='Keep your fans updated'
       />
-      <Block
-        title='Fans-only'
-        description='You can choose to only allow fans to view and/or contribute ideas. Ask them to sign in using your existing service such as Patreon.'
-      />
-      <Block
-        title='Threaded conversations'
-        description=''
-      />
-      <Block
-        title='Threaded conversations'
-        description=''
-      />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' staggerHeight={100}>
+        <Block
+          variant='content'
+          type='column'
+          title='Roadmap'
+          description=''
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Announcements'
+          description=''
+        />
+      </HorizontalPanels>
     </React.Fragment>
   );
 }
