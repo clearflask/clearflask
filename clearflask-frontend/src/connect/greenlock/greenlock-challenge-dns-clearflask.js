@@ -23,12 +23,13 @@ module.exports.create = function (config) {
 
 			await ServerConnect.get()
 				.dispatch()
-				.certChallengeDnsPutConnect({
-					host: dnsHost,
-					challenge: {
-						result: keyAuthorizationDigest,
+				.certChallengeDnsPutConnect(
+					{
+						host: dnsHost,
+						challenge: {
+							result: keyAuthorizationDigest,
+						},
 					},
-				},
 					undefined,
 					{ 'x-cf-connect-token': connectConfig.connectToken });
 
@@ -64,8 +65,13 @@ module.exports.create = function (config) {
 
 			await ServerConnect.get()
 				.dispatch()
-				.certChallengeHttpDeleteConnect(
-					{ host: dnsHost },
+				.certChallengeDnsDeleteConnect(
+					{
+						host: dnsHost,
+						challenge: {
+							result: keyAuthorizationDigest,
+						},
+					},
 					undefined,
 					{ 'x-cf-connect-token': connectConfig.connectToken });
 			return null;

@@ -123,7 +123,7 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public Optional<String> getDnsChallenge(String host) {
-        checkDnsHost(host);
+        checkArgument(allowedHostPredicate.test(host));
         ListResourceRecordSetsResult result = route53.listResourceRecordSets(new ListResourceRecordSetsRequest(config.hostedZoneId())
                 .withStartRecordType(RRType.TXT)
                 .withStartRecordName(host));
@@ -135,31 +135,28 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public void setDnsChallenge(String host, String value) {
-        checkDnsHost(host);
+        checkArgument(allowedHostPredicate.test(host));
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),
                 new ChangeBatch(ImmutableList.of(new Change(
                         ChangeAction.UPSERT, new ResourceRecordSet(
                         host,
-                        "\"" + RRType.TXT + "\"")
-                        .withResourceRecords(new ResourceRecord(value))
+                        RRType.TXT)
+                        .withResourceRecords(new ResourceRecord("\"" + value + "\""))
                         .withTTL(300L))))));
     }
 
     @Override
-    public void deleteDnsChallenge(String host) {
-        checkDnsHost(host);
+    public void deleteDnsChallenge(String host, String value) {
+        checkArgument(allowedHostPredicate.test(host));
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),
                 new ChangeBatch(ImmutableList.of(new Change(
                         ChangeAction.DELETE, new ResourceRecordSet(
                         host,
-                        RRType.TXT))))));
-    }
-
-    private void checkDnsHost(String host) {
-        checkArgument(allowedHostPredicate.test(host));
-        checkArgument(!host.equals("_acme-challenge.clearflask.com"));
+                        RRType.TXT)
+                        .withResourceRecords(new ResourceRecord("\"" + value + "\""))
+                        .withTTL(300L))))));
     }
 
     @Extern

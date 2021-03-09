@@ -12,7 +12,8 @@ Manager.create = function (opts) {
 
     manager.get = async function (opts) {
         console.log('manager.get', opts);
-        const servername = opts.servername === 'clearflask.com' || opts.servername.endsWith('.clearflask.com')
+        // Redirect all subdomains to wildcard cert except for base domain which needs its own cert
+        const servername = opts.servername.endsWith('.clearflask.com')
             ? "*.clearflask.com"
             : opts.servername;
         try {
@@ -45,6 +46,7 @@ Manager.create = function (opts) {
 
     manager.set = async function (opts) {
         console.log('manager.set', opts.domain);
+        if (opts.domain === undefined) return; // Greenlock sometimes calls us with nothing
         await ServerConnect.get()
             .dispatch()
             .certPutConnect(

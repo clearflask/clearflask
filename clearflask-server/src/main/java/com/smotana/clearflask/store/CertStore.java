@@ -36,7 +36,7 @@ public interface CertStore {
 
     void setDnsChallenge(String host, String value);
 
-    void deleteDnsChallenge(String host);
+    void deleteDnsChallenge(String host, String value);
 
 
     Optional<CertModel> getCert(String domain);

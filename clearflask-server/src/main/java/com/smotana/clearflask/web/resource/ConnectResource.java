@@ -75,8 +75,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public void certChallengeDnsDeleteConnect(String host) {
-        certStore.deleteDnsChallenge(host);
+    public void certChallengeDnsDeleteConnect(String host, Challenge challenge) {
+        certStore.deleteDnsChallenge(host, challenge.getResult());
     }
 
     @RolesAllowed({Role.CONNECT})
