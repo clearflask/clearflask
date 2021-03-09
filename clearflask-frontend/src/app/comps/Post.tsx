@@ -426,6 +426,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     this._isMounted = true;
     if (!!this.props.settings.demoFundingControlAnimate) {
       this.demoFundingControlAnimate(this.props.settings.demoFundingControlAnimate);
+    } else if (!!this.props.settings.demoFundingAnimate) {
+      this.demoFundingAnimate(this.props.settings.demoFundingAnimate);
     }
     if (!!this.props.settings.demoVotingExpressionsAnimate) {
       this.demoVotingExpressionsAnimate(this.props.settings.demoVotingExpressionsAnimate);
@@ -1150,6 +1152,55 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         {children}
       </Link>
     );
+  }
+
+  async demoFundingAnimate(fundAmount: number) {
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
+    const ideaId = this.props.idea!.ideaId;
+    const ideaWithVote: Client.IdeaWithVote = {
+      ...this.props.idea!,
+      vote: {
+        vote: this.props.server.getStore().getState().votes.votesByIdeaId[ideaId],
+        expression: this.props.server.getStore().getState().votes.expressionByIdeaId[ideaId],
+        fundAmount: this.props.server.getStore().getState().votes.fundAmountByIdeaId[ideaId],
+      },
+    }
+    const initialFundAmount = ideaWithVote.funded || 0;
+    const targetFundAmount = initialFundAmount + fundAmount;
+    var currFundAmount = initialFundAmount;
+    var stepFundAmount = (fundAmount >= 0 ? 1 : -1);
+
+    for (; ;) {
+      if (await animate({ sleepInMs: 150 })) return;
+      if (currFundAmount + stepFundAmount < Math.min(initialFundAmount, targetFundAmount)
+        || currFundAmount + stepFundAmount > Math.max(initialFundAmount, targetFundAmount)) {
+        stepFundAmount = -stepFundAmount;
+        continue;
+      }
+      currFundAmount = currFundAmount + stepFundAmount;
+      const msg: Client.ideaGetActionFulfilled = {
+        type: Client.ideaGetActionStatus.Fulfilled,
+        meta: {
+          action: Client.Action.ideaGet,
+          request: {
+            projectId: this.props.projectId,
+            ideaId: ideaId,
+          },
+        },
+        payload: {
+          ...ideaWithVote,
+          funded: currFundAmount,
+        },
+      };
+      // Private API just for this animation
+      Server._dispatch(msg, this.props.server.store);
+    }
   }
 
   async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>) {

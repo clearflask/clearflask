@@ -297,6 +297,7 @@ export interface StateSettings {
     index: number;
     fundDiff: number;
   }>,
+  demoFundingAnimate?: number,
   demoVotingExpressionsAnimate?: Array<{
     type: 'vote';
     upvote: boolean;

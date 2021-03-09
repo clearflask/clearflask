@@ -60,6 +60,7 @@ import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
 import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
 import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
@@ -73,6 +74,7 @@ import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
+import SupportImg from '../../public/img/landing/support.svg';
 import ValueImg from '../../public/img/landing/value.svg';
 import SalesImg from '../../public/img/support/sales.svg';
 import * as Client from '../api/client';
@@ -1569,18 +1571,80 @@ export function LandingInternalFeedback() {
         description='Collect feedback from within your organization or customer-base'
         image={InternalFeedbackImg}
       />
+      <Demo
+        title='All your feedback in one place'
+        description='Eliminate the mess of keeping track of feedback via starred emails, post-it notes, and text documents. Keep it all in one place.'
+        alignItems='flex-end'
+        demoFixedHeight={350}
+        demoInsetFade
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoExplorer({
+          allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
+          display: {
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 2,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: true,
+            showFunding: false,
+            showExpression: false,
+          },
+        }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 3 })}
+        // mock={mocker => mocker.demoFeedbackType()}
+        mock={mocker => mocker.demoBoard([
+          { status: '0', titleWords: 8, descriptionWords: 20, extra: { voteValue: 349 } },
+          { status: '0', titleWords: 6, descriptionWords: 25, extra: { voteValue: 286 } },
+          { status: '0', titleWords: 5, descriptionWords: 20, extra: { voteValue: 114 } },
+        ])}
+        settings={{
+          demoDisablePostOpen: true,
+          demoDisableExplorerExpanded: true,
+          demoBlurryShadow: true,
+          demoCreateAnimate: {
+            title: 'Page load performance',
+          },
+        }}
+      />
       <Block
         title='Keep all your data private'
         description='Setup privacy settings so only authorized users can see and post feedback.'
-      />
-      <Block
-        title='Stop forgetting what your coworker requested'
-        description='Eliminate the mess of keeping track of feedback via starred emails, post-it notes, and text documents. Keep it all in one place.'
+        image={DemoProjectPrivateImg}
+        imageScale={0.5}
+        alignItems='center'
         mirror
       />
       <Block
-        title='Keep your company informed'
-        description='Let your co-workers see your workload in order to understand your prioritization of their requests.'
+        type='mediumDemo'
+        title='Keep your stakeholders informed'
+        description='Keep your stakeholders up-to-date with notifications over email or web-push.'
+        image={DemoEmailNotificationImg}
+        imageScale={0.4}
+        alignItems='center'
+        mirror
+      />
+      <Demo
+        type='mediumDemo'
+        title='Transparency in your workload'
+        description='Let your co-workers see your work in order to understand your prioritization of their requests.'
+        initialSubPath='/embed/demo'
+        alignItems='center'
+        template={templater => templater.demoBoard('Ticket queue', [
+          { title: 'In Review' }, { title: 'In progress' },
+        ])}
+        mock={mocker => mocker.demoBoard([
+          { status: '0' }, { status: '0' }, { status: '0' },
+          { status: '1' }, { status: '1' },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
+        buttonTitle='See a Roadmap'
+        buttonLink='/solutions/public-roadmap'
       />
     </React.Fragment>
   );
@@ -1699,31 +1763,81 @@ export function LandingContentCreator() {
         image={CreatorImg}
       />
       <Block
-        title='Create a community'
+        title='Establish a community'
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={100}>
-        <Block
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md'>
+        <Demo
           variant='content'
           type='column'
           icon={<IdeasIcon />}
           title='Idea brainstorm'
-          description='Let your fans brainstorm'
+          description="Understand your community's opinion to make the right next step."
+          alignItems='flex-start'
+          demoFixedHeight={350}
+          scale={0.7}
+          demoInsetFade
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoExplorer({
+            allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
+            display: {
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 2,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: true,
+              showFunding: false,
+              showExpression: false,
+            },
+          }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 3 })}
+          // mock={mocker => mocker.demoFeedbackType()}
+          mock={mocker => mocker.demoBoard([
+            { status: '0', titleWords: 8, descriptionWords: 20, extra: { voteValue: 349 } },
+            { status: '0', titleWords: 6, descriptionWords: 25, extra: { voteValue: 286 } },
+            { status: '0', titleWords: 5, descriptionWords: 20, extra: { voteValue: 114 } },
+          ])}
+          settings={{
+            demoDisablePostOpen: true,
+            demoDisableExplorerExpanded: true,
+            demoBlurryShadow: true,
+            demoCreateAnimate: {
+              title: 'Add Dark Mode',
+              similarSearchTerm: 'theme',
+            },
+          }}
         />
-        <Block
+        <Demo
           variant='content'
           type='column'
           icon={<ForumIcon />}
           title='Discussion forum'
-          description='Forum categories, Threaded comments'
-        />
-        <Block
-          variant='content'
-          type='column'
-          icon={<PrivacyIcon />}
-          title='Fans-only'
-          description='You can choose to only allow fans to view and/or contribute ideas. Ask them to sign in using your existing service such as Patreon.'
+          description='Nurture a community in forum discussions with customized categories and threaded comments that bubble up the best comments to the top.'
+          alignItems='center'
+          initialSubPath='/embed/demo'
+          demoFixedHeight={420}
+          scale={0.7}
+          template={templater => {
+            templater.demoCategory();
+            templater.styleWhite();
+          }}
+          settings={{
+            demoBlurryShadow: true,
+          }}
+          mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+            .then(() => mocker.mockLoggedIn())}
+          demo={LandingCommentListDemo}
         />
       </HorizontalPanels>
+      <Block
+        // variant='content'
+        // type='column'
+        icon={<PrivacyIcon />}
+        title='Fans-only'
+        description='You can choose to only allow fans to suggest ideas or to see your private content. You can ask them to sign in using their existing account on platforms such as Patreon or YouTube.'
+      />
       <Block
         title='Prioritize your work'
       />
@@ -1731,7 +1845,7 @@ export function LandingContentCreator() {
         <Demo
           variant='content'
           type='column'
-          title='Simple vote'
+          title='Simple voting'
           description='Let your fans vote up or down which ideas they like so you can concentrate on what your fanbase wants.'
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('vote')}
@@ -1760,6 +1874,7 @@ export function LandingContentCreator() {
           settings={{
             demoDisablePostOpen: true,
             demoBlurryShadow: true,
+            demoFundingAnimate: 20,
           }}
         />
       </HorizontalPanels>
@@ -1767,8 +1882,8 @@ export function LandingContentCreator() {
         <Block
           variant='content'
           type='column'
-          title='1# Link with Patreon, OpenCollective, ...'
-          description='Link and issue credits'
+          title='1# Link with your platform'
+          description='If you are taking donations or payments for your content, link your platform to automatically issue'
           demo={(<LandingCreditSystemLinkOptions donationFirst />)}
         />
         <Block
@@ -1799,14 +1914,14 @@ export function LandingContentCreator() {
         description=''
         initialSubPath='/embed/demo'
         alignItems='center'
-        template={templater => templater.demoBoard('Plan', [
-          { title: 'Funding', display: { showFunding: true } },
-          { title: 'Up next', status: { disableFunding: true } },
+        template={templater => templater.demoBoard('Plan to fame', [
+          { title: 'Gathering ideas', },
+          { title: 'Up next', display: { showExpression: true } },
         ])}
         mock={mocker => mocker.demoBoard([
-          { status: '0', extra: { fundGoal: 10000, funded: 7800 } },
-          { status: '0', extra: { fundGoal: 7000, funded: 2100 } },
-          { status: '1' }, { status: '1' }, { status: '1' },
+          { status: '0' }, { status: '0' }, { status: '0' },
+          { status: '1', extra: { expressions: { '👍': 14, '❤️': 5 } } },
+          { status: '1', extra: { expressions: { '👍': 6, } } },
         ])}
         settings={{
           demoBlurryShadow: true,
@@ -1833,9 +1948,10 @@ export function LandingCommercialSupportManagement() {
       <Hero
         title='Commercial Support Management'
         description=''
+        image={SupportImg}
       />
       <Block
-        title=''
+        title='Pay Per Support'
         description=''
       />
       <Block

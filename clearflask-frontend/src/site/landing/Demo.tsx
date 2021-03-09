@@ -12,6 +12,19 @@ import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
+  insetFadeContainer: {
+    position: 'relative',
+  },
+  insetFade: {
+    pointerEvents: 'none',
+    boxShadow: 'inset 0px 0px 13px 7px rgb(255, 255, 255, 1)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
 });
 interface Props {
   initialSubPath?: string;
@@ -29,6 +42,7 @@ interface Props {
   scale?: number;
   settings?: StateSettings;
   containerPortal?: boolean;
+  demoInsetFade?: boolean;
 }
 class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
@@ -99,6 +113,17 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
         return demo;
       }} />
     );
+    if (this.props.demoInsetFade) {
+      demoPromised = (
+        <div className={this.props.classes.insetFadeContainer} style={{
+          height: this.props.demoFixedHeight,
+          width: this.props.demoFixedWidth,
+        }}>
+          <div className={this.props.classes.insetFade} />
+          {demoPromised}
+        </div>
+      );
+    }
     if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
       const isDark = this.props.demoWrap === 'browser-dark';
       demoPromised = (

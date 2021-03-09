@@ -152,7 +152,7 @@ components:
         - notificationMethods
       properties:
         visibility:
-          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'Whether project and content is visible to the public. Private projects require viewers to first sign-in.' }
           type: string
           enum: [Public, Private]
         accountFields:
