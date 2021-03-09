@@ -81,26 +81,26 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   async fetchData(props: Props, serverPromise: Promise<Server>): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
     const server = await serverPromise;
     const subscriptionResult = await WebNotification.getInstance().getPermission();
-    const configAndUserBind = await server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => {
-      if (windowIso.isSsr) {
-        return d.configBindSlug({ slug: windowIso.location.hostname });
-      } else {
-        return d.configAndUserBindSlug({
-          slug: windowIso.location.hostname,
-          userBind: {
-            browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-              ? subscriptionResult.token : undefined,
-          },
-        });
-      }
-    });
+    const dispatcher = await server.dispatch({ ssr: true, ssrStatusPassthrough: true });
+    var configAndUserBind: Client.ConfigBindSlugResult | Client.ConfigAndUserBindSlugResult | undefined;
+    if (windowIso.isSsr) {
+      configAndUserBind = await dispatcher.configBindSlug({ slug: windowIso.location.hostname });
+    } else {
+      configAndUserBind = await dispatcher.configAndUserBindSlug({
+        slug: windowIso.location.hostname,
+        userBind: {
+          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+            ? subscriptionResult.token : undefined,
+        },
+      });
+    }
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
 
-    const post = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
-      projectId: configAndUserBind.config?.config.projectId,
+    const post = await dispatcher.ideaGet({
+      projectId: configAndUserBind.config.config.projectId,
       ideaId: props.postId,
     });
 

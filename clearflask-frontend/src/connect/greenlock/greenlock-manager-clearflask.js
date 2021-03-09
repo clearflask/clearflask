@@ -12,10 +12,12 @@ Manager.create = function (opts) {
 
     manager.get = async function (opts) {
         console.log('manager.get', opts);
-        // Redirect all subdomains to wildcard cert except for base domain which needs its own cert
-        const servername = opts.servername.endsWith('.clearflask.com')
-            ? "*.clearflask.com"
-            : opts.servername;
+        // TODO RE-ENABLE WILDCARDS after you fix this greenlock mess
+        // // Redirect all subdomains to wildcard cert except for base domain which needs its own cert
+        // const servername = opts.servername.endsWith('.clearflask.com')
+        //     ? "*.clearflask.com"
+        //     : opts.servername;
+        const servername = opts.servername;
         try {
             const result = await ServerConnect.get()
                 .dispatch()
