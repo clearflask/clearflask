@@ -2,6 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.route53.AmazonRoute53;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
@@ -140,6 +141,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         ControllableSleepingStopwatch controllableSleepingStopwatch = new ControllableSleepingStopwatch();
         install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
         bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
+        bindMock(AmazonRoute53.class);
 
         install(Modules.override(
                 Application.module(),
