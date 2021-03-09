@@ -8,7 +8,7 @@ module.exports.create = function (config) {
 
 	return {
 		init: async ({ request }) => {
-			console.log('challenge.dns.init', opts);
+			console.log('challenge.dns.init');
 			return Promise.resolve(null);
 		},
 
