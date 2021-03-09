@@ -26,9 +26,13 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import lombok.extern.slf4j.Slf4j;
+import rx.Observable;
+import rx.functions.Action1;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -39,6 +43,11 @@ public class DynamoCertStore implements CertStore {
     public interface Config {
         @DefaultValue("")
         String hostedZoneId();
+
+        @DefaultValue("^(_acme-challenge\\.clearflask\\.com|_greenlock-dryrun-[a-z0-9]+\\.clearflask.com)$")
+        String allowedDnsHostRegex();
+
+        Observable<String> allowedDnsHostRegexObservable();
     }
 
     @Inject
@@ -46,17 +55,22 @@ public class DynamoCertStore implements CertStore {
     @Inject
     private DynamoMapper dynamoMapper;
     @Inject
-    AmazonRoute53 route53;
+    private AmazonRoute53 route53;
 
     private TableSchema<KeypairModel> keypairSchema;
     private TableSchema<ChallengeModel> challengeSchema;
     private TableSchema<CertModel> certSchema;
+    private Predicate<String> allowedHostPredicate;
 
     @Inject
     private void setup() {
         keypairSchema = dynamoMapper.parseTableSchema(KeypairModel.class);
         challengeSchema = dynamoMapper.parseTableSchema(ChallengeModel.class);
         certSchema = dynamoMapper.parseTableSchema(CertModel.class);
+
+        Action1<String> compileAllowedDnsHostRegex = r -> allowedHostPredicate = Pattern.compile(r).asPredicate();
+        config.allowedDnsHostRegexObservable().subscribe(compileAllowedDnsHostRegex);
+        compileAllowedDnsHostRegex.call(config.allowedDnsHostRegex());
     }
 
     @Extern
@@ -127,7 +141,7 @@ public class DynamoCertStore implements CertStore {
                 new ChangeBatch(ImmutableList.of(new Change(
                         ChangeAction.UPSERT, new ResourceRecordSet(
                         host,
-                        RRType.TXT)
+                        "\"" + RRType.TXT + "\"")
                         .withResourceRecords(new ResourceRecord(value))
                         .withTTL(300L))))));
     }
@@ -144,6 +158,7 @@ public class DynamoCertStore implements CertStore {
     }
 
     private void checkDnsHost(String host) {
+        checkArgument(allowedHostPredicate.test(host));
         checkArgument(!host.equals("_acme-challenge.clearflask.com"));
     }
 
