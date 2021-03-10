@@ -937,6 +937,22 @@ export default class Templater {
     }
   }
 
+  usersOnboardingOAuthClear() {
+    this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).setRaw([]);
+  }
+
+  usersOnboardingOAuthAdd(oauth: Partial<Admin.NotificationMethodsOauth>) {
+    const index = this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).insert().path.slice(-1).pop() as number;
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'buttonTitle']).set(oauth.buttonTitle || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'oauthId']).set(oauth.oauthId || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'clientId']).set(oauth.clientId || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'authorizeUrl']).set(oauth.authorizeUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'tokenUrl']).set(oauth.tokenUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'scope']).set(oauth.scope || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'userProfileUrl']).set(oauth.userProfileUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'guidJsonPath']).set(oauth.guidJsonPath || '');
+  }
+
   // usersOnboardingMobilePush(enable: boolean) {
   //   this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'mobilePush']).set(enable);
   // }

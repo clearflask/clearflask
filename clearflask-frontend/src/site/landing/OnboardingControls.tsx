@@ -12,6 +12,7 @@ enum SignupMethods {
   Web = 'web',
   Anonymous = 'anonymous',
   Sso = 'sso',
+  Oauth = 'oauth',
 }
 
 const initialSignupMethods = [SignupMethods.Email, SignupMethods.Web];
@@ -21,7 +22,12 @@ const setSignupMethodsTemplate = (templater: Templater, signupMethods: SignupMet
   // templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
   templater.usersOnboardingBrowserPush(signupMethods.includes(SignupMethods.Web));
   templater.usersOnboardingAnonymous(signupMethods.includes(SignupMethods.Anonymous), !signupMethods.includes(SignupMethods.Anonymous));
-  templater.usersOnboardingSso(signupMethods.includes(SignupMethods.Sso), 'secret', '#', 'MyApp');
+  templater.usersOnboardingSso(signupMethods.includes(SignupMethods.Sso), 'secret', '/sso', 'My App');
+  templater.usersOnboardingOAuthClear();
+  if (signupMethods.includes(SignupMethods.Oauth)) templater.usersOnboardingOAuthAdd({
+    buttonTitle: 'Google',
+    authorizeUrl: '/oauth',
+  });
 }
 
 export const setInitSignupMethodsTemplate = (templater: Templater) => {
@@ -38,6 +44,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   templater: Templater;
   onboardingDemoRef: React.RefObject<any>;
+  showDisplayNameControls?: boolean;
 }
 
 interface State {
@@ -48,6 +55,7 @@ interface State {
   allowDesktopPush: boolean;
   allowAnonymous: boolean;
   allowSso: boolean;
+  allowOauth: boolean;
   collectDisplayName: Client.AccountFieldsDisplayNameEnum;
 }
 
@@ -60,6 +68,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
     allowDesktopPush: true,
     allowAnonymous: true,
     allowSso: false,
+    allowOauth: false,
     collectDisplayName: Client.AccountFieldsDisplayNameEnum.None,
   };
 
@@ -112,24 +121,29 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
           <ToggleButton value={SignupMethods.Anonymous}>Anon</ToggleButton>
           <ToggleButton value={SignupMethods.Sso}>SSO</ToggleButton>
+          <ToggleButton value={SignupMethods.Oauth}>OAuth</ToggleButton>
         </ToggleButtonGroup>
-        <Typography variant='caption' display='block'>Display name</Typography>
-        <ToggleButtonGroup
-          {...{ size: 'small' }}
-          value={this.state.collectDisplayName}
-          exclusive
-          className={this.props.classes.toggleButtonGroup}
-          onChange={(e, val) => {
-            if (!val) return;
-            const displayName = val as Client.AccountFieldsDisplayNameEnum;
-            this.setState({ collectDisplayName: displayName });
-            this.props.templater.usersOnboardingDisplayName(displayName);
-          }}
-        >
-          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.None}>None</ToggleButton>
-          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Opt</ToggleButton>
-          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Req</ToggleButton>
-        </ToggleButtonGroup>
+        {this.props.showDisplayNameControls && (
+          <React.Fragment>
+            <Typography variant='caption' display='block'>Display name</Typography>
+            <ToggleButtonGroup
+              {...{ size: 'small' }}
+              value={this.state.collectDisplayName}
+              exclusive
+              className={this.props.classes.toggleButtonGroup}
+              onChange={(e, val) => {
+                if (!val) return;
+                const displayName = val as Client.AccountFieldsDisplayNameEnum;
+                this.setState({ collectDisplayName: displayName });
+                this.props.templater.usersOnboardingDisplayName(displayName);
+              }}
+            >
+              <ToggleButton value={Client.AccountFieldsDisplayNameEnum.None}>None</ToggleButton>
+              <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Opt</ToggleButton>
+              <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Req</ToggleButton>
+            </ToggleButtonGroup>
+          </React.Fragment>
+        )}
       </div>
     );
   }

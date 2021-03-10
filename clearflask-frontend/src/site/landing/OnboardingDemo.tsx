@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { Server } from '../../api/server';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import LogIn from '../../app/comps/LogIn';
+import ErrorPage from '../../app/ErrorPage';
 import DemoPushPermissionDialog from '../../common/DemoPushPermissionDialog';
 import DeviceContainer, { Device } from '../../common/DeviceContainer';
 import MobileNotification, { Device as MobileDevice, Status as MobileStatus } from '../../common/notification/mobileNotification';
@@ -26,6 +27,15 @@ const styles = (theme: Theme) => createStyles({
   },
   loginPaperScrollBody: {
     marginBottom: 65, // Extend to show shadow
+  },
+  tryAgainButton: {
+    paddingTop: 0,
+    paddingBottom: 0,
+    marginLeft: 10,
+  },
+  tryAgainContainer: {
+    display: 'flex',
+    alignItems: 'center',
   },
 });
 
@@ -55,6 +65,7 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
   }
 
   render() {
+    const loggedIn = !!this.props.server.getStore().getState().users.loggedIn.user;
     return (
       <DeviceContainer key={this.state.device} device={this.state.device}>
         <DemoPushPermissionDialog
@@ -103,18 +114,24 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
                     }}
                   />
                 ) : (
-                    <Button
-                      onClick={() => this.props.server.dispatch().then(d => d.userLogout({
-                        projectId: this.props.server.getProjectId(),
-                      }))
-                        .then(() => {
-                          this.mobileNotification.mockSetStatus(MobileStatus.Available);
-                          this.mobileNotification.mockSetDevice(MobileDevice.Ios);
-                          this.webNotification.mockSetStatus(WebStatus.Available);
-                          this.setState({ loginOpen: true })
-                        })}
-                    >Try again</Button>
-                  )}
+                  <ErrorPage msg={(
+                    <div className={this.props.classes.tryAgainContainer}>
+                      {loggedIn ? 'Successfully logged in' : 'Failed to login'}
+                      <Button
+                        className={this.props.classes.tryAgainButton}
+                        onClick={() => this.props.server.dispatch().then(d => d.userLogout({
+                          projectId: this.props.server.getProjectId(),
+                        }))
+                          .then(() => {
+                            this.mobileNotification.mockSetStatus(MobileStatus.Available);
+                            this.mobileNotification.mockSetDevice(MobileDevice.Ios);
+                            this.webNotification.mockSetStatus(WebStatus.Available);
+                            this.setState({ loginOpen: true })
+                          })}
+                      >Try again</Button>
+                    </div>
+                  )} variant={loggedIn ? 'success' : 'error'} />
+                )}
               </div>
             </AppThemeProvider>
           </Provider>

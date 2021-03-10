@@ -13,7 +13,6 @@ import NewWindowIcon from '@material-ui/icons/OpenInNew';
 import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
-import SilentIcon from '@material-ui/icons/Web';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -21,6 +20,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import AcceptTerms from '../../common/AcceptTerms';
 import Hr from '../../common/Hr';
+import GuestIcon from '../../common/icon/GuestIcon';
 import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import WebNotification from '../../common/notification/webNotification';
 import SubmitButton from '../../common/SubmitButton';
@@ -78,7 +78,6 @@ const styles = (theme: Theme) => createStyles({
     fontWeight: 'bold',
   },
 });
-
 export interface Props {
   server: Server;
   open?: boolean;
@@ -90,14 +89,12 @@ export interface Props {
   DialogProps?: Partial<DialogProps>;
   forgotEmailDialogProps?: Partial<DialogProps>;
 }
-
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   onboardBefore?: Client.Onboarding;
   loggedInUser?: Client.UserMe;
 }
-
 interface State {
   open?: boolean;
   notificationType?: NotificationType;
@@ -115,7 +112,6 @@ interface State {
   emailVerifyDialog?: boolean;
   emailVerification?: (number | undefined)[];
 }
-
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
   state: State = {};
   storageListener?: any;
@@ -195,7 +191,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const emailValid = this.isEmailValid(this.state.email);
       const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO;
+      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
       const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
       const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
@@ -310,8 +306,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Silent }) : undefined}
                       disabled={this.state.isSubmitting}
                     >
-                      <ListItemIcon><SilentIcon /></ListItemIcon>
-                      <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
+                      <ListItemIcon><GuestIcon /></ListItemIcon>
+                      <ListItemText primary='Guest' />
                     </ListItem>
                   </Collapse>
                   <Collapse in={!signupAllowed && !loginAllowed}>
@@ -533,8 +529,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               {this.state.awaitExternalBind === 'recovery' ? (
                 <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
               ) : (
-                  <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
-                )}
+                <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
@@ -638,8 +634,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         this.props.server.dispatch().then(d => d.userCreate({
           projectId: this.props.server.getProjectId(),
           userCreate: {
-            email: 'mock@email.com',
-            name: 'Mock User',
+            email: 'john.doe@example.com',
+            name: 'John Doe',
             ...{
               isExternal: true, // Only used during development, disregarded otherwise
             },

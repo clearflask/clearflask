@@ -23,6 +23,7 @@ import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import LogoImg from '../../public/img/clearflask-logo.png';
+import DemoOnboardingLogin from '../app/DemoOnboardingLogin';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
@@ -40,7 +41,7 @@ const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", we
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/SsoSuccessDemoPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/DemoOnboardingLogin').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingClearFlaskDemo, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
@@ -340,11 +341,11 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             </Route>
             <Route exact path='/sso'>
               <SetTitle title='Single sign-on' />
-              <SsoSuccessDemoPage type='sso' />
+              <DemoOnboardingLogin type='sso' />
             </Route>
             <Route path='/oauth'>
               <SetTitle title='OAuth' />
-              <SsoSuccessDemoPage type='oauth' />
+              <DemoOnboardingLogin type='oauth' />
             </Route>
             <Route exact path='/terms-of-service'>
               <SetTitle title='Terms of Service' />
@@ -364,7 +365,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             <Route exact path='/'>
               <SetTitle />
               <LandingHero />
-              <LandingClearFlaskDemo />
+              <LandingClearFlaskDemo noSpacing type='demoOnly' />
               <LandingLoop />
               <LandingCollectFeedbackHero />
               <LandingPrioritizationHero />

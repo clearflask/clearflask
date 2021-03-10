@@ -3,6 +3,7 @@ import loadable from '@loadable/component';
 import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
+import AddCommentIcon from '@material-ui/icons/AddComment';
 import OncallIcon from '@material-ui/icons/Alarm';
 import LifecycleIcon from '@material-ui/icons/Autorenew';
 import BuildIcon from '@material-ui/icons/Build';
@@ -15,14 +16,17 @@ import ServerIcon from '@material-ui/icons/Dns';
 import EditIcon from '@material-ui/icons/Edit';
 import LightbulbIcon from '@material-ui/icons/EmojiObjectsOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
+import FacebookIcon from '@material-ui/icons/Facebook';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import BackupIcon from '@material-ui/icons/FileCopy';
 import ForumIcon from '@material-ui/icons/Forum';
+import GithubIcon from '@material-ui/icons/GitHub';
 import EngageIcon from '@material-ui/icons/Hearing';
 import KnowledgeIcon from '@material-ui/icons/Help';
 import EncryptionIcon from '@material-ui/icons/Https';
+import LinkIcon from '@material-ui/icons/Link';
 import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import UpcomingFeaturesIcon from '@material-ui/icons/NewReleasesOutlined';
@@ -90,6 +94,9 @@ import CreditView from '../common/config/CreditView';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
+import AccountAdd from '../common/icon/AccountAdd';
+import GoogleIcon from '../common/icon/GoogleIcon';
+import GuestIcon from '../common/icon/GuestIcon';
 import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
@@ -239,6 +246,25 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     width: 400,
     maxWidth: '90vw',
   },
+  demoStatusEmbedText: {
+    fontSize: '1.3em',
+  },
+  demoStatusEmbedContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  demoStatusEmbedIframe: {
+    marginLeft: 10,
+  },
+  iconsContainer: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  githubIcon: {
+    fontSize: 21,
+    margin: theme.spacing(0, 1),
+  },
 }));
 
 
@@ -258,16 +284,18 @@ export function LandingHero() {
   );
 }
 
-export function LandingClearFlaskDemo() {
+export function LandingClearFlaskDemo(props: Partial<React.ComponentProps<typeof Block>> & {
+  fakeBrowserProps?: Partial<React.ComponentProps<typeof FakeBrowser>>,
+}) {
   const classes = useStyles();
+  const { fakeBrowserProps, ...blockProps } = props;
   return (
     <div className={classes.demo}>
       <Block
-        noSpacing
-        type='demoOnly'
         demo={(
           <FakeBrowser
             fixedHeight={500}
+            {...fakeBrowserProps}
           >
             <iframe
               title='Demo: ClearFlask Feedback'
@@ -278,59 +306,42 @@ export function LandingClearFlaskDemo() {
             />
           </FakeBrowser>
         )}
+        {...blockProps}
       />
-      <Hr margins='50px' length='200px'>OR</Hr>
-      <LandingDemoEmbed />
     </div>
   );
 }
 
-export function LandingDemoEmbed() {
-  const [demoOpen, setDemoOpen] = useState<{
-    anchor: React.RefObject<HTMLButtonElement>,
-    page: string,
-  } | undefined>(undefined);
-  const feedbackBtnRef = useRef<HTMLButtonElement>(null);
-  const roadmapBtnRef = useRef<HTMLButtonElement>(null);
+export function LandingDemoEmbed(props: { path?: string, children: any }) {
+  const [demoOpen, setDemoOpen] = useState<boolean>(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
   const classes = useStyles();
   return (
-    <div className={classes.demoEmbedButtons}>
+    <React.Fragment>
       <IconButton
-        onClick={() => setDemoOpen({
-          anchor: feedbackBtnRef,
-          page: 'feedback',
-        })}
-        ref={feedbackBtnRef}
+        onClick={() => setDemoOpen(true)}
+        ref={anchorRef}
       >
-        <FeedbackIcon />
-      </IconButton>
-      <IconButton
-        onClick={() => setDemoOpen({
-          anchor: roadmapBtnRef,
-          page: 'roadmap',
-        })}
-        ref={roadmapBtnRef}
-      >
-        <RoadmapIcon style={{ transform: 'rotate(180deg)' }} />
+        {props.children}
       </IconButton>
       <ClosablePopper
         open={!!demoOpen}
-        onClose={() => setDemoOpen(undefined)}
+        onClose={() => setDemoOpen(false)}
         placement='top'
-        anchorEl={demoOpen?.anchor.current}
+        anchorEl={anchorRef.current}
         arrow
         clickAway
         paperClassName={classes.demoEmbedPopper}
       >
         <iframe
           title='Demo: ClearFlask Feedback'
-          src={demoOpen ? `${windowIso.location.protocol}//feedback.${windowIso.location.host}/embed/${demoOpen.page}` : 'about:blank'}
+          src={demoOpen ? `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${props.path || ''}` : 'about:blank'}
           width='100%'
           height='100%'
           frameBorder={0}
         />
       </ClosablePopper>
-    </div>
+    </React.Fragment>
   );
 }
 
@@ -1182,28 +1193,6 @@ export function LandingIntegrations() {
   );
 }
 
-export function LandingCustomizeOther() {
-  const onboardingDemoRef = useRef(null);
-  return (
-    <React.Fragment>
-      <Demo
-        variant='heading'
-        type='column'
-        title='Choose sign-up options'
-        description='Introduce least amount of friction by choosing the right sign-up options for your product.'
-        initialSubPath='/embed/demo'
-        demoFixedWidth={420}
-        template={templater => {
-          setInitSignupMethodsTemplate(templater);
-          templater.styleWhite();
-        }}
-        controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
-        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
-      />
-    </React.Fragment>
-  );
-}
-
 export function LandingFeatureRequestTracking() {
   return (
     <React.Fragment>
@@ -2035,6 +2024,8 @@ export function LandingGrowWithUs() {
 }
 
 export function LandingInstall() {
+  const classes = useStyles();
+  const onboardingDemoRef = useRef(null);
   return (
     <React.Fragment>
       <Hero
@@ -2043,19 +2034,116 @@ export function LandingInstall() {
         image={InstallImg}
       />
       <Block
-        title='Link, Custom domain'
+        title='Integration points'
       />
-      <Block
-        title='Post Status'
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <LandingClearFlaskDemo
+          variant='content'
+          type='column'
+          title='Direct Link'
+          description={(
+            <React.Fragment>
+              Link directly from your app or website to your ClearFlask portal. Optionally use a custom domain <b>feedback.yoursite.com</b>
+            </React.Fragment>
+          )}
+          fakeBrowserProps={{
+            fixedHeight: 200,
+            addresBarContent: 'feedback.yoursite.com',
+            // darkMode: true,
+          }}
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Widget'
+          description='Embed within your website using IFrames either entire ClearFlask portal or individual pages.'
+          demo={(
+            <div className={classes.demoEmbedButtons}>
+              <LandingDemoEmbed><FeedbackIcon /></LandingDemoEmbed>
+              <Hr vertical margins='35px' length='100px'>or</Hr>
+              <LandingDemoEmbed path='embed/feedback'><AddCommentIcon /></LandingDemoEmbed>
+              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+            </div>
+          )}
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Embed Status'
+          description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
+          demo={(
+            <div className={classes.demoStatusEmbedContainer}>
+              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
+              <PostStatusIframe
+                className={classes.demoStatusEmbedIframe}
+                width={100}
+                postId='ustom-subdomains-vr4'
+                config={{
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                }}
+              />
+            </div>
+          )}
+        />
+      </HorizontalPanels>
+      <Demo
+        alignItems='center'
+        mirror
+        title='User onboarding'
+        description='Introduce least amount of friction by choosing the right sign-up options for your product.'
+        initialSubPath='/embed/demo'
+        demoFixedWidth={420}
+        template={templater => {
+          setInitSignupMethodsTemplate(templater);
+          templater.styleWhite();
+        }}
+        controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
+        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
       />
-      <Block
-        title='Embed Pages'
-      />
-      <Block
-        title='User management SSO/OAuth'
-      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <Block
+          variant='content'
+          type='column'
+          icon={(<LinkIcon />)}
+          title='Link accounts'
+          description="If your users already have an account with you, consider using Single Sign-On or OAuth so they don't have to create additional accounts."
+        />
+        <Block
+          variant='content'
+          type='column'
+          icon={(
+            <div className={classes.iconsContainer}>
+              <GoogleIcon />
+              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
+              <FacebookIcon />
+            </div>
+          )}
+          title='Sign in with ...'
+          description="They can also log in with third-party OAuth providers such as Facebook, Google, Github."
+        />
+        <div />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <div />
+        <Block
+          variant='content'
+          type='column'
+          icon={(<AccountAdd />)}
+          title='New accounts'
+          description=''
+        />
+        <Block
+          variant='content'
+          type='column'
+          icon={(<GuestIcon />)}
+          title='Guest accounts'
+          description=''
+        />
+      </HorizontalPanels>
       <Block
         title='Credits: issue them'
+        description='API, Zapier'
       />
     </React.Fragment>
   );
