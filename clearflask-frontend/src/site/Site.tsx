@@ -4,7 +4,7 @@ import { AppBar, Button, Container, Divider, Drawer, Grid, Grow, Hidden, IconBut
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
-import CommercialSupportIcon from '@material-ui/icons/AccountBalance';
+import InstallIcon from '@material-ui/icons/AccountTree';
 import CustomizeIcon from '@material-ui/icons/Brush';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import InternalFeedbackIcon from '@material-ui/icons/Feedback';
@@ -45,7 +45,6 @@ const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSucces
 const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingClearFlaskDemo, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
 const LandingCollectFeedbackHero = loadable(() => import(/* webpackChunkName: "LandingCollectFeedbackHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedbackHero, fallback: (<Loading />) });
-const LandingCommercialSupportManagement = loadable(() => import(/* webpackChunkName: "LandingCommercialSupportManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCommercialSupportManagement, fallback: (<Loading />) });
 const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingContentCreator, fallback: (<Loading />) });
 const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCrowdFunding, fallback: (<Loading />) });
 const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomize, fallback: (<Loading />) });
@@ -53,6 +52,7 @@ const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEng
 const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagementHero, fallback: (<Loading />) });
 const LandingCustomizeHero = loadable(() => import(/* webpackChunkName: "LandingCustomizeHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomizeHero, fallback: (<Loading />) });
 const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
+const LandingInstall = loadable(() => import(/* webpackChunkName: "LandingInstall" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInstall, fallback: (<Loading />) });
 const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
 const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingHero, fallback: (<Loading />) });
 const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIdeaManagement, fallback: (<Loading />) });
@@ -212,7 +212,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
           { type: 'button', link: '/product/activate', title: 'Activate', icon: ActivateIcon },
           { type: 'divider' },
           { type: 'button', link: '/product/customize', title: 'Customize', icon: CustomizeIcon },
-          { type: 'button', link: '/product/grow-with-us', title: 'Grow With Us', icon: GrowIcon },
+          { type: 'button', link: '/product/install', title: 'Install', icon: InstallIcon },
+          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us', icon: GrowIcon },
           { type: 'button', link: '/product/integrations', title: 'Integrations', icon: WidgetIcon },
         ]
       },
@@ -225,7 +226,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
           { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
           { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum', icon: ContentCreatorIcon },
           { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
-          { type: 'button', link: '/solutions/commercial-support-management', title: 'Commercial Support Management', icon: CommercialSupportIcon },
         ]
       },
       {
@@ -393,8 +393,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <SetTitle title='Integrations' />
               <LandingIntegrations />
             </Route>
-            <Route exact path='/product/grow-with-us'>
-              <SetTitle title='Grow with us' />
+            <Route exact path='/product/install'>
+              <SetTitle title='Install' />
+              <LandingInstall />
+            </Route>
+            <Route exact path='/product/scale-with-us'>
+              <SetTitle title='Scale with us' />
               <LandingGrowWithUs />
             </Route>
 
@@ -421,10 +425,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             <Route exact path='/solutions/internal-feedback'>
               <SetTitle title='Internal Feedback' />
               <LandingInternalFeedback />
-            </Route>
-            <Route exact path='/solutions/commercial-support-management'>
-              <SetTitle title='Commercial Support Management' />
-              <LandingCommercialSupportManagement />
             </Route>
             <Route exact path='/pricing'>
               <SetTitle title='Pricing' />
@@ -455,8 +455,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                             return subItem.linkIsExternal ? (
                               <MuiLink key={subIndex} href={subItem.link} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>
                             ) : (
-                                <NavLink key={subIndex} to={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>
-                              );
+                              <NavLink key={subIndex} to={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>
+                            );
                           case 'divider':
                             return (
                               <div className={this.props.classes.bottomNavigationDivider} />

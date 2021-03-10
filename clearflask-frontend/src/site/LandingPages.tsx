@@ -68,6 +68,7 @@ import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HeroImg from '../../public/img/landing/hero.svg';
 import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
+import InstallImg from '../../public/img/landing/install.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
@@ -102,7 +103,6 @@ import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
-import RoadmapControls from './landing/RoadmapControls';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -778,8 +778,8 @@ export function LandingEngagementRoadmap() {
       imageLocation='above'
       imageStyle={{ maxWidth: 500, padding: 0, }}
       type='largeDemo'
-      demoWrap='browser'
-      demoWrapPadding={40}
+      // demoWrap='browser'
+      // demoWrapPadding={40}
       template={templater => templater.demoBoardPreset('development')}
       mock={mocker => mocker.demoBoard([
         { status: '0', extra: { funded: 0, fundGoal: 9000, fundersCount: 0, voteValue: 14 } },
@@ -796,7 +796,7 @@ export function LandingEngagementRoadmap() {
         demoBlurryShadow: true,
         demoDisablePostOpen: true,
       }}
-      controls={project => (<RoadmapControls templater={project.templater} />)}
+    // controls={project => (<RoadmapControls templater={project.templater} />)}
     />
   );
 }
@@ -1037,8 +1037,8 @@ export function LandingIntegrations() {
   return (
     <React.Fragment>
       <Hero
-        title='Integrate with your tools'
-        description=''
+        title='Integrations'
+        description='Use with your existing tools.'
         image={IntegrationImg}
       />
       <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
@@ -1379,7 +1379,7 @@ export function LandingCrowdFunding() {
         demo={(<LandingCreditSystemLinkOptions />)}
       />
       <Block
-        title='Receive credits and spend'
+        title='Issue credits and spend'
         description='When a customer makes a payment on your site, issue them ClearFlask credits. They will be able to spend those credits on feature requests.'
         alignItems='center'
         mirror
@@ -1417,23 +1417,12 @@ export function LandingCrowdFunding() {
           title='Donation-based / Freemium'
           description='Let users with the highest contributions dictate where your product should go.'
         />
-        <div />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-        <div />
         <BlockContent
           icon={(<ContentCreatorIcon />)}
           title='Content Creator'
           description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
           buttonTitle='Learn more'
           buttonLink='/solutions/content-creator-forum'
-        />
-        <BlockContent
-          icon={(<PaymentIcon />)}
-          title='Commercial Support'
-          description='Issue credits as support allowance your customers can spend to receive support.'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/commercial-support-management'
         />
       </HorizontalPanels>
       <Block
@@ -1610,14 +1599,6 @@ export function LandingInternalFeedback() {
         }}
       />
       <Block
-        title='Keep all your data private'
-        description='Setup privacy settings so only authorized users can see and post feedback.'
-        image={DemoProjectPrivateImg}
-        imageScale={0.5}
-        alignItems='center'
-        mirror
-      />
-      <Block
         type='mediumDemo'
         title='Keep your stakeholders informed'
         description='Keep your stakeholders up-to-date with notifications over email or web-push.'
@@ -1645,6 +1626,14 @@ export function LandingInternalFeedback() {
         }}
         buttonTitle='See a Roadmap'
         buttonLink='/solutions/public-roadmap'
+      />
+      <Block
+        title='Keep all your data private'
+        description='Setup privacy settings so only authorized users can see and post feedback.'
+        image={DemoProjectPrivateImg}
+        imageScale={0.5}
+        alignItems='center'
+        mirror
       />
     </React.Fragment>
   );
@@ -1837,6 +1826,7 @@ export function LandingContentCreator() {
         icon={<PrivacyIcon />}
         title='Fans-only'
         description='You can choose to only allow fans to suggest ideas or to see your private content. You can ask them to sign in using their existing account on platforms such as Patreon or YouTube.'
+        image={SupportImg}
       />
       <Block
         title='Prioritize your work'
@@ -1942,39 +1932,11 @@ export function LandingContentCreator() {
   );
 }
 
-export function LandingCommercialSupportManagement() {
-  return (
-    <React.Fragment>
-      <Hero
-        title='Commercial Support Management'
-        description=''
-        image={SupportImg}
-      />
-      <Block
-        title='Pay Per Support'
-        description=''
-      />
-      <Block
-        title=''
-        description=''
-      />
-      <Block
-        title=''
-        description=''
-      />
-      <Block
-        title=''
-        description=''
-      />
-    </React.Fragment>
-  );
-}
-
 export function LandingGrowWithUs() {
   return (
     <React.Fragment>
       <Hero
-        title='Grow With Us'
+        title='Scale with us'
         description='Built on scalable infrastructure to grow with your needs.'
         image={ArchitectureImg}
       />
@@ -2068,6 +2030,33 @@ export function LandingGrowWithUs() {
           description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
         />
       </HorizontalPanels>
+    </React.Fragment>
+  );
+}
+
+export function LandingInstall() {
+  return (
+    <React.Fragment>
+      <Hero
+        title='Install'
+        description='How to connect ClearFlask with your product.'
+        image={InstallImg}
+      />
+      <Block
+        title='Link, Custom domain'
+      />
+      <Block
+        title='Post Status'
+      />
+      <Block
+        title='Embed Pages'
+      />
+      <Block
+        title='User management SSO/OAuth'
+      />
+      <Block
+        title='Credits: issue them'
+      />
     </React.Fragment>
   );
 }
