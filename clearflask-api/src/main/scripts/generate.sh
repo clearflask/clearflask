@@ -13,6 +13,7 @@ NPM="${NODE} node/node_modules/npm/bin/npm-cli.js"
 NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
 
 OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
+REDOC_CLI="${NPX} -p redoc-cli@0.10.2 redoc-cli"
 
 # Frontend Client API
 ${OPENAPI_GENERATOR} generate \
@@ -39,13 +40,10 @@ ${OPENAPI_GENERATOR} generate \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/connect &
 
-# HTML Docs
+# Bundle Docs for use with Redoc
 ${OPENAPI_GENERATOR} generate \
-    -t ${TEMPLATE_SOURCE_DIR}/html-docs \
     -i ${OPENAPI_SOURCE_DIR}/api-docs.yaml \
-    -p infoUrl="https://clearflask.com" \
-    -p infoEmail="support@clearflask.com" \
-    -g html \
+    -g openapi-yaml \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
 # Server API
@@ -77,3 +75,9 @@ ${OPENAPI_GENERATOR} generate \
     -o ${OPENAPI_TARGET_DIR}/server &
 
 wait
+
+${REDOC_CLI} bundle \
+    ${OPENAPI_TARGET_DIR}/docs/openapi/openapi.yaml \
+    --disableGoogleFont \
+    --title "API | ClearFlask" \
+    --output ${OPENAPI_TARGET_DIR}/docs/index.html

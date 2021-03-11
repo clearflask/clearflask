@@ -6,13 +6,10 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <fileSets>
-        <fileSet>
-            <directory>${openapi.targetDirectory}${file.separator}docs</directory>
+    <files>
+        <file>
+            <source>${openapi.targetDirectory}${file.separator}docs${file.separator}index.html</source>
             <outputDirectory>${file.separator}</outputDirectory>
-            <excludes>
-                <exclude>.openapi*</exclude>
-            </excludes>
-        </fileSet>
-    </fileSets>
+        </file>
+    </files>
 </assembly>
