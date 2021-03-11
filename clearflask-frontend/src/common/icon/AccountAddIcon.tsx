@@ -1,7 +1,7 @@
 import SvgIcon from "@material-ui/core/SvgIcon";
 import React from 'react';
 
-export default function AccountAdd(props) {
+export default function AccountAddIcon(props) {
   return (
     <SvgIcon {...props}>
       <svg width="24" height="24" viewBox="0 0 24 24">

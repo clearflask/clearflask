@@ -8,6 +8,7 @@ import LogIn from '../../app/comps/LogIn';
 import ErrorPage from '../../app/ErrorPage';
 import DemoPushPermissionDialog from '../../common/DemoPushPermissionDialog';
 import DeviceContainer, { Device } from '../../common/DeviceContainer';
+import FakeBrowser from '../../common/FakeBrowser';
 import MobileNotification, { Device as MobileDevice, Status as MobileStatus } from '../../common/notification/mobileNotification';
 import WebNotification, { Status as WebStatus } from '../../common/notification/webNotification';
 
@@ -36,6 +37,10 @@ const styles = (theme: Theme) => createStyles({
   tryAgainContainer: {
     display: 'flex',
     alignItems: 'center',
+  },
+  desktopBrowser: {
+    borderRadius: 0,
+    height: '100%',
   },
 });
 
@@ -66,78 +71,89 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
 
   render() {
     const loggedIn = !!this.props.server.getStore().getState().users.loggedIn.user;
-    return (
+    var content = (
+      <DemoPushPermissionDialog
+        mobileNotification={this.mobileNotification}
+        webNotification={this.webNotification}
+      >
+        <Provider store={this.props.server.getStore()}>
+          <AppThemeProvider
+            appRootId='onboardingDemo'
+            seed='onboardingDemo'
+            isInsideContainer={true}
+            supressCssBaseline={true}
+            breakpoints={this.state.device === Device.Mobile ? {
+              'xs': 0,
+              'sm': 10000,
+              'md': 10000,
+              'lg': 10000,
+              'xl': 10000,
+            } : undefined}
+          >
+            <div id='onboardingDemo' className={this.props.classes.content}>
+              {this.state.loginOpen ? (
+                <LogIn
+                  actionTitle='Create account'
+                  server={this.props.server}
+                  open={this.state.loginOpen}
+                  onClose={() => this.setState({ loginOpen: false })}
+                  onLoggedInAndClose={() => this.setState({ loginOpen: false })}
+                  overrideMobileNotification={this.state.device === Device.Mobile ? this.mobileNotification : this.mobileNotificationNotSupported}
+                  overrideWebNotification={(this.state.device === Device.Desktop || this.state.device === Device.None) ? this.webNotification : this.webNotificationNotSupported}
+                  DialogProps={{
+                    disablePortal: true,
+                    disableBackdropClick: true,
+                    disableEscapeKeyDown: true,
+                    hideBackdrop: this.state.device === Device.None,
+                    disableAutoFocus: true,
+                    classes: {
+                      root: this.props.classes.loginDialog,
+                      paperScrollBody: this.props.classes.loginPaperScrollBody,
+                    },
+                  }}
+                  forgotEmailDialogProps={{
+                    disableBackdropClick: true,
+                    disableEscapeKeyDown: true,
+                    hideBackdrop: this.state.device === Device.None,
+                  }}
+                />
+              ) : (
+                <ErrorPage msg={(
+                  <div className={this.props.classes.tryAgainContainer}>
+                    {loggedIn ? 'Successfully logged in' : 'Failed to login'}
+                    <Button
+                      className={this.props.classes.tryAgainButton}
+                      onClick={() => this.props.server.dispatch().then(d => d.userLogout({
+                        projectId: this.props.server.getProjectId(),
+                      }))
+                        .then(() => {
+                          this.mobileNotification.mockSetStatus(MobileStatus.Available);
+                          this.mobileNotification.mockSetDevice(MobileDevice.Ios);
+                          this.webNotification.mockSetStatus(WebStatus.Available);
+                          this.setState({ loginOpen: true })
+                        })}
+                    >Try again</Button>
+                  </div>
+                )} variant={loggedIn ? 'success' : 'error'} />
+              )}
+            </div>
+          </AppThemeProvider>
+        </Provider>
+      </DemoPushPermissionDialog>
+    );
+    if (this.state.device === Device.Desktop) {
+      content = (
+        <FakeBrowser darkMode fixedHeight='100%' className={this.props.classes.desktopBrowser}>
+          {content}
+        </FakeBrowser>
+      );
+    }
+    content = (
       <DeviceContainer key={this.state.device} device={this.state.device}>
-        <DemoPushPermissionDialog
-          mobileNotification={this.mobileNotification}
-          webNotification={this.webNotification}
-        >
-          <Provider store={this.props.server.getStore()}>
-            <AppThemeProvider
-              appRootId='onboardingDemo'
-              seed='onboardingDemo'
-              isInsideContainer={true}
-              supressCssBaseline={true}
-              breakpoints={this.state.device === Device.Mobile ? {
-                'xs': 0,
-                'sm': 10000,
-                'md': 10000,
-                'lg': 10000,
-                'xl': 10000,
-              } : undefined}
-            >
-              <div id='onboardingDemo' className={this.props.classes.content}>
-                {this.state.loginOpen ? (
-                  <LogIn
-                    actionTitle='Create account'
-                    server={this.props.server}
-                    open={this.state.loginOpen}
-                    onClose={() => this.setState({ loginOpen: false })}
-                    onLoggedInAndClose={() => this.setState({ loginOpen: false })}
-                    overrideMobileNotification={this.state.device === Device.Mobile ? this.mobileNotification : this.mobileNotificationNotSupported}
-                    overrideWebNotification={(this.state.device === Device.Desktop || this.state.device === Device.None) ? this.webNotification : this.webNotificationNotSupported}
-                    DialogProps={{
-                      disablePortal: true,
-                      disableBackdropClick: true,
-                      disableEscapeKeyDown: true,
-                      hideBackdrop: this.state.device === Device.None,
-                      disableAutoFocus: true,
-                      classes: {
-                        root: this.props.classes.loginDialog,
-                        paperScrollBody: this.props.classes.loginPaperScrollBody,
-                      },
-                    }}
-                    forgotEmailDialogProps={{
-                      disableBackdropClick: true,
-                      disableEscapeKeyDown: true,
-                      hideBackdrop: this.state.device === Device.None,
-                    }}
-                  />
-                ) : (
-                  <ErrorPage msg={(
-                    <div className={this.props.classes.tryAgainContainer}>
-                      {loggedIn ? 'Successfully logged in' : 'Failed to login'}
-                      <Button
-                        className={this.props.classes.tryAgainButton}
-                        onClick={() => this.props.server.dispatch().then(d => d.userLogout({
-                          projectId: this.props.server.getProjectId(),
-                        }))
-                          .then(() => {
-                            this.mobileNotification.mockSetStatus(MobileStatus.Available);
-                            this.mobileNotification.mockSetDevice(MobileDevice.Ios);
-                            this.webNotification.mockSetStatus(WebStatus.Available);
-                            this.setState({ loginOpen: true })
-                          })}
-                      >Try again</Button>
-                    </div>
-                  )} variant={loggedIn ? 'success' : 'error'} />
-                )}
-              </div>
-            </AppThemeProvider>
-          </Provider>
-        </DemoPushPermissionDialog>
+        {content}
       </DeviceContainer>
     );
+    return content;
   }
 
   /** Called externally by OnboardingControls */

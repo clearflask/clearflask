@@ -21,12 +21,26 @@ interface Props {
   maxContentWidth?: Breakpoint;
   maxWidth?: Breakpoint;
   staggerHeight?: number;
+  padLeft?: number;
+  padRight?: number;
 }
 class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true> & WithWidthProps> {
 
   render() {
     const isHorizontal = this.props.alwaysWrap ? false : (!this.props.width || !this.props.wrapBelow || isWidthUp(this.props.wrapBelow, this.props.width));
-    const contentsSize = React.Children.count(this.props.children);
+    const padLeftSize = isHorizontal && this.props.padLeft || 0;
+    const padRightSize = isHorizontal && this.props.padRight || 0;
+    const childrenSize = React.Children.count(this.props.children)
+    const contentsSize = childrenSize + padLeftSize + padRightSize;
+    const childrenMapper: (mapper: (content: React.ReactNode, index: number) => React.ReactNode) => React.ReactNode = (mapper) => {
+      return (
+        <React.Fragment>
+          {isHorizontal ? [...Array(padLeftSize)].map((c, i) => mapper((<div />), i)) : null}
+          {React.Children.map(this.props.children, (c, i) => mapper(c, (isHorizontal ? padLeftSize : 0) + i))}
+          {isHorizontal ? [...Array(padRightSize)].map((c, i) => mapper((<div />), padLeftSize + childrenSize + i)) : undefined}
+        </React.Fragment>
+      );
+    }
 
     const staggerHeight = Math.abs(this.props.staggerHeight || 0);
     const staggerAsc = (this.props.staggerHeight || 0) < 0;
@@ -39,7 +53,7 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
           flexDirection: isHorizontal ? 'row' : (staggerAsc ? 'column-reverse' : 'column'),
         }}
       >
-        {React.Children.map(this.props.children, (content, index) => {
+        {childrenMapper((content, index) => {
           if (!content) return null;
           var leftPads = index;
           var rightPads = contentsSize - index - 1;

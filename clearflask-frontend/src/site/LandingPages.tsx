@@ -14,6 +14,7 @@ import BlogIcon from '@material-ui/icons/Description';
 import ClientIcon from '@material-ui/icons/Devices';
 import ServerIcon from '@material-ui/icons/Dns';
 import EditIcon from '@material-ui/icons/Edit';
+import EmailIcon from '@material-ui/icons/Email';
 import LightbulbIcon from '@material-ui/icons/EmojiObjectsOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FacebookIcon from '@material-ui/icons/Facebook';
@@ -94,7 +95,6 @@ import CreditView from '../common/config/CreditView';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
-import AccountAdd from '../common/icon/AccountAdd';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
 import { vh } from '../common/util/screenUtil';
@@ -276,7 +276,7 @@ export function LandingHero() {
   return (
     <Hero
       title='Listen to your users during product development'
-      description='Feedback Management Tool with voting or crowd-funding to prioritize your roadmap'
+      description='Feedback Management Tool to prioritize your roadmap'
       image={HeroImg}
       mirror
       buttonTitle='Get started'
@@ -1365,7 +1365,6 @@ export function LandingCrowdFunding() {
         image={CrowdfundImg}
       />
       <Block
-        // variant='content'
         title='Link with your credit system'
         description='You can continue to use your existing payment platform. Link it with our system and decide when users will be issued credits.'
         alignItems='center'
@@ -2109,13 +2108,13 @@ export function LandingInstall() {
         controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
         demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
         <Block
           variant='content'
           type='column'
           icon={(<LinkIcon />)}
           title='Link accounts'
-          description="If your users already have an account with you, consider using Single Sign-On or OAuth so they don't have to create additional accounts."
+          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO creates an ideal seamless experience with no additional login steps.'
         />
         <Block
           variant='content'
@@ -2128,30 +2127,43 @@ export function LandingInstall() {
             </div>
           )}
           title='Sign in with ...'
-          description="They can also log in with third-party OAuth providers such as Facebook, Google, Github."
+          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
         />
-        <div />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-        <div />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
         <Block
           variant='content'
           type='column'
-          icon={(<AccountAdd />)}
-          title='New accounts'
-          description=''
+          icon={(<EmailIcon />)}
+          title='Email sign-up'
+          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
         />
+        <Block
+          variant='content'
+          type='column'
+          icon={(<NotificationIcon />)}
+          title='Browser Notifications'
+          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
         <Block
           variant='content'
           type='column'
           icon={(<GuestIcon />)}
           title='Guest accounts'
-          description=''
+          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
         />
       </HorizontalPanels>
       <Block
-        title='Credits: issue them'
-        description='API, Zapier'
+        title='Issue Credit automatically'
+        description='If you are using the Credit System, issue credits to your users automatically with your platform when they make a purchase or complete any action.'
+        alignItems='flex-start'
+        image={CrowdfundImg}
+        imageLocation='above'
+        demo={(<LandingCreditSystemLinkOptions />)}
+        buttonTitle='See Feature Crowdfunding'
+        buttonLink='/solutions/feature-crowdfunding'
       />
     </React.Fragment>
   );

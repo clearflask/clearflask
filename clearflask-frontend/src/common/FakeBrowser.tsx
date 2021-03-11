@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React from 'react';
 import LockSimpleIcon from './icon/LockSimpleIcon';
 
@@ -47,6 +48,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className?: string;
   children?: React.ReactNode;
   darkMode?: boolean;
   fixedWidth?: number | string;
@@ -58,8 +60,7 @@ interface Props {
 class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
-      <div className={this.props.classes.container} style={{
-      }}>
+      <div className={classNames(this.props.classes.container, this.props.className)}>
         <div className={this.props.classes.navbar}>
           <div className={this.props.classes.button} />
           <div className={this.props.classes.button} />
