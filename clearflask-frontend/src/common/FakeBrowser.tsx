@@ -18,8 +18,8 @@ const styles = (theme: Theme) => createStyles({
   },
   button: {
     backgroundColor: (props: Props) => theme.palette.grey[props.darkMode ? 600 : 200],
-    width: 12,
-    height: 12,
+    minWidth: 12,
+    minHeight: 12,
     borderRadius: 10,
     margin: 5,
     marginRight: 0,
@@ -32,6 +32,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
     display: 'flex',
     alignItems: 'center',
+    width: 200,
   },
   content: {
     backgroundColor: (props: Props) => props.darkMode ? 'black' : 'white',

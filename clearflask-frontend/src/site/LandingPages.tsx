@@ -236,6 +236,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     maxHeight: 50,
   },
   demoEmbedButtons: {
+    width: '100%',
+    height: '100%',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -250,6 +252,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontSize: '1.3em',
   },
   demoStatusEmbedContainer: {
+    width: '100%',
+    height: '100%',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -2058,12 +2062,14 @@ export function LandingInstall() {
           title='Widget'
           description='Embed within your website using IFrames either entire ClearFlask portal or individual pages.'
           demo={(
-            <div className={classes.demoEmbedButtons}>
-              <LandingDemoEmbed><FeedbackIcon /></LandingDemoEmbed>
-              <Hr vertical margins='35px' length='100px'>or</Hr>
-              <LandingDemoEmbed path='embed/feedback'><AddCommentIcon /></LandingDemoEmbed>
-              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
-            </div>
+            <FakeBrowser fixedHeight={200} addresBarContent='yoursite.com'>
+              <div className={classes.demoEmbedButtons}>
+                <LandingDemoEmbed><FeedbackIcon /></LandingDemoEmbed>
+                <Hr vertical margins='35px' length='100px'>or</Hr>
+                <LandingDemoEmbed path='embed/feedback'><AddCommentIcon /></LandingDemoEmbed>
+                <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+              </div>
+            </FakeBrowser>
           )}
         />
         <Block
@@ -2072,18 +2078,20 @@ export function LandingInstall() {
           title='Embed Status'
           description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
           demo={(
-            <div className={classes.demoStatusEmbedContainer}>
-              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
-              <PostStatusIframe
-                className={classes.demoStatusEmbedIframe}
-                width={100}
-                postId='ustom-subdomains-vr4'
-                config={{
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                }}
-              />
-            </div>
+            <FakeBrowser fixedHeight={200} addresBarContent='yoursite.com'>
+              <div className={classes.demoStatusEmbedContainer}>
+                <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
+                <PostStatusIframe
+                  className={classes.demoStatusEmbedIframe}
+                  width={100}
+                  postId='ustom-subdomains-vr4'
+                  config={{
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                  }}
+                />
+              </div>
+            </FakeBrowser>
           )}
         />
       </HorizontalPanels>
