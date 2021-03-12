@@ -6,10 +6,10 @@ import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@materi
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
 import InstallIcon from '@material-ui/icons/AccountTree';
 import CustomizeIcon from '@material-ui/icons/Brush';
+import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import InternalFeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
-import CollectIcon from '@material-ui/icons/Hearing';
 import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MenuIcon from '@material-ui/icons/Menu';
 import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
@@ -147,6 +147,11 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2),
     padding: theme.spacing(0, 2),
   },
+  buttonInsideDrawer: {
+    height: 40,
+    margin: theme.spacing(2),
+    padding: theme.spacing(0, 2),
+  },
   buttonOuter: {
     margin: theme.spacing(0, 1),
   },
@@ -169,6 +174,14 @@ const styles = (theme: Theme) => createStyles({
   },
   bottomNavigationDivider: {
     minHeight: theme.spacing(1.5),
+  },
+  menuItemsDrawer: {
+    display: 'block',
+    width: 240,
+    paddingBottom: theme.spacing(2),
+  },
+  menuItemDividerInsideDrawer: {
+    margin: theme.spacing(4),
   },
 });
 const useStyles = makeStyles(styles);
@@ -281,13 +294,14 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   ModalProps={{
                     keepMounted: true,
                   }}
+                  classes={{ paper: this.props.classes.menuItemsDrawer }}
                 >
                   <MenuItems
                     items={[
                       { type: 'header', title: 'ClearFlask' },
                       ...menuItemsRight,
                       ...menuItemsLeft]}
-                    flattenDropdown
+                    insideDrawer
                     onClick={() => this.setState({ menuOpen: false })}
                   />
                 </Drawer>
@@ -560,10 +574,10 @@ const MenuDropdownButton = withStyles(styles, { withTheme: true })(MenuDropdownB
 function MenuItems(props: {
   items: Array<MenuButton | MenuHeader | MenuDivider | MenuDropdown>;
   onClick?: () => void;
-  flattenDropdown?: boolean;
+  insideDrawer?: boolean;
   insideDropdown?: boolean;
 }) {
-  const isOuter = !props.insideDropdown && !props.flattenDropdown;
+  const isOuter = !props.insideDropdown && !props.insideDrawer;
   return (
     <React.Fragment>
       {props.items.map((item, index) => {
@@ -571,6 +585,7 @@ function MenuItems(props: {
           case 'header':
             return (
               <MenuItemHeader
+                insideDrawer={props.insideDrawer}
                 item={item}
               />
             );
@@ -581,26 +596,30 @@ function MenuItems(props: {
                 onClick={props.onClick}
                 isOuter={isOuter}
                 insideDropdown={props.insideDropdown}
+                insideDrawer={props.insideDrawer}
               />
             );
           case 'divider':
             return (
               <MenuItemDivider
+                insideDropdown={props.insideDropdown}
+                insideDrawer={props.insideDrawer}
                 item={item}
               />
             );
           case 'dropdown':
-            if (props.flattenDropdown) {
+            if (props.insideDrawer) {
               return (
                 <React.Fragment>
                   <MenuItemHeader
+                    insideDrawer={props.insideDrawer}
                     item={{ type: 'header', title: item.title }}
                   />
                   <MenuItems
                     key={item.title}
                     items={item.items}
                     onClick={props.onClick}
-                    flattenDropdown={props.flattenDropdown}
+                    insideDrawer={props.insideDrawer}
                     insideDropdown={props.insideDropdown}
                   />
                 </React.Fragment>
@@ -627,6 +646,7 @@ function MenuItemButton(props: {
   onClick?: () => void;
   isOuter?: boolean;
   insideDropdown?: boolean;
+  insideDrawer?: boolean;
 }) {
   const classes = useStyles();
   const Icon = props.item.icon
@@ -634,7 +654,11 @@ function MenuItemButton(props: {
     <Button
       size='large'
       key={props.item.title}
-      className={classNames(classes.button, props.isOuter && classes.buttonOuter, props.insideDropdown && classes.buttonInsideDropdown)}
+      className={classNames(
+        classes.button,
+        props.isOuter && classes.buttonOuter,
+        props.insideDropdown && classes.buttonInsideDropdown,
+        props.insideDrawer && classes.buttonInsideDrawer)}
       component={(props.item.linkIsExternal ? MuiLink : Link) as any}
       {...(props.item.linkIsExternal
         ? {
@@ -656,6 +680,7 @@ function MenuItemButton(props: {
 };
 
 function MenuItemHeader(props: {
+  insideDrawer?: boolean;
   item: MenuHeader;
 }) {
   return (
@@ -664,7 +689,7 @@ function MenuItemHeader(props: {
         key={props.item.title}
         disabled
         style={{
-          justifyContent: 'center',
+          justifyContent: props.insideDrawer ? 'flex-start' : 'center',
           minHeight: 48,
         }}
       >{props.item.title}</MenuItem>
@@ -674,9 +699,14 @@ function MenuItemHeader(props: {
 };
 
 function MenuItemDivider(props: {
+  insideDrawer?: boolean;
+  insideDropdown?: boolean;
   item: MenuDivider;
 }) {
-  return (
+  const classes = useStyles();
+  return props.insideDrawer ? (
+    <div className={classes.menuItemDividerInsideDrawer} />
+  ) : (
     <Divider />
   );
 };

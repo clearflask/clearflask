@@ -543,26 +543,34 @@ export function LandingCollectFeedback() {
         title='Collect'
         description='collect, embed in iframe, use API, internal feedback'
       />
-      <Block
-        title='Feature request tracking'
-        description=''
-        buttonTitle='Learn more'
-        buttonLink='/solutions/feature-request-tracking'
-        mirror
-      />
-      <Block
-        title='Internal feedback'
-        description=''
-        buttonTitle='Learn more'
-        buttonLink='/solutions/internal-feedback'
-      />
-      <Block
-        title='Idea management'
-        description=''
-        buttonTitle='Learn more'
-        buttonLink='/solutions/idea-management'
-        mirror
-      />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+        <Block
+          variant='content'
+          type='column'
+          title='Feature request tracking'
+          description=''
+          buttonTitle='Learn more'
+          buttonLink='/solutions/feature-request-tracking'
+          mirror
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Internal feedback'
+          description=''
+          buttonTitle='Learn more'
+          buttonLink='/solutions/internal-feedback'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Idea management'
+          description=''
+          buttonTitle='Learn more'
+          buttonLink='/solutions/idea-management'
+          mirror
+        />
+      </HorizontalPanels>
       <Block
         title='Crowd-funding'
         description=''
@@ -2043,7 +2051,7 @@ export function LandingInstall() {
         <LandingClearFlaskDemo
           variant='content'
           type='column'
-          title='Direct Link'
+          title='Portal'
           description={(
             <React.Fragment>
               Link directly from your app or website to your ClearFlask portal. Optionally use a custom domain <b>feedback.yoursite.com</b>
