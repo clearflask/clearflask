@@ -302,7 +302,6 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                   />
                 </Collapse>
                 <Demo
-                  variant='content'
                   type='column'
                   demoProject={Promise.resolve(this.props.previewProject)}
                   initialSubPath='/embed/demo'

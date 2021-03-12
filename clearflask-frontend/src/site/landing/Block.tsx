@@ -16,21 +16,24 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.down('sm')]: {
       padding: `${vh(10)}px 1vw`,
     },
+    minHeight: vh(100),
+    display: 'flex',
+    justifyContent: 'center',
   },
   spacing: {
     [theme.breakpoints.up('md')]: {
-      padding: `${vh(10)}px 10vw ${vh(10)}px`,
+      padding: `${vh(5)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: `${vh(10)}px 1vw ${vh(10)}px`,
+      padding: `${vh(5)}px 1vw`,
     },
   },
   spacingMediumDemo: {
     [theme.breakpoints.up('lg')]: {
-      padding: `${vh(10)}px 10vw ${vh(10)}px`,
+      padding: `${vh(5)}px 10vw`,
     },
     [theme.breakpoints.down('md')]: {
-      padding: `${vh(10)}px 1vw ${vh(10)}px`,
+      padding: `${vh(5)}px 1vw`,
     },
   },
   grid: {
@@ -52,10 +55,10 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(8),
     width: '100%',
     [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(8),
+      padding: theme.spacing(0, 8, 8),
     },
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(8, 2),
+      padding: theme.spacing(0, 2, 6),
     },
   },
   columnOnly: {
@@ -79,9 +82,9 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-export interface Props extends BlockContentProps {
+export interface Props extends Omit<BlockContentProps, 'variant'> {
   className?: string;
-  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'demoOnly';
+  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'heading-main' | 'demoOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   demoImage?: Img;
@@ -180,6 +183,9 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         break;
       case 'column':
         blockVariant = 'content';
+        break;
+      case 'heading-main':
+        blockVariant = 'heading-main';
         break;
     }
     const { classes, ...blockContentProps } = this.props;
