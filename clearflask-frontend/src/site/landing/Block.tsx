@@ -45,6 +45,9 @@ const styles = (theme: Theme) => createStyles({
   controlsInner: {
     margin: theme.spacing(4),
   },
+  demoImage: {
+    width: '100%',
+  },
   image: {
     padding: theme.spacing(8),
     width: '100%',
@@ -81,6 +84,7 @@ export interface Props extends BlockContentProps {
   type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'demoOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
+  demoImage?: Img;
   image?: Img;
   imageScale?: number;
   imagePath?: string;
@@ -116,6 +120,20 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     );
 
     var demo = this.props.demo;
+    if (this.props.demoImage) {
+      demo = (
+        <ImgIso
+          alt=''
+          className={this.props.classes.demoImage}
+          src={this.props.demoImage.src}
+          aspectRatio={this.props.demoImage?.aspectRatio}
+          width={!this.props.demoImage?.aspectRatio ? '100%' : undefined}
+          maxWidth={this.props.demoImage?.width}
+          maxHeight={this.props.demoImage?.height}
+        />
+      );
+
+    }
     if (demo && this.props.edgeType) {
       demo = (
         <div className={classNames(this.props.edgeType ? this.props.classes['edge' + this.props.edgeType] : '')}>

@@ -271,6 +271,168 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
+export function Landing() {
+  return (
+    <React.Fragment>
+      <LandingHero />
+      <LandingClearFlaskDemo noSpacing type='demoOnly' />
+      <Block
+        title='Features'
+      />
+      <Block
+        title='Ask your customers what they need'
+        description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
+        image={ListenImg}
+        imageLocation='above'
+        buttonTitle='Learn more'
+        buttonLink='/product/ask'
+        alignItems='center'
+      // demoImage={DemoPageFeedbackImg}
+      />
+      <Block
+        title='Analyze blah balh'
+        description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
+        image={ValueImg}
+        imageLocation='above'
+        buttonTitle='Learn more'
+        mirror
+        buttonLink='/product/analyze'
+      />
+      <Block
+        title='Activate blah blah blah blah'
+        description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
+        image={CommunityImg}
+        imageLocation='above'
+        buttonTitle='Learn more'
+        buttonLink='/product/activate'
+        alignItems='center'
+      // demoImage={DemoPageRoadmapImg}
+      />
+      <Block
+        title='Use cases'
+      />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
+        <Block
+          variant='content'
+          type='column'
+          title='Idea Management'
+          description='Blah nalhal bnal alsdnl ksand msdklm kladm lksdm lsa adsa'
+          image={IdeasImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/idea-management'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Feature Crowdfunding'
+          description='Credit-system to reward your paying customers with a voice to shape your product.'
+          image={CrowdfundImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/feature-crowdfunding'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Public Roadmap'
+          description='Transparency between development and customers for stronger ties with your community.'
+          image={Roadmap2Img}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/public-roadmap'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' padRight={1}>
+        <Block
+          variant='content'
+          type='column'
+          title='Feature Request Tracking'
+          description='Tool to keep organized and drive your product forward'
+          image={FeatureRequestImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/feature-request-tracking'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Content Creator Forum'
+          description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
+          image={CreatorImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/content-creator-forum'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' padRight={2}>
+        <Block
+          variant='content'
+          type='column'
+          title='Internal Feedback'
+          description='Collect feedback from within your organization or customer-base'
+          image={InternalFeedbackImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/internal-feedback'
+        />
+      </HorizontalPanels>
+
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md'>
+        <Block
+          variant='content'
+          type='column'
+          title='Install'
+          description='How to connect ClearFlask with your product.'
+          image={InstallImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/product/install'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Integrations'
+          description='Use with your existing tools.'
+          image={IntegrationImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/product/integrations'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md'>
+        <Block
+          variant='content'
+          type='column'
+          title='Scale with us'
+          description='Built on scalable infrastructure to grow with your needs.'
+          image={ArchitectureImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/product/scale-with-us'
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Integrations'
+          description='Use with your existing tools.'
+          image={IntegrationImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/product/integrations'
+        />
+      </HorizontalPanels>
+
+      <div style={{ height: '100vh' }} />
+      <LandingLoop />
+      <LandingCollectFeedbackHero />
+      <LandingPrioritizationHero />
+      <LandingEngagementHero />
+      <LandingCustomizeHero />
+      <LandingSales />
+    </React.Fragment>
+  );
+}
 
 export function LandingHero() {
   return (

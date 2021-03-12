@@ -43,27 +43,20 @@ const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", we
 const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/DemoOnboardingLogin').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
-const LandingClearFlaskDemo = loadable(() => import(/* webpackChunkName: "LandingClearFlaskDemo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingClearFlaskDemo, fallback: (<Loading />) });
+const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.Landing, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
-const LandingCollectFeedbackHero = loadable(() => import(/* webpackChunkName: "LandingCollectFeedbackHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedbackHero, fallback: (<Loading />) });
 const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingContentCreator, fallback: (<Loading />) });
 const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCrowdFunding, fallback: (<Loading />) });
 const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomize, fallback: (<Loading />) });
 const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagement, fallback: (<Loading />) });
-const LandingEngagementHero = loadable(() => import(/* webpackChunkName: "LandingEngagementHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagementHero, fallback: (<Loading />) });
-const LandingCustomizeHero = loadable(() => import(/* webpackChunkName: "LandingCustomizeHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomizeHero, fallback: (<Loading />) });
 const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
 const LandingInstall = loadable(() => import(/* webpackChunkName: "LandingInstall" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInstall, fallback: (<Loading />) });
 const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
-const LandingHero = loadable(() => import(/* webpackChunkName: "LandingHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingHero, fallback: (<Loading />) });
 const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIdeaManagement, fallback: (<Loading />) });
 const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingIntegrations" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIntegrations, fallback: (<Loading />) });
 const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInternalFeedback, fallback: (<Loading />) });
-const LandingLoop = loadable(() => import(/* webpackChunkName: "LandingLoop" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingLoop, fallback: (<Loading />) });
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
-const LandingPrioritizationHero = loadable(() => import(/* webpackChunkName: "LandingPrioritizationHero" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritizationHero, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
-const LandingSales = loadable(() => import(/* webpackChunkName: "LandingSales" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingSales, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -378,14 +371,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
 
             <Route exact path='/'>
               <SetTitle />
-              <LandingHero />
-              <LandingClearFlaskDemo noSpacing type='demoOnly' />
-              <LandingLoop />
-              <LandingCollectFeedbackHero />
-              <LandingPrioritizationHero />
-              <LandingEngagementHero />
-              <LandingCustomizeHero />
-              <LandingSales />
+              <Landing />
             </Route>
 
             <Route exact path='/product/ask'>
