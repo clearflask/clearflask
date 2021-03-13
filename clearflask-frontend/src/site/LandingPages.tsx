@@ -67,6 +67,7 @@ import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoPostResponseImg from '../../public/img/landing/demo-post-response.png';
 import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
 import DemoSearchPostsImg from '../../public/img/landing/demo-search-posts.png';
@@ -82,9 +83,11 @@ import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
+import NotifyImg from '../../public/img/landing/notify.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
 import SupportImg from '../../public/img/landing/support.svg';
+import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
 import SalesImg from '../../public/img/support/sales.svg';
 import * as Client from '../api/client';
@@ -279,7 +282,9 @@ export function Landing() {
       <LandingHero />
 
       <Block
-        title={LandingCollectFeedbackHeroTitle}
+        mirror
+        type='heading-main'
+        title='Ask'
         description={LandingCollectFeedbackHeroDescription}
         image={ListenImg}
         imageLocation='above'
@@ -289,27 +294,30 @@ export function Landing() {
       // demoImage={DemoPageFeedbackImg}
       />
       <Block
-        title='Analyze blah balh'
-        description=''
+        type='heading-main'
+        title='Analyze'
+        description='Organize all the data you collected to make the right decision'
         image={AnalyzeImg}
         imageLocation='above'
         buttonTitle='Learn more'
-        mirror
         buttonLink='/product/analyze'
       />
       <Block
-        title='Activate blah blah blah blah'
-        description=''
-        image={CommunityImg}
+        mirror
+        type='heading-main'
+        title='Act'
+        description='Become a customer-centric organization with transparent customer-driven product development.'
+        image={NotifyImg}
         imageLocation='above'
-        buttonTitle='Learn more'
-        buttonLink='/product/activate'
+        buttonTitle='See how'
+        buttonLink='/product/act'
         alignItems='center'
       // demoImage={DemoPageRoadmapImg}
       />
 
       <Block
-        title='Use cases'
+        type='heading-main'
+        title='See how our product can fit you'
       />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
         <Block
@@ -374,6 +382,7 @@ export function Landing() {
         </HorizontalPanels>
       </Hidden>
 
+      <Block />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' padRight={1}>
         <Block
           type='column'
@@ -414,7 +423,7 @@ export function Landing() {
           buttonLink='/product/integrations'
         />
       </HorizontalPanels>
-      <LandingGraveyard />
+      {/* <LandingGraveyard /> */}
     </React.Fragment>
   );
 }
@@ -815,7 +824,7 @@ export function LandingCollectFeedback() {
         description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
         alignItems='flex-start'
         initialSubPath='/embed/demo'
-        demoFixedHeight={420}
+        demoFixedHeight={450}
         image={CommunityImg}
         imageLocation='above'
         // scale={0.7}
@@ -829,6 +838,15 @@ export function LandingCollectFeedback() {
         mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
           .then(() => mocker.mockLoggedIn())}
         demo={LandingCommentListDemo}
+      />
+      <Block
+        title='Analyze feedback'
+        description='Organize all the data you collected to make the right decision'
+        image={AnalyzeImg}
+        imageLocation='above'
+        mirror
+        buttonTitle='Continue'
+        buttonLink='/product/analyze'
       />
     </React.Fragment>
   );
@@ -849,12 +867,14 @@ export function LandingPrioritization() {
           title='Identify top ideas'
           description='Understand what your users want. Search and Filter by Categories, Tags and Statuses.'
           image={DemoSearchPostsImg}
+          imageLocation='above'
         />
         <Block
           type='column'
           title='Drill-down'
           description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement, give us feedback!'
           image={DemoStatsIdeaImg}
+          imageLocation='above'
           postStatusId='customer-segmentation-and-analytics-pgi'
         />
       </HorizontalPanels>
@@ -863,6 +883,9 @@ export function LandingPrioritization() {
         icon={(<LightbulbIcon />)}
         title='Idea Validation'
         description='Get a sense of how successful a feature will be prior to any development work'
+        image={IdeasImg}
+        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
+        alignItems='flex-start'
       />
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
@@ -884,90 +907,85 @@ export function LandingPrioritization() {
           description='Analyze feedback to shape your idea for success.'
         />
       </HorizontalPanels>
-      <Demo
+      <Block
         type='heading-main'
         title='Give your most-valuable customers a proportionate voice'
         description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
-        alignItems='center'
-        // demoWrap='browser'
-        demoWrapPadding='40px 40px 40px 20px'
+        alignItems='flex-start'
         image={ValueImg}
+        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
+      />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+        <Demo
+          type='column'
+          title='Keep it simple with voting'
+          description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('vote')}
+          // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoVotingExpressionsAnimate: [
+              { type: 'vote', upvote: true },
+            ],
+          }}
+          demoFixedHeight={150}
+          containerPortal
+        />
+        <Demo
+          type='column'
+          title='Expressions for a wider range of feedback'
+          description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('express')}
+          // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoVotingExpressionsAnimate: [
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+            ],
+          }}
+          demoFixedHeight={420}
+          containerPortal
+        />
+        <Demo
+          type='column'
+          title='Credit System for advanced prioritization'
+          description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('fund')}
+          // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={450}
+          containerPortal
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoFundingControlAnimate: [
+              { index: 0, fundDiff: 20 },
+              { index: 1, fundDiff: -30 },
+              { index: 2, fundDiff: 20 },
+            ],
+          }}
+          buttonTitle='See Feature Crowdfunding'
+          buttonLink='/solutions/feature-crowdfunding'
+        />
+      </HorizontalPanels>
+      <Block
+        title='Act'
+        description='Take action based on what you have learnt.'
+        image={NotifyImg}
         imageLocation='above'
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('all')}
-        mock={mocker => mocker.demoPrioritization()}
-        settings={{
-          demoFlashPostVotingControls: true,
-        }}
+        mirror
+        buttonTitle='See how'
+        buttonLink='/product/act'
       />
-      <LandingPrioritizationTypes />
     </React.Fragment>
-  );
-}
-
-export function LandingPrioritizationTypes() {
-  return (
-    <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
-      <Demo
-        type='column'
-        title='Keep it simple with voting'
-        description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('vote')}
-        // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
-        mock={mocker => mocker.demoPrioritization()}
-        settings={{
-          demoDisablePostOpen: true,
-          demoBlurryShadow: true,
-          demoVotingExpressionsAnimate: [
-            { type: 'vote', upvote: true },
-          ],
-        }}
-        demoFixedHeight={150}
-        containerPortal
-      />
-      <Demo
-        type='column'
-        title='Expressions for a wider range of feedback'
-        description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('express')}
-        // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
-        mock={mocker => mocker.demoPrioritization()}
-        settings={{
-          demoDisablePostOpen: true,
-          demoBlurryShadow: true,
-          demoVotingExpressionsAnimate: [
-            { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
-            { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
-          ],
-        }}
-        demoFixedHeight={420}
-        containerPortal
-      />
-      <Demo
-        type='column'
-        title='Credit System for advanced prioritization'
-        description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('fund')}
-        // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
-        mock={mocker => mocker.demoPrioritization()}
-        demoFixedHeight={450}
-        containerPortal
-        settings={{
-          demoDisablePostOpen: true,
-          demoBlurryShadow: true,
-          demoFundingControlAnimate: [
-            { index: 0, fundDiff: 20 },
-            { index: 1, fundDiff: -30 },
-            { index: 2, fundDiff: 20 },
-          ],
-        }}
-        buttonTitle='See Feature Crowdfunding'
-        buttonLink='/solutions/feature-crowdfunding'
-      />
-    </HorizontalPanels>
   );
 }
 
@@ -999,36 +1017,6 @@ export function LandingCaseStudies() {
   );
 }
 
-export function LandingEngagementHero(props: { isHero?: boolean }) {
-  return (
-    <Demo
-      title='Build a community around your product'
-      description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
-      type={props.isHero ? 'hero' : 'heading-main'}
-      alignItems='flex-start'
-      initialSubPath='/embed/demo'
-      demoFixedHeight={420}
-      image={CommunityImg}
-      imageLocation='above'
-      // scale={0.7}
-      template={templater => {
-        templater.demoCategory();
-        templater.styleWhite();
-      }}
-      settings={{
-        // demoBlurryShadow: true,
-      }}
-      mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
-        .then(() => mocker.mockLoggedIn())}
-      demo={LandingCommentListDemo}
-      {...(props.isHero ? {} : {
-        buttonTitle: 'Learn more',
-        buttonLink: '/product/activate',
-      })}
-    />
-  );
-}
-
 function LandingCommentListDemo(project) {
   return (
     <Provider store={project.server.getStore()}>
@@ -1049,7 +1037,6 @@ function LandingCommentListDemo(project) {
     </Provider>
   );
 }
-
 
 export function LandingEngagementRoadmap() {
   return (
@@ -1086,56 +1073,90 @@ export function LandingEngagementRoadmap() {
   );
 }
 
+export function LandingEngagementHero(props: { isHero?: boolean }) {
+  return (
+    <Block
+      type={props.isHero ? 'hero' : 'heading-main'}
+      title='Act'
+      description='Become a customer-centric organization with transparent customer-driven product development.'
+      mirror
+      image={NotifyImg}
+      {...(props.isHero ? {} : {
+        buttonTitle: 'Learn more',
+        buttonLink: '/product/act',
+      })}
+    />
+  );
+}
 export function LandingEngagement() {
   return (
     <React.Fragment>
       <LandingEngagementHero isHero />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={240}>
-        <BlockContent
-          variant='content'
+
+      <Block
+        title='Keep your stakeholders informed'
+        description='Transparency between development and your stakeholders is an important part of your success.'
+        image={SupportImg}
+        imageStyleOuter={{ maxWidth: 400, padding: 0, }}
+        alignItems='flex-start'
+      />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm'>
+        <Block
+          type='column'
+          title='Product roadmap'
+          description='Public or stakeholder-only roadmap to keep everyone up to date on the high-level progress.'
+          icon={(<RespondIcon />)}
+          image={DemoRoadmapImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          buttonTitle='See a Roadmap'
+          buttonLink='/solutions/public-roadmap'
+        />
+        <Block
+          type='column'
           title='Respond to suggestions'
           description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
           icon={(<RespondIcon />)}
+          image={DemoPostResponseImg}
+          imageStyleOuter={{ padding: 'unset' }}
         />
-        <BlockContent
-          variant='content'
-          title='Activate users'
-          description='Bring your users back when their wishes have been fulfilled'
+        <Block
+          type='column'
+          title='Status updates'
+          description='Let waiting customers know your feature is ready.'
           icon={(<NotificationIcon />)}
-        />
-        <BlockContent
-          variant='content'
-          title='Get involved'
-          description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
-          icon={(<CommunityIcon />)}
+          image={DemoEmailNotificationImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          imageScale={0.3}
         />
       </HorizontalPanels>
-      {/* // TODO add example roadmaps of:
-        // - Software development workflow: Planned, In Progress, Recently completed
-        // - Crowdfunding: Gathering feedback, Funding, Funded
-        // - Custom (language courses): Gaining traction, Beta, Public
-        // - Custom (Game ideas): Semi-finals, Selected */}
-      <LandingEngagementRoadmap />
+
       <Block
-        title='Understand potential customers'
+        title='Create trust in your community'
         description=''
+        image={TeamImg}
+        imageStyleOuter={{ maxWidth: 400, padding: 0, }}
+        alignItems='flex-start'
       />
-      <Block
-        title='Bring back churned customers'
-        description=''
-      />
-      <Block
-        title='Notify the right people'
-        description=''
-      />
-      <Block
-        title='Show status for future ideas'
-        description=''
-      />
-      <Block
-        title='Roadmap changes'
-        description=''
-      />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm'>
+        <Block
+          type='column'
+          icon={(<TransparentIcon />)}
+          title='Embrace a transparent culture'
+          description='Customers are loyal to brands they trust and understand.'
+        />
+        <Block
+          type='column'
+          icon={(<CommunityIcon />)}
+          title='Get involved'
+          description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
+        />
+        <Block
+          type='column'
+          icon={(<FeedbackIcon />)}
+          title='Understand potential and churned customers'
+          description='Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving.'
+        />
+      </HorizontalPanels>
     </React.Fragment>
   );
 }
@@ -1143,12 +1164,12 @@ export function LandingEngagement() {
 export function LandingCustomizeHero(props: { isHero?: boolean }) {
   return (
     <Block
+      type={props.isHero ? 'hero' : 'heading-main'}
       title='Make it your own'
       description='Our solution can be customized out of the box to fit your specific needs.'
       image={CustomizeImg}
       mirror
       imageStyle={{ paddingBottom: 0, maxWidth: 700 }}
-      type={props.isHero ? 'hero' : 'heading-main'}
       alignItems={props.isHero ? 'flex-start' : 'center'}
       {...(props.isHero ? {} : {
         buttonTitle: 'Learn more',
@@ -1531,6 +1552,11 @@ export function LandingFeatureRequestTracking() {
   );
 }
 
+// TODO other example roadmaps of:
+// - Software development workflow: Planned, In Progress, Recently completed
+// - Crowdfunding: Gathering feedback, Funding, Funded
+// - Custom (language courses): Gaining traction, Beta, Public
+// - Custom (Game ideas): Semi-finals, Selected
 export function LandingPublicRoadmap() {
   return (
     <React.Fragment>
@@ -1981,13 +2007,13 @@ export function LandingIdeaManagement() {
         />
       </HorizontalPanels>
       <Block
-        title='Keep your contributors engaged'
-        description='Notify your contributors when you have made progress to keep them in the loop and engaged.'
+        title='Act'
+        description='Take action based on what you have learnt.'
         image={LoopImg}
         mirror
         alignItems='center'
         buttonTitle='See how'
-        buttonLink='/product/activate'
+        buttonLink='/product/act'
       />
     </React.Fragment>
   );

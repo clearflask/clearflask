@@ -7,6 +7,7 @@ import GrowIcon from '@material-ui/icons/AccessibilityNew';
 import InstallIcon from '@material-ui/icons/AccountTree';
 import CustomizeIcon from '@material-ui/icons/Brush';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
+import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import InternalFeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
@@ -14,7 +15,6 @@ import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MenuIcon from '@material-ui/icons/Menu';
 import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
 import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
-import ActivateIcon from '@material-ui/icons/RssFeed';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import WidgetIcon from '@material-ui/icons/Widgets';
 // import CareersIcon from '@material-ui/icons/Work';
@@ -41,7 +41,6 @@ const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", we
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const SsoSuccessDemoPage = loadable(() => import(/* webpackChunkName: "SsoSuccessDemoPage" */'../app/DemoOnboardingLogin').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.Landing, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
@@ -216,7 +215,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         type: 'dropdown', title: 'Product', items: [
           { type: 'button', link: '/product/ask', title: 'Ask', icon: CollectIcon },
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
-          { type: 'button', link: '/product/activate', title: 'Activate', icon: ActivateIcon },
+          { type: 'button', link: '/product/act', title: 'Act', icon: ActIcon },
           { type: 'divider' },
           { type: 'button', link: '/product/customize', title: 'Customize', icon: CustomizeIcon },
           { type: 'button', link: '/product/install', title: 'Install', icon: InstallIcon },
@@ -375,19 +374,19 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             </Route>
 
             <Route exact path='/product/ask'>
-              <SetTitle title='Collect' />
+              <SetTitle title='Ask your users' />
               <LandingCollectFeedback />
             </Route>
             <Route exact path='/product/analyze'>
-              <SetTitle title='Analyze' />
+              <SetTitle title='Analyze feedback' />
               <LandingPrioritization />
             </Route>
-            <Route exact path='/product/activate'>
-              <SetTitle title='Activate' />
+            <Route exact path='/product/act'>
+              <SetTitle title='Take action' />
               <LandingEngagement />
             </Route>
             <Route exact path='/product/customize'>
-              <SetTitle title='Customize' />
+              <SetTitle title='Make it your own' />
               <LandingCustomize />
             </Route>
             <Route exact path='/product/integrations'>
