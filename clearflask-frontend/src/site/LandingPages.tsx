@@ -29,6 +29,7 @@ import KnowledgeIcon from '@material-ui/icons/Help';
 import EncryptionIcon from '@material-ui/icons/Https';
 import LinkIcon from '@material-ui/icons/Link';
 import ContentCreatorIcon from '@material-ui/icons/LiveTv';
+import MoodBadIcon from '@material-ui/icons/MoodBad';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import UpcomingFeaturesIcon from '@material-ui/icons/NewReleasesOutlined';
 import NotificationIcon from '@material-ui/icons/Notifications';
@@ -68,6 +69,8 @@ import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
 import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
+import DemoSearchPostsImg from '../../public/img/landing/demo-search-posts.png';
+import DemoStatsIdeaImg from '../../public/img/landing/demo-stats-idea.png';
 import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
 import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
@@ -109,8 +112,6 @@ import HorizontalPanels from './landing/HorizontalPanels';
 import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
 import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
-import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
-import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -290,7 +291,7 @@ export function Landing() {
       <Block
         title='Analyze blah balh'
         description=''
-        image={ValueImg}
+        image={AnalyzeImg}
         imageLocation='above'
         buttonTitle='Learn more'
         mirror
@@ -842,30 +843,49 @@ export function LandingPrioritization() {
         description='Organize all the data you collected to make the right decision'
         image={AnalyzeImg}
       />
-      <Block
-        title='Identify top ideas'
-      />
-      <Block
-        title='Drill-down'
-        description='Segmentation'
-        postStatusId='customer-segmentation-and-analytics-pgi'
-      />
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
-          title='Gauge user reactions'
+          type='column'
+          title='Identify top ideas'
+          description='Understand what your users want. Search and Filter by Categories, Tags and Statuses.'
+          image={DemoSearchPostsImg}
         />
         <Block
-          title='Reach out to customers, discussions, Communication channel to the exact customers you need'
-        />
-        <Block
-          title='Recruit beta users'
+          type='column'
+          title='Drill-down'
+          description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement, give us feedback!'
+          image={DemoStatsIdeaImg}
+          postStatusId='customer-segmentation-and-analytics-pgi'
         />
       </HorizontalPanels>
       <Block
-        title='Crowd-funding'
-        description='Rather than prioritizing features based on customer value, give customers credits what they are worth. Instead of assigning users value internally, distribute credits'
+        type='heading-main'
+        icon={(<LightbulbIcon />)}
+        title='Idea Validation'
+        description='Get a sense of how successful a feature will be prior to any development work'
       />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+        <Block
+          type='column'
+          icon={(<ForumIcon />)}
+          title='Market audience at your fingertips'
+          description='Reach out to customers that are directly interested in your particular idea.'
+        />
+        <Block
+          type='column'
+          icon={(<BuildIcon />)}
+          title='Recruit BETA users'
+          description='Partially roll-out your feature to customers that you know will use it and provide you feedback.'
+        />
+        <Block
+          type='column'
+          icon={(<MoodBadIcon />)}
+          title="Gauge users' reactions"
+          description='Analyze feedback to shape your idea for success.'
+        />
+      </HorizontalPanels>
       <Demo
+        type='heading-main'
         title='Give your most-valuable customers a proportionate voice'
         description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
         alignItems='center'
@@ -880,48 +900,21 @@ export function LandingPrioritization() {
           demoFlashPostVotingControls: true,
         }}
       />
-  );
-
       <LandingPrioritizationTypes />
-      <Block
-        title='Give credits based on customer value'
-        description='Decide which customers deserve your attention. Typically credits are issued based on monetary contribution and can be automatically issued with our API.'
-      />
-      <Block
-        title="Gauge users's reactions to features"
-        description=''
-      />
-      <Block
-        title='Communication channel with the exact customers you need'
-        description='Validate solutions, recruit beta users, shape upcoming features'
-      />
-      <Block
-        title='Segmentation'
-        description=''
-        postStatusId='segmentation'
-      />
-      <Block
-        title='Identify top ideas'
-        description=''
-      />
-      <Block
-        title=''
-        description=''
-      />
     </React.Fragment>
   );
 }
 
 export function LandingPrioritizationTypes() {
   return (
-    <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
+    <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
       <Demo
         type='column'
         title='Keep it simple with voting'
         description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
         initialSubPath='/embed/demo'
         template={templater => templater.demoPrioritization('vote')}
-        controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+        // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
         mock={mocker => mocker.demoPrioritization()}
         settings={{
           demoDisablePostOpen: true,
@@ -939,7 +932,7 @@ export function LandingPrioritizationTypes() {
         description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
         initialSubPath='/embed/demo'
         template={templater => templater.demoPrioritization('express')}
-        controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+        // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
         mock={mocker => mocker.demoPrioritization()}
         settings={{
           demoDisablePostOpen: true,
@@ -954,11 +947,11 @@ export function LandingPrioritizationTypes() {
       />
       <Demo
         type='column'
-        title='Credit system for advanced prioritization'
+        title='Credit System for advanced prioritization'
         description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
         initialSubPath='/embed/demo'
         template={templater => templater.demoPrioritization('fund')}
-        controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+        // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
         mock={mocker => mocker.demoPrioritization()}
         demoFixedHeight={450}
         containerPortal
@@ -971,6 +964,8 @@ export function LandingPrioritizationTypes() {
             { index: 2, fundDiff: 20 },
           ],
         }}
+        buttonTitle='See Feature Crowdfunding'
+        buttonLink='/solutions/feature-crowdfunding'
       />
     </HorizontalPanels>
   );
