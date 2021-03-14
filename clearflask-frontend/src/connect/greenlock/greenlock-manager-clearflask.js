@@ -12,36 +12,43 @@ Manager.create = function (opts) {
 
     manager.get = async function (opts) {
         console.log('manager.get', opts);
+        // TODO RE-ENABLE WILDCARDS after you fix this greenlock mess
+        // // Redirect all subdomains to wildcard cert except for base domain which needs its own cert
+        // const servername = opts.servername.endsWith('.clearflask.com')
+        //     ? "*.clearflask.com"
+        //     : opts.servername;
+        const servername = opts.servername;
         try {
             const result = await ServerConnect.get()
                 .dispatch()
                 .certGetConnect(
-                    { domain: opts.servername },
+                    { domain: servername },
                     undefined,
                     { 'x-cf-connect-token': connectConfig.connectToken });
-            console.log('Manager get found for servername', opts.servername);
+            console.log('Manager get found for servername', servername);
             return result;
         } catch (response) {
             if (response.status === 404) {
-                console.log('Manager get not found for servername', opts.servername);
+                console.log('Manager get not found for servername', servername);
                 // Tell Greenlock to create one 
                 return {
-                    subject: opts.servername,
-                    altnames: [opts.servername],
+                    subject: servername,
+                    altnames: [servername],
                 };
             }
             if (response.status === 401) {
-                console.log('Manager get not allowed for servername', opts.servername);
+                console.log('Manager get not allowed for servername', servername);
                 // Tell Greenlock to not bother
                 return null;
             }
-            console.log('Manager get unknown error for servername', opts.servername, response);
+            console.log('Manager get unknown error for servername', servername, response);
             throw response;
         }
     };
 
     manager.set = async function (opts) {
         console.log('manager.set', opts.domain);
+        if (opts.domain === undefined) return; // Greenlock sometimes calls us with nothing
         await ServerConnect.get()
             .dispatch()
             .certPutConnect(

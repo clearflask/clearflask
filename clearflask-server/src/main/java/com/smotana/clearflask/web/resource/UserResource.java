@@ -496,7 +496,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {

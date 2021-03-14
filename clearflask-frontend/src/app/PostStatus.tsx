@@ -79,7 +79,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     const server = await serverPromise;
     const subscriptionResult = await WebNotification.getInstance().getPermission();
     const dispatcher = await server.dispatch({ ssr: true, ssrStatusPassthrough: true });
-    var configAndUserBind;
+    var configAndUserBind: Client.ConfigBindSlugResult | Client.ConfigAndUserBindSlugResult | undefined;
     if (windowIso.isSsr) {
       configAndUserBind = await dispatcher.configBindSlug({ slug: windowIso.location.hostname });
     } else {
@@ -96,8 +96,8 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       throw new Error('Permission denied');
     }
 
-    const post = await (await server.dispatch({ ssr: true, ssrStatusPassthrough: true })).ideaGet({
-      projectId: configAndUserBind.config?.config.projectId,
+    const post = await dispatcher.ideaGet({
+      projectId: configAndUserBind.config.config.projectId,
       ideaId: props.postId,
     });
 

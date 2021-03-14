@@ -17,14 +17,13 @@ _run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-ru
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
-_run-dev-frontend: npm-run-dev-frontend nginx-run
+_run-dev-frontend: _npm-run-dev-frontend nginx-run
+_npm-run-dev-frontend:
+	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js run start:frontend
 
 run-it-services:
 	@$(MAKE) _run-dev -j 50
 _run-dev: elastic-run killbill-run
-
-npm-run-dev-frontend:
-	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js run start:frontend
 
 connect-extract:
 	rm -fr `pwd`/clearflask-frontend/target/ROOT
@@ -33,10 +32,10 @@ connect-extract:
 	LANG=C find `pwd`/clearflask-frontend/target/ROOT -type f -exec \
 	sed -i '' -e 's/clearflask\.com/localhost\.com/g' {} +
 
-npm-run-dev-connect:
-	@$(MAKE) _npm-run-dev-connect -j 50
-_npm-run-dev-connect: nginx-run __npm-run-dev-connect
-__npm-run-dev-connect:
+run-dev-connect:
+	@$(MAKE) _run-dev-connect -j 50
+_run-dev-connect: nginx-run __run-dev-connect
+__run-dev-connect:
 	make connect-extract
 	docker run --rm --name clearflask-connect \
 	-p 80:3000 \
