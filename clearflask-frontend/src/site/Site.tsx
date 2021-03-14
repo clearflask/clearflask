@@ -226,7 +226,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       {
         type: 'dropdown', title: 'Solutions', items: [
           { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
-          { type: 'button', link: '/solutions/public-roadmap', title: 'Public Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/solutions/product-roadmap', title: 'Product Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
           { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
           { type: 'divider' },
           { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
@@ -406,8 +406,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <SetTitle title='Feature Request Tracking' />
               <LandingFeatureRequestTracking />
             </Route>
-            <Route exact path='/solutions/public-roadmap'>
-              <SetTitle title='Public Roadmap' />
+            <Route exact path='/solutions/product-roadmap'>
+              <SetTitle title='Product Roadmap' />
               <LandingPublicRoadmap />
             </Route>
             <Route exact path='/solutions/feature-crowdfunding'>

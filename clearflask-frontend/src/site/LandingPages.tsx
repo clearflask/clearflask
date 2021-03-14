@@ -1,6 +1,6 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { Container, Hidden, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import AddCommentIcon from '@material-ui/icons/AddComment';
@@ -281,9 +281,10 @@ export function Landing() {
     <React.Fragment>
       <LandingHero />
 
-      <Block
-        mirror
+      <LandingCollectFeedbackHero />
+      {/* <Block
         type='heading-main'
+        mirror
         title='Ask'
         description={LandingCollectFeedbackHeroDescription}
         image={ListenImg}
@@ -291,9 +292,10 @@ export function Landing() {
         buttonTitle='Learn more'
         buttonLink='/product/ask'
         alignItems='center'
-      // demoImage={DemoPageFeedbackImg}
-      />
+        demoImage={DemoPageFeedbackImg}
+      /> */}
       <Block
+        mirror
         type='heading-main'
         title='Analyze'
         description='Organize all the data you collected to make the right decision'
@@ -301,9 +303,9 @@ export function Landing() {
         imageLocation='above'
         buttonTitle='Learn more'
         buttonLink='/product/analyze'
+        demoImage={DemoSearchPostsImg}
       />
       <Block
-        mirror
         type='heading-main'
         title='Act'
         description='Become a customer-centric organization with transparent customer-driven product development.'
@@ -312,14 +314,14 @@ export function Landing() {
         buttonTitle='See how'
         buttonLink='/product/act'
         alignItems='center'
-      // demoImage={DemoPageRoadmapImg}
+        demoImage={DemoRoadmapImg}
       />
 
       <Block
         type='heading-main'
-        title='See how our product can fit you'
+        title='See how our solutions can fit your needs'
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={150}>
         <Block
           type='column'
           title='Idea Management'
@@ -340,15 +342,15 @@ export function Landing() {
         />
         <Block
           type='column'
-          title='Public Roadmap'
+          title='Product Roadmap'
           description='Transparency between development and customers for stronger ties with your community.'
           image={Roadmap2Img}
           imageLocation='above'
           buttonTitle='Learn more'
-          buttonLink='/solutions/public-roadmap'
+          buttonLink='/solutions/product-roadmap'
         />
       </HorizontalPanels>
-      <Hidden mdDown>
+      {/* <Hidden mdDown>
         <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' padRight={1}>
           <Block
             type='column'
@@ -380,9 +382,9 @@ export function Landing() {
             buttonLink='/solutions/internal-feedback'
           />
         </HorizontalPanels>
-      </Hidden>
+      </Hidden> */}
 
-      <Block />
+      {/* <Block />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' padRight={1}>
         <Block
           type='column'
@@ -422,7 +424,8 @@ export function Landing() {
           buttonTitle='Learn more'
           buttonLink='/product/integrations'
         />
-      </HorizontalPanels>
+      </HorizontalPanels> */}
+      <LandingSales />
       {/* <LandingGraveyard /> */}
     </React.Fragment>
   );
@@ -545,11 +548,10 @@ export function LandingGraveyard() {
         buttonTitle='Learn more'
         buttonLink='/solutions/feature-crowdfunding'
       />
-      {/* <LandingLoop />
+      <LandingLoop />
       <LandingCollectFeedbackHero />
       <LandingEngagementHero />
       <LandingCustomizeHero />
-      <LandingSales /> */}
     </React.Fragment>
   );
 }
@@ -817,7 +819,7 @@ export function LandingCollectFeedback() {
           demoDisablePostOpen: true,
         }}
         buttonTitle='See a Roadmap'
-        buttonLink='/solutions/public-roadmap'
+        buttonLink='/solutions/product-roadmap'
       />
       <Demo
         title='Build a community around your product'
@@ -867,14 +869,14 @@ export function LandingPrioritization() {
           title='Identify top ideas'
           description='Understand what your users want. Search and Filter by Categories, Tags and Statuses.'
           image={DemoSearchPostsImg}
-          imageLocation='above'
+        // imageLocation='above'
         />
         <Block
           type='column'
           title='Drill-down'
-          description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement, give us feedback!'
+          description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement for us, give us feedback!'
           image={DemoStatsIdeaImg}
-          imageLocation='above'
+          // imageLocation='above'
           postStatusId='customer-segmentation-and-analytics-pgi'
         />
       </HorizontalPanels>
@@ -978,7 +980,7 @@ export function LandingPrioritization() {
       </HorizontalPanels>
       <Block
         title='Act'
-        description='Take action based on what you have learnt.'
+        description='Take action on what your users are telling you.'
         image={NotifyImg}
         imageLocation='above'
         mirror
@@ -1109,7 +1111,7 @@ export function LandingEngagement() {
           image={DemoRoadmapImg}
           imageStyleOuter={{ padding: 'unset' }}
           buttonTitle='See a Roadmap'
-          buttonLink='/solutions/public-roadmap'
+          buttonLink='/solutions/product-roadmap'
         />
         <Block
           type='column'
@@ -1157,6 +1159,15 @@ export function LandingEngagement() {
           description='Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving.'
         />
       </HorizontalPanels>
+      <Block
+        title='Customize'
+        description='Match your workflow and style. Customize our platform to your liking.'
+        image={CustomizeImg}
+        imageLocation='above'
+        mirror
+        buttonTitle='See how'
+        buttonLink='/product/customize'
+      />
     </React.Fragment>
   );
 }
@@ -1324,9 +1335,13 @@ export function LandingCustomize() {
         /> */}
       </HorizontalPanels>
       <Block
-        title='And a lot more...'
-        description="Sign up to see all the customizations. Remember if you don't find what you're looking for, we are here to help."
+        title='Install'
+        description='How you can connect ClearFlask with your website or app'
+        image={InstallImg}
+        imageLocation='above'
         mirror
+        buttonTitle='See how'
+        buttonLink='/product/install'
       />
     </React.Fragment>
   );
@@ -1539,15 +1554,30 @@ export function LandingFeatureRequestTracking() {
           title='Visualize with a Roadmap'
           description='High-level overview of the features currently in your pipeline for users to get an idea of what is going on.'
           buttonTitle='See a Roadmap'
-          buttonLink='/solutions/public-roadmap'
+          buttonLink='/solutions/product-roadmap'
         />
       </HorizontalPanels>
-      <Block
-        title='Internal feedback'
-        description='Collect feedback from a closed-group of people within your organization or customer-base'
-        buttonTitle='See how'
-        buttonLink='/solutions/internal-feedback'
-      />
+      <Block />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <Block
+          type='column'
+          title='Internal feedback'
+          description='Collect feedback from a closed-group of people within your organization or customer-base'
+          image={InternalFeedbackImg}
+          imageLocation='above'
+          buttonTitle='See how'
+          buttonLink='/solutions/internal-feedback'
+        />
+        <Block
+          type='column'
+          title='Feature Crowdfunding'
+          description='Bring in your own tools and connect with ClearFlask'
+          image={CrowdfundImg}
+          imageLocation='above'
+          buttonTitle='Learn more'
+          buttonLink='/solutions/feature-crowdfunding'
+        />
+      </HorizontalPanels>
     </React.Fragment>
   );
 }
@@ -1561,14 +1591,13 @@ export function LandingPublicRoadmap() {
   return (
     <React.Fragment>
       <Hero
-        title='Public Roadmap'
+        title='Product Roadmap'
         description='Transparency between development and customers for stronger ties with your community.'
         image={Roadmap2Img}
       />
       <Demo
-        title='Include a public roadmap for your product'
         initialSubPath='/embed/demo'
-        type='largeDemo'
+        type='demoOnly'
         template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([
           { status: '0' }, { status: '0' }, { status: '0' }, { status: '0' },
@@ -1600,36 +1629,42 @@ export function LandingPublicRoadmap() {
           description='Let your community get excited about what you are working on. Keep them in-the-know of your hard work behind the scenes.'
         />
       </HorizontalPanels>
-      <Block
-        title='Subscribe to updates'
-        description='Keep users engaged with feature updates.'
-        image={DemoEmailNotificationImg}
-        imageScale={0.4}
-        mirror
-        alignItems='center'
-      />
-      <Demo
-        title='Embrace discussions'
-        description='Shape your features by directly communicating with your customer base.'
-        alignItems='center'
-        initialSubPath='/embed/demo'
-        demoFixedHeight={420}
-        template={templater => {
-          templater.demoCategory();
-          templater.styleWhite();
-        }}
-        settings={{
-          // demoBlurryShadow: true,
-        }}
-        mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
-          .then(() => mocker.mockLoggedIn())}
-        demo={LandingCommentListDemo}
-      />
+      <Block />
+      <HorizontalPanels wrapBelow='lg' maxWidth='md' maxContentWidth='xs'>
+        <Block
+          type='column'
+          title='Subscribe to updates'
+          description='Keep users engaged with feature updates.'
+          image={DemoEmailNotificationImg}
+          imageScale={0.3}
+          mirror
+          alignItems='center'
+        />
+        <Demo
+          type='column'
+          title='Embrace discussions'
+          description='Shape your features by directly communicating with your customer base.'
+          alignItems='center'
+          initialSubPath='/embed/demo'
+          demoFixedHeight={450}
+          scale={0.7}
+          template={templater => {
+            templater.demoCategory();
+            templater.styleWhite();
+          }}
+          settings={{
+            // demoBlurryShadow: true,
+          }}
+          mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+            .then(() => mocker.mockLoggedIn())}
+          demo={LandingCommentListDemo}
+        />
+      </HorizontalPanels>
       <Demo
         title='Customize'
         description='Change the columns, content, and labels. You can even create multiple roadmaps for different stakeholders.'
         initialSubPath='/embed/demo'
-        type='largeDemo'
+        type='mediumDemo'
         template={templater => templater.demoBoardPreset('design')}
         mock={mocker => mocker.demoBoard([
           { status: '1' }, { status: '1' }, { status: '1' }, { status: '1' },
@@ -1640,6 +1675,8 @@ export function LandingPublicRoadmap() {
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
+        buttonTitle='See more customizations'
+        buttonLink='/product/customize'
       />
     </React.Fragment>
   );
@@ -1726,7 +1763,16 @@ export function LandingCrowdFunding() {
         mirror
         image={DemoFundingRoadmapImg}
       />
-    </React.Fragment>
+      <Block
+        title='Feature request tracking'
+        description='Tool to keep organized and drive your product forward'
+        image={FeatureRequestImg}
+        imageLocation='above'
+        mirror
+        buttonTitle='See how'
+        buttonLink='/solutions/feature-request-tracking'
+      />
+    </React.Fragment >
   );
 }
 
@@ -1879,20 +1925,34 @@ export function LandingInternalFeedback() {
           },
         }}
       />
-      <Block
-        type='mediumDemo'
-        title='Keep your stakeholders informed'
-        description='Keep your stakeholders up-to-date with notifications over email or web-push.'
-        image={DemoEmailNotificationImg}
-        imageScale={0.4}
-        alignItems='center'
-        mirror
-      />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+        <Block
+          type='column'
+          icon={(<NotificationIcon />)}
+          title='Keep your stakeholders informed'
+          description='Keep your stakeholders up-to-date with notifications over email or web-push.'
+          image={DemoEmailNotificationImg}
+          imageScale={0.4}
+          alignItems='center'
+          mirror
+        />
+        <Block
+          type='column'
+          icon={(<PrivacyIcon />)}
+          title='Keep all your data private'
+          description='Setup privacy settings so only your users can see and post feedback. Authenticate via Single Sign-On, OAuth or whitelist your email domain.'
+          image={DemoProjectPrivateImg}
+          imageScale={0.5}
+          alignItems='center'
+        />
+      </HorizontalPanels>
       <Demo
         type='mediumDemo'
         title='Transparency in your workload'
         description='Let your co-workers see your work in order to understand your prioritization of their requests.'
         initialSubPath='/embed/demo'
+        image={Roadmap2Img}
+        imageLocation='above'
         alignItems='center'
         template={templater => templater.demoBoard('Ticket queue', [
           { title: 'In Review' }, { title: 'In progress' },
@@ -1906,15 +1966,7 @@ export function LandingInternalFeedback() {
           demoDisablePostOpen: true,
         }}
         buttonTitle='See a Roadmap'
-        buttonLink='/solutions/public-roadmap'
-      />
-      <Block
-        title='Keep all your data private'
-        description='Setup privacy settings so only authorized users can see and post feedback.'
-        image={DemoProjectPrivateImg}
-        imageScale={0.5}
-        alignItems='center'
-        mirror
+        buttonLink='/solutions/product-roadmap'
       />
     </React.Fragment>
   );
@@ -1944,7 +1996,7 @@ export function LandingIdeaManagement() {
           demoDisablePostOpen: true,
         }}
         buttonTitle='See a Roadmap'
-        buttonLink='/solutions/public-roadmap'
+        buttonLink='/solutions/product-roadmap'
       />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
@@ -2187,7 +2239,7 @@ export function LandingContentCreator() {
           demoDisablePostOpen: true,
         }}
         buttonTitle='See a Roadmap'
-        buttonLink='/solutions/public-roadmap'
+        buttonLink='/solutions/product-roadmap'
       />
       <Block
         title='Let your fans know'
@@ -2299,6 +2351,15 @@ export function LandingGrowWithUs() {
           description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
         />
       </HorizontalPanels>
+      <Block
+        title='Integrations'
+        description='Bring in your own tools and connect with ClearFlask'
+        image={IntegrationImg}
+        imageLocation='above'
+        mirror
+        buttonTitle='See all integrations'
+        buttonLink='/product/integrations'
+      />
     </React.Fragment>
   );
 }
@@ -2310,7 +2371,7 @@ export function LandingInstall() {
     <React.Fragment>
       <Hero
         title='Install'
-        description='How to connect ClearFlask with your product.'
+        description='How you can connect ClearFlask with your website or app'
         image={InstallImg}
       />
       <Block
@@ -2425,7 +2486,7 @@ export function LandingInstall() {
         />
       </HorizontalPanels>
       <Block
-        title='Issue Credit automatically'
+        title='Issue credits automatically'
         description='If you are using the Credit System, issue credits to your users automatically with your platform when they make a purchase or complete any action.'
         alignItems='flex-start'
         image={CrowdfundImg}
@@ -2433,6 +2494,15 @@ export function LandingInstall() {
         demo={(<LandingCreditSystemLinkOptions />)}
         buttonTitle='See Feature Crowdfunding'
         buttonLink='/solutions/feature-crowdfunding'
+      />
+      <Block
+        title='Scale with us'
+        description='Our platform is built on robust infrastructure and security'
+        image={ArchitectureImg}
+        imageLocation='above'
+        mirror
+        buttonTitle='See how'
+        buttonLink='/product/scale-with-us'
       />
     </React.Fragment>
   );
