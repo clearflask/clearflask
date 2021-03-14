@@ -7,6 +7,7 @@ import MuiAnimatedSwitch from '../../common/MuiAnimatedSwitch';
 
 interface Props extends WithTheme {
   render: (pageSlug: string) => React.ReactNode;
+  notFoundRoute: React.ReactNode;
 }
 
 interface ConnectProps {
@@ -22,6 +23,7 @@ const AnimatedPageSwitch = connect<ConnectProps, {}, Props, ReduxState>((state) 
     props.children,
     ...(props.customPageSlugs || []).filter(pageSlug => !!pageSlug).map(customPageSlug => props.render(customPageSlug)),
     props.render(''),
+    props.notFoundRoute,
   ];
   return props.theme.disableTransitions
     ? <Switch>{children}</Switch>

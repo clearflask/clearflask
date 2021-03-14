@@ -28,7 +28,7 @@ import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import { RedirectIso } from '../common/util/routerUtil';
+import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
@@ -431,10 +431,10 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <PricingPage />
             </Route>
 
-            <Route>
+            <RouteWithStatus httpCode={404} >
               <SetTitle title='Page not found' />
               <ErrorPage msg='Page not found' variant='error' />
-            </Route>
+            </RouteWithStatus>
           </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>
@@ -506,7 +506,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
       const lastEventId = ++this.lastEventId;
       setTimeout(() => lastEventId === this.lastEventId
         && !this.state.hover
-        && this.setState({ open: false }), 10);
+        && this.setState({ open: false }), 1);
     };
     return (
       <div className={this.props.classes.dropdownContainer}>
@@ -540,6 +540,10 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
             timeout: this.props.theme.transitions.duration.shortest,
           }}
           placement='bottom'
+          modifiers={{
+            preventOverflow: { enabled: false },
+            flip: { enabled: false },
+          }}
         >
           <MenuItems
             items={this.props.dropdown.items}

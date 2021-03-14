@@ -52,6 +52,7 @@ function createApp(serverHttpp) {
     },
   }));
 
+  serverApp.use("/api/", express.static(path.resolve(__dirname, 'public', 'api', 'index.html')));
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
       target: process.env.ENV !== 'local' ? 'http://localhost:8080' : 'http://host.docker.internal:8080',

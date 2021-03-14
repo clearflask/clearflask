@@ -134,7 +134,6 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             };
           }
           if (!status) {
-            console.log('Failed to load, post has no status', config, user, post);
             return null;
           };
 
@@ -168,7 +167,6 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
           );
         }}
         renderError={err => {
-          console.log('Failed to load:', err);
           return null;
         }}
         renderLoading={() => null}

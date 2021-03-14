@@ -117,6 +117,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     const {
       children,
       classes,
+      theme,
       paperClassName,
       zIndex,
       onClose,
@@ -148,9 +149,8 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
       <React.Fragment>
         <Popper
           style={{
-            ...(zIndex === undefined ? {} : {
-              zIndex: zIndex,
-            }),
+            zIndex: zIndex !== undefined ? zIndex : theme.zIndex.modal + 1,
+            ...popperProps.style,
           }}
           placement={placement || 'right-start'}
           anchorEl={this.props.anchorEl !== undefined

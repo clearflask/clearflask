@@ -8,6 +8,7 @@ import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
+import { RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
@@ -233,7 +234,7 @@ class App extends Component<Props> {
               <AnimatedPageSwitch
                 key='app-switch'
                 render={(pageSlug: string) => (
-                  <Route key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
+                  <Route exact key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
                     <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
                       <CustomPage
                         pageSlug={pageSlug}
@@ -241,7 +242,18 @@ class App extends Component<Props> {
                       />
                     </BasePage>
                   )} />
-                )} >
+                )}
+                notFoundRoute={(
+                  <RouteWithStatus httpCode={404} >
+                    <BasePage
+                      pageTitle='Page not found'
+                      showFooter
+                    >
+                      <ErrorPage msg='Page not found' variant='error' />
+                    </BasePage>
+                  </RouteWithStatus>
+                )}
+              >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
                     <UserPage server={this.server} userId={props.match.params.userId} />

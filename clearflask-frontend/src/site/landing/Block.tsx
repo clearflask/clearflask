@@ -22,18 +22,18 @@ const styles = (theme: Theme) => createStyles({
   },
   spacing: {
     [theme.breakpoints.up('md')]: {
-      padding: `${vh(5)}px 10vw`,
+      padding: `${vh(10)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: `${vh(5)}px 1vw`,
+      padding: `${vh(10)}px 1vw`,
     },
   },
   spacingMediumDemo: {
     [theme.breakpoints.up('lg')]: {
-      padding: `${vh(5)}px 10vw`,
+      padding: `${vh(10)}px 10vw`,
     },
     [theme.breakpoints.down('md')]: {
-      padding: `${vh(5)}px 1vw`,
+      padding: `${vh(10)}px 1vw`,
     },
   },
   grid: {
