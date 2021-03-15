@@ -209,7 +209,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   projectPromise: undefined | Promise<Project>;
 
   render() {
-    const isLandingPage = this.props.location.pathname === '/';
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
@@ -246,7 +245,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       },
     ];
     const menuItemsRight: Array<MenuButton> = [
-      isLandingPage
+      (this.props.location.pathname === '/' || this.props.location.pathname === '/signup')
         ? { type: 'button', link: '/login', title: 'Log in' }
         : { type: 'button', link: '/signup', title: 'Sign up' },
       { type: 'button', link: '/pricing', title: 'Pricing' },

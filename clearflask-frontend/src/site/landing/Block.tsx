@@ -84,7 +84,7 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props extends Omit<BlockContentProps, 'variant'> {
   className?: string;
-  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'heading-main' | 'demoOnly';
+  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'headingMain' | 'demoOnly' | 'headingOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   demoImage?: Img;
@@ -184,8 +184,9 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       case 'column':
         blockVariant = 'content';
         break;
-      case 'heading-main':
-        blockVariant = 'heading-main';
+      case 'headingMain':
+      case 'headingOnly':
+        blockVariant = 'headingMain';
         break;
     }
     const { classes, ...blockContentProps } = this.props;
@@ -195,6 +196,16 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         {...blockContentProps}
       />
     );
+
+    if (this.props.type === 'headingOnly') {
+      return (
+        <div
+          className={classNames(!this.props.noSpacing && this.props.classes.spacing, this.props.className)}
+        >
+          {content}
+        </div>
+      );
+    }
 
     if (this.props.type === 'column') {
       return (

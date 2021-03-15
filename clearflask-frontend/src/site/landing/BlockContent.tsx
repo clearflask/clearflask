@@ -39,7 +39,7 @@ export interface Props {
   buttonLinkExt?: string;
   buttonLink?: string;
   buttonState?: any;
-  variant?: 'hero' | 'heading-main' | 'heading' | 'content';
+  variant?: 'hero' | 'headingMain' | 'heading' | 'content';
   titleCmpt?: string;
   icon?: React.ReactNode;
   scrollAnchor?: ScrollAnchorProps;
@@ -58,7 +58,7 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
         titleCmpt = this.props.titleCmpt || 'h1';
         bodyCmpt = 'div';
         break;
-      case 'heading-main':
+      case 'headingMain':
         titleVariant = 'h4';
         bodyVariant = 'body1';
         titleCmpt = this.props.titleCmpt || 'h2';
