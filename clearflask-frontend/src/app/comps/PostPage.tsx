@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
+import { initialWidth } from '../../common/util/screenUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
@@ -34,12 +35,20 @@ interface Props {
   suppressSimilar?: boolean;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   postStatus: Status;
   post?: Client.Idea;
   projectName?: string,
   suppressSetTitle?: boolean,
 }
 class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>> {
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   render() {
     if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
       setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));
@@ -120,14 +129,16 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
 
   const byId = state.ideas.byId[ownProps.postId];
   if (!byId) {
-    ownProps.server.dispatch().ideaGet({
-      projectId: state.projectId!,
-      ideaId: ownProps.postId,
-    });
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.ideaGet({
+        projectId: state.projectId!,
+        ideaId: ownProps.postId,
+      }));
+    };
   } else {
     newProps.postStatus = byId.status;
     newProps.post = byId.idea;
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(withWidth()(PostPage)));
+})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(PostPage)));

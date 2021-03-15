@@ -26,6 +26,7 @@ interface Props {
   onAuthorClick?: (commentId: string, userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
   loadMore: () => Promise<Client.IdeaCommentSearchResponse>;
@@ -37,13 +38,15 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
   constructor(props) {
     super(props)
 
+    props.callOnMount?.();
+
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
     if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
-      this.props.server.dispatch().ideaCommentSearch({
+      this.props.server.dispatch().then(d => d.ideaCommentSearch({
         projectId: this.props.server.getProjectId(),
         ideaId: this.props.ideaId,
         ideaCommentSearch: {},
-      });
+      }));
     }
   }
 
@@ -100,6 +103,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 }
 
 const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  var callOnMount;
   const comments: Client.CommentWithVote[] = [];
   var ideaIdOrParentCommentId = ownProps.parentCommentId || ownProps.ideaId;
   const commentIds = state.comments.byIdeaIdOrParentCommentId[ideaIdOrParentCommentId];
@@ -120,29 +124,32 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
       comments.push(comment.comment);
     });
     if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByCommentIds.length > 0) {
-      ownProps.server.dispatch().commentVoteGetOwn({
-        projectId: state.projectId!,
-        commentIds: missingVotesByCommentIds,
-        myOwnCommentIds: missingVotesByCommentIds
-          .map(commentId => state.comments.byId[commentId])
-          .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
-          .map(comment => comment?.comment?.commentId)
-          .filter(notEmpty),
-      });
+      callOnMount = () => {
+        ownProps.server.dispatch().then(d => d.commentVoteGetOwn({
+          projectId: state.projectId!,
+          commentIds: missingVotesByCommentIds,
+          myOwnCommentIds: missingVotesByCommentIds
+            .map(commentId => state.comments.byId[commentId])
+            .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
+            .map(comment => comment?.comment?.commentId)
+            .filter(notEmpty),
+        }));
+      };
     }
   }
   return {
+    callOnMount: callOnMount,
     commentsStatus: commentsStatus,
     comments: comments,
     settings: state.settings,
-    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().ideaCommentSearch({
+    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().then(d => d.ideaCommentSearch({
       projectId: state.projectId!,
       ideaId: ownProps.ideaId,
       ideaCommentSearch: {
         parentCommentId: ownProps.parentCommentId,
         excludeChildrenCommentIds: commentIds && commentIds.commentIds ? [...commentIds.commentIds] : undefined,
       },
-    }),
+    })),
   };
 })(withStyles(styles, { withTheme: true })(CommentListRaw));
 export default CommentList;

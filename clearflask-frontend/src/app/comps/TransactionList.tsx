@@ -31,6 +31,7 @@ interface Props {
 }
 
 interface ConnectProps {
+  callOnMount?: () => void,
   isLoggedIn: boolean;
   configver?: string;
   credits?: Client.Credits;
@@ -41,6 +42,12 @@ interface ConnectProps {
 
 class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
 
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   render() {
     if (!this.props.isLoggedIn) {
       return (<ErrorMsg msg='You need to log in to see your balance' variant='info' />);
@@ -50,7 +57,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
       <div className={this.props.className}>
         <DividerCorner title='Transaction history' height='100%'>
           <div className={this.props.classes.transactionsTable}>
-            <Table size='small'>
+            <Table>
               <TableHead>
                 <TableRow>
                   <TableCell key='date'>Date</TableCell>
@@ -117,21 +124,25 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   };
   const searchKey: string = getSearchKey(search);
   var getNextTransactions;
+  var callOnMount;
   if (userId && (state.credits.transactionSearch.status === undefined || state.credits.transactionSearch.searchKey !== searchKey)) {
-    ownProps.server.dispatch().transactionSearch({
-      projectId: ownProps.server.getProjectId(),
-      userId: userId,
-      transactionSearch: search,
-    });
+    callOnMount = () => {
+      ownProps.server.dispatch().then(d => d.transactionSearch({
+        projectId: ownProps.server.getProjectId(),
+        userId: userId,
+        transactionSearch: search,
+      }));
+    };
   } else if (userId && state.credits.transactionSearch.cursor && state.credits.transactionSearch.searchKey === searchKey) {
-    getNextTransactions = () => ownProps.server.dispatch().transactionSearch({
+    getNextTransactions = () => ownProps.server.dispatch().then(d => d.transactionSearch({
       projectId: ownProps.server.getProjectId(),
       userId: userId,
       transactionSearch: search,
       cursor: state.credits.transactionSearch.cursor,
-    });
+    }));
   }
   const connectProps: ConnectProps = {
+    callOnMount,
     configver: state.conf.ver, // force rerender on config change
     isLoggedIn: !!userId,
     transactions: state.credits.transactionSearch.transactions,

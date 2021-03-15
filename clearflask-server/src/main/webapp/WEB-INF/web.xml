@@ -130,11 +130,6 @@
         <url-pattern>/error</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>default</servlet-name>
-        <!-- Docs hosted at base api -->
-        <url-pattern>/api/index.html</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
         <servlet-name>api</servlet-name>
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>

@@ -12,7 +12,9 @@ paths:
     $ref: 'api-sni.yaml#/~1connect~1account~1keypair'
   /connect/cert/keypair:
     $ref: 'api-sni.yaml#/~1connect~1cert~1keypair'
-  /connect/cert/challenge:
-    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge'
+  /connect/cert/challenge/http:
+    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1http'
+  /connect/cert/challenge/dns:
+    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1dns'
   /connect/cert:
     $ref: 'api-sni.yaml#/~1connect~1cert'

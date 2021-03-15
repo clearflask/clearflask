@@ -2,6 +2,8 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.SniConnectApi;
 import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
@@ -33,8 +35,15 @@ import java.util.Optional;
 @Path(Application.RESOURCE_VERSION)
 public class ConnectResource extends AbstractResource implements SniConnectApi {
 
+    public interface Config {
+        @DefaultValue("^(.+\\.)?clearflask\\.com$")
+        String domainWhitelist();
+    }
+
     @Context
     private HttpHeaders headers;
+    @Inject
+    private Config config;
     @Inject
     private CertStore certStore;
     @Inject
@@ -66,22 +75,42 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public void certChallengeDeleteConnect(String key) {
-        certStore.deleteChallenge(key);
+    public void certChallengeDnsDeleteConnect(String host, Challenge challenge) {
+        certStore.deleteDnsChallenge(host, challenge.getResult());
     }
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public Challenge certChallengeGetConnect(String key) {
-        return certStore.getChallenge(key)
+    public Challenge certChallengeDnsGetConnect(String host) {
+        return certStore.getDnsChallenge(host)
+                .map(Challenge::new)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public void certChallengeDnsPutConnect(String host, Challenge challenge) {
+        certStore.setDnsChallenge(host, challenge.getResult());
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public void certChallengeHttpDeleteConnect(String key) {
+        certStore.deleteHttpChallenge(key);
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public Challenge certChallengeHttpGetConnect(String key) {
+        return certStore.getHttpChallenge(key)
                 .map(ChallengeModel::toChallenge)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public void certChallengePutConnect(String key, Challenge challenge) {
-        certStore.setChallenge(new ChallengeModel(
+    public void certChallengeHttpPutConnect(String key, Challenge challenge) {
+        certStore.setHttpChallenge(new ChallengeModel(
                 key,
                 challenge.getResult()));
     }
@@ -99,7 +128,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
                 .map(CertModel::toCert);
         if (certOpt.isPresent()) {
             return certOpt.get();
-        } else if (projectStore.getProjectBySlug(domain, true).isPresent()) {
+        } else if (domain.matches(config.domainWhitelist())
+                || projectStore.getProjectBySlug(domain, true).isPresent()) {
             throw new ClientErrorException(Response.Status.NOT_FOUND);
         } else {
             throw new ClientErrorException(Response.Status.UNAUTHORIZED);
@@ -148,6 +178,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
             @Override
             protected void configure() {
                 bind(ConnectResource.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

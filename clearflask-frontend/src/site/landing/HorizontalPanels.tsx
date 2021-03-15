@@ -2,6 +2,7 @@ import { Container, isWidthUp, withWidth, WithWidthProps } from '@material-ui/co
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import React, { Component } from 'react';
+import { initialWidth } from '../../common/util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -11,16 +12,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flex: '1 1 auto',
     padding: theme.spacing(4),
-    justifyContent: 'center',
-  },
-  contentFirst: {
-    justifyContent: 'flex-start',
-  },
-  contentMiddle: {
-    justifyContent: 'center',
-  },
-  contentLast: {
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
   },
 });
 interface Props {
@@ -29,12 +21,26 @@ interface Props {
   maxContentWidth?: Breakpoint;
   maxWidth?: Breakpoint;
   staggerHeight?: number;
+  padLeft?: number;
+  padRight?: number;
 }
 class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true> & WithWidthProps> {
 
   render() {
     const isHorizontal = this.props.alwaysWrap ? false : (!this.props.width || !this.props.wrapBelow || isWidthUp(this.props.wrapBelow, this.props.width));
-    const contentsSize = React.Children.count(this.props.children);
+    const padLeftSize = isHorizontal && this.props.padLeft || 0;
+    const padRightSize = isHorizontal && this.props.padRight || 0;
+    const childrenSize = React.Children.count(this.props.children)
+    const contentsSize = childrenSize + padLeftSize + padRightSize;
+    const childrenMapper: (mapper: (content: React.ReactNode, index: number) => React.ReactNode) => React.ReactNode = (mapper) => {
+      return (
+        <React.Fragment>
+          {isHorizontal ? [...Array(padLeftSize)].map((c, i) => mapper((<div />), i)) : null}
+          {React.Children.map(this.props.children, (c, i) => mapper(c, (isHorizontal ? padLeftSize : 0) + i))}
+          {isHorizontal ? [...Array(padRightSize)].map((c, i) => mapper((<div />), padLeftSize + childrenSize + i)) : undefined}
+        </React.Fragment>
+      );
+    }
 
     const staggerHeight = Math.abs(this.props.staggerHeight || 0);
     const staggerAsc = (this.props.staggerHeight || 0) < 0;
@@ -47,39 +53,33 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
           flexDirection: isHorizontal ? 'row' : (staggerAsc ? 'column-reverse' : 'column'),
         }}
       >
-        {React.Children.map(this.props.children, (content, index) => {
+        {childrenMapper((content, index) => {
           if (!content) return null;
-          var contentClass: string | undefined = undefined;
-          if (!isHorizontal) {
-            if (index === 0) {
-              contentClass = this.props.classes.contentFirst;
-            } else if (index === contentsSize - 1) {
-              contentClass = this.props.classes.contentLast;
-            } else {
-              contentClass = this.props.classes.contentMiddle;
-            }
-          }
+          var leftPads = index;
+          var rightPads = contentsSize - index - 1;
           return (
             <div
               key={content?.['key'] || index}
-              className={`${this.props.classes.content} ${contentClass || ''}`}
+              className={this.props.classes.content}
               style={isHorizontal ? {
                 marginTop: staggerAsc
-                  ? (childrenCount - index) * staggerHeight
+                  ? (childrenCount - index - 1) * staggerHeight
                   : index * staggerHeight
               } : undefined}
             >
+              {[...Array(leftPads)].map((u, i) => (<div key={`left-${i}`} />))}
               <Container maxWidth={this.props.maxContentWidth} style={{
                 margin: 'unset',
               }}>
                 {content}
               </Container>
+              {[...Array(rightPads)].map((u, i) => (<div key={`right-${i}`} />))}
             </div>
           )
-        })}
+        }) || {}}
       </Container>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withWidth()(HorizontalPanels));
+export default withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(HorizontalPanels));

@@ -35,6 +35,20 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
+                                    <directory>${project.basedir}/dist</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/dist-dev</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/node</directory>
                                     <includes>
                                         <include>**</include>
@@ -66,6 +80,27 @@
                                     <directory>${project.basedir}/src/api/client/</directory>
                                     <includes>
                                         <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/src/api/connect/</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}/greenlock.d</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>.greenlockrc</include>
                                     </includes>
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
@@ -126,6 +161,16 @@
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
                                     <artifactId>clearflask-api</artifactId>
+                                    <classifier>connect</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/src/api/connect/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-api</artifactId>
                                     <classifier>docs</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
@@ -156,10 +201,22 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install</arguments>
+                            <arguments>install --production=false</arguments>
                         </configuration>
                         <phase>initialize</phase>
                     </execution>
+                    <!--
+                    <execution>
+                        <id>npm test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>test</arguments>
+                        </configuration>
+                        <phase>test</phase>
+                    </execution>
+                    -->
                     <execution>
                         <id>npm run build</id>
                         <goals>
@@ -192,11 +249,29 @@
                             <outputDirectory>${basedir}/target/classes/ROOT</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/build</directory>
+                                    <directory>${basedir}/dist</directory>
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/connect-server.xml</descriptor>
+                    </descriptors>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

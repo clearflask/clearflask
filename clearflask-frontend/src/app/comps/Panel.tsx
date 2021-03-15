@@ -13,6 +13,7 @@ const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     alignItems: 'baseline',
+    minWidth: 'min-content',
   },
   [Direction.Horizontal]: {
     ...(contentScrollApplyStyles(theme, Side.Center, false)),
@@ -25,7 +26,6 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   className?: string;
-  innerClassName?: string;
   direction: Direction;
   title?: React.ReactNode;
   maxHeight?: string | number,
@@ -45,7 +45,6 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
       content = (
         <DividerCorner
           className={this.props.className}
-          innerClassName={this.props.innerClassName}
           title={this.props.title}
           width={this.props.direction === Direction.Vertical ? '90%' : undefined}
           maxWidth={this.props.direction === Direction.Vertical ? 300 : undefined}

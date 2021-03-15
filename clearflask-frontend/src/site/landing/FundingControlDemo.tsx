@@ -27,6 +27,7 @@ class FundingControlDemo extends Component<Props & WithStyles<typeof styles, tru
       <Provider store={this.props.server.getStore()}>
         <AppThemeProvider
           appRootId='fundingControlDemo'
+          seed='fundingControlDemo'
           isInsideContainer={true}
           supressCssBaseline={true}
         >

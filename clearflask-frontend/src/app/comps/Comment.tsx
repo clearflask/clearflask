@@ -191,12 +191,12 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
   voteUpdate(vote: Client.VoteOption) {
     this.setState({ isSubmittingVote: vote });
-    this.props.logIn().then(() => this.props.server.dispatch().commentVoteUpdate({
+    this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentVoteUpdate({
       projectId: this.props.server.getProjectId(),
       commentId: this.props.comment!.commentId,
       ideaId: this.props.comment!.ideaId,
       commentVoteUpdate: { vote: vote },
-    })).then(commentResult => {
+    }))).then(commentResult => {
       this.setState({ isSubmittingVote: undefined });
     }).catch(err => {
       this.setState({ isSubmittingVote: undefined });

@@ -5,6 +5,7 @@ import notEmpty from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
+import { mock } from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
 
@@ -249,11 +250,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {
-          brand: 'mastercard',
-          last4: "4242",
-          expiryMonth: 7,
-          expiryYear: 2032,
-        },
+        brand: 'mastercard',
+        last4: "4242",
+        expiryMonth: 7,
+        expiryYear: 2032,
+      },
       billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       billingPeriodMau: 341,
       availablePlans: Object.values(AvailablePlans),
@@ -517,22 +518,27 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
-  async configGet(request: Omit<Client.ConfigGetAndUserBindRequest, 'userBind'>): Promise<Omit<Client.ConfigAndBindResult, 'user'>> {
-    const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
+  async configBindSlug(request: Client.ConfigBindSlugRequest): Promise<Client.ConfigBindSlugResult> {
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
     return this.returnLater({
       config: project.config,
     });
   }
-  async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
-    const project = this.getProjectBySlug(request.slug);
-    if (!project) return this.throwLater(404, 'Project not found');
-
-    const configGet = await this.configGet(request);
-    const userBind = await this.userBind({
+  async userBindSlug(request: Client.UserBindSlugRequest): Promise<Client.UserBindResponse> {
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
+    return this.userBind({
       projectId: project.config.config.projectId,
       ...request,
     });
+  }
+  async configAndUserBindSlug(request: Client.ConfigAndUserBindSlugRequest): Promise<Client.ConfigAndUserBindSlugResult> {
+    const project = await this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
+
+    const configGet = await this.configBindSlug(request);
+    const userBind = await this.userBindSlug(request);
 
     return this.returnLater({
       config: configGet.config,
@@ -811,7 +817,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
+    const projectId = request.configAdmin.projectId || `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
     request.configAdmin.projectId = projectId;
     this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({
@@ -1167,11 +1173,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return project;
   }
 
-  getProjectBySlug(slug: string) {
+  async getProjectBySlug(slug: string) {
     const last = slug.split('.')[0];
-    return Object.values(this.db).find(p =>
+    const project = Object.values(this.db).find(p =>
       p.config.config.slug === last
       || p.config.config.domain === slug);
+
+    if (project) return project;
+
+    return this.getProject((await mock(slug)).config.projectId);
   }
 
   deleteProject(projectId: string) {
@@ -1276,7 +1286,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async wait(latency: number): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, latency));
+    await new Promise<void>(resolve => setTimeout(resolve, latency));
   }
 
   generateId(): string {

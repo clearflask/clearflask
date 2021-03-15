@@ -32,12 +32,20 @@ interface Props {
 }
 
 interface ConnectProps {
+  callOnMount?: () => void,
   userId?: string;
   notifications?: Client.Notification[];
   getNextNotifications?: () => void;
 }
 
 class NotificationList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   render() {
     if (!this.props.userId) {
       return (<ErrorMsg msg='You need to log in to see your notifications' variant='info' />);
@@ -97,33 +105,37 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
   }
 
   clearNotification(notification: Client.Notification) {
-    this.props.server.dispatch().notificationClear({
+    this.props.server.dispatch().then(d => d.notificationClear({
       projectId: this.props.server.getProjectId(),
       notificationId: notification.notificationId,
-    });
+    }));
   }
 
   clearAll() {
-    this.props.server.dispatch().notificationClearAll({
+    this.props.server.dispatch().then(d => d.notificationClearAll({
       projectId: this.props.server.getProjectId(),
-    });
+    }));
   }
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined;
   var getNextNotifications;
+  var callOnMount;
   if (userId && state.notifications.notificationSearch.status === undefined) {
-    ownProps.server.dispatch().notificationSearch({
-      projectId: ownProps.server.getProjectId(),
-    });
+    callOnMount = () => {
+      ownProps.server.dispatch().then(d => d.notificationSearch({
+        projectId: ownProps.server.getProjectId(),
+      }));
+    };
   } else if (userId && state.notifications.notificationSearch.cursor) {
-    getNextNotifications = () => ownProps.server.dispatch().notificationSearch({
+    getNextNotifications = () => ownProps.server.dispatch().then(d => d.notificationSearch({
       projectId: ownProps.server.getProjectId(),
       cursor: state.notifications.notificationSearch.cursor,
-    });
+    }));
   }
   const connectProps: ConnectProps = {
+    callOnMount: callOnMount,
     userId: userId,
     notifications: state.notifications.notificationSearch.notifications,
     getNextNotifications: getNextNotifications,

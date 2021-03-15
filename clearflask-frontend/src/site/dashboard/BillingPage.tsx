@@ -26,6 +26,8 @@ import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { isTracking } from '../../common/util/detectEnv';
+import { initialWidth } from '../../common/util/screenUtil';
+import windowIso from '../../common/windowIso';
 import { StopTrialAfterActiveUsersReaches } from '../PricingPage';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
@@ -112,6 +114,7 @@ interface Props {
   stripePromise: Promise<Stripe | null>;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   accountStatus?: Status;
   account?: Admin.AccountAdmin;
   accountBillingStatus?: Status;
@@ -140,8 +143,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   refreshBillingAfterPaymentClose?: boolean;
   paymentActionMessageListener?: any;
 
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   componentWillUnmount() {
-    this.paymentActionMessageListener && window.removeEventListener('message', this.paymentActionMessageListener);
+    this.paymentActionMessageListener && !windowIso.isSsr && windowIso.removeEventListener('message', this.paymentActionMessageListener);
   }
 
   render() {
@@ -152,10 +161,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const status = this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus;
     if (!this.props.accountBilling || status !== Status.FULFILLED) {
       return (
-        <Loader
-          inline
-          status={status}
-        />
+        <Loader skipFade status={status} />
       );
     }
 
@@ -393,13 +399,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               src={this.state.paymentActionUrl}
             />
           ) : (
-              <div style={{
-                minWidth: this.getFrameActionWidth(),
-                minHeight: 400,
-              }}>
-                <LoadingPage />
-              </div>
-            ))}
+            <div style={{
+              minWidth: this.getFrameActionWidth(),
+              minHeight: 400,
+            }}>
+              <LoadingPage />
+            </div>
+          ))}
         </Dialog>
       </React.Fragment>
     ) : undefined;
@@ -770,7 +776,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   }
 
   onInvoiceClick(invoiceId: string) {
-    window.open(`${window.location.origin}/invoice/${invoiceId}`, '_blank')
+    !windowIso.isSsr && windowIso.open(`${windowIso.location.origin}/invoice/${invoiceId}`, '_blank')
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe) {
@@ -873,7 +879,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     try {
       result = await stripe.confirmCardPayment(
         paymentStripeAction.actionData.paymentIntentClientSecret,
-        { return_url: `${window.location.protocol}//${window.location.host}/dashboard/${BillingPaymentActionRedirectPath}` },
+        { return_url: `${windowIso.location.protocol}//${windowIso.location.host}/dashboard/${BillingPaymentActionRedirectPath}` },
         { handleActions: false });
     } catch (e) {
       this.refreshBillingAfterPaymentClose = true;
@@ -923,7 +929,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     // Setup iframe message listener
     this.paymentActionMessageListener = (ev: MessageEvent) => {
-      if (ev.origin !== window.location.origin) return;
+      if (ev.origin !== windowIso.location.origin) return;
       if (typeof ev.data !== 'string' || ev.data !== BillingPaymentActionRedirectPath) return;
       this.refreshBillingAfterPaymentClose = true;
       this.setState({
@@ -931,29 +937,31 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         paymentActionMessageSeverity: 'info',
       })
     };
-    window.addEventListener('message', this.paymentActionMessageListener);
+    !windowIso.isSsr && windowIso.addEventListener('message', this.paymentActionMessageListener);
 
     this.setState({ paymentActionUrl: result.paymentIntent.next_action.redirect_to_url.url });
   }
 }
 
 export const BillingPaymentActionRedirect = () => {
-  window.top.postMessage(BillingPaymentActionRedirectPath, window.location.origin);
+  !windowIso.isSsr && windowIso.top.postMessage(BillingPaymentActionRedirectPath, windowIso.location.origin);
   return (
     <Message message='Please wait...' severity='info' />
   );
 };
 
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
-  if (state.account.billing.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
-  }
-  const connectProps: ConnectProps = {
+  const newProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
     accountBillingStatus: state.account.billing.status,
     accountBilling: state.account.billing.billing,
     isSuperAdmin: state.account.isSuperAdmin,
   };
-  return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(BillingPage))));
+  if (state.account.billing.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
+    };
+  }
+  return newProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(BillingPage))));

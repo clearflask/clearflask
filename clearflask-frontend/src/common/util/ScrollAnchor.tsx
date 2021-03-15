@@ -16,7 +16,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   unlisten?: () => void;
 
   async scrollNow() {
-    await new Promise(resolve => setTimeout(resolve, 1));
+    await new Promise<void>(resolve => setTimeout(resolve, 1));
     if (!this.scrollToRef.current) {
       return;
     }
@@ -50,7 +50,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
       this.unlisten = this.props.history.listen((location, action) => {
         if (action !== 'POP'
           && !!this.props.scrollOnStateName
-          && this.props.scrollOnStateName === location.state?.[SCROLL_TO_STATE_KEY]) {
+          && this.props.scrollOnStateName === (location.state as any)?.[SCROLL_TO_STATE_KEY]) {
           this.scrollNow();
           return;
         }
@@ -64,7 +64,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
 
         if (action === 'PUSH'
           && this.props.scrollOnNavigate
-          && !location.state?.[SCROLL_TO_STATE_KEY]
+          && !(location.state as any)?.[SCROLL_TO_STATE_KEY]
           && !location?.hash) {
           this.scrollNow();
           return;
@@ -77,7 +77,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
     }
 
     if (!!this.props.scrollOnStateName
-      && this.props.scrollOnStateName === this.props.location.state?.[SCROLL_TO_STATE_KEY]) {
+      && this.props.scrollOnStateName === (this.props.location.state as any)?.[SCROLL_TO_STATE_KEY]) {
       this.scrollNow();
       return;
     }

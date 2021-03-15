@@ -26,7 +26,7 @@ components:
         # test:
         #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         projectId:
-          x-clearflask-prop: { order: 0, name: 'Project ID', description: 'Used in API calls', subType: 'id' }
+          x-clearflask-prop: { order: 0, name: 'Project ID', description: 'For use in API calls', subType: 'id' }
           type: string
         website:
           x-clearflask-prop: { order: 2, name: 'Website', description: 'Your product website.', placeholder: 'https://' }
@@ -48,7 +48,7 @@ components:
           # If changed, also change in Sanitizer.java
           pattern: '^[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?$'
         domain:
-          x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
+          x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
@@ -80,8 +80,20 @@ components:
             summary:
               x-clearflask-prop: { order: 2, name: 'Transaction summary', description: 'Description to show to the user as part of this transaction' }
               type: string
+        creditPurchase:
+          x-clearflask-prop: { order: 10, name: 'Credits purchase', description: 'Direct your users to your website to purchase or claim more credits.' }
+          type: object
+          required:
+            - redirectUrl
+          properties:
+            redirectUrl:
+              x-clearflask-prop: { order: 1, name: 'Redirect link', placeholder: 'https://example.com/purchase', description: 'Specify a link where your users can get more credits.' }
+              type: string
+            buttonTitle:
+              x-clearflask-prop: { order: 2, name: 'Redirect button title', placeholder: 'Get more', description: 'Optionally set the button title such as "Buy more", "Claim more"' }
+              type: string
         formats:
-          x-clearflask-prop: { order: 1, name: 'Display rules', description: '
+          x-clearflask-prop: { order: 20, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
             1/ "Range" matching a value.
             2/ The credits will be multiplied by the Multiplier.
@@ -140,7 +152,7 @@ components:
         - notificationMethods
       properties:
         visibility:
-          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'Whether project and content is visible to the public. Private projects require viewers to first sign-in.' }
           type: string
           enum: [Public, Private]
         accountFields:
@@ -237,7 +249,7 @@ components:
                 - guidJsonPath
                 properties:
                   oauthId:
-                    x-clearflask-prop: { order: 0, name: 'OAuth ID', description: 'Used in API calls', subType: 'id' }
+                    x-clearflask-prop: { order: 0, name: 'OAuth ID', description: 'For use in API calls', subType: 'id' }
                     x-clearflask-hide: true
                     type: string
                   buttonTitle:
@@ -464,7 +476,7 @@ components:
               - pageIds
             properties:
               menuId:
-                x-clearflask-prop: { order: 0, name: 'Menu ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Menu ID', description: 'For use in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               pageIds:
@@ -491,7 +503,7 @@ components:
               - panels
             properties:
               pageId:
-                x-clearflask-prop: { order: 0, name: 'Page ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Page ID', description: 'For use in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               name:
@@ -546,7 +558,7 @@ components:
               - disableComments
             properties:
               statusId:
-                x-clearflask-prop: { order: 0, name: 'Status ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Status ID', description: 'For use in API calls', subType: 'id' }
                 type: string
               name:
                 x-clearflask-prop: { order: 1, defaultValue: 'Status <>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
@@ -594,7 +606,7 @@ components:
               - name
             properties:
               tagId:
-                x-clearflask-prop: { order: 3, name: 'Tag ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 3, name: 'Tag ID', description: 'For use in API calls', subType: 'id' }
                 type: string
               name:
                 x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Tag Name', description: "Keep it short since it's used in tight spaces" }
@@ -616,7 +628,7 @@ components:
               - tagIds
             properties:
               tagGroupId:
-                x-clearflask-prop: { order: 0, name: 'Tag Group ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Tag Group ID', description: 'For use in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               name:
@@ -663,7 +675,7 @@ components:
               - visibility
             properties:
               categoryId:
-                x-clearflask-prop: { order: 0, name: 'Category ID', description: 'Used in API calls', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Category ID', description: 'For use in API calls', subType: 'id' }
                 type: string
               name:
                 x-clearflask-prop: { defaultValue: 'Category <>', order: 1, name: 'Name', description: 'Category name. Keep it short as the name is visible in tight spaces.' }
@@ -895,9 +907,9 @@ components:
         version:
           type: string
 
-/slug/{slug}/config:
+/slug/{slug}/bind/configAndUser:
   post:
-    operationId: configGetAndUserBind
+    operationId: configAndUserBindSlug
     tags: [Project]
     parameters:
     - name: slug
@@ -916,13 +928,61 @@ components:
         content:
           application/json:
             schema:
-              title: ConfigAndBindResult
+              title: ConfigAndUserBindSlugResult
               type: object
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 onboardBefore: # For private projects, you have to first onboard before receiving config
                   $ref: 'api-project.yaml#/components/schemas/onboarding'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/slug/{slug}/bind/config:
+  post:
+    operationId: configBindSlug
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigBindSlugResult
+              type: object
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore:
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+/slug/{slug}/bind/user:
+  post:
+    operationId: userBindSlug
+    tags: [Project]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: UserBindSlugResult
+              type: object
+              properties:
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:

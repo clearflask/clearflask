@@ -13,24 +13,59 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 50
-_run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run ses-run elastic-run kibana-run
+_run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-run elastic-run kibana-run nginx-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
-_run-dev-frontend: npm-run-dev-frontend nginx-run
+_run-dev-frontend: _npm-run-dev-frontend nginx-run
+_npm-run-dev-frontend:
+	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js run start:frontend
 
 run-it-services:
 	@$(MAKE) _run-dev -j 50
 _run-dev: elastic-run killbill-run
 
-npm-run-dev-frontend:
-	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js start
+connect-extract:
+	rm -fr `pwd`/clearflask-frontend/target/ROOT
+	mkdir `pwd`/clearflask-frontend/target/ROOT
+	tar -xzf `pwd`/clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz -C `pwd`/clearflask-frontend/target/ROOT
+	LANG=C find `pwd`/clearflask-frontend/target/ROOT -type f -exec \
+	sed -i '' -e 's/clearflask\.com/localhost\.com/g' {} +
+
+run-dev-connect:
+	@$(MAKE) _run-dev-connect -j 50
+_run-dev-connect: nginx-run __run-dev-connect
+__run-dev-connect:
+	make connect-extract
+	docker run --rm --name clearflask-connect \
+	-p 80:3000 \
+	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
+	-w /srv/clearflask-connect \
+	--add-host=localhost.com:172.17.0.1 \
+	--add-host=acme.staging.localhost:172.17.0.1 \
+	-e DEBUG=express:query \
+	-e ENV=development \
+	node:14.15.1-slim \
+	./start.sh
+
+connect-run-dev:
+	make connect-extract
+	docker run --rm --name clearflask-connect \
+	-p 80:9080 \
+	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
+	-w /srv/clearflask-connect \
+	--add-host=localhost.com:172.17.0.1 \
+	--add-host=acme.staging.localhost:172.17.0.1 \
+	-e NODE_TLS_REJECT_UNAUTHORIZED=0 \
+	-e ENV=local \
+	node:14.15.1-slim \
+	./start.sh
 
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
 	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
 	sed -i '' -e 's/clearflask\.com/localhost\.com/g' `pwd`/clearflask-server/target/ROOT/index.html `pwd`/clearflask-server/target/ROOT/asset-manifest.json
-	docker run --rm --name clearflask-webserver \
+	docker run --rm --name clearflask-server \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \
 		-Dcom.sun.management.jmxremote.authenticate=false \
@@ -38,7 +73,6 @@ tomcat-run-dev:
 		-Dcom.sun.management.jmxremote.port=9950 \
 		-Dcom.sun.management.jmxremote.rmi.port=9951 \
 		-Djava.rmi.server.hostname=0.0.0.0" \
-	-p 80:8080 \
 	-p 8080:8080 \
 	-p 9950:9950 \
 	-p 9951:9951 \
@@ -72,6 +106,10 @@ letsencrypt-run:
 	-p 14000:14000 \
 	-p 15000:15000 \
 	-e "PEBBLE_VA_NOSLEEP=1" \
+	-e "PEBBLE_VA_ALWAYS_VALID=1" \
+	-e "PEBBLE_WFE_NONCEREJECT=0" \
+	-e "PEBBLE_AUTHZREUSE=100" \
+	--add-host=localhost.com:172.17.0.1 \
 	letsencrypt/pebble
 
 ses-run:
@@ -134,26 +172,18 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	nginx
 
 deploy:
-	make deploy-files
 	make deploy-server
 	make deploy-connect
 	make deploy-rotate-instances
-	make deploy-manifest
-	make deploy-cloudfront-invalidate
+	make deploy-cloudfront-invalidate-all
 
 deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
 
-deploy-connect: ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz
-	aws s3 cp ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz s3://clearflask-secret/clearflask-connect-0.1-connect.tar.gz
+deploy-connect: ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz
+	aws s3 cp ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz s3://clearflask-secret/clearflask-frontend-0.1-connect.tar.gz
 
 deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deploy-files
-
-deploy-manifest: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=0" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
-
-deploy-files: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
 
 deploy-rotate-instances:
 	./instance-refresh-and-wait.sh clearflask-server
@@ -180,7 +210,8 @@ deploy-cloudfront-invalidate-all:
 	  location / {
 	     proxy_pass http://host.docker.internal:80;
 	     proxy_http_version 1.1;
-	     proxy_set_header Upgrade $http_upgrade;
+	     proxy_set_header Host \$$host;
+	     proxy_set_header Upgrade \$$http_upgrade;
 	     proxy_set_header Connection "upgrade";
 	     proxy_read_timeout 86400;
 	  }
@@ -191,6 +222,7 @@ deploy-cloudfront-invalidate-all:
 	  ssl_certificate_key /etc/nginx/conf.d/key.pem;
 	  location / {
 	     proxy_pass http://host.docker.internal:3000;
+	     proxy_set_header Host \$$host;
 	  }
 	}
 	EOF

@@ -3,7 +3,6 @@ import windowIso from "../windowIso";
 var envCache: Environment | undefined = undefined;
 
 enum Environment {
-  SSR = 'SSR',
   DEVELOPMENT_FRONTEND = 'FRONTEND',
   DEVELOPMENT_LOCAL = 'LOCAL',
   PRODUCTION = 'PROD',
@@ -11,12 +10,14 @@ enum Environment {
 
 function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (windowIso.isSsr) {
-      envCache = Environment.SSR;
-    } else if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+    if (windowIso['ENV'] === 'development' /* npm run start:dev */) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else if (windowIso.location.hostname.endsWith('localhost.com'
-      || windowIso.location.hostname.endsWith('localhost'))) {
+    } else if (windowIso['ENV'] === 'local' /* npm run start:local */) {
+      envCache = Environment.DEVELOPMENT_LOCAL;
+    } else if (process?.env?.NODE_ENV === 'development' /* npm run start:frontend */) {
+      envCache = Environment.DEVELOPMENT_FRONTEND;
+    } else if (windowIso.location.hostname.endsWith('localhost.com') /* fallback */
+      || windowIso.location.hostname.endsWith('localhost')) {
       envCache = Environment.DEVELOPMENT_LOCAL;
     } else {
       envCache = Environment.PRODUCTION;
@@ -34,7 +35,13 @@ function isTracking(): boolean {
 }
 
 function isDoNotTrack(): boolean {
-  return navigator.doNotTrack === "yes" || navigator.doNotTrack === "1" || navigator['msDoNotTrack'] === "1" || window.doNotTrack === "yes" || window.doNotTrack === "1" || window['msDoNotTrack'] === "1";
+  return windowIso.isSsr
+    || windowIso.navigator.doNotTrack === "yes"
+    || windowIso.navigator.doNotTrack === "1"
+    || windowIso.navigator['msDoNotTrack'] === "1"
+    || windowIso.doNotTrack === "yes"
+    || windowIso.doNotTrack === "1"
+    || windowIso['msDoNotTrack'] === "1";
 }
 
 export { isProd, isTracking, detectEnv, Environment };

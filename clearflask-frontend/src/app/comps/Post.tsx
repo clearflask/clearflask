@@ -1,3 +1,4 @@
+import loadable from '@loadable/component';
 import { Button, Chip, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -8,7 +9,7 @@ import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,7 @@ import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
-const EmojiPicker = React.lazy(() => import('../../common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export type PostVariant = 'list' | 'page';
 export const MaxContentWidth = 600;
@@ -383,6 +384,7 @@ interface Props {
   onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   projectId: string;
   settings: StateSettings;
@@ -416,15 +418,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   constructor(props) {
     super(props);
+
     this.state = {
       currentVariant: props.variant,
     };
+
+    props.callOnMount?.();
   }
 
   componentDidMount() {
     this._isMounted = true;
     if (!!this.props.settings.demoFundingControlAnimate) {
       this.demoFundingControlAnimate(this.props.settings.demoFundingControlAnimate);
+    } else if (!!this.props.settings.demoFundingAnimate) {
+      this.demoFundingAnimate(this.props.settings.demoFundingAnimate);
     }
     if (!!this.props.settings.demoVotingExpressionsAnimate) {
       this.demoVotingExpressionsAnimate(this.props.settings.demoVotingExpressionsAnimate);
@@ -437,14 +444,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   render() {
     if (!this.props.idea) return (
-      <Loader loaded={false}>
+      <Loader skipFade loaded={false}>
       </Loader>
     );
 
     const variant = this.state.currentVariant;
 
     return (
-      <Loader className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
+      <Loader skipFade className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
           <div className={this.props.classes.post}>
             <div className={this.props.classes.postVoting}>
@@ -992,13 +999,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         expressionAllowed ? () => clickExpression(expressionDisplay) : undefined,
         0));
     const picker = limitEmojiSet ? undefined : (
-      <Suspense fallback={<Loading />}>
-        <EmojiPicker
-          key='picker'
-          inline
-          onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
-        />
-      </Suspense>
+      <EmojiPicker
+        key='picker'
+        inline
+        onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
+      />
     );
 
     const maxItems = 3;
@@ -1102,20 +1107,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               {variant === 'list' ? (
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
-                  <UserDisplay
-                    onClick={this.props.onUserClick}
-                    user={{
-                      userId: this.props.idea.responseAuthorUserId,
-                      name: this.props.idea.responseAuthorName,
-                      isMod: true
-                    }}
-                  />
-                )}
+                <UserDisplay
+                  onClick={this.props.onUserClick}
+                  user={{
+                    userId: this.props.idea.responseAuthorUserId,
+                    name: this.props.idea.responseAuthorName,
+                    isMod: true
+                  }}
+                />
+              )}
               :&nbsp;&nbsp;
             </React.Fragment>
           ) : (
-              <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
-            )}
+            <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
+          )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
@@ -1132,7 +1137,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (variant === 'page'
       || !this.props.expandable
       || !!this.props.onClickPost
-      || !this.props.idea) return (
+      || !this.props.idea
+      || !!this.props.settings.demoDisablePostOpen) return (
         <div
           className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.expandable)}
           onClick={this.props.onClickPost ? () => this.props.onClickPost && this.props.idea
@@ -1152,6 +1158,55 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
+  async demoFundingAnimate(fundAmount: number) {
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
+    const ideaId = this.props.idea!.ideaId;
+    const ideaWithVote: Client.IdeaWithVote = {
+      ...this.props.idea!,
+      vote: {
+        vote: this.props.server.getStore().getState().votes.votesByIdeaId[ideaId],
+        expression: this.props.server.getStore().getState().votes.expressionByIdeaId[ideaId],
+        fundAmount: this.props.server.getStore().getState().votes.fundAmountByIdeaId[ideaId],
+      },
+    }
+    const initialFundAmount = ideaWithVote.funded || 0;
+    const targetFundAmount = initialFundAmount + fundAmount;
+    var currFundAmount = initialFundAmount;
+    var stepFundAmount = (fundAmount >= 0 ? 1 : -1);
+
+    for (; ;) {
+      if (await animate({ sleepInMs: 150 })) return;
+      if (currFundAmount + stepFundAmount < Math.min(initialFundAmount, targetFundAmount)
+        || currFundAmount + stepFundAmount > Math.max(initialFundAmount, targetFundAmount)) {
+        stepFundAmount = -stepFundAmount;
+        continue;
+      }
+      currFundAmount = currFundAmount + stepFundAmount;
+      const msg: Client.ideaGetActionFulfilled = {
+        type: Client.ideaGetActionStatus.Fulfilled,
+        meta: {
+          action: Client.Action.ideaGet,
+          request: {
+            projectId: this.props.projectId,
+            ideaId: ideaId,
+          },
+        },
+        payload: {
+          ...ideaWithVote,
+          funded: currFundAmount,
+        },
+      };
+      // Private API just for this animation
+      Server._dispatch(msg, this.props.server.store);
+    }
+  }
+
   async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>) {
     const animate = animateWrapper(
       () => this._isMounted,
@@ -1164,7 +1219,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     for (; ;) {
       if (await animate({ sleepInMs: 500 })) return;
-      await new Promise(resolve => this.fundingExpand(resolve));
+      await new Promise<void>(resolve => this.fundingExpand(resolve));
 
       if (!this.fundingControlRef.current) return;
       await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
@@ -1201,7 +1256,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             }
             break;
           case 'express':
-            await new Promise(resolve => this.expressExpand(resolve));
+            await new Promise<void>(resolve => this.expressExpand(resolve));
 
             if (await animate({ sleepInMs: 1000 })) return;
 
@@ -1220,6 +1275,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   var vote: Client.VoteOption | undefined;
   var expression: Array<string> | undefined;
   var fundAmount: number | undefined;
+  var callOnMount;
   if (ownProps.idea) {
     const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
     if (voteStatus === undefined) {
@@ -1227,12 +1283,14 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       if (ownProps.variant === 'page'
         && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user) {
-        ownProps.server.dispatch().ideaVoteGetOwn({
-          projectId: state.projectId!,
-          ideaIds: [ownProps.idea.ideaId],
-          myOwnIdeaIds: ownProps.idea.authorUserId === state.users.loggedIn.user?.userId
-            ? [ownProps.idea.ideaId] : [],
-        });
+        callOnMount = () => {
+          ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
+            projectId: state.projectId!,
+            ideaIds: [ownProps.idea!.ideaId],
+            myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
+              ? [ownProps.idea!.ideaId] : [],
+          }));
+        };
       }
     } else {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
@@ -1241,6 +1299,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     }
   }
   return {
+    callOnMount,
     configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId!,
     settings: state.settings,
@@ -1253,10 +1312,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
+    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
       projectId: state.projectId!,
       ideaId: ownProps.idea!.ideaId,
       ideaVoteUpdate,
-    }),
+    })),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

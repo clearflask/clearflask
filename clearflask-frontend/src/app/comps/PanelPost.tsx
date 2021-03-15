@@ -1,4 +1,4 @@
-import { Fade, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import notEmpty from '../../common/util/arrayUtil';
+import keyMapper from '../../common/util/keyMapper';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import Panel from './Panel';
@@ -50,7 +51,6 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props {
   className?: string;
-  innerClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   widthExpand?: boolean;
@@ -65,12 +65,20 @@ export interface Props {
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   searchResult: SearchResult;
   searchMerged: Client.IdeaSearch;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps> {
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   render() {
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
@@ -132,7 +140,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     content = this.props.suppressPanel ? content : (
       <Panel
         className={this.props.className}
-        innerClassName={this.props.innerClassName}
         title={this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}
@@ -140,62 +147,65 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         {content}
       </Panel>
     );
-    return (
-      <Fade in={true} appear>
-        <div>
-          {content}
-        </div>
-      </Fade>
-    );
+    return content;
   }
 }
 
-export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
-  var newProps: ConnectProps = {
-    configver: state.conf.ver, // force rerender on config change
-    config: state.conf.conf,
-    searchResult: {
-      status: Status.PENDING,
-      ideas: [],
-      cursor: undefined,
-    } as SearchResult,
-    searchMerged: {
-      ...ownProps.panel.search,
-      ...ownProps.searchOverride,
-    },
-  };
+export default keyMapper(
+  (ownProps: Props) => getSearchKey({
+    ...ownProps.panel.search,
+    ...ownProps.searchOverride,
+  }),
+  connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
+    const newProps: ConnectProps = {
+      configver: state.conf.ver, // force rerender on config change
+      config: state.conf.conf,
+      searchResult: {
+        status: Status.PENDING,
+        ideas: [],
+        cursor: undefined,
+      } as SearchResult,
+      searchMerged: {
+        ...ownProps.panel.search,
+        ...ownProps.searchOverride,
+      },
+    };
 
-  const searchKey = getSearchKey(newProps.searchMerged);
-  const bySearch = state.ideas.bySearch[searchKey];
-  if (!bySearch) {
-    ownProps.server.dispatch().ideaSearch({
-      projectId: state.projectId!,
-      ideaSearch: newProps.searchMerged,
-    });
-  } else {
-    const missingVotesByIdeaIds: string[] = [];
-    newProps.searchResult.status = bySearch.status;
-    newProps.searchResult.cursor = bySearch.cursor;
-    newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
-      const idea = state.ideas.byId[ideaId];
-      if (!idea || idea.status !== Status.FULFILLED) return undefined;
-      if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
-      return idea.idea;
-    }).filter(notEmpty);
-    if (state.users.loggedIn.status === Status.FULFILLED
-      && state.users.loggedIn.user
-      && missingVotesByIdeaIds.length > 0) {
-      ownProps.server.dispatch().ideaVoteGetOwn({
-        projectId: state.projectId!,
-        ideaIds: missingVotesByIdeaIds,
-        myOwnIdeaIds: missingVotesByIdeaIds
-          .map(ideaId => state.ideas.byId[ideaId])
-          .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
-          .map(idea => idea?.idea?.ideaId)
-          .filter(notEmpty),
-      });
+    const searchKey = getSearchKey(newProps.searchMerged);
+    const bySearch = state.ideas.bySearch[searchKey];
+    if (!bySearch) {
+      newProps.callOnMount = () => {
+        ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
+          projectId: state.projectId!,
+          ideaSearch: newProps.searchMerged,
+        }));
+      };
+    } else {
+      const missingVotesByIdeaIds: string[] = [];
+      newProps.searchResult.status = bySearch.status;
+      newProps.searchResult.cursor = bySearch.cursor;
+      newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
+        const idea = state.ideas.byId[ideaId];
+        if (!idea || idea.status !== Status.FULFILLED) return undefined;
+        if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
+        return idea.idea;
+      }).filter(notEmpty);
+      if (state.users.loggedIn.status === Status.FULFILLED
+        && state.users.loggedIn.user
+        && missingVotesByIdeaIds.length > 0) {
+        newProps.callOnMount = () => {
+          ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
+            projectId: state.projectId!,
+            ideaIds: missingVotesByIdeaIds,
+            myOwnIdeaIds: missingVotesByIdeaIds
+              .map(ideaId => state.ideas.byId[ideaId])
+              .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
+              .map(idea => idea?.idea?.ideaId)
+              .filter(notEmpty),
+          }));
+        };
+      }
     }
-  }
 
-  return newProps;
-})(withWidth()(withStyles(styles, { withTheme: true })(PanelPost)));
+    return newProps;
+  })(withStyles(styles, { withTheme: true })(PanelPost)));

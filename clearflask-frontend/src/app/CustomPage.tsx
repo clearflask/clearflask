@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
-import { vh } from '../common/util/vhUtil';
+import { vh } from '../common/util/screenUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -107,11 +107,9 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         panelsCmpt = (
           <div className={classNames(this.props.classes.singlePanels, this.props.classes.spacing)}>
             {(this.props.page.panels || []).map(panel => {
-              const searchKey = getSearchKey(panel.search);
               return (
-                <div key={searchKey} className={this.props.classes.singlePanel}>
+                <div className={this.props.classes.singlePanel}>
                   <PanelPost
-                    key={searchKey}
                     direction={Direction.Horizontal}
                     panel={panel}
                     server={this.props.server}
@@ -139,33 +137,27 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.board) {
         const board = this.props.page.board;
         var panels: any = board.panels.map((panel, panelIndex) => (
-          <div key={panelIndex} className={this.props.classes.boardPanel}>
-            <PanelPost
-              key={getSearchKey(panel.search)}
-              maxHeight={vh(80)}
-              direction={Direction.Vertical}
-              panel={panel}
-              server={this.props.server}
-              displayDefaults={{
-                titleTruncateLines: 1,
-                descriptionTruncateLines: 0,
-                showCommentCount: false,
-                showCategoryName: false,
-                showCreated: false,
-                showAuthor: false,
-                showStatus: false,
-                showTags: false,
-                showVoting: false,
-                showFunding: false,
-                showExpression: false,
-              }} />
-          </div>
+          <PanelPost
+            key={getSearchKey(panel.search)}
+            className={this.props.classes.boardPanel}
+            maxHeight={vh(80)}
+            direction={Direction.Vertical}
+            panel={panel}
+            server={this.props.server}
+            displayDefaults={{
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 0,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            }} />
         ));
-        boardCmpt = (
-          <div className={this.props.classes.board}>
-            {panels}
-          </div>
-        );
         if (board.title) {
           boardCmpt = (
             <DividerCorner
@@ -239,7 +231,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     }
 
     return (
-      <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
+      <Loader skipFade key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
         {page}
       </Loader>
     );

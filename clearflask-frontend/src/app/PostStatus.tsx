@@ -8,6 +8,7 @@ import { Server } from '../api/server';
 import WebNotification from '../common/notification/webNotification';
 import Promised from '../common/Promised';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import windowIso from '../common/windowIso';
 
 export class PostStatusConfigDef {
   fontSize?: number | string;
@@ -49,44 +50,58 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   constructor(props) {
     super(props);
 
-    this.dataPromise = this.fetchData(props);
-  }
 
-  async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
-    var server: Server | undefined;
+    var ssrWait = false;
+    var serverPromise: Promise<Server>;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const DemoApp = await import('../site/DemoApp'/* webpackChunkName: "demoApp" */);
-      const project = await DemoApp.getProject(
-        templater => templater.workflowFeatures(templater.demoCategory()),
-        mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
-          statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
-        })),
-        { suppressSetTitle: true });
-      server = project.server;
+      serverPromise = this.mockData(props);
     } else {
-      server = new Server();
+      const server = new Server();
+      if (windowIso.isSsr && server.getStore().getState().conf.status === undefined) {
+        ssrWait = true;
+      }
+      serverPromise = Promise.resolve(server);
     }
 
-    const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
-      slug: window.location.hostname,
-      userBind: {
-        browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-          ? subscriptionResult.token : undefined,
-      },
-    }));
+    this.dataPromise = this.fetchData(props, serverPromise);
+    if (windowIso.isSsr && ssrWait) windowIso.awaitPromises.push(this.dataPromise);
+  }
 
-    const postPromise = server.dispatch().ideaGet({
-      projectId: server.getProjectId(),
-      ideaId: props.postId,
-    });
+  async mockData(props: Props): Promise<Server> {
+    const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
+    const serverMock = await import(/* webpackChunkName: "serverMock" */'../api/serverMock')
+    const projectId = (await mocker.mock()).config.projectId;
+    await mocker.mockIdea(projectId, props.postId);
+    return new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
+  }
 
-    const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
+  async fetchData(props: Props, serverPromise: Promise<Server>): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
+    const server = await serverPromise;
+    const subscriptionResult = await WebNotification.getInstance().getPermission();
+    const dispatcher = await server.dispatch({ ssr: true, ssrStatusPassthrough: true });
+    var configAndUserBind: Client.ConfigBindSlugResult | Client.ConfigAndUserBindSlugResult | undefined;
+    if (windowIso.isSsr) {
+      configAndUserBind = await dispatcher.configBindSlug({ slug: windowIso.location.hostname });
+    } else {
+      configAndUserBind = await dispatcher.configAndUserBindSlug({
+        slug: windowIso.location.hostname,
+        userBind: {
+          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+            ? subscriptionResult.token : undefined,
+        },
+      });
+    }
 
     if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
 
-    return [configAndUserBind.config, configAndUserBind.user, post];
+    const post = await dispatcher.ideaGet({
+      projectId: configAndUserBind.config.config.projectId,
+      ideaId: props.postId,
+    });
+
+    return [configAndUserBind.config, configAndUserBind['user'], post];
   }
 
   render() {
@@ -119,11 +134,10 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             };
           }
           if (!status) {
-            console.log('Failed to load, post has no status', config, user, post);
             return null;
           };
 
-          const src = `${window.location.origin}/post/${post.ideaId}`;
+          const src = `${windowIso.location.origin}/post/${post.ideaId}`;
 
           return (
             <div
@@ -139,9 +153,9 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 textTransform: statusConfig.textTransform as any,
               }}
             >
-              <a
+              <a // eslint-disable-line react/jsx-no-target-blank
                 href={src}
-                target='_blank' // eslint-disable-line react/jsx-no-target-blank
+                target='_blank'
                 rel='noopener nofollow'
                 className={this.props.classes.link}
               >
@@ -153,7 +167,6 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
           );
         }}
         renderError={err => {
-          console.log('Failed to load:', err);
           return null;
         }}
         renderLoading={() => null}

@@ -5,13 +5,25 @@ import DataMock from '../../api/dataMock';
 import { StateSettings } from '../../api/server';
 import Loading from '../../app/utils/Loading';
 import Templater from '../../common/config/configTemplater';
-import FakeBrowser from '../../common/FakeBrowser';
 import Promised from '../../common/Promised';
 import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
+  insetFadeContainer: {
+    position: 'relative',
+  },
+  insetFade: {
+    pointerEvents: 'none',
+    boxShadow: 'inset 0px 0px 13px 7px rgb(255, 255, 255, 1)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
 });
 interface Props {
   initialSubPath?: string;
@@ -19,16 +31,13 @@ interface Props {
   mock?: (mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>;
   controls?: (project: Project) => React.ReactNode;
   demo?: (project: Project) => React.ReactNode;
-  demoFixedHeight?: number;
-  demoFixedWidth?: number | string;
-  demoWrap?: 'browser' | 'browser-dark',
-  demoWrapPadding?: number | string,
   demoPreventInteraction?: boolean
   demoProject?: Promise<Project>;
   demoScrollYOnClick?: boolean;
   scale?: number;
   settings?: StateSettings;
   containerPortal?: boolean;
+  demoInsetFade?: boolean;
 }
 class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
@@ -62,7 +71,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-          <Loading showImmediately />
+          <Loading />
         </div>
       )} render={project => {
         var demo = this.props.demo
@@ -99,17 +108,15 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
         return demo;
       }} />
     );
-    if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
-      const isDark = this.props.demoWrap === 'browser-dark';
+    if (this.props.demoInsetFade) {
       demoPromised = (
-        <FakeBrowser
-          darkMode={isDark}
-          contentPadding={this.props.demoWrapPadding}
-          fixedWidth={this.props.demoFixedWidth}
-          fixedHeight={this.props.demoFixedHeight}
-        >
+        <div className={this.props.classes.insetFadeContainer} style={{
+          height: this.props.demoFixedHeight,
+          width: this.props.demoFixedWidth,
+        }}>
+          <div className={this.props.classes.insetFade} />
           {demoPromised}
-        </FakeBrowser>
+        </div>
       );
     }
 

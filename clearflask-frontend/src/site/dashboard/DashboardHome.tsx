@@ -4,13 +4,13 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server } from '../../api/server';
+import { ReduxState, Server } from '../../api/server';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import PanelSearch from '../../app/comps/PanelSearch';
 import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
-import { vh } from '../../common/util/vhUtil';
+import { initialWidth, vh } from '../../common/util/screenUtil';
 import CategoryStats from './CategoryStats';
 import UserExplorer from './UserExplorer';
 
@@ -85,6 +85,7 @@ interface Props {
   onUserClick: (userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
@@ -96,6 +97,12 @@ interface State {
 }
 class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
 
   render() {
     const display: Client.PostDisplay = this.state.expanded ? {
@@ -112,20 +119,20 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
       showFunding: true,
       showExpression: true,
     } : {
-        titleTruncateLines: 1,
-        descriptionTruncateLines: 0,
-        responseTruncateLines: 0,
-        showCommentCount: false,
-        showCategoryName: false,
-        showCreated: false,
-        showAuthor: false,
-        showStatus: false,
-        showTags: false,
-        showVoting: false,
-        showFunding: false,
-        showExpression: false,
-        showEdit: false,
-      };
+      titleTruncateLines: 1,
+      descriptionTruncateLines: 0,
+      responseTruncateLines: 0,
+      showCommentCount: false,
+      showCategoryName: false,
+      showCreated: false,
+      showAuthor: false,
+      showStatus: false,
+      showTags: false,
+      showVoting: false,
+      showFunding: false,
+      showExpression: false,
+      showEdit: false,
+    };
     return (
       <div className={this.props.classes.page}>
         <Typography variant='h4' component='h1'>Welcome back!</Typography>
@@ -243,7 +250,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
         isExplorer
       >
         <PanelPost
-          key={getSearchKey({ ...searchOverride, ...panel.search })}
           maxHeight={vh(80)}
           direction={Direction.Vertical}
           panel={panel}
@@ -259,16 +265,18 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
-  if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({
-      slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      userBind: {}
-    });
-  }
-  return {
+  const newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
-    settings: state.settings,
+  };
+  if (!state.conf.conf && !state.conf.status) {
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch().then(d => d.configAndUserBindSlug({
+        slug: ownProps.server.getStore().getState().conf.conf?.slug!,
+        userBind: {}
+      }));
+    };
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(DashboardHome))));
+  return newProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(DashboardHome))));

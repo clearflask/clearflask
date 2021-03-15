@@ -137,7 +137,8 @@ class WorkflowPreview extends Component<Props, State> {
           selector: 'node',
           style: {
             'label': 'data(label)',
-            'font-size': 10,
+            'font-size': 12,
+            'font-family': '"Roboto", "Helvetica", "Arial", sans-serif',
             'background-color': 'white',
             'border-width': '1px',
             'border-color': 'data(color)',

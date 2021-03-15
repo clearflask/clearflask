@@ -1,4 +1,4 @@
-import { Button, Slider, Typography } from '@material-ui/core';
+import { Button, Link as MuiLink, Slider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -64,6 +64,16 @@ const styles = (theme: Theme) => createStyles({
     left: 0,
     top: 0,
   },
+  linkGetMore: {
+    color: theme.palette.text.primary,
+  },
+  link: {
+    borderBottom: '1px dashed',
+    textDecoration: 'none',
+    '&:hover': {
+      borderBottomStyle: 'solid',
+    },
+  },
 });
 
 interface Props {
@@ -88,7 +98,7 @@ interface ConnectProps {
   maxFundAmountSeen: number;
   settings: StateSettings;
   updateVote: (ideaId: string, voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
-  callOnMount: () => void,
+  callOnMount?: () => void,
   loadMore?: () => void;
 }
 
@@ -107,12 +117,14 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
   constructor(props: Readonly<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps>) {
     super(props);
+
+    props.callOnMount?.();
+
     if (this.props.myRef) this.props.myRef.current = this;
   }
 
   componentDidMount() {
     this._isMounted = true;
-    this.props.callOnMount();
   }
 
   componentWillUnmount() {
@@ -219,7 +231,21 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
             className={classNames(this.props.classes.msg, this.props.classes.msgHover)}
             variant='overline'
             component='div'
-          >You have no balance</Typography>
+          >
+            You have no balance.&nbsp;
+            {!!this.props.credits?.creditPurchase?.redirectUrl && (
+              <MuiLink
+                className={classNames(this.props.classes.link, this.props.classes.linkGetMore)}
+                color='inherit'
+                href={this.props.credits.creditPurchase.redirectUrl}
+                target='_blank'
+                underline='none'
+                rel='noopener nofollow'
+              >
+                {this.props.credits.creditPurchase.buttonTitle || 'Get more'}
+              </MuiLink>
+            )}
+          </Typography>
         )}
         <Slider
           className={classNames(this.props.classes.slider, (min === max) && this.props.classes.sliderHide)}
@@ -341,17 +367,21 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     for (const change of (isReverse ? [...changes].reverse() : changes)) {
       const fundDiff = change.fundDiff * (isReverse ? -1 : 1)
 
-      const idea = (change.index === 0 && !!this.props.idea)
+      const idea: Client.Idea | Client.IdeaWithVote | undefined = (change.index === 0 && !!this.props.idea)
         ? this.props.idea
         : this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
       if (!idea) continue;
 
+      const fundAmount = change.index === 0
+        ? this.props.fundAmount
+        : (idea as Client.IdeaWithVote).vote.fundAmount;
+
       const increment = fundDiff >= 0 ? 1 : -1;
 
-      while (this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId
+      while ((this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId)
         && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
         && this.props.balance >= ((this.state.sliderFundAmountDiff || 0) + increment)
-        && ((idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment) >= 0) {
+        && ((fundAmount || 0) + (this.state.sliderFundAmountDiff || 0) + increment) >= 0) {
 
         if (await animate({
           setState: {
@@ -402,22 +432,22 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
     settings: state.settings,
-    updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
+    updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
       projectId: state.projectId!,
       ideaId: ideaId,
       ideaVoteUpdate: ideaVoteUpdate,
-    }),
+    })),
     callOnMount: () => {
       if (dispatchIdeaGetOnIdeaId) {
-        ownProps.server.dispatch().ideaGet({
+        ownProps.server.dispatch().then(d => d.ideaGet({
           projectId: state.projectId!,
           ideaId: dispatchIdeaGetOnIdeaId,
-        });
+        }));
       }
-      ownProps.server.dispatch().ideaSearch({
+      ownProps.server.dispatch().then(d => d.ideaSearch({
         projectId: state.projectId!,
         ideaSearch: search,
-      });
+      }));
     },
   };
 
@@ -440,11 +470,11 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       });
     if (bySearch.cursor) {
       newProps.loadMore = () => {
-        ownProps.server.dispatch().ideaSearch({
+        ownProps.server.dispatch().then(d => d.ideaSearch({
           projectId: state.projectId!,
           ideaSearch: search,
           cursor: bySearch.cursor,
-        });
+        }));
       }
     }
   }

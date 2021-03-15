@@ -1,3 +1,4 @@
+import { NoSsr } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -18,13 +19,21 @@ interface Props {
   type: 'terms' | 'privacy';
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   legal?: Admin.LegalResponse;
   legalStatus?: Status;
 }
 
 class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
+
   render() {
-    var doc;
+    var doc: string | undefined;
     switch (this.props.type) {
       case 'terms':
         doc = this.props.legal?.terms;
@@ -36,7 +45,9 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
     return (
       <div className={this.props.classes.page}>
         <Loader status={this.props.legalStatus}>
-          <MarkdownElement text={doc} />
+          <NoSsr>
+            <MarkdownElement text={doc} />
+          </NoSsr>
         </Loader>
       </div>
     );
@@ -44,11 +55,14 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.legal.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.legalGet());
-  }
-  return {
+  const newProps: ConnectProps = {
     legal: state.legal.legal,
     legalStatus: state.legal.status,
   };
+  if (state.legal.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.legalGet());
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(LegalPage));

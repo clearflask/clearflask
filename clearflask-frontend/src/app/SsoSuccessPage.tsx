@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
+import windowIso from '../common/windowIso';
 import ErrorPage from './ErrorPage';
 
 const styles = (theme: Theme) => createStyles({
@@ -15,10 +16,12 @@ interface ConnectProps {
 }
 class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if (!this.props.userMe) {
+    if (windowIso.isSsr) {
+      return null; // prevent a flash of "Failed to log in"
+    } else if (!this.props.userMe) {
       return (<ErrorPage msg='Failed to log in' variant='error' />);
     } else {
-      setTimeout(() => window.self.close(), 500);
+      !windowIso.isSsr && setTimeout(() => !windowIso.isSsr && windowIso.self.close(), 500);
       return (<ErrorPage msg='Successfully logged in' variant='success' />);
     }
   }

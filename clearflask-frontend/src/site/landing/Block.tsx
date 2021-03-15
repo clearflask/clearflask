@@ -1,11 +1,12 @@
 import { Grid, GridItemsAlignment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
-import { vh } from '../../common/util/vhUtil';
+import FakeBrowser from '../../common/FakeBrowser';
+import ImgIso from '../../common/ImgIso';
+import { vh } from '../../common/util/screenUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
@@ -16,13 +17,24 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.down('sm')]: {
       padding: `${vh(10)}px 1vw`,
     },
+    minHeight: vh(100),
+    display: 'flex',
+    justifyContent: 'center',
   },
   spacing: {
     [theme.breakpoints.up('md')]: {
-      padding: `${vh(10)}px 10vw ${vh(10)}px`,
+      padding: `${vh(10)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: `${vh(10)}px 1vw ${vh(10)}px`,
+      padding: `${vh(10)}px 1vw`,
+    },
+  },
+  spacingMediumDemo: {
+    [theme.breakpoints.up('lg')]: {
+      padding: `${vh(10)}px 10vw`,
+    },
+    [theme.breakpoints.down('md')]: {
+      padding: `${vh(10)}px 1vw`,
     },
   },
   grid: {
@@ -37,14 +49,17 @@ const styles = (theme: Theme) => createStyles({
   controlsInner: {
     margin: theme.spacing(4),
   },
+  demoImage: {
+    width: '100%',
+  },
   image: {
     padding: theme.spacing(8),
     width: '100%',
     [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(8),
+      padding: theme.spacing(0, 8, 8),
     },
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(8, 2),
+      padding: theme.spacing(0, 2, 6),
     },
   },
   columnOnly: {
@@ -68,14 +83,22 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-export interface Props extends BlockContentProps {
+export interface Props extends Omit<BlockContentProps, 'variant'> {
   className?: string;
-  type?: 'largeDemo' | 'hero' | 'column' | 'demoOnly';
+  type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'headingMain' | 'demoOnly' | 'headingOnly';
   controls?: React.ReactNode;
   demo?: React.ReactNode;
+  demoImage?: Img;
+  demoWrap?: 'browser' | 'browser-dark',
+  demoWrapPadding?: number | string,
+  demoFixedHeight?: number;
+  demoFixedWidth?: number | string;
+  image?: Img;
+  imageScale?: number;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
-  imageStyle?: CSSProperties;
+  imageStyle?: React.CSSProperties;
+  imageStyleOuter?: React.CSSProperties;
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
@@ -88,16 +111,37 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
   render() {
     const isHero = this.props.type === 'hero';
 
-    var image = this.props.imagePath && (
-      <img
+    const imageSrc = this.props.image?.src || this.props.imagePath;
+    var image = imageSrc && (
+      <ImgIso
         alt=''
         className={this.props.classes.image}
-        src={this.props.imagePath}
+        src={imageSrc}
+        aspectRatio={this.props.image?.aspectRatio}
+        scale={this.props.imageScale}
+        width={!this.props.image?.aspectRatio ? '100%' : undefined}
+        maxWidth={this.props.image?.width}
+        maxHeight={this.props.image?.height}
         style={this.props.imageStyle}
+        styleOuter={this.props.imageStyleOuter}
       />
     );
 
     var demo = this.props.demo;
+    if (this.props.demoImage) {
+      demo = (
+        <ImgIso
+          alt=''
+          className={this.props.classes.demoImage}
+          src={this.props.demoImage.src}
+          aspectRatio={this.props.demoImage?.aspectRatio}
+          width={!this.props.demoImage?.aspectRatio ? '100%' : undefined}
+          maxWidth={this.props.demoImage?.width}
+          maxHeight={this.props.demoImage?.height}
+        />
+      );
+
+    }
     if (demo && this.props.edgeType) {
       demo = (
         <div className={classNames(this.props.edgeType ? this.props.classes['edge' + this.props.edgeType] : '')}>
@@ -105,6 +149,21 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         </div>
       );
     }
+    if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
+      const isDark = this.props.demoWrap === 'browser-dark';
+      demo = (
+        <FakeBrowser
+          darkMode={isDark}
+          contentPadding={this.props.demoWrapPadding}
+          fixedWidth={this.props.demoFixedWidth || (this.props.demoImage ? '100%' : undefined)}
+          fixedHeight={this.props.demoFixedHeight}
+        >
+          {demo}
+        </FakeBrowser>
+      );
+    }
+
+
     const display = (
       <React.Fragment>
         {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}
@@ -145,6 +204,10 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       case 'column':
         blockVariant = 'content';
         break;
+      case 'headingMain':
+      case 'headingOnly':
+        blockVariant = 'headingMain';
+        break;
     }
     const { classes, ...blockContentProps } = this.props;
     const content = (
@@ -153,6 +216,16 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         {...blockContentProps}
       />
     );
+
+    if (this.props.type === 'headingOnly') {
+      return (
+        <div
+          className={classNames(!this.props.noSpacing && this.props.classes.spacing, this.props.className)}
+        >
+          {content}
+        </div>
+      );
+    }
 
     if (this.props.type === 'column') {
       return (
@@ -168,9 +241,10 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       );
     } else {
       const isLargeDemo = this.props.type === 'largeDemo';
+      const isMediumDemo = this.props.type === 'mediumDemo';
       return (
         <Grid
-          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : this.props.classes.spacing), this.props.className)}
+          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : (isMediumDemo ? this.props.classes.spacingMediumDemo : this.props.classes.spacing)), this.props.className)}
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}
@@ -178,15 +252,41 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
           justify='center'
         >
-          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 12 : 6} className={classNames(this.props.classes.grid)}>
+          <Grid
+            item
+            className={classNames(this.props.classes.grid)}
+            alignItems={this.props.displayAlign || 'center'}
+            xs={12}
+            md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)}
+            lg={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+            xl={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+          >
             {display}
           </Grid>
-          <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+          <Grid
+            item
+            className={this.props.classes.grid}
+            alignItems='center'
+            xs={12}
+            sm={8}
+            md={isMediumDemo ? 3 : 6}
+            lg={isMediumDemo ? 4 : 5}
+            xl={4}
+          >
             {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
             {content}
           </Grid>
           {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
-            <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+            <Grid
+              item
+              className={this.props.classes.grid}
+              alignItems='center'
+              xs={12}
+              sm={8}
+              md={6}
+              lg={5}
+              xl={4}
+            >
               {image}
             </Grid>
           )}

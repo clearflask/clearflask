@@ -5,7 +5,7 @@ import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { NavLink, Redirect, RouteComponentProps, withRouter } from 'react-router-dom';
+import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -16,6 +16,8 @@ import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import preloadImage from '../common/util/imageUtil';
+import { RedirectIso } from '../common/util/routerUtil';
+import windowIso from '../common/windowIso';
 import { WelcomeImagePath } from './dashboard/WelcomePage';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
@@ -67,6 +69,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   accountStatus?: Status;
   plans?: Admin.Plan[];
 }
@@ -80,21 +83,22 @@ interface State {
 }
 
 class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
   constructor(props) {
     super(props);
 
-    this.state = {};
+    props.callOnMount?.();
 
     preloadImage(WelcomeImagePath);
   }
 
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
-      return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
+      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
-    if (!SIGNUP_PROD_ENABLED && isProd() && new URL(window.location.href).searchParams.get('please') !== 'true') {
+    if (!SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
       return <ErrorPage variant='warning' msg={(
         <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
           Direct sign ups are currently disabled. Instead,&nbsp;
@@ -104,7 +108,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       )} />
     }
 
-    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_BASE_PLAN_ID]
+    const selectedPlanId = (this.props.location.state as any)?.[PRE_SELECTED_BASE_PLAN_ID]
       || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
     const selectedPlan = !selectedPlanId ? undefined : this.props.plans?.find(plan => plan.basePlanId === selectedPlanId);
 
@@ -117,7 +121,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       && !!this.state.email
       && !requiresWorkEmail
       && !!this.state.pass;
-    const emailDisposableList = import('../common/util/emailDisposableList'/* webpackChunkName: "emailDisposableList" */);
+    const emailDisposableList = import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList');
 
     return (
       <Container maxWidth='md' className={this.props.classes.page}>
@@ -227,11 +231,14 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
-  }
-  return {
+  const newProps: ConnectProps = {
     accountStatus: state.account.account.status,
     plans: state.plans.plans.plans,
   };
+  if (state.plans.plans.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(withRouter(SignupPage)));

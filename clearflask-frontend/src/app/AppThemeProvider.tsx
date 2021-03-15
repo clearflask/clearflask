@@ -1,12 +1,12 @@
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
-import { MuiThemeProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
-import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 import { ComponentsProps } from '@material-ui/core/styles/props';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
+import windowIso from '../common/windowIso';
 
 interface ThemeCustomProps {
   disableTransitions?: boolean;
@@ -36,6 +36,7 @@ interface Props {
   isInsideContainer?: boolean;
   breakpoints?: { [key in Breakpoint]: number };
   appRootId: string;
+  seed: string;
   // connect
   config?: Client.Config;
 }
@@ -104,7 +105,9 @@ class AppThemeProvider extends Component<Props> {
         props: {
           ...ComponentPropsOverrides,
           MuiDialog: {
-            container: () => document.getElementById(this.props.appRootId)!,
+            ...(!windowIso.isSsr ? {
+              container: () => document.getElementById(this.props.appRootId)!,
+            } : {}),
             ...(this.props.isInsideContainer ? {
               style: { position: 'absolute' },
               BackdropProps: { style: { position: 'absolute' } },
@@ -122,17 +125,19 @@ class AppThemeProvider extends Component<Props> {
     }
 
     return (
-      <MuiThemeProvider theme={theme}>
-        {!this.props.supressCssBaseline && (<CssBaseline />)}
-        <div style={{
-          height: '100%',
-          background: theme.palette.background.default,
-          color: theme.palette.text.primary,
-          ...(this.props.containerStyle || {}),
-        }}>
-          {this.props.children}
-        </div>
-      </MuiThemeProvider>
+      <StylesProvider injectFirst>
+        <MuiThemeProvider theme={theme}>
+          {!this.props.supressCssBaseline && (<CssBaseline />)}
+          <div style={{
+            height: '100%',
+            background: theme.palette.background.default,
+            color: theme.palette.text.primary,
+            ...(this.props.containerStyle || {}),
+          }}>
+            {this.props.children}
+          </div>
+        </MuiThemeProvider>
+      </StylesProvider>
     );
   }
 }

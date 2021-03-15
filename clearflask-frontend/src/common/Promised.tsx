@@ -18,7 +18,7 @@ interface State<T> {
 class Promised<T> extends React.Component<Props<T>, State<T>> {
   state: State<T> = {};
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.promise
       .then(val => this.setState({
         result: true,

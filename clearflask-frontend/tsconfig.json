@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "lib": ["dom", "dom.iterable", "esnext", "es7"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "es7"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -13,11 +18,25 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "sourceMap": true,
+    "jsx": "react-jsx",
     "noImplicitReturns": true,
     "noImplicitAny": false,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "downlevelIteration": true,
+    "outDir": "./target/build",
+    "rootDir": "./src",
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "public/sw.ts"],
-  "exclude": ["node_modules", "**/node_modules/*"]
+  "exclude": [
+    "**/node_modules/*",
+    "node_modules",
+    "dist/*",
+    "dist-dev/*",
+    "public/*"
+  ],
+  "include": [
+    "src/**/*",
+    "public/sw.ts"
+  ]
 }

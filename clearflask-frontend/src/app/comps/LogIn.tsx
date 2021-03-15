@@ -13,7 +13,6 @@ import NewWindowIcon from '@material-ui/icons/OpenInNew';
 import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
-import SilentIcon from '@material-ui/icons/Web';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -21,12 +20,14 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import AcceptTerms from '../../common/AcceptTerms';
 import Hr from '../../common/Hr';
+import GuestIcon from '../../common/icon/GuestIcon';
 import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import WebNotification from '../../common/notification/webNotification';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { detectEnv, Environment } from '../../common/util/detectEnv';
 import randomUuid from '../../common/util/uuid';
+import windowIso from '../../common/windowIso';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
 import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
@@ -77,7 +78,6 @@ const styles = (theme: Theme) => createStyles({
     fontWeight: 'bold',
   },
 });
-
 export interface Props {
   server: Server;
   open?: boolean;
@@ -89,14 +89,12 @@ export interface Props {
   DialogProps?: Partial<DialogProps>;
   forgotEmailDialogProps?: Partial<DialogProps>;
 }
-
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   onboardBefore?: Client.Onboarding;
   loggedInUser?: Client.UserMe;
 }
-
 interface State {
   open?: boolean;
   notificationType?: NotificationType;
@@ -114,13 +112,12 @@ interface State {
   emailVerifyDialog?: boolean;
   emailVerification?: (number | undefined)[];
 }
-
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
   state: State = {};
   storageListener?: any;
 
   componentWillUnmount() {
-    this.storageListener && window.removeEventListener('storage', this.storageListener);
+    this.storageListener && !windowIso.isSsr && windowIso.removeEventListener('storage', this.storageListener);
   }
 
   render() {
@@ -194,7 +191,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const emailValid = this.isEmailValid(this.state.email);
       const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO;
+      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
       const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
       const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
@@ -309,8 +306,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Silent }) : undefined}
                       disabled={this.state.isSubmitting}
                     >
-                      <ListItemIcon><SilentIcon /></ListItemIcon>
-                      <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
+                      <ListItemIcon><GuestIcon /></ListItemIcon>
+                      <ListItemText primary='Guest' />
                     </ListItem>
                   </Collapse>
                   <Collapse in={!signupAllowed && !loginAllowed}>
@@ -469,21 +466,21 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   if (!!isLogin && !this.state.pass) {
                     this.listenForExternalBind();
                     this.setState({ awaitExternalBind: 'recovery' });
-                    this.props.server.dispatch().forgotPassword({
+                    this.props.server.dispatch().then(d => d.forgotPassword({
                       projectId: this.props.server.getProjectId(),
                       forgotPassword: {
                         email: this.state.email!,
                       },
-                    });
+                    }));
                   } else if (!!isLogin && !!this.state.pass) {
                     this.setState({ isSubmitting: true });
-                    this.props.server.dispatch().userLogin({
+                    this.props.server.dispatch().then(d => d.userLogin({
                       projectId: this.props.server.getProjectId(),
                       userLogin: {
                         email: this.state.email!,
-                        password: saltHashPassword(this.state.pass),
+                        password: saltHashPassword(this.state.pass!),
                       },
-                    }).then(() => {
+                    })).then(() => {
                       this.setState({ isSubmitting: false });
                       this.props.onLoggedInAndClose();
                     }).catch(() => {
@@ -491,7 +488,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     });
                   } else {
                     this.setState({ isSubmitting: true });
-                    this.props.server.dispatch().userCreate({
+                    this.props.server.dispatch().then(d => d.userCreate({
                       projectId: this.props.server.getProjectId(),
                       userCreate: {
                         name: showDisplayNameInput ? this.state.displayName : undefined,
@@ -501,7 +498,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
                         browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
                       },
-                    }).then(userCreateResponse => {
+                    })).then(userCreateResponse => {
                       if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
                         this.setState({
                           isSubmitting: false,
@@ -532,8 +529,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               {this.state.awaitExternalBind === 'recovery' ? (
                 <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
               ) : (
-                  <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
-                )}
+                <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
@@ -557,7 +554,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       emailVerification: val,
                       isSubmitting: true,
                     }, () => setTimeout(() => {
-                      this.props.server.dispatch().userCreate({
+                      this.props.server.dispatch().then(d => d.userCreate({
                         projectId: this.props.server.getProjectId(),
                         userCreate: {
                           name: this.state.displayName,
@@ -565,7 +562,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           emailVerification: val.join(),
                           password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
                         },
-                      }).then(userCreateResponse => {
+                      })).then(userCreateResponse => {
                         if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
                           this.setState({ isSubmitting: false });
                         } else {
@@ -634,24 +631,24 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     this.storageListener = (ev: StorageEvent) => {
       if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
       if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-        this.props.server.dispatch().userCreate({
+        this.props.server.dispatch().then(d => d.userCreate({
           projectId: this.props.server.getProjectId(),
           userCreate: {
-            email: 'mock@email.com',
-            name: 'Mock User',
+            email: 'john.doe@example.com',
+            name: 'John Doe',
             ...{
               isExternal: true, // Only used during development, disregarded otherwise
             },
           },
-        });
+        }));
       } else {
-        this.props.server.dispatch().userBind({
+        this.props.server.dispatch().then(d => d.userBind({
           projectId: this.props.server.getProjectId(),
           userBind: {},
-        });
+        }));
       }
     }
-    window.addEventListener('storage', this.storageListener);
+    !windowIso.isSsr && windowIso.addEventListener('storage', this.storageListener);
   }
 
   onClickOauthNotif(oauthConfig: Client.NotificationMethodsOauth) {
@@ -664,13 +661,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthCsrfToken);
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'oauth' });
-    window.open(`${oauthConfig.authorizeUrl}?`
+    !windowIso.isSsr && windowIso.open(`${oauthConfig.authorizeUrl}?`
       + `response_type=code`
       + `&client_id=${oauthConfig.clientId}`
-      + `&redirect_uri=${window.location.protocol}//${window.location.host}/oauth`
+      + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}/oauth`
       + `&scope=${oauthConfig.scope}`
       + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
-      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`);
+      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`);
   }
 
   onClickSsoNotif() {
@@ -678,10 +675,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     if (!onboarding?.notificationMethods.sso?.redirectUrl) return;
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'sso' });
-    window.open(onboarding.notificationMethods.sso.redirectUrl
-      .replace('<return_uri>', `${window.location.protocol}//${window.location.host}/sso`),
+    !windowIso.isSsr && windowIso.open(onboarding.notificationMethods.sso.redirectUrl
+      .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}/sso`),
       `cf_${this.props.server.getProjectId()}_sso`,
-      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`,
+      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`,
     );
   }
 

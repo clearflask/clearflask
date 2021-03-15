@@ -114,7 +114,7 @@ export default class Templater {
             this.creditsTime();
             break;
           case 'beer':
-            this.creditsBeer();
+            this.creditsEmoji('🍺');
             break;
         }
       }
@@ -250,7 +250,7 @@ export default class Templater {
     });
   }
 
-  demoBoardPreset(preset: 'development' | 'funding' | 'design') {
+  demoBoardPreset(preset: 'development' | 'funding' | 'design' | 'ideas') {
     switch (preset) {
       case 'development':
         this.demoBoard('Roadmap', [
@@ -268,9 +268,15 @@ export default class Templater {
         break;
       case 'design':
         this.demoBoard('Design process', [
-          { title: 'Ideas' },
+          { title: 'Ideas', hideIfEmpty: true, },
           { title: 'Concept' },
           { title: 'Approved', display: { showExpression: true } },
+        ]);
+        break;
+      case 'ideas':
+        this.demoBoard('Ideas', [
+          { title: 'Considering' },
+          { title: 'Planned' },
         ]);
         break;
     }
@@ -280,6 +286,7 @@ export default class Templater {
     title?: string;
     status?: Partial<Admin.IdeaStatus>;
     display?: Partial<Admin.PostDisplay>;
+    hideIfEmpty?: boolean;
   }>) {
     this.styleWhite();
     this.creditsCurrency();
@@ -318,7 +325,7 @@ export default class Templater {
             showExpression: false,
             ...panel.display,
           }),
-          hideIfEmpty: false,
+          hideIfEmpty: panel.hideIfEmpty || false,
         })),
       }),
     });
@@ -802,6 +809,14 @@ export default class Templater {
     const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...((withFunding && withStandaloneFunding) ? [funding.statusId] : []), closed.statusId, planned.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...((withFunding && withStandaloneFunding) ? [funding] : [])]);
   }
+  workflowIdea(categoryIndex: number): Admin.IdeaStatus[] {
+    const discarded = Admin.IdeaStatusToJSON({ name: 'Discarded', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [discarded.statusId, completed.statusId], color: this.workflowColorProgress, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [discarded.statusId, inProgress.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const newNew = Admin.IdeaStatusToJSON({ name: 'New', nextStatusIds: [discarded.statusId, underReview.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    return this.workflow(categoryIndex, newNew.statusId, [discarded, completed, inProgress, underReview, newNew]);
+  }
   workflowBug(categoryIndex: number): Admin.IdeaStatus[] {
     const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     const wontFix = Admin.IdeaStatusToJSON({ name: 'Won\'t fix', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
@@ -831,12 +846,15 @@ export default class Templater {
       this._get<ConfigEditor.ObjectProperty>(['users', 'credits', 'creditOnSignup']).setRaw(
         Admin.CreditsCreditOnSignupToJSON({ amount: creditOnSignup }));
     }
-    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw(Templater.creditsCurrencyFormat());
+  }
+  static creditsCurrencyFormat(): Admin.CreditFormatterEntry[] {
+    return [
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', lessOrEqual: 0 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '¢' }),
-    ]);
+    ];
   }
   creditsTime() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
@@ -878,16 +896,16 @@ export default class Templater {
   //     Admin.CreditFormatterEntryToJSON({suffix: 'Low', multiplier: 100, lessOrEqual: 0.1}),
   //   ]);
   // }
-  creditsBeer() {
+  creditsEmoji(emoji: string) {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' 🍺', lessOrEqual: 999 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm ' + emoji, multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k ' + emoji, multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' ' + emoji, lessOrEqual: 999 }),
     ]);
   }
 
@@ -917,6 +935,22 @@ export default class Templater {
       if (buttonTitle !== undefined) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'buttonTitle']).set(buttonTitle);
       if (secretKey !== undefined) this._get<ConfigEditor.StringProperty>(['ssoSecretKey']).set(secretKey);
     }
+  }
+
+  usersOnboardingOAuthClear() {
+    this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).setRaw([]);
+  }
+
+  usersOnboardingOAuthAdd(oauth: Partial<Admin.NotificationMethodsOauth>) {
+    const index = this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).insert().path.slice(-1).pop() as number;
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'buttonTitle']).set(oauth.buttonTitle || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'oauthId']).set(oauth.oauthId || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'clientId']).set(oauth.clientId || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'authorizeUrl']).set(oauth.authorizeUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'tokenUrl']).set(oauth.tokenUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'scope']).set(oauth.scope || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'userProfileUrl']).set(oauth.userProfileUrl || '');
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'guidJsonPath']).set(oauth.guidJsonPath || '');
   }
 
   // usersOnboardingMobilePush(enable: boolean) {

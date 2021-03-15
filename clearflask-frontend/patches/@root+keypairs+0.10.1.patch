@@ -1,0 +1,17 @@
+diff --git a/node_modules/@root/keypairs/lib/node/generate-privkey-ursa.js b/node_modules/@root/keypairs/lib/node/generate-privkey-ursa.js
+index 71acbc3..66adbf9 100644
+--- a/node_modules/@root/keypairs/lib/node/generate-privkey-ursa.js
++++ b/node_modules/@root/keypairs/lib/node/generate-privkey-ursa.js
+@@ -6,11 +6,7 @@
+ 
+ module.exports = function (bitlen, exp) {
+ 	var ursa;
+-	try {
+-		ursa = require('ursa');
+-	} catch (e) {
+-		ursa = require('ursa-optional');
+-	}
++	ursa = require('ursa-optional');
+ 	var keypair = ursa.generatePrivateKey(bitlen, exp);
+ 	var result = {
+ 		privateKeyPem: keypair.toPrivatePem().toString('ascii').trim()

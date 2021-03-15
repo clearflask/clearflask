@@ -59,6 +59,7 @@ import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
+import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -68,6 +69,7 @@ import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
+import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
@@ -162,6 +164,7 @@ public enum ServiceInjector {
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
                 install(DynamoCertStore.module());
+                install(DefaultRoute53Provider.module());
                 install(ResourceLegalStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());
@@ -218,6 +221,7 @@ public enum ServiceInjector {
                 install(VoteResource.module());
                 install(ProjectResource.module());
                 install(SupportResource.module());
+                install(ConnectResource.module());
 
                 // Billing
                 install(KillBillClientProvider.module());

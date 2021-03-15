@@ -50,7 +50,7 @@ class WelcomePage extends Component<Props & WithStyles<typeof styles, true>> {
       newModName: account?.name,
       newModEmail: account?.email,
       // newItemTitle: 'Add dark mode',
-      // newItemDescription: textToRaw('To reduce eye-strain, please add a low-light option'),
+      // newItemDescription: textToRaw('To reduce eye-strain, please add a low-light option. '),
     };
   }
 

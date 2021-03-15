@@ -15,14 +15,32 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Category;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.ConfigAndBindAllResult;
+import com.smotana.clearflask.api.model.ConfigAndBindAllResultByProjectId;
+import com.smotana.clearflask.api.model.ConfigAndUserBindSlugResult;
+import com.smotana.clearflask.api.model.ConfigBindSlugResult;
+import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.ImportResponse;
+import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.Tag;
+import com.smotana.clearflask.api.model.UserBind;
+import com.smotana.clearflask.api.model.UserBindResponse;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -36,7 +54,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.joda.time.DateTime;
 
@@ -109,19 +126,52 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public ConfigAndBindResult configGetAndUserBind(String slug, UserBind userBind) {
-        Optional<Project> projectOpt = Optional.empty();
-        if (slug.endsWith("." + configApp.domain())) {
-            projectOpt = projectStore.getProjectBySlug(slug.substring(0, slug.indexOf('.')), true);
+    public ConfigBindSlugResult configBindSlug(String slug) {
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
+        if (!Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()
+                .getConfig()
+                .getUsers()
+                .getOnboarding()
+                .getVisibility())) {
+            // For private boards, force user to login first, also hide the full config until login
+            return new ConfigBindSlugResult(
+                    null,
+                    project.getVersionedConfig().getConfig().getUsers().getOnboarding());
         }
-        if (!projectOpt.isPresent()) {
-            projectOpt = projectStore.getProjectBySlug(slug, true);
-        }
-        if (!projectOpt.isPresent()) {
-            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
-        }
-        Project project = projectOpt.get();
 
+        return new ConfigBindSlugResult(
+                project.getVersionedConfig(),
+                null);
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10)
+    @Override
+    public UserBindResponse userBindSlug(String slug, UserBind userBind) {
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
+        Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
+                request,
+                response,
+                project.getProjectId(),
+                getExtendedPrincipal(),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
+                Optional.ofNullable(userBind.getOauthToken()),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
+
+        return new UserBindResponse(loggedInUserOpt
+                .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
+                .orElse(null));
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10)
+    @Override
+    public ConfigAndUserBindSlugResult configAndUserBindSlug(String slug, UserBind userBind) {
+        Project project = projectStore.getProjectBySlug(slug, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserModel> loggedInUserOpt = userBindUtil.userBind(
                 request,
                 response,
@@ -138,13 +188,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .getOnboarding()
                 .getVisibility())) {
             // For private boards, force user to login first, also hide the full config until login
-            return new ConfigAndBindResult(
+            return new ConfigAndUserBindSlugResult(
                     null,
                     project.getVersionedConfig().getConfig().getUsers().getOnboarding(),
                     null);
         }
 
-        return new ConfigAndBindResult(
+        return new ConfigAndUserBindSlugResult(
                 project.getVersionedConfig(),
                 null,
                 loggedInUserOpt.map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))

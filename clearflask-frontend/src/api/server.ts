@@ -4,7 +4,9 @@ import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { htmlDataRetrieve } from '../common/util/htmlData';
 import randomUuid from '../common/util/uuid';
+import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
@@ -17,6 +19,10 @@ export const errorSubscribers: ErrorSubscribers = {}
 export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 export type ChallengeSubscribers = { [subscriberId: string]: ChallengeSubscriber };
 export const challengeSubscribers: ChallengeSubscribers = {}
+export interface DispatchProps {
+  ssr?: boolean;
+  ssrStatusPassthrough?: boolean;
+}
 
 export enum Status {
   PENDING = 'PENDING',
@@ -27,41 +33,63 @@ export enum Status {
 type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
 
 export class Server {
-  readonly store: Store<ReduxState, AllActions>;
-  readonly mockServer: ServerMock | undefined;
-  readonly dispatcherClient: Client.Dispatcher;
-  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
+  static storesState: StoresState | undefined;
 
+  readonly store: Store<ReduxState, AllActions>;
+  readonly dispatcherClient: Client.Dispatcher;
+  readonly dispatcherAdmin: Admin.Dispatcher;
+
+  // NOTE: If creating multiple projects, only one project can have projectId undefined
+  // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
-        typeof window === 'object' &&
-          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
-    this.store = createStore(
-      reducers,
-      Server.initialState(projectId, settings),
-      storeMiddleware);
 
-    const dispatchers = Server.getDispatchers(
+    const projectStoreId = projectId || windowIso.location.hostname;
+    if (windowIso.isSsr) {
+      windowIso.storesState.serverStores = windowIso.storesState.serverStores || {};
+      windowIso.storesState.serverStores[projectStoreId] = windowIso.storesState.serverStores[projectStoreId]
+        || createStore(reducers, Server.initialState(projectId, settings), storeMiddleware);
+      this.store = windowIso.storesState.serverStores[projectStoreId];
+    } else {
+      const preloadedState = (htmlDataRetrieve('__SSR_STORE_INITIAL_STATE__') as StoresStateSerializable | undefined)?.serverStores?.[projectStoreId]
+        || Server.initialState(projectId, settings);
+      this.store = createStore(reducers, preloadedState, storeMiddleware);
+    }
+
+    const apiConf: Client.ConfigurationParameters = {
+      fetchApi: windowIso.fetch.bind(windowIso),
+      basePath: Server.augmentApiBasePath(Client.BASE_PATH),
+    };
+    if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      apiOverride = ServerMock.get();
+    }
+    this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
-      apiOverride);
-    this.dispatcherClient = dispatchers.client;
-    this.dispatcherAdmin = dispatchers.adminPromise;
+      new Client.Api(new Client.Configuration(apiConf), apiOverride));
+    this.dispatcherAdmin = apiOverride
+      ? new Admin.Dispatcher(
+        msg => Server._dispatch(msg, this.store),
+        new Admin.Api(new Admin.Configuration(apiConf), apiOverride))
+      : ServerAdmin.get().dispatcherAdmin
   }
 
   static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
     try {
       var result = await store.dispatch(msg);
     } catch (response) {
-      console.log("Dispatch error: ", msg, response);
-      console.trace();
+      if (detectEnv() !== Environment.PRODUCTION) {
+        console.log("Dispatch error: ", msg, response);
+        console.trace();
+      }
       try {
         if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
           const challengeSubscriber = Object.values(challengeSubscribers)[0];
@@ -114,27 +142,6 @@ export class Server {
     return result.value;
   }
 
-  static getDispatchers(
-    dispatcherDelegate: (msg: any) => Promise<any>,
-    apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
-
-    const apiConf: Client.ConfigurationParameters = {};
-    if (!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      apiOverride = ServerMock.get();
-    } else {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
-    }
-
-    const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
-      new Client.Api(new Client.Configuration(apiConf), apiOverride));
-    const dispatcherAdminPromise = Promise.resolve(new Admin.Dispatcher(dispatcherDelegate,
-      new Admin.Api(new Admin.Configuration(apiConf), apiOverride)));
-    return {
-      client: dispatcherClient,
-      adminPromise: dispatcherAdminPromise,
-    };
-  }
-
   static initialState(projectId?: string, settings?: StateSettings): any {
     const state: ReduxState = {
       projectId: projectId || stateProjectIdDefault,
@@ -149,6 +156,17 @@ export class Server {
       notifications: stateNotificationsDefault,
     };
     return state;
+  }
+
+  static augmentApiBasePath(basePath: string): string {
+    switch (detectEnv()) {
+      case Environment.DEVELOPMENT_FRONTEND:
+        break;
+      default:
+        basePath = basePath.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
+        break;
+    }
+    return basePath;
   }
 
   getProjectId(): string {
@@ -166,13 +184,42 @@ export class Server {
       && !!state.users.loggedIn.user?.isMod;
   }
 
-  dispatch(): Client.Dispatcher {
-    return this.dispatcherClient;
+  dispatch(props: DispatchProps = {}): Promise<Client.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherClient);
   }
 
-  async dispatchAdmin(): Promise<Admin.Dispatcher> {
-    // TODO load as async webpack here. remove all references to Admin.*
-    return this.dispatcherAdmin;
+  dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
+    return Server.__dispatch(props, this.dispatcherAdmin);
+  }
+
+  static __dispatch<D>(props: DispatchProps = {}, dispatcher: D): Promise<D> {
+    if (!props.ssr && windowIso.isSsr) {
+      return new Promise(() => { }); // Promise that never resolves
+    }
+    const dispatchPromise = Promise.resolve(dispatcher);
+    if (props.ssr && windowIso.isSsr) {
+      windowIso.awaitPromises.push(dispatchPromise);
+      // Extend the 'then' method and add any API calls
+      // to the list of promises to wait for in SSR
+      dispatchPromise.then = (function (_super) {
+        return function (this: any) {
+          var apiPromise = _super.apply(this, arguments as any);
+          if (props.ssrStatusPassthrough) {
+            apiPromise = apiPromise.catch(err => {
+              if (!windowIso.isSsr) return;
+              if (isNaN(err?.status)) {
+                windowIso.staticRouterContext.statusCode = 500;
+              } else {
+                windowIso.staticRouterContext.statusCode = err.status;
+              }
+            })
+          }
+          if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
+          return apiPromise;
+        };
+      })(dispatchPromise.then) as any;
+    }
+    return dispatchPromise;
   }
 
   subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {
@@ -215,7 +262,20 @@ export const getSearchKey = (search: object): string => {
   const keys = Object.keys(search);
   // Consistently return the same key by sorting by keys
   keys.sort();
-  return JSON.stringify(keys.map(key => key + '=' + search[key]));
+  var searchKey = 'sk';
+  keys.forEach(key => {
+    const val = search[key];
+    const isArray = Array.isArray(val);
+    const isObject = typeof val === 'object';
+    if (val === undefined
+      || (isArray && !((val as Array<any>)?.length))
+      || (isObject && !Object.keys(val)?.length)) {
+      return;
+    }
+
+    searchKey += ';' + key + '=' + JSON.stringify(isObject ? getSearchKey(val) : val);
+  });
+  return searchKey;
 }
 
 const stateProjectIdDefault = null;
@@ -223,7 +283,8 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
       return action.payload.config.projectId || projectId;
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.configBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       return action.payload.config?.config.projectId || projectId;
     default:
       return projectId;
@@ -233,7 +294,7 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
 export const cssBlurry = {
   blurry: {
     color: 'transparent',
-    textShadow: '0px 0px 6px rgba(0,0,0,0.8)',
+    textShadow: '3px 0px 6px rgba(0,0,0,0.8)',
   }
 };
 interface updateSettingsAction {
@@ -249,6 +310,7 @@ export interface StateSettings {
     index: number;
     fundDiff: number;
   }>,
+  demoFundingAnimate?: number,
   demoVotingExpressionsAnimate?: Array<{
     type: 'vote';
     upvote: boolean;
@@ -271,6 +333,7 @@ export interface StateSettings {
   }>;
   demoDisableExplorerExpanded?: boolean;
   demoScrollY?: boolean;
+  demoDisablePostOpen?: boolean;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {
@@ -290,12 +353,17 @@ export interface StateConf {
   conf?: Client.Config;
   onboardBefore?: Client.Onboarding;
   ver?: string;
+  rejectionMessage?: string;
 }
 const stateConfDefault = {};
 function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
-    case Client.configGetAndUserBindActionStatus.Pending:
-      return { status: Status.PENDING };
+    case Client.configBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
+      return {
+        status: Status.PENDING,
+        rejectionMessage: undefined,
+      };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
     case Admin.configGetAdminActionStatus.Fulfilled:
       const versionedConfigAdmin = action.type === Admin.projectCreateAdminActionStatus.Fulfilled
@@ -303,18 +371,25 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
         : action.payload;
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: versionedConfigAdmin.config,
         ver: versionedConfigAdmin.version,
       };
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.configBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
+        rejectionMessage: undefined,
         conf: action.payload.config?.config,
         onboardBefore: action.payload.onboardBefore,
         ver: action.payload.config?.version,
       };
-    case Client.configGetAndUserBindActionStatus.Rejected:
-      return { status: Status.REJECTED };
+    case Client.configBindSlugActionStatus.Rejected:
+    case Client.configAndUserBindSlugActionStatus.Rejected:
+      return {
+        status: Status.REJECTED,
+        rejectionMessage: action.payload.userFacingMessage,
+      };
     default:
       return state;
   }
@@ -653,9 +728,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId],
           status: Status.FULFILLED,
           commentIds: new Set([
-            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]
-              ? newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId].commentIds || []
-              : []),
+            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]?.commentIds || []),
             comment.commentId,
           ]),
         }
@@ -904,8 +977,27 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           },
         } : {}),
       };
+    case Client.userBindActionStatus.Pending:
+    case Client.userBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
+      return {
+        ...state,
+        loggedIn: {
+          status: Status.PENDING,
+        },
+      };
+    case Client.userBindActionStatus.Pending:
+    case Client.userBindSlugActionStatus.Pending:
+    case Client.configAndUserBindSlugActionStatus.Pending:
+      return {
+        ...state,
+        loggedIn: {
+          status: Status.REJECTED,
+        },
+      };
     case Client.userBindActionStatus.Fulfilled:
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.userBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {
         ...state,
@@ -1384,7 +1476,8 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         } : {}),
       };
     case Client.userBindActionStatus.Fulfilled:
-    case Client.configGetAndUserBindActionStatus.Fulfilled:
+    case Client.userBindSlugActionStatus.Fulfilled:
+    case Client.configAndUserBindSlugActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {
         ...state,

@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    "@loadable/babel-plugin",
+    [
+      "transform-media-imports",
+      {
+        "baseDir": "./public"
+      }
+    ]
+  ]
+}

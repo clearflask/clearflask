@@ -7,18 +7,27 @@ const PROD_APP_ID = 'zklmfmdu';
 const TEST_APP_ID = 'ga9fvvhx';
 
 export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((state) => {
+  const connectProps: IntercomWrapperConnectProps = {
+    dontUseThisComponentDirectly: true,
+  };
+
   if (state.account.account.status === undefined) {
-    ServerAdmin.get().dispatchAdmin()
-      .then(d => d.accountBindAdmin({}));
+    connectProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin()
+        .then(d => d.accountBindAdmin({}));
+    };
   }
 
   // Just don't show intercom to super admins (that's me!)
   if (state.account.isSuperAdmin) {
-    return { dontUseThisComponentDirectly: true, disabled: true };
+    connectProps.disabled = true;
+    return connectProps;
   }
 
+  connectProps.appId = isProd() ? PROD_APP_ID : TEST_APP_ID;
+
   const account = state.account.account.account;
-  const userData = !!account?.intercomIdentity ? {
+  connectProps.userData = !!account?.intercomIdentity ? {
     user_hash: account.intercomIdentity,
     email: account.email,
     name: account.name,
@@ -26,10 +35,5 @@ export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((st
     subscription_status: account.subscriptionStatus,
   } : undefined;
 
-  const connectProps: IntercomWrapperConnectProps = {
-    appId: isProd() ? PROD_APP_ID : TEST_APP_ID,
-    userData,
-    dontUseThisComponentDirectly: true,
-  };
   return connectProps;
 }, null, null, { forwardRef: true })(IntercomWrapper);

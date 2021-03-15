@@ -25,11 +25,18 @@ public interface CertStore {
     void deleteKeypair(KeypairType type, String id);
 
 
-    Optional<ChallengeModel> getChallenge(String key);
+    Optional<ChallengeModel> getHttpChallenge(String key);
 
-    void setChallenge(ChallengeModel challenge);
+    void setHttpChallenge(ChallengeModel challenge);
 
-    void deleteChallenge(String key);
+    void deleteHttpChallenge(String key);
+
+
+    Optional<String> getDnsChallenge(String host);
+
+    void setDnsChallenge(String host, String value);
+
+    void deleteDnsChallenge(String host, String value);
 
 
     Optional<CertModel> getCert(String domain);

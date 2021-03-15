@@ -297,7 +297,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
               isSubmitting={this.state.importIsSubmitting}
               onClick={() => {
                 this.setState({ importIsSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.projectImportPostAdmin({
+                this.props.server.dispatchAdmin().then(d => d.projectImportPostAdmin({
                   projectId: this.props.server.getProjectId(),
                   firstRowIsHeader: this.state.importFirstRowIsHeader,
                   categoryId: this.state.importCategoryId!,
@@ -367,7 +367,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
             isSubmitting={this.state.exportIsSubmitting}
             onClick={() => {
               this.setState({ exportIsSubmitting: true });
-              ServerAdmin.get().dispatchAdmin().then(d => d.projectExportAdmin({
+              this.props.server.dispatchAdmin().then(d => d.projectExportAdmin({
                 projectId: this.props.server.getProjectId(),
                 includePosts: this.state.exportIncludePosts,
                 includeComments: this.state.exportIncludeComments,
@@ -404,7 +404,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
                 style={{ color: !this.state.deleteIsSubmitting ? this.props.theme.palette.error.main : undefined }}
                 onClick={() => {
                   this.setState({ deleteIsSubmitting: true });
-                  ServerAdmin.get().dispatchAdmin().then(d => d.projectDeleteAdmin({
+                  this.props.server.dispatchAdmin().then(d => d.projectDeleteAdmin({
                     projectId: this.props.server.getProjectId(),
                   }))
                     .then(() => {
