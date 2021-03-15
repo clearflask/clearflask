@@ -262,7 +262,20 @@ export const getSearchKey = (search: object): string => {
   const keys = Object.keys(search);
   // Consistently return the same key by sorting by keys
   keys.sort();
-  return JSON.stringify(keys.map(key => key + '=' + search[key]));
+  var searchKey = 'sk';
+  keys.forEach(key => {
+    const val = search[key];
+    const isArray = Array.isArray(val);
+    const isObject = typeof val === 'object';
+    if (val === undefined
+      || (isArray && !((val as Array<any>)?.length))
+      || (isObject && !Object.keys(val)?.length)) {
+      return;
+    }
+
+    searchKey += ';' + key + '=' + JSON.stringify(isObject ? getSearchKey(val) : val);
+  });
+  return searchKey;
 }
 
 const stateProjectIdDefault = null;

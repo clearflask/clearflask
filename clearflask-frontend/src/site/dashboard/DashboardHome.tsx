@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server } from '../../api/server';
+import { ReduxState, Server } from '../../api/server';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import PanelSearch from '../../app/comps/PanelSearch';
@@ -250,7 +250,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
         isExplorer
       >
         <PanelPost
-          key={getSearchKey({ ...searchOverride, ...panel.search })}
           maxHeight={vh(80)}
           direction={Direction.Vertical}
           panel={panel}

@@ -107,11 +107,9 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         panelsCmpt = (
           <div className={classNames(this.props.classes.singlePanels, this.props.classes.spacing)}>
             {(this.props.page.panels || []).map(panel => {
-              const searchKey = getSearchKey(panel.search);
               return (
-                <div key={searchKey} className={this.props.classes.singlePanel}>
+                <div className={this.props.classes.singlePanel}>
                   <PanelPost
-                    key={searchKey}
                     direction={Direction.Horizontal}
                     panel={panel}
                     server={this.props.server}
@@ -140,7 +138,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         const board = this.props.page.board;
         var panels: any = board.panels.map((panel, panelIndex) => (
           <PanelPost
-            key={`${panelIndex}-${getSearchKey(panel.search)}`}
+            key={getSearchKey(panel.search)}
             className={this.props.classes.boardPanel}
             maxHeight={vh(80)}
             direction={Direction.Vertical}

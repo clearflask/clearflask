@@ -19,7 +19,7 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
+import { ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import SubmitButton from '../../common/SubmitButton';
@@ -197,7 +197,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       content = (
         <div className={this.props.classes.content}>
           <PanelPost
-            key={getSearchKey({ ...searchOverride, ...this.props.explorer.search })}
             direction={Direction.Vertical}
             panel={this.props.explorer}
             searchOverride={searchOverride}
@@ -226,7 +225,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       content = (
         <div className={this.props.classes.content}>
           <PanelPost
-            key={getSearchKey(this.props.explorer.search)}
             server={this.props.server}
             direction={Direction.Vertical}
             widthExpand

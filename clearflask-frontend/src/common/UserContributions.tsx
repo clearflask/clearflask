@@ -31,7 +31,6 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
       <React.Fragment>
         <PanelPost
           className={this.props.classes.panel}
-          key={getSearchKey(postsPanel.search)}
           direction={Direction.Horizontal}
           panel={postsPanel}
           server={this.props.server}
