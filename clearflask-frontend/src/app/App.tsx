@@ -64,8 +64,10 @@ class App extends Component<Props> {
 
     const storeState = this.server.getStore().getState();
     const hasConfig = storeState.conf.status !== undefined;
-    if (windowIso.isSsr && !hasConfig) {
-      windowIso.awaitPromises.push(this.initSsr());
+    if (windowIso.isSsr) {
+      if (!hasConfig) {
+        windowIso.awaitPromises.push(this.initSsr());
+      }
     } else {
       this.init().finally(() => {
         // Start render since we received our configuration
@@ -87,7 +89,8 @@ class App extends Component<Props> {
   }
 
   async initSsr() {
-    await (await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true })).configBindSlug({
+    const dispatcher = await this.server.dispatch({ ssr: true, ssrStatusPassthrough: true });
+    return await dispatcher.configBindSlug({
       slug: this.props.slug,
     });
   }

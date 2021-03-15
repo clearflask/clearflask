@@ -64,12 +64,18 @@ export interface Props {
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   searchResult: SearchResult;
   searchMerged: Client.IdeaSearch;
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
+
   render() {
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
@@ -143,7 +149,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
-  var newProps: ConnectProps = {
+  const newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     searchResult: {
@@ -160,10 +166,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
-      projectId: state.projectId!,
-      ideaSearch: newProps.searchMerged,
-    }));
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
+        projectId: state.projectId!,
+        ideaSearch: newProps.searchMerged,
+      }));
+    };
   } else {
     const missingVotesByIdeaIds: string[] = [];
     newProps.searchResult.status = bySearch.status;
@@ -177,15 +185,17 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     if (state.users.loggedIn.status === Status.FULFILLED
       && state.users.loggedIn.user
       && missingVotesByIdeaIds.length > 0) {
-      ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
-        projectId: state.projectId!,
-        ideaIds: missingVotesByIdeaIds,
-        myOwnIdeaIds: missingVotesByIdeaIds
-          .map(ideaId => state.ideas.byId[ideaId])
-          .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
-          .map(idea => idea?.idea?.ideaId)
-          .filter(notEmpty),
-      }));
+      newProps.callOnMount = () => {
+        ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
+          projectId: state.projectId!,
+          ideaIds: missingVotesByIdeaIds,
+          myOwnIdeaIds: missingVotesByIdeaIds
+            .map(ideaId => state.ideas.byId[ideaId])
+            .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
+            .map(idea => idea?.idea?.ideaId)
+            .filter(notEmpty),
+        }));
+      };
     }
   }
 

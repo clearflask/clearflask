@@ -5,7 +5,6 @@ import DataMock from '../../api/dataMock';
 import { StateSettings } from '../../api/server';
 import Loading from '../../app/utils/Loading';
 import Templater from '../../common/config/configTemplater';
-import FakeBrowser from '../../common/FakeBrowser';
 import Promised from '../../common/Promised';
 import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
@@ -32,10 +31,6 @@ interface Props {
   mock?: (mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>;
   controls?: (project: Project) => React.ReactNode;
   demo?: (project: Project) => React.ReactNode;
-  demoFixedHeight?: number;
-  demoFixedWidth?: number | string;
-  demoWrap?: 'browser' | 'browser-dark',
-  demoWrapPadding?: number | string,
   demoPreventInteraction?: boolean
   demoProject?: Promise<Project>;
   demoScrollYOnClick?: boolean;
@@ -122,19 +117,6 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           <div className={this.props.classes.insetFade} />
           {demoPromised}
         </div>
-      );
-    }
-    if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
-      const isDark = this.props.demoWrap === 'browser-dark';
-      demoPromised = (
-        <FakeBrowser
-          darkMode={isDark}
-          contentPadding={this.props.demoWrapPadding}
-          fixedWidth={this.props.demoFixedWidth}
-          fixedHeight={this.props.demoFixedHeight}
-        >
-          {demoPromised}
-        </FakeBrowser>
       );
     }
 

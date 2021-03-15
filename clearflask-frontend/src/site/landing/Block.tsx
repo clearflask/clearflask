@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
+import FakeBrowser from '../../common/FakeBrowser';
 import ImgIso from '../../common/ImgIso';
 import { vh } from '../../common/util/screenUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
@@ -88,6 +89,10 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   demoImage?: Img;
+  demoWrap?: 'browser' | 'browser-dark',
+  demoWrapPadding?: number | string,
+  demoFixedHeight?: number;
+  demoFixedWidth?: number | string;
   image?: Img;
   imageScale?: number;
   imagePath?: string;
@@ -144,6 +149,21 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         </div>
       );
     }
+    if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
+      const isDark = this.props.demoWrap === 'browser-dark';
+      demo = (
+        <FakeBrowser
+          darkMode={isDark}
+          contentPadding={this.props.demoWrapPadding}
+          fixedWidth={this.props.demoFixedWidth || (this.props.demoImage ? '100%' : undefined)}
+          fixedHeight={this.props.demoFixedHeight}
+        >
+          {demo}
+        </FakeBrowser>
+      );
+    }
+
+
     const display = (
       <React.Fragment>
         {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}

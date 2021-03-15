@@ -384,6 +384,7 @@ interface Props {
   onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   projectId: string;
   settings: StateSettings;
@@ -423,6 +424,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+
     this._isMounted = true;
     if (!!this.props.settings.demoFundingControlAnimate) {
       this.demoFundingControlAnimate(this.props.settings.demoFundingControlAnimate);
@@ -1103,20 +1106,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               {variant === 'list' ? (
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
-                  <UserDisplay
-                    onClick={this.props.onUserClick}
-                    user={{
-                      userId: this.props.idea.responseAuthorUserId,
-                      name: this.props.idea.responseAuthorName,
-                      isMod: true
-                    }}
-                  />
-                )}
+                <UserDisplay
+                  onClick={this.props.onUserClick}
+                  user={{
+                    userId: this.props.idea.responseAuthorUserId,
+                    name: this.props.idea.responseAuthorName,
+                    isMod: true
+                  }}
+                />
+              )}
               :&nbsp;&nbsp;
             </React.Fragment>
           ) : (
-              <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
-            )}
+            <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
+          )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
@@ -1271,6 +1274,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   var vote: Client.VoteOption | undefined;
   var expression: Array<string> | undefined;
   var fundAmount: number | undefined;
+  var callOnMount;
   if (ownProps.idea) {
     const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
     if (voteStatus === undefined) {
@@ -1278,12 +1282,14 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       if (ownProps.variant === 'page'
         && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user) {
-        ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
-          projectId: state.projectId!,
-          ideaIds: [ownProps.idea!.ideaId],
-          myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
-            ? [ownProps.idea!.ideaId] : [],
-        }));
+        callOnMount = () => {
+          ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
+            projectId: state.projectId!,
+            ideaIds: [ownProps.idea!.ideaId],
+            myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
+              ? [ownProps.idea!.ideaId] : [],
+          }));
+        };
       }
     } else {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
@@ -1292,6 +1298,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     }
   }
   return {
+    callOnMount,
     configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId!,
     settings: state.settings,

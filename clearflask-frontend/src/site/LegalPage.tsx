@@ -19,11 +19,17 @@ interface Props {
   type: 'terms' | 'privacy';
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   legal?: Admin.LegalResponse;
   legalStatus?: Status;
 }
 
 class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
+
   render() {
     var doc: string | undefined;
     switch (this.props.type) {
@@ -47,11 +53,14 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.legal.status === undefined) {
-    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.legalGet());
-  }
-  return {
+  const newProps: ConnectProps = {
     legal: state.legal.legal,
     legalStatus: state.legal.status,
   };
+  if (state.legal.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.legalGet());
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(LegalPage));

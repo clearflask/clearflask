@@ -45,6 +45,7 @@ interface Props {
   hideAuthor?: boolean;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   searchResult: SearchResult;
   loggedInUser?: Client.UserMe;
 }
@@ -54,6 +55,10 @@ interface State {
 class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   onLoggedIn?: () => void;
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
 
   render() {
     var content;
@@ -142,10 +147,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const searchKey = getSearchKey(ownProps.search);
   const bySearch = state.comments.bySearch[searchKey];
   if (!bySearch) {
-    ownProps.server.dispatch().then(d => d.commentSearch({
-      projectId: state.projectId!,
-      commentSearch: ownProps.search,
-    }));
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch().then(d => d.commentSearch({
+        projectId: state.projectId!,
+        commentSearch: ownProps.search,
+      }));
+    };
   } else {
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;

@@ -85,6 +85,7 @@ interface Props {
   onUserClick: (userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
@@ -96,6 +97,10 @@ interface State {
 }
 class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
 
   render() {
     const display: Client.PostDisplay = this.state.expanded ? {
@@ -112,20 +117,20 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
       showFunding: true,
       showExpression: true,
     } : {
-        titleTruncateLines: 1,
-        descriptionTruncateLines: 0,
-        responseTruncateLines: 0,
-        showCommentCount: false,
-        showCategoryName: false,
-        showCreated: false,
-        showAuthor: false,
-        showStatus: false,
-        showTags: false,
-        showVoting: false,
-        showFunding: false,
-        showExpression: false,
-        showEdit: false,
-      };
+      titleTruncateLines: 1,
+      descriptionTruncateLines: 0,
+      responseTruncateLines: 0,
+      showCommentCount: false,
+      showCategoryName: false,
+      showCreated: false,
+      showAuthor: false,
+      showStatus: false,
+      showTags: false,
+      showVoting: false,
+      showFunding: false,
+      showExpression: false,
+      showEdit: false,
+    };
     return (
       <div className={this.props.classes.page}>
         <Typography variant='h4' component='h1'>Welcome back!</Typography>
@@ -259,16 +264,18 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
-  if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().then(d => d.configAndUserBindSlug({
-      slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      userBind: {}
-    }));
-  }
-  return {
+  const newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
-    settings: state.settings,
+  };
+  if (!state.conf.conf && !state.conf.status) {
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch().then(d => d.configAndUserBindSlug({
+        slug: ownProps.server.getStore().getState().conf.conf?.slug!,
+        userBind: {}
+      }));
+    };
   }
+  return newProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(DashboardHome))));

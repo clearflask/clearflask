@@ -112,6 +112,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   plans?: Admin.Plan[];
   featuresTable?: Admin.FeaturesTable;
 }
@@ -121,6 +122,11 @@ interface State {
 }
 class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
+
   render() {
     return (
       <div className={this.props.classes.page}>
@@ -301,11 +307,14 @@ const FeatureListItem = (props: {
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
-  }
-  return {
+  const newProps: ConnectProps = {
     plans: state.plans.plans.plans,
     featuresTable: state.plans.plans.featuresTable,
   };
+  if (state.plans.plans.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(withRouter(PricingPage)));

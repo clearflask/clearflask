@@ -274,51 +274,100 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     fontSize: 21,
     margin: theme.spacing(0, 1),
   },
+  textAlignCenter: {
+    textAlign: 'center',
+  },
 }));
 
 export function Landing() {
+  const classes = useStyles();
   return (
     <React.Fragment>
       <LandingHero />
 
-      <LandingCollectFeedbackHero />
-      {/* <Block
-        type='heading-main'
-        mirror
-        title='Ask'
-        description={LandingCollectFeedbackHeroDescription}
-        image={ListenImg}
-        imageLocation='above'
+      <Block
+        className={classes.textAlignCenter}
+        type='headingOnly'
+        title="Here’s how our platform can help you understand your customers"
+      />
+      <Demo
+        type='headingMain'
+        title='Ask for feedback'
+        description='Collect your customer feedback and new ideas in one bucket'
+        points={[
+          'Submit suggestions',
+          'Vote for your favourtie idea',
+          'Discuss feature details',
+        ]}
+        alignItems='center'
+        demoWrap='browser'
+        demoFixedHeight={350}
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoExplorer({
+          allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
+          display: {
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 2,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: false,
+            showFunding: false,
+            showExpression: false,
+          },
+        }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
+        mock={mocker => mocker.demoFeedbackType()}
+        settings={{
+          demoDisableExplorerExpanded: true,
+          // demoBlurryShadow: true,
+          demoCreateAnimate: {
+            title: 'Add Dark Mode',
+            description: 'To reduce eye-strain, please add a low-light option. ',
+            similarSearchTerm: 'theme',
+          },
+        }}
         buttonTitle='Learn more'
         buttonLink='/product/ask'
-        alignItems='center'
-        demoImage={DemoPageFeedbackImg}
-      /> */}
-      <Block
+      />
+      <Demo
         mirror
-        type='heading-main'
-        title='Analyze'
-        description='Organize all the data you collected to make the right decision'
-        image={AnalyzeImg}
-        imageLocation='above'
+        type='headingMain'
+        title='Analyze ideas'
+        description='Find the most wanted features by the most important customers.'
+        points={[
+          'Explore feedback',
+          'Validate new ideas',
+          'Reach out for clarification',
+        ]}
+        alignItems='center'
+        demoWrap='browser'
+        demoImage={DemoSearchPostsImg}
         buttonTitle='Learn more'
         buttonLink='/product/analyze'
-        demoImage={DemoSearchPostsImg}
       />
       <Block
-        type='heading-main'
-        title='Act'
+        type='headingMain'
+        title='Take action'
         description='Become a customer-centric organization with transparent customer-driven product development.'
-        image={NotifyImg}
-        imageLocation='above'
+        points={[
+          'Show off your Product Roadmap',
+          'Keep stakeholders informed',
+          'Engage your community',
+        ]}
+        alignItems='center'
         buttonTitle='See how'
         buttonLink='/product/act'
-        alignItems='center'
+        demoWrap='browser'
+        demoWrapPadding={24}
         demoImage={DemoRoadmapImg}
       />
 
       <Block
-        type='heading-main'
+        className={classes.textAlignCenter}
+        type='headingOnly'
         title='See how our solutions can fit your needs'
       />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={150}>
@@ -724,11 +773,11 @@ const LandingCollectFeedbackHeroDescription = 'Collect customer feedback in one 
 export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
   return (
     <Demo
-      type={props.isHero ? 'hero' : 'heading-main'}
+      type={props.isHero ? 'hero' : 'headingMain'}
       title={LandingCollectFeedbackHeroTitle}
       description={LandingCollectFeedbackHeroDescription}
-      alignItems='flex-start'
-      image={ListenImg}
+      alignItems={props.isHero ? 'flex-start' : 'center'}
+      image={props.isHero ? ListenImg : undefined}
       imageLocation='above'
       displayAlign='flex-start'
       // demoWrap='browser'
@@ -881,7 +930,7 @@ export function LandingPrioritization() {
         />
       </HorizontalPanels>
       <Block
-        type='heading-main'
+        type='headingMain'
         icon={(<LightbulbIcon />)}
         title='Idea Validation'
         description='Get a sense of how successful a feature will be prior to any development work'
@@ -910,7 +959,7 @@ export function LandingPrioritization() {
         />
       </HorizontalPanels>
       <Block
-        type='heading-main'
+        type='headingMain'
         title='Give your most-valuable customers a proportionate voice'
         description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
         alignItems='flex-start'
@@ -1078,7 +1127,7 @@ export function LandingEngagementRoadmap() {
 export function LandingEngagementHero(props: { isHero?: boolean }) {
   return (
     <Block
-      type={props.isHero ? 'hero' : 'heading-main'}
+      type={props.isHero ? 'hero' : 'headingMain'}
       title='Act'
       description='Become a customer-centric organization with transparent customer-driven product development.'
       mirror
@@ -1175,7 +1224,7 @@ export function LandingEngagement() {
 export function LandingCustomizeHero(props: { isHero?: boolean }) {
   return (
     <Block
-      type={props.isHero ? 'hero' : 'heading-main'}
+      type={props.isHero ? 'hero' : 'headingMain'}
       title='Make it your own'
       description='Our solution can be customized out of the box to fit your specific needs.'
       image={CustomizeImg}

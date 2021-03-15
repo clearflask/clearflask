@@ -69,6 +69,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   accountStatus?: Status;
   plans?: Admin.Plan[];
 }
@@ -89,6 +90,10 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
     this.state = {};
 
     preloadImage(WelcomeImagePath);
+  }
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {
@@ -229,11 +234,14 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
-  }
-  return {
+  const newProps: ConnectProps = {
     accountStatus: state.account.account.status,
     plans: state.plans.plans.plans,
   };
+  if (state.plans.plans.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(withRouter(SignupPage)));

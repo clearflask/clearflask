@@ -114,6 +114,7 @@ interface Props {
   stripePromise: Promise<Stripe | null>;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   accountStatus?: Status;
   account?: Admin.AccountAdmin;
   accountBillingStatus?: Status;
@@ -141,6 +142,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   state: State = {};
   refreshBillingAfterPaymentClose?: boolean;
   paymentActionMessageListener?: any;
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
 
   componentWillUnmount() {
     this.paymentActionMessageListener && !windowIso.isSsr && windowIso.removeEventListener('message', this.paymentActionMessageListener);
@@ -384,13 +389,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               src={this.state.paymentActionUrl}
             />
           ) : (
-              <div style={{
-                minWidth: this.getFrameActionWidth(),
-                minHeight: 400,
-              }}>
-                <LoadingPage />
-              </div>
-            ))}
+            <div style={{
+              minWidth: this.getFrameActionWidth(),
+              minHeight: 400,
+            }}>
+              <LoadingPage />
+            </div>
+          ))}
         </Dialog>
       </React.Fragment>
     ) : undefined;
@@ -936,15 +941,17 @@ export const BillingPaymentActionRedirect = () => {
 };
 
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
-  if (state.account.billing.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
-  }
-  const connectProps: ConnectProps = {
+  const newProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
     accountBillingStatus: state.account.billing.status,
     accountBilling: state.account.billing.billing,
     isSuperAdmin: state.account.isSuperAdmin,
   };
-  return connectProps;
+  if (state.account.billing.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
+    };
+  }
+  return newProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(BillingPage))));

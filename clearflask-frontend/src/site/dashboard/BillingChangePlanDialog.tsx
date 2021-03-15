@@ -20,6 +20,7 @@ interface Props {
   isSubmitting?: boolean;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   accountPlanId?: string;
   plans?: Admin.Plan[];
   accountBillingStatus?: Status;
@@ -31,6 +32,10 @@ interface State {
 
 class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
 
   render() {
     return (
@@ -77,13 +82,16 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.account.billing.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
-  }
-  return {
+  const newProps: ConnectProps = {
     accountPlanId: state.account.billing.billing?.plan.basePlanId,
     plans: state.account.billing.billing?.availablePlans,
     accountStatus: state.account.account.status,
     accountBillingStatus: state.account.billing.status,
   };
+  if (state.account.billing.status === undefined) {
+    newProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
+    };
+  }
+  return newProps;
 })(withStyles(styles, { withTheme: true })(withMediaQuery(theme => theme.breakpoints.down('xs'))(BillingChangePlanDialog)));

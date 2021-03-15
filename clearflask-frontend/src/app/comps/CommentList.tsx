@@ -26,6 +26,7 @@ interface Props {
   onAuthorClick?: (commentId: string, userId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
   loadMore: () => Promise<Client.IdeaCommentSearchResponse>;
@@ -45,6 +46,10 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
         ideaCommentSearch: {},
       }));
     }
+  }
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {
@@ -100,6 +105,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 }
 
 const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  var callOnMount;
   const comments: Client.CommentWithVote[] = [];
   var ideaIdOrParentCommentId = ownProps.parentCommentId || ownProps.ideaId;
   const commentIds = state.comments.byIdeaIdOrParentCommentId[ideaIdOrParentCommentId];
@@ -120,18 +126,21 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
       comments.push(comment.comment);
     });
     if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByCommentIds.length > 0) {
-      ownProps.server.dispatch().then(d => d.commentVoteGetOwn({
-        projectId: state.projectId!,
-        commentIds: missingVotesByCommentIds,
-        myOwnCommentIds: missingVotesByCommentIds
-          .map(commentId => state.comments.byId[commentId])
-          .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
-          .map(comment => comment?.comment?.commentId)
-          .filter(notEmpty),
-      }));
+      callOnMount = () => {
+        ownProps.server.dispatch().then(d => d.commentVoteGetOwn({
+          projectId: state.projectId!,
+          commentIds: missingVotesByCommentIds,
+          myOwnCommentIds: missingVotesByCommentIds
+            .map(commentId => state.comments.byId[commentId])
+            .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
+            .map(comment => comment?.comment?.commentId)
+            .filter(notEmpty),
+        }));
+      };
     }
   }
   return {
+    callOnMount: callOnMount,
     commentsStatus: commentsStatus,
     comments: comments,
     settings: state.settings,

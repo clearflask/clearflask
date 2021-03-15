@@ -7,6 +7,7 @@ var loggedInUserHash: string | undefined;
 
 export interface IntercomWrapperConnectProps {
   dontUseThisComponentDirectly: true; // Use IntercomWrapperMain or IntercomWrapperCustomer
+  callOnMount?: () => void,
   disabled?: boolean;
   appId?: string;
   userData?: {
@@ -23,6 +24,10 @@ export default class IntercomWrapper extends Component<IntercomWrapperConnectPro
       intercomLoad(props.appId);
       loadedAppId = props.appId;
     }
+  }
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {

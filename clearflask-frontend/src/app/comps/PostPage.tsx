@@ -35,12 +35,16 @@ interface Props {
   suppressSimilar?: boolean;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   postStatus: Status;
   post?: Client.Idea;
   projectName?: string,
   suppressSetTitle?: boolean,
 }
 class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>> {
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
   render() {
     if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
       setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));
@@ -121,10 +125,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
 
   const byId = state.ideas.byId[ownProps.postId];
   if (!byId) {
-    ownProps.server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.ideaGet({
-      projectId: state.projectId!,
-      ideaId: ownProps.postId,
-    }));
+    newProps.callOnMount = () => {
+      ownProps.server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.ideaGet({
+        projectId: state.projectId!,
+        ideaId: ownProps.postId,
+      }));
+    };
   } else {
     newProps.postStatus = byId.status;
     newProps.post = byId.idea;

@@ -103,6 +103,7 @@ interface Props {
   onClickPost?: (postId: string) => void;
 }
 interface ConnectProps {
+  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
@@ -155,6 +156,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+
     this._isMounted = true;
     if (!!this.props.settings.demoCreateAnimate) {
       this.demoCreateAnimate(
@@ -597,17 +600,21 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  var callOnMount;
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch({ ssr: true }).then(d => {
-      const slug = ownProps.server.getStore().getState().conf.conf?.slug!;
-      if (windowIso.isSsr) {
-        d.configBindSlug({ slug });
-      } else {
-        d.configAndUserBindSlug({ slug, userBind: {} });
-      }
-    });
+    callOnMount = () => {
+      ownProps.server.dispatch({ ssr: true }).then(d => {
+        const slug = ownProps.server.getStore().getState().conf.conf?.slug!;
+        if (windowIso.isSsr) {
+          d.configBindSlug({ slug });
+        } else {
+          d.configAndUserBindSlug({ slug, userBind: {} });
+        }
+      });
+    };
   }
   return {
+    callOnMount: callOnMount,
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,

@@ -98,7 +98,7 @@ interface ConnectProps {
   maxFundAmountSeen: number;
   settings: StateSettings;
   updateVote: (ideaId: string, voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
-  callOnMount: () => void,
+  callOnMount?: () => void,
   loadMore?: () => void;
 }
 
@@ -122,7 +122,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
   componentDidMount() {
     this._isMounted = true;
-    this.props.callOnMount();
+    this.props.callOnMount && this.props.callOnMount();
   }
 
   componentWillUnmount() {
