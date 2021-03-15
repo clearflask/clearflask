@@ -38,6 +38,8 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
   constructor(props) {
     super(props)
 
+    props.callOnMount?.();
+
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
     if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
       this.props.server.dispatch().then(d => d.ideaCommentSearch({
@@ -46,10 +48,6 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
         ideaCommentSearch: {},
       }));
     }
-  }
-
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {

@@ -138,6 +138,7 @@ interface State {
 
 
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
+  state: State = {};
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
@@ -146,7 +147,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
   constructor(props) {
     super(props);
-    this.state = {};
+    props.callOnMount?.();
     this.updateSearchText = debounce(
       (title?: string, descTextOnly?: string) => !!title && !!descTextOnly && this.setState({
         newItemSearchText:
@@ -156,8 +157,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
-
     this._isMounted = true;
     if (!!this.props.settings.demoCreateAnimate) {
       this.demoCreateAnimate(

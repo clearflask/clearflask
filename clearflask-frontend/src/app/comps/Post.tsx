@@ -418,14 +418,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   constructor(props) {
     super(props);
+
     this.state = {
       currentVariant: props.variant,
     };
+
+    props.callOnMount?.();
   }
 
   componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
-
     this._isMounted = true;
     if (!!this.props.settings.demoFundingControlAnimate) {
       this.demoFundingControlAnimate(this.props.settings.demoFundingControlAnimate);

@@ -83,17 +83,14 @@ interface State {
 }
 
 class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
   constructor(props) {
     super(props);
 
-    this.state = {};
+    props.callOnMount?.();
 
     preloadImage(WelcomeImagePath);
-  }
-
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {

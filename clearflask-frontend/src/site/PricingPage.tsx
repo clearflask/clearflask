@@ -123,8 +123,10 @@ interface State {
 class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   render() {

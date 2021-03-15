@@ -33,8 +33,10 @@ interface State {
 class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   render() {

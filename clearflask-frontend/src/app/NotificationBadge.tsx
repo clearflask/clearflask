@@ -17,9 +17,10 @@ interface ConnectProps {
 }
 
 class NotificationBadge extends Component<Props & ConnectProps> {
+  constructor(props) {
+    super(props);
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+    props.callOnMount?.();
   }
 
   render() {

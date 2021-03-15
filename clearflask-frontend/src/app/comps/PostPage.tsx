@@ -42,9 +42,13 @@ interface ConnectProps {
   suppressSetTitle?: boolean,
 }
 class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>> {
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
+
   render() {
     if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
       setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));

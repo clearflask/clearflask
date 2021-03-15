@@ -20,14 +20,12 @@ export default class IntercomWrapper extends Component<IntercomWrapperConnectPro
   constructor(props) {
     super(props);
 
+    props.callOnMount?.();
+
     if (!loadedAppId && props.appId) {
       intercomLoad(props.appId);
       loadedAppId = props.appId;
     }
-  }
-
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
   }
 
   render() {

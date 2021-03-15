@@ -56,8 +56,10 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
   state: State = {};
   onLoggedIn?: () => void;
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   render() {

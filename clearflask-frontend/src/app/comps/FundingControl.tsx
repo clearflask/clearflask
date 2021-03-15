@@ -117,12 +117,14 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
   constructor(props: Readonly<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps>) {
     super(props);
+
+    props.callOnMount?.();
+
     if (this.props.myRef) this.props.myRef.current = this;
   }
 
   componentDidMount() {
     this._isMounted = true;
-    this.props.callOnMount && this.props.callOnMount();
   }
 
   componentWillUnmount() {

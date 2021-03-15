@@ -143,8 +143,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   refreshBillingAfterPaymentClose?: boolean;
   paymentActionMessageListener?: any;
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   componentWillUnmount() {

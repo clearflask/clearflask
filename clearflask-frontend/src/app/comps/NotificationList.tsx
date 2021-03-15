@@ -40,8 +40,10 @@ interface ConnectProps {
 
 class NotificationList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   render() {

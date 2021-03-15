@@ -72,8 +72,10 @@ interface ConnectProps {
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
-  componentDidMount() {
-    this.props.callOnMount && this.props.callOnMount();
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
   }
 
   render() {
