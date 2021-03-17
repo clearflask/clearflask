@@ -1,9 +1,9 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -11,14 +11,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests take a long time, ignore until a change happens.
  */
-@Ignore
+//@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
     @Test(timeout = 300_000L)
-    public void test_trial_reachLimit() throws Exception {
+    public void test_trial_ends() throws Exception {
         AccountAndProject accountAndProject = getTrialAccount();
-        accountAndProject = reachTrialLimit(accountAndProject);
+        kbClockSleepAndRefresh(15, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.NOPAYMENTMETHOD);
 
         AccountBilling accountBilling = accountResource.accountBillingAdmin(false);
@@ -29,8 +29,6 @@ public class BillingIT extends AbstractBlackboxIT {
         log.info("Invoice #1:\n{}", invoice1);
         String invoice2 = accountResource.invoiceHtmlGetAdmin(accountBilling.getInvoices().getResults().get(1).getInvoiceId()).getInvoiceHtml();
         log.info("Invoice #2:\n{}", invoice1);
-
-        // TODO assert usage is done correctly here
     }
 
     @Test(timeout = 300_000L)
@@ -42,24 +40,24 @@ public class BillingIT extends AbstractBlackboxIT {
     @Test(timeout = 300_000L)
     public void test_trial_noPayment_deleteAccount() throws Exception {
         AccountAndProject accountAndProject = getTrialAccount();
-        accountAndProject = endTrial(accountAndProject);
+        kbClockSleepAndRefresh(14, accountAndProject);
         deleteAccount(accountAndProject);
     }
 
     @Test(timeout = 300_000L)
     public void test_trial_upgradePlan_addPayment_active() throws Exception {
-        AccountAndProject accountAndProject = getTrialAccount("growth-monthly");
-        accountAndProject = changePlan(accountAndProject, "standard-monthly");
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
+        accountAndProject = changePlan(accountAndProject, "standard2-monthly");
         accountAndProject = addPaymentMethod(accountAndProject);
-        accountAndProject = endTrial(accountAndProject);
+        kbClockSleepAndRefresh(14, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
     }
 
     @Test(timeout = 300_000L)
     public void test_trial_downgradePlan_noPayment_addPayment_active() throws Exception {
-        AccountAndProject accountAndProject = getTrialAccount("standard-monthly");
-        accountAndProject = changePlan(accountAndProject, "growth-monthly");
-        accountAndProject = endTrial(accountAndProject);
+        AccountAndProject accountAndProject = getTrialAccount("standard2-monthly");
+        accountAndProject = changePlan(accountAndProject, "growth2-monthly");
+        kbClockSleepAndRefresh(14, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.NOPAYMENTMETHOD);
         accountAndProject = addPaymentMethod(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
@@ -67,7 +65,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
     @Test(timeout = 300_000L)
     public void test_trial_upgradeFlat() throws Exception {
-        AccountAndProject accountAndProject = getTrialAccount("growth-monthly");
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
         accountAndProject = changePlanToFlat(accountAndProject, 2000L);
         accountAndProject = addPaymentMethod(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
@@ -83,30 +81,30 @@ public class BillingIT extends AbstractBlackboxIT {
 
     @Test(timeout = 300_000L)
     public void test_active_upgradeAccount() throws Exception {
-        AccountAndProject accountAndProject = getActiveAccount("growth-monthly");
-        accountAndProject = changePlan(accountAndProject, "standard-monthly");
-        assertPlanid("standard-monthly");
+        AccountAndProject accountAndProject = getActiveAccount("growth2-monthly");
+        accountAndProject = changePlan(accountAndProject, "standard2-monthly");
+        assertPlanid("standard2-monthly");
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
     }
 
     @Test(timeout = 300_000L)
     public void test_active_upgradeAccount_paymentFailed() throws Exception {
-        AccountAndProject accountAndProject = getActiveAccount("growth-monthly");
+        AccountAndProject accountAndProject = getActiveAccount("growth2-monthly");
         failFuturePayments();
-        accountAndProject = changePlan(accountAndProject, "standard-monthly");
-        assertPlanid("standard-monthly");
+        accountAndProject = changePlan(accountAndProject, "standard2-monthly");
+        assertPlanid("standard2-monthly");
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
     }
 
     @Test(timeout = 300_000L)
     public void test_active_downgradeAccount_waitForUpgrade() throws Exception {
-        AccountAndProject accountAndProject = getActiveAccount("standard-monthly");
-        accountAndProject = changePlan(accountAndProject, "growth-monthly");
-        assertPlanid("standard-monthly");
+        AccountAndProject accountAndProject = getActiveAccount("standard2-monthly");
+        accountAndProject = changePlan(accountAndProject, "growth2-monthly");
+        assertPlanid("standard2-monthly");
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
 
-        kbClockSleep(31);
-        assertPlanid("growth-monthly");
+        kbClockSleepAndRefresh(31, accountAndProject);
+        assertPlanid("growth2-monthly");
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
     }
 
@@ -114,7 +112,7 @@ public class BillingIT extends AbstractBlackboxIT {
     public void test_active_paymentFailed_deleteAccount() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         failFuturePayments();
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
         deleteAccount(accountAndProject);
     }
@@ -123,11 +121,11 @@ public class BillingIT extends AbstractBlackboxIT {
     public void test_active_paymentFailed_paymentRetrySuccess_active() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         failFuturePayments();
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
 
         resetPaymentPlugin();
-        kbClockSleep(5);
+        kbClockSleepAndRefresh(5, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
     }
 
@@ -135,10 +133,10 @@ public class BillingIT extends AbstractBlackboxIT {
     public void test_active_paymentFailed_blocked_deleteAccount() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         failFuturePayments();
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
 
-        kbClockSleep(21);
+        kbClockSleepAndRefresh(21, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.BLOCKED);
         deleteAccount(accountAndProject);
     }
@@ -147,7 +145,7 @@ public class BillingIT extends AbstractBlackboxIT {
     public void test_active_paymentFailed_updatePayment_active() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         failFuturePayments();
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
 
         resetPaymentPlugin();
@@ -159,13 +157,13 @@ public class BillingIT extends AbstractBlackboxIT {
     public void test_active_paymentFailed_updatePayment_paymentFailed_blocked_deleteAccount() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         failFuturePayments();
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
 
         accountAndProject = addPaymentMethod(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVEPAYMENTRETRY);
 
-        kbClockSleep(21);
+        kbClockSleepAndRefresh(21, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.BLOCKED);
         deleteAccount(accountAndProject);
     }
@@ -196,7 +194,7 @@ public class BillingIT extends AbstractBlackboxIT {
         accountAndProject = cancelAccount(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVENORENEWAL);
 
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.CANCELLED);
         deleteAccount(accountAndProject);
     }
@@ -207,7 +205,7 @@ public class BillingIT extends AbstractBlackboxIT {
         accountAndProject = cancelAccount(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVENORENEWAL);
 
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.CANCELLED);
 
         accountAndProject = resumeAccount(accountAndProject);
@@ -220,7 +218,7 @@ public class BillingIT extends AbstractBlackboxIT {
         accountAndProject = cancelAccount(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVENORENEWAL);
 
-        kbClockSleep(31);
+        kbClockSleepAndRefresh(31, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.CANCELLED);
 
         failFuturePayments();
@@ -230,5 +228,110 @@ public class BillingIT extends AbstractBlackboxIT {
         resetPaymentPlugin();
         accountAndProject = addPaymentMethod(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_usage() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
+        accountAndProject = addPaymentMethod(accountAndProject);
+
+        addTrackedUsers(accountAndProject, 101);
+        kbClockSleepAndRefresh(14, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 100);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 100);
+        kbClockSleepAndRefresh(15, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 100);
+        accountAndProject = cancelAccount(accountAndProject);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        kbClockSleepAndRefresh(31, accountAndProject);
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 80d, 60d));
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_usage_noPayment() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
+        addTrackedUsers(accountAndProject, 101);
+
+        kbClockSleepAndRefresh(14, accountAndProject);
+
+        kbClockSleepAndRefresh(21, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 200);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 200);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 45d));
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_usage_downgrade() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("standard2-monthly");
+        accountAndProject = addPaymentMethod(accountAndProject);
+        addTrackedUsers(accountAndProject, 1001);
+
+        kbClockSleepAndRefresh(14, accountAndProject);
+
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        kbClockSleepAndRefresh(15, accountAndProject);
+        changePlan(accountAndProject, "growth2-monthly");
+        addTrackedUsers(accountAndProject, 1000);
+
+        kbClockSleepAndRefresh(16, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 1000);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 1000);
+        kbClockSleepAndRefresh(31, accountAndProject);
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 200d, 222.58d, 500d, 700d, 900d));
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_usage_upgrade() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
+        accountAndProject = addPaymentMethod(accountAndProject);
+        addTrackedUsers(accountAndProject, 1001);
+
+        kbClockSleepAndRefresh(14, accountAndProject);
+
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        kbClockSleepAndRefresh(15, accountAndProject);
+        changePlan(accountAndProject, "standard2-monthly");
+        addTrackedUsers(accountAndProject, 1000);
+
+        kbClockSleepAndRefresh(16, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 1000);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTrackedUsers(accountAndProject, 1000);
+        kbClockSleepAndRefresh(31, accountAndProject);
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 200d, 50d, 95d, 110d));
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_usage_upgradeFlat() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("growth2-monthly");
+        accountAndProject = addPaymentMethod(accountAndProject);
+
+        addTrackedUsers(accountAndProject, 101);
+        kbClockSleepAndRefresh(31, accountAndProject);
+        addTrackedUsers(accountAndProject, 200);
+        changePlanToFlat(accountAndProject, 1500L);
+        addTrackedUsers(accountAndProject, 300);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 31.75, 45d, 1500d));
     }
 }

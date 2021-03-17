@@ -77,6 +77,7 @@ public class KillBillResource extends ManagedService {
                 ",SUBSCRIPTION_BCD_CHANGE" +
                 ",PAYMENT_SUCCESS" +
                 ",PAYMENT_FAILED" +
+                ",INVOICE_CREATION" +
                 ",INVOICE_PAYMENT_SUCCESS", innerType = String.class)
         Set<String> eventsToListenFor();
 
@@ -191,6 +192,11 @@ public class KillBillResource extends ManagedService {
         }
 
         boolean changesMade = false;
+
+        if (ExtBusEventType.INVOICE_CREATION.equals(event.eventType)) {
+            billing.finalizeInvoice(accountOpt.get().getAccountId(), event.getObjectId());
+            changesMade = true;
+        }
 
         if (ExtBusEventType.INVOICE_PAYMENT_SUCCESS.equals(event.eventType)) {
             processInvoiceCreditSync(accountOpt.get(), event);

@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.store.UserStore.UserModel;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.PaymentMethod;
@@ -51,8 +52,6 @@ public interface Billing {
 
     Subscription resumeSubscription(String accountId);
 
-    boolean endTrial(String accountId);
-
     Subscription changePlan(String accountId, String planId);
 
     Subscription changePlanToFlatYearly(String accountId, long yearlyPrice);
@@ -69,7 +68,9 @@ public interface Billing {
 
     ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId);
 
-    long getUsageCurrentPeriod(String accountId);
+    ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, UserModel user);
+
+    void finalizeInvoice(String accountId, UUID invoiceId);
 
     void closeAccount(String accountId);
 

@@ -11,8 +11,10 @@
     </currencies>
 
     <units>
-        <!-- If changed, also change unit name in KillBilling.java -->
+        <!-- Remove active-user unit in next catalog -->
         <unit prettyName="Active Users" name="active-user"/>
+        <!-- If changed, also change unit name in KillBilling.java -->
+        <unit prettyName="Tracked Users" name="tracked-user"/>
     </units>
 
     <products>
@@ -110,15 +112,16 @@
                     </recurringPrice>
                 </recurring>
                 <usages>
-                    <usage prettyName="Active Users" name="growth2-active-users" billingMode="IN_ARREAR"
+                    <usage prettyName="Tracked Users" name="growth2-tracked-users" billingMode="IN_ARREAR"
                            usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
                         <billingPeriod>MONTHLY</billingPeriod>
                         <tiers>
                             <tier>
                                 <blocks>
                                     <tieredBlock>
-                                        <unit>active-user</unit>
-                                        <size>50</size>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>100</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -132,12 +135,13 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
-                                        <unit>active-user</unit>
-                                        <size>50</size>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>100</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>30</value>
+                                                <value>15</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -181,15 +185,16 @@
                     </recurringPrice>
                 </recurring>
                 <usages>
-                    <usage prettyName="Active Users" name="standard2-active-users" billingMode="IN_ARREAR"
+                    <usage prettyName="Tracked Users" name="standard2-tracked-users" billingMode="IN_ARREAR"
                            usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
                         <billingPeriod>MONTHLY</billingPeriod>
                         <tiers>
                             <tier>
                                 <blocks>
                                     <tieredBlock>
-                                        <unit>active-user</unit>
-                                        <size>300</size>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>1000</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -203,8 +208,9 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
-                                        <unit>active-user</unit>
-                                        <size>300</size>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>500</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -253,7 +259,7 @@
                 </recurring>
             </finalPhase>
         </plan>
-        <!-- Remove below plans in next catalog -->
+        <!-- Remove below plans in next catalog, only updated prettyName -->
         <plan name="growth-monthly" prettyName="Growth Plan (Grandfathered)">
             <product>growth</product>
             <initialPhases>
@@ -294,6 +300,7 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
                                         <unit>active-user</unit>
                                         <size>50</size>
                                         <prices>
@@ -309,6 +316,7 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
                                         <unit>active-user</unit>
                                         <size>50</size>
                                         <prices>
@@ -366,6 +374,7 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
                                         <unit>active-user</unit>
                                         <size>300</size>
                                         <prices>
@@ -381,6 +390,7 @@
                             <tier>
                                 <blocks>
                                     <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
                                         <unit>active-user</unit>
                                         <size>300</size>
                                         <prices>

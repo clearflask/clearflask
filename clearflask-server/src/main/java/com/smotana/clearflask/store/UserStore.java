@@ -23,15 +23,12 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.Period;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,6 +55,12 @@ public interface UserStore {
     SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
     void exportAllForProject(String projectId, Consumer<UserModel> consumer);
+
+    long getUserCountForProject(String projectId);
+
+    void setUserTracked(String projectId, String userId);
+
+    void updateUserCountForProject(String projectId, long diff);
 
     UserAndIndexingFuture updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin);
 
@@ -111,8 +114,6 @@ public interface UserStore {
     void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt);
 
     ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
-
-    boolean getAndSetUserActive(String projectId, String userId, String periodId, Period periodLength);
 
     @Value
     class SearchUsersResponse {
@@ -233,6 +234,8 @@ public interface UserStore {
 
         byte[] commentVoteBloom;
 
+        Boolean isTracked;
+
         public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(
                     this.getUserId(),
@@ -334,18 +337,15 @@ public interface UserStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "userActiveForPeriod", rangeKeys = "periodId")
-    class UserActive {
+    @DynamoTable(type = Primary, partitionKeys = {"projectId"}, rangePrefix = "userCounterForProject", rangeKeys = {"shardId"})
+    class UserCounter {
         @NonNull
         String projectId;
 
         @NonNull
-        String userId;
+        long shardId;
 
         @NonNull
-        String periodId;
-
-        @NonNull
-        long ttlInEpochSec;
+        long count;
     }
 }

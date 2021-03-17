@@ -73,6 +73,8 @@ public interface DynamoMapper {
 
         String upsertExpression(T object, Map<String, String> nameMap, Map<String, Object> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression);
 
+        String upsertExpressionAttrVal(T object, Map<String, String> nameMap, Map<String, AttributeValue> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression);
+
         String serializeLastEvaluatedKey(Map<String, AttributeValue> lastEvaluatedKey);
 
         PrimaryKey toExclusiveStartKey(String serializedlastEvaluatedKey);
@@ -122,6 +124,7 @@ public interface DynamoMapper {
 
         Expression build();
     }
+
     interface Expression {
         String updateExpression();
 

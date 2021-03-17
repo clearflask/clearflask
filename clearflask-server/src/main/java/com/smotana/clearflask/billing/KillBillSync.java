@@ -68,6 +68,7 @@ public class KillBillSync extends ManagedService {
     public static final String CATALOG_PREFIX = "killbill/";
     public static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
+            .add("catalog002.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
@@ -378,7 +379,7 @@ public class KillBillSync extends ManagedService {
         }
 
         if (config.uploadInvoiceTemplate()) {
-            String invoiceTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/invoice-template.html"), Charsets.UTF_8);
+            String invoiceTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/invoice-template.mustache"), Charsets.UTF_8);
             String invoiceTemplateHtmlOld = kbInvoiceProvider.get().getInvoiceTemplate(KillBillUtil.roDefault());
             if (invoiceTemplateHtml.equals(invoiceTemplateHtmlOld)) {
                 log.info("Skipping invoice template, already exists");

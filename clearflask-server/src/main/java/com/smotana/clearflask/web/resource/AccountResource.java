@@ -464,9 +464,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 p.getCardExpiryMonth().orElse(1L),
                 p.getCardExpiryYear().orElse(99L)));
 
-        Long billingPeriodMau = null;
-        if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(status)) {
-            billingPeriodMau = billing.getUsageCurrentPeriod(account.getAccountId());
+        Long trackedUsers = null;
+        if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(plan.getBasePlanId())) {
+            trackedUsers = accountStore.getUserCountForAccount(account.getAccountId());
         }
 
         Instant billingPeriodEnd = null;
@@ -481,7 +481,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 && !PlanStore.STOP_TRIAL_FOR_PLANS.contains(subscription.getPlanName())) {
 
             LocalDate trialStart = subscription.getChargedThroughDate();
-            if(trialStart == null ){
+            if (trialStart == null) {
                 trialStart = subscription.getStartDate();
             }
             trialStart = trialStart.plusDays(14);
@@ -504,7 +504,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 status,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
-                (billingPeriodMau == null || billingPeriodMau <= 0) ? null : billingPeriodMau,
+                (trackedUsers == null || trackedUsers <= 0) ? null : trackedUsers,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,

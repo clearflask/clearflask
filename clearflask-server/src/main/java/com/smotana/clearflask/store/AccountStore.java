@@ -18,9 +18,7 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -43,6 +41,8 @@ public interface AccountStore {
     Optional<Account> getAccountByEmail(String email);
 
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
+
+    long getUserCountForAccount(String accountId);
 
     AccountAndIndexingFuture setPlan(String accountId, String planid);
 

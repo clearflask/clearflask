@@ -15,6 +15,8 @@ public interface PlanStore {
     long STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES = 10;
     /** If changed, also update PricingPage.tsx */
     ImmutableSet<String> STOP_TRIAL_FOR_PLANS = ImmutableSet.of("growth-monthly", "standard-monthly");
+    /** If changed, also update PricingPage.tsx */
+    ImmutableSet<String> RECORD_TRACKED_USERS_FOR_PLANS = ImmutableSet.of("growth2-monthly", "standard2-monthly");
 
     PlansGetResponse getPublicPlans();
 

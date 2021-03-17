@@ -1,10 +1,10 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 public class ExtendedSecurityContext implements SecurityContext {
 
     @Value
+    @Builder(toBuilder = true)
     public static class ExtendedPrincipal implements Principal {
         @NonNull
         String name;

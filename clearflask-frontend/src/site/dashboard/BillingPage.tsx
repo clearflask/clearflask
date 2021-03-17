@@ -651,12 +651,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               className={this.props.classes.plan}
               plan={this.props.accountBilling.plan}
             />
-            {(this.props.accountBilling?.billingPeriodMau !== undefined) && (
+            {(this.props.accountBilling?.trackedUsers !== undefined) && (
               <Box display='grid' gridTemplateAreas='"mauLbl mauAmt"' alignItems='baseline' gridGap='10px 10px'>
-                <Box gridArea='mauLbl'><Typography component='div'>Current MAU:</Typography></Box>
+                <Box gridArea='mauLbl'><Typography component='div'>Tracked users:</Typography></Box>
                 <Box gridArea='mauAmt' display='flex'>
                   <Typography component='div' variant='h5'>
-                    {this.props.accountBilling.billingPeriodMau}
+                    {this.props.accountBilling.trackedUsers}
                   </Typography>
                 </Box>
               </Box>

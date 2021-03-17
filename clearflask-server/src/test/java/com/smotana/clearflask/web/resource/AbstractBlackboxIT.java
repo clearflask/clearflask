@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.route53.AmazonRoute53;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.gson.Gson;
@@ -33,7 +32,6 @@ import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
 import com.smotana.clearflask.billing.KillBilling;
-import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
@@ -54,6 +52,7 @@ import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -91,11 +90,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
+import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.model.Invoices;
+import org.killbill.billing.client.model.gen.Invoice;
+import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.*;
@@ -127,6 +132,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected DynamoMapper dynamoMapper;
     @Inject
     protected AccountStore accountStore;
+    @Inject
+    protected UserStore userStore;
+    @Inject
+    protected AccountApi kbAccount;
     @Inject
     protected Billing billing;
     @Inject
@@ -219,7 +228,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 }));
                 install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
                     om.override(om.id().createTenant()).withValue(true);
-                    om.override(om.id().uploadAnalyticsReports()).withValue(true);
+                    // These slow down the system
+                    om.override(om.id().uploadAnalyticsReports()).withValue(false);
                     om.override(om.id().emailPluginHost()).withValue("host.docker.internal");
                     om.override(om.id().emailPluginPort()).withValue(9001);
                     om.override(om.id().emailPluginUsername()).withValue("a");
@@ -255,7 +265,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected AccountAndProject getTrialAccount() throws Exception {
-        return getTrialAccount("growth-monthly");
+        return getTrialAccount("growth2-monthly");
     }
 
     protected AccountAndProject getTrialAccount(String planid) throws Exception {
@@ -267,31 +277,36 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("myproject").getConfig());
-        return new AccountAndProject(accountAdmin, newProjectResult);
+        AccountAndProject accountAndProject = new AccountAndProject(accountAdmin, newProjectResult);
+        finalizeInvoices(accountAndProject);
+        assertSubscriptionStatus(SubscriptionStatus.ACTIVETRIAL);
+        return accountAndProject;
     }
 
-    protected AccountAndProject changePlan(AccountAndProject accountAndProject, String planId) {
+    protected AccountAndProject changePlan(AccountAndProject accountAndProject, String planId) throws Exception {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .basePlanId(planId)
                 .build());
+        finalizeInvoices(accountAndProject);
         return accountAndProject.toBuilder().account(accountAdmin).build();
     }
 
-    protected AccountAndProject changePlanToFlat(AccountAndProject accountAndProject, long yearlyPrice) {
+    protected AccountAndProject changePlanToFlat(AccountAndProject accountAndProject, long yearlyPrice) throws Exception {
         AccountAdmin accountAdmin = accountResource.accountUpdateSuperAdmin(AccountUpdateSuperAdmin.builder()
                 .changeToFlatPlanWithYearlyPrice(yearlyPrice)
                 .build());
+        finalizeInvoices(accountAndProject);
         return accountAndProject.toBuilder().account(accountAdmin).build();
     }
 
     protected AccountAndProject getActiveAccount() throws Exception {
-        return getActiveAccount("growth-monthly");
+        return getActiveAccount("growth2-monthly");
     }
 
     protected AccountAndProject getActiveAccount(String planid) throws Exception {
         AccountAndProject accountAndProject = getTrialAccount(planid);
         accountAndProject = addPaymentMethod(accountAndProject);
-        accountAndProject = endTrial(accountAndProject);
+        kbClockSleepAndRefresh(30, accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
         return accountAndProject;
     }
@@ -312,33 +327,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 .build();
     }
 
-    protected AccountAndProject endTrial(AccountAndProject accountAndProject) throws Exception {
-        assertTrue(billing.endTrial(accountStore.getAccountByEmail(accountAndProject.getAccount().getEmail()).get().getAccountId()));
-        return accountAndProject
-                .toBuilder()
-                .account(accountResource.accountBindAdmin().getAccount())
-                .build();
-    }
-
-    protected AccountAndProject reachTrialLimit(AccountAndProject accountAndProject) throws Exception {
-        for (int x = 0; x < PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES; x++) {
-            UserMeWithBalance userAdded = addActiveUser(
-                    accountAndProject.getProject().getProjectId(),
-                    accountAndProject.getProject().getConfig().getConfig());
-            log.info("Added user {}", userAdded.getName());
-        }
-        TestUtil.retry(() -> {
-            SubscriptionStatus subsStatus = accountResource.accountBindAdmin().getAccount().getSubscriptionStatus();
-            assertTrue("Account expected to end trial, instead status is " + subsStatus,
-                    ImmutableSet.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.NOPAYMENTMETHOD)
-                            .contains(subsStatus));
-        });
-        return accountAndProject
-                .toBuilder()
-                .account(accountResource.accountBindAdmin().getAccount())
-                .build();
-    }
-
     protected UserMeWithBalance addActiveUser(String projectId, ConfigAdmin configAdmin) throws Exception {
         long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
@@ -355,6 +343,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         return user;
     }
 
+    protected void addTrackedUsers(AccountAndProject accountAndProject, long amount) throws Exception {
+        userStore.updateUserCountForProject(accountAndProject.getProject().getProjectId(), amount);
+    }
+
     protected void deleteAccount(AccountAndProject accountAndProject) {
         accountResource.accountDeleteAdmin();
         assertFalse(accountStore.getAccountByEmail(accountAndProject.getAccount().getEmail()).isPresent());
@@ -364,6 +356,12 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L170
         Response response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
         log.info("Reset clock to {}", response.getResponseBody());
+    }
+
+    protected void kbClockSleepAndRefresh(long sleepInDays, AccountAndProject accountAndProject) throws Exception {
+        kbClockSleep(sleepInDays);
+        refreshStatus(accountAndProject.getAccount().getAccountId());
+        finalizeInvoices(accountAndProject);
     }
 
     protected void kbClockSleep(long sleepInDays) throws Exception {
@@ -392,6 +390,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)
                 .build());
+        finalizeInvoices(accountAndProject);
         return accountAndProject
                 .toBuilder()
                 .account(accountAdmin)
@@ -402,6 +401,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .resume(true)
                 .build());
+        finalizeInvoices(accountAndProject);
         return accountAndProject
                 .toBuilder()
                 .account(accountAdmin)
@@ -424,6 +424,43 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         log.info("Account status {}", accountStore.getAccountByAccountId(accountId).get().getStatus());
     }
 
+    protected void waitForInvoice(AccountAndProject accountAndProject) throws Exception {
+        waitForInvoices(accountAndProject, 1L);
+    }
+
+    protected void waitForInvoices(AccountAndProject accountAndProject, long expectedAmount) throws Exception {
+        AtomicLong actualAmount = new AtomicLong();
+        TestUtil.retry(() -> {
+            assertEquals(expectedAmount, actualAmount.addAndGet(finalizeInvoices(accountAndProject)));
+        });
+    }
+
+    private long finalizeInvoices(AccountAndProject accountAndProject) throws Exception {
+        UUID accountIdKb = billing.getAccount(accountAndProject.getAccount().getAccountId()).getAccountId();
+        Invoices invoices = kbAccount.getInvoicesForAccount(
+                accountIdKb,
+                null,
+                null,
+                false,
+                false,
+                false,
+                null,
+                KillBillUtil.roDefault());
+        long invoicesCommitted = 0L;
+        for (Invoice invoice : invoices) {
+            if (InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
+                killBillResource.webhook(gson.toJson(new KillBillResource.Event(
+                        ExtBusEventType.INVOICE_CREATION,
+                        ObjectType.INVOICE,
+                        invoice.getInvoiceId(),
+                        invoice.getAccountId(),
+                        null)));
+                invoicesCommitted++;
+            }
+        }
+        return invoicesCommitted;
+    }
+
     protected void dumpDynamoTable() {
         log.info("DynamoScan starting");
         String tableName = dynamoMapper.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
@@ -432,6 +469,29 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 .getItems()
                 .forEach(item -> log.info("DynamoScan: {}", item));
         log.info("DynamoScan finished");
+    }
+
+    void assertInvoices(AccountAndProject accountAndProject, ImmutableList<Double> invoiceAmountsExpected) throws Exception {
+        Invoices invoicesKb = kbAccount.getInvoicesForAccount(
+                billing.getAccount(accountAndProject.getAccount().getAccountId()).getAccountId(),
+                null,
+                null,
+                false,
+                false,
+                true,
+                null,
+                KillBillUtil.roDefault());
+        log.info("KB invoices:\n{}", invoicesKb);
+
+        assertEquals("Uncommitted invoices", 0L, invoicesKb.stream()
+                .filter(i -> InvoiceStatus.DRAFT.equals(i.getStatus()))
+                .count());
+
+        ImmutableList<Double> invoiceAmountsActual = invoicesKb.stream()
+                .sorted(Comparator.comparingLong(i -> i.getTargetDate().toDate().toInstant().getEpochSecond()))
+                .map(i -> i.getAmount().doubleValue())
+                .collect(ImmutableList.toImmutableList());
+        assertEquals(invoiceAmountsExpected, invoiceAmountsActual);
     }
 
     void assertSubscriptionStatus(SubscriptionStatus status) throws Exception {

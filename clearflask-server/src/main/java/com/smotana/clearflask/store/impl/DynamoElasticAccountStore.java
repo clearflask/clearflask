@@ -41,7 +41,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
@@ -56,12 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -121,6 +119,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private ElasticUtil elasticUtil;
     @Inject
     private RestHighLevelClient elastic;
+    @Inject
+    private UserStore userStore;
 
     private TableSchema<Account> accountSchema;
     private IndexSchema<Account> accountByApiKeySchema;
@@ -265,6 +265,15 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 accounts.stream().map(Account::getAccountId).collect(ImmutableList.toImmutableList()),
                 accounts.stream().map(Account::toAccount).collect(ImmutableList.toImmutableList()),
                 searchResponseWithCursor.getCursorOpt());
+    }
+
+    @Override
+    public long getUserCountForAccount(String accountId) {
+        return getAccountByAccountId(accountId).get()
+                .getProjectIds()
+                .stream()
+                .mapToLong(userStore::getUserCountForProject)
+                .sum();
     }
 
     @Extern
@@ -589,7 +598,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     private void indexAccount(SettableFuture<WriteResponse> indexingFuture, String accountId) {
         Optional<Account> accountOpt = getAccountByAccountId(accountId);
-        if(!accountOpt.isPresent()) {
+        if (!accountOpt.isPresent()) {
             elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
         } else {

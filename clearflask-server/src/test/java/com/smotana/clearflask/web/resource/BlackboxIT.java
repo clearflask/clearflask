@@ -29,7 +29,6 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
-import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 "smotana",
                 "unittest@clearflask.com",
                 "password",
-                "growth-monthly"));
+                "growth2-monthly"));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("sermyproject").getConfig());
@@ -62,12 +61,10 @@ public class BlackboxIT extends AbstractBlackboxIT {
                         .build())
                 .build());
         refreshStatus(accountId);
-        for (int x = 0; x < PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES; x++) {
-            UserMeWithBalance userAdded = addActiveUser(projectId, newProjectResult.getConfig().getConfig());
-            log.info("Added user {}", userAdded.getName());
-        }
-        // Need to wait until killBilling has processed usage recording
+        addActiveUser(projectId, newProjectResult.getConfig().getConfig());
+        kbClockSleep(30);
         TestUtil.retry(() -> assertEquals(SubscriptionStatus.ACTIVE, accountResource.accountBillingAdmin(true).getSubscriptionStatus()));
+        addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)
@@ -78,7 +75,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .build());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .basePlanId("standard-monthly")
+                .basePlanId("standard2-monthly")
                 .build());
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();

@@ -5,9 +5,12 @@ import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
+import { EstimatedPercUsersBecomeTracked } from './PricingPage';
 
 type Marks = Array<{ val: number, basePlanId: string }>;
-const quadrupleStepAfterIteration = 17;
+const quadrupleStepAfterIteration = 100;
+const maxMau = 5001;
+const startingStep = 10;
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -58,7 +61,6 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   plans: Admin.Plan[];
-  estimatedPercUsersBecomeActive: number;
   onSelectedPlanChange: (basePlanId: string, callForQuote: boolean) => void;
 }
 interface State {
@@ -67,7 +69,7 @@ interface State {
 }
 class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {
-    mauIndex: 6,
+    mauIndex: startingStep,
     marks: this.getMarks(),
   };
   sliderWasTouched?: boolean;
@@ -98,7 +100,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
     const pricing: Admin.PlanPricing = plan.pricing!;
 
-    const monthlyUsers = Math.round(mau / this.props.estimatedPercUsersBecomeActive);
+    const monthlyUsers = Math.round(mau / EstimatedPercUsersBecomeTracked);
 
     const addtPrice = Math.ceil(Math.max(0, mau - pricing.baseMau) / pricing.unitMau) * pricing.unitPrice;
     const price = pricing.basePrice + addtPrice;
@@ -117,7 +119,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
               <Typography variant='h6' component='div' style={{ visibility: callForQuote ? 'visible' : 'hidden' }}>+</Typography>
             </div>
             <div className={this.props.classes.valueHorizontal}>
-              <Typography variant='caption' component='div'>Monthly Unique Visitors</Typography>
+              <Typography variant='caption' component='div'>Total users</Typography>
             </div>
           </div>
           <Slider
@@ -141,20 +143,22 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
                 to='/contact/sales'
               >Talk to us</Button>
             ) : (
-                <React.Fragment>
-                  <div className={this.props.classes.valueHorizontal}>
-                    <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='div' variant='h4'>{this.formatNumber(price)}</Typography>
-                    <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
-                  </div>
-                  <Typography component='div' variant='subtitle2' color='textSecondary'>{this.formatNumber(mau)}&nbsp;MAU*</Typography>
-                </React.Fragment>
-              )}
+              <React.Fragment>
+                <div className={this.props.classes.valueHorizontal}>
+                  <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                  <Typography component='div' variant='h4'>{this.formatNumber(price)}</Typography>
+                  <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
+                </div>
+                <Typography component='div' variant='subtitle2' color='textSecondary'>{this.formatNumber(mau)}&nbsp;tracked*</Typography>
+              </React.Fragment>
+            )}
           </div>
         </div>
         <div className={this.props.classes.disclaimer}>
           <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
-          <Typography variant='caption' component='div' color='textSecondary'>Typically about {this.props.estimatedPercUsersBecomeActive * 100}% of your monthly unique visitors will provide feedback every month</Typography>
+          <Typography variant='caption' component='div' color='textSecondary'>
+            Typically about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked
+          </Typography>
         </div>
       </div>
     );
@@ -166,7 +170,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
   getMarks(): Marks {
     var fractionsToInclude = 1;
-    var currMaxMau = 1201;
+    var currMaxMau = maxMau;
     const points = this.props.plans.slice().reverse().flatMap(plan => {
       var step = 1;
       const pts: Marks = [];

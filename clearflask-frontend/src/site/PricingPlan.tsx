@@ -130,21 +130,21 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   )}
                 />
               ) : (
-                  <Button
-                    color='primary'
-                    variant='contained'
-                    disableElevation
-                    style={{ fontWeight: 900 }}
-                    onClick={this.props.actionOnClick}
-                    disabled={!this.props.actionOnClick}
-                    {...(this.props.actionTo ? {
-                      component: Link,
-                      to: this.props.actionTo,
-                    } : {})}
-                  >
-                    {this.props.actionTitle}
-                  </Button>
-                )}
+                <Button
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  style={{ fontWeight: 900 }}
+                  onClick={this.props.actionOnClick}
+                  disabled={!this.props.actionOnClick}
+                  {...(this.props.actionTo ? {
+                    component: Link,
+                    to: this.props.actionTo,
+                  } : {})}
+                >
+                  {this.props.actionTitle}
+                </Button>
+              )}
             </CardActions>
           )
         }
@@ -169,7 +169,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
           </div>
           <div className={this.props.classes.cardPricingTerms}>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited MAU`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited tracked users`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
           </div>
         </React.Fragment>
@@ -215,8 +215,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
       extraMau = (
         <React.Fragment>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} additional ${this.props.plan.pricing.unitMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
         </React.Fragment>
       );
     }

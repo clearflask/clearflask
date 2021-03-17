@@ -135,7 +135,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
 
         webhookService.eventPostNew(ideaModel, user);
-        billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
+        billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
@@ -195,7 +195,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
 
         webhookService.eventPostNew(ideaModel, user);
-        billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
+        billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);

@@ -28,8 +28,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -102,20 +100,16 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -136,7 +130,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.Period;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -144,6 +137,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
@@ -197,11 +191,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         @NoDefaultValue
         SecretKey tokenSignerPrivKey();
 
-        @DefaultValue("1.5d")
-        double userActivityExpireAfterPeriodMultiplier();
-
-        @DefaultValue("PT3H")
-        Duration userActivityCacheExpireAfterAccess();
+        /**
+         * This value can never be decreased.
+         * Increase this value to match the number of DynamoDB shards.
+         */
+        @DefaultValue("8")
+        long userCounterShardCount();
     }
 
     private static final String USER_INDEX = "user";
@@ -236,11 +231,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private IndexSchema<IdentifierUser> identifierByProjectIdSchema;
     private TableSchema<UserSession> sessionByIdSchema;
     private IndexSchema<UserSession> sessionByUserSchema;
-    private TableSchema<UserActive> userActiveSchema;
-    /**
-     * Value not important, simply need to check for existence of key
-     */
-    private Cache<String, Object> userActivityCache;
+    private TableSchema<UserCounter> userCounterSchema;
     private CloseableHttpClient client;
 
     @Inject
@@ -251,12 +242,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         identifierByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
         sessionByIdSchema = dynamoMapper.parseTableSchema(UserSession.class);
         sessionByUserSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, UserSession.class);
-        userActiveSchema = dynamoMapper.parseTableSchema(UserActive.class);
-
-        userActivityCache = CacheBuilder.newBuilder()
-                .maximumSize(10_000L)
-                .expireAfterAccess(config.userActivityCacheExpireAfterAccess())
-                .build();
+        userCounterSchema = dynamoMapper.parseTableSchema(UserCounter.class);
     }
 
     @Override
@@ -471,6 +457,77 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .map(userByProjectSchema::fromItem)
                 .filter(user -> projectId.equals(user.getProjectId()))
                 .forEach(consumer);
+    }
+
+    @Override
+    public long getUserCountForProject(String projectId) {
+        return StreamSupport.stream(userCounterSchema.table().query(new QuerySpec()
+                .withHashKey(userCounterSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
+                        .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(userCounterSchema::fromItem)
+                .mapToLong(UserCounter::getCount)
+                .sum();
+    }
+
+    @Override
+    public void setUserTracked(String projectId, String userId) {
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valMap = Maps.newHashMap();
+        List<String> conditions = Lists.newArrayList();
+        List<String> setUpdates = Lists.newArrayList();
+
+        nameMap.put("#isTracked", "isTracked");
+        valMap.put(":true", true);
+        String conditionExpression = "#isTracked <> :true";
+        String updateExpression = "SET #isTracked = :true";
+
+        UserModel userModel;
+        try {
+            userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(userSchema.primaryKey(Map.of(
+                            "projectId", projectId,
+                            "userId", userId)))
+                    .withUpdateExpression(updateExpression)
+                    .withConditionExpression(conditionExpression)
+                    .withNameMap(nameMap)
+                    .withValueMap(valMap)
+                    .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+        } catch (ConditionalCheckFailedException ex) {
+            log.trace("User already tracked, projectId {} userId {}", projectId, userId, ex);
+            return;
+        }
+
+        updateUserCountForProject(projectId, 1L);
+    }
+
+    @Extern
+    @Override
+    public void updateUserCountForProject(String projectId, long diff) {
+        if (diff == 0L) {
+            return;
+        }
+        long userCounterShardId = ThreadLocalRandom.current().nextLong(config.userCounterShardCount());
+        HashMap<String, String> userCounterNameMap = Maps.newHashMap();
+        HashMap<String, Object> userCounterValueMap = Maps.newHashMap();
+        userCounterNameMap.put("#count", "count");
+        userCounterValueMap.put(":diff", diff);
+        userCounterValueMap.put(":zero", 0L);
+        String userCounterUpdateExpression = userCounterSchema.upsertExpression(new UserCounter(projectId, userCounterShardId, diff), userCounterNameMap, userCounterValueMap,
+                ImmutableSet.of("count"), ", #count = if_not_exists(#count, :zero) + :diff");
+        log.trace("UserCounter update expression: {}", userCounterUpdateExpression);
+        userCounterSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(userCounterSchema.primaryKey(Map.of(
+                        "shardId", userCounterShardId,
+                        "projectId", projectId)))
+                .withUpdateExpression(userCounterUpdateExpression)
+                .withNameMap(userCounterNameMap)
+                .withValueMap(userCounterValueMap));
     }
 
     @Override
@@ -832,6 +889,10 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "identifierHash", e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue())))
                 .toArray(PrimaryKey[]::new))));
 
+        updateUserCountForProject(projectId, users.stream()
+                .filter(user -> user.getIsTracked() == Boolean.TRUE)
+                .count());
+
         users.stream()
                 .map(UserModel::getUserId)
                 .forEach(userId -> revokeSessions(projectId, userId, Optional.empty()));
@@ -1115,6 +1176,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     null,
                     null,
                     null,
+                    null,
                     null))
                     .getUser());
         }
@@ -1251,6 +1313,24 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
+        // Delete user counter
+        Iterables.partition(StreamSupport.stream(userCounterSchema.table().query(new QuerySpec()
+                .withHashKey(userCounterSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
+                        .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(userCounterSchema::fromItem)
+                .map(userCounterSchema::primaryKey)
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(userCounterShardPrimaryKeys -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(userSchema.tableName());
+                    userCounterShardPrimaryKeys.forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                });
+
         // Delete user index
         SettableFuture<AcknowledgedResponse> deleteFuture = SettableFuture.create();
         elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
@@ -1259,45 +1339,6 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         // Note: not deleting sessions, they will expire themselves eventually
 
         return deleteFuture;
-    }
-
-    @Override
-    public boolean getAndSetUserActive(String projectId, String userId, String periodId, Period periodLength) {
-        String cacheKey = userId + ";" + periodId;
-        if (userActivityCache.getIfPresent(cacheKey) != null) {
-            log.trace("User {} already active, cache hit", userId);
-            return true;
-        }
-
-        if (userActiveSchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(userActiveSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId,
-                        "periodId", periodId)))) != null) {
-            userActivityCache.put(cacheKey, cacheKey);
-            log.trace("User {} already active, cache miss", userId);
-            return true;
-        }
-
-        long expireTtlInEpochSec = (long) (Instant.now().plus(periodLength).getEpochSecond() * config.userActivityExpireAfterPeriodMultiplier());
-        try {
-            userActiveSchema.table().putItem(new PutItemSpec()
-                    .withItem(userActiveSchema.toItem(new UserActive(
-                            projectId,
-                            userId,
-                            periodId,
-                            expireTtlInEpochSec)))
-                    .withConditionExpression("attribute_not_exists(#partitionKey)")
-                    .withNameMap(new NameMap().with("#partitionKey", userActiveSchema.partitionKeyName())));
-        } catch (ConditionalCheckFailedException ex) {
-            log.trace("User {} already active, dynamo write clash", userId);
-            return true;
-        }
-
-        // Only populate if successfully inserted to Dynamo
-        log.trace("User {} was inactive", userId);
-        userActivityCache.put(cacheKey, cacheKey);
-        return false;
     }
 
     private void indexUser(SettableFuture<WriteResponse> indexingFuture, String projectId, String userId) {

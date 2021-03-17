@@ -243,6 +243,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null,
                 null,
+                null,
                 null);
         userStore.createUser(user);
 
@@ -299,6 +300,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getAndroidPushToken(),
                 userCreateAdmin.getBrowserPushToken(),
                 Instant.now(),
+                null,
                 null,
                 null,
                 null,

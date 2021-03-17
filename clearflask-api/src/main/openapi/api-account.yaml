@@ -240,7 +240,7 @@ components:
         billingPeriodEnd:
           type: string
           format: date-time
-        billingPeriodMau:
+        trackedUsers:
           type: integer
           format: int64
         availablePlans:

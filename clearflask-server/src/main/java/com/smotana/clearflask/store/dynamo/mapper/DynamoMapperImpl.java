@@ -942,6 +942,25 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         @Override
         public String upsertExpression(T object, Map<String, String> nameMap, Map<String, Object> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression) {
+            return upsertExpression(
+                    object,
+                    nameMap,
+                    (key, val) -> valMap.put(":" + key, val),
+                    skipFieldNames,
+                    additionalExpression);
+        }
+
+        @Override
+        public String upsertExpressionAttrVal(T object, Map<String, String> nameMap, Map<String, AttributeValue> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression) {
+            return upsertExpression(
+                    object,
+                    nameMap,
+                    (key, val) -> valMap.put(":" + key, toAttrValue(key, val)),
+                    skipFieldNames,
+                    additionalExpression);
+        }
+
+        private String upsertExpression(T object, Map<String, String> nameMap, BiConsumer<String, Object> valMapPutter, ImmutableSet<String> skipFieldNames, String additionalExpression) {
             List<String> setUpdates = Lists.newArrayList();
             toItemMapper.apply(object).attributes().forEach(entry -> {
                 if (partitionKeyName.equals(entry.getKey()) || rangeKeyName.equals(entry.getKey())) {
@@ -951,7 +970,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     return;
                 }
                 nameMap.put("#" + entry.getKey(), entry.getKey());
-                valMap.put(":" + entry.getKey(), entry.getValue());
+                valMapPutter.accept(entry.getKey(), entry.getValue());
                 setUpdates.add("#" + entry.getKey() + " = " + ":" + entry.getKey());
             });
             return "SET " + String.join(", ", setUpdates) + additionalExpression;

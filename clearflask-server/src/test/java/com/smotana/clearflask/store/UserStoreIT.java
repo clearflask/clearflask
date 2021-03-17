@@ -27,7 +27,6 @@ import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -95,6 +94,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,
                 null,
                 null,
                 null,
@@ -168,6 +168,7 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
         UserModel user2 = new UserModel(
                 projectId,
@@ -189,6 +190,7 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
         UserModel user3 = new UserModel(
                 projectId,
@@ -207,6 +209,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken3",
                 "myBrowserPushToken3",
                 Instant.now().minus(2, ChronoUnit.DAYS),
+                null,
                 null,
                 null,
                 null,
@@ -268,6 +271,7 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         store.createIndex(user.getProjectId()).get();
@@ -302,6 +306,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,
                 null,
                 null,
                 null,

@@ -119,7 +119,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 parentCommentOpt,
                 commentModel,
                 user);
-        billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user.getUserId());
+        billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
         webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }

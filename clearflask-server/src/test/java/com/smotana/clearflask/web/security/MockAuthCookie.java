@@ -110,7 +110,9 @@ public class MockAuthCookie implements AuthCookie {
                     }
                 };
             }
-            mockExtendedSecurityContext.override(principal, userHasRolePredicate);
+            mockExtendedSecurityContext.override(
+                    principal,
+                    userHasRolePredicate);
         }
     }
 

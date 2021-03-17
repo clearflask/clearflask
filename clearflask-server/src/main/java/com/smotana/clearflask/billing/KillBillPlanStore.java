@@ -34,7 +34,11 @@ import org.killbill.billing.client.model.gen.Usage;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -85,7 +89,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
                     new PlanPerk("Flat annual price", null),
-                    new PlanPerk("Tailored plan", null)),
+                    new PlanPerk("Tailored plan", null),
+                    new PlanPerk("SLA", null)),
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
@@ -271,6 +276,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 }
                 return;
             case "standard-monthly":
+            case "standard2-monthly":
             case "flat-yearly":
         }
     }

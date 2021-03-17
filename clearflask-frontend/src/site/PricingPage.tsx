@@ -26,37 +26,26 @@ export const TrialInfoText = () => (
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
-export const EstimatedPercUsersBecomeActive = 0.02;
+export const EstimatedPercUsersBecomeTracked = 0.05;
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
-    heading: 'What are Monthly Active Users (MAUs)?',
+    heading: 'What are tracked users?',
     body: (
       <React.Fragment>
         <p>
-          Monthly Active User (MAU) is any user that has provided you feedback
-          in the past month by either submitting a post, commenting or voting.
-        </p>
-        <p>
-          Typically only about {EstimatedPercUsersBecomeActive * 100}% of your monthly unique users will provide you feedback
-          every month. The main influencing factor is how tightly you integrate ClearFlask
-          with your product.
+          A user signed up on ClearFlask becomes tracked when they post, comment or vote.
+          Typically only about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked.
         </p>
       </React.Fragment>
     ),
   },
   {
-    heading: 'How do you compare MAU with "tracked users"?',
+    heading: 'Can I import/export data?',
     body: (
       <React.Fragment>
         <p>
-          Our competitors are charging based on "tracked users" which are
-          users that have posted, commented or voted at least once in the past.
-        </p>
-        <p>
-          Over time, you will accumulate and continue to pay for tracked users
-          that are no longer providing you with feedback.
-          With us, you only pay for users active in the past month.
+          Yes, you can switch between providers if you want to. We provide both import and export functionality via CSV format.
         </p>
       </React.Fragment>
     ),
@@ -124,7 +113,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.header}>
             <div>
               <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h6" color="textSecondary">Only pay for users that actively provide value.</Typography>
+              <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
             </div>
             <Container maxWidth='md'>
               <ImgIso
@@ -152,7 +141,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                     selected={this.state.highlightedBasePlanid === plan.basePlanId
                       || this.state.callForQuote && !plan.pricing}
                     actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you find what you need'}
+                    remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
                     actionOnClick={() => {
                       if (isTracking()) {
                         ReactGA.event({
@@ -174,7 +163,6 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               <Grid item key='slider' xs={12} sm={6} md={4}>
                 <PricingSlider
                   plans={this.props.plans || []}
-                  estimatedPercUsersBecomeActive={EstimatedPercUsersBecomeActive}
                   onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
                     highlightedBasePlanid: callForQuote ? undefined : basePlanId,
                     callForQuote,

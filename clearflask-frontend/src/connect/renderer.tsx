@@ -158,7 +158,7 @@ export default function render() {
       html = html.replace(PH_MAIN_SCREEN, renderResult.renderedScreen);
 
       // Add populated stores
-      if (storesState.serverAdminStore || storesState.serverStores) {
+      if (storesState.serverAdminStore !== undefined || storesState.serverStores !== undefined) {
         const storesStateSerializable: StoresStateSerializable = {
           serverAdminStore: storesState.serverAdminStore?.getState(),
           serverStores: {},
