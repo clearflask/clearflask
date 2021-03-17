@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
