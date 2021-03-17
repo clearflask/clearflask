@@ -294,7 +294,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0d, 200d, 50d, 95d, 110d));
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 200d, 300d, 350d, 500d, 650d));
     }
 
     @Test(timeout = 300_000L)
