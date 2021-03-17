@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests take a long time, ignore until a change happens.
  */
-//@Ignore
+@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
@@ -293,7 +293,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 200d, 222.58d, 500d, 700d, 900d));
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 200d, 50d, 95d, 110d));
     }
 
     @Test(timeout = 300_000L)
@@ -317,7 +317,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0d, 200d, 50d, 95d, 110d));
+        assertInvoices(accountAndProject, ImmutableList.of(0d, 50d, 200d, 222.58d, 500d, 700d, 900d));
     }
 
     @Test(timeout = 300_000L)
