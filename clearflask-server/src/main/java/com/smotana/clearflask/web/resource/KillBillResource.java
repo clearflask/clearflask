@@ -244,7 +244,7 @@ public class KillBillResource extends ManagedService {
         } catch (KillBillClientException ex) {
             log.warn("Failed to fetch payment, paymentId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
         PaymentMetadata paymentMetadata = gson.fromJson(event.metaData, PaymentMetadata.class);
         PaymentTransaction paymentTransaction = payment.getTransactions().stream()
@@ -281,7 +281,7 @@ public class KillBillResource extends ManagedService {
         } catch (KillBillClientException ex) {
             log.warn("Failed to fetch invoice, invoiceId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
 
         if (!InvoiceStatus.COMMITTED.equals(invoice.getStatus())) {
@@ -304,7 +304,7 @@ public class KillBillResource extends ManagedService {
         } catch (Exception ex) {
             log.warn("Failed to sync credit, invoiceId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
-            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 

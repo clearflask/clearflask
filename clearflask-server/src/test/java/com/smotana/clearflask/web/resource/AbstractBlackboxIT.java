@@ -207,6 +207,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
                     om.override(om.id().domain()).withValue("localhost:8080");
                 }));
+                install(ConfigSystem.overrideModule(KillBilling.Config.class, om -> {
+                    om.override(om.id().reuseDraftInvoices()).withValue(false);
+                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
@@ -287,7 +290,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .basePlanId(planId)
                 .build());
-        finalizeInvoices(accountAndProject);
+        waitForInvoice(accountAndProject);
         return accountAndProject.toBuilder().account(accountAdmin).build();
     }
 

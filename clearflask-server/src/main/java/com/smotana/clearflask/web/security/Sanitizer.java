@@ -172,8 +172,8 @@ public class Sanitizer {
         Lookup lookup = null;
         try {
             lookup = new Lookup(domain, Type.CNAME);
-        } catch (TextParseException e) {
-            throw new ApiException(BAD_REQUEST, "Custom domain name appears to be invalid.");
+        } catch (TextParseException ex) {
+            throw new ApiException(BAD_REQUEST, "Custom domain name appears to be invalid.", ex);
         }
         Record[] records = Optional.ofNullable(lookup.run()).orElse(new Record[]{});
         switch (lookup.getResult()) {

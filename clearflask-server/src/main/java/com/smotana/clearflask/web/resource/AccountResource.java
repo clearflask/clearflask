@@ -394,7 +394,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         try {
             invoiceId = UUID.fromString(invoiceIdStr);
         } catch (IllegalArgumentException ex) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number", ex);
         }
         Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
         String invoiceHtml = billing.getInvoiceHtml(account.getAccountId(), invoiceId);

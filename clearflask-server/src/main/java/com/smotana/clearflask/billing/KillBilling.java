@@ -115,6 +115,10 @@ public class KillBilling extends ManagedService implements Billing {
 
         @DefaultValue("true")
         boolean finalizeInvoiceEnabled();
+
+        /** Used in testing for deterministic number of invoices */
+        @DefaultValue("true")
+        boolean reuseDraftInvoices();
     }
 
     @Inject
@@ -181,9 +185,9 @@ public class KillBilling extends ManagedService implements Billing {
 
         if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(planId)) {
             try {
-                kbAccount.createAccountTags(account.getAccountId(), ImmutableList.of(
-                        ControlTagType.AUTO_INVOICING_DRAFT.getId(),
-                        ControlTagType.AUTO_INVOICING_REUSE_DRAFT.getId()),
+                kbAccount.createAccountTags(
+                        account.getAccountId(),
+                        getDraftInvoicingTagIds(),
                         KillBillUtil.roDefault());
             } catch (KillBillClientException ex) {
                 log.warn("Failed to attach tags to KillBill Account for email {} name {}", email, name, ex);
@@ -644,10 +648,11 @@ public class KillBilling extends ManagedService implements Billing {
             boolean oldPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName());
             boolean newPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(planId);
 
+            ImmutableList<UUID> draftInvoicingTagIds = getDraftInvoicingTagIds();
             if (!oldPlanHasTrackedUsers && newPlanHasTrackedUsers) {
-                kbAccount.createAccountTags(accountInKb.getAccountId(), ImmutableList.of(
-                        ControlTagType.AUTO_INVOICING_DRAFT.getId(),
-                        ControlTagType.AUTO_INVOICING_REUSE_DRAFT.getId()),
+                kbAccount.createAccountTags(
+                        accountInKb.getAccountId(),
+                        draftInvoicingTagIds,
                         KillBillUtil.roDefault());
             }
 
@@ -667,9 +672,9 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
 
             if (oldPlanHasTrackedUsers && !newPlanHasTrackedUsers) {
-                kbAccount.deleteAccountTags(accountInKb.getAccountId(), ImmutableList.of(
-                        ControlTagType.AUTO_INVOICING_DRAFT.getId(),
-                        ControlTagType.AUTO_INVOICING_REUSE_DRAFT.getId()),
+                kbAccount.deleteAccountTags(
+                        accountInKb.getAccountId(),
+                        draftInvoicingTagIds,
                         KillBillUtil.roDefault());
             }
 
@@ -713,9 +718,9 @@ public class KillBilling extends ManagedService implements Billing {
 
             boolean oldPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName());
             if (oldPlanHasTrackedUsers) {
-                kbAccount.deleteAccountTags(accountInKb.getAccountId(), ImmutableList.of(
-                        ControlTagType.AUTO_INVOICING_DRAFT.getId(),
-                        ControlTagType.AUTO_INVOICING_REUSE_DRAFT.getId()),
+                kbAccount.deleteAccountTags(
+                        accountInKb.getAccountId(),
+                        getDraftInvoicingTagIds(),
                         KillBillUtil.roDefault());
             }
 
@@ -1021,19 +1026,29 @@ public class KillBilling extends ManagedService implements Billing {
                         userCountSupplier.get(), invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
             }
 
+            Optional<Invoice> newInvoiceOpt = Optional.empty();
             if (doUpdateInvoice) {
-                kbInvoice.createFutureInvoice(
+                newInvoiceOpt = Optional.of(kbInvoice.createFutureInvoice(
                         invoice.getAccountId(),
                         null,
-                        KillBillUtil.roDefault());
+                        KillBillUtil.roDefault()));
             }
 
-            log.info("Committing invoice for accountId {} invoiceId {}", invoice.getAccountId(), invoice.getInvoiceId());
+            log.info("Committing invoice for accountId {} invoiceId {}",
+                    invoice.getAccountId(), invoice.getInvoiceId());
             kbInvoice.commitInvoice(invoiceId, KillBillUtil.roDefault());
+
+            if (newInvoiceOpt.isPresent()
+                    && !newInvoiceOpt.get().getInvoiceId().equals(invoiceId)
+                    && InvoiceStatus.DRAFT.equals(newInvoiceOpt.get().getStatus())) {
+                log.info("Committing usage invoice for accountId {} invoiceId {}",
+                        invoice.getAccountId(), newInvoiceOpt.get().getInvoiceId());
+                kbInvoice.commitInvoice(newInvoiceOpt.get().getInvoiceId(), KillBillUtil.roDefault());
+            }
         } catch (KillBillClientException ex) {
             log.warn("Failed to finalize invoice, accountId {} invoiceId {}",
                     accountId, invoiceId, ex);
-            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 
@@ -1054,6 +1069,14 @@ public class KillBilling extends ManagedService implements Billing {
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to close account", ex);
         }
+    }
+
+    ImmutableList<UUID> getDraftInvoicingTagIds() {
+        return config.reuseDraftInvoices()
+                ? ImmutableList.of(
+                ControlTagType.AUTO_INVOICING_DRAFT.getId(),
+                ControlTagType.AUTO_INVOICING_REUSE_DRAFT.getId())
+                : ImmutableList.of(ControlTagType.AUTO_INVOICING_DRAFT.getId());
     }
 
     /** If changed, also change in BillingPage.tsx */
