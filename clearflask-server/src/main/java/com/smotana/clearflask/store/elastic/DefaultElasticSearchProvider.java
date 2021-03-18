@@ -13,6 +13,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -39,6 +40,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
     private Config config;
     @Inject
     private Gson gson;
+    @Inject
+    private Environment env;
 
     private Optional<RestHighLevelClient> restClientOpt = Optional.empty();
 

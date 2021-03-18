@@ -240,7 +240,7 @@ public enum ServiceInjector {
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:
-                        bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
+                        bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("test", "test")));
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;

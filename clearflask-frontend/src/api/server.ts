@@ -163,7 +163,7 @@ export class Server {
       case Environment.DEVELOPMENT_FRONTEND:
         break;
       default:
-        basePath = basePath.replace(/https:\/\/clearflask\.com/, `${windowIso.location.protocol}//${windowIso.location.host}`);
+        basePath = basePath.replace('https://clearflask.com', `${windowIso.location.protocol}//${windowIso.location.host}`);
         break;
     }
     return basePath;

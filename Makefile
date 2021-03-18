@@ -13,17 +13,13 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 50
-_run-dev: killbill-run kaui-run connect-run-dev tomcat-run-dev dynamo-run ses-run elastic-run kibana-run nginx-run
+_run-dev: aws-mock-run elastic-run killbill-engine-run killbill-db-run kaui-run connect-run-dev tomcat-run-dev nginx-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
 _run-dev-frontend: _npm-run-dev-frontend nginx-run
 _npm-run-dev-frontend:
 	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js run start:frontend
-
-run-it-services:
-	@$(MAKE) _run-dev -j 50
-_run-dev: elastic-run killbill-run
 
 connect-extract:
 	rm -fr `pwd`/clearflask-frontend/target/ROOT
@@ -51,7 +47,7 @@ __run-dev-connect:
 connect-run-dev:
 	make connect-extract
 	docker run --rm --name clearflask-connect \
-	-p 80:9080 \
+	-p 80:3000 \
 	-v `pwd -P`/clearflask-frontend/target/ROOT:/srv/clearflask-connect \
 	-w /srv/clearflask-connect \
 	--add-host=localhost.com:172.17.0.1 \
@@ -64,7 +60,6 @@ connect-run-dev:
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
 	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
-	sed -i '' -e 's/clearflask\.com/localhost\.com/g' `pwd`/clearflask-server/target/ROOT/index.html `pwd`/clearflask-server/target/ROOT/asset-manifest.json
 	docker run --rm --name clearflask-server \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \
@@ -80,6 +75,19 @@ tomcat-run-dev:
 	-v `pwd -P`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
 	-v `pwd -P`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \
 	tomcat:8.5-jdk11-openjdk-slim
+
+aws-mock-run:
+	docker run --rm -it --name aws-mock --privileged \
+	-p 4566:4566 \
+	-p 4571:4571 \
+	-p 4582:8080 \
+	-e DEFAULT_REGION="us-east-1" \
+	-e LOCALSTACK_HOSTNAME="localhost" \
+	-e HOSTNAME_EXTERNAL="host.docker.internal" \
+	-e SERVICES="dynamodb,route53,ses,s3" \
+	-e START_WEB=1 \
+	-e USE_SSL=1 \
+	localstack/localstack-full
 
 elastic-run:
 	docker run --rm --name clearflask-elastic \
@@ -116,10 +124,6 @@ ses-run:
 	docker run --rm --name clearflask-ses \
 	-p 9001:9001 \
 	jdelibas/aws-ses-local
-
-killbill-run:
-	@$(MAKE) _killbill-run -j 50
-_killbill-run: killbill-engine-run killbill-db-run
 
 killbill-engine-run:
 	docker run --rm --name clearflask-killbill-engine \
@@ -167,7 +171,6 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \
 	-p 8300:8300 \
 	-p 443:8443 \
-	-p 8083:8082 \
 	-v $(shell pwd -P)/.nginx:/etc/nginx/conf.d \
 	nginx
 

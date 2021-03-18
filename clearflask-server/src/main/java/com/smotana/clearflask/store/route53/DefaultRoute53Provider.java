@@ -23,7 +23,7 @@ import java.util.Optional;
 public class DefaultRoute53Provider extends ManagedService implements Provider<AmazonRoute53> {
 
     public interface Config {
-        @DefaultValue("")
+        @DefaultValue("us-east-1")
         String productionRegion();
 
         @DefaultValue("")
