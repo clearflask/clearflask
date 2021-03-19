@@ -242,7 +242,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (this.props.accountBilling?.billingPeriodEnd) {
             planDesc = (
               <React.Fragment>
-                You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
+                You have full access to your {this.props.accountBilling.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
               </React.Fragment>
             );
           } else {

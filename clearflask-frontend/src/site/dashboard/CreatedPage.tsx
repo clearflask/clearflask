@@ -111,7 +111,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Grid>
             <Grid item xs={12} md={6} lg={7}>
               <Stepper activeStep={this.state.activeStep} orientation='vertical'>
-                <Step completed={isLoggedIn} {...expandedProp(!isLoggedIn)}>
+                <Step completed={isLoggedIn} {...expandedProp(this.state.activeStep === 0)}>
                   <StepLabel>Add yourself as a moderator</StepLabel>
                   <StepContent>
                     <div className={this.props.classes.form}>
@@ -162,7 +162,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   </StepContent>
                 </Step>
                 {!!this.props.ideaCategoryId && (
-                  <Step completed={!!this.state.newItemSubmitted} {...expandedProp(isLoggedIn && !this.state.newItemSubmitted)}>
+                  <Step completed={!!this.state.newItemSubmitted} {...expandedProp(this.state.activeStep === 1)}>
                     <StepLabel>Create your first post</StepLabel>
                     <StepContent>
                       <div className={this.props.classes.form}>
