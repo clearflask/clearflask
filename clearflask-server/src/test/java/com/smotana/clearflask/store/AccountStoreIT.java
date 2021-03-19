@@ -12,12 +12,15 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
@@ -45,6 +48,9 @@ public class AccountStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticAccountStore.module(),
+                DynamoProjectStore.module(),
+                Application.module(),
+                IntercomUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
