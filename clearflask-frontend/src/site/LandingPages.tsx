@@ -295,7 +295,7 @@ export function Landing() {
         description='Collect your customer feedback and new ideas in one bucket'
         points={[
           'Submit suggestions',
-          'Vote for your favourtie idea',
+          'Vote for your favorite idea',
           'Discuss feature details',
         ]}
         alignItems='center'
