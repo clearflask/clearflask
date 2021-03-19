@@ -1,14 +1,12 @@
-import { Box } from '@material-ui/core';
+import { Box, WithTheme, withTheme } from '@material-ui/core';
 import React, { Component } from 'react';
 import Message from '../common/Message';
-import { vh } from '../common/util/screenUtil';
 
 interface Props {
   msg?: string | React.ReactNode;
   variant?: 'success' | 'warning' | 'error' | 'info';
 }
-
-export default class ErrorPage extends Component<Props> {
+class ErrorPage extends Component<Props & WithTheme> {
   readonly styles = {
     message: {
       margin: '40px auto',
@@ -24,7 +22,7 @@ export default class ErrorPage extends Component<Props> {
         justifyContent='center'
         alignItems='center'
         width='100%'
-        height={vh(100)}
+        height={this.props.theme.vh(100)}
       >
         <Message innerStyle={this.styles.message}
           message={this.props.msg}
@@ -34,3 +32,5 @@ export default class ErrorPage extends Component<Props> {
     );
   }
 }
+
+export default withTheme(ErrorPage);

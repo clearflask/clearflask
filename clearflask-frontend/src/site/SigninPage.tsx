@@ -1,21 +1,18 @@
-import { Button, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
-import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import ErrorPage from '../app/ErrorPage';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
-import { isProd } from '../common/util/detectEnv';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
-import { SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
@@ -119,12 +116,6 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
               disabled={!this.state.email || !this.state.pass}
               onClick={this.onSubmit.bind(this)}
             >Continue</SubmitButton>
-            {(SIGNUP_PROD_ENABLED || !isProd()) && (
-              <Button
-                component={Link}
-                to='/signup'
-              >Or Signup</Button>
-            )}
           </DialogActions>
         </div>
       </div>

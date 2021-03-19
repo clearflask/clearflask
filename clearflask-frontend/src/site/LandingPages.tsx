@@ -104,7 +104,6 @@ import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
-import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Block from './landing/Block';
@@ -249,7 +248,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   demoEmbedPopper: {
     height: 400,
-    maxHeight: vh(90),
+    maxHeight: theme.vh(90),
     width: 400,
     maxWidth: '90vw',
   },

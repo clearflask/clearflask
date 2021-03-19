@@ -10,7 +10,7 @@ import PanelPost from '../../app/comps/PanelPost';
 import PanelSearch from '../../app/comps/PanelSearch';
 import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
-import { initialWidth, vh } from '../../common/util/screenUtil';
+import { initialWidth } from '../../common/util/screenUtil';
 import CategoryStats from './CategoryStats';
 import UserExplorer from './UserExplorer';
 
@@ -250,7 +250,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
         isExplorer
       >
         <PanelPost
-          maxHeight={vh(80)}
+          maxHeight={this.props.theme.vh(80)}
           direction={Direction.Vertical}
           panel={panel}
           searchOverride={searchOverride}

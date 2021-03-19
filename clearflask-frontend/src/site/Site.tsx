@@ -29,7 +29,6 @@ import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
-import { vh } from '../common/util/screenUtil';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -74,7 +73,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
   },
   page: {
-    minHeight: vh(100),
+    minHeight: theme.vh(100),
     paddingBottom: theme.spacing(6),
   },
   appBarSpacer: theme.mixins.toolbar,

@@ -3,13 +3,12 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import ImgIso from '../../common/ImgIso';
-import { vh } from '../../common/util/screenUtil';
 
 const styles = (theme: Theme) => createStyles({
   hero: {
     width: '100vw',
-    minHeight: vh(40),
-    padding: `${vh(10)}px 10vw`,
+    minHeight: theme.vh(40),
+    padding: `${theme.vh(10)}px 10vw`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',

@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
-import { vh } from '../common/util/screenUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -140,7 +139,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           <PanelPost
             key={getSearchKey(panel.search)}
             className={this.props.classes.boardPanel}
-            maxHeight={vh(80)}
+            maxHeight={this.props.theme.vh(80)}
             direction={Direction.Vertical}
             panel={panel}
             server={this.props.server}

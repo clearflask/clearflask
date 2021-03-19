@@ -12,7 +12,6 @@ import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import SubmitButton from '../common/SubmitButton';
 import preloadImage from '../common/util/imageUtil';
-import { vh } from '../common/util/screenUtil';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -52,7 +51,7 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(0, 0, 8, 0),
     width: '100%',
     margin: 'auto',
-    maxHeight: vh(40),
+    maxHeight: theme.vh(40),
   },
 });
 
@@ -248,21 +247,21 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                             }}
                           />
                         ) : (
-                            <TextField
-                              variant='outlined'
-                              size='small'
-                              className={this.props.classes.field}
-                              disabled={this.state.isSubmitting}
-                              label={field.title}
-                              placeholder={field.placeholder}
-                              helperText={field.helperText}
-                              value={this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || ''}
-                              onChange={e => this.setState({ [`field_${form.type}_${field.attrName}`]: e.target.value })}
-                              required={field.required}
-                              multiline={field.type === 'multiline'}
-                              rowsMax={field.type === 'multiline' ? 10 : undefined}
-                            />
-                          )))}
+                          <TextField
+                            variant='outlined'
+                            size='small'
+                            className={this.props.classes.field}
+                            disabled={this.state.isSubmitting}
+                            label={field.title}
+                            placeholder={field.placeholder}
+                            helperText={field.helperText}
+                            value={this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || ''}
+                            onChange={e => this.setState({ [`field_${form.type}_${field.attrName}`]: e.target.value })}
+                            required={field.required}
+                            multiline={field.type === 'multiline'}
+                            rowsMax={field.type === 'multiline' ? 10 : undefined}
+                          />
+                        )))}
                         <SubmitButton
                           wrapperClassName={this.props.classes.submitButton}
                           color='primary'

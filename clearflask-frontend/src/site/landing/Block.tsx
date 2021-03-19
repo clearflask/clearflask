@@ -6,35 +6,34 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
 import FakeBrowser from '../../common/FakeBrowser';
 import ImgIso from '../../common/ImgIso';
-import { vh } from '../../common/util/screenUtil';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
     [theme.breakpoints.up('md')]: {
-      padding: `${vh(20)}px 10vw`,
+      padding: `${theme.vh(20)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: `${vh(10)}px 1vw`,
+      padding: `${theme.vh(10)}px 1vw`,
     },
-    minHeight: vh(100),
+    minHeight: theme.vh(100),
     display: 'flex',
     justifyContent: 'center',
   },
   spacing: {
     [theme.breakpoints.up('md')]: {
-      padding: `${vh(10)}px 10vw`,
+      padding: `${theme.vh(10)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: `${vh(10)}px 1vw`,
+      padding: `${theme.vh(10)}px 1vw`,
     },
   },
   spacingMediumDemo: {
     [theme.breakpoints.up('lg')]: {
-      padding: `${vh(10)}px 10vw`,
+      padding: `${theme.vh(10)}px 10vw`,
     },
     [theme.breakpoints.down('md')]: {
-      padding: `${vh(10)}px 1vw`,
+      padding: `${theme.vh(10)}px 1vw`,
     },
   },
   grid: {

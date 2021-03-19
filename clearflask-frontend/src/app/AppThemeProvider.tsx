@@ -6,6 +6,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
+import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 
 interface ThemeCustomProps {
@@ -14,6 +15,7 @@ interface ThemeCustomProps {
   isInsideContainer?: boolean;
   expressionGrayscale?: number;
   explorerExpandTimeout?: number;
+  vh: (heightPerc: number) => number;
 }
 
 declare module '@material-ui/core/styles/createMuiTheme' {
@@ -62,6 +64,7 @@ class AppThemeProvider extends Component<Props> {
         isInsideContainer: !!this.props.isInsideContainer,
         expressionGrayscale: expressionGrayscale,
         explorerExpandTimeout: 500,
+        vh,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           primary: {

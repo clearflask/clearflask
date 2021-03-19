@@ -59,7 +59,7 @@ connect-run-dev:
 
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
-	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
+	unzip -q `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
 	docker run --rm --name clearflask-server \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \

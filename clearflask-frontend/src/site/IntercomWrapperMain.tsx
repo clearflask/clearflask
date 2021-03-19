@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import { isProd } from '../common/util/detectEnv';
+import { isProd, isTracking } from '../common/util/detectEnv';
 import IntercomWrapper, { IntercomWrapperConnectProps } from './IntercomWrapper';
 
 const PROD_APP_ID = 'zklmfmdu';
@@ -18,8 +18,7 @@ export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((st
     };
   }
 
-  // Just don't show intercom to super admins (that's me!)
-  if (state.account.isSuperAdmin) {
+  if (state.account.isSuperAdmin || !isTracking()) {
     connectProps.disabled = true;
     return connectProps;
   }

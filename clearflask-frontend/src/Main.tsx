@@ -63,6 +63,7 @@ const theme: Theme = createMuiTheme({
   props: {
     ...ComponentPropsOverrides,
   },
+  vh,
 });
 interface Props {
   ssrLocation?: string;
@@ -106,7 +107,7 @@ class Main extends Component<Props> {
               <CaptchaChallenger />
               <RemoveSsrCss />
               <div style={{
-                minHeight: vh(100),
+                minHeight: windowIso.isSsr ? undefined : theme.vh(100),
                 display: 'flex',
                 flexDirection: 'column',
                 background: theme.palette.background.default,
