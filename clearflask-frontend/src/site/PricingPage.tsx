@@ -34,8 +34,8 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <React.Fragment>
         <p>
-          A user signed up on ClearFlask becomes tracked when they post, comment or vote.
-          Typically only about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked.
+          A user signed up on ClearFlask becomes tracked when they provide you with feedback by posting, commenting or voting.
+          Typically about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked.
         </p>
       </React.Fragment>
     ),
@@ -45,7 +45,7 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <React.Fragment>
         <p>
-          Yes, you can switch between providers if you want to. We provide both import and export functionality via CSV format.
+          Yes, you can switch between providers whenever you want to. We provide both import and export functionality via CSV format.
         </p>
       </React.Fragment>
     ),

@@ -223,9 +223,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Plan plan = planStore.getPublicPlans().getPlans().stream()
                 .filter(p -> p.getBasePlanId().equals(signup.getBasePlanId()))
                 .findAny()
-                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Plan not available"));
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Plan no longer available, please refressh"));
         if (plan.getComingSoon() == Boolean.TRUE) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Plan not available");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Plan is not available");
         }
 
         // Create customer in KillBill

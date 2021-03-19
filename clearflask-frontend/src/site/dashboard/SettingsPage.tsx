@@ -10,6 +10,7 @@ import UpgradeWrapper, { Action as FeatureAction } from '../../common/config/set
 import SubmitButton from '../../common/SubmitButton';
 import UpdatableField from '../../common/UpdatableField';
 import { saltHashPassword } from '../../common/util/auth';
+import { redirectIso } from '../../common/util/routerUtil';
 
 const styles = (theme: Theme) => createStyles({
   details: {
@@ -78,7 +79,10 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
               <Button
                 disabled={this.state.isSubmitting}
                 // style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
-                onClick={() => ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin())}
+                onClick={() => {
+                  ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
+                  redirectIso('/');
+                }}
               >Sign out</Button>
             </Grid>
           </Grid>

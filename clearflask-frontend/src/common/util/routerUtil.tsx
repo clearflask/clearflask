@@ -35,6 +35,6 @@ export function redirectIso(url: string, httpCode: number = 302) {
     windowIso.staticRouterContext.statusCode = httpCode;
     windowIso.staticRouterContext.url = url;
   } else {
-    windowIso.open(url);
+    windowIso.open(url, '_self');
   }
 }

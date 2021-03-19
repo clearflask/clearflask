@@ -28,7 +28,6 @@ import SubmitButton from '../../common/SubmitButton';
 import { isTracking } from '../../common/util/detectEnv';
 import { initialWidth } from '../../common/util/screenUtil';
 import windowIso from '../../common/windowIso';
-import { StopTrialAfterActiveUsersReaches } from '../PricingPage';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 
@@ -208,7 +207,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan is active';
         planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
         if (hasAvailablePlansToSwitch) {
-          planDesc += ' If you switch plans now, balance will be prorated.';
+          planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
           showPlanChange = true;
         }
         break;
@@ -222,7 +221,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </React.Fragment>
             );
           } else {
-            paymentDesc = `Your first payment will be automatically billed at the end of the trial period when you reach ${StopTrialAfterActiveUsersReaches} MAU.`;
+            paymentDesc = `Your first payment will be automatically billed at the end of the trial period.`;
           }
           cardState = 'active';
           showSetPayment = true;
@@ -230,7 +229,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           planTitle = 'Your plan is active';
           planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
           if (hasAvailablePlansToSwitch) {
-            planDesc += ' If you switch plans now, your first payment will reflect your new plan.';
+            planDesc += ' If you switch plans now, your first payment at the end of your trial will reflect your new plan.';
             showPlanChange = true;
           }
         } else {
@@ -239,7 +238,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           cardState = 'warn';
           showSetPayment = true;
           setPaymentTitle = 'Add payment method';
-          planTitle = 'Your plan is active until your trial expires';
+          planTitle = 'Your plan is active until your trial ends';
           if (this.props.accountBilling?.billingPeriodEnd) {
             planDesc = (
               <React.Fragment>
@@ -247,7 +246,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </React.Fragment>
             );
           } else {
-            planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires when you reach ${StopTrialAfterActiveUsersReaches} MAU. Add a payment method to continue using our service beyond the trial period.`;
+            planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
           }
           if (hasAvailablePlansToSwitch) {
             showPlanChange = true;
@@ -256,7 +255,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         break;
       case Admin.SubscriptionStatus.ActivePaymentRetry:
         paymentTitle = 'Automatic renewal is having issues with your payment method';
-        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may block your service if we are unsuccessful.';
+        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may block your service if unsuccessful.';
         cardState = 'error';
         showSetPayment = true;
         if (this.props.accountBilling?.payment) {

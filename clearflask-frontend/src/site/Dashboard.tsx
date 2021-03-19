@@ -27,7 +27,7 @@ import Layout from '../common/Layout';
 import UserDisplayMe from '../common/UserDisplayMe';
 import notEmpty from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
-import { isProd } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -113,13 +113,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         currentPagePath: [],
         binding: true,
       };
-      ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin({})
-          .then(result => {
-            this.setState({ binding: false })
-            if (result.account) d.configGetAllAndUserBindAllAdmin()
-          }))
-        .catch(e => this.setState({ binding: false }));
+      this.bind();
     } else if (props.accountStatus === Status.FULFILLED && !props.configsStatus) {
       this.state = {
         currentPagePath: [],
@@ -145,6 +139,23 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     this.searchAccounts = newValue => {
       this.setState({ accountSearching: newValue });
       searchAccountsDebounced(newValue);
+    }
+  }
+
+  async bind() {
+    try {
+      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+        const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
+        await mocker.mock();
+      }
+      const dispatcher = await ServerAdmin.get().dispatchAdmin();
+      const result = await dispatcher.accountBindAdmin({});
+      this.setState({ binding: false })
+      if (result.account) {
+        dispatcher.configGetAllAndUserBindAllAdmin();
+      }
+    } catch (er) {
+      this.setState({ binding: false });
     }
   }
 
@@ -454,7 +465,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       page = (
         <ErrorPage msg='Oops, you have to create a project first' />
       );
-      this.props.history.push('/dashboard/welcome');
+      this.props.history.replace('/dashboard/welcome');
     }
 
     const quickViewEnabled = this.isQuickViewEnabled();

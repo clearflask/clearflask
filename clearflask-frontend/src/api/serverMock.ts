@@ -258,7 +258,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
       billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       trackedUsers: 341,
-      availablePlans: Object.values(AvailablePlans),
+      availablePlans: Object.values(AvailablePlans).filter(p => p.basePlanId !== 'flat-yearly'),
       invoices: {
         cursor: 'one more',
         results: [{
