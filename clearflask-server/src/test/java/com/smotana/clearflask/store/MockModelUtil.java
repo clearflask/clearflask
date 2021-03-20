@@ -38,7 +38,8 @@ public class MockModelUtil {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
     }
 
     public static IdeaModel getRandomIdea() {

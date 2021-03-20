@@ -9,7 +9,7 @@
 //   QueryParamConfig,
 // } from 'use-query-params';
 import loadable from '@loadable/component';
-import { Grid, isWidthUp, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Collapse, FormControlLabel, Grid, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
@@ -118,6 +118,9 @@ interface State {
   newItemChosenCategoryId?: string;
   newItemChosenTagIds?: string[];
   newItemChosenStatusId?: string;
+  newItemNotifySubscribers?: boolean;
+  newItemNotifyTitle?: string;
+  newItemNotifyBody?: string;
   newItemTagSelectHasError?: boolean;
   newItemSearchText?: string;
   newItemIsSubmitting?: boolean;
@@ -444,6 +447,66 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             />
           </Grid>
         )}
+        {isModOrAdminLoggedIn && !!selectedCategory?.subscription && (
+          <React.Fragment>
+            <Grid item xs={12} className={this.props.classes.createGridItem}>
+              <FormControlLabel
+                disabled={this.state.newItemIsSubmitting}
+                control={(
+                  <Switch
+                    checked={!!this.state.newItemNotifySubscribers}
+                    onChange={(e, checked) => this.setState({
+                      newItemNotifySubscribers: !this.state.newItemNotifySubscribers,
+                      ...(!this.state.newItemNotifyTitle ? { newItemNotifyTitle: `New ${selectedCategory.name}` } : undefined),
+                      ...(!this.state.newItemNotifyBody ? { newItemNotifyBody: `Check out my new ${selectedCategory.name}: ${this.state.newItemTitle || 'My title here'}` } : undefined),
+                    })}
+                    color='primary'
+                  />
+                )}
+                label='Notify all subscribers'
+              />
+            </Grid>
+            <Collapse in={!!this.state.newItemNotifySubscribers}>
+              <Grid item xs={12} className={this.props.classes.createGridItem}>
+                <TextField
+                  variant='outlined'
+                  size='small'
+                  id='createTitle'
+                  disabled={this.state.newItemIsSubmitting}
+                  className={this.props.classes.createFormField}
+                  label='Notification Title'
+                  value={this.state.newItemNotifyTitle || ''}
+                  onChange={e => this.setState({ newItemNotifyTitle: e.target.value })}
+                  InputProps={{
+                    inputRef: this.createInputRef,
+                  }}
+                  inputProps={{
+                    maxLength: PostTitleMaxLength,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} className={this.props.classes.createGridItem}>
+                <TextField
+                  variant='outlined'
+                  size='small'
+                  id='createTitle'
+                  multiline
+                  disabled={this.state.newItemIsSubmitting}
+                  className={this.props.classes.createFormField}
+                  label='Notification Body'
+                  value={this.state.newItemNotifyBody || ''}
+                  onChange={e => this.setState({ newItemNotifyBody: e.target.value })}
+                  InputProps={{
+                    inputRef: this.createInputRef,
+                  }}
+                  inputProps={{
+                    maxLength: PostTitleMaxLength,
+                  }}
+                />
+              </Grid>
+            </Collapse>
+          </React.Fragment>
+        )}
         <Grid item xs={12} container justify='flex-end' className={this.props.classes.createGridItem}>
           <Grid item xs={4}>
             <SubmitButton
@@ -491,6 +554,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           description: this.state.newItemDescription,
           categoryId: this.state.newItemChosenCategoryId!,
           statusId: this.state.newItemChosenStatusId,
+          notifySubscribers: !this.state.newItemNotifySubscribers ? undefined : {
+            title: this.state.newItemNotifyTitle!,
+            body: this.state.newItemNotifyBody!,
+          },
           tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
         },
       }))

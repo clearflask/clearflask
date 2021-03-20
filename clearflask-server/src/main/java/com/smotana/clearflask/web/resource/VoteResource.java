@@ -11,6 +11,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.VoteApi;
 import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.CommentVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.CommentVoteUpdate;
 import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
@@ -20,8 +21,10 @@ import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
+import com.smotana.clearflask.api.model.Subscription;
 import com.smotana.clearflask.api.model.Transaction;
 import com.smotana.clearflask.api.model.TransactionType;
+import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -47,7 +50,6 @@ import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.update.UpdateResponse;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -79,6 +81,32 @@ public class VoteResource extends AbstractResource implements VoteApi {
     private Billing billing;
     @Inject
     private WebhookService webhookService;
+
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 1)
+    @Override
+    public UserMe categorySubscribe(String projectId, String categoryId, Boolean subscribe) {
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        // Ensure subscriptions are allowed for this category
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Project does not exist"));
+        Category category = project.getCategory(categoryId)
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Category does not exist"));
+        Subscription subscription = Optional.ofNullable(category.getSubscription())
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Subscriptions not allowed"));
+
+        VoteValue newVote = subscribe == Boolean.TRUE ? VoteValue.Upvote : VoteValue.None;
+        VoteValue prevVote = voteStore.vote(projectId, userId, categoryId, newVote);
+
+        UserModel user = newVote.equals(prevVote)
+                ? userStore.getUser(projectId, userId).get()
+                : userStore.updateSubscription(projectId, userId, categoryId, subscribe == Boolean.TRUE);
+
+        return user.toUserMe(project.getIntercomEmailToIdentityFun());
+    }
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)

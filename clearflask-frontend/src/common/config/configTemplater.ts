@@ -585,6 +585,13 @@ export default class Templater {
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: changelogCategoryId, name: 'Changelog',
       userCreatable: false,
+      subscription: {
+        hellobar: {
+          title: 'Get notified',
+          message: 'If you enjoy hearing about new features in our product',
+          button: 'Follow us',
+        }
+      },
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
       support: Admin.SupportToJSON({ comment: false, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),

@@ -20,9 +20,14 @@ import WidgetIcon from '@material-ui/icons/Widgets';
 // import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import LogoImg from '../../public/img/clearflask-logo.png';
+import * as Admin from '../api/admin';
+import { Status } from '../api/server';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import DemoOnboardingLogin from '../app/DemoOnboardingLogin';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
@@ -55,6 +60,28 @@ const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingI
 const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInternalFeedback, fallback: (<Loading />) });
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
+
+interface MenuDropdown {
+  type: 'dropdown';
+  title: string;
+  items: Array<MenuButton | MenuHeader | MenuDivider>;
+}
+interface MenuButton {
+  icon?: OverridableComponent<SvgIconTypeMap>,
+  iconClassName?: string,
+  type: 'button';
+  title: string;
+  link: string;
+  linkIsExternal?: boolean;
+  scrollState?: string;
+}
+interface MenuHeader {
+  type: 'header';
+  title: string;
+}
+interface MenuDivider {
+  type: 'divider';
+}
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -176,36 +203,23 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 const useStyles = makeStyles(styles);
-
-interface MenuDropdown {
-  type: 'dropdown';
-  title: string;
-  items: Array<MenuButton | MenuHeader | MenuDivider>;
+interface ConnectProps {
+  callOnMount?: () => void,
+  accountStatus?: Status;
+  account?: Admin.AccountAdmin;
 }
-interface MenuButton {
-  icon?: OverridableComponent<SvgIconTypeMap>,
-  iconClassName?: string,
-  type: 'button';
-  title: string;
-  link: string;
-  linkIsExternal?: boolean;
-  scrollState?: string;
-}
-interface MenuHeader {
-  type: 'header';
-  title: string;
-}
-interface MenuDivider {
-  type: 'divider';
-}
-
 interface State {
   menuOpen?: boolean;
 }
-
-class Site extends Component<RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   projectPromise: undefined | Promise<Project>;
+
+  constructor(props) {
+    super(props);
+
+    props.callOnMount?.();
+  }
 
   render() {
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
@@ -234,19 +248,21 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: `${windowIso.location.protocol}//blog.${windowIso.location.host}`, linkIsExternal: true, title: 'Blog' },
-          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`, linkIsExternal: true, title: 'Docs' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs' },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API' },
           { type: 'divider' },
-          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/roadmap`, linkIsExternal: true, title: 'Roadmap' },
-          { type: 'button', link: `${windowIso.location.protocol}//feedback.${windowIso.location.host}/feedback`, linkIsExternal: true, title: 'Feedback' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/roadmap`), linkIsExternal: true, title: 'Roadmap' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/feedback`), linkIsExternal: true, title: 'Feedback' },
         ]
       },
     ];
     const menuItemsRight: Array<MenuButton> = [
-      (this.props.location.pathname === '/' || this.props.location.pathname === '/signup')
-        ? { type: 'button', link: '/login', title: 'Log in' }
-        : { type: 'button', link: '/signup', title: 'Sign up' },
+      (!!this.props.account
+        ? { type: 'button', link: '/dashboard', title: 'Dashboard' }
+        : ((this.props.location.pathname === '/' || this.props.location.pathname === '/signup')
+          ? { type: 'button', link: '/login', title: 'Log in' }
+          : { type: 'button', link: '/signup', title: 'Sign up' })),
       { type: 'button', link: '/pricing', title: 'Pricing' },
     ];
     const bottomNavigation: Array<MenuButton | MenuDropdown> = [
@@ -474,6 +490,12 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       </div>
     );
   }
+
+  urlAddCfJwt(url: string): string {
+    return !!this.props.account
+      ? `${url}?${SSO_TOKEN_PARAM_NAME}=${this.props.account.cfJwt}`
+      : url;
+  }
 }
 
 interface MenuDropdownButtonProps {
@@ -698,4 +720,16 @@ function MenuItemDivider(props: {
   );
 };
 
-export default withStyles(styles, { withTheme: true })(Site);
+export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
+  const connectProps: ConnectProps = {
+    accountStatus: state.account.account.status,
+    account: state.account.account.account,
+  };
+  if (state.account.account.status === undefined) {
+    connectProps.callOnMount = () => {
+      ServerAdmin.get().dispatchAdmin()
+        .then(d => d.accountBindAdmin({}));
+    };
+  }
+  return connectProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Site));

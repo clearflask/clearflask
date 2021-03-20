@@ -3,6 +3,7 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
@@ -244,7 +245,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         userStore.createUser(user);
 
         UserSession session = userStore.createSession(
@@ -304,7 +306,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         userStore.createUser(user);
         if (user.getIsMod() == Boolean.TRUE) {
             ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();

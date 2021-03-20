@@ -24,7 +24,11 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 public interface VoteStore {
 
     /**
-     * Returns previous vote.
+     * @param targetId refers to
+     * - ideaId for idea voting
+     * - commentId for comment voting
+     * - categoryId for subscriptions
+     * @return Returns previous vote.
      */
     VoteValue vote(String projectId, String userId, String targetId, VoteValue vote);
 

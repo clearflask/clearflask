@@ -32,6 +32,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -72,6 +73,15 @@ public class DynamoNotificationStore implements NotificationStore {
     public void notificationCreate(NotificationModel notification) {
         notificationSchema.table().putItem(new PutItemSpec()
                 .withItem(notificationSchema.toItem(notification)));
+    }
+
+    @Override
+    public void notificationsCreate(Collection<NotificationModel> notifications) {
+        TableWriteItems tableWriteItems = new TableWriteItems(notificationSchema.tableName());
+        tableWriteItems.withItemsToPut(notifications.stream()
+                .map(notificationSchema::toItem)
+                .collect(ImmutableList.toImmutableList()));
+        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
     }
 
     @Override

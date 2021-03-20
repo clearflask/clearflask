@@ -9,6 +9,7 @@ import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.Response;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 
@@ -22,6 +23,11 @@ public class MockNotificationStore implements NotificationStore {
     public void notificationCreate(NotificationModel notification) {
         log.info("Send {}", notification);
         this.sent.add(notification);
+    }
+
+    @Override
+    public void notificationsCreate(Collection<NotificationModel> notifications) {
+        notifications.forEach(this::notificationCreate);
     }
 
     @Override

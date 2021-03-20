@@ -31,6 +31,7 @@ interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   userMe?: Client.UserMe;
+  categories?: Client.Category[];
 }
 interface State {
   deleteDialogOpen?: boolean;
@@ -55,6 +56,8 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     const isPushOrAnon = !this.props.userMe.email && !this.props.userMe.isExternal;
 
+    const categoriesWithSubscribe = (this.props.categories || []).filter(c => !!c.subscription);
+
     return (
       <div className={this.props.classes.page}>
         <Typography component="h1" variant="h5" color="textPrimary">Your profile</Typography>
@@ -67,32 +70,32 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <Typography>{this.props.userMe.name || 'None'}</Typography>
                 </Tooltip>
               ) : (
-                  <React.Fragment>
-                    <TextField
-                      id='displayName'
-                      error={!this.props.userMe.name}
-                      value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
-                      onChange={e => this.setState({ displayName: e.target.value })}
-                    />
-                    <Button aria-label="Save" color='primary' style={{
-                      visibility:
-                        !this.state.displayName
-                          || this.state.displayName === this.props.userMe.name
-                          ? 'hidden' : undefined
-                    }} onClick={() => {
-                      if (!this.state.displayName
-                        || !this.props.userMe
-                        || this.state.displayName === this.props.userMe.name) {
-                        return;
-                      }
-                      this.props.server.dispatch().then(d => d.userUpdate({
-                        projectId: this.props.server.getProjectId(),
-                        userId: this.props.userMe!.userId,
-                        userUpdate: { name: this.state.displayName },
-                      }));
-                    }}>Save</Button>
-                  </React.Fragment>
-                )}
+                <React.Fragment>
+                  <TextField
+                    id='displayName'
+                    error={!this.props.userMe.name}
+                    value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
+                    onChange={e => this.setState({ displayName: e.target.value })}
+                  />
+                  <Button aria-label="Save" color='primary' style={{
+                    visibility:
+                      !this.state.displayName
+                        || this.state.displayName === this.props.userMe.name
+                        ? 'hidden' : undefined
+                  }} onClick={() => {
+                    if (!this.state.displayName
+                      || !this.props.userMe
+                      || this.state.displayName === this.props.userMe.name) {
+                      return;
+                    }
+                    this.props.server.dispatch().then(d => d.userUpdate({
+                      projectId: this.props.server.getProjectId(),
+                      userId: this.props.userMe!.userId,
+                      userUpdate: { name: this.state.displayName },
+                    }));
+                  }}>Save</Button>
+                </React.Fragment>
+              )}
             </Grid>
           </Grid>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
@@ -103,31 +106,31 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <Typography>{this.props.userMe.email || 'None'}</Typography>
                 </Tooltip>
               ) : (
-                  <React.Fragment>
-                    <TextField
-                      id='email'
-                      value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
-                      onChange={e => this.setState({ email: e.target.value })}
-                    />
-                    <Button aria-label="Save" color='primary' style={{
-                      visibility:
-                        !this.state.email
-                          || this.state.email === this.props.userMe.email
-                          ? 'hidden' : undefined
-                    }} onClick={() => {
-                      if (!this.state.email
-                        || !this.props.userMe
-                        || this.state.email === this.props.userMe.email) {
-                        return;
-                      }
-                      this.props.server.dispatch().then(d => d.userUpdate({
-                        projectId: this.props.server.getProjectId(),
-                        userId: this.props.userMe!.userId,
-                        userUpdate: { email: this.state.email },
-                      }));
-                    }}>Save</Button>
-                  </React.Fragment>
-                )}
+                <React.Fragment>
+                  <TextField
+                    id='email'
+                    value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
+                    onChange={e => this.setState({ email: e.target.value })}
+                  />
+                  <Button aria-label="Save" color='primary' style={{
+                    visibility:
+                      !this.state.email
+                        || this.state.email === this.props.userMe.email
+                        ? 'hidden' : undefined
+                  }} onClick={() => {
+                    if (!this.state.email
+                      || !this.props.userMe
+                      || this.state.email === this.props.userMe.email) {
+                      return;
+                    }
+                    this.props.server.dispatch().then(d => d.userUpdate({
+                      projectId: this.props.server.getProjectId(),
+                      userId: this.props.userMe!.userId,
+                      userUpdate: { email: this.state.email },
+                    }));
+                  }}>Save</Button>
+                </React.Fragment>
+              )}
             </Grid>
           </Grid>
           {!this.props.userMe.isExternal && (
@@ -257,9 +260,53 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <Grid item xs={12} sm={6}>{emailControl}</Grid>
             </Grid>
           )}
+          {categoriesWithSubscribe.length > 0 && (
+            <div className={this.props.classes.section}>
+              {categoriesWithSubscribe.map(category => (
+                <Grid container alignItems='baseline' className={this.props.classes.item}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography>New {category.name}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    {this.renderCategorySubscribeControl(category)}
+                  </Grid>
+                </Grid>
+              ))}
+            </div>
+          )}
         </DividerCorner>
         <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
       </div>
+    );
+  }
+
+  renderCategorySubscribeControl(category: Client.Category) {
+    if (!category.subscription) return null;
+
+    const isSubscribed = this.props.userMe?.categorySubscriptions?.includes(category.categoryId);
+
+    return (
+      <FormControlLabel
+        control={(
+          <Switch
+            color='default'
+            checked={!!isSubscribed}
+            onChange={async (e, checked) => {
+              const dispatcher = await this.props.server.dispatch();
+              await dispatcher.categorySubscribe({
+                projectId: this.props.server.getProjectId(),
+                categoryId: category.categoryId,
+                subscribe: !isSubscribed,
+              });
+            }}
+          />
+        )}
+        label={(
+          <FormHelperText component='span'>
+            {isSubscribed ? 'Subscribed' : 'Unsubscribed'}
+          </FormHelperText>
+        )}
+      />
     );
   }
 
@@ -465,6 +512,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     userMe: state.users.loggedIn.user,
+    categories: state.conf.conf?.content.categories,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withSnackbar(AccountPage)));

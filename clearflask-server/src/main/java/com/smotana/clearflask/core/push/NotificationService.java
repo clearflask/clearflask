@@ -1,9 +1,11 @@
 package com.smotana.clearflask.core.push;
 
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 
@@ -30,4 +32,6 @@ public interface NotificationService {
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);
 
     void onEmailVerify(ConfigAdmin configAdmin, String email, String token);
+
+    void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
 }

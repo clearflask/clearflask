@@ -98,7 +98,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
@@ -169,7 +170,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         UserModel user2 = new UserModel(
                 projectId,
                 store.genUserId(Optional.empty()),
@@ -191,7 +193,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         UserModel user3 = new UserModel(
                 projectId,
                 store.genUserId(Optional.empty()),
@@ -213,7 +216,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         store.createIndex(projectId).get().index();
         store.createUser(user1).getIndexingFuture().get();
@@ -272,7 +276,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
@@ -310,7 +315,8 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();

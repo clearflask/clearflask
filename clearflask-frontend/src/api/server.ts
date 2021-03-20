@@ -986,9 +986,9 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           status: Status.PENDING,
         },
       };
-    case Client.userBindActionStatus.Pending:
-    case Client.userBindSlugActionStatus.Pending:
-    case Client.configAndUserBindSlugActionStatus.Pending:
+    case Client.userBindActionStatus.Rejected:
+    case Client.userBindSlugActionStatus.Rejected:
+    case Client.configAndUserBindSlugActionStatus.Rejected:
       return {
         ...state,
         loggedIn: {
@@ -1017,6 +1017,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
     case Client.userLoginActionStatus.Fulfilled:
     case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
+    case Client.categorySubscribeActionStatus.Fulfilled:
       const user = action.type === Client.userCreateActionStatus.Fulfilled
         ? action.payload.user : action.payload;
       if (user === undefined) return state;

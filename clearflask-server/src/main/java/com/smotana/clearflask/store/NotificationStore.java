@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
@@ -22,6 +23,8 @@ public interface NotificationStore {
     }
 
     void notificationCreate(NotificationModel notification);
+
+    void notificationsCreate(Collection<NotificationModel> notifications);
 
     NotificationListResponse notificationList(String projectId, String userId, Optional<String> cursorOpt);
 

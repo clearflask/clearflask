@@ -396,6 +396,27 @@ components:
             footer:
               x-clearflask-prop: { order: 4, name: 'Footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden.', subType: 'multiline' }
               type: string
+    subscription:
+      x-clearflask-page: { order: 3, name: 'Subscription', description: 'Allow users to subscribe to new content, typically used for a blog or changelog.' }
+      title: Subscription
+      type: object
+      required:
+      properties:
+        hellobar:
+          x-clearflask-prop: { order: 3, name: 'Subscribe message', description: 'Show a subscribe-to-me bar when viewing this content.', defaultValue: true }
+          title: HelloBar
+          type: object
+          required:
+          properties:
+            title:
+              x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to show users to entice them to subscribe', defaultValue: 'Get notified' }
+              type: string
+            message:
+              x-clearflask-prop: { order: 1, name: 'Message', description: 'Reason why they should subscribe', defaultValue: 'If you enjoyed reading this, follow my new content.' }
+              type: string
+            button:
+              x-clearflask-prop: { order: 1, name: 'Button text', description: 'Subscribe button action text', defaultValue: 'Follow' }
+              type: string
     support:
       x-clearflask-page: { order: 4, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
       title: Support
@@ -686,6 +707,8 @@ components:
               userCreatable:
                 x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Whether content under this category can be created by users', defaultValue: true }
                 type: boolean
+              subscription:
+                $ref: 'api-project.yaml#/components/schemas/subscription'
               workflow:
                 $ref: 'api-project.yaml#/components/schemas/workflow'
               support:

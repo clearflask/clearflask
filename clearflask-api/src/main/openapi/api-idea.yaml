@@ -178,6 +178,17 @@ components:
             fundGoal:
               type: integer
               format: int64
+            notifySubscribers:
+              title: NotifySubscribers
+              type: object
+              required:
+              - title
+              - body
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
     IdeaUpdate:
       type: object
       properties:

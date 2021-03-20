@@ -808,6 +808,22 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
+    public UserModel updateSubscription(String projectId, String userId, String categoryId, boolean subscribe) {
+        return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(userSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "userId", userId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression((subscribe ? "ADD" : "DELETE") + " #subscribedCategoryIds :categoryId")
+                .withNameMap(new NameMap()
+                        .with("#subscribedCategoryIds", "subscribedCategoryIds")
+                        .with("#partitionKey", userSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":categoryId", categoryId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
     public UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt) {
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valMap = Maps.newHashMap();
@@ -1177,7 +1193,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     null,
                     null,
                     null,
-                    null))
+                    null,
+                    ImmutableSet.of()))
                     .getUser());
         }
         return userOpt.get();

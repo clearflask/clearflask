@@ -51,6 +51,7 @@ components:
         vote:
           $ref: 'api-vote.yaml#/components/schemas/VoteOption'
 
+
 /project/{projectId}/vote/ideas:
   get:
     operationId: ideaVoteGetOwn
@@ -229,5 +230,33 @@ components:
               properties:
                 comment:
                   $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/subscribe/category/{categoryId}:
+  patch:
+    operationId: categorySubscribe
+    tags: [Vote]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: categoryId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: subscribe
+      in: query
+      required: true
+      schema:
+        type: boolean
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

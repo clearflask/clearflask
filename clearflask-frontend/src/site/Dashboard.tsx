@@ -1,6 +1,7 @@
 import { Button, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
+import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
@@ -44,11 +45,6 @@ import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
-
-loadStripe.setLoadParameters({ advancedFraudSignals: false })
-const stripePromise = loadStripe(isProd()
-  ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
-  : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
 
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {
@@ -99,6 +95,7 @@ interface State {
   accountSearching?: string;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithMediaQuery, State> {
+  static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
@@ -107,6 +104,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
   constructor(props) {
     super(props);
+
+    Dashboard.getStripePromise();
 
     if (props.accountStatus === undefined) {
       this.state = {
@@ -140,6 +139,16 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       this.setState({ accountSearching: newValue });
       searchAccountsDebounced(newValue);
     }
+  }
+
+  static getStripePromise(): Promise<Stripe | null> {
+    if (!Dashboard.stripePromise) {
+      loadStripe.setLoadParameters({ advancedFraudSignals: false })
+      Dashboard.stripePromise = loadStripe(isProd()
+        ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
+        : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
+    }
+    return Dashboard.stripePromise;
   }
 
   async bind() {
@@ -346,7 +355,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'billing':
         setTitle('Billing - Dashboard');
-        page = (<BillingPage stripePromise={stripePromise} />);
+        page = (<BillingPage stripePromise={Dashboard.getStripePromise()} />);
         crumbs = [{ name: 'Billing', slug: activePath }];
         break;
       case 'account':
@@ -657,7 +666,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     );
 
     return (
-      <Elements stripe={stripePromise}>
+      <Elements stripe={Dashboard.getStripePromise()}>
         {this.props.account && (
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
@@ -748,7 +757,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   openFeedbackUrl(page?: string) {
-    return `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
+    var url = `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${page || ''}`;
+    if (this.props.account) {
+      url += `?${SSO_TOKEN_PARAM_NAME}=${this.props.account.cfJwt}`;
+    }
+    return url;
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

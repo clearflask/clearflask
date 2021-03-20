@@ -63,6 +63,7 @@ const styles = (theme: Theme) => createStyles({
     gridTemplateAreas:
       "'. f'"
       + " 'v c'"
+      + " 'bc bc'"
       + " 'o o'",
   },
   postContent: {
@@ -78,6 +79,11 @@ const styles = (theme: Theme) => createStyles({
   postFunding: {
     gridArea: 'f',
     minWidth: 0,
+  },
+  postContentBeforeComments: {
+    gridArea: 'bc',
+    minWidth: 0,
+    paddingTop: theme.spacing(4),
   },
   postComments: {
     gridArea: 'o',
@@ -377,6 +383,7 @@ interface Props {
   forceDisablePostExpand?: boolean;
   display?: Client.PostDisplay;
   widthExpand?: boolean;
+  contentBeforeComments?: React.ReactNode;
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
@@ -473,6 +480,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               ))}
               {this.renderBottomBar(variant)}
             </div>
+            {this.props.contentBeforeComments && (
+              <div className={this.props.classes.postContentBeforeComments}>
+                {this.props.contentBeforeComments}
+              </div>
+            )}
             <div className={this.props.classes.postComments}>
               {this.renderComments(variant)}
             </div>

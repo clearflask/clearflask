@@ -1101,6 +1101,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       comment,
     });
   }
+  categorySubscribe(request: Client.CategorySubscribeRequest): Promise<Admin.UserMe> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const subscribedToSet = new Set(loggedInUser.categorySubscriptions || []);
+    if (!!request.subscribe) {
+      subscribedToSet.add(request.categoryId);
+    } else {
+      subscribedToSet.delete(request.categoryId);
+    }
+    loggedInUser.categorySubscriptions = [...subscribedToSet];
+    return this.returnLater(loggedInUser);
+  }
   accountNoopAdmin(): Promise<void> {
     return this.returnLater();
   }

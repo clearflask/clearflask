@@ -102,6 +102,10 @@ components:
               type: boolean
             intercomIdentity:
               type: string
+            categorySubscriptions:
+              type: array
+              items:
+                type: string
     UserMeWithBalance:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMe'

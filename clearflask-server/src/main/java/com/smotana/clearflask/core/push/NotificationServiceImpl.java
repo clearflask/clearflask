@@ -2,6 +2,7 @@ package com.smotana.clearflask.core.push;
 
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -17,6 +18,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
@@ -27,6 +29,7 @@ import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
+import com.smotana.clearflask.core.push.message.OnPostCreated;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
@@ -41,6 +44,7 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.ListResponse;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -123,6 +127,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnAdminInvite onAdminInvite;
     @Inject
     private OnEmailChanged onEmailChanged;
+    @Inject
+    private OnPostCreated onPostCreated;
     @Inject
     private EmailVerify emailVerify;
     @Inject
@@ -476,6 +482,80 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
+    public void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        if (!project.getCategory(idea.getCategoryId())
+                .flatMap(c -> Optional.ofNullable(c.getSubscription()))
+                .isPresent()) {
+            return;
+        }
+        submit(() -> {
+            String projectId = project.getProjectId();
+            ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
+            String link = "https://"
+                    + Project.getHostname(configAdmin, configApp)
+                    + "/post/"
+                    + idea.getIdeaId();
+
+            Optional<String> cursor = Optional.empty();
+            do {
+                ListResponse<VoteStore.VoteModel> subscriptionsBatch = voteStore.voteListByTarget(projectId, idea.getCategoryId(), cursor);
+                cursor = subscriptionsBatch.getCursorOpt();
+
+                ImmutableMap<String, UserModel> subscribersBatch = userStore.getUsers(
+                        projectId,
+                        subscriptionsBatch.getItems().stream()
+                                .map(VoteStore.VoteModel::getUserId)
+                                .collect(ImmutableList.toImmutableList()));
+
+                try {
+                    notificationStore.notificationsCreate(subscribersBatch.values().stream()
+                            .map(user -> new NotificationModel(
+                                    projectId,
+                                    user.getUserId(),
+                                    notificationStore.genNotificationId(),
+                                    idea.getIdeaId(),
+                                    null,
+                                    idea.getCreated(),
+                                    Instant.now().plus(this.config.notificationExpiry()).getEpochSecond(),
+                                    onPostCreated.inAppDescription(notifySubscribers, configAdmin, user)))
+                            .collect(ImmutableList.toImmutableList()));
+                } catch (Exception ex) {
+                    log.warn("Failed to send in-app notification", ex);
+                }
+
+                subscribersBatch.values().forEach(user -> {
+                    Optional<String> authTokenOpt = Optional.empty();
+                    try {
+                        if (user.isEmailNotify() && !Strings.isNullOrEmpty(user.getEmail())) {
+                            if (!authTokenOpt.isPresent()) {
+                                authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), this.config.autoLoginExpiry()));
+                            }
+                            emailService.send(onPostCreated.email(notifySubscribers, configAdmin, user, link, authTokenOpt.get()));
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Failed to send email notification", ex);
+                    }
+                    try {
+                        if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
+                            if (!authTokenOpt.isPresent()) {
+                                authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), this.config.autoLoginExpiry()));
+                            }
+                            browserPushService.send(onPostCreated.browserPush(notifySubscribers, configAdmin, user, link, authTokenOpt.get()));
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Failed to send browser push notification", ex);
+                    }
+                });
+
+            } while (cursor.isPresent());
+        });
+    }
+
+    @Override
     public void onAccountSignup(Account account) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
@@ -496,9 +576,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         String skipUserId = senderOpt.map(UserModel::getUserId).orElse("");
         ImmutableSet.Builder<String> userIdsFundBuilder = ImmutableSet.builder();
         if (idea.getFundersCount() != null && idea.getFundersCount() != 0) {
-            VoteStore.ListResponse<VoteStore.FundModel> resultFund = null;
+            ListResponse<VoteStore.FundModel> resultFund = null;
             do {
-                resultFund = voteStore.fundListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultFund).flatMap(VoteStore.ListResponse::getCursorOpt));
+                resultFund = voteStore.fundListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultFund).flatMap(ListResponse::getCursorOpt));
                 userIdsFundBuilder.addAll(resultFund.getItems().stream()
                         .map(VoteStore.FundModel::getUserId)
                         .filter(Predicates.not(skipUserId::equals))
@@ -509,9 +589,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
         ImmutableSet.Builder<String> userIdsVoteBuilder = ImmutableSet.builder();
         if (idea.getVotersCount() != null && idea.getVotersCount() != 0) {
-            VoteStore.ListResponse<VoteStore.VoteModel> resultVote = null;
+            ListResponse<VoteStore.VoteModel> resultVote = null;
             do {
-                resultVote = voteStore.voteListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultVote).flatMap(VoteStore.ListResponse::getCursorOpt));
+                resultVote = voteStore.voteListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultVote).flatMap(ListResponse::getCursorOpt));
                 userIdsVoteBuilder.addAll(resultVote.getItems().stream()
                         .map(VoteStore.VoteModel::getUserId)
                         .filter(Predicates.not(skipUserId::equals))
@@ -522,9 +602,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
         ImmutableSet.Builder<String> userIdsExpressBuilder = ImmutableSet.builder();
         if (!idea.getExpressions().isEmpty()) {
-            VoteStore.ListResponse<VoteStore.ExpressModel> resultExpress = null;
+            ListResponse<VoteStore.ExpressModel> resultExpress = null;
             do {
-                resultExpress = voteStore.expressListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultExpress).flatMap(VoteStore.ListResponse::getCursorOpt));
+                resultExpress = voteStore.expressListByTarget(idea.getProjectId(), idea.getIdeaId(), Optional.ofNullable(resultExpress).flatMap(ListResponse::getCursorOpt));
                 userIdsExpressBuilder.addAll(resultExpress.getItems().stream()
                         .map(VoteStore.ExpressModel::getUserId)
                         .filter(Predicates.not(skipUserId::equals))

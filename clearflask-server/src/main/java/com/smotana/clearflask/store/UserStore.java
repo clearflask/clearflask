@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Balance;
 import com.smotana.clearflask.api.model.NotificationMethodsOauth;
@@ -71,6 +72,8 @@ public interface UserStore {
     UserModel userCommentVoteUpdateBloom(String projectId, String userId, String commentId);
 
     UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId);
+
+    UserModel updateSubscription(String projectId, String userId, String categoryId, boolean subscribe);
 
     UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
 
@@ -236,6 +239,9 @@ public interface UserStore {
 
         Boolean isTracked;
 
+        @NonNull
+        ImmutableSet<String> subscribedCategoryIds;
+
         public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(
                     this.getUserId(),
@@ -250,7 +256,8 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
-                    getIntercomIdentity(intercomEmailToIdentity));
+                    getIntercomIdentity(intercomEmailToIdentity),
+                    this.getSubscribedCategoryIds().asList());
         }
 
         public UserMeWithBalance toUserMeWithBalance(Function<String, String> intercomEmailToIdentity) {
@@ -268,6 +275,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
                     getIntercomIdentity(intercomEmailToIdentity),
+                    this.getSubscribedCategoryIds().asList(),
                     this.getBalance());
         }
 
@@ -286,6 +294,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
                     getIntercomIdentity(intercomEmailToIdentity),
+                    this.getSubscribedCategoryIds().asList(),
                     this.getBalance());
         }
 
