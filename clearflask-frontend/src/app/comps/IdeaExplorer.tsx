@@ -490,7 +490,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                   variant='outlined'
                   size='small'
                   id='createTitle'
-                  multiline
                   disabled={this.state.newItemIsSubmitting}
                   className={this.props.classes.createFormField}
                   label='Notification Body'
