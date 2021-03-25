@@ -30,7 +30,6 @@ const styles = (theme: Theme) => createStyles({
   post: {
     flexGrow: 1,
     display: 'flex',
-    justifyContent: 'center',
   },
   similar: {
     minWidth: 300,
