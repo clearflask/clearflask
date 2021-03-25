@@ -19,8 +19,6 @@ import com.smotana.clearflask.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -35,13 +33,13 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     private static final Pattern CONTENT_TYPE_URL_MATCHER = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/(?<key>" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^?]+\\.(?<extension>[^.?]+)))(?<query>\\?[^#]*)?$");
 
     public interface Config {
-        @DefaultValue("upload.clearflask.com")
+        @DefaultValue("clearflask-upload.s3.amazonaws.com")
         String hostname();
 
         @DefaultValue("https")
         String scheme();
 
-        @DefaultValue("upload.clearflask.com")
+        @DefaultValue("clearflask-upload")
         String bucketName();
 
         @DefaultValue("false")
@@ -147,17 +145,11 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
     @Override
     public String signUrl(ContentUrl contentUrl) {
-        URL presignedUrl = s3.generatePresignedUrl(
+        return s3.generatePresignedUrl(
                 config.bucketName(),
                 contentUrl.getKey(),
                 Date.from(Instant.now().plus(config.presignedUrlExpiry())),
-                HttpMethod.GET);
-        try {
-            return new URL("https", config.hostname(), presignedUrl.getFile()).toString();
-        } catch (MalformedURLException ex) {
-            log.warn("Malformed presigned url, {} {}", contentUrl, presignedUrl, ex);
-            throw new RuntimeException(ex);
-        }
+                HttpMethod.GET).toString();
     }
 
     @Override
