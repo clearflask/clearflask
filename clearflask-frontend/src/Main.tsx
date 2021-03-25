@@ -30,7 +30,8 @@ export const importSuccess = i => {
   return i;
 };
 export const importFailed = e => {
-  notistackRef.current?.enqueueSnackbar("Network connectivity issues, please reload the page", {
+  console.log('import failed', e);
+  notistackRef.current?.enqueueSnackbar("Failed to load: " + e, {
     variant: 'error',
     preventDuplicate: true,
     persist: true,

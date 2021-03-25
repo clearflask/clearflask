@@ -15,7 +15,7 @@ import { RestrictedProperties, UpgradeAlert } from '../../common/config/settings
 import { Device } from '../../common/DeviceContainer';
 import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
-import preloadImage from '../../common/util/imageUtil';
+import { preloadImage } from '../../common/util/imageUtil';
 import { Project } from '../DemoApp';
 import Demo from '../landing/Demo';
 import OnboardingDemo from '../landing/OnboardingDemo';

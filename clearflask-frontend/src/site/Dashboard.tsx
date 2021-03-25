@@ -26,7 +26,7 @@ import Page from '../common/config/settings/Page';
 import ProjectSettings from '../common/config/settings/ProjectSettings';
 import Layout from '../common/Layout';
 import UserDisplayMe from '../common/UserDisplayMe';
-import notEmpty from '../common/util/arrayUtil';
+import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';

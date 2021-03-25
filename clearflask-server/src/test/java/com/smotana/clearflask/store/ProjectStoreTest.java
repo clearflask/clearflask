@@ -34,6 +34,8 @@ public class ProjectStoreTest extends AbstractTest {
     protected void configure() {
         super.configure();
 
+        bindMock(ContentStore.class);
+
         install(Modules.override(
                 Application.module(),
                 DynamoProjectStore.module(),

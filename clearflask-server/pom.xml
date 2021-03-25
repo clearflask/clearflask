@@ -112,6 +112,91 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.twelvemonkeys.common</groupId>
+            <artifactId>common-image</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.common</groupId>
+            <artifactId>common-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.common</groupId>
+            <artifactId>common-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.servlet</groupId>
+            <artifactId>servlet</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-bmp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tiff</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-psd</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <!-- For SVG -->
+            <artifactId>imageio-batik</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-rasterizer-ext</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.xmlgraphics</groupId>
+                    <artifactId>batik-extensions</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-extension</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>xalan</groupId>
+                    <artifactId>xalan</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>xmlgraphics-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-anim</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-svggen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>fop</groupId>
+                    <artifactId>fop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
@@ -537,6 +622,31 @@
                                 <log>
                                     <prefix>killbill-engine:</prefix>
                                     <color>cyan</color>
+                                </log>
+                            </run>
+                        </image>
+                        <image>
+                            <alias>aws-services</alias>
+                            <name>localstack/localstack-full</name>
+                            <run>
+                                <env>
+                                    <LOCALSTACK_HOSTNAME>localhost</LOCALSTACK_HOSTNAME>
+                                    <HOSTNAME_EXTERNAL>s3.localhost.localstack.cloud</HOSTNAME_EXTERNAL>
+                                    <SERVICES>route53,ses,s3</SERVICES>
+                                    <LS_LOG>debug</LS_LOG>
+                                    <START_WEB>0</START_WEB>
+                                    <USE_SSL>0</USE_SSL>
+                                </env>
+                                <ports>
+                                    <port>4566:4566</port>
+                                </ports>
+                                <wait>
+                                    <time>300000</time>
+                                    <log>Ready.</log>
+                                </wait>
+                                <log>
+                                    <prefix>aws:</prefix>
+                                    <color>green</color>
                                 </log>
                             </run>
                         </image>

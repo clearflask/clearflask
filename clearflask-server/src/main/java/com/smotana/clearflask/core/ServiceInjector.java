@@ -27,6 +27,7 @@ import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
+import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
@@ -60,7 +61,9 @@ import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
+import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
+import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -71,6 +74,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.ConnectResource;
+import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
@@ -155,7 +159,9 @@ public enum ServiceInjector {
 
                 // Stores
                 install(DefaultDynamoDbProvider.module());
+                install(DefaultS3ClientProvider.module());
                 install(DefaultElasticSearchProvider.module());
+                install(S3ContentStore.module());
                 install(DynamoProjectStore.module());
                 install(DynamoElasticAccountStore.module());
                 install(DynamoElasticUserStore.module());
@@ -224,6 +230,7 @@ public enum ServiceInjector {
                 install(ProjectResource.module());
                 install(SupportResource.module());
                 install(ConnectResource.module());
+                install(ContentResource.module());
 
                 // Billing
                 install(KillBillClientProvider.module());
@@ -239,6 +246,7 @@ public enum ServiceInjector {
                 install(AuthCookieImpl.module());
                 install(Sanitizer.module());
                 install(IntercomUtil.module());
+                install(ImageNormalizationImpl.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

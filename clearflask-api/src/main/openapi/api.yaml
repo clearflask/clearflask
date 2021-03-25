@@ -59,6 +59,11 @@ paths:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear'
   /project/{projectId}/notificationclear/{notificationId}/clear:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
+  # api-content.yaml
+  /project/{projectId}/content/upload:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
+  /project/{projectId}/admin/content/uploadAs:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   # api-admin.yaml
   /support/message:
     $ref: 'api-account.yaml#/~1support~1message'

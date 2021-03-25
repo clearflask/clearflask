@@ -2,7 +2,11 @@ package com.smotana.clearflask.testutil;
 
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Stage;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
@@ -34,7 +38,7 @@ public abstract class AbstractTest extends AbstractModule {
     private ConfigNamingStrategy configNamingStrategy;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         injector = Guice.createInjector(Stage.DEVELOPMENT, new AbstractModule() {
             @Override
             protected void configure() {
@@ -62,7 +66,7 @@ public abstract class AbstractTest extends AbstractModule {
     }
 
     @After
-    public void cleanup() {
+    public void cleanup() throws Exception {
         if (serviceManager != null) {
             log.info("stopping services");
             serviceManager.stopAsync().awaitStopped();

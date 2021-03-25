@@ -11,6 +11,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -44,32 +45,8 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 public class Sanitizer {
     private static final PolicyFactory HtmlToPlaintextPolicyFactory = new HtmlPolicyBuilder().toFactory();
 
-    /** If changed, also change in Sanitizer.java */
-    private static final PolicyFactory RichHtmlPolicyFactory = new HtmlPolicyBuilder()
-            .allowAttributes("class").matching(Pattern.compile("ql-indent-[0-9]")).onElements("li")
-            .allowAttributes("class").matching(false, "ql-syntax").onElements("pre")
-            .allowAttributes("spellcheck").matching(false, "false").onElements("pre")
-            .allowAttributes("data-checked").matching(false, "true", "false").onElements("ul")
-
-            // Links
-            .allowAttributes("href").onElements("a")
-            // If changed, also change in quill-format-link.ts
-            .allowAttributes("target").matching((String elementName, String attributeName, String value) -> "_blank").onElements("a")
-            .allowAttributes("rel").matching((String elementName, String attributeName, String value) -> "" /* Will be set by requireRelsOnLinks */).onElements("a")
-            .allowElements((elementName, attrs) -> attrs.containsAll(ImmutableSet.of("rel", "href", "target")) ? elementName : null, "a")
-            // If changed, also change in quill-format-link.ts
-            .requireRelsOnLinks("noreferrer", "noopener", "ugc")
-            // If changed, also change in quill-format-link.ts
-            .allowUrlProtocols("https", "http", "mailto", "tel")
-
-            // Migration from <p> to <div>
-            .allowElements((elementName, attrs) -> "div", "p")
-
-            .allowElements("div", "br", "a", "strong", "s", "em", "u", "ul", "ol", "li", "pre", "blockquote")
-            .toFactory();
-
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api,domain,cname,sni", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api,domain,cname,sni,upload", innerType = String.class)
         Set<String> reservedSubdomains();
 
         @DefaultValue(value = "", innerType = String.class)
@@ -90,6 +67,8 @@ public class Sanitizer {
 
     @Inject
     private Config config;
+    @Inject
+    private ContentStore contentStore;
 
     /** If changed, also change in IdeaExplorer.tsx */
     private static final long POST_TITLE_MAX_LENGTH = 100;
@@ -102,12 +81,38 @@ public class Sanitizer {
     /** If changed, also change in api-project.yaml */
     private static final String SUBDOMAIN_REGEX = "^[a-z0-9](?:[a-z0-9\\-]*[a-z0-9])?$";
     private static final long SEARCH_TEXT_MAX_LENGTH = 200;
+    private static final Pattern IS_NUMERIC_PATTERN = Pattern.compile("^[0-9]+$");
 
-    private final Predicate<String> subdomainPredicate;
+    private Predicate<String> subdomainPredicate;
+    private PolicyFactory richHtmlPolicyFactory;
 
     @Inject
-    private Sanitizer() {
+    private void setup() {
         subdomainPredicate = Pattern.compile(SUBDOMAIN_REGEX).asPredicate();
+        richHtmlPolicyFactory = new HtmlPolicyBuilder()
+                .allowAttributes("class").matching(Pattern.compile("ql-indent-[0-9]")).onElements("li")
+                .allowAttributes("class").matching(false, "ql-syntax").onElements("pre")
+                .allowAttributes("spellcheck").matching(false, "false").onElements("pre")
+                .allowAttributes("data-checked").matching(false, "true", "false").onElements("ul")
+
+                // Links
+                .allowAttributes("src", "width", "align").onElements("img")
+                // Links
+                .allowAttributes("href").onElements("a")
+                // If changed, also change in quill-format-link.ts
+                .allowAttributes("target").matching((String elementName, String attributeName, String value) -> "_blank").onElements("a")
+                .allowAttributes("rel").matching((String elementName, String attributeName, String value) -> "" /* Will be set by requireRelsOnLinks */).onElements("a")
+                .allowElements((elementName, attrs) -> attrs.containsAll(ImmutableSet.of("rel", "href", "target")) ? elementName : null, "a")
+                // If changed, also change in quill-format-link.ts
+                .requireRelsOnLinks("noreferrer", "noopener", "ugc")
+                // If changed, also change in quill-format-link.ts
+                .allowUrlProtocols("https", "http", "mailto", "tel")
+
+                // Migration from <p> to <div>
+                .allowElements((elementName, attrs) -> "div", "p")
+
+                .allowElements("div", "br", "a", "strong", "s", "em", "u", "ul", "ol", "li", "pre", "blockquote", "h2", "h3", "h4", "img")
+                .toFactory();
     }
 
     public void email(String email) {
@@ -211,7 +216,7 @@ public class Sanitizer {
         }
     }
 
-    public String richHtml(String html, String identifierType, String identifierId) {
+    public String richHtml(String html, String identifierType, String identifierId, String projectId) {
         if (!config.htmlSanitizerEnabled()) {
             return html;
         }
@@ -238,7 +243,8 @@ public class Sanitizer {
                     }
                     sanitizedHtmlBuilder.append(config.htmlSanitizerInvalidHtmlMessage());
                 });
-        HtmlSanitizer.sanitize(html, RichHtmlPolicyFactory.apply(renderer, htmlChangeListener, discarded));
+        PolicyFactory policy = richHtmlPolicyFactory.and(contentSignUrlsPolicy(projectId));
+        HtmlSanitizer.sanitize(html, policy.apply(renderer, htmlChangeListener, discarded));
 
         // Migration from <p> to <div>
         if (!discarded.isEmpty()
@@ -254,6 +260,30 @@ public class Sanitizer {
             }
         }
         return sanitizedHtmlBuilder.toString();
+    }
+
+    /**
+     * - Only allow images uploaded to our service
+     * - Attach S3 presigned URL query params.
+     */
+    private PolicyFactory contentSignUrlsPolicy(String projectId) {
+        return new HtmlPolicyBuilder()
+                .allowAttributes("src")
+                .matching((elementName, attributeName, value) -> contentStore.signUrl(projectId, value).orElse(null))
+                .onElements("img")
+
+                .allowAttributes("width")
+                .matching(IS_NUMERIC_PATTERN)
+                .onElements("img")
+
+                .allowAttributes("align")
+                .matching(true, "left", "middle", "right")
+                .onElements("img")
+
+                .allowElements((elementName, attrs) -> attrs.containsAll(ImmutableSet.of("src")) ? elementName : null, "img")
+                .allowUrlProtocols(contentStore.getScheme())
+                .allowElements("img")
+                .toFactory();
     }
 
     public String richHtmlToPlaintext(String html) {

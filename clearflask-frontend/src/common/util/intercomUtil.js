@@ -10,7 +10,7 @@ export function intercomLoad(APP_ID) {
       ic('reattach_activator');
       ic('update', w.intercomSettings);
     } else {
-      var d = document;
+      var d = windowIso.document;
       var i = function () {
         i.c(arguments);
       };
@@ -27,7 +27,7 @@ export function intercomLoad(APP_ID) {
         var x = d.getElementsByTagName('script')[0];
         x.parentNode.insertBefore(s, x);
       };
-      if (document.readyState === 'complete') {
+      if (windowIso.document.readyState === 'complete') {
         l();
       } else if (w.attachEvent) {
         w.attachEvent('onload', l);

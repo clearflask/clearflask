@@ -5,8 +5,9 @@ import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
-import notEmpty from '../../common/util/arrayUtil';
+import { notEmpty } from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
@@ -43,6 +44,8 @@ interface State {
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
+  readonly richEditorDescriptionImageUploadRef = React.createRef<RichEditorImageUpload>();
+  readonly richEditorResponseImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   render() {
     const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
@@ -102,6 +105,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               )}
               <Grid item xs={12} className={this.props.classes.row}>
                 <RichEditor
+                  onUploadImage={(file) => this.richEditorDescriptionImageUploadRef.current?.onUploadImage(file)}
                   variant='outlined'
                   size='small'
                   disabled={this.state.isSubmitting}
@@ -114,11 +118,17 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   rows={1}
                   rowsMax={15}
                 />
+                <RichEditorImageUpload
+                  ref={this.richEditorDescriptionImageUploadRef}
+                  server={this.props.server}
+                  asAuthorId={isModOrAdminLoggedIn ? this.props.idea.authorUserId : undefined}
+                />
               </Grid>
               {isModOrAdminLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
                     <RichEditor
+                      onUploadImage={(file) => this.richEditorResponseImageUploadRef.current?.onUploadImage(file)}
                       variant='outlined'
                       size='small'
                       disabled={this.state.isSubmitting}
@@ -130,6 +140,11 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       multiline
                       rows={1}
                       rowsMax={3}
+                    />
+                    <RichEditorImageUpload
+                      ref={this.richEditorResponseImageUploadRef}
+                      server={this.props.server}
+                      asAuthorId={this.props.loggedInUser?.userId}
                     />
                   </Grid>
                   {(isModOrAdminLoggedIn && this.props.category.workflow.statuses.length > 0) && (

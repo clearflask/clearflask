@@ -21,13 +21,15 @@ public class NetworkUtil {
     private NetworkUtil() {
     }
 
-    public static int findFreePort() throws IOException {
+    public static int findFreePort() {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
     }
 
-    public static int findRandomFreePort(int rangeStartInclusive, int rangeEndExclusive) throws IOException {
+    public static int findRandomFreePort(int rangeStartInclusive, int rangeEndExclusive) {
         while (true) {
             int port = ThreadLocalRandom.current().nextInt(rangeStartInclusive, rangeEndExclusive);
             try (ServerSocket socket = new ServerSocket()) {
@@ -39,7 +41,7 @@ public class NetworkUtil {
         }
     }
 
-    public static int findAscendingFreePort(int portStart) throws IOException {
+    public static int findAscendingFreePort(int portStart) {
         int port = portStart;
         while (true) {
             try (ServerSocket socket = new ServerSocket()) {

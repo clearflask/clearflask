@@ -10,7 +10,7 @@ import * as Client from '../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../api/server';
 import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
 import InViewObserver from '../common/InViewObserver';
-import notEmpty from '../common/util/arrayUtil';
+import { notEmpty } from '../common/util/arrayUtil';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';

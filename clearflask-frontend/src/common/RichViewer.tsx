@@ -1,5 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
+import classNames from 'classnames';
 import React from 'react';
 import { contentScrollApplyStyles, Side } from './ContentScroll';
 
@@ -53,6 +54,10 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
     counterReset:
       'list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9'
   },
+  // If changing headers, also edit "toneDownHeadings" below,
+  '& h2': theme.typography.h5,
+  '& h3': theme.typography.h6,
+  '& h4': theme.typography.subtitle1,
   '& ol, & ul': { paddingLeft: theme.spacing(0.5) },
   '& ol > li, & ul > li': { listStyleType: 'none' },
   '& ul > li::before': { content: '"\\2022"' },
@@ -264,22 +269,43 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
   '& .ql-align-center': { textAlign: 'center' },
   '& .ql-align-justify': { textAlign: 'justify' },
   '& .ql-align-right': { textAlign: 'right' },
+  '& img': { margin: theme.spacing(1) },
+  '& img[align="left"]': {
+    float: 'left',
+    marginLeft: 0,
+  },
+  '& img[align="right"]': {
+    float: 'right',
+    marginRight: 0,
+  },
+  '& img[align="left"], & img[align="right"]': { clear: 'both' },
+  '& img[align="middle"]': {
+    display: 'block',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
 });
 
 const styles = (theme: Theme) => createStyles({
   container: {
     ...QuillViewStyle(theme),
   },
+  toneDownHeadings: {
+    '& h2': { fontSize: '1.2rem' },
+    '& h3': { fontSize: '1.1rem' },
+    '& h4': { fontSize: '1.05rem' },
+  }
 });
 interface Props {
   iAgreeInputIsSanitized: true;
   html: string;
+  toneDownHeadings?: boolean;
 }
 class RichViewer extends React.Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
       <div
-        className={this.props.classes.container}
+        className={classNames(this.props.classes.container, this.props.toneDownHeadings && this.props.classes.toneDownHeadings)}
         dangerouslySetInnerHTML={{ __html: this.props.html }}
       />
     );

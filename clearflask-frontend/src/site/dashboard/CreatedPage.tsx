@@ -10,6 +10,7 @@ import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import { PostTitleMaxLength } from '../../app/comps/IdeaExplorer';
 import Loading from '../../app/utils/Loading';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import windowIso from '../../common/windowIso';
 import { importFailed, importSuccess } from '../../Main';
@@ -76,6 +77,7 @@ interface State {
   linkClicked?: boolean;
 }
 class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   constructor(props) {
     super(props);
@@ -179,6 +181,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           }}
                         />
                         <RichEditor
+                          onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
                           variant='outlined'
                           size='small'
                           disabled={this.state.isSubmitting}
@@ -190,6 +193,10 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           multiline
                           rows={1}
                           rowsMax={5}
+                        />
+                        <RichEditorImageUpload
+                          ref={this.richEditorImageUploadRef}
+                          server={this.props.server}
                         />
                         <SubmitButton
                           wrapperClassName={this.props.classes.button}

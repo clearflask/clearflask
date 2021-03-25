@@ -31,7 +31,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Instant;
@@ -201,7 +200,7 @@ public interface IdeaStore {
         Double trendScore;
 
         public String getDescriptionSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getDescription(), "idea", getIdeaId());
+            return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
         }
 
         public String getDescriptionAsText(Sanitizer sanitizer) {
@@ -213,7 +212,7 @@ public interface IdeaStore {
         }
 
         public String getResponseSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getResponse(), "idea", getIdeaId());
+            return sanitizer.richHtml(getResponse(), "idea", getIdeaId(), getProjectId());
         }
 
         public String getResponseAsText(Sanitizer sanitizer) {

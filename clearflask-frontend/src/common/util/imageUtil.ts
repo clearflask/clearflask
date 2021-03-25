@@ -1,9 +1,17 @@
 import windowIso from "../windowIso";
+import { base64ToBlob } from "./arrayUtil";
 
-function preloadImage(imagePath: string) {
+export function preloadImage(imagePath: string) {
   if (windowIso.isSsr) return;
   const img = new Image();
   img.src = imagePath;
 }
 
-export default preloadImage;
+// Assumes imageData is in format: "data:image/gif;base64,R0lGODlhPQBEAP..."
+export function dataImageToBlob(imageDataUrl: string): Blob {
+  var block = imageDataUrl.split(";");
+  var contentType = block[0].split(":")[1];
+  var realData = block[1].split(",")[1];
+  var blob = base64ToBlob(realData, contentType);
+  return blob;
+}

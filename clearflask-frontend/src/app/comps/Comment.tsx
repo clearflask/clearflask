@@ -12,7 +12,7 @@ import ModAction from '../../common/ModAction';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
-import notEmpty from '../../common/util/arrayUtil';
+import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
@@ -126,13 +126,13 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
         {content}
       </Link>
     ) : (
-        <div
-          className={classNames(this.props.classes.content, this.props.onCommentClick && this.props.classes.clickable)}
-          onClick={this.props.onCommentClick}
-        >
-          {content}
-        </div>
-      );
+      <div
+        className={classNames(this.props.classes.content, this.props.onCommentClick && this.props.classes.clickable)}
+        onClick={this.props.onCommentClick}
+      >
+        {content}
+      </div>
+    );
     return (
       <div className={classNames(this.props.classes.comment, this.props.className)}>
         {content}

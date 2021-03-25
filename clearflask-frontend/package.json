@@ -91,6 +91,7 @@
     "push.js": "1.0.9",
     "query-string": "6.13.1",
     "querystring": "0.2.0",
+    "quill-image-resize": "3.0.9",
     "rc-trigger": "2.6.2",
     "react": "16.14.0",
     "react-app-rewire-alias": "^0.2.1",

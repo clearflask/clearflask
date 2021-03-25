@@ -15,7 +15,7 @@ import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import preloadImage from '../common/util/imageUtil';
+import { preloadImage } from '../common/util/imageUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import { WelcomeImagePath } from './dashboard/WelcomePage';

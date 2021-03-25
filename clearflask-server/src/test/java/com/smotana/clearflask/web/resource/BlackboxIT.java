@@ -34,6 +34,7 @@ import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.util.stream.Stream;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
@@ -202,9 +203,12 @@ public class BlackboxIT extends AbstractBlackboxIT {
                         .amount(300L)
                         .build())
                 .build());
+        InputStream examplePngIn = Thread.currentThread().getContextClassLoader().getResourceAsStream("example.png");
+        String imageUrl = contentResource.contentUpload(projectId, examplePngIn).getUrl();
         IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
                 .authorUserId(user.getUserId())
                 .title("Add dark mode " + IdUtil.randomId())
+                .description("<b>Hello</b> <img src=\"" + imageUrl + "\">")
                 .categoryId(configAdmin.getContent().getCategories().get(0).getCategoryId())
                 .tagIds(ImmutableList.of())
                 .build());

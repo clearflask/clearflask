@@ -82,3 +82,5 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1import~1post'
   /project/{projectId}/admin/export:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
+  /project/{projectId}/admin/content/uploadAs:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'

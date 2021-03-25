@@ -3,7 +3,9 @@ package com.smotana.clearflask.web.resource;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.route53.AmazonRoute53;
+import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.gson.Gson;
@@ -34,6 +36,7 @@ import com.smotana.clearflask.billing.KillBillUtil;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
+import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
@@ -66,6 +69,8 @@ import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
+import com.smotana.clearflask.store.impl.S3ContentStore;
+import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -87,6 +92,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.grizzly.servlet.HttpServletRequestImpl;
+import org.glassfish.grizzly.servlet.HttpServletResponseImpl;
 import org.junit.Before;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
@@ -123,6 +130,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected VoteResource voteResource;
     @Inject
+    protected ContentResource contentResource;
+    @Inject
     protected KillBillResource killBillResource;
     @Inject
     protected MockExtendedSecurityContext mockExtendedSecurityContext;
@@ -139,9 +148,12 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected Billing billing;
     @Inject
+    private AmazonS3 s3;
+    @Inject
     protected Gson gson;
 
     protected long userNumber = 0L;
+    protected final String contentUploadBucketName = "mock-" + IdUtil.randomId();
 
     @Override
     protected void configure() {
@@ -160,6 +172,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ProjectResource.module(),
                 UserResource.module(),
                 ConnectResource.module(),
+                ContentResource.module(),
                 ClearFlaskCreditSync.module(),
                 KillBillResource.module(),
                 KillBillSync.module(),
@@ -196,6 +209,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
                 DynamoCertStore.module(),
+                S3ContentStore.module(),
+                DefaultS3ClientProvider.module(),
+                ImageNormalizationImpl.module(),
                 MockAuthCookie.module(),
                 UserBindUtil.module(),
                 ElasticUtil.module(),
@@ -242,21 +258,42 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
                     om.override(om.id().registerWebhookOnStartup()).withValue(false);
                 }));
+                install(ConfigSystem.overrideModule(S3ContentStore.Config.class, om -> {
+                    om.override(om.id().hostname()).withValue(contentUploadBucketName + ".s3.localhost.localstack.cloud:4566");
+                    om.override(om.id().bucketName()).withValue(contentUploadBucketName);
+                }));
+                install(ConfigSystem.overrideModule(DefaultS3ClientProvider.Config.class, om -> {
+                    om.override(om.id().serviceEndpoint()).withValue("http://s3.localhost.localstack.cloud:4566");
+                    om.override(om.id().signingRegion()).withValue("us-east-1");
+                    om.override(om.id().dnsResolverTo()).withValue("localhost");
+                }));
             }
         }));
     }
 
     @Before
-    public void setupTest() throws Exception {
-        accountResource.securityContext = mockExtendedSecurityContext;
-        projectResource.securityContext = mockExtendedSecurityContext;
-        userResource.securityContext = mockExtendedSecurityContext;
-        ideaResource.securityContext = mockExtendedSecurityContext;
-        commentResource.securityContext = mockExtendedSecurityContext;
-        voteResource.securityContext = mockExtendedSecurityContext;
+    public void setup() throws Exception {
+        super.setup();
+        HttpServletRequestImpl request = HttpServletRequestImpl.create();
+        HttpServletResponseImpl response = HttpServletResponseImpl.create();
+        ImmutableSet.of(
+                accountResource,
+                projectResource,
+                userResource,
+                ideaResource,
+                commentResource,
+                voteResource,
+                contentResource
+        ).forEach(resource -> {
+            resource.securityContext = mockExtendedSecurityContext;
+            resource.request = request;
+            resource.response = response;
+        });
 
         kbClockReset();
         resetPaymentPlugin();
+
+        s3.createBucket(contentUploadBucketName);
     }
 
     @Value

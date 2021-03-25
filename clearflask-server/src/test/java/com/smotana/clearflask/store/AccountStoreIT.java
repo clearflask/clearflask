@@ -44,6 +44,8 @@ public class AccountStoreIT extends AbstractIT {
     protected void configure() {
         super.configure();
 
+        bindMock(ContentStore.class);
+
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),

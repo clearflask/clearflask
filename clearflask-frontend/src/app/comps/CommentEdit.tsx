@@ -5,6 +5,7 @@ import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { importFailed, importSuccess } from '../../Main';
@@ -29,6 +30,7 @@ interface State {
 }
 class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   render() {
     const canSubmit = this.state.content !== undefined;
@@ -47,6 +49,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             <Grid container alignItems='baseline'>
               <Grid item xs={12}>
                 <RichEditor
+                  onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
                   variant='outlined'
                   size='small'
                   disabled={this.state.isSubmitting}
@@ -58,6 +61,10 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
                   multiline
                   rows={1}
                   rowsMax={15}
+                />
+                <RichEditorImageUpload
+                  ref={this.richEditorImageUploadRef}
+                  server={this.props.server}
                 />
               </Grid>
             </Grid>

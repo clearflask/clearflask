@@ -47,6 +47,7 @@ public class UserStoreIT extends AbstractIT {
     protected void configure() {
         super.configure();
 
+        bindMock(ContentStore.class);
 
         install(Modules.override(
                 Application.module(),

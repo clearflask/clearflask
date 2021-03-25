@@ -3,6 +3,7 @@ import { Button, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Server } from '../../api/server';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
@@ -41,6 +42,7 @@ interface State {
 
 class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   state: State = {};
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   readonly inputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
   componentDidMount() {
@@ -54,6 +56,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
     return (
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
         <RichEditor
+          onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
           variant='outlined'
           size='small'
           id='createComment'
@@ -69,6 +72,10 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
             // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
             onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
           }}
+        />
+        <RichEditorImageUpload
+          ref={this.richEditorImageUploadRef}
+          server={this.props.server}
         />
         <Collapse in={!!this.state.newCommentInput}>
           <Button

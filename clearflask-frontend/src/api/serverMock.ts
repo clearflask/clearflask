@@ -1,7 +1,7 @@
 import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
-import notEmpty from '../common/util/arrayUtil';
+import { notEmpty } from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
@@ -1133,6 +1133,22 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   commentUnsubscribeAdmin(request: Admin.CommentUnsubscribeAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
+  }
+
+  contentUploadAsAdmin(request: Admin.ContentUploadAsAdminRequest): Promise<Admin.ContentUploadAsAdminResponse> {
+    return this.contentUpload(request);
+  }
+  async contentUpload(request: Client.ContentUploadRequest): Promise<Client.ContentUploadResponse> {
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        // Always a string since using readAsDataURL below
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(request.body);
+    });
+    return this.returnLater({ url: data });
   }
 
   // **** Private methods

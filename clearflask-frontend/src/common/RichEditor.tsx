@@ -9,18 +9,28 @@ import ListOrderedIcon from "@material-ui/icons/FormatListNumbered";
 import QuoteIcon from "@material-ui/icons/FormatQuote";
 import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
+import ImageIcon from "@material-ui/icons/Image";
 import LinkIcon from "@material-ui/icons/Link";
 import MoreIcon from "@material-ui/icons/MoreHoriz";
 import classNames from 'classnames';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import Quill, { DeltaStatic, RangeStatic, Sources } from 'quill';
+import Delta from "quill-delta";
+import ImageResize from 'quill-image-resize';
 import React from 'react';
+import Dropzone, { DropzoneRef } from 'react-dropzone';
 import ReactQuill, { UnprivilegedEditor } from 'react-quill';
 import ClosablePopper from './ClosablePopper';
+import Heading2Icon from './icon/Heading2Icon';
+import Heading3Icon from './icon/Heading3Icon';
+import Heading4Icon from './icon/Heading4Icon';
 import QuillBlockExtended from './quill-format-block';
 import QuillFormatLinkExtended, { sanitize } from './quill-format-link';
+import ToolbarExtended from './quill-image-resize-toolbar';
 import { QuillViewStyle } from './RichViewer';
+import { dataImageToBlob } from './util/imageUtil';
 
+Quill.register('modules/imageResize', ImageResize, true);
 Quill.register('formats/link', QuillFormatLinkExtended, true);
 Quill.register('blots/block', QuillBlockExtended, true);
 
@@ -147,6 +157,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface PropsRichEditor {
   variant: 'standard' | 'outlined' | 'filled';
+  onUploadImage: (file: Blob) => Promise<string>,
   onChange?(event: { target: { value: string } }, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor): void;
   iAgreeInputIsSanitized: true;
   inputRef?: React.Ref<ReactQuill>;
@@ -181,7 +192,9 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
           ...this.props.InputProps || {},
           inputComponent: RichEditorInputRefWrap,
           inputProps: {
+            // Anything here will be passed along to RichEditorQuill below
             ...this.props.InputProps?.inputProps || {},
+            onUploadImage: this.props.onUploadImage,
             classes: this.props.classes,
             theme: theme,
             hidePlaceholder: !shrink && !!this.props.label,
@@ -233,6 +246,7 @@ class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap
 }
 
 interface PropsQuill {
+  onUploadImage: (file: Blob) => Promise<string>,
   onChange?: (event: {
     target: {
       value: string;
@@ -269,6 +283,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   state: StateQuill = {};
   readonly editorContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
   readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
+  readonly dropzoneRef: React.RefObject<DropzoneRef> = React.createRef();
 
   focus(): void {
     this.editorRef.current?.focus();
@@ -295,87 +310,134 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
     const { value, onChange, onFocus, onBlur, ...otherInputProps } = this.props;
 
     return (
-      <div
-        className={this.props.classes.editorContainer}
-        ref={this.editorContainerRef}
-        onClick={e => this.editorRef.current?.focus()}
+      <Dropzone
+        ref={this.dropzoneRef}
+        maxSize={10 * 1024 * 1024}
+        multiple
+        noClick
+        noKeyboard
+        onDrop={(acceptedFiles, rejectedFiles, e) => {
+          rejectedFiles.forEach(rejectedFile => {
+            rejectedFile.errors.forEach(error => {
+              this.props.enqueueSnackbar(
+                `${rejectedFile.file.name}: ${error.message}`,
+                { variant: 'error' });
+            })
+          })
+          this.onDropFiles(acceptedFiles);
+        }}
       >
-        <ReactQuill
-          {...otherInputProps as any}
-          modules={{
-            clipboard: {
-              /**
-               * Fixes issue with newlines multiplying
-               * NOTE: When upgrading to Quill V2, this property is deprecated!
-               * https://github.com/KillerCodeMonkey/ngx-quill/issues/357#issuecomment-578138062
-               */
-              matchVisual: false,
-            },
-          }}
-          onFocus={(selection, source, editor) => {
-            if (!this.state.showFormats) {
-              this.setState({ showFormats: true });
-            }
-            this.props.onFocus && this.props.onFocus({
-              selection,
-              source,
-              editor,
-              stopPropagation: () => { },
-            });
-          }}
-          onBlur={(previousSelection, source, editor) => this.props.onBlur && this.props.onBlur({
-            previousSelection,
-            source,
-            editor,
-            stopPropagation: () => { },
-          })}
-          className={classNames(!!this.props.hidePlaceholder && 'hidePlaceholder', this.props.classes.quill)}
-          theme={'' /** core theme */}
-          ref={this.editorRef}
-          value={value}
-          onChange={(valueNew, delta, source, editor) => this.props.onChange && this.props.onChange({
-            target: {
-              value: this.isQuillEmpty(editor) ? '' : valueNew,
-              delta,
-              source,
-              editor,
-            }
-          })}
-          formats={[
-            'bold',
-            'strike',
-            'list',
-            'link',
-            'italic',
-            'underline',
-            'blockquote',
-            'code-block',
-            'indent',
-          ]}
-        />
-        <Collapse in={!!this.state.showFormats} className={this.props.classes.toggleButtonGroups}>
-          <div className={this.props.classes.toggleButtonGroup}>
-            {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
-            {this.renderToggleButton(StrikethroughIcon, 'strike', undefined, true)}
-            {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'bullet')}
-            {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'unchecked', ['unchecked', 'checked'])}
-            {this.renderToggleButtonLink(LinkIcon)}
-            <Fade in={!this.state.showFormatsExtended}>
-              {this.renderToggleButtonCmpt(MoreIcon, false, () => this.setState({ showFormatsExtended: true }))}
-            </Fade>
+        {({ getRootProps, getInputProps }) => (
+          <div
+            {...getRootProps()}
+            className={this.props.classes.editorContainer}
+            ref={this.editorContainerRef}
+            onClick={e => this.editorRef.current?.focus()}
+          >
+            <input {...getInputProps()} />
+            <ReactQuill
+              {...otherInputProps as any}
+              modules={{
+                clipboard: {
+                  /**
+                   * Fixes issue with newlines multiplying
+                   * NOTE: When upgrading to Quill V2, this property is deprecated!
+                   * https://github.com/KillerCodeMonkey/ngx-quill/issues/357#issuecomment-578138062
+                   */
+                  matchVisual: false,
+                },
+                imageResize: {
+                  modules: ['Resize', ToolbarExtended],
+                  toolbarButtonSvgStyles: {},
+                },
+              }}
+              onFocus={(selection, source, editor) => {
+                if (!this.state.showFormats) {
+                  this.setState({ showFormats: true });
+                }
+                this.props.onFocus && this.props.onFocus({
+                  selection,
+                  source,
+                  editor,
+                  stopPropagation: () => { },
+                });
+              }}
+              onBlur={(previousSelection, source, editor) => this.props.onBlur && this.props.onBlur({
+                previousSelection,
+                source,
+                editor,
+                stopPropagation: () => { },
+              })}
+              className={classNames(!!this.props.hidePlaceholder && 'hidePlaceholder', this.props.classes.quill)}
+              theme={'' /** core theme */}
+              ref={this.editorRef}
+              value={value}
+              onChange={(valueNew, delta, source, editor) => {
+                this.props.onChange && this.props.onChange({
+                  target: {
+                    value: this.isQuillEmpty(editor) ? '' : valueNew,
+                    delta,
+                    source,
+                    editor,
+                  }
+                });
+                if (delta.ops && source === 'user') {
+                  var retainCount = 0;
+                  for (const op of delta.ops) {
+                    if (op.insert
+                      && typeof op.insert === 'object'
+                      && op.insert.image
+                      && typeof op.insert.image === 'string'
+                      && op.insert.image.startsWith('data:')) {
+                      this.onDataImageFound(op.insert.image, retainCount - 1);
+                    }
+                    retainCount += (op.insert ? 1 : 0) + (op.retain || 0) - (op.delete || 0);
+                  }
+                }
+              }}
+              formats={[
+                'bold',
+                'strike',
+                'list',
+                'link',
+                'italic',
+                'underline',
+                'blockquote',
+                'code-block',
+                'indent',
+                'header',
+                'image', 'width', 'align',
+              ]}
+            />
+            <Collapse in={!!this.state.showFormats} className={this.props.classes.toggleButtonGroups}>
+              <div className={this.props.classes.toggleButtonGroup}>
+                {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
+                {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
+                {this.renderToggleButton(UnderlineIcon, 'underline', undefined, true)}
+                {this.renderToggleButton(StrikethroughIcon, 'strike', undefined, true)}
+                {this.renderToggleButtonLink(LinkIcon)}
+                {this.renderToggleButtonImage(ImageIcon)}
+                {this.renderToggleButton(CodeIcon, undefined, 'code-block', true)}
+                <Fade in={!this.state.showFormatsExtended}>
+                  {this.renderToggleButtonCmpt(MoreIcon, false, () => this.setState({ showFormatsExtended: true }))}
+                </Fade>
+              </div>
+              <Collapse in={!!this.state.showFormatsExtended}>
+                <div className={this.props.classes.toggleButtonGroup}>
+                  {this.renderToggleButton(Heading2Icon, undefined, 'header', 2)}
+                  {this.renderToggleButton(Heading3Icon, undefined, 'header', 3)}
+                  {this.renderToggleButton(Heading4Icon, undefined, 'header', 4)}
+                  {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'unchecked', ['unchecked', 'checked'])}
+                  {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'bullet')}
+                  {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'ordered')}
+                  {this.renderToggleButton(QuoteIcon, undefined, 'blockquote', true)}
+                </div>
+              </Collapse>
+            </Collapse>
+            {this.renderEditLinkPopper()}
           </div>
-          <Collapse in={!!this.state.showFormatsExtended}>
-            <div className={this.props.classes.toggleButtonGroup}>
-              {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
-              {this.renderToggleButton(UnderlineIcon, 'underline', undefined, true)}
-              {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'ordered')}
-              {this.renderToggleButton(QuoteIcon, undefined, 'blockquote', true)}
-              {this.renderToggleButton(CodeIcon, undefined, 'code-block', true)}
-            </div>
-          </Collapse>
-        </Collapse>
-        {this.renderEditLinkPopper()}
-      </div>
+        )}
+      </Dropzone>
     );
   }
 
@@ -481,29 +543,29 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             >Save</Button>
           </React.Fragment>
         ) : (
-            <React.Fragment>
-              <div>Visit</div>
-              <a
-                href={this.state.editLinkPrevValue}
-                className={this.props.classes.editLinkA}
-                target="_blank"
-                rel="noreferrer noopener ugc"
-              >{this.state.editLinkPrevValue}</a>
-              <Button
-                size='small'
-                color='primary'
-                classes={{
-                  root: this.props.classes.editLinkButton,
-                  label: this.props.classes.editLinkButtonLabel
-                }}
-                onClick={e => {
-                  this.setState({
-                    editLinkEditing: true,
-                  })
-                }}
-              >Edit</Button>
-            </React.Fragment>
-          )}
+          <React.Fragment>
+            <div>Visit</div>
+            <a
+              href={this.state.editLinkPrevValue}
+              className={this.props.classes.editLinkA}
+              target="_blank"
+              rel="noreferrer noopener ugc"
+            >{this.state.editLinkPrevValue}</a>
+            <Button
+              size='small'
+              color='primary'
+              classes={{
+                root: this.props.classes.editLinkButton,
+                label: this.props.classes.editLinkButtonLabel
+              }}
+              onClick={e => {
+                this.setState({
+                  editLinkEditing: true,
+                })
+              }}
+            >Edit</Button>
+          </React.Fragment>
+        )}
         {(!!this.state.editLinkPrevValue) && (
           <Button
             size='small'
@@ -553,6 +615,93 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
           editLinkError: undefined,
         });
       })
+  }
+
+  renderToggleButtonImage(IconCmpt) {
+    return this.renderToggleButtonCmpt(
+      IconCmpt,
+      false,
+      e => this.dropzoneRef.current?.open())
+  }
+
+  /**
+   * Convert data url by uploading and replacing with remote url.
+   * 
+   * This catches any images drag-n-drop dropzone or uploaded using
+   * the image upload button.
+   */
+  async onDropFiles(files: File[]) {
+    const editor = this.editorRef.current?.getEditor();
+    if (!editor) return;
+    const range = editor.getSelection(true);
+    for (const file of files) {
+      try {
+        const url = await this.props.onUploadImage(file);
+        editor.insertEmbed(range.index, 'image', url, 'user');
+      } catch (e) {
+        this.props.enqueueSnackbar(
+          `${file.name}: ${e}`,
+          { variant: 'error' });
+      }
+    }
+  }
+
+  /**
+   * Convert data url by uploading and replacing with remote url.
+   * 
+   * This catches any images not handled by the dropzone.
+   * Particularly if you paste an image into the editor.
+   */
+  async onDataImageFound(imageDataUrl, retainCount) {
+    const editor = this.editorRef.current?.getEditor();
+    if (!editor) return;
+
+    const blob = dataImageToBlob(imageDataUrl);
+
+    var imageLink;
+    try {
+      imageLink = await this.props.onUploadImage(blob);
+    } catch (e) {
+      imageLink = false;
+      this.props.enqueueSnackbar(
+        `Failed image upload: ${e}`,
+        { variant: 'error' });
+    };
+
+    // Ensure the image is still in the same spot
+    // or find where it was moved to and adjust retainCount
+    const isOpOurImage = o => (typeof o?.insert === 'object'
+      && typeof o.insert.image === 'string'
+      && o.insert.image.startsWith(imageDataUrl.slice(0, Math.min(50, imageDataUrl.length))));
+    var op = editor.getContents(retainCount).ops?.[0];
+    if (!op || !isOpOurImage(op)) {
+      retainCount = -1;
+      do {
+        retainCount++;
+        // There must be a better way to find the index without getting contents
+        // for each character here, but:
+        // - This is safer than parsing the Delta format
+        // - This should be a rare case
+        op = editor.getContents(retainCount, 1).ops?.[0];
+        if (op === undefined) {
+          // The image was deleted while uploaded
+          return;
+        }
+      } while (!isOpOurImage(op));
+    }
+
+    if (imageLink) {
+      editor.updateContents(new Delta()
+        .retain(retainCount)
+        .delete(1)
+        .insert({ image: imageLink }, op.attributes),
+        'silent');
+    } else {
+      editor.updateContents(new Delta()
+        .retain(retainCount)
+        .delete(1),
+        'silent');
+    }
   }
 
   updateFormats(editor: Quill, range?: RangeStatic) {

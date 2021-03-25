@@ -7,7 +7,19 @@ import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.web.resource.*;
+import com.smotana.clearflask.web.resource.AccountResource;
+import com.smotana.clearflask.web.resource.CommentResource;
+import com.smotana.clearflask.web.resource.ConnectResource;
+import com.smotana.clearflask.web.resource.ContentResource;
+import com.smotana.clearflask.web.resource.CreditResource;
+import com.smotana.clearflask.web.resource.HealthResource;
+import com.smotana.clearflask.web.resource.IdeaResource;
+import com.smotana.clearflask.web.resource.KillBillResource;
+import com.smotana.clearflask.web.resource.NotificationResource;
+import com.smotana.clearflask.web.resource.ProjectResource;
+import com.smotana.clearflask.web.resource.SupportResource;
+import com.smotana.clearflask.web.resource.UserResource;
+import com.smotana.clearflask.web.resource.VoteResource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +63,7 @@ public class ServiceInjectorTest {
                 KillBillResource.class,
                 ProjectResource.class,
                 CreditResource.class,
+                ContentResource.class,
                 HealthResource.class,
                 ServiceManager.class
         ).forEach(injector::getBinding);

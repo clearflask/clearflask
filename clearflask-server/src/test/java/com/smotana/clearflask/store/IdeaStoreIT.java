@@ -50,6 +50,8 @@ public class IdeaStoreIT extends AbstractIT {
     protected void configure() {
         super.configure();
 
+        bindMock(ContentStore.class);
+
         install(Modules.override(
                 Application.module(),
                 InMemoryDynamoDbProvider.module(),

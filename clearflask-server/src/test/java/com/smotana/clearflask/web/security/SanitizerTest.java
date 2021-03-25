@@ -4,16 +4,16 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Test;
-import org.xbill.DNS.CNAMERecord;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Type;
+import org.mockito.Mockito;
 
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -21,12 +21,18 @@ import static org.junit.Assert.fail;
 @Slf4j
 public class SanitizerTest extends AbstractTest {
 
+    private static final String PROJECT_ID = "my-project-id";
+
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private ContentStore contentStoreMock;
 
     @Override
     protected void configure() {
         super.configure();
+
+        bindMock(ContentStore.class);
 
         install(Modules.override(
                 Sanitizer.module()
@@ -38,6 +44,12 @@ public class SanitizerTest extends AbstractTest {
                 }));
             }
         }));
+    }
+
+    @Before
+    public void setup() throws Exception {
+        super.setup();
+        Mockito.when(contentStoreMock.getScheme()).thenReturn("https");
     }
 
     @Test(timeout = 10_000L)
@@ -103,17 +115,57 @@ public class SanitizerTest extends AbstractTest {
     }
 
     @Test(timeout = 10_000L)
-    public void testtest() throws Exception {
-        boolean isCanonical = Arrays.stream(new Lookup("feedback.clearflask.com", Type.CNAME).run())
-                .allMatch(r -> r.getType() == Type.CNAME
-                        && "sni.clearflask.com".equals(((CNAMERecord) r).getTarget().toString(true)));
-        log.info("DEBUG {}", isCanonical);
-    }
-
-    @Test(timeout = 10_000L)
     public void testDomain() throws Exception {
         assertSanitizeDomain("feedback.clearflask.com", false);
         assertSanitizeDomain("feedback.example.com", true);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testImg() throws Exception {
+        String uploadDomain = "upload.clearflask.com";
+        String signedQuery = "?signed";
+        Mockito.when(contentStoreMock.signUrl(Mockito.anyString(), Mockito.anyString()))
+                .thenAnswer(i -> {
+                    String matchProjectId = i.getArgument(0);
+                    String url = i.getArgument(1);
+                    assertEquals(PROJECT_ID, matchProjectId);
+                    if (url.startsWith("https://" + uploadDomain + "/" + matchProjectId + "/")) {
+                        return Optional.of(url + signedQuery);
+                    } else {
+                        return Optional.empty();
+                    }
+                });
+
+        assertSanitize("Should be signed",
+                "o<img src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be signed, with all attributes",
+                "o<img width=\"43\" align=\"right\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img width=\"43\" align=\"right\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be signed, width attribute is allowed",
+                "o<img width=\"43\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img width=\"43\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be signed, with width attribute dropped",
+                "o<img src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img width=\"3oh\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be signed, align attribute is allowed",
+                "o<img align=\"middle\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img align=\"middle\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be signed, with align attribute dropped",
+                "o<img src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg" + signedQuery + "\" />",
+                "o<img align=\"center\" src=\"https://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be unsigned, projectId mismatch",
+                "o",
+                "o<img src=\"https://" + uploadDomain + "/some-other-project-id/user-id/image.jpeg\" />");
+        assertSanitize("Should be unsigned, domain mismatch",
+                "o",
+                "o<img src=\"https://some.other.clearflask.com/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be unsigned, protocol mismatch",
+                "o",
+                "o<img src=\"http://" + uploadDomain + "/" + PROJECT_ID + "/user-id/image.jpeg\" />");
+        assertSanitize("Should be unsigned, data url not allowed",
+                "o",
+                "o<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==\" />");
     }
 
     void assertSanitizeDomain(String domain, boolean expectFailure) {
@@ -134,6 +186,6 @@ public class SanitizerTest extends AbstractTest {
     }
 
     void assertSanitize(String message, String expHtml, String inpHtml) {
-        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'"));
+        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID));
     }
 }

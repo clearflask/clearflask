@@ -10,6 +10,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ElasticUtil.PaginationType;
@@ -57,6 +58,8 @@ public class ElasticUtilIT extends AbstractIT {
     @Override
     protected void configure() {
         super.configure();
+
+        bindMock(ContentStore.class);
 
         install(Modules.override(
                 ElasticUtil.module(),

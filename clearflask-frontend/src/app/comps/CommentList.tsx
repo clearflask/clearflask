@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../../api/server';
-import notEmpty from '../../common/util/arrayUtil';
+import { notEmpty } from '../../common/util/arrayUtil';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
 import CommentReply from './CommentReply';

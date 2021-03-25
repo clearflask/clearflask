@@ -20,11 +20,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
-import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
@@ -153,7 +151,7 @@ public interface CommentStore {
         }
 
         public String getContentSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getContent(), "comment", getCommentId());
+            return sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId());
         }
 
         public String getContentAsText(Sanitizer sanitizer) {
@@ -190,7 +188,7 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
-                    sanitizer.richHtml(getContent(), "comment", getCommentId()),
+                    sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId()),
                     (long) (getUpvotes() - getDownvotes()),
                     vote);
         }

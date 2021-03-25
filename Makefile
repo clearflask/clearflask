@@ -85,8 +85,9 @@ aws-mock-run:
 	-e LOCALSTACK_HOSTNAME="localhost" \
 	-e HOSTNAME_EXTERNAL="host.docker.internal" \
 	-e SERVICES="dynamodb,route53,ses,s3" \
+	-e LS_LOG=debug \
 	-e START_WEB=1 \
-	-e USE_SSL=1 \
+	-e USE_SSL=0 \
 	localstack/localstack-full
 
 elastic-run:

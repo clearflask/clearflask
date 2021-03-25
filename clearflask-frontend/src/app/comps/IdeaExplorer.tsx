@@ -22,6 +22,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -147,6 +148,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   constructor(props) {
     super(props);
@@ -356,6 +358,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         </Grid>
         <Grid item xs={12} className={this.props.classes.createGridItem}>
           <RichEditor
+            onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
             variant='outlined'
             size='small'
             id='createDescription'
@@ -378,6 +381,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 newItemDescriptionTextOnly: descriptionTextOnly,
               })
             }}
+          />
+          <RichEditorImageUpload
+            ref={this.richEditorImageUploadRef}
+            server={this.props.server}
+            asAuthorId={this.state.newItemAuthorLabel?.value}
           />
         </Grid>
         {categoryOptions.length > 1 && (

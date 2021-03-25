@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
-import notEmpty from '../../common/util/arrayUtil';
+import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';

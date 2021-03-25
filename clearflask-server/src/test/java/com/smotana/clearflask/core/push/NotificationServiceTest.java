@@ -29,6 +29,7 @@ import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.core.push.provider.MockNotificationStore;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.MockModelUtil;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
@@ -91,6 +92,7 @@ public class NotificationServiceTest extends AbstractTest {
 
         bindMock(VoteStore.class);
         bindMock(UserStore.class);
+        bindMock(ContentStore.class);
 
         install(Application.module());
         install(NotificationServiceImpl.module());
