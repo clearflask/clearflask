@@ -19,6 +19,8 @@ import com.smotana.clearflask.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -145,11 +147,17 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
     @Override
     public String signUrl(ContentUrl contentUrl) {
-        return s3.generatePresignedUrl(
+        URL presignedUrl = s3.generatePresignedUrl(
                 config.bucketName(),
                 contentUrl.getKey(),
                 Date.from(Instant.now().plus(config.presignedUrlExpiry())),
-                HttpMethod.GET).toString();
+                HttpMethod.GET);
+        try {
+            return new URL("https", config.hostname(), presignedUrl.getFile()).toString();
+        } catch (MalformedURLException ex) {
+            log.warn("Malformed presigned url, {} {}", contentUrl, presignedUrl, ex);
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
