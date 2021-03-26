@@ -249,11 +249,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                     om.override(om.id().createTenant()).withValue(true);
                     // These slow down the system
                     om.override(om.id().uploadAnalyticsReports()).withValue(false);
-                    om.override(om.id().emailPluginHost()).withValue("host.docker.internal");
-                    om.override(om.id().emailPluginPort()).withValue(9001);
-                    om.override(om.id().emailPluginUsername()).withValue("a");
-                    om.override(om.id().emailPluginPassword()).withValue("a");
-                    om.override(om.id().emailPluginUseSsl()).withValue(false);
                 }));
                 install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
                     om.override(om.id().registerWebhookOnStartup()).withValue(false);
