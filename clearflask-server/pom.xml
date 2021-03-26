@@ -711,15 +711,6 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>killbill-email-notifications-plugin</artifactId>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>
-                                        ${project.build.directory}/kb-ddl/sources/killbill-email-notifications-plugin/
-                                    </outputDirectory>
-                                    <includes>ddl.sql</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
                                     <artifactId>analytics-plugin</artifactId>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
@@ -752,13 +743,6 @@
                                 <artifactItem>
                                     <groupId>org.kill-bill.billing.plugin.java</groupId>
                                     <artifactId>stripe-plugin</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-plugins/</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>killbill-email-notifications-plugin</artifactId>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-plugins/</outputDirectory>

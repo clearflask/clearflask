@@ -39,7 +39,6 @@ import org.killbill.billing.client.api.gen.UsageApi;
 public class KillBillClientProvider implements Provider<KillBillHttpClient> {
     public static final String STRIPE_PLUGIN_NAME = "killbill-stripe";
     public static final String PAYMENT_TEST_PLUGIN_NAME = "killbill-payment-test";
-    public static final String EMAIL_PLUGIN_NAME = "email-notifications";
 
     public interface Config {
         @NoDefaultValue

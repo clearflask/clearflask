@@ -15,7 +15,6 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.billing.ReportConfigurationJson.ReportConfigurationJsonList;
 import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +53,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.smotana.clearflask.billing.KillBillClientProvider.EMAIL_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.DAILY;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.HOURLY;
@@ -152,30 +150,6 @@ public class KillBillSync extends ManagedService {
 
         @DefaultValue("ClearFlask platform")
         String stripePluginChargeStatementDesc();
-
-        @DefaultValue("true")
-        boolean emailPluginSync();
-
-        @DefaultValue(value = "", innerType = String.class)
-        List<String> emailPluginEmailEvents();
-
-        @NoDefaultValue
-        String emailPluginHost();
-
-        @DefaultValue("25")
-        int emailPluginPort();
-
-        @NoDefaultValue
-        String emailPluginUsername();
-
-        @NoDefaultValue
-        String emailPluginPassword();
-
-        @DefaultValue("billing@clearflask.com")
-        String emailPluginSender();
-
-        @DefaultValue("true")
-        boolean emailPluginUseSsl();
 
         @DefaultValue("false")
         boolean uploadAnalyticsReports();
@@ -317,44 +291,6 @@ public class KillBillSync extends ManagedService {
             }
         } else {
             log.info("Skipping Stripe plugin sync, disabled");
-        }
-
-        if (config.emailPluginSync()) {
-            if (!pluginInfos.isPresent()) {
-                pluginInfos = Optional.of(kbPluginInfoProvider.get().getPluginsInfo(RequestOptions.empty()));
-            }
-            if (pluginInfos.get().stream().anyMatch(i -> EMAIL_PLUGIN_NAME.equals(i.getPluginName()))) {
-                throw new Exception("KillBill is missing plugin: " + EMAIL_PLUGIN_NAME);
-            }
-
-            // Config props defined here https://github.com/killbill/killbill-email-notifications-plugin/blob/c1ef2e0f0a05abcbe4cb86a8b139c75c918f2863/src/main/java/org/killbill/billing/plugin/notification/setup/EmailNotificationConfiguration.java#L47
-            Map<String, Object> emailProperties = Maps.newHashMap();
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.defaultEvents",
-                    config.emailPluginEmailEvents() == null ? "" : String.join(",", config.emailPluginEmailEvents()));
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.host", config.emailPluginHost());
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.port", config.emailPluginPort());
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.useAuthentication", "true");
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.userName", config.emailPluginUsername());
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.password", config.emailPluginPassword());
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.defaultSender", config.emailPluginSender());
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.useSSL", Boolean.toString(config.emailPluginUseSsl()));
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail", "true");
-            String emailExpectedConf = toPropertiesString(emailProperties);
-
-            TenantKeyValue pluginConfiguration = kbTenantProvider.get().getPluginConfiguration(EMAIL_PLUGIN_NAME, KillBillUtil.roDefault());
-            if (pluginConfiguration == null || pluginConfiguration.getValues() == null || pluginConfiguration.getValues().isEmpty() || !emailExpectedConf.equals(pluginConfiguration.getValues().get(0).trim())) {
-                log.info("Updating Email plugin config");
-                log.trace("Email config expected:\n{}\nactual:\n{}", emailExpectedConf, pluginConfiguration);
-                kbTenantProvider.get().uploadPluginConfiguration(EMAIL_PLUGIN_NAME, emailExpectedConf, KillBillUtil.roDefault());
-            } else {
-                log.info("Skipping Email plugin config, already set");
-            }
-
-            // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
-            String emailTemplateFailedPayment = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/billing-FailedPayment.html"), Charsets.UTF_8);
-            setUserKeyValueIfDifferent("killbill-email-notifications:FAILED_PAYMENT_en_US", emailTemplateFailedPayment);
-        } else {
-            log.info("Skipping Email plugin sync, disabled");
         }
 
         if (config.uploadAnalyticsReports()) {
