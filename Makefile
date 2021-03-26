@@ -140,7 +140,7 @@ killbill-engine-run:
 	-v $(shell pwd -P)/clearflask-server/src/test/resources/killbill.sh:/var/lib/killbill/killbill.sh \
 	-v $(shell pwd -P)/clearflask-server/target/kb-plugins:/var/lib/killbill/bundles/autoload \
 	-p 8082:8080 \
-	killbill/killbill:0.22.10
+	killbill/killbill:0.22.20
 
 kaui-run:
 	docker run --rm --name clearflask-killbill-kaui \
@@ -183,6 +183,9 @@ deploy:
 
 deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
+
+deploy-logging: ./clearflask-logging/target/clearflask-logging-0.1-standalone.jar
+	aws s3 cp ./clearflask-logging/target/clearflask-logging-0.1-standalone.jar s3://killbill-secret/clearflask-logging-0.1-standalone.jar
 
 deploy-connect: ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz
 	aws s3 cp ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz s3://clearflask-secret/clearflask-frontend-0.1-connect.tar.gz

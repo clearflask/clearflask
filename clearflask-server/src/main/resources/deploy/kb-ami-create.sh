@@ -13,19 +13,17 @@ sudo mkdir -p /var/lib/killbill
 sudo chown -R ec2-user:ec2-user /var/lib/killbill
 cat > /var/lib/killbill/kpm.yml <<"EOF"
 killbill:
-  version: 0.22.10
+  version: 0.22.20
   plugins:
     java:
       - name: analytics
         version: 7.0.8
-      - name: email-notifications
-        version: 0.6.1
       - name: stripe
         version: 7.0.4
   webapp_path: /var/lib/tomcat/webapps/killbill/ROOT.war
   plugins_dir: /var/lib/killbill/bundles
 kaui:
-  version: 2.0.5
+  version: 2.0.8
   plugins_dir: /var/lib/killbill # Used for sha1.yml
   webapp_path: /var/lib/tomcat/webapps/kaui/ROOT.war
 EOF
@@ -76,7 +74,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
             <param name="OncePerSeconds" value="600"/>
         </evaluator>
         <layout class="com.smotana.clearflask.logging.HTMLLayout">
-            <pattern>%msg</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%maskedMsg%n</pattern>
         </layout>
     </appender>
     <appender name="ASYNC_EMAIL_SES" class="ch.qos.logback.classic.AsyncAppender">
@@ -271,8 +269,8 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
         <To>ops@clearflask.com</To>
         <From>no-reply@clearflask.com</From>
         <Subject>[ClearFlask Logs] [KillBill] ${HOSTNAME}</Subject>
-        <evaluator class="com.smotana.clearflask.logging.CounterBasedEvaluator">
-            <param name="CounterLimit" value="10"/>
+        <evaluator class="com.smotana.clearflask.logging.RateLimitBasedEvaluator">
+            <param name="OncePerSeconds" value="600"/>
         </evaluator>
         <layout class="com.smotana.clearflask.logging.HTMLLayout">
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%maskedMsg%n</pattern>

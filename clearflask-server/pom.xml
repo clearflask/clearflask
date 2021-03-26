@@ -576,7 +576,7 @@
                         </image>
                         <image>
                             <alias>killbill-engine</alias>
-                            <name>killbill/killbill:0.22.10</name>
+                            <name>killbill/killbill:0.22.20</name>
                             <run>
                                 <links>
                                     <link>killbill-db</link>

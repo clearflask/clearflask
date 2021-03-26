@@ -558,7 +558,7 @@
             <dependency>
                 <groupId>org.kill-bill.billing</groupId>
                 <artifactId>killbill-catalog</artifactId>
-                <version>0.22.10</version>
+                <version>0.22.20</version>
                 <scope>test</scope>
             </dependency>
 
