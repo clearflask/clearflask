@@ -2,7 +2,8 @@
 
 set -ex
 
-$KPM_INSTALL_CMD
+# Run both the main playbook and the one enabling structured logging
+$KPM_INSTALL_CMD $KILLBILL_CLOUD_ANSIBLE_ROLES/killbill_json_logging.yml
 
 # Install plugins
 for PLUGIN_FILE_PATH in /var/lib/killbill/bundles/autoload/*; do
