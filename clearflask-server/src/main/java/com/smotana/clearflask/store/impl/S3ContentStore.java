@@ -45,7 +45,7 @@ public class S3ContentStore extends ManagedService implements ContentStore {
         @DefaultValue("false")
         boolean createBucket();
 
-        @DefaultValue("P7D")
+        @DefaultValue("PT3H")
         Duration presignedUrlExpiry();
     }
 

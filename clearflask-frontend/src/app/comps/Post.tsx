@@ -1089,7 +1089,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='h5' component='h5' className={`${this.props.classes.title} ${variant === 'page' ? this.props.classes.titlePage : ((this.props.display?.descriptionTruncateLines || 0) <= 0 ? this.props.classes.titleListWithoutDescription : this.props.classes.titleList)} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+      <Typography variant='h5' component='h1' className={`${this.props.classes.title} ${variant === 'page' ? this.props.classes.titlePage : ((this.props.display?.descriptionTruncateLines || 0) <= 0 ? this.props.classes.titleListWithoutDescription : this.props.classes.titleList)} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<TruncateEllipsis ellipsis='…' lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
           : this.props.idea.title}
