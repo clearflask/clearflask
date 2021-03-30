@@ -1,4 +1,4 @@
-import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, TextField, Typography } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
@@ -63,8 +63,8 @@ const styles = (theme: Theme) => createStyles({
     textShadow: '0px 0px 3px rgba(0,0,0,0.3)',
   },
   customInput: {
-    fontSize: '1.4rem',
-    width: 78,
+    color: theme.palette.text.disabled,
+    borderBottom: '1px dashed ' + theme.palette.text.disabled,
   },
 });
 
@@ -72,7 +72,7 @@ interface Props {
   className?: string;
   plan: Admin.Plan;
   selected?: boolean;
-  showNoPriceAsCustom?: boolean;
+  customPrice?: string;
   actionTitle?: string;
   actionType?: 'button' | 'radio';
   actionTo?: LocationDescriptor;
@@ -158,13 +158,13 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   renderPriceTag() {
-    if (!!this.props.showNoPriceAsCustom && !this.props.plan.pricing) {
+    if (this.props.customPrice !== undefined && !this.props.plan.pricing) {
       return (
         <React.Fragment>
           <div className={this.props.classes.cardPricing}>
             <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
             &nbsp;&nbsp;
-              <TextField value='Custom' disabled InputProps={{ classes: { input: this.props.classes.customInput } }} />
+            <Typography component='h2' variant='h4' className={this.props.classes.customInput}>{this.props.customPrice || 'Custom'}</Typography>
               &nbsp;&nbsp;
             <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
           </div>

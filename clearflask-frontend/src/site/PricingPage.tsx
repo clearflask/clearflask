@@ -136,7 +136,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               {this.props.plans && this.props.plans.map((plan, index) => (
                 <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
                   <PricingPlan
-                    showNoPriceAsCustom
+                    customPrice='1000+'
                     plan={plan}
                     selected={this.state.highlightedBasePlanid === plan.basePlanId
                       || this.state.callForQuote && !plan.pricing}

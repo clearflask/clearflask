@@ -9,7 +9,7 @@ import { EstimatedPercUsersBecomeTracked } from './PricingPage';
 
 type Marks = Array<{ val: number, basePlanId: string }>;
 const quadrupleStepAfterIteration = 100;
-const maxMau = 5001;
+const maxMau = 3000;
 const startingStep = 10;
 
 const styles = (theme: Theme) => createStyles({
