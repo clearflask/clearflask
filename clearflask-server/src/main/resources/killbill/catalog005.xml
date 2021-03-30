@@ -2,7 +2,7 @@
 <catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="CatalogSchema.xsd">
 
-    <effectiveDate>2021-03-29T00:00:00+00:00</effectiveDate>
+    <effectiveDate>2021-03-30T00:00:00+00:00</effectiveDate>
     <catalogName>ClearFlask</catalogName>
     <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
 
@@ -210,7 +210,7 @@
                                     <tieredBlock>
                                         <!-- If Changed, also change in KillBilling.java -->
                                         <unit>tracked-user</unit>
-                                        <size>100</size>
+                                        <size>500</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
