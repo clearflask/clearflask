@@ -322,7 +322,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .basePlanId(planId)
                 .build());
-        waitForInvoice(accountAndProject);
+        finalizeInvoices(accountAndProject);
         return accountAndProject.toBuilder().account(accountAdmin).build();
     }
 

@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
@@ -28,7 +29,7 @@ public interface Billing {
             SubscriptionStatus.ACTIVEPAYMENTRETRY,
             SubscriptionStatus.ACTIVETRIAL);
 
-    AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId);
+    void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn);
 
     Account getAccount(String accountId);
 

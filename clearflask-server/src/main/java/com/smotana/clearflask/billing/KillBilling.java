@@ -119,6 +119,14 @@ public class KillBilling extends ManagedService implements Billing {
         /** Used in testing for deterministic number of invoices */
         @DefaultValue("true")
         boolean reuseDraftInvoices();
+
+        /** Retry creating account again assuming it failed before */
+        @DefaultValue("true")
+        boolean createAccountIfNotExists();
+
+        /** Retry creating subscription again assuming it failed before */
+        @DefaultValue("true")
+        boolean createSubscriptionIfNotExists();
     }
 
     @Inject
@@ -154,54 +162,79 @@ public class KillBilling extends ManagedService implements Billing {
     private NotificationService notificationService;
 
     private ListeningExecutorService usageExecutor;
+    private ListeningExecutorService accountCreationExecutor;
 
     @Override
     protected void serviceStart() throws Exception {
         usageExecutor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder()
                 .setNameFormat("KillBilling-usage-%d").build()));
+        accountCreationExecutor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder()
+                .setNameFormat("KillBilling-account-creation-%d").build()));
     }
 
     @Override
     protected void serviceStop() throws Exception {
         usageExecutor.shutdown();
+        accountCreationExecutor.shutdown();
+
         usageExecutor.awaitTermination(5, TimeUnit.MINUTES);
+        accountCreationExecutor.awaitTermination(5, TimeUnit.MINUTES);
     }
 
     @Extern
     @Override
-    public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
+    public void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn) {
+        accountCreationExecutor.submit(() -> {
+            try {
+                Account account = createAccount(accountInDyn);
+                createSubscription(accountInDyn, account);
+            } catch (Exception ex) {
+                log.warn("Failed to create account with subscription", ex);
+            }
+        });
+    }
+
+    @Extern
+    private Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
         try {
             account = kbAccount.createAccount(new Account()
-                    .setExternalKey(accountId)
-                    .setName(name)
-                    .setEmail(email)
+                    .setExternalKey(accountInDyn.getAccountId())
+                    .setName(accountInDyn.getName())
+                    .setEmail(accountInDyn.getEmail())
                     .setCurrency(Currency.USD), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
-            log.warn("Failed to create KillBill Account for email {} name {}", email, name, ex);
+            log.warn("Failed to create KillBill Account for email {} name {}", accountInDyn.getEmail(), accountInDyn.getName(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor, try again later", ex);
         }
 
-        if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(planId)) {
+        if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(accountInDyn.getPlanid())) {
             try {
                 kbAccount.createAccountTags(
                         account.getAccountId(),
                         getDraftInvoicingTagIds(),
                         KillBillUtil.roDefault());
             } catch (KillBillClientException ex) {
-                log.warn("Failed to attach tags to KillBill Account for email {} name {}", email, name, ex);
+                log.warn("Failed to attach tags to KillBill Account for email {} name {}",
+                        accountInDyn.getEmail(), accountInDyn.getName(), ex);
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                         "Failed to contact payment processor, try again later", ex);
             }
         }
 
+        return account;
+    }
+
+    @Extern
+    private Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()
-                            .setBundleExternalKey(accountId)
+                            .setBundleExternalKey(accountInDyn.getAccountId())
                             .setAccountId(account.getAccountId())
-                            .setPlanName(planId),
+                            .setPhaseType(PhaseType.TRIAL)
+                            .setPlanName(accountInDyn.getPlanid()),
                     null,
                     null,
                     false,
@@ -211,12 +244,15 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
-            log.warn("Failed to create KillBill Subscription for accountId {} email {} name {}", account.getAccountId(), email, name, ex);
+            log.warn("Failed to create KillBill Subscription for accountId {} email {} name {}",
+                    account.getAccountId(), accountInDyn.getEmail(), accountInDyn.getName(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor, try again later", ex);
         }
 
-        return new AccountWithSubscription(account, subscription);
+        updateAndGetEntitlementStatus(accountInDyn.getStatus(), account, subscription, "Subscription creation");
+
+        return subscription;
     }
 
     @Extern
@@ -230,9 +266,19 @@ public class KillBilling extends ManagedService implements Billing {
                     AuditLevel.NONE,
                     KillBillUtil.roDefault());
             if (account == null) {
-                log.warn("Account doesn't exist by account id {}", accountId);
+                if (config.createAccountIfNotExists()) {
+                    Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccountByAccountId(accountId);
+                    if (accountInDynOpt.isPresent()) {
+                        log.warn("Account doesn't exist in KB by account id {}, creating...", accountId);
+                        return createAccount(accountInDynOpt.get());
+                    } else {
+                        log.warn("Account doesn't exist in KB by account id {}, can't create either it doesnt exist in db either", accountId);
+                    }
+                } else {
+                    log.warn("Account doesn't exist by in KB account id {}, throwing...", accountId);
+                }
                 throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Account doesn't exist");
+                        "Failed to contact payment processor, try again later");
             }
             return account;
         } catch (KillBillClientException ex) {
@@ -265,14 +311,36 @@ public class KillBilling extends ManagedService implements Billing {
     @Extern
     @Override
     public Subscription getSubscription(String accountId) {
-        return getSubscriptionByBundleExternalKey(accountId, false)
-                .or(() -> getSubscriptionByBundleExternalKey(accountId, true))
-                .or(() -> getSubscriptionByExternalKey(accountId))
-                .orElseThrow(() -> {
-                    log.warn("No subscription found for accountId {}", accountId);
-                    return new ApiException(
-                            Response.Status.BAD_REQUEST, "Subscription doesn't exist, contact support");
-                });
+        Optional<Subscription> subscriptionOpt = Optional.empty();
+
+        if (!subscriptionOpt.isPresent()) {
+            subscriptionOpt = getSubscriptionByBundleExternalKey(accountId, false);
+        }
+
+        if (!subscriptionOpt.isPresent()) {
+            subscriptionOpt = getSubscriptionByBundleExternalKey(accountId, true);
+        }
+
+        if (!subscriptionOpt.isPresent()) {
+            subscriptionOpt = getSubscriptionByExternalKey(accountId);
+        }
+
+        if (!subscriptionOpt.isPresent() && config.createSubscriptionIfNotExists()) {
+            Account account = getAccount(accountId);
+            Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccountByAccountId(accountId);
+            if (accountInDynOpt.isPresent()) {
+                subscriptionOpt = Optional.of(createSubscription(accountInDynOpt.get(), account));
+            } else {
+                log.warn("Cannot create missing subscription if account doesn't exist for accountId {}", accountId);
+            }
+        }
+
+        if (subscriptionOpt.isPresent()) {
+            return subscriptionOpt.get();
+        } else {
+            log.warn("No subscription found for accountId {}", accountId);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to contact payment processor, try again later");
+        }
     }
 
     private Optional<Subscription> getSubscriptionByBundleExternalKey(String externalKey, boolean includeDeleted) {

@@ -367,7 +367,7 @@ export function Landing() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title='See how our solutions can fit your needs'
+        title='See how our solution can solve your problem'
       />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={150}>
         <Block

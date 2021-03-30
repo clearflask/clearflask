@@ -228,13 +228,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             throw new ApiException(Response.Status.BAD_REQUEST, "Plan is not available");
         }
 
-        // Create customer in KillBill
-        Billing.AccountWithSubscription accountWithSubscription = billing.createAccountWithSubscription(
-                accountId,
-                signup.getEmail(),
-                signup.getName(),
-                plan.getBasePlanId());
-        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
@@ -242,7 +235,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         account = new Account(
                 accountId,
                 signup.getEmail(),
-                status,
+                SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
                 null,
                 plan.getBasePlanId(),
                 Instant.now(),
@@ -250,6 +243,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 passwordHashed,
                 ImmutableSet.of());
         accountStore.createAccount(account);
+
+        // Create customer in KillBill asynchronously because:
+        // - It takes too long
+        // - Had spurious errors that prevented users from signing up
+        billing.createAccountWithSubscriptionAsync(account);
 
         // Create auth session
         AccountStore.AccountSession accountSession = accountStore.createSession(
