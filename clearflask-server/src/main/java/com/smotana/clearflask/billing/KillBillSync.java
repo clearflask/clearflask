@@ -67,7 +67,7 @@ public class KillBillSync extends ManagedService {
     public static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
             .add("catalog002.xml")
-            .add("catalog003.xml")
+            .add("catalog004.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
