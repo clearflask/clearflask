@@ -45,7 +45,7 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <React.Fragment>
         <p>
-          Yes, you can switch between providers whenever you want to. We provide both import and export functionality via CSV format.
+          Yes, you can switch between providers whenever you need to. We provide both import and export functionality via CSV format. Contact us for help.
         </p>
       </React.Fragment>
     ),

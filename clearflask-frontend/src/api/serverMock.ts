@@ -16,7 +16,7 @@ const termsProjects = 'You can create separate projects each having their own se
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
   'growth2-monthly': {
     basePlanId: 'growth2-monthly', title: 'Growth',
-    pricing: { basePrice: 50, baseMau: 100, unitPrice: 15, unitMau: 100, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { basePrice: 10, baseMau: 50, unitPrice: 10, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
       { desc: 'Credit System' },
@@ -25,7 +25,7 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
   },
   'standard2-monthly': {
     basePlanId: 'standard2-monthly', title: 'Standard',
-    pricing: { basePrice: 200, baseMau: 1000, unitPrice: 100, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Single Sign-On' },
       { desc: 'Private projects' },

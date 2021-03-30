@@ -126,16 +126,21 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     protected void serviceStart() throws Exception {
         Catalogs catalogs = catalogApi.getCatalogJson(null, null, KillBillUtil.roDefault());
-        Catalog catalog = catalogs.stream().max(Comparator.comparing(Catalog::getEffectiveDate)).get();
         ImmutableList<Plan> plans = PLANS_BUILDER.entrySet().stream().map(e -> {
             // Oh god this is just terrible, this is what happens when you check in at 4am
             String planName = e.getKey();
-            org.killbill.billing.client.model.gen.Plan plan = catalog.getProducts().stream()
+            Phase evergreen = catalogs
+                    .stream()
+                    .sorted(Comparator.comparing(Catalog::getEffectiveDate).reversed())
+                    .flatMap(c -> c.getProducts().stream())
                     .flatMap(p -> p.getPlans().stream())
                     .filter(p -> planName.equals(p.getName()))
+                    .findFirst()
+                    .stream()
+                    .flatMap(p -> p.getPhases().stream())
+                    .filter(p -> PhaseType.EVERGREEN.name().equals(p.getType()))
                     .findAny()
                     .get();
-            Phase evergreen = plan.getPhases().stream().filter(p -> PhaseType.EVERGREEN.name().equals(p.getType())).findAny().get();
             long basePrice = evergreen.getPrices().get(0).getValue().longValueExact();
             Usage usage = evergreen.getUsages().get(0);
             PeriodEnum period;

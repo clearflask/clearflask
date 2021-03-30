@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -11,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests take a long time, ignore until a change happens.
  */
-//@Ignore
+@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
@@ -251,7 +252,7 @@ public class BillingIT extends AbstractBlackboxIT {
         kbClockSleepAndRefresh(31, accountAndProject);
 
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 50.0, 50.0, 30.0, -24.19, 60.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 10.0, 40.0, -4.84, 80.0));
     }
 
     @Test(timeout = 300_000L)
@@ -269,7 +270,7 @@ public class BillingIT extends AbstractBlackboxIT {
         addTrackedUsers(accountAndProject, 200);
         kbClockSleepAndRefresh(31, accountAndProject);
 
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 50.0, 0.0, 45.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 0.0, 60.0));
     }
 
     @Test(timeout = 300_000L)
@@ -317,7 +318,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 50.0, 50.0, 150.0, 72.58, 150.0, 200.0, 300.0, 200.0, 500.0, 200.0, 700.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 10.0, 200.0, 43.55, 200.0, 100.0, 800.0, 100.0, 1300.0, 100.0, 1800.0));
     }
 
     @Test(timeout = 300_000L)
@@ -332,6 +333,6 @@ public class BillingIT extends AbstractBlackboxIT {
         addTrackedUsers(accountAndProject, 300);
         kbClockSleepAndRefresh(31, accountAndProject);
 
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 50.0, 1408.47, 45.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 1425.81, 60.0));
     }
 }
