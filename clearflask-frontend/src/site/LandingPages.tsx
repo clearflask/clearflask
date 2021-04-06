@@ -1407,7 +1407,7 @@ export function LandingIntegrations() {
       <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
         <BlockContent
           variant='content'
-          title='API'
+          title='API and Webhooks'
           description='Integrate any service directly with our API'
           icon={(
             <Typography className={classes.apiText}>{'{ }'}</Typography>
