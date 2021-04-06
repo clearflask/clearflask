@@ -1,3 +1,4 @@
+import compression from 'compression';
 import express from 'express';
 import fs from 'fs';
 import greenlockExpress, { glx } from 'greenlock-express';
@@ -29,6 +30,8 @@ function createProxy() {
 
 function createApp(serverHttpp) {
   const serverApp = express();
+
+  serverApp.use(compression());
 
   if (process.env.ENV !== 'production') {
     serverApp.get("/asset-manifest.json", function (req, res) {
