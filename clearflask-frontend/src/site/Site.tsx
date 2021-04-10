@@ -6,6 +6,7 @@ import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@materi
 import GrowIcon from '@material-ui/icons/AccessibilityNew';
 import InstallIcon from '@material-ui/icons/AccountTree';
 import CustomizeIcon from '@material-ui/icons/Brush';
+import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
 import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
@@ -60,6 +61,7 @@ const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingI
 const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInternalFeedback, fallback: (<Loading />) });
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
+const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
 
 interface MenuDropdown {
   type: 'dropdown';
@@ -233,6 +235,8 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/install', title: 'Install', icon: InstallIcon },
           { type: 'button', link: '/product/scale-with-us', title: 'Scale with us', icon: GrowIcon },
           { type: 'button', link: '/product/integrations', title: 'Integrations', icon: WidgetIcon },
+          { type: 'divider' },
+          { type: 'button', link: '/product/compare', title: 'Compare', icon: CompareIcon },
         ]
       },
       {
@@ -406,6 +410,10 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             <Route exact path='/product/integrations'>
               <SetTitle title='Integrations' />
               <LandingIntegrations />
+            </Route>
+            <Route exact path='/product/compare'>
+              <SetTitle title='Compare Customer Feedback Platforms' />
+              <LandingCompare />
             </Route>
             <Route exact path='/product/install'>
               <SetTitle title='Install' />

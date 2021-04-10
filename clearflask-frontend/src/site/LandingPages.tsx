@@ -54,6 +54,7 @@ import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
+import CompareImg from '../../public/img/landing/compare.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
@@ -106,6 +107,7 @@ import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
+import Competitors from './Competitors';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -2582,6 +2584,18 @@ export function LandingInstall() {
 //     </React.Fragment>
 //   );
 // }
+
+export function LandingCompare() {
+  return (<React.Fragment>
+    <Hero
+      title='Compare Customer Feedback Platforms'
+      description='There are over 50+ tools that we know of in this space. They vary by specific use cases, features and price. Let us help you choose the right tool'
+      image={CompareImg}
+    />
+    <Competitors />
+  </React.Fragment>
+  );
+}
 
 export function LandingSales() {
   return (
