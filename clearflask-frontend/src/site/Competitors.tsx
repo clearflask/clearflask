@@ -1,11 +1,20 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, darken, fade, lighten, makeStyles, Theme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import CheckIcon from '@material-ui/icons/Check';
 import FilterIcon from '@material-ui/icons/FilterList';
+import ImportExportIcon from '@material-ui/icons/ImportExport';
 import OpenIcon from '@material-ui/icons/OpenInNew';
+import PaymentIcon from '@material-ui/icons/Payment';
+import PeopleIcon from '@material-ui/icons/People';
+import FeaturesIcon from '@material-ui/icons/PlaylistAddCheck';
+import SpeakIcon from '@material-ui/icons/RecordVoiceOver';
+import AnalyzeIcon from '@material-ui/icons/ShowChart';
+import SpeedIcon from '@material-ui/icons/Speed';
+import TranslateIcon from '@material-ui/icons/Translate';
+import IntegrationsIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
 import React, { useContext, useState } from 'react';
 import ReactGA from 'react-ga';
@@ -229,10 +238,28 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     marginTop: theme.spacing(6),
   },
   tableHeading: {
+    verticalAlign: 'bottom',
     textAlign: 'center',
     [theme.breakpoints.down(dontHoverBelow)]: {
       verticalAlign: 'baseline', // Align the filter icons
     },
+  },
+  tableDivider: {
+    verticalAlign: 'bottom',
+    padding: theme.spacing(0, 1),
+    '& div': {
+      height: theme.spacing(5),
+      borderLeft: `1px solid ${
+        // From TableCell.js root
+        theme.palette.type === 'light'
+          ? lighten(fade(theme.palette.divider, 1), 0.88)
+          : darken(fade(theme.palette.divider, 1), 0.68)
+        }`,
+    }
+  },
+  tableGrouping: {
+    textAlign: 'center',
+    color: theme.palette.text.hint,
   },
   check: {
     margin: 'auto',
@@ -337,6 +364,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   platformOther: {
     textAlign: 'center',
+    minHeight: 38,
   },
   pricingContainer: {
     display: 'flex',
@@ -347,6 +375,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   pricingOpenButton: {
     fontSize: '0.9em',
     color: theme.palette.text.hint,
+  },
+  pricingCell: {
+    border: 'none',
   },
   pricingPriceCell: {
     display: 'flex',
@@ -390,6 +421,8 @@ const Competitors = () => {
         <Onboarding />
         <Language />
         <ImportExport />
+        <Integrations />
+        <PageLoad />
       </Container>
     </HiddenPlatformsContext.Provider>
   );
@@ -412,7 +445,10 @@ const Volume = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>How many users do you expect?</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <PeopleIcon fontSize='inherit' />&nbsp;
+        How many users do you expect?
+      </Typography>
       <p><Typography>The amount of feedback you will receive depends on your current or predicted number of customers and how tightly you integrate the feedback tool with your product.</Typography></p>
       <p><Typography>The <span className={classes.emphasize}>coverage rate</span> metric measures the percentage of users that have provided you with feedback by posting a unique idea or indicating that an existing idea is suited for them. UserVoice <ExternalLink url='https://community.uservoice.com/blog/new-in-uservoice-coverage-rate-reporting/'>reports</ExternalLink> that at least 15% coverage rate is considered satisfactory with typical rate ranging up to 50%. While Canny customers see a typical rate of 5%.</Typography></p>
       <p><Typography>Some platforms are not only suited to handle large amounts of feedback, but do not provide the tools to organize and sort through that feedback afterwards. Typically you will fall under one of these categories:</Typography></p>
@@ -465,21 +501,46 @@ const PricingCompare = (props: {}) => {
   const [markIndex, setMarkIndex] = useState<number>(1);
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>What is your budget?</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <PaymentIcon fontSize='inherit' />&nbsp;
+        What is your budget?
+      </Typography>
       <p><Typography>Although pricing shouldn't be your sole factor for determining your solution, you should know how much are you willing to spend. If your product has variable number of users, calculate how much you are willing to spend per customer.</Typography></p>
       <p><Typography>Look at your current or predicted number of total users you have to estimate your price below</Typography></p>
 
       <div className={classes.pricingContainer}>
         <PricingTable totalUsers={sliderMarks[markIndex]} />
-        <UserCountSlider
-          marks={sliderMarks}
-          markIndex={markIndex}
-          markIndexChanged={setMarkIndex}
-          totalUserActiveUserRatio={0.05}
-        />
+        <div>
+          <UserCountSlider
+            marks={sliderMarks}
+            markIndex={markIndex}
+            markIndexChanged={setMarkIndex}
+            totalUserActiveUserRatio={0.05}
+          />
+        </div>
       </div>
     </React.Fragment>
   );
+};
+const getPrice = (platform: Platform, totalUsers: number): { platform: Platform, price: number } => {
+  var price: number | undefined;
+  for (const plan of platform.pricing.plans) {
+    var planPrice = plan.basePrice;
+    if (plan.unitPrice && plan.unitUsers) {
+      var usersCovered = plan.baseUsers || 0;
+      while (usersCovered < totalUsers) {
+        usersCovered += plan.unitUsers;
+        planPrice += plan.unitPrice;
+      }
+    } else if (plan.baseUsers && plan.baseUsers < totalUsers) {
+      continue;
+    }
+    if (price !== undefined && price <= planPrice) {
+      break;
+    }
+    price = planPrice;
+  }
+  return { platform, price: price === undefined ? -1 : price };
 };
 const PricingTable = (props: {
   totalUsers: number;
@@ -490,26 +551,7 @@ const PricingTable = (props: {
   const data: Array<{
     platform: Platform,
     price: number,
-  }> = Object.values(Platforms).map(platform => {
-    var price: number | undefined;
-    for (const plan of platform.pricing.plans) {
-      var planPrice = plan.basePrice;
-      if (plan.unitPrice && plan.unitUsers) {
-        var usersCovered = plan.baseUsers || 0;
-        while (usersCovered < props.totalUsers) {
-          usersCovered += plan.unitUsers;
-          planPrice += plan.unitPrice;
-        }
-      } else if (plan.baseUsers && plan.baseUsers < props.totalUsers) {
-        continue;
-      }
-      if (price !== undefined && price <= planPrice) {
-        break;
-      }
-      price = planPrice;
-    }
-    return { platform, price: price === undefined ? -1 : price };
-  }).sort((l, r) =>
+  }> = Object.values(Platforms).map(platform => getPrice(platform, props.totalUsers)).sort((l, r) =>
     (hiddenPlatforms.has(r.platform.id) ? -1 : 1) - (hiddenPlatforms.has(l.platform.id) ? -1 : 1)
     || (r.price - l.price));
 
@@ -521,8 +563,10 @@ const PricingTable = (props: {
             <HoverArea hoverDown={dontHoverBelow}>
               {(hoverAreaProps, isHovering) => (
                 <TableRow {...hoverAreaProps} key={row.platform.id} className={classNames(hiddenPlatforms.has(row.platform.id) && classes.tableHiddenPlatform)}>
-                  <TableCell key='platformName'><Brand platformId={row.platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} /></TableCell>
-                  <TableCell key='price' className={classes.pricingPriceCell}>
+                  <TableCell key='platformName' className={classes.pricingCell}>
+                    <Brand platformId={row.platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
+                  </TableCell>
+                  <TableCell key='price' className={classNames(classes.pricingCell, classes.pricingPriceCell)}>
                     <Price val={row.price} />
                     <IconButton
                       className={classes.pricingOpenButton}
@@ -569,11 +613,89 @@ const Price = (props: {
   );
 };
 
+// TODO remove dead code; this is a chart of all prices, but it doesn't look good 
+// const sliderMarksChart: number[] = [];
+// for (var mark = sliderMarks[0]; mark <= sliderMarks[sliderMarks.length - 1]; mark += sliderMarks[1]) {
+//   sliderMarksChart.push(mark);
+// }
+// const pricingChartTransparentPlatforms = new Set([PlatformFider, PlatformNolt, PlatformSuggested, PlatformFeatureUpvote, PlatformNoora, PlatformHelloNext]);
+// const PricingChart = (props: {
+//   totalUsers: number;
+// }) => {
+//   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+//   const series = Object.values(Platforms)
+//     .filter(platform => !hiddenPlatforms.has(platform.id))
+//     .map(platform => {
+//       const data: Array<{ x: number, y: number }> = [];
+//       for (const mark of sliderMarks) {
+//         const price = getPrice(platform, mark);
+//         if (price.price >= 0) {
+//           data.push({
+//             x: mark,
+//             y: price.price,
+//           });
+//         }
+//       }
+//       return {
+//         name: platform.name,
+//         color: pricingChartTransparentPlatforms.has(platform.id)
+//           ? fade(platform.color, 0.1)
+//           : platform.color,
+//         data,
+//       };
+//     });
+//   return (
+//     <ReactApexChart
+//       series={series}
+//       options={{
+//         tooltip: {
+//           x: {
+//             formatter: (val) => `${val} total users`,
+//           },
+//         },
+//         grid: {
+//         },
+//         xaxis: {
+//           type: 'numeric',
+//           lines: {
+//             show: true,
+//           },
+//         },
+//         yaxis: {
+//           labels: {
+//             formatter: (val) => `$${val}`,
+//           },
+//         },
+//         chart: {
+//           type: 'line',
+//           height: 350,
+//           animations: { enabled: false },
+//           toolbar: { show: false },
+//         },
+//         stroke: {
+//           // curve: 'stepline',
+//           lineCap: 'butt',
+//           curve: 'smooth',
+//           width: 2,
+//           // dashArray: 5,
+//         },
+//         legend: { show: false },
+//       }}
+//       type='line'
+//       height={350}
+//     />
+//   );
+// };
+
+
 const MajorFeatures = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Which features matter to you?</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <FeaturesIcon fontSize='inherit' />&nbsp;
+        Which features matter to you?
+      </Typography>
       <p><Typography>Each platform has a set of major components that are available. Be prepared that although two platforms have the same component, the functionality of that component may drastically differ. Use this table as a quick comparison:</Typography></p>
       <ComparisonTable
         headers={[
@@ -609,17 +731,20 @@ const VotingMechanism = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Prioritization of feedback</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <AnalyzeIcon fontSize='inherit' />&nbsp;
+        Prioritization of feedback
+      </Typography>
       <p><Typography>Most platforms can collect a lot of feedback, while only a few can handle making sense of it all.</Typography></p>
       <p><Typography>To better understand the feedback you collected, you need to consider the value of each of your customers. For example, you may want to know which features your customers wanted considering revenue. Or you may want to see only your recently churned customers in your enterprise plan.</Typography></p>
 
-      <Typography component='h4' variant='h6'>Analyze externally</Typography>
+      <Typography component='h4' variant='h6' className={classes.heading}>Analyze externally</Typography>
       <p><Typography>One way to accomplish this is to export your data to an external Data Warehouse or analytics tool to further analyze your data which allows you to correlate with other data you have about your customers.</Typography></p>
 
-      <Typography component='h4' variant='h6'>Segmentation</Typography>
+      <Typography component='h4' variant='h6' className={classes.heading}>Segmentation</Typography>
       <p><Typography>Some platforms allow you to import arbitrary customer data in order to filter, search and assign weights to your customers.</Typography></p>
 
-      <Typography component='h4' variant='h6'>Credit system</Typography>
+      <Typography component='h4' variant='h6' className={classes.heading}>Credit system</Typography>
       <p><Typography>Another approach is to issue credits to your customers based on their value such as monthly spend. They can then spend their credits on the features they want.</Typography></p>
 
       <p><Typography>Whether you choose to give control to your users with fine-grained ranking or analyze behind the scenes (or both) is dependant on your specific use case.</Typography></p>
@@ -650,16 +775,23 @@ const Onboarding = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Engagement channels</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <SpeakIcon fontSize='inherit' />&nbsp;
+        Engagement channels
+      </Typography>
       <p><Typography>The value of feedback is drastically different between a customer or someone that has no intention in being your customer. One way to ensure that feedback is valuable is to ask the user to provide a communication channel so they can be notified when their feedback is addressed.</Typography></p>
 
-      <Typography component='h4' variant='h6'>Onboarding friction</Typography>
+      <Typography component='h4' variant='h6' className={classes.heading}>Onboarding friction</Typography>
       <p><Typography>Users are hesitant to provide their personal information including their email address. The more personal information you ask during sign-up will result in less feedback you will receive.</Typography></p>
       <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the right solution as it allows you to seamlessly login your users in the background with no login screen.</Typography></p>
 
-      <Typography component='h4' variant='h6'>Guest / Anonymous feedback</Typography>
+      <Typography component='h4' variant='h6' className={classes.heading}>Guest / Anonymous feedback</Typography>
       <p><Typography>Ideal in narrow use cases, allows your users to sign-up without providing any contact information. Use this only as a last resort as it attracts spam and leaves you with no engagement opportunity.</Typography></p>
       <p><Typography><span className={classes.emphasize}>Browser Push Notifications</span> are an alternative where your users don't have to provide their email, but you have a communication channel open.</Typography></p>
+
+
+      <Typography component='h4' variant='h6' className={classes.heading}>OAuth, SAML</Typography>
+      <p><Typography>Although OAuth and SAML allow you to login with the vast majority of external providers including Facebook and Google, some platforms have a built-in shared login for specific providers shown below.</Typography></p>
 
       <ComparisonTable
         headers={[
@@ -672,29 +804,7 @@ const Onboarding = (props: {}) => {
           { headingId: 'emaildomain', content: 'Email Domain' },
           { headingId: 'openid', content: 'OpenId' },
           { headingId: 'okta', content: 'Okta' },
-        ]}
-        data={[
-          { platformId: PlatformUserVoice, headingIds: new Set(['email', 'emaildomain', 'sso', 'saml', 'okta', 'openid']) },
-          { platformId: PlatformClearFlask, headingIds: new Set(['guest', 'browserpush', 'email', 'emaildomain', 'sso', 'oauth']) },
-          { platformId: PlatformCanny, headingIds: new Set(['email', 'emaildomain', 'sso']) },
-          { platformId: PlatformFider, headingIds: new Set(['email', 'oauth']) },
-          { platformId: PlatformFeatureUpvote, headingIds: new Set(['email', 'saml']) },
-          { platformId: PlatformUpvoty, headingIds: new Set(['guest', 'email', 'sso']) },
-          { platformId: PlatformHelloNext, headingIds: new Set(['guest', 'email', 'sso']) },
-          { platformId: PlatformConflux, headingIds: new Set(['guest', 'email', 'sso']) },
-          { platformId: PlatformSuggested, headingIds: new Set(['guest', 'email', 'sso']) },
-          { platformId: PlatformNolt, headingIds: new Set(['guest', 'email', 'sso']) },
-          { platformId: PlatformNoora, headingIds: new Set(['email', 'sso']) },
-          { platformId: PlatformConvas, headingIds: new Set(['guest', 'email']) },
-          { platformId: PlatformRoadmapSpace, headingIds: new Set(['email']) },
-        ]}
-      />
-
-      <Typography component='h4' variant='h6' className={classes.heading}>OAuth, SAML</Typography>
-      <p><Typography>Although OAuth and SAML allow you to login with the vast majority of external providers including Facebook and Google, some platforms have a built-in shared login for specific providers shown below.</Typography></p>
-
-      <ComparisonTable
-        headers={[
+          { content: 'Shared' },
           { headingId: 'google', content: 'Google' },
           { headingId: 'fb', content: 'Facebook' },
           { headingId: 'github', content: 'Github' },
@@ -707,15 +817,19 @@ const Onboarding = (props: {}) => {
           { headingId: 'gsuite', content: 'GSuite' },
         ]}
         data={[
-          { platformId: PlatformCanny, headingIds: new Set(['fb', 'twitter', 'github', 'google', 'azure', 'gsuite']) },
-          { platformId: PlatformConflux, headingIds: new Set(['fb', 'google', 'discord', 'steam']) },
-          { platformId: PlatformUpvoty, headingIds: new Set(['twitter', 'google', 'wordpress']) },
-          { platformId: PlatformFider, headingIds: new Set(['fb', 'github', 'google']) },
-          { platformId: PlatformHelloNext, headingIds: new Set(['github', 'google', 'apple']) },
-          { platformId: PlatformSuggested, headingIds: new Set(['fb', 'github', 'google']) },
-          { platformId: PlatformNolt, headingIds: new Set(['twitter', 'google']) },
-          { platformId: PlatformUserVoice, headingIds: new Set(['fb', 'google']) },
-          { platformId: PlatformNoora, headingIds: new Set(['google']) },
+          { platformId: PlatformUserVoice, headingIds: new Set(['email', 'emaildomain', 'sso', 'saml', 'okta', 'openid', 'fb', 'google']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['guest', 'browserpush', 'email', 'emaildomain', 'sso', 'oauth']) },
+          { platformId: PlatformCanny, headingIds: new Set(['email', 'emaildomain', 'sso', 'fb', 'twitter', 'github', 'google', 'azure', 'gsuite']) },
+          { platformId: PlatformFider, headingIds: new Set(['email', 'oauth', 'fb', 'github', 'google']) },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['email', 'saml']) },
+          { platformId: PlatformUpvoty, headingIds: new Set(['guest', 'email', 'sso', 'twitter', 'google', 'wordpress']) },
+          { platformId: PlatformHelloNext, headingIds: new Set(['guest', 'email', 'sso', 'github', 'google', 'apple']) },
+          { platformId: PlatformConflux, headingIds: new Set(['guest', 'email', 'sso', 'fb', 'google', 'discord', 'steam']) },
+          { platformId: PlatformSuggested, headingIds: new Set(['guest', 'email', 'sso', 'fb', 'github', 'google']) },
+          { platformId: PlatformNolt, headingIds: new Set(['guest', 'email', 'sso', 'twitter', 'google']) },
+          { platformId: PlatformNoora, headingIds: new Set(['email', 'sso', 'google']) },
+          { platformId: PlatformConvas, headingIds: new Set(['guest', 'email']) },
+          { platformId: PlatformRoadmapSpace, headingIds: new Set(['email']) },
         ]}
       />
     </React.Fragment>
@@ -726,7 +840,10 @@ const ImportExport = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Import and Export: vendor lock-in</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <ImportExportIcon fontSize='inherit' />&nbsp;
+        Import and Export: vendor lock-in
+      </Typography>
       <p><Typography></Typography></p>
 
       <FilterButton
@@ -737,8 +854,9 @@ const ImportExport = (props: {}) => {
       <ComparisonTable
         tableStyle={{ width: 'max-content' }}
         headers={[
-          { headingId: 'export', content: 'Export self-service' },
-          { headingId: 'import', content: 'Import self-service' },
+          { content: 'Self-service' },
+          { headingId: 'export', content: 'Export' },
+          { headingId: 'import', content: 'Import' },
         ]}
         data={[
           { platformId: PlatformUserVoice, headingIds: new Set(['import', 'export']) },
@@ -760,14 +878,18 @@ const Language = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Language support</Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <TranslateIcon fontSize='inherit' />&nbsp;
+        Language support
+        </Typography>
       <p><Typography></Typography></p>
 
       <ComparisonTable
         headers={[
-          { headingId: 'English', content: 'English' },
           { headingId: 'contribute', content: 'Contribute translation' },
           { headingId: 'google', content: 'Google Translate' },
+          { content: 'Languages' },
+          { headingId: 'English', content: 'English' },
           { headingId: 'Arabic', content: 'Arabic' },
           { headingId: 'Bulgarian', content: 'Bulgarian' },
           { headingId: 'Catalan', content: 'Catalan' },
@@ -811,12 +933,156 @@ const Language = (props: {}) => {
   );
 };
 
+const Integrations = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <IntegrationsIcon fontSize='inherit' />&nbsp;
+        Integrations
+      </Typography>
+      <p><Typography></Typography></p>
+
+      <ComparisonTable
+        headers={[
+          { content: 'API' },
+          { headingId: 'API', content: 'API' },
+          { headingId: 'Zapier', content: 'Zapier' },
+          { content: 'Analytics' },
+          { headingId: 'GoogleAnalytics', content: 'GAnalytics' },
+          { headingId: 'Hotjar', content: 'Hotjar' },
+          { headingId: 'FullStory', content: 'FullStory' },
+          { headingId: 'Fivetran', content: 'Fivetran' },
+          { content: 'Collect' },
+          { headingId: 'Chrome', content: 'Chrome Extension' },
+          { headingId: 'Firefox', content: 'Firefox Extension' },
+          { headingId: 'MacApp', content: 'Mac app' },
+          { headingId: 'Intercom', content: 'Intercom' },
+          { headingId: 'Wordpress', content: 'Wordpress' },
+          { content: 'Sync' },
+          { headingId: 'Slack', content: 'Slack' },
+          { headingId: 'MsftTeams', content: 'Microsoft Teams' },
+          { headingId: 'Jira', content: 'Jira' },
+          { headingId: 'Zendesk', content: 'Zendesk' },
+          { headingId: 'Github', content: 'Github' },
+          { headingId: 'Trello', content: 'Trello' },
+          { headingId: 'Freshdesk', content: 'Freshdesk' },
+          { headingId: 'Gainsight', content: 'Gainsight' },
+          { headingId: 'AzureDevOps', content: 'Azure DevOps' },
+          { headingId: 'Groove', content: 'Groove' },
+          { headingId: 'PivotalTracker', content: 'Pivotal Tracker' },
+          { headingId: 'Teamwork', content: 'Teamwork' },
+          { content: 'Segment' },
+          { headingId: 'Stripe', content: 'Stripe' },
+          { headingId: 'Salesforce', content: 'Salesforce' },
+          { headingId: 'Segment', content: 'Segment' },
+          { content: 'Auth' },
+          { headingId: 'Okta', content: 'Okta' },
+          { headingId: 'OneLogin', content: 'OneLogin' },
+          { headingId: 'Patreon', content: 'Patreon' },
+
+        ]}
+        data={[
+          { platformId: PlatformRoadmapSpace, headingIds: new Set(['API', 'Zapier', 'GoogleAnalytics', 'Chrome', 'Firefox', 'Slack', 'Intercom', 'Wordpress', 'Jira', 'Zendesk', 'Github', 'Trello', 'Freshdesk', 'Groove', 'PivotalTracker', 'Teamwork', 'Salesforce']) },
+          { platformId: PlatformUserVoice, headingIds: new Set(['API', 'GoogleAnalytics', 'FullStory', 'Fivetran', 'Slack', 'MsftTeams', 'Jira', 'Zendesk', 'Gainsight', 'AzureDevOps', 'Salesforce', 'Okta', 'OneLogin']) },
+          { platformId: PlatformCanny, headingIds: new Set(['API', 'Zapier', 'GoogleAnalytics', 'Slack', 'MsftTeams', 'Intercom', 'Jira', 'Zendesk', 'Github', 'Salesforce', 'Segment', 'Okta', 'OneLogin']) },
+          { platformId: PlatformUpvoty, headingIds: new Set(['Zapier', 'GoogleAnalytics', 'FullStory', 'Chrome', 'Firefox', 'MacApp', 'Slack', 'Intercom']) },
+          { platformId: PlatformNoora, headingIds: new Set(['Zapier', 'Chrome', 'Slack', 'Intercom', 'Jira', 'Segment']) },
+          { platformId: PlatformConflux, headingIds: new Set(['Zapier', 'Chrome', 'Slack', 'Jira', 'Stripe']) },
+          { platformId: PlatformNolt, headingIds: new Set(['GoogleAnalytics', 'Slack', 'Jira', 'Github', 'Trello']) },
+          { platformId: PlatformHelloNext, headingIds: new Set(['Zapier', 'Slack', 'Intercom', 'Jira', 'Patreon']) },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['GoogleAnalytics', 'Slack', 'Jira']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['API', 'GoogleAnalytics', 'Hotjar']) },
+          { platformId: PlatformSuggested, headingIds: new Set(['Zapier', 'Slack', 'Intercom']) },
+          { platformId: PlatformFider, headingIds: new Set(['API']) },
+          { platformId: PlatformConvas, headingIds: new Set([]) },
+        ]}
+      />
+    </React.Fragment>
+  );
+};
+
+const PageLoad = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <SpeedIcon fontSize='inherit' />&nbsp;
+        Website health
+      </Typography>
+      <p><Typography>
+        Largest Contentful Paint (seconds, Mobile) https://web.dev/lcp/
+        Cumulative Layout Shift (Mobile) https://web.dev/cls/
+        PageSpeed score (Mobile)
+        </Typography></p>
+
+      <ComparisonTable
+        tableStyle={{ width: 'max-content' }}
+        headers={[
+          { headingId: 'paint', content: 'Page load', customContent: true },
+          { headingId: 'pageshift', content: 'Page shift', customContent: true },
+          // { headingId: 'score', content: 'Score', customContent: true },
+          { headingId: 'nojs', content: 'NoJS' },
+        ]}
+        data={[
+          { platformId: PlatformNolt, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={58} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={74} />), pageshift: (<PageLoadLayoutShift val={0.002} />) } },
+          { platformId: PlatformFider, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={3.2} />), score: (<PageLoadSpeed val={62} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformClearFlask, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={4.3} />), score: (<PageLoadSpeed val={30} />), pageshift: (<PageLoadLayoutShift val={0.159} />) } },
+          { platformId: PlatformRoadmapSpace, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={5.4} />), score: (<PageLoadSpeed val={26} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformUpvoty, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={5.6} />), score: (<PageLoadSpeed val={51} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformHelloNext, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={6.4} />), score: (<PageLoadSpeed val={42} />), pageshift: (<PageLoadLayoutShift val={0.084} />) } },
+          { platformId: PlatformConvas, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={7.2} />), score: (<PageLoadSpeed val={21} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformCanny, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={8.2} />), score: (<PageLoadSpeed val={41} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformSuggested, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={8.4} />), score: (<PageLoadSpeed val={39} />), pageshift: (<PageLoadLayoutShift val={0.074} />) } },
+          { platformId: PlatformNoora, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={9.1} />), score: (<PageLoadSpeed val={11} />), pageshift: (<PageLoadLayoutShift val={0.129} />) } },
+          { platformId: PlatformConflux, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={9.4} />), score: (<PageLoadSpeed val={30} />), pageshift: (<PageLoadLayoutShift val={0.706} />) } },
+          { platformId: PlatformUserVoice, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={10.8} />), score: (<PageLoadSpeed val={18} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+        ]}
+      />
+    </React.Fragment>
+  );
+};
+const PageLoadSeconds = (props: { val: number }) => {
+  return (
+    <div style={{ textAlign: 'end', color: `rgb(${Math.max(0, (props.val - 2) * 50)},0,0)` }}>
+      {props.val}&nbsp;sec
+    </div>
+  );
+};
+const PageLoadSpeed = (props: { val: number }) => {
+  return (
+    <div style={{ textAlign: 'center', color: `rgb(${Math.max(0, 100 - props.val)},0,0)` }}>
+      {props.val}%
+    </div>
+  );
+};
+const PageLoadLayoutShift = (props: { val: number }) => {
+  return (
+    <div style={{ textAlign: 'center', color: `rgb(${Math.max(0, props.val * 1000)},0,0)` }}>
+      {props.val.toFixed(3)}
+    </div>
+  );
+};
+
 const TemplateDeleteMe = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}></Typography>
+      <Typography component='h2' variant='h4' className={classes.heading}>
+        <FeaturesIcon fontSize='inherit' />&nbsp;
+        a
+      </Typography>
       <p><Typography></Typography></p>
+
+      <ComparisonTable
+        headers={[
+          { headingId: '', content: '' },
+        ]}
+        data={[
+          { platformId: PlatformUserVoice, headingIds: new Set([]) },
+        ]}
+      />
     </React.Fragment>
   );
 };
@@ -824,12 +1090,14 @@ const TemplateDeleteMe = (props: {}) => {
 const ComparisonTable = (props: {
   tableStyle?: any;
   headers: Array<{
-    headingId: string;
+    headingId?: string;
     content: React.ReactNode;
+    customContent?: boolean;
   }>;
   data: Array<{
     platformId: string;
     headingIds: Set<string>;
+    customContentByHeadingId?: { [headingId: string]: any };
   }>;
 }) => {
   const classes = useStyles();
@@ -840,15 +1108,34 @@ const ComparisonTable = (props: {
       {(hoverAreaProps, isHovering) => (
         <TableRow {...hoverAreaProps} key={row.platformId} className={classNames(isHidden && classes.tableHiddenPlatform)}>
           <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentCheckbox={!isHovering} /></TableCell>
-          {props.headers.map(header => (
-            <TableCell key={header.headingId}>
-              {row.headingIds.has(header.headingId) ? (
-                <CheckIcon titleAccess='Yes' color='inherit' fontSize='inherit' className={classes.check} />
-              ) : (
-                null
-              )}
-            </TableCell>
-          ))}
+          {props.headers.map(header => {
+            if (!header.headingId) {
+              return (
+                <React.Fragment>
+                  <TableCell key={`divider-${header.headingId}`} className={classes.tableDivider}></TableCell>
+                  <TableCell key={`grouping-${header.headingId}`}></TableCell>
+                </React.Fragment>
+              );
+            }
+
+            if (!!header.customContent) {
+              return (
+                <TableCell key={header.headingId}>
+                  {row.customContentByHeadingId[header.headingId]}
+                </TableCell>
+              );
+            }
+
+            return (
+              <TableCell key={header.headingId}>
+                {row.headingIds.has(header.headingId) ? (
+                  <CheckIcon titleAccess='Yes' color='inherit' fontSize='inherit' className={classes.check} />
+                ) : (
+                  null
+                )}
+              </TableCell>
+            );
+          })}
         </TableRow>
       )}
     </HoverArea>
@@ -856,47 +1143,67 @@ const ComparisonTable = (props: {
 
   return (
     <div className={classes.table} style={props.tableStyle}>
-      <Table>
+      <Table size='small'>
         <TableHead>
           <TableRow>
             <TableCell key='platformName'></TableCell>
-            {props.headers.map(header => (
-              <HoverArea hoverDown={dontHoverBelow}>
-                {(hoverAreaProps, isHovering) => {
-                  var otherSeen = false;
-                  const platformIds = new Set(props.data.filter(row => {
-                    const isChecked = row.headingIds.has(header.headingId);
-                    if (row.platformId === PlatformOther) {
-                      otherSeen = otherSeen || isChecked;
-                      return false;
-                    } else {
-                      return isChecked;
-                    }
-                  }).map(row => row.platformId));
+            {props.headers.map(header => {
+              if (!header.headingId) {
+                return (
+                  <React.Fragment>
+                    <TableCell key={`divider-${header.headingId}`} className={classes.tableDivider}><div /></TableCell>
+                    <TableCell key={`grouping-${header.headingId}`} className={classNames(classes.tableHeading, classes.tableGrouping)}>{header.content}</TableCell>
+                  </React.Fragment>
+                );
+              }
 
-                  // Take care of PlatformOther here
-                  if (otherSeen) {
-                    const dataPlatformIds = new Set(props.data.map(row => row.platformId));
-                    Object.keys(Platforms).filter(id => !dataPlatformIds.has(id))
-                      .forEach(id => platformIds.add(id));
-                  }
+              if (!!header.customContent) {
+                return (
+                  <TableCell key={header.headingId} className={classes.tableHeading}>
+                    {header.content}
+                  </TableCell>
+                );
+              }
 
-                  return (
-                    <TableCell {...hoverAreaProps} key={header.headingId} className={classes.tableHeading}>
-                      <div>
-                        <FilterIconButton
-                          iconClassName={classNames(classes.transparentTransition, !isHovering && classes.transparent)}
-                          select={false}
-                          platformIds={platformIds}
-                          invertSelection
-                        />
-                      </div>
-                      {header.content}
-                    </TableCell>
-                  );
-                }}
-              </HoverArea>
-            ))}
+              const headingId = header.headingId!;
+              var otherSeen = false;
+              const platformIds = new Set(props.data.filter(row => {
+                const isChecked = row.headingIds.has(headingId);
+                if (row.platformId === PlatformOther) {
+                  otherSeen = otherSeen || isChecked;
+                  return false;
+                } else {
+                  return isChecked;
+                }
+              }).map(row => row.platformId));
+
+              // Take care of PlatformOther here
+              if (otherSeen) {
+                const dataPlatformIds = new Set(props.data.map(row => row.platformId));
+                Object.keys(Platforms).filter(id => !dataPlatformIds.has(id))
+                  .forEach(id => platformIds.add(id));
+              }
+
+              return (
+                <HoverArea hoverDown={dontHoverBelow}>
+                  {(hoverAreaProps, isHovering) => {
+                    return (
+                      <TableCell {...hoverAreaProps} key={headingId} className={classes.tableHeading}>
+                        <div>
+                          <FilterIconButton
+                            iconClassName={classNames(classes.transparentTransition, !isHovering && classes.transparent)}
+                            select={false}
+                            platformIds={platformIds}
+                            invertSelection
+                          />
+                        </div>
+                        {header.content}
+                      </TableCell>
+                    );
+                  }}
+                </HoverArea>
+              );
+            })}
           </TableRow>
         </TableHead>
         <TableBody>
