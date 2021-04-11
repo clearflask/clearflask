@@ -1,5 +1,5 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Button, Checkbox, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
@@ -22,6 +22,7 @@ import RoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace.png';
 import SuggestedImg from '../../public/img/landing/compare/suggested.png';
 import UpvotyImg from '../../public/img/landing/compare/upvoty.png';
 import UserVoiceImg from '../../public/img/landing/compare/uservoice.png';
+import { contentScrollApplyStyles } from '../common/ContentScroll';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
 import { isTracking } from '../common/util/detectEnv';
@@ -39,6 +40,8 @@ const PlatformSuggested = 'suggested';
 const PlatformNoora = 'noora';
 const PlatformRoadmapSpace = 'roadmapspace';
 const PlatformFeatureUpvote = 'featureupvote';
+// Special case for showing other companies
+const PlatformOther = 'other';
 
 const percTotalUsersAreActive3Months = 0.05;
 const percTotalUsersAreActive60Days = 0.05;
@@ -237,7 +240,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     color: theme.palette.primary.main,
   },
   table: {
+    maxWidth: '100%',
     width: 'min-content',
+    ...contentScrollApplyStyles(theme),
   },
   tableHiddenPlatform: {
     filter: 'grayscale(100%)',
@@ -288,6 +293,24 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
   },
+  filterButtonExample: {
+    margin: theme.spacing(1, 2, 0),
+    '& $brandImg': {
+      width: 11,
+    },
+    '& p': {
+      fontSize: '0.8em',
+    },
+  },
+  filterButtonExampleOther: {
+    paddingLeft: theme.spacing(3.5),
+  },
+  filterButtonExamplesContainer: {
+    margin: theme.spacing(1, 0, 1, 2),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
   transparentTransition: {
     opacity: 1,
     transition: theme.transitions.create('opacity'),
@@ -311,6 +334,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   brandName: {
     display: 'inline-block',
+  },
+  platformOther: {
+    textAlign: 'center',
   },
   pricingContainer: {
     display: 'flex',
@@ -362,6 +388,8 @@ const Competitors = () => {
         <MajorFeatures />
         <VotingMechanism />
         <Onboarding />
+        <Language />
+        <ImportExport />
       </Container>
     </HiddenPlatformsContext.Provider>
   );
@@ -394,7 +422,7 @@ const Volume = (props: {}) => {
       <p><Typography>If you have a clear cut use case that requires a high volume of feedback, you need to choose a platform that can handle this amount of feedback. Collecting feedback is one thing, but how do you sort throught it at scale matters.</Typography></p>
       <p><Typography>UserVoice is the market leader in this space with Canny and ClearFlask as alternative options.</Typography></p>
       <FilterButton
-        label='Show me' text='only high-volume platforms'
+        label='Show me' text='only high-volume platforms' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformClearFlask, PlatformCanny])}
       />
 
@@ -403,7 +431,7 @@ const Volume = (props: {}) => {
       <p><Typography>Startups or products with growth should look at platforms that can handle high-volume and scale with your needs. Beware of unlimited plans that usually indicate the platform has never experienced a high-volume customer and may not be able to handle your future volume.</Typography></p>
       <p><Typography>ClearFlask and Canny are both built for high-volume while only charging you based on your current volume.</Typography></p>
       <FilterButton
-        label='Show me' text='only variable-volume platforms'
+        label='Show me' text='only variable-volume platforms' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformCanny])}
       />
 
@@ -412,7 +440,7 @@ const Volume = (props: {}) => {
       <p><Typography>If you collect feedback across many small separate projects, you don't want to be paying and maintaining separate accounts and billing for each project.</Typography></p>
       <p><Typography>At ClearFlask, you can have multiple projects under the same account and you only pay for the combined user count across all of your projects. Convas has a free-tier for projects under 50 users, while Fider is free and open-source for only the cost of hosting and managing your instances.</Typography></p>
       <FilterButton
-        label='Show me' text='only multi-project platforms'
+        label='Show me' text='only multi-project platforms' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformConvas, PlatformFider])}
       />
 
@@ -420,7 +448,7 @@ const Volume = (props: {}) => {
       <Typography variant='subtitle1'>Small group, hobbyist</Typography>
       <p><Typography>For collecting feedback from a small group of users, there are many options available. Keep reading below to find the product based on other factors.</Typography></p>
       <FilterButton
-        label='Show me' text='only low-volume platforms'
+        label='Show me' text='only low-volume platforms' showExamples={4} invertExamples
         select={false} platformIds={new Set([PlatformUserVoice])}
       />
     </React.Fragment>
@@ -611,7 +639,7 @@ const VotingMechanism = (props: {}) => {
           { platformId: PlatformClearFlask, headingIds: new Set(['up', 'down', 'emoji', 'credit', 'fund']) },
           { platformId: PlatformHelloNext, headingIds: new Set(['up', 'down']) },
           { platformId: PlatformNolt, headingIds: new Set(['up', 'down']) },
-          { platformId: '...', headingIds: new Set(['up']) },
+          { platformId: PlatformOther, headingIds: new Set(['up']) },
         ]}
       />
     </React.Fragment>
@@ -694,6 +722,95 @@ const Onboarding = (props: {}) => {
   );
 };
 
+const ImportExport = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4' className={classes.heading}>Import and Export: vendor lock-in</Typography>
+      <p><Typography></Typography></p>
+
+      <FilterButton
+        label='Show me' text='only platforms with Export' showExamples={3}
+        select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformCanny, PlatformClearFlask, PlatformUpvoty, PlatformFider, PlatformSuggested, PlatformFeatureUpvote])}
+      />
+
+      <ComparisonTable
+        tableStyle={{ width: 'max-content' }}
+        headers={[
+          { headingId: 'export', content: 'Export self-service' },
+          { headingId: 'import', content: 'Import self-service' },
+        ]}
+        data={[
+          { platformId: PlatformUserVoice, headingIds: new Set(['import', 'export']) },
+          { platformId: PlatformCanny, headingIds: new Set(['import', 'export']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['import', 'export']) },
+          { platformId: PlatformUpvoty, headingIds: new Set(['export']) },
+          { platformId: PlatformFider, headingIds: new Set(['export']) },
+          { platformId: PlatformSuggested, headingIds: new Set(['export']) },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['export']) },
+          { platformId: PlatformNoora, headingIds: new Set(['import']) },
+          { platformId: PlatformOther, headingIds: new Set([]) },
+        ]}
+      />
+    </React.Fragment>
+  );
+};
+
+const Language = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4' className={classes.heading}>Language support</Typography>
+      <p><Typography></Typography></p>
+
+      <ComparisonTable
+        headers={[
+          { headingId: 'English', content: 'English' },
+          { headingId: 'contribute', content: 'Contribute translation' },
+          { headingId: 'google', content: 'Google Translate' },
+          { headingId: 'Arabic', content: 'Arabic' },
+          { headingId: 'Bulgarian', content: 'Bulgarian' },
+          { headingId: 'Catalan', content: 'Catalan' },
+          { headingId: 'Chinese', content: 'Chinese' },
+          { headingId: 'Czechia', content: 'Czechia' },
+          { headingId: 'Danish', content: 'Danish' },
+          { headingId: 'Dutch', content: 'Dutch' },
+          { headingId: 'Estonian', content: 'Estonian' },
+          { headingId: 'Finnish', content: 'Finnish' },
+          { headingId: 'French', content: 'French' },
+          { headingId: 'German', content: 'German' },
+          { headingId: 'Hebrew', content: 'Hebrew' },
+          { headingId: 'Hungarian', content: 'Hungarian' },
+          { headingId: 'Icelandic', content: 'Icelandic' },
+          { headingId: 'Indonesian', content: 'Indonesian' },
+          { headingId: 'Italian', content: 'Italian' },
+          { headingId: 'Japanese', content: 'Japanese' },
+          { headingId: 'Korean', content: 'Korean' },
+          { headingId: 'Norwegian', content: 'Norwegian' },
+          { headingId: 'Persian', content: 'Persian' },
+          { headingId: 'Polish', content: 'Polish' },
+          { headingId: 'Portuguese', content: 'Portuguese' },
+          { headingId: 'Russian', content: 'Russian' },
+          { headingId: 'Serbian', content: 'Serbian' },
+          { headingId: 'Slovak', content: 'Slovak' },
+          { headingId: 'Spanish', content: 'Spanish' },
+          { headingId: 'Swedish', content: 'Swedish' },
+          { headingId: 'Turkish', content: 'Turkish' },
+          { headingId: 'Vietnamese', content: 'Vietnamese' },
+        ]}
+        data={[
+          { platformId: PlatformUserVoice, headingIds: new Set(['google', 'contribute', 'English', 'Bulgarian', 'Catalan', 'Dutch', 'French', 'German', 'Serbian', 'Spanish', 'Turkish', 'Vietnamese']) },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['contribute', 'English', 'Czechia', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hebrew', 'Icelandic', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Swedish', 'Turkish']) },
+          { platformId: PlatformUpvoty, headingIds: new Set(['English', 'Arabic', 'Chinese', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hungarian', 'Indonesian', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Slovak', 'Spanish', 'Swedish', 'Turkish']) },
+          { platformId: PlatformNolt, headingIds: new Set(['English', 'Arabic', 'Danish', 'Dutch', 'Estonian', 'French', 'German', 'Hungarian', 'Italian', 'Norwegian', 'Persian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Turkish', 'Vietnamese']) },
+          { platformId: PlatformHelloNext, headingIds: new Set(['English', 'Chinese', 'French', 'German', 'Korean', 'Portuguese', 'Russian', 'Spanish']) },
+          { platformId: PlatformOther, headingIds: new Set(['English']) },
+        ]}
+      />
+    </React.Fragment>
+  );
+};
+
 const TemplateDeleteMe = (props: {}) => {
   const classes = useStyles();
   return (
@@ -705,6 +822,7 @@ const TemplateDeleteMe = (props: {}) => {
 };
 
 const ComparisonTable = (props: {
+  tableStyle?: any;
   headers: Array<{
     headingId: string;
     content: React.ReactNode;
@@ -737,26 +855,46 @@ const ComparisonTable = (props: {
   );
 
   return (
-    <div className={classes.table}>
+    <div className={classes.table} style={props.tableStyle}>
       <Table>
         <TableHead>
           <TableRow>
             <TableCell key='platformName'></TableCell>
             {props.headers.map(header => (
               <HoverArea hoverDown={dontHoverBelow}>
-                {(hoverAreaProps, isHovering) => (
-                  <TableCell {...hoverAreaProps} key={header.headingId} className={classes.tableHeading}>
-                    <div>
-                      <FilterIconButton
-                        iconClassName={classNames(classes.transparentTransition, !isHovering && classes.transparent)}
-                        select={false}
-                        platformIds={new Set(props.data.filter(row => row.headingIds.has(header.headingId)).map(row => row.platformId))}
-                        invertSelection
-                      />
-                    </div>
-                    {header.content}
-                  </TableCell>
-                )}
+                {(hoverAreaProps, isHovering) => {
+                  var otherSeen = false;
+                  const platformIds = new Set(props.data.filter(row => {
+                    const isChecked = row.headingIds.has(header.headingId);
+                    if (row.platformId === PlatformOther) {
+                      otherSeen = otherSeen || isChecked;
+                      return false;
+                    } else {
+                      return isChecked;
+                    }
+                  }).map(row => row.platformId));
+
+                  // Take care of PlatformOther here
+                  if (otherSeen) {
+                    const dataPlatformIds = new Set(props.data.map(row => row.platformId));
+                    Object.keys(Platforms).filter(id => !dataPlatformIds.has(id))
+                      .forEach(id => platformIds.add(id));
+                  }
+
+                  return (
+                    <TableCell {...hoverAreaProps} key={header.headingId} className={classes.tableHeading}>
+                      <div>
+                        <FilterIconButton
+                          iconClassName={classNames(classes.transparentTransition, !isHovering && classes.transparent)}
+                          select={false}
+                          platformIds={platformIds}
+                          invertSelection
+                        />
+                      </div>
+                      {header.content}
+                    </TableCell>
+                  );
+                }}
               </HoverArea>
             ))}
           </TableRow>
@@ -829,8 +967,14 @@ const FilterButton = (props: {
   select: boolean;
   platformIds: Set<string>;
   invertSelection?: boolean;
+  showExamples?: number;
+  invertExamples?: boolean;
 }) => {
   const classes = useStyles();
+
+  const examples = !!props.invertExamples
+    ? new Set(Object.keys(Platforms).filter(id => !props.platformIds.has(id)))
+    : props.platformIds;
 
   return (
     <FilterButtonBase
@@ -838,19 +982,41 @@ const FilterButton = (props: {
       platformIds={props.platformIds}
       invertSelection={props.invertSelection}
       renderButton={(onClick, disabled) => (
-        <div className={classes.filterButtonContainer}>
-          <Button
-            disabled={disabled}
-            color='primary'
-            variant='text'
-            onClick={onClick}
-          >
-            {props.label}
-          </Button>
-          {props.text && (
-            <Typography variant='caption'>{props.text}</Typography>
+        <Collapse in={!disabled}>
+          <div className={classes.filterButtonContainer}>
+            <Button
+              disabled={disabled}
+              color='primary'
+              variant='text'
+              onClick={onClick}
+            >
+              {props.label}
+            </Button>
+            {props.text && (
+              <Typography variant='caption'>{props.text}</Typography>
+            )}
+          </div>
+          {props.showExamples && (
+            <div className={classes.filterButtonExamplesContainer}>
+              {[...examples].slice(0, props.showExamples).map(platformId => (
+                <Brand
+                  className={classes.filterButtonExample}
+                  key={platformId}
+                  platformId={platformId}
+                  showLogo
+                // showCheckbox
+                />
+              ))}
+              {props.showExamples < examples.size && (
+                <Brand
+                  className={classNames(classes.filterButtonExampleOther, classes.filterButtonExample)}
+                  key='plus'
+                  platformId={`+${examples.size - props.showExamples}`}
+                />
+              )}
+            </div>
           )}
-        </div>
+        </Collapse>
       )}
     />
   );
@@ -890,7 +1056,6 @@ const FilterButtonBase = (props: {
   invertSelection?: boolean;
   renderButton: (onClick, disabled) => any;
 }) => {
-  const classes = useStyles();
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
   if (props.platformIds.size === 0) return null;
 
@@ -909,18 +1074,30 @@ const FilterButtonBase = (props: {
 };
 
 const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
+  className?: string;
   showLogo?: boolean;
   showCheckbox?: boolean;
+  showTextColor?: boolean;
   transparentCheckbox?: boolean;
 }) => {
   const classes = useStyles();
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const platform: Platform | undefined = props['platform'] || Platforms[props['platformId']]
-  if (!platform) return props['platformId'];
+  if (!platform) {
+    return (
+      <div className={classNames(classes.platformOther, props.className)}>
+        <Typography color='inherit'>
+          {props['platformId'] === PlatformOther
+            ? '...'
+            : props['platformId']}
+        </Typography>
+      </div>
+    );
+  }
 
   return (
-    <div className={classes.brandContainer}>
+    <div className={classNames(classes.brandContainer, props.className)}>
       {props.showCheckbox && (
         <Checkbox className={classNames(classes.brandCheckbox, classes.transparentTransition, props.transparentCheckbox && classes.transparent)} size='small' color='default' checked={!hiddenPlatforms.has(platform.id)}
           onChange={e => toggleHiddenPlatform(platform.id)}
@@ -936,7 +1113,9 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
           maxHeight={platform.logo.height}
         />
       )}
-      <Typography color='inherit' style={{ color: platform.color }}>
+      <Typography color='inherit' style={{
+        color: props.showTextColor ? platform.color : undefined,
+      }}>
         {platform.name}
       </Typography>
     </div>
