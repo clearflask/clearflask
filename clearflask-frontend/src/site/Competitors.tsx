@@ -1,7 +1,7 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
-import { createStyles, darken, fade, lighten, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import CheckIcon from '@material-ui/icons/Check';
 import FilterIcon from '@material-ui/icons/FilterList';
@@ -35,6 +35,7 @@ import { contentScrollApplyStyles } from '../common/ContentScroll';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
 import { isTracking } from '../common/util/detectEnv';
+import { vh } from '../common/util/screenUtil';
 
 const PlatformClearFlask = 'clearflask';
 const PlatformUserVoice = 'uservoice';
@@ -68,6 +69,7 @@ interface Platform {
   name: string;
   logo: Img;
   color: string;
+  url: string;
   pricing: {
     url: string;
     plans: Array<PlanPricing>,
@@ -79,6 +81,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'ClearFlask',
     logo: ClearFlaskImg,
     color: '#218774',
+    url: 'https://clearflask.com/',
     pricing: {
       url: 'https://clearflask.com/pricing',
       plans: [
@@ -92,6 +95,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'UserVoice',
     logo: UserVoiceImg,
     color: 'rgb(237,112,56)',
+    url: 'https://uservoice.com/',
     pricing: {
       url: 'https://uservoice.com/request-demo',
       plans: [{ basePrice: 500 }],
@@ -102,6 +106,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Canny',
     logo: CannyImg,
     color: 'rgb(94,98,240)',
+    url: 'https://canny.io/',
     pricing: {
       url: 'https://canny.io/pricing',
       plans: [
@@ -115,6 +120,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Upvoty',
     logo: UpvotyImg,
     color: 'rgb(233,134,85)',
+    url: 'https://upvoty.com/',
     pricing: {
       url: 'https://upvoty.com/pricing/',
       plans: [
@@ -129,8 +135,9 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Fider',
     logo: FiderImg,
     color: 'rgb(0,0,0)',
+    url: 'https://getfider.com/',
     pricing: {
-      url: 'https://getfider.com',
+      url: 'https://getfider.com/',
       plans: [{ basePrice: 0 }],
     },
   },
@@ -139,6 +146,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'HelloNext',
     logo: HelloNextImg,
     color: 'rgb(10,73,176)',
+    url: 'https://hellonext.co/',
     pricing: {
       url: 'https://hellonext.co/pricing/#compare-plans',
       plans: [{ basePrice: 50 }],
@@ -149,6 +157,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Convas',
     logo: ConvasImg,
     color: 'rgb(72,166,248)',
+    url: 'https://convas.io/',
     pricing: {
       url: 'https://convas.io/pricing',
       plans: [
@@ -163,6 +172,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Conflux',
     logo: ConfluxImg,
     color: 'rgb(81,183,249)',
+    url: 'https://getconflux.com/',
     pricing: {
       url: 'https://getconflux.com/pricing',
       plans: [
@@ -178,6 +188,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Nolt',
     logo: NoltImg,
     color: 'rgb(237,106,102)',
+    url: 'https://nolt.io/',
     pricing: {
       url: 'https://nolt.io/pricing/',
       plans: [{ basePrice: 25 }],
@@ -188,6 +199,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Suggested',
     logo: SuggestedImg,
     color: '#286ffa',
+    url: 'https://suggested.co/',
     pricing: {
       url: 'https://suggested.co/pricing/',
       plans: [{ basePrice: 50 }],
@@ -198,6 +210,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'Noora',
     logo: NooraImg,
     color: 'rgb(234,53,117)',
+    url: 'https://noorahq.com/',
     pricing: {
       url: 'https://noorahq.com/pricing/',
       plans: [{ basePrice: 60 }],
@@ -208,6 +221,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'RoadmapSpace',
     logo: RoadmapSpaceImg,
     color: 'rgb(153,123,247)',
+    url: 'https://roadmap.space/',
     pricing: {
       url: 'https://roadmap.space/plans-pricing/',
       plans: [
@@ -222,6 +236,7 @@ const Platforms: { [platformId: string]: Platform } = {
     name: 'FeatureUpvote',
     logo: FeatureUpvoteImg,
     color: 'rgb(50,58,70)',
+    url: 'https://featureupvote.com/',
     pricing: {
       url: 'https://featureupvote.com/pricing/',
       plans: [{ basePrice: 99 }],
@@ -231,6 +246,41 @@ const Platforms: { [platformId: string]: Platform } = {
 
 const dontHoverBelow: Breakpoint = 'sm';
 const useStyles = makeStyles((theme: Theme) => createStyles({
+  pageContainer: {
+    display: 'flex',
+  },
+  appBarSpacer: theme.mixins.toolbar,
+  competitorSelectContainer: {
+    marginTop: theme.spacing(20),
+    minHeight: '100%',
+  },
+  competitorSelect: {
+    position: 'sticky',
+    top: 0,
+    maxHeight: vh(100),
+    marginLeft: theme.spacing(6),
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  competitorSelectScroll: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...contentScrollApplyStyles(theme, undefined, true),
+  },
+  competitorSelectReset: {
+    alignSelf: 'flex-end',
+    margin: theme.spacing(3),
+  },
+  competitorSelectHeading: {
+    margin: theme.spacing(2, 1, 2, 6),
+  },
+  competitorSelectRow: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  pageContent: {
+    minWidth: 0,
+  },
   emphasize: {
     fontWeight: 'bolder',
   },
@@ -372,7 +422,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'space-evenly',
     flexWrap: 'wrap',
   },
-  pricingOpenButton: {
+  platformOpenButton: {
     fontSize: '0.9em',
     color: theme.palette.text.hint,
   },
@@ -397,6 +447,9 @@ const HiddenPlatformsContext = React.createContext({
 });
 
 const Competitors = () => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const xsDown = useMediaQuery(theme.breakpoints.down('xs'));
   const [hiddenPlatforms, setHiddenPlatforms] = useState<Set<string>>(new Set());
   const hiddenPlatformsWrapper = {
     hiddenPlatforms,
@@ -412,19 +465,63 @@ const Competitors = () => {
 
   return (
     <HiddenPlatformsContext.Provider value={hiddenPlatformsWrapper}>
-      <Container maxWidth='md'>
-        <Intro />
-        <Volume />
-        <PricingCompare />
-        <MajorFeatures />
-        <VotingMechanism />
-        <Onboarding />
-        <Language />
-        <ImportExport />
-        <Integrations />
-        <PageLoad />
+      <Container maxWidth='md' className={classes.pageContainer}>
+        <div className={classes.pageContent}>
+          <Intro />
+          <Volume />
+          <PricingCompare />
+          <MajorFeatures />
+          <VotingMechanism />
+          <Onboarding />
+          <Language />
+          <ImportExport />
+          <Integrations />
+          <PageLoad />
+        </div>
+        {!xsDown && (
+          <div className={classes.competitorSelectContainer}>
+            <div className={classes.competitorSelect}>
+              <div className={classes.appBarSpacer} />
+              <div className={classes.competitorSelectScroll}>
+                <CompetitorSelect />
+              </div>
+            </div>
+          </div>
+        )}
       </Container>
     </HiddenPlatformsContext.Provider>
+  );
+};
+
+const CompetitorSelect = (props: {}) => {
+  const classes = useStyles();
+  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+
+  const rowMapper = isHidden => platform => (
+    <HoverArea hoverDown={dontHoverBelow}>
+      {(hoverAreaProps, isHovering) => (
+        <div key={platform.id} {...hoverAreaProps} className={classNames(classes.competitorSelectRow, isHidden && classes.tableHiddenPlatform)}>
+          <Brand platformId={platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
+          <ExternalLinkPlatform type='home' platform={platform} transparent={!isHovering} />
+        </div>
+      )}
+    </HoverArea>
+  );
+
+  return (
+    <React.Fragment>
+      <Typography component='div' variant='h6' className={classes.competitorSelectHeading}>Compare</Typography>
+      <div>
+        {Object.values(Platforms).filter(platform => !hiddenPlatforms.has(platform.id)).map(rowMapper(false))}
+        {Object.values(Platforms).filter(platform => hiddenPlatforms.has(platform.id)).map(rowMapper(true))}
+      </div>
+      <Button
+        className={classes.competitorSelectReset}
+        style={{ visibility: hiddenPlatforms.size > 0 ? 'visible' : 'hidden' }}
+        onClick={() => setHiddenPlatforms(new Set())}
+        size='small'
+      >Reset</Button>
+    </React.Fragment>
   );
 };
 
@@ -567,24 +664,8 @@ const PricingTable = (props: {
                     <Brand platformId={row.platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
                   </TableCell>
                   <TableCell key='price' className={classNames(classes.pricingCell, classes.pricingPriceCell)}>
-                    <Price val={row.price} />
-                    <IconButton
-                      className={classes.pricingOpenButton}
-                      color='inherit'
-                      aria-label='Pricing page'
-                      onClick={e => {
-                        if (isTracking()) {
-                          ReactGA.event({
-                            category: 'compare',
-                            action: 'click-competitor-pricing-page',
-                            label: row.platform.id,
-                          });
-                        }
-                        window.open(row.platform.pricing.url, '_blank', 'noopener');
-                      }}
-                    >
-                      <OpenIcon fontSize='inherit' />
-                    </IconButton>
+                    <Price val={row.price} suffix={row.platform.id === PlatformUserVoice ? '+' : undefined} />
+                    <ExternalLinkPlatform type='pricing' platform={row.platform} />
                   </TableCell>
                 </TableRow>
               )}
@@ -597,6 +678,7 @@ const PricingTable = (props: {
 };
 const Price = (props: {
   val: number;
+  suffix?: string;
 }) => {
   const classes = useStyles();
   if (props.val < 0) return (
@@ -607,7 +689,7 @@ const Price = (props: {
   return (
     <div className={classes.priceContainer}>
       <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-      <Typography component='div' variant='h5'>{formatNumber(props.val)}</Typography>
+      <Typography component='div' variant='h5'>{formatNumber(props.val)}{props.suffix}</Typography>
       <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
     </div>
   );
@@ -1443,6 +1525,33 @@ const ExternalLink = (props: {
     >
       {props.children}
     </MuiLink>
+  );
+};
+
+const ExternalLinkPlatform = (props: {
+  type: 'pricing' | 'home';
+  platform: Platform;
+  transparent?: boolean;
+}) => {
+  const classes = useStyles();
+  return (
+    <IconButton
+      className={classNames(classes.platformOpenButton, classes.transparentTransition, !!props.transparent && classes.transparent)}
+      color='inherit'
+      aria-label={props.type === 'pricing' ? 'pricing page' : 'home page'}
+      onClick={e => {
+        if (isTracking()) {
+          ReactGA.event({
+            category: 'compare',
+            action: props.type === 'pricing' ? 'click-competitor-pricing-page' : 'click-competitor-home-page',
+            label: props.platform.id,
+          });
+        }
+        window.open(props.type === 'pricing' ? props.platform.pricing.url : props.platform.url, '_blank', 'noopener');
+      }}
+    >
+      <OpenIcon fontSize='inherit' />
+    </IconButton>
   );
 };
 
