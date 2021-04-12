@@ -31,6 +31,7 @@ declare module '*.dds' { const img: Img; export default img; }
 declare module '*.gif' { const img: Img; export default img; }
 declare module '*.icns' { const img: Img; export default img; }
 declare module '*.ico' { const img: Img; export default img; }
+declare module '*.jpg' { const img: Img; export default img; }
 declare module '*.jpeg' { const img: Img; export default img; }
 declare module '*.ktx' { const img: Img; export default img; }
 declare module '*.png' { const img: Img; export default img; }

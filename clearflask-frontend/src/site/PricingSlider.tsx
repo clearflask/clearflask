@@ -9,8 +9,9 @@ import { EstimatedPercUsersBecomeTracked } from './PricingPage';
 
 type Marks = Array<{ val: number, basePlanId: string }>;
 const quadrupleStepAfterIteration = 100;
-const maxMau = 3000;
-const startingStep = 5;
+const maxMau = 5001;
+const startingStep = 10;
+const callForQuoteCount = 5;
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -72,7 +73,6 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
     mauIndex: startingStep,
     marks: this.getMarks(),
   };
-  sliderWasTouched?: boolean;
   lastSelectedPlanid?: string;
   lastCallForQuote?: boolean;
 
@@ -81,18 +81,15 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
     const mauIndex = this.state.mauIndex;
 
-    const callForQuote = mauIndex >= this.state.marks.length - 1;
-    const mauMark = callForQuote
-      ? this.state.marks[this.state.marks.length - 1]
-      : this.state.marks[mauIndex];
+    const callForQuote = mauIndex >= this.state.marks.length - callForQuoteCount;
+    const mauMark = this.state.marks[mauIndex];
     const mau = mauMark.val;
 
     const plan = this.props.plans.find(p => p.basePlanId === mauMark.basePlanId);
     if (!plan) return null;
 
-    if (this.sliderWasTouched
-      && (this.lastSelectedPlanid !== plan.basePlanId
-        || this.lastCallForQuote !== callForQuote)) {
+    if (this.lastSelectedPlanid !== plan.basePlanId
+      || this.lastCallForQuote !== callForQuote) {
       this.props.onSelectedPlanChange(plan.basePlanId, callForQuote);
       this.lastSelectedPlanid = plan.basePlanId;
       this.lastCallForQuote = callForQuote;
@@ -116,7 +113,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
             <div className={this.props.classes.valueHorizontal}>
               <Typography variant='h6' component='div' style={{ visibility: 'hidden' }}>+</Typography>
               <Typography variant='h6' component='div'>{this.formatNumber(monthlyUsers)}</Typography>
-              <Typography variant='h6' component='div' style={{ visibility: callForQuote ? 'visible' : 'hidden' }}>+</Typography>
+              <Typography variant='h6' component='div' style={{ visibility: (callForQuote && (mauIndex === this.state.marks.length - 1)) ? 'visible' : 'hidden' }}>+</Typography>
             </div>
             <div className={this.props.classes.valueHorizontal}>
               <Typography variant='caption' component='div'>Total users</Typography>
@@ -131,7 +128,6 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
             orientation='vertical'
             max={max}
             onChange={(e, val) => {
-              this.sliderWasTouched = true;
               this.setState({ mauIndex: (val as any as number) })
             }}
           />

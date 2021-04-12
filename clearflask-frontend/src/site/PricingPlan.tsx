@@ -169,7 +169,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
           </div>
           <div className={this.props.classes.cardPricingTerms}>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited tracked users`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`High-volume`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
           </div>
         </React.Fragment>

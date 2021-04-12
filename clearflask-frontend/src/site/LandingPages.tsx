@@ -2588,7 +2588,7 @@ export function LandingInstall() {
 export function LandingCompare() {
   return (<React.Fragment>
     <Hero
-      title='Compare Customer Feedback Platforms'
+      title='Comparing Customer Feedback Platforms'
       description='There are over 50+ tools that we know of in this space. They vary by specific use cases, features and price. Let us help you choose the right tool'
       image={CompareImg}
     />

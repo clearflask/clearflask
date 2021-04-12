@@ -412,7 +412,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
               <LandingIntegrations />
             </Route>
             <Route exact path='/product/compare'>
-              <SetTitle title='Compare Customer Feedback Platforms' />
+              <SetTitle title='Comparing Customer Feedback Platforms' />
               <LandingCompare />
             </Route>
             <Route exact path='/product/install'>

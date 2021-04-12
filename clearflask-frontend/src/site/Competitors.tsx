@@ -4,13 +4,16 @@ import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import CheckIcon from '@material-ui/icons/Check';
+import MobileDesktopIcon from '@material-ui/icons/DevicesRounded';
 import FilterIcon from '@material-ui/icons/FilterList';
+import DesignIcon from '@material-ui/icons/FormatPaint';
 import ImportExportIcon from '@material-ui/icons/ImportExport';
 import OpenIcon from '@material-ui/icons/OpenInNew';
 import PaymentIcon from '@material-ui/icons/Payment';
 import PeopleIcon from '@material-ui/icons/People';
 import FeaturesIcon from '@material-ui/icons/PlaylistAddCheck';
 import SpeakIcon from '@material-ui/icons/RecordVoiceOver';
+import CustomizeIcon from '@material-ui/icons/SettingsRounded';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import SpeedIcon from '@material-ui/icons/Speed';
 import TranslateIcon from '@material-ui/icons/Translate';
@@ -18,20 +21,48 @@ import IntegrationsIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
 import React, { useContext, useState } from 'react';
 import ReactGA from 'react-ga';
+import { Link } from 'react-router-dom';
 import ClearFlaskImg from '../../public/img/clearflask-logo.png';
+import DesktopCannyImg from '../../public/img/landing/compare/canny-desktop.jpg';
+import MobileCannyImg from '../../public/img/landing/compare/canny-mobile.jpg';
 import CannyImg from '../../public/img/landing/compare/canny.png';
+import DesktopClearFlaskImg from '../../public/img/landing/compare/clearflask-desktop.jpg';
+import MobileClearFlaskImg from '../../public/img/landing/compare/clearflask-mobile.jpg';
+import DesktopConfluxImg from '../../public/img/landing/compare/conflux-desktop.jpg';
+import MobileConfluxImg from '../../public/img/landing/compare/conflux-mobile.jpg';
 import ConfluxImg from '../../public/img/landing/compare/conflux.png';
+import DesktopConvasImg from '../../public/img/landing/compare/convas-desktop.jpg';
+import MobileConvasImg from '../../public/img/landing/compare/convas-mobile.jpg';
 import ConvasImg from '../../public/img/landing/compare/convas.png';
+import DesktopFeatureUpvoteImg from '../../public/img/landing/compare/featureupvote-desktop.jpg';
+import MobileFeatureUpvoteImg from '../../public/img/landing/compare/featureupvote-mobile.jpg';
 import FeatureUpvoteImg from '../../public/img/landing/compare/featureupvote.png';
+import DesktopFiderImg from '../../public/img/landing/compare/fider-desktop.jpg';
+import MobileFiderImg from '../../public/img/landing/compare/fider-mobile.jpg';
 import FiderImg from '../../public/img/landing/compare/fider.png';
+import DesktopHelloNextImg from '../../public/img/landing/compare/hellonext-desktop.jpg';
+import MobileHelloNextImg from '../../public/img/landing/compare/hellonext-mobile.jpg';
 import HelloNextImg from '../../public/img/landing/compare/hellonext.png';
+import DesktopNoltImg from '../../public/img/landing/compare/nolt-desktop.jpg';
+import MobileNoltImg from '../../public/img/landing/compare/nolt-mobile.jpg';
 import NoltImg from '../../public/img/landing/compare/nolt.png';
+import DesktopNooraImg from '../../public/img/landing/compare/noora-desktop.jpg';
+import MobileNooraImg from '../../public/img/landing/compare/noora-mobile.jpg';
 import NooraImg from '../../public/img/landing/compare/noora.png';
+import DesktopRoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace-desktop.jpg';
+import MobileRoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace-mobile.jpg';
 import RoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace.png';
+import DesktopSuggestedImg from '../../public/img/landing/compare/suggested-desktop.jpg';
+import MobileSuggestedImg from '../../public/img/landing/compare/suggested-mobile.jpg';
 import SuggestedImg from '../../public/img/landing/compare/suggested.png';
+import DesktopUpvotyImg from '../../public/img/landing/compare/upvoty-desktop.jpg';
+import MobileUpvotyImg from '../../public/img/landing/compare/upvoty-mobile.jpg';
 import UpvotyImg from '../../public/img/landing/compare/upvoty.png';
+import DesktopUserVoiceImg from '../../public/img/landing/compare/uservoice-desktop.jpg';
+import MobileUserVoiceImg from '../../public/img/landing/compare/uservoice-mobile.jpg';
 import UserVoiceImg from '../../public/img/landing/compare/uservoice.png';
 import { contentScrollApplyStyles } from '../common/ContentScroll';
+import DeviceContainer, { Device } from '../common/DeviceContainer';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
 import { isTracking } from '../common/util/detectEnv';
@@ -70,6 +101,8 @@ interface Platform {
   logo: Img;
   color: string;
   url: string;
+  desktop: Img;
+  mobile: Img;
   pricing: {
     url: string;
     plans: Array<PlanPricing>,
@@ -82,6 +115,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: ClearFlaskImg,
     color: '#218774',
     url: 'https://clearflask.com/',
+    desktop: DesktopClearFlaskImg,
+    mobile: MobileClearFlaskImg,
     pricing: {
       url: 'https://clearflask.com/pricing',
       plans: [
@@ -96,9 +131,11 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: UserVoiceImg,
     color: 'rgb(237,112,56)',
     url: 'https://uservoice.com/',
+    desktop: DesktopUserVoiceImg,
+    mobile: MobileUserVoiceImg,
     pricing: {
       url: 'https://uservoice.com/request-demo',
-      plans: [{ basePrice: 500 }],
+      plans: [{ basePrice: 1000 }],
     },
   },
   [PlatformCanny]: {
@@ -107,26 +144,13 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: CannyImg,
     color: 'rgb(94,98,240)',
     url: 'https://canny.io/',
+    desktop: DesktopCannyImg,
+    mobile: MobileCannyImg,
     pricing: {
       url: 'https://canny.io/pricing',
       plans: [
         { basePrice: 50, baseUsers: 100 / percTotalUsersAreTracked, unitPrice: 20, unitUsers: 100 / percTotalUsersAreTracked },
         { basePrice: 200, baseUsers: 1000 / percTotalUsersAreTracked, unitPrice: 100, unitUsers: 1000 / percTotalUsersAreTracked },
-      ],
-    },
-  },
-  [PlatformUpvoty]: {
-    id: PlatformUpvoty,
-    name: 'Upvoty',
-    logo: UpvotyImg,
-    color: 'rgb(233,134,85)',
-    url: 'https://upvoty.com/',
-    pricing: {
-      url: 'https://upvoty.com/pricing/',
-      plans: [
-        { basePrice: 15, baseUsers: 150 / percTotalUsersAreTracked },
-        { basePrice: 25, baseUsers: 1500 / percTotalUsersAreTracked },
-        { basePrice: 49 },
       ],
     },
   },
@@ -136,20 +160,54 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: FiderImg,
     color: 'rgb(0,0,0)',
     url: 'https://getfider.com/',
+    desktop: DesktopFiderImg,
+    mobile: MobileFiderImg,
     pricing: {
       url: 'https://getfider.com/',
       plans: [{ basePrice: 0 }],
     },
   },
-  [PlatformHelloNext]: {
-    id: PlatformHelloNext,
-    name: 'HelloNext',
-    logo: HelloNextImg,
-    color: 'rgb(10,73,176)',
-    url: 'https://hellonext.co/',
+  [PlatformNolt]: {
+    id: PlatformNolt,
+    name: 'Nolt',
+    logo: NoltImg,
+    color: 'rgb(237,106,102)',
+    url: 'https://nolt.io/',
+    desktop: DesktopNoltImg,
+    mobile: MobileNoltImg,
     pricing: {
-      url: 'https://hellonext.co/pricing/#compare-plans',
-      plans: [{ basePrice: 50 }],
+      url: 'https://nolt.io/pricing/',
+      plans: [{ basePrice: 25 }],
+    },
+  },
+  [PlatformUpvoty]: {
+    id: PlatformUpvoty,
+    name: 'Upvoty',
+    logo: UpvotyImg,
+    color: 'rgb(233,134,85)',
+    url: 'https://upvoty.com/',
+    desktop: DesktopUpvotyImg,
+    mobile: MobileUpvotyImg,
+    pricing: {
+      url: 'https://upvoty.com/pricing/',
+      plans: [
+        { basePrice: 15, baseUsers: 150 / percTotalUsersAreTracked },
+        { basePrice: 25, baseUsers: 1500 / percTotalUsersAreTracked },
+        { basePrice: 49 },
+      ],
+    },
+  },
+  [PlatformFeatureUpvote]: {
+    id: PlatformFeatureUpvote,
+    name: 'FeatureUpvote',
+    logo: FeatureUpvoteImg,
+    color: 'rgb(50,58,70)',
+    url: 'https://featureupvote.com/',
+    desktop: DesktopFeatureUpvoteImg,
+    mobile: MobileFeatureUpvoteImg,
+    pricing: {
+      url: 'https://featureupvote.com/pricing/',
+      plans: [{ basePrice: 99 }],
     },
   },
   [PlatformConvas]: {
@@ -158,6 +216,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: ConvasImg,
     color: 'rgb(72,166,248)',
     url: 'https://convas.io/',
+    desktop: DesktopConvasImg,
+    mobile: MobileConvasImg,
     pricing: {
       url: 'https://convas.io/pricing',
       plans: [
@@ -173,6 +233,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: ConfluxImg,
     color: 'rgb(81,183,249)',
     url: 'https://getconflux.com/',
+    desktop: DesktopConfluxImg,
+    mobile: MobileConfluxImg,
     pricing: {
       url: 'https://getconflux.com/pricing',
       plans: [
@@ -183,15 +245,17 @@ const Platforms: { [platformId: string]: Platform } = {
       ],
     },
   },
-  [PlatformNolt]: {
-    id: PlatformNolt,
-    name: 'Nolt',
-    logo: NoltImg,
-    color: 'rgb(237,106,102)',
-    url: 'https://nolt.io/',
+  [PlatformHelloNext]: {
+    id: PlatformHelloNext,
+    name: 'HelloNext',
+    logo: HelloNextImg,
+    color: 'rgb(10,73,176)',
+    url: 'https://hellonext.co/',
+    desktop: DesktopHelloNextImg,
+    mobile: MobileHelloNextImg,
     pricing: {
-      url: 'https://nolt.io/pricing/',
-      plans: [{ basePrice: 25 }],
+      url: 'https://hellonext.co/pricing/#compare-plans',
+      plans: [{ basePrice: 50 }],
     },
   },
   [PlatformSuggested]: {
@@ -200,6 +264,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: SuggestedImg,
     color: '#286ffa',
     url: 'https://suggested.co/',
+    desktop: DesktopSuggestedImg,
+    mobile: MobileSuggestedImg,
     pricing: {
       url: 'https://suggested.co/pricing/',
       plans: [{ basePrice: 50 }],
@@ -211,6 +277,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: NooraImg,
     color: 'rgb(234,53,117)',
     url: 'https://noorahq.com/',
+    desktop: DesktopNooraImg,
+    mobile: MobileNooraImg,
     pricing: {
       url: 'https://noorahq.com/pricing/',
       plans: [{ basePrice: 60 }],
@@ -222,6 +290,8 @@ const Platforms: { [platformId: string]: Platform } = {
     logo: RoadmapSpaceImg,
     color: 'rgb(153,123,247)',
     url: 'https://roadmap.space/',
+    desktop: DesktopRoadmapSpaceImg,
+    mobile: MobileRoadmapSpaceImg,
     pricing: {
       url: 'https://roadmap.space/plans-pricing/',
       plans: [
@@ -231,23 +301,24 @@ const Platforms: { [platformId: string]: Platform } = {
       ],
     },
   },
-  [PlatformFeatureUpvote]: {
-    id: PlatformFeatureUpvote,
-    name: 'FeatureUpvote',
-    logo: FeatureUpvoteImg,
-    color: 'rgb(50,58,70)',
-    url: 'https://featureupvote.com/',
-    pricing: {
-      url: 'https://featureupvote.com/pricing/',
-      plans: [{ basePrice: 99 }],
-    },
-  },
 };
 
 const dontHoverBelow: Breakpoint = 'sm';
 const useStyles = makeStyles((theme: Theme) => createStyles({
   pageContainer: {
     display: 'flex',
+    '& h2': {
+      margin: theme.spacing(12, 0, 2),
+    },
+    '& h3': {
+      margin: theme.spacing(8, 0, 1),
+    },
+    '& h4': {
+      margin: theme.spacing(4, 0, 0),
+    },
+    '& p': {
+      marginTop: 7,
+    },
   },
   appBarSpacer: theme.mixins.toolbar,
   competitorSelectContainer: {
@@ -284,9 +355,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   emphasize: {
     fontWeight: 'bolder',
   },
-  heading: {
-    marginTop: theme.spacing(6),
-  },
   tableHeading: {
     verticalAlign: 'bottom',
     textAlign: 'center',
@@ -321,7 +389,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     width: 'min-content',
     ...contentScrollApplyStyles(theme),
   },
-  tableHiddenPlatform: {
+  hiddenPlatform: {
     filter: 'grayscale(100%)',
     opacity: 0.4,
   },
@@ -370,19 +438,26 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
   },
-  filterButtonExample: {
-    margin: theme.spacing(1, 2, 0),
+  brandListSmall: {
+    margin: theme.spacing(1, 0, 0),
+    '& $brandCheckbox': {
+      padding: theme.spacing(0.5),
+      marginRight: theme.spacing(1),
+    },
     '& $brandImg': {
       width: 11,
     },
-    '& p': {
+    '& div': {
       fontSize: '0.8em',
     },
+    '& svg': {
+      fontSize: 16,
+    },
   },
-  filterButtonExampleOther: {
-    paddingLeft: theme.spacing(3.5),
+  brandListOther: {
+    padding: theme.spacing(0.5, 0, 0, 6),
   },
-  filterButtonExamplesContainer: {
+  brandListContainer: {
     margin: theme.spacing(1, 0, 1, 2),
     display: 'flex',
     flexDirection: 'column',
@@ -438,6 +513,17 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     alignItems: 'baseline',
   },
+  designContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end'
+  },
+  designBrandAndSwitcher: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
 }));
 
 const HiddenPlatformsContext = React.createContext({
@@ -471,12 +557,15 @@ const Competitors = () => {
           <Volume />
           <PricingCompare />
           <MajorFeatures />
+          <Design />
+          <ImportExport />
+          <Customize />
           <VotingMechanism />
           <Onboarding />
-          <Language />
-          <ImportExport />
-          <Integrations />
           <PageLoad />
+          <Language />
+          <Integrations />
+          <Disclaimer />
         </div>
         {!xsDown && (
           <div className={classes.competitorSelectContainer}>
@@ -500,7 +589,7 @@ const CompetitorSelect = (props: {}) => {
   const rowMapper = isHidden => platform => (
     <HoverArea hoverDown={dontHoverBelow}>
       {(hoverAreaProps, isHovering) => (
-        <div key={platform.id} {...hoverAreaProps} className={classNames(classes.competitorSelectRow, isHidden && classes.tableHiddenPlatform)}>
+        <div key={platform.id} {...hoverAreaProps} className={classNames(classes.competitorSelectRow, isHidden && classes.hiddenPlatform)}>
           <Brand platformId={platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
           <ExternalLinkPlatform type='home' platform={platform} transparent={!isHovering} />
         </div>
@@ -529,7 +618,7 @@ const Intro = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>Problem outline</Typography>
+      <Typography component='h2' variant='h4'>Problem outline</Typography>
       <p><Typography>You’ve created a product and you want to know which area you should focus on next. A great source of ideas is your customer voice, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
       <p><Typography>This is where customer feedback platforms can help. Most are a drop-in platform you can integrate with your website, app or product to start collecting feedback right away. The right tool will not only help in de-duplicating and combining ideas together, but also prioritizing feedback based on customer value or other factors important to you.</Typography></p>
       <p><Typography>An important aspect of feedback collection is to make your customer base feel heard. Keeping your product development in touch with your customers will help your reputation and also keep your customers engaged. Your customer will love to hear from you when you release their long-awaited feature.</Typography></p>
@@ -542,47 +631,48 @@ const Volume = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <PeopleIcon fontSize='inherit' />&nbsp;
-        How many users do you expect?
+        How many users?
       </Typography>
       <p><Typography>The amount of feedback you will receive depends on your current or predicted number of customers and how tightly you integrate the feedback tool with your product.</Typography></p>
       <p><Typography>The <span className={classes.emphasize}>coverage rate</span> metric measures the percentage of users that have provided you with feedback by posting a unique idea or indicating that an existing idea is suited for them. UserVoice <ExternalLink url='https://community.uservoice.com/blog/new-in-uservoice-coverage-rate-reporting/'>reports</ExternalLink> that at least 15% coverage rate is considered satisfactory with typical rate ranging up to 50%. While Canny customers see a typical rate of 5%.</Typography></p>
       <p><Typography>Some platforms are not only suited to handle large amounts of feedback, but do not provide the tools to organize and sort through that feedback afterwards. Typically you will fall under one of these categories:</Typography></p>
 
-      <Typography component='h3' variant='h5' className={classes.heading}>High Volume</Typography>
-      <Typography variant='subtitle1'>Enterprise or proven product</Typography>
-      <p><Typography>If you have a clear cut use case that requires a high volume of feedback, you need to choose a platform that can handle this amount of feedback. Collecting feedback is one thing, but how do you sort throught it at scale matters.</Typography></p>
-      <p><Typography>UserVoice is the market leader in this space with Canny and ClearFlask as alternative options.</Typography></p>
+      <Typography component='h3' variant='h5'>High volume</Typography>
+      <Typography variant='caption'>{formatNumber(10000)}+ users: Enterprise, B2C, or proven product</Typography>
+      <p><Typography>If you have a use case that requires a high-volume of feedback, the answer is simple: request a quote from the following platforms and let the Sales teams guide you.</Typography></p>
+      <p><Typography>Your main goal is to find a platform that will analyze your large set of data effectively. UserVoice is the market leader in this space with Canny and ClearFlask as cheaper alternatives.</Typography></p>
       <FilterButton
-        label='Show me' text='only high-volume platforms' showExamples={3}
+        label='Filter' text='high-volume platforms' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformClearFlask, PlatformCanny])}
       />
 
-      <Typography component='h3' variant='h5' className={classes.heading}>Variable Volume</Typography>
-      <Typography variant='subtitle1'>Startups or growing product</Typography>
-      <p><Typography>Startups or products with growth should look at platforms that can handle high-volume and scale with your needs. Beware of unlimited plans that usually indicate the platform has never experienced a high-volume customer and may not be able to handle your future volume.</Typography></p>
+      <Typography component='h3' variant='h5'>Variable volume</Typography>
+      <Typography variant='caption'>Startups or growing product</Typography>
+      <p><Typography>Startups or products with growth should look at platforms that can handle high-volume when you need it, but has scaled pricing. Beware of unlimited plans that usually indicate the platform has never experienced high-volume and may not be able to handle your future needs.</Typography></p>
       <p><Typography>ClearFlask and Canny are both built for high-volume while only charging you based on your current volume.</Typography></p>
       <FilterButton
-        label='Show me' text='only variable-volume platforms' showExamples={3}
+        label='Filter' text='variable-volume platforms' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformCanny])}
       />
 
-      <Typography component='h3' variant='h5' className={classes.heading}>Low Volume with many projects</Typography>
-      <Typography variant='subtitle1'>Serial hobbyist</Typography>
-      <p><Typography>If you collect feedback across many small separate projects, you don't want to be paying and maintaining separate accounts and billing for each project.</Typography></p>
+      <Typography component='h3' variant='h5'>Low volume, multi-project</Typography>
+      <Typography variant='caption'>Serial hobbyist</Typography>
+      <p><Typography>If you collect feedback across many small separate projects, you don't want to be paying and maintaining separate accounts and billing for each.</Typography></p>
       <p><Typography>At ClearFlask, you can have multiple projects under the same account and you only pay for the combined user count across all of your projects. Convas has a free-tier for projects under 50 users, while Fider is free and open-source for only the cost of hosting and managing your instances.</Typography></p>
-      <FilterButton
-        label='Show me' text='only multi-project platforms' showExamples={3}
-        select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformConvas, PlatformFider])}
+      <BrandList
+        small
+        platformIds={[PlatformClearFlask, PlatformConvas, PlatformFider]}
       />
 
-      <Typography component='h3' variant='h5' className={classes.heading}>Low Volume</Typography>
-      <Typography variant='subtitle1'>Small group, hobbyist</Typography>
+      <Typography component='h3' variant='h5'>Low volume</Typography>
+      <Typography variant='caption'>Up to {formatNumber(1000)}: Closed group, hobbyist</Typography>
       <p><Typography>For collecting feedback from a small group of users, there are many options available. Keep reading below to find the product based on other factors.</Typography></p>
-      <FilterButton
-        label='Show me' text='only low-volume platforms' showExamples={4} invertExamples
-        select={false} platformIds={new Set([PlatformUserVoice])}
+      <BrandList
+        small
+        platformIds={Object.keys(Platforms).filter(id => id !== PlatformUserVoice)}
+        limit={4}
       />
     </React.Fragment>
   );
@@ -598,7 +688,7 @@ const PricingCompare = (props: {}) => {
   const [markIndex, setMarkIndex] = useState<number>(1);
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <PaymentIcon fontSize='inherit' />&nbsp;
         What is your budget?
       </Typography>
@@ -659,7 +749,7 @@ const PricingTable = (props: {
           {data.map(row => (
             <HoverArea hoverDown={dontHoverBelow}>
               {(hoverAreaProps, isHovering) => (
-                <TableRow {...hoverAreaProps} key={row.platform.id} className={classNames(hiddenPlatforms.has(row.platform.id) && classes.tableHiddenPlatform)}>
+                <TableRow {...hoverAreaProps} key={row.platform.id} className={classNames(hiddenPlatforms.has(row.platform.id) && classes.hiddenPlatform)}>
                   <TableCell key='platformName' className={classes.pricingCell}>
                     <Brand platformId={row.platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
                   </TableCell>
@@ -774,7 +864,7 @@ const MajorFeatures = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <FeaturesIcon fontSize='inherit' />&nbsp;
         Which features matter to you?
       </Typography>
@@ -787,7 +877,7 @@ const MajorFeatures = (props: {}) => {
           { headingId: 'knowledge', content: 'Knowledge base' },
           { headingId: 'forum', content: 'Forum' },
           { headingId: 'blog', content: 'Blog' },
-          { headingId: 'custom', content: 'Custom' },
+          { headingId: 'custom', content: 'Custom content' },
         ]}
         data={[
           { platformId: PlatformClearFlask, headingIds: new Set(['ideas', 'roadmap', 'changelog', 'knowledge', 'forum', 'blog', 'custom']) },
@@ -813,23 +903,26 @@ const VotingMechanism = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <AnalyzeIcon fontSize='inherit' />&nbsp;
         Prioritization of feedback
       </Typography>
       <p><Typography>Most platforms can collect a lot of feedback, while only a few can handle making sense of it all.</Typography></p>
       <p><Typography>To better understand the feedback you collected, you need to consider the value of each of your customers. For example, you may want to know which features your customers wanted considering revenue. Or you may want to see only your recently churned customers in your enterprise plan.</Typography></p>
 
-      <Typography component='h4' variant='h6' className={classes.heading}>Analyze externally</Typography>
+      <Typography component='h4' variant='h6'>Analyze externally</Typography>
       <p><Typography>One way to accomplish this is to export your data to an external Data Warehouse or analytics tool to further analyze your data which allows you to correlate with other data you have about your customers.</Typography></p>
+      <BrandList small platformIds={[PlatformUserVoice]} />
 
-      <Typography component='h4' variant='h6' className={classes.heading}>Segmentation</Typography>
+      <Typography component='h4' variant='h6'>Segmentation</Typography>
       <p><Typography>Some platforms allow you to import arbitrary customer data in order to filter, search and assign weights to your customers.</Typography></p>
+      <BrandList small platformIds={[PlatformUserVoice, PlatformCanny]} />
 
-      <Typography component='h4' variant='h6' className={classes.heading}>Credit system</Typography>
+      <Typography component='h4' variant='h6'>Credit system / Crowd-funding</Typography>
       <p><Typography>Another approach is to issue credits to your customers based on their value such as monthly spend. They can then spend their credits on the features they want.</Typography></p>
+      <BrandList small platformIds={[PlatformClearFlask]} />
+      {/* <p><Typography>Whether you choose to give control to your users with fine-grained ranking or analyze behind the scenes (or both) is dependant on your specific use case.</Typography></p> */}
 
-      <p><Typography>Whether you choose to give control to your users with fine-grained ranking or analyze behind the scenes (or both) is dependant on your specific use case.</Typography></p>
       <ComparisonTable
         headers={[
           { headingId: 'up', content: 'Upvote' },
@@ -857,22 +950,22 @@ const Onboarding = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <SpeakIcon fontSize='inherit' />&nbsp;
         Engagement channels
       </Typography>
-      <p><Typography>The value of feedback is drastically different between a customer or someone that has no intention in being your customer. One way to ensure that feedback is valuable is to ask the user to provide a communication channel so they can be notified when their feedback is addressed.</Typography></p>
+      <p><Typography>The value of feedback is drastically different between a current customer or someone that has no intention in being your customer. One way to ensure that feedback is valuable is to ask to provide a communication channel so the customer can be notified when their feedback is addressed.</Typography></p>
 
-      <Typography component='h4' variant='h6' className={classes.heading}>Onboarding friction</Typography>
+      <Typography component='h4' variant='h6'>Onboarding friction</Typography>
       <p><Typography>Users are hesitant to provide their personal information including their email address. The more personal information you ask during sign-up will result in less feedback you will receive.</Typography></p>
-      <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the right solution as it allows you to seamlessly login your users in the background with no login screen.</Typography></p>
+      <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the ideal solution as it allows you to seamlessly login your users in the background with no login screen.</Typography></p>
 
-      <Typography component='h4' variant='h6' className={classes.heading}>Guest / Anonymous feedback</Typography>
+      <Typography component='h4' variant='h6'>Guest / Anonymous feedback</Typography>
       <p><Typography>Ideal in narrow use cases, allows your users to sign-up without providing any contact information. Use this only as a last resort as it attracts spam and leaves you with no engagement opportunity.</Typography></p>
       <p><Typography><span className={classes.emphasize}>Browser Push Notifications</span> are an alternative where your users don't have to provide their email, but you have a communication channel open.</Typography></p>
 
 
-      <Typography component='h4' variant='h6' className={classes.heading}>OAuth, SAML</Typography>
+      <Typography component='h4' variant='h6'>OAuth, SAML</Typography>
       <p><Typography>Although OAuth and SAML allow you to login with the vast majority of external providers including Facebook and Google, some platforms have a built-in shared login for specific providers shown below.</Typography></p>
 
       <ComparisonTable
@@ -883,7 +976,7 @@ const Onboarding = (props: {}) => {
           { headingId: 'saml', content: 'SAML' },
           { headingId: 'oauth', content: 'OAuth' },
           { headingId: 'browserpush', content: 'Browser Push' },
-          { headingId: 'emaildomain', content: 'Email Domain' },
+          { headingId: 'emaildomain', content: 'Domain Whitelist' },
           { headingId: 'openid', content: 'OpenId' },
           { headingId: 'okta', content: 'Okta' },
           { content: 'Shared' },
@@ -922,16 +1015,20 @@ const ImportExport = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <ImportExportIcon fontSize='inherit' />&nbsp;
         Import and Export: vendor lock-in
       </Typography>
-      <p><Typography></Typography></p>
+      <p><Typography>Whether you are switching from another platform or you eventually will in the future, you need to consider your options now. Choose a platform that you can freely switch to and from to prevent locking in yourself to a particular platform.</Typography></p>
 
       <FilterButton
-        label='Show me' text='only platforms with Export' showExamples={3}
+        label='Filter' text='platforms with Export functionality' showExamples={3}
         select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformCanny, PlatformClearFlask, PlatformUpvoty, PlatformFider, PlatformSuggested, PlatformFeatureUpvote])}
       />
+
+
+      <Typography component='h4' variant='h6'>Importing data</Typography>
+      <p><Typography>If you are already using another platform or you have customer or account data in another database, consider your import options now. Some platforms may already offer custom integrations with the particular provider you are using. Otherwise, choose a platform that can provide self-service import or contact support of that platform for a custom import job.</Typography></p>
 
       <ComparisonTable
         tableStyle={{ width: 'max-content' }}
@@ -960,7 +1057,7 @@ const Language = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <TranslateIcon fontSize='inherit' />&nbsp;
         Language support
         </Typography>
@@ -1019,11 +1116,11 @@ const Integrations = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <IntegrationsIcon fontSize='inherit' />&nbsp;
         Integrations
       </Typography>
-      <p><Typography></Typography></p>
+      <p><Typography>If you are already using existing tools that you want to integrate, take a look at what each platform supports.</Typography></p>
 
       <ComparisonTable
         headers={[
@@ -1088,29 +1185,40 @@ const PageLoad = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <SpeedIcon fontSize='inherit' />&nbsp;
         Website health
       </Typography>
+      <p><Typography>Bloated and slow websites are a silent killer in User Experience. You may want to consider dropping platforms that do not consider their website performance.</Typography></p>
+
       <p><Typography>
-        Largest Contentful Paint (seconds, Mobile) https://web.dev/lcp/
-        Cumulative Layout Shift (Mobile) https://web.dev/cls/
-        PageSpeed score (Mobile)
+        Good metrics of a healthy website are <ExternalLink url='https://web.dev/lcp/'>Largest Contentful Paint</ExternalLink> and <ExternalLink url='https://web.dev/cls/'>Cumulative Layout Shift</ExternalLink>.
+          These web vitals can quantify the user experience as well as improve Search Engine Optimization.
+          As most browsing is done on Mobile, both of these vitals are measured for the Mobile experience. We have analyzed the feedback page for each platform below using Google's <ExternalLink url='https://developers.google.com/speed/pagespeed/insights/'>PageSpeed Insights</ExternalLink> tool.
         </Typography></p>
+
+      <Typography component='h4' variant='h6'>Largest Contentful Paint (LCP)</Typography>
+      <p><Typography>There are different strategies to determine when a page is considered to be loaded for measuring page load time. Researchers have found that across many websites, the more accurate way to determine when page is loaded is when majority of the page has been rendered. LCP is a web vital measuring exactly this.</Typography></p>
+
+      <Typography component='h4' variant='h6'>Cumulative Layout Shift (CLS)</Typography>
+      <p><Typography>Unexpected movement of page content can vary between mildly annoying to accidentally clicking the wrong button. Cumulative Layout Shift is a web vital measuring how much has content shifted around from its original place.</Typography></p>
+
+      <Typography component='h4' variant='h6'>No JavaScript support</Typography>
+      <p><Typography>A website able to render without any JavaScript is an important consideration. Typically pre-rendered websites load faster, are able to be viewed on older web browsers and play a big role in Search Engine Optimizaion</Typography></p>
 
       <ComparisonTable
         tableStyle={{ width: 'max-content' }}
         headers={[
-          { headingId: 'paint', content: 'Page load', customContent: true },
-          { headingId: 'pageshift', content: 'Page shift', customContent: true },
+          { headingId: 'paint', content: 'Page load (LCP)', customContent: true },
+          { headingId: 'pageshift', content: 'Page shift (CLS)', customContent: true },
           // { headingId: 'score', content: 'Score', customContent: true },
-          { headingId: 'nojs', content: 'NoJS' },
+          { headingId: 'nojs', content: 'No JS support' },
         ]}
         data={[
+          { platformId: PlatformClearFlask, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.6} />), score: (<PageLoadSpeed val={51} />), pageshift: (<PageLoadLayoutShift val={0.159} />) } },
           { platformId: PlatformNolt, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={58} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
           { platformId: PlatformFeatureUpvote, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={74} />), pageshift: (<PageLoadLayoutShift val={0.002} />) } },
           { platformId: PlatformFider, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={3.2} />), score: (<PageLoadSpeed val={62} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
-          { platformId: PlatformClearFlask, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={4.3} />), score: (<PageLoadSpeed val={30} />), pageshift: (<PageLoadLayoutShift val={0.159} />) } },
           { platformId: PlatformRoadmapSpace, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={5.4} />), score: (<PageLoadSpeed val={26} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
           { platformId: PlatformUpvoty, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={5.6} />), score: (<PageLoadSpeed val={51} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
           { platformId: PlatformHelloNext, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={6.4} />), score: (<PageLoadSpeed val={42} />), pageshift: (<PageLoadLayoutShift val={0.084} />) } },
@@ -1147,11 +1255,157 @@ const PageLoadLayoutShift = (props: { val: number }) => {
   );
 };
 
+const Disclaimer = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h6'>Disclaimer</Typography>
+      <p><Typography variant='body2'>If your tool is not listed here or you found a mistake, please <Link to='/contact/general'>contact</Link> us.</Typography></p>
+      <p><Typography variant='body2'>Our mission is to highlight each platform's strengths and weaknesses. However, the information contained in this article represents the views and opinions of our researcher and may not reflect reality.</Typography></p>
+    </React.Fragment>
+  );
+};
+
+const Design = (props: {}) => {
+  const classes = useStyles();
+  const [device, setDevice] = useState<Device>(Device.Desktop);
+  const [hoverId, setHoverId] = useState<string>();
+  const [clickedId, setClickedId] = useState<string>();
+
+  const selectedId = hoverId || clickedId || PlatformClearFlask;
+  const selectedPlatform = Platforms[selectedId];
+  const img = device === Device.Desktop ? selectedPlatform.desktop : selectedPlatform.mobile;
+
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4'>
+        <DesignIcon fontSize='inherit' />&nbsp;
+        Look &amp; feel
+      </Typography>
+      <p><Typography></Typography></p>
+
+      <div className={classes.designContainer}>
+        <div>
+          <div className={classes.designBrandAndSwitcher}>
+            <Brand platform={selectedPlatform} showLogo />
+            <IconButton
+              color='inherit'
+              onClick={() => setDevice(device === Device.Desktop ? Device.Mobile : Device.Desktop)}
+            >
+              <MobileDesktopIcon
+                fontSize='small'
+                color='inherit'
+              />
+            </IconButton>
+          </div>
+          <div style={{ width: device === Device.Desktop ? 444 : 256 }}>
+            <DeviceContainer device={device}>
+              <ImgIso
+                alt='Preview'
+                src={img.src}
+                aspectRatio={img.aspectRatio}
+                maxWidth={img.width}
+                maxHeight={img.height}
+              />
+            </DeviceContainer>
+          </div>
+        </div>
+        <BrandList
+          small
+          platformIds={Object.keys(Platforms)}
+          BrandProps={{ showCheckbox: false }}
+          onClick={setClickedId}
+          onHover={(id, isHovering) => {
+            if (!isHovering && id === hoverId) {
+              setHoverId(undefined);
+            } else if (isHovering) {
+              setHoverId(id);
+            }
+          }}
+        />
+      </div>
+    </React.Fragment>
+  );
+};
+
+const Customize = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4'>
+        <CustomizeIcon fontSize='inherit' />&nbsp;
+        Customize
+      </Typography>
+      <p><Typography>Some tools are perfected and focused on a specific use-case (ie Canny, Nolt, FeatureUpvote) while others are feature-rich for general purpose (ie ClearFlask, UserVoice). If you cannot find the right tool, customize one to fit your needs.</Typography></p>
+
+      <Typography component='h4' variant='h6'>Open-source</Typography>
+      <p><Typography>Open-source is the ultimate freedom to customize if you got the time.
+        The only contender, Fider licensed under AGPL3, is available on <ExternalLink url='https://github.com/getfider/fider'>Github</ExternalLink>.
+        Although Fider is lacking analytic features and scalable infrastructure, it is ideal for small to medium volume.</Typography></p>
+      <BrandList small platformIds={[PlatformFider]} />
+
+      <Typography component='h4' variant='h6'>Whitelabel</Typography>
+      <p><Typography>For optimal user experience, your customer should not sense they are leaving your website and using another platform for feedback.
+      The look and feel of the feedback platform must be customizable to match your design.
+        Create and organize pages with custom content with UserVoice and ClearFlask.</Typography></p>
+      <BrandList small platformIds={[PlatformUserVoice, PlatformClearFlask]} />
+
+      <Typography component='h4' variant='h6'>Workflow</Typography>
+      <p><Typography>Create categories, tags and statuses to organize your feedback.
+      Create a custom status with transition rules and behavior to match your development workflow.
+        </Typography></p>
+      <BrandList small platformIds={[PlatformClearFlask, PlatformUserVoice]} />
+
+      <Typography component='h4' variant='h6'>Custom content type</Typography>
+      <p><Typography>ClearFlask is built to handle custom content types.
+      There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.
+      You can create your own content types to match your needs such as <span className={classes.emphasize}>Job postings</span>, <span className={classes.emphasize}>Employee feedback</span>, <span className={classes.emphasize}>Q&amp;A</span>.
+        Create new pages and customize the menu for a custom experience.</Typography></p>
+      <BrandList small platformIds={[PlatformClearFlask]} />
+
+      <ComparisonTable
+        headers={[
+          { headingId: 'open-source', content: 'Open Source' },
+          { headingId: 'custom-content', content: 'Custom content' },
+          { content: 'Workflow' },
+          { headingId: 'tag', content: 'Add/Remove Tagging' },
+          // { headingId: 'rename-status', content: 'Rename statuses' },
+          { headingId: 'custom-status', content: 'Add/Remove Statuses' },
+          { content: 'Whitelabel' },
+          { headingId: 'custom-domain', content: 'Own domain' },
+          // { headingId: 'widget', content: 'Widget' },
+          { headingId: 'color', content: 'Color scheme' },
+          { headingId: 'css', content: 'Inject CSS' },
+          { headingId: 'poweredby', content: 'Remove PoweredBy' },
+          // { headingId: 'rename-pages', content: 'Rename pages' },
+          { headingId: 'custom-pages', content: 'Custom pages' },
+          { headingId: 'custom-html', content: 'Custom HTML' },
+        ]}
+        data={[
+          { platformId: PlatformFider, headingIds: new Set(['open-source', 'custom-domain', 'color', 'tag', 'css', 'poweredby']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['custom-content', 'custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'custom-pages', 'custom-html', 'css', 'poweredby']) },
+          { platformId: PlatformUserVoice, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'custom-pages', 'custom-html', 'css', 'poweredby']) },
+          { platformId: PlatformFeatureUpvote, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'css', 'poweredby']) },
+          { platformId: PlatformUpvoty, headingIds: new Set(['custom-domain', 'widget', 'color', 'rename-status', 'rename-pages', 'css', 'poweredby']) },
+          { platformId: PlatformRoadmapSpace, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-pages', 'css']) },
+          { platformId: PlatformHelloNext, headingIds: new Set(['custom-domain', 'widget', 'color', 'rename-status', 'rename-pages']) },
+          { platformId: PlatformCanny, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-pages', 'poweredby']) },
+          { platformId: PlatformNolt, headingIds: new Set(['custom-domain', 'widget', 'color', 'rename-pages']) },
+          { platformId: PlatformSuggested, headingIds: new Set(['custom-domain', 'color', 'rename-pages', 'poweredby']) },
+          { platformId: PlatformNoora, headingIds: new Set(['custom-domain', 'color', 'tag', 'rename-status', 'custom-status']) },
+          { platformId: PlatformConflux, headingIds: new Set(['custom-domain', 'tag', 'rename-status', 'custom-status']) },
+          { platformId: PlatformConvas, headingIds: new Set(['custom-domain', 'widget']) },
+        ]}
+      />
+    </React.Fragment>
+  );
+};
+
 const TemplateDeleteMe = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4' className={classes.heading}>
+      <Typography component='h2' variant='h4'>
         <FeaturesIcon fontSize='inherit' />&nbsp;
         a
       </Typography>
@@ -1188,7 +1442,7 @@ const ComparisonTable = (props: {
   const rowMapper = isHidden => row => (
     <HoverArea hoverDown={dontHoverBelow}>
       {(hoverAreaProps, isHovering) => (
-        <TableRow {...hoverAreaProps} key={row.platformId} className={classNames(isHidden && classes.tableHiddenPlatform)}>
+        <TableRow {...hoverAreaProps} key={row.platformId} className={classNames(isHidden && classes.hiddenPlatform)}>
           <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentCheckbox={!isHovering} /></TableCell>
           {props.headers.map(header => {
             if (!header.headingId) {
@@ -1343,7 +1597,7 @@ const UserCountSlider = (props: {
       <div className={classes.sliderDisclaimer}>
         <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
         <Typography variant='caption' component='div' color='textSecondary'>
-          For comparison of different definitions of active users, we estimate tracked and active users to be {percTotalUsersAreTracked * 100}% of your total users.
+          For comparison of different definitions of active users, we estimate active/tracked users to be {percTotalUsersAreTracked * 100}% of your total users.
           </Typography>
       </div>
     </div>
@@ -1371,41 +1625,30 @@ const FilterButton = (props: {
       platformIds={props.platformIds}
       invertSelection={props.invertSelection}
       renderButton={(onClick, disabled) => (
-        <Collapse in={!disabled}>
-          <div className={classes.filterButtonContainer}>
-            <Button
-              disabled={disabled}
-              color='primary'
-              variant='text'
-              onClick={onClick}
-            >
-              {props.label}
-            </Button>
-            {props.text && (
-              <Typography variant='caption'>{props.text}</Typography>
-            )}
-          </div>
-          {props.showExamples && (
-            <div className={classes.filterButtonExamplesContainer}>
-              {[...examples].slice(0, props.showExamples).map(platformId => (
-                <Brand
-                  className={classes.filterButtonExample}
-                  key={platformId}
-                  platformId={platformId}
-                  showLogo
-                // showCheckbox
-                />
-              ))}
-              {props.showExamples < examples.size && (
-                <Brand
-                  className={classNames(classes.filterButtonExampleOther, classes.filterButtonExample)}
-                  key='plus'
-                  platformId={`+${examples.size - props.showExamples}`}
-                />
+        <React.Fragment>
+          <Collapse in={!disabled}>
+            <div className={classes.filterButtonContainer}>
+              <Button
+                disabled={disabled}
+                color='primary'
+                variant='text'
+                onClick={onClick}
+              >
+                {props.label}
+              </Button>
+              {props.text && (
+                <Typography variant='caption'>{props.text}</Typography>
               )}
             </div>
+          </Collapse>
+          {props.showExamples && (
+            <BrandList
+              platformIds={[...examples]}
+              limit={props.showExamples}
+              small
+            />
           )}
-        </Collapse>
+        </React.Fragment>
       )}
     />
   );
@@ -1462,6 +1705,62 @@ const FilterButtonBase = (props: {
   return props.renderButton(onClick, disabled);
 };
 
+const BrandList = (props: {
+  platformIds: Array<string>,
+  limit?: number,
+  small?: boolean,
+  onClick?: (platformId: string) => void,
+  onHover?: (platformId: string, isHovering: boolean) => void,
+  BrandProps?: Partial<React.ComponentProps<typeof Brand>>;
+}) => {
+  const classes = useStyles();
+  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+
+  var platformIds = hiddenPlatforms.size > 0
+    ? [
+      ...props.platformIds.filter(id => !hiddenPlatforms.has(id)),
+      ...props.platformIds.filter(id => hiddenPlatforms.has(id)),
+    ]
+    : props.platformIds;
+  if (props.limit !== undefined) {
+    platformIds = platformIds.slice(0, props.limit);
+  }
+
+  return (
+    <div className={classes.brandListContainer}>
+      {platformIds.map(platformId => (
+        <HoverArea key={platformId} hoverDown={dontHoverBelow}>
+          {(hoverAreaProps, isHovering) => {
+            props.onHover && props.onHover(platformId, isHovering);
+            return (
+              <div {...hoverAreaProps} onClick={() => props.onClick && props.onClick(platformId)} style={{
+                cursor: props.onClick ? 'pointer' : undefined,
+              }}>
+                <Brand
+                  className={classNames(props.small && classes.brandListSmall, hiddenPlatforms.has(platformId) && classes.hiddenPlatform)}
+                  key={platformId}
+                  platformId={platformId}
+                  showLogo
+                  showCheckbox
+                  transparentCheckbox={!isHovering}
+                  {...props.BrandProps}
+                />
+              </div>
+            );
+          }}
+        </HoverArea>
+      ))}
+      {(props.limit && props.limit < props.platformIds.length) && (
+        <Brand
+          className={classNames(props.small && classes.brandListSmall, classes.brandListOther)}
+          key='plus'
+          platformId={`+${props.platformIds.length - props.limit}`}
+          {...props.BrandProps}
+        />
+      )}
+    </div>
+  );
+};
 const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
   className?: string;
   showLogo?: boolean;
@@ -1476,7 +1775,7 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
   if (!platform) {
     return (
       <div className={classNames(classes.platformOther, props.className)}>
-        <Typography color='inherit'>
+        <Typography component='div' color='inherit'>
           {props['platformId'] === PlatformOther
             ? '...'
             : props['platformId']}
@@ -1502,7 +1801,7 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
           maxHeight={platform.logo.height}
         />
       )}
-      <Typography color='inherit' style={{
+      <Typography component='div' color='inherit' style={{
         color: props.showTextColor ? platform.color : undefined,
       }}>
         {platform.name}
