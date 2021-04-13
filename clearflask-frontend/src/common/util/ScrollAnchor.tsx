@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
+import windowIso from '../windowIso';
 
 export const SCROLL_TO_STATE_KEY = 'scrollTo';
 
@@ -16,6 +17,9 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   unlisten?: () => void;
 
   async scrollNow() {
+    if (windowIso.isSsr) {
+      return;
+    }
     await new Promise<void>(resolve => setTimeout(resolve, 1));
     if (!this.scrollToRef.current) {
       return;
@@ -37,7 +41,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
 
   render() {
     return (
-      <span ref={this.scrollToRef}>
+      <span id={this.props.scrollOnAnchorTag} ref={this.scrollToRef}>
         {this.props.children}
       </span>
     );

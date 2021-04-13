@@ -1,11 +1,12 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Table, TableBody, TableCell, TableHead, TableRow, Typography, useMediaQuery } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import CheckIcon from '@material-ui/icons/Check';
 import MobileDesktopIcon from '@material-ui/icons/DevicesRounded';
 import FilterIcon from '@material-ui/icons/FilterList';
+import AlternativesIcon from '@material-ui/icons/FilterNone';
 import DesignIcon from '@material-ui/icons/FormatPaint';
 import ImportExportIcon from '@material-ui/icons/ImportExport';
 import OpenIcon from '@material-ui/icons/OpenInNew';
@@ -22,7 +23,10 @@ import classNames from 'classnames';
 import React, { useContext, useState } from 'react';
 import ReactGA from 'react-ga';
 import { Link } from 'react-router-dom';
+import Scrollspy from 'react-scrollspy';
 import ClearFlaskImg from '../../public/img/clearflask-logo.png';
+import AhaImg from '../../public/img/landing/compare/aha.png';
+import AskNicelyImg from '../../public/img/landing/compare/asknicely.png';
 import DesktopCannyImg from '../../public/img/landing/compare/canny-desktop.jpg';
 import MobileCannyImg from '../../public/img/landing/compare/canny-mobile.jpg';
 import CannyImg from '../../public/img/landing/compare/canny.png';
@@ -34,6 +38,7 @@ import ConfluxImg from '../../public/img/landing/compare/conflux.png';
 import DesktopConvasImg from '../../public/img/landing/compare/convas-desktop.jpg';
 import MobileConvasImg from '../../public/img/landing/compare/convas-mobile.jpg';
 import ConvasImg from '../../public/img/landing/compare/convas.png';
+import ExcelImg from '../../public/img/landing/compare/excel.png';
 import DesktopFeatureUpvoteImg from '../../public/img/landing/compare/featureupvote-desktop.jpg';
 import MobileFeatureUpvoteImg from '../../public/img/landing/compare/featureupvote-mobile.jpg';
 import FeatureUpvoteImg from '../../public/img/landing/compare/featureupvote.png';
@@ -49,15 +54,26 @@ import NoltImg from '../../public/img/landing/compare/nolt.png';
 import DesktopNooraImg from '../../public/img/landing/compare/noora-desktop.jpg';
 import MobileNooraImg from '../../public/img/landing/compare/noora-mobile.jpg';
 import NooraImg from '../../public/img/landing/compare/noora.png';
+import PendoImg from '../../public/img/landing/compare/pendo.png';
+import ProdPadImg from '../../public/img/landing/compare/prodpad.png';
+import ProductBoardImg from '../../public/img/landing/compare/productboard.png';
 import DesktopRoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace-desktop.jpg';
 import MobileRoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace-mobile.jpg';
 import RoadmapSpaceImg from '../../public/img/landing/compare/roadmapspace.png';
+import SalesforceIdeaExchangeImg from '../../public/img/landing/compare/salesforce.png';
+import SheetsImg from '../../public/img/landing/compare/sheets.png';
+import ShipRightImg from '../../public/img/landing/compare/shipright.png';
+import SimpleFeatureRequestsImg from '../../public/img/landing/compare/simplefeaturerequests.png';
 import DesktopSuggestedImg from '../../public/img/landing/compare/suggested-desktop.jpg';
 import MobileSuggestedImg from '../../public/img/landing/compare/suggested-mobile.jpg';
 import SuggestedImg from '../../public/img/landing/compare/suggested.png';
+import TrelloImg from '../../public/img/landing/compare/trello.png';
 import DesktopUpvotyImg from '../../public/img/landing/compare/upvoty-desktop.jpg';
 import MobileUpvotyImg from '../../public/img/landing/compare/upvoty-mobile.jpg';
 import UpvotyImg from '../../public/img/landing/compare/upvoty.png';
+import UserbackImg from '../../public/img/landing/compare/userback.png';
+import UseResponseImg from '../../public/img/landing/compare/useresponse.png';
+import UserReportImg from '../../public/img/landing/compare/userreport.png';
 import DesktopUserVoiceImg from '../../public/img/landing/compare/uservoice-desktop.jpg';
 import MobileUserVoiceImg from '../../public/img/landing/compare/uservoice-mobile.jpg';
 import UserVoiceImg from '../../public/img/landing/compare/uservoice.png';
@@ -67,6 +83,7 @@ import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
 import { isTracking } from '../common/util/detectEnv';
 import { vh } from '../common/util/screenUtil';
+import windowIso from '../common/windowIso';
 
 const PlatformClearFlask = 'clearflask';
 const PlatformUserVoice = 'uservoice';
@@ -83,6 +100,122 @@ const PlatformRoadmapSpace = 'roadmapspace';
 const PlatformFeatureUpvote = 'featureupvote';
 // Special case for showing other companies
 const PlatformOther = 'other';
+// Alternative platforms
+const PlatformAskNicely = 'asknicely';
+const PlatformSimpleFeatureRequests = 'simplefeaturerequests';
+const PlatformUserback = 'userback';
+const PlatformUserReport = 'userreport';
+const PlatformPendo = 'pendo';
+const PlatformSalesforceIdeaExchange = 'salesforceideaexchange';
+const PlatformAha = 'aha';
+const PlatformProductBoard = 'productboard';
+const PlatformProdPad = 'prodpad';
+const PlatformUseResponse = 'useresponse';
+const PlatformShipRight = 'shipright';
+const PlatformTrello = 'trello';
+const PlatformExcel = 'excel';
+const PlatformSheets = 'sheets';
+
+const AlternativePlatforms: { [platformId: string]: AlternativePlatform } = {
+  [PlatformAskNicely]: {
+    id: PlatformAskNicely,
+    name: 'AskNicely',
+    logo: AskNicelyImg,
+    color: '#a848c1',
+    url: 'https://asknicely.com/',
+  },
+  [PlatformSimpleFeatureRequests]: {
+    id: PlatformSimpleFeatureRequests,
+    name: 'SimpleFeatureRequests',
+    logo: SimpleFeatureRequestsImg,
+    color: '#c53656',
+    url: 'https://simplefeaturerequests.com/',
+  },
+  [PlatformUserback]: {
+    id: PlatformUserback,
+    name: 'Userback',
+    logo: UserbackImg,
+    color: '#2878f0',
+    url: 'https://userback.io/',
+  },
+  [PlatformUserReport]: {
+    id: PlatformUserReport,
+    name: 'UserReport',
+    logo: UserReportImg,
+    color: '#6555ff',
+    url: 'https://userreport.com/',
+  },
+  [PlatformPendo]: {
+    id: PlatformPendo,
+    name: 'Pendo',
+    logo: PendoImg,
+    color: '#ec2059',
+    url: 'https://pendo.io/',
+  },
+  [PlatformSalesforceIdeaExchange]: {
+    id: PlatformSalesforceIdeaExchange,
+    name: 'Salesforce IdeaExchange',
+    logo: SalesforceIdeaExchangeImg,
+    color: '#00a1e0',
+    url: 'https://ideas.salesforce.com/s/about',
+  },
+  [PlatformAha]: {
+    id: PlatformAha,
+    name: 'Aha',
+    logo: AhaImg,
+    color: '#0073cf',
+    url: 'https://aha.io/',
+  },
+  [PlatformProductBoard]: {
+    id: PlatformProductBoard,
+    name: 'ProductBoard',
+    logo: ProductBoardImg,
+    color: '#2e73da',
+    url: 'https://productboard.com/',
+  },
+  [PlatformProdPad]: {
+    id: PlatformProdPad,
+    name: 'ProdPad',
+    logo: ProdPadImg,
+    color: '#24b4c6',
+    url: 'https://prodpad.com/',
+  },
+  [PlatformUseResponse]: {
+    id: PlatformUseResponse,
+    name: 'UseResponse',
+    logo: UseResponseImg,
+    color: '#2b3236',
+    url: 'https://useresponse.com/',
+  },
+  [PlatformShipRight]: {
+    id: PlatformShipRight,
+    name: 'ShipRight',
+    logo: ShipRightImg,
+    color: '#226cff',
+    url: 'https://shipright.co/',
+  },
+  [PlatformTrello]: {
+    id: PlatformTrello,
+    name: 'Trello',
+    logo: TrelloImg,
+    color: '#0079bf',
+    url: 'https://trello.com/',
+  },
+  [PlatformExcel]: {
+    id: PlatformExcel,
+    name: 'Microsoft Excel',
+    logo: ExcelImg,
+    color: '#107c41',
+    url: 'https://office.live.com/start/excel.aspx',
+  },
+  [PlatformSheets]: {
+    id: PlatformSheets,
+    name: 'Google Sheets',
+    logo: SheetsImg,
+    color: '#34a853',
+    url: 'https://sheets.google.com/',
+  },
+};
 
 const percTotalUsersAreActive3Months = 0.05;
 const percTotalUsersAreActive60Days = 0.05;
@@ -94,6 +227,13 @@ interface PlanPricing {
   baseUsers?: number;
   unitPrice?: number;
   unitUsers?: number;
+}
+interface AlternativePlatform {
+  id: string;
+  name: string;
+  logo: Img;
+  color: string;
+  url: string;
 }
 interface Platform {
   id: string;
@@ -321,19 +461,24 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
   },
   appBarSpacer: theme.mixins.toolbar,
-  competitorSelectContainer: {
+  stickyOuterContainer: {
     marginTop: theme.spacing(20),
     minHeight: '100%',
   },
-  competitorSelect: {
+  stickyContainerLeft: {
+    marginRight: theme.spacing(6),
+  },
+  stickyContainerRight: {
+    marginLeft: theme.spacing(6),
+  },
+  stickyContainer: {
     position: 'sticky',
     top: 0,
     maxHeight: vh(100),
-    marginLeft: theme.spacing(6),
     display: 'flex',
     flexDirection: 'column',
   },
-  competitorSelectScroll: {
+  stickyScroll: {
     display: 'flex',
     flexDirection: 'column',
     ...contentScrollApplyStyles(theme, undefined, true),
@@ -438,6 +583,29 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
   },
+  tocHeading: {
+    alignSelf: 'flex-end',
+    margin: theme.spacing(2, 3, 2, 2),
+  },
+  tocIndicator: {
+  },
+  tocItem: {
+    height: 'auto',
+    minHeight: 40,
+  },
+  tocItemIcon: {
+    margin: theme.spacing(0, 0, 0, 1),
+  },
+  tocItemWrapper: {
+    alignItems: 'flex-end',
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
+  },
+  brandListSelected: {
+    '& $brandName': {
+      fontWeight: 'bold',
+    },
+  },
   brandListSmall: {
     margin: theme.spacing(1, 0, 0),
     '& $brandCheckbox': {
@@ -485,7 +653,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
   },
   brandName: {
-    display: 'inline-block',
+    // Used as a ref, don't delete
   },
   platformOther: {
     textAlign: 'center',
@@ -536,6 +704,7 @@ const Competitors = () => {
   const classes = useStyles();
   const theme = useTheme();
   const xsDown = useMediaQuery(theme.breakpoints.down('xs'));
+  const smDown = useMediaQuery(theme.breakpoints.down('sm'));
   const [hiddenPlatforms, setHiddenPlatforms] = useState<Set<string>>(new Set());
   const hiddenPlatformsWrapper = {
     hiddenPlatforms,
@@ -551,27 +720,62 @@ const Competitors = () => {
 
   return (
     <HiddenPlatformsContext.Provider value={hiddenPlatformsWrapper}>
-      <Container maxWidth='md' className={classes.pageContainer}>
+      <Container maxWidth='lg' className={classes.pageContainer}>
+        {!smDown && (
+          <div className={classes.stickyOuterContainer}>
+            <div className={classNames(classes.stickyContainer, classes.stickyContainerLeft)}>
+              <div className={classes.appBarSpacer} />
+              <div className={classes.stickyScroll}>
+                <TableOfContents />
+              </div>
+            </div>
+          </div>
+        )}
         <div className={classes.pageContent}>
           <Intro />
-          <Volume />
-          <PricingCompare />
-          <MajorFeatures />
-          <Design />
-          <ImportExport />
-          <Customize />
-          <VotingMechanism />
-          <Onboarding />
-          <PageLoad />
-          <Language />
-          <Integrations />
+          <div id='Users'>
+            <Volume />
+          </div>
+          <div id='Pricing'>
+            <PricingCompare />
+          </div>
+          <div id='Features'>
+            <MajorFeatures />
+          </div>
+          <div id='Design'>
+            <Design />
+          </div>
+          <div id='Import_Export'>
+            <ImportExport />
+          </div>
+          <div id='Customize'>
+            <Customize />
+          </div>
+          <div id='Voting_mechanism'>
+            <VotingMechanism />
+          </div>
+          <div id='Onboarding'>
+            <Onboarding />
+          </div>
+          <div id='Website_health'>
+            <PageLoad />
+          </div>
+          <div id='Languages'>
+            <Language />
+          </div>
+          <div id='Integrations'>
+            <Integrations />
+          </div>
+          <div id='Alternatives'>
+            <OtherAlternatives />
+          </div>
           <Disclaimer />
         </div>
         {!xsDown && (
-          <div className={classes.competitorSelectContainer}>
-            <div className={classes.competitorSelect}>
+          <div className={classes.stickyOuterContainer}>
+            <div className={classNames(classes.stickyContainer, classes.stickyContainerRight)}>
               <div className={classes.appBarSpacer} />
-              <div className={classes.competitorSelectScroll}>
+              <div className={classes.stickyScroll}>
                 <CompetitorSelect />
               </div>
             </div>
@@ -582,16 +786,89 @@ const Competitors = () => {
   );
 };
 
+const TableOfContentsAnchors: Array<{ id: string, title: string, icon: OverridableComponent<SvgIconTypeMap> }> = [
+  { id: 'Users', title: 'Users', icon: PeopleIcon },
+  { id: 'Pricing', title: 'Pricing', icon: PaymentIcon },
+  { id: 'Features', title: 'Features', icon: FeaturesIcon },
+  { id: 'Design', title: 'Design', icon: DesignIcon },
+  { id: 'Import_Export', title: 'Import/Export', icon: ImportExportIcon },
+  { id: 'Customize', title: 'Customize', icon: CustomizeIcon },
+  { id: 'Voting_mechanism', title: 'Voting', icon: AnalyzeIcon },
+  { id: 'Onboarding', title: 'Onboarding', icon: SpeakIcon },
+  { id: 'Website_health', title: 'Health', icon: SpeedIcon },
+  { id: 'Languages', title: 'Languages', icon: TranslateIcon },
+  { id: 'Integrations', title: 'Integrations', icon: IntegrationsIcon },
+  { id: 'Alternatives', title: 'Alternatives', icon: AlternativesIcon },
+];
+const TableOfContents = (props: {}) => {
+  const classes = useStyles();
+  const [anchorId, setAnchorId] = useState<string>();
+  return (
+    <React.Fragment>
+      <Typography component='div' variant='h6' className={classes.tocHeading}>Contents</Typography>
+      <Scrollspy
+        items={TableOfContentsAnchors.map(item => item.id)}
+        componentTag='div'
+        onUpdate={(el) => { setAnchorId(el?.id); }}
+      >
+        <Tabs
+          orientation='vertical'
+          indicatorColor='primary'
+          value={anchorId || null}
+          classes={{
+            indicator: classes.tocIndicator,
+          }}
+          onChange={(e, newAnchorId) => {
+            e.preventDefault();
+            if (windowIso.isSsr) return;
+            const el = windowIso.document.getElementById(newAnchorId);
+            if (!el) return;
+            windowIso.scrollTo({
+              top: el.getBoundingClientRect().top
+                + windowIso.pageYOffset
+                - 75, // AppBar
+              behavior: 'smooth',
+            });
+            setAnchorId(newAnchorId);
+            return false;
+          }}
+        >
+          {TableOfContentsAnchors.map(anchor => {
+            const Icon = anchor.icon;
+            return (
+              <Tab
+                className={classes.tocItem}
+                classes={{
+                  wrapper: classes.tocItemWrapper,
+                }}
+                key={anchor.id}
+                label={anchor.title}
+                value={anchor.id}
+                icon={(
+                  <Icon
+                    className={classes.tocItemIcon}
+                    fontSize='inherit'
+                  />
+                )}
+              />
+            );
+          })}
+        </Tabs>
+      </Scrollspy>
+    </React.Fragment>
+  );
+};
+
 const CompetitorSelect = (props: {}) => {
   const classes = useStyles();
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const rowMapper = isHidden => platform => (
     <HoverArea hoverDown={dontHoverBelow}>
-      {(hoverAreaProps, isHovering) => (
+      {(hoverAreaProps, isHovering, isHoverDown) => (
         <div key={platform.id} {...hoverAreaProps} className={classNames(classes.competitorSelectRow, isHidden && classes.hiddenPlatform)}>
-          <Brand platformId={platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
-          <ExternalLinkPlatform type='home' platform={platform} transparent={!isHovering} />
+          <Brand platformId={platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} />
+          <ExternalLinkPlatform type='home' platform={platform} transparent={!(isHovering || isHoverDown)} />
         </div>
       )}
     </HoverArea>
@@ -748,14 +1025,14 @@ const PricingTable = (props: {
         <TableBody>
           {data.map(row => (
             <HoverArea hoverDown={dontHoverBelow}>
-              {(hoverAreaProps, isHovering) => (
+              {(hoverAreaProps, isHovering, isHoverDown) => (
                 <TableRow {...hoverAreaProps} key={row.platform.id} className={classNames(hiddenPlatforms.has(row.platform.id) && classes.hiddenPlatform)}>
                   <TableCell key='platformName' className={classes.pricingCell}>
-                    <Brand platformId={row.platform.id} showLogo showCheckbox transparentCheckbox={!isHovering} />
+                    <Brand platformId={row.platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} />
                   </TableCell>
                   <TableCell key='price' className={classNames(classes.pricingCell, classes.pricingPriceCell)}>
                     <Price val={row.price} suffix={row.platform.id === PlatformUserVoice ? '+' : undefined} />
-                    <ExternalLinkPlatform type='pricing' platform={row.platform} />
+                    <ExternalLinkPlatform type='pricing' platform={row.platform} transparent={!(isHovering || isHoverDown)} />
                   </TableCell>
                 </TableRow>
               )}
@@ -871,7 +1148,7 @@ const MajorFeatures = (props: {}) => {
       <p><Typography>Each platform has a set of major components that are available. Be prepared that although two platforms have the same component, the functionality of that component may drastically differ. Use this table as a quick comparison:</Typography></p>
       <ComparisonTable
         headers={[
-          { headingId: 'ideas', content: 'Collect Feedback' },
+          { headingId: 'ideas', content: 'Feature voting' },
           { headingId: 'roadmap', content: 'Public Roadmap' },
           { headingId: 'changelog', content: 'Changelog' },
           { headingId: 'knowledge', content: 'Knowledge base' },
@@ -1133,6 +1410,7 @@ const Integrations = (props: {}) => {
           { headingId: 'FullStory', content: 'FullStory' },
           { headingId: 'Fivetran', content: 'Fivetran' },
           { content: 'Collect' },
+          { headingId: 'Mobile', content: 'Mobile' },
           { headingId: 'Chrome', content: 'Chrome Extension' },
           { headingId: 'Firefox', content: 'Firefox Extension' },
           { headingId: 'MacApp', content: 'Mac app' },
@@ -1163,7 +1441,7 @@ const Integrations = (props: {}) => {
         ]}
         data={[
           { platformId: PlatformRoadmapSpace, headingIds: new Set(['API', 'Zapier', 'GoogleAnalytics', 'Chrome', 'Firefox', 'Slack', 'Intercom', 'Wordpress', 'Jira', 'Zendesk', 'Github', 'Trello', 'Freshdesk', 'Groove', 'PivotalTracker', 'Teamwork', 'Salesforce']) },
-          { platformId: PlatformUserVoice, headingIds: new Set(['API', 'GoogleAnalytics', 'FullStory', 'Fivetran', 'Slack', 'MsftTeams', 'Jira', 'Zendesk', 'Gainsight', 'AzureDevOps', 'Salesforce', 'Okta', 'OneLogin']) },
+          { platformId: PlatformUserVoice, headingIds: new Set(['API', 'GoogleAnalytics', 'FullStory', 'Fivetran', 'Slack', 'Mobile', 'MsftTeams', 'Jira', 'Zendesk', 'Gainsight', 'AzureDevOps', 'Salesforce', 'Okta', 'OneLogin']) },
           { platformId: PlatformCanny, headingIds: new Set(['API', 'Zapier', 'GoogleAnalytics', 'Slack', 'MsftTeams', 'Intercom', 'Jira', 'Zendesk', 'Github', 'Salesforce', 'Segment', 'Okta', 'OneLogin']) },
           { platformId: PlatformUpvoty, headingIds: new Set(['Zapier', 'GoogleAnalytics', 'FullStory', 'Chrome', 'Firefox', 'MacApp', 'Slack', 'Intercom']) },
           { platformId: PlatformNoora, headingIds: new Set(['Zapier', 'Chrome', 'Slack', 'Intercom', 'Jira', 'Segment']) },
@@ -1215,7 +1493,7 @@ const PageLoad = (props: {}) => {
           { headingId: 'nojs', content: 'No JS support' },
         ]}
         data={[
-          { platformId: PlatformClearFlask, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.6} />), score: (<PageLoadSpeed val={51} />), pageshift: (<PageLoadLayoutShift val={0.159} />) } },
+          { platformId: PlatformClearFlask, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.6} />), score: (<PageLoadSpeed val={51} />), pageshift: (<PageLoadLayoutShift val={0.005} />) } },
           { platformId: PlatformNolt, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={58} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
           { platformId: PlatformFeatureUpvote, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={2.9} />), score: (<PageLoadSpeed val={74} />), pageshift: (<PageLoadLayoutShift val={0.002} />) } },
           { platformId: PlatformFider, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={3.2} />), score: (<PageLoadSpeed val={62} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
@@ -1270,9 +1548,9 @@ const Design = (props: {}) => {
   const classes = useStyles();
   const [device, setDevice] = useState<Device>(Device.Desktop);
   const [hoverId, setHoverId] = useState<string>();
-  const [clickedId, setClickedId] = useState<string>();
+  const [clickedId, setClickedId] = useState<string>(PlatformClearFlask);
 
-  const selectedId = hoverId || clickedId || PlatformClearFlask;
+  const selectedId = hoverId || clickedId;
   const selectedPlatform = Platforms[selectedId];
   const img = device === Device.Desktop ? selectedPlatform.desktop : selectedPlatform.mobile;
 
@@ -1313,6 +1591,7 @@ const Design = (props: {}) => {
         <BrandList
           small
           platformIds={Object.keys(Platforms)}
+          selected={clickedId}
           BrandProps={{ showCheckbox: false }}
           onClick={setClickedId}
           onHover={(id, isHovering) => {
@@ -1401,6 +1680,70 @@ const Customize = (props: {}) => {
   );
 };
 
+const OtherAlternatives = (props: {}) => {
+  const classes = useStyles();
+  return (
+    <React.Fragment>
+      <Typography component='h2' variant='h4'>
+        <AlternativesIcon fontSize='inherit' />&nbsp;
+        Niche alternatives
+      </Typography>
+
+      <Typography component='h3' variant='h5'>Customer-driven product management</Typography>
+      <p><Typography></Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformAha} /></div>
+      <div><Brand showLogo showLink platformId={PlatformProdPad} /></div>
+      <div><Brand showLogo showLink platformId={PlatformProductBoard} /></div>
+
+      <Typography component='h3' variant='h5'>Customer Relationship Management (CRM)</Typography>
+      <p><Typography>A CRM compiles data from multiple sources to keep track of customers and leads. It allows businesses to learn more about their target audiences and how to best cater for their needs.</Typography></p>
+      <p><Typography>Salesforce is a leading customer management tool that includes a subproduct IdeaExchange for collecting and prioritizing ideas with a roadmap. While UseResponse is a simpler CRM tool with feedback, helpdesk, knowledge base, and live Chat.</Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformSalesforceIdeaExchange} /></div>
+      <div><Brand showLogo showLink platformId={PlatformUseResponse} /></div>
+
+      <Typography component='h3' variant='h5'>Crowd-funding features</Typography>
+      <p><Typography>Let your customers purchase support or feature development. Issue credits when a customer makes a purchase or donation.</Typography></p>
+      <Brand showLogo platformId={PlatformClearFlask} />
+
+      <Typography component='h3' variant='h5'>Feedback for frontline workers</Typography>
+      <p><Typography>Coach, motivate, and empower your frontline workers to improve customer experience.</Typography></p>
+      <Brand showLogo showLink platformId={PlatformAskNicely} />
+
+      <Typography component='h3' variant='h5'>Website screenshot feedback</Typography>
+      <p><Typography>Get visual feedback on any web page by letting your users take screenshots and comment on specific parts of your website.</Typography></p>
+      <Brand showLogo showLink platformId={PlatformUserback} />
+
+      <Typography component='h3' variant='h5'>Quick and Free Public Roadmap</Typography>
+      <Typography component='h4' variant='h6'>Kanban board</Typography>
+      <p><Typography>Display what you are working on by making your Kanban board public.</Typography></p>
+      <Brand showLogo showLink platformId={PlatformTrello} />
+      <Typography component='h4' variant='h6'>Spreadsheet</Typography>
+      <p><Typography>Easily create a public roadmap in a cloud-based spreadsheet.</Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformSheets} /></div>
+      <div><Brand showLogo showLink platformId={PlatformExcel} /></div>
+
+      <Typography component='h3' variant='h5'>WordPress plugin</Typography>
+      <p><Typography>Collect feedback with a public roadmap using your existing WordPress website</Typography></p>
+      <Brand showLogo showLink platformId={PlatformSimpleFeatureRequests} />
+
+      <Typography component='h3' variant='h5'>Mobile-first widget</Typography>
+      <p><Typography>A survey and feedback widget embedded within your mobile app.</Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformUserReport} /></div>
+
+      <Typography component='h3' variant='h5'>Feedback and Roadmap without the voting</Typography>
+      <p><Typography>Platform for a public roadmap and feedback collection with a caveat: feedback is not publicly accessible unless approved by you.
+        Their ideology is strongly <ExternalLink url='https://www.shipright.co/post/feature-voting-board-messing-up-your-product'>against</ExternalLink> public voting tools as it can lead to implementing the wrong features.
+        Ideal for smaller teams able to sift through all feedback</Typography></p>
+      <Brand showLogo showLink platformId={PlatformShipRight} />
+
+      <Typography component='h3' variant='h5'>Customer behavior and guidance</Typography>
+      <p><Typography>Analytics tool to better understand customer behavior through their product journey with feedback, surveys and walkthroughs.</Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformPendo} /></div>
+
+    </React.Fragment>
+  );
+};
+
 const TemplateDeleteMe = (props: {}) => {
   const classes = useStyles();
   return (
@@ -1441,9 +1784,9 @@ const ComparisonTable = (props: {
 
   const rowMapper = isHidden => row => (
     <HoverArea hoverDown={dontHoverBelow}>
-      {(hoverAreaProps, isHovering) => (
+      {(hoverAreaProps, isHovering, isHoverDown) => (
         <TableRow {...hoverAreaProps} key={row.platformId} className={classNames(isHidden && classes.hiddenPlatform)}>
-          <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentCheckbox={!isHovering} /></TableCell>
+          <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} /></TableCell>
           {props.headers.map(header => {
             if (!header.headingId) {
               return (
@@ -1522,12 +1865,12 @@ const ComparisonTable = (props: {
 
               return (
                 <HoverArea hoverDown={dontHoverBelow}>
-                  {(hoverAreaProps, isHovering) => {
+                  {(hoverAreaProps, isHovering, isHoverDown) => {
                     return (
                       <TableCell {...hoverAreaProps} key={headingId} className={classes.tableHeading}>
                         <div>
                           <FilterIconButton
-                            iconClassName={classNames(classes.transparentTransition, !isHovering && classes.transparent)}
+                            iconClassName={classNames(classes.transparentTransition, !(isHovering || isHoverDown) && classes.transparent)}
                             select={false}
                             platformIds={platformIds}
                             invertSelection
@@ -1707,6 +2050,7 @@ const FilterButtonBase = (props: {
 
 const BrandList = (props: {
   platformIds: Array<string>,
+  selected?: string,
   limit?: number,
   small?: boolean,
   onClick?: (platformId: string) => void,
@@ -1730,19 +2074,22 @@ const BrandList = (props: {
     <div className={classes.brandListContainer}>
       {platformIds.map(platformId => (
         <HoverArea key={platformId} hoverDown={dontHoverBelow}>
-          {(hoverAreaProps, isHovering) => {
+          {(hoverAreaProps, isHovering, isHoverDown) => {
             props.onHover && props.onHover(platformId, isHovering);
             return (
               <div {...hoverAreaProps} onClick={() => props.onClick && props.onClick(platformId)} style={{
                 cursor: props.onClick ? 'pointer' : undefined,
               }}>
                 <Brand
-                  className={classNames(props.small && classes.brandListSmall, hiddenPlatforms.has(platformId) && classes.hiddenPlatform)}
+                  className={classNames(
+                    props.small && classes.brandListSmall,
+                    hiddenPlatforms.has(platformId) && classes.hiddenPlatform,
+                    props.selected === platformId && classes.brandListSelected)}
                   key={platformId}
                   platformId={platformId}
                   showLogo
                   showCheckbox
-                  transparentCheckbox={!isHovering}
+                  transparentControls={!(isHovering || isHoverDown)}
                   {...props.BrandProps}
                 />
               </div>
@@ -1761,17 +2108,18 @@ const BrandList = (props: {
     </div>
   );
 };
-const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
+const Brand = (props: ({ platformId: string; } | { platform: Platform | AlternativePlatform }) & {
   className?: string;
   showLogo?: boolean;
   showCheckbox?: boolean;
   showTextColor?: boolean;
-  transparentCheckbox?: boolean;
+  showLink?: boolean
+  transparentControls?: boolean;
 }) => {
   const classes = useStyles();
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
-  const platform: Platform | undefined = props['platform'] || Platforms[props['platformId']]
+  const platform: AlternativePlatform | Platform | undefined = props['platform'] || Platforms[props['platformId']] || AlternativePlatforms[props['platformId']];
   if (!platform) {
     return (
       <div className={classNames(classes.platformOther, props.className)}>
@@ -1787,7 +2135,7 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
   return (
     <div className={classNames(classes.brandContainer, props.className)}>
       {props.showCheckbox && (
-        <Checkbox className={classNames(classes.brandCheckbox, classes.transparentTransition, props.transparentCheckbox && classes.transparent)} size='small' color='default' checked={!hiddenPlatforms.has(platform.id)}
+        <Checkbox className={classNames(classes.brandCheckbox, classes.transparentTransition, props.transparentControls && classes.transparent)} size='small' color='default' checked={!hiddenPlatforms.has(platform.id)}
           onChange={e => toggleHiddenPlatform(platform.id)}
         />
       )}
@@ -1803,9 +2151,12 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform }) & {
       )}
       <Typography component='div' color='inherit' style={{
         color: props.showTextColor ? platform.color : undefined,
-      }}>
+      }} className={classes.brandName}>
         {platform.name}
       </Typography>
+      {props.showLink && (
+        <ExternalLinkPlatform type='home' platform={platform} transparent={props.transparentControls} />
+      )}
     </div>
   );
 };
@@ -1827,9 +2178,13 @@ const ExternalLink = (props: {
   );
 };
 
-const ExternalLinkPlatform = (props: {
-  type: 'pricing' | 'home';
+const ExternalLinkPlatform = (props: ({
+  type: 'home';
+  platform: Platform | AlternativePlatform;
+} | {
+  type: 'pricing';
   platform: Platform;
+}) & {
   transparent?: boolean;
 }) => {
   const classes = useStyles();
