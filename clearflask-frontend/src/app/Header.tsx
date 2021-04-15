@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import NotificationsIcon from '@material-ui/icons/Notifications';
+import SettingsIcon from '@material-ui/icons/Settings';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { ReduxState, Server, StateSettings, Status } from '../api/server';
 import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
 import InViewObserver from '../common/InViewObserver';
 import { notEmpty } from '../common/util/arrayUtil';
+import windowIso from '../common/windowIso';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';
@@ -262,6 +264,16 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         </div>
       ) : undefined;
 
+      // TODO this should only show when Admin logged in, not mod
+      const settingsButton = this.props.server.isModOrAdminLoggedIn() && (
+        <IconButton
+          className={this.props.classes.actionButton}
+          aria-label='Dashboard'
+          onClick={() => !windowIso.isSsr && windowIso.open(`https://clearflask.com/dashboard?projectId=${this.props.server.getProjectId()}`, '_self')}
+        >
+          <SettingsIcon fontSize='inherit' />
+        </IconButton>
+      );
       var rightSide;
       if (this.props.config && this.props.loggedInUser) {
         rightSide = (
@@ -304,6 +316,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
                 <AccountIcon fontSize='inherit' />
               </Badge>
             </IconButton>
+            {settingsButton}
           </div>
         );
       } else if (this.props.config && !this.props.loggedInUser) {
@@ -322,6 +335,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               onClose={() => this.setState({ logInOpen: false })}
               onLoggedInAndClose={() => this.setState({ logInOpen: false })}
             />
+            {settingsButton}
           </div>
         );
       }

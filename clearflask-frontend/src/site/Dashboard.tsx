@@ -1,5 +1,6 @@
-import { Button, Collapse, Typography } from '@material-ui/core';
+import { Button, Collapse, IconButton, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -45,6 +46,7 @@ import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
+const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
 
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {
@@ -207,8 +209,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }));
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
     if (!selectedLabel) {
+      const params = new URL(windowIso.location.href).searchParams;
+      const selectedProjectIdFromParams = params.get(SELECTED_PROJECT_ID_PARAM_NAME);
+      if (selectedProjectIdFromParams) {
+        selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromParams);
+      }
+    }
+    if (!selectedLabel) {
       const selectedProjectIdFromLocalStorage = localStorage.getItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY);
-      selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromLocalStorage);
+      if (selectedProjectIdFromLocalStorage) {
+        selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromLocalStorage);
+      }
     }
     if (activePath === 'create') {
       selectedLabel = undefined;
@@ -665,18 +676,23 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       </div>
     );
 
+    const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
+    const projectLink = (!!activeProjectConf && !!allowProjectUserSelect) ? (
+      `${windowIso.location.protocol}//${activeProjectConf.domain || `${activeProjectConf.slug}.${windowIso.location.host}`}`
+    ) : undefined;
+
     return (
       <Elements stripe={Dashboard.getStripePromise()}>
         {this.props.account && (
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
         <Layout
-          toolbarLeft={
+          toolbarLeft={(
             <div className={this.props.classes.toolbarLeft}>
               <Typography
                 style={{ width: !isSelectProjectUserInMenu ? 180 : undefined }}
                 variant='h6'
-                color="inherit"
+                color='inherit'
                 noWrap
                 onClick={() => this.setState({ titleClicked: (this.state.titleClicked || 0) + 1 })}
               >
@@ -684,7 +700,16 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               </Typography>
               {!isSelectProjectUserInMenu && selectProjectUser}
             </div>
-          }
+          )}
+          toolbarRight={!projectLink ? undefined : (
+            <IconButton
+              color='inherit'
+              aria-label='Open project'
+              onClick={() => !windowIso.isSsr && windowIso.open(projectLink, '_blank')}
+            >
+              <OpenInNewIcon />
+            </IconButton>
+          )}
           previewBar={previewBar}
           previewBarInfo={previewBarInfo}
           preview={preview}

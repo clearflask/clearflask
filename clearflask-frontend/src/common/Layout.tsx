@@ -167,8 +167,8 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
             <div className={this.props.classes.grow} />
             <Fade in={!!this.props.preview}>
               <IconButton
-                color="inherit"
-                aria-label="Preview changes"
+                color='inherit'
+                aria-label='Preview changes'
                 onClick={this.handlePreviewToggle.bind(this)}
                 className={this.props.classes.previewButton}
               >
