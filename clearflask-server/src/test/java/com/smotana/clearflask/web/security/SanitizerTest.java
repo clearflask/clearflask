@@ -116,7 +116,7 @@ public class SanitizerTest extends AbstractTest {
 
     @Test(timeout = 10_000L)
     public void testDomain() throws Exception {
-        assertSanitizeDomain("feedback.clearflask.com", false);
+        assertSanitizeDomain("sandbox.smotana.com", false);
         assertSanitizeDomain("feedback.example.com", true);
     }
 
