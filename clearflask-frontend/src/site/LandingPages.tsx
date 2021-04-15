@@ -54,7 +54,6 @@ import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
-import CompareImg from '../../public/img/landing/compare.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
@@ -2586,15 +2585,7 @@ export function LandingInstall() {
 // }
 
 export function LandingCompare() {
-  return (<React.Fragment>
-    <Hero
-      title='Comparing Customer Feedback Platforms'
-      description='There are over 50+ tools that we know of in this space. They vary by specific use cases, features and price. Let us help you choose the right tool'
-      image={CompareImg}
-    />
-    <Competitors />
-  </React.Fragment>
-  );
+  return (<Competitors />);
 }
 
 export function LandingSales() {

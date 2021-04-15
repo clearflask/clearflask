@@ -19,12 +19,14 @@ import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import SpeedIcon from '@material-ui/icons/Speed';
 import TranslateIcon from '@material-ui/icons/Translate';
 import IntegrationsIcon from '@material-ui/icons/Widgets';
+import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { useContext, useState } from 'react';
 import ReactGA from 'react-ga';
 import { Link } from 'react-router-dom';
 import Scrollspy from 'react-scrollspy';
 import ClearFlaskImg from '../../public/img/clearflask-logo.png';
+import CompareImg from '../../public/img/landing/compare.svg';
 import AhaImg from '../../public/img/landing/compare/aha.png';
 import AskNicelyImg from '../../public/img/landing/compare/asknicely.png';
 import DesktopCannyImg from '../../public/img/landing/compare/canny-desktop.jpg';
@@ -84,6 +86,7 @@ import ImgIso from '../common/ImgIso';
 import { isTracking } from '../common/util/detectEnv';
 import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
+import Hero from './landing/Hero';
 
 const PlatformClearFlask = 'clearflask';
 const PlatformUserVoice = 'uservoice';
@@ -461,6 +464,21 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     },
   },
   appBarSpacer: theme.mixins.toolbar,
+  heroBrandList: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    margin: theme.spacing(2, 0),
+  },
+  heroBrandListBreak: {
+    width: '100%',
+  },
+  heroBrandImg: {
+    maxWidth: 14,
+    width: 14,
+    maxHeight: 14,
+    margin: theme.spacing(1),
+  },
   stickyOuterContainer: {
     marginTop: theme.spacing(20),
     minHeight: '100%',
@@ -579,9 +597,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     padding: theme.spacing(4, 0),
   },
-  filterButtonContainer: {
-    display: 'flex',
-    alignItems: 'center',
+  filterButtonAlert: {
+    width: 'max-content',
   },
   tocHeading: {
     alignSelf: 'flex-end',
@@ -592,6 +609,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   tocItem: {
     height: 'auto',
     minHeight: 40,
+  },
+  tocItemRead: {
+    opacity: 0.4,
   },
   tocItemIcon: {
     margin: theme.spacing(0, 0, 0, 1),
@@ -682,6 +702,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     alignItems: 'baseline',
   },
   designContainer: {
+    width: '100%',
+    maxWidth: 570,
+    margin: 'auto',
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
@@ -718,8 +741,51 @@ const Competitors = () => {
     setHiddenPlatforms,
   };
 
+  const brandListBreaks = new Set([
+    1,
+    1 + 2,
+    1 + 2 + 3,
+    1 + 2 + 3 + 4,
+    1 + 2 + 3 + 4 + 5,
+    1 + 2 + 3 + 4 + 5 + 6,
+    1 + 2 + 3 + 4 + 5 + 6 + 7,
+  ]);
+
   return (
     <HiddenPlatformsContext.Provider value={hiddenPlatformsWrapper}>
+
+      <Hero
+        title='Comparing Customer Feedback Platforms'
+        description={(
+          <React.Fragment>
+            There are 30+ tools that we know of in this space that vary by use case, features and price. Let's choose the right tool for your needs.
+            <div className={classes.heroBrandList}>
+              {[
+                ...Object.values(Platforms),
+                ...Object.values(AlternativePlatforms),
+                Platforms[PlatformClearFlask],
+              ].map((platform, index) => (
+                <React.Fragment>
+                  {brandListBreaks.has(index) && (
+                    <div className={classes.heroBrandListBreak} />
+                  )}
+                  <ImgIso
+                    className={classes.heroBrandImg}
+                    alt={platform.name}
+                    src={platform.logo.src}
+                    aspectRatio={platform.logo.aspectRatio}
+                    maxWidth={platform.logo.width}
+                    maxHeight={platform.logo.height}
+                  />
+                </React.Fragment>
+              ))}
+            </div>
+          </React.Fragment>
+        )}
+        image={CompareImg}
+      />
+
+
       <Container maxWidth='lg' className={classes.pageContainer}>
         {!smDown && (
           <div className={classes.stickyOuterContainer}>
@@ -733,42 +799,42 @@ const Competitors = () => {
         )}
         <div className={classes.pageContent}>
           <Intro />
-          <div id='Users'>
+          <TableOfContentAnchor id='Users'>
             <Volume />
-          </div>
-          <div id='Pricing'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Pricing'>
             <PricingCompare />
-          </div>
-          <div id='Features'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Features'>
             <MajorFeatures />
-          </div>
-          <div id='Design'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Design'>
             <Design />
-          </div>
-          <div id='Import_Export'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Import_Export'>
             <ImportExport />
-          </div>
-          <div id='Customize'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Customize'>
             <Customize />
-          </div>
-          <div id='Voting_mechanism'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Prioritization'>
             <VotingMechanism />
-          </div>
-          <div id='Onboarding'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Onboarding'>
             <Onboarding />
-          </div>
-          <div id='Website_health'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Website_health'>
             <PageLoad />
-          </div>
-          <div id='Languages'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Languages'>
             <Language />
-          </div>
-          <div id='Integrations'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Integrations'>
             <Integrations />
-          </div>
-          <div id='Alternatives'>
+          </TableOfContentAnchor>
+          <TableOfContentAnchor id='Alternatives'>
             <OtherAlternatives />
-          </div>
+          </TableOfContentAnchor>
           <Disclaimer />
         </div>
         {!xsDown && (
@@ -793,16 +859,60 @@ const TableOfContentsAnchors: Array<{ id: string, title: string, icon: Overridab
   { id: 'Design', title: 'Design', icon: DesignIcon },
   { id: 'Import_Export', title: 'Import/Export', icon: ImportExportIcon },
   { id: 'Customize', title: 'Customize', icon: CustomizeIcon },
-  { id: 'Voting_mechanism', title: 'Voting', icon: AnalyzeIcon },
+  { id: 'Prioritization', title: 'Prioritization', icon: AnalyzeIcon },
   { id: 'Onboarding', title: 'Onboarding', icon: SpeakIcon },
   { id: 'Website_health', title: 'Health', icon: SpeedIcon },
   { id: 'Languages', title: 'Languages', icon: TranslateIcon },
   { id: 'Integrations', title: 'Integrations', icon: IntegrationsIcon },
   { id: 'Alternatives', title: 'Alternatives', icon: AlternativesIcon },
 ];
+const TableOfContentAnchor = (props: {
+  id: string;
+  children: any;
+}) => {
+  const classes = useStyles();
+  return (
+    <div id={props.id}>
+      <div className={classes.appBarSpacer} />
+      {props.children}
+    </div>
+  );
+};
+
+const LinkScroll = (props: {
+  anchorId: string;
+  children: any;
+}) => {
+  const classes = useStyles();
+  return (
+    <MuiLink
+      href={`#${props.anchorId}`}
+      underline='none'
+      onClick={(e) => {
+        e.preventDefault();
+        scrollToAnchorId(props.anchorId);
+        return false;
+      }}
+    >
+      {props.children}
+    </MuiLink>
+  );
+};
+const scrollToAnchorId = (anchorId) => {
+  if (windowIso.isSsr) return;
+  const el = windowIso.document.getElementById(anchorId);
+  if (!el) return;
+  windowIso.scrollTo({
+    top: el.getBoundingClientRect().top + windowIso.pageYOffset + 10,
+    behavior: 'smooth',
+  });
+};
 const TableOfContents = (props: {}) => {
   const classes = useStyles();
   const [anchorId, setAnchorId] = useState<string>();
+
+  var anchorSeen: boolean = !anchorId;
+
   return (
     <React.Fragment>
       <Typography component='div' variant='h6' className={classes.tocHeading}>Contents</Typography>
@@ -820,24 +930,20 @@ const TableOfContents = (props: {}) => {
           }}
           onChange={(e, newAnchorId) => {
             e.preventDefault();
-            if (windowIso.isSsr) return;
-            const el = windowIso.document.getElementById(newAnchorId);
-            if (!el) return;
-            windowIso.scrollTo({
-              top: el.getBoundingClientRect().top
-                + windowIso.pageYOffset
-                - 75, // AppBar
-              behavior: 'smooth',
-            });
-            setAnchorId(newAnchorId);
+            scrollToAnchorId(newAnchorId);
             return false;
           }}
         >
           {TableOfContentsAnchors.map(anchor => {
             const Icon = anchor.icon;
+
+            if (!anchorSeen && anchor.id === anchorId) {
+              anchorSeen = true;
+            }
+
             return (
               <Tab
-                className={classes.tocItem}
+                className={classNames(classes.tocItem, !anchorSeen && classes.tocItemRead)}
                 classes={{
                   wrapper: classes.tocItemWrapper,
                 }}
@@ -876,7 +982,13 @@ const CompetitorSelect = (props: {}) => {
 
   return (
     <React.Fragment>
-      <Typography component='div' variant='h6' className={classes.competitorSelectHeading}>Compare</Typography>
+      <div>
+
+      </div>
+      <Typography component='div' variant='h6' className={classes.competitorSelectHeading}>
+        Filter
+        &nbsp;<FilterIcon fontSize='inherit' />&nbsp;
+        </Typography>
       <div>
         {Object.values(Platforms).filter(platform => !hiddenPlatforms.has(platform.id)).map(rowMapper(false))}
         {Object.values(Platforms).filter(platform => hiddenPlatforms.has(platform.id)).map(rowMapper(true))}
@@ -895,11 +1007,15 @@ const Intro = (props: {}) => {
   const classes = useStyles();
   return (
     <React.Fragment>
-      <Typography component='h2' variant='h4'>Problem outline</Typography>
-      <p><Typography>You’ve created a product and you want to know which area you should focus on next. A great source of ideas is your customer voice, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
-      <p><Typography>This is where customer feedback platforms can help. Most are a drop-in platform you can integrate with your website, app or product to start collecting feedback right away. The right tool will not only help in de-duplicating and combining ideas together, but also prioritizing feedback based on customer value or other factors important to you.</Typography></p>
-      <p><Typography>An important aspect of feedback collection is to make your customer base feel heard. Keeping your product development in touch with your customers will help your reputation and also keep your customers engaged. Your customer will love to hear from you when you release their long-awaited feature.</Typography></p>
-      <p><Typography>So which feedback tool is right for you?</Typography></p>
+      <Typography component='h2' variant='h4'>Why do you need feedback?</Typography>
+      <p><Typography>So you’ve created a product and now you want to know which area you should focus on.
+         A great source of inspiration is your own customers, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
+      <p><Typography>This is where customer feedback platforms can help. Most are a drop-in platform you can integrate with your website, app or product to start collecting almost immediately.
+      </Typography></p>
+      <p><Typography>
+        The right tool will not only help in <span className={classes.emphasize}>collecting and grouping ideas</span> together, but also <span className={classes.emphasize}>prioritizing feedback</span> based on customer value or other factors that are important to you.</Typography></p>
+      <p><Typography>Your customers will appreciate being involved in your product development and feel their ideas are being heard.</Typography></p>
+      <p><Typography>Let's talk about how to choose the right feedback tool for you.</Typography></p>
     </React.Fragment>
   );
 };
@@ -912,26 +1028,26 @@ const Volume = (props: {}) => {
         <PeopleIcon fontSize='inherit' />&nbsp;
         How many users?
       </Typography>
-      <p><Typography>The amount of feedback you will receive depends on your current or predicted number of customers and how tightly you integrate the feedback tool with your product.</Typography></p>
-      <p><Typography>The <span className={classes.emphasize}>coverage rate</span> metric measures the percentage of users that have provided you with feedback by posting a unique idea or indicating that an existing idea is suited for them. UserVoice <ExternalLink url='https://community.uservoice.com/blog/new-in-uservoice-coverage-rate-reporting/'>reports</ExternalLink> that at least 15% coverage rate is considered satisfactory with typical rate ranging up to 50%. While Canny customers see a typical rate of 5%.</Typography></p>
-      <p><Typography>Some platforms are not only suited to handle large amounts of feedback, but do not provide the tools to organize and sort through that feedback afterwards. Typically you will fall under one of these categories:</Typography></p>
+      <p><Typography>The amount of feedback you will receive depends on your current (or predicted) number of customers and how tightly you integrate the feedback tool with your product.</Typography></p>
+      <p><Typography>The <span className={classes.emphasize}>coverage rate</span> metric measures the percentage of users that have provided you with feedback. UserVoice <ExternalLink url='https://community.uservoice.com/blog/new-in-uservoice-coverage-rate-reporting/'>reports</ExternalLink> that at least 15% coverage rate is considered satisfactory with typical rate ranging up to 50%. While Canny customers see a typical rate of 5%.</Typography></p>
+      <p><Typography>Most platforms can handle collecting large amounts of feedback, but only a handful provide the tools to organize and sort through that feedback afterwards. Typically you will fall under one of the following categories.</Typography></p>
 
       <Typography component='h3' variant='h5'>High volume</Typography>
-      <Typography variant='caption'>{formatNumber(10000)}+ users: Enterprise, B2C, or proven product</Typography>
+      <Typography variant='caption'>{formatNumber(100000)}+ users: Enterprise, B2C, or proven product</Typography>
       <p><Typography>If you have a use case that requires a high-volume of feedback, the answer is simple: request a quote from the following platforms and let the Sales teams guide you.</Typography></p>
       <p><Typography>Your main goal is to find a platform that will analyze your large set of data effectively. UserVoice is the market leader in this space with Canny and ClearFlask as cheaper alternatives.</Typography></p>
-      <FilterButton
-        label='Filter' text='high-volume platforms' showExamples={3}
-        select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformClearFlask, PlatformCanny])}
+      <BrandList
+        small
+        platformIds={[PlatformUserVoice, PlatformClearFlask, PlatformCanny]}
       />
 
       <Typography component='h3' variant='h5'>Variable volume</Typography>
       <Typography variant='caption'>Startups or growing product</Typography>
-      <p><Typography>Startups or products with growth should look at platforms that can handle high-volume when you need it, but has scaled pricing. Beware of unlimited plans that usually indicate the platform has never experienced high-volume and may not be able to handle your future needs.</Typography></p>
+      <p><Typography>Startups or products with growth should look at platforms that can handle high-volume when you need it and provide flexible pricing that scales with you. Beware of unlimited plans. It is typically an indication that the platform has never experienced high-volume and may not be able to handle your future needs.</Typography></p>
       <p><Typography>ClearFlask and Canny are both built for high-volume while only charging you based on your current volume.</Typography></p>
-      <FilterButton
-        label='Filter' text='variable-volume platforms' showExamples={3}
-        select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformCanny])}
+      <BrandList
+        small
+        platformIds={[PlatformClearFlask, PlatformCanny]}
       />
 
       <Typography component='h3' variant='h5'>Low volume, multi-project</Typography>
@@ -944,7 +1060,7 @@ const Volume = (props: {}) => {
       />
 
       <Typography component='h3' variant='h5'>Low volume</Typography>
-      <Typography variant='caption'>Up to {formatNumber(1000)}: Closed group, hobbyist</Typography>
+      <Typography variant='caption'>Up to {formatNumber(1000)} users: Closed group, hobbyist</Typography>
       <p><Typography>For collecting feedback from a small group of users, there are many options available. Keep reading below to find the product based on other factors.</Typography></p>
       <BrandList
         small
@@ -969,8 +1085,8 @@ const PricingCompare = (props: {}) => {
         <PaymentIcon fontSize='inherit' />&nbsp;
         What is your budget?
       </Typography>
-      <p><Typography>Although pricing shouldn't be your sole factor for determining your solution, you should know how much are you willing to spend. If your product has variable number of users, calculate how much you are willing to spend per customer.</Typography></p>
-      <p><Typography>Look at your current or predicted number of total users you have to estimate your price below</Typography></p>
+      <p><Typography>A naive engineer may see feedback collection a simple functionality. The value of the higher-priced feedback platforms are only visible behind-the-scenes helping you make sense of the data you've collected.</Typography></p>
+      <p><Typography>As the complexity of managing feedback increases with volume, many platforms offer flexible pricing based on users.</Typography></p>
 
       <div className={classes.pricingContainer}>
         <PricingTable totalUsers={sliderMarks[markIndex]} />
@@ -1145,7 +1261,16 @@ const MajorFeatures = (props: {}) => {
         <FeaturesIcon fontSize='inherit' />&nbsp;
         Which features matter to you?
       </Typography>
-      <p><Typography>Each platform has a set of major components that are available. Be prepared that although two platforms have the same component, the functionality of that component may drastically differ. Use this table as a quick comparison:</Typography></p>
+      <p><Typography>In addition to feedback collection, each platform offers a different set of major functionality.</Typography></p>
+      <p><Typography>For niche use cases and for tools where feedback is part of a larger solution, see the <LinkScroll anchorId={'Alternatives'}>Alternatives</LinkScroll>. These include Product Management tools, Customer Relationship Management tools and customer behavior analytics.</Typography></p>
+
+      <Typography><span className={classes.emphasize}>Public Roadmap</span>: Show off your product plan and what you're currently working on.</Typography>
+      <Typography><span className={classes.emphasize}>Changelog</span>: Let your users know of recently launched features</Typography>
+      <Typography><span className={classes.emphasize}>Knowledge base</span>: Product help articles to describe functionality and address frequent issues</Typography>
+      <Typography><span className={classes.emphasize}>Forum</span>: Let your user discuss various topics</Typography>
+      <Typography><span className={classes.emphasize}>Blog</span>: Share your thoughts on your own blog and let your users subscribe.</Typography>
+      <Typography><span className={classes.emphasize}>Custom content</span>: Flexible content type with custom rules such as Job postings, Employee feedback, Q&amp;A</Typography>
+
       <ComparisonTable
         headers={[
           { headingId: 'ideas', content: 'Feature voting' },
@@ -1185,20 +1310,21 @@ const VotingMechanism = (props: {}) => {
         Prioritization of feedback
       </Typography>
       <p><Typography>Most platforms can collect a lot of feedback, while only a few can handle making sense of it all.</Typography></p>
-      <p><Typography>To better understand the feedback you collected, you need to consider the value of each of your customers. For example, you may want to know which features your customers wanted considering revenue. Or you may want to see only your recently churned customers in your enterprise plan.</Typography></p>
+      <p><Typography>To better understand the feedback you collected, you need to consider the value of each of your customers.
+        For example, you may want to know which features your highest-paying customers wanted. Or you may want to see what your recently churned customers in your enterprise plan said.</Typography></p>
 
       <Typography component='h4' variant='h6'>Analyze externally</Typography>
-      <p><Typography>One way to accomplish this is to export your data to an external Data Warehouse or analytics tool to further analyze your data which allows you to correlate with other data you have about your customers.</Typography></p>
+      <p><Typography>One way to accomplish this is to export your data to an external Data Warehouse or analytics tool.
+        Correlate feedback with other data you have about your customers.</Typography></p>
       <BrandList small platformIds={[PlatformUserVoice]} />
 
-      <Typography component='h4' variant='h6'>Segmentation</Typography>
-      <p><Typography>Some platforms allow you to import arbitrary customer data in order to filter, search and assign weights to your customers.</Typography></p>
+      <Typography component='h4' variant='h6'>Analyze on-platform (Segmentation)</Typography>
+      <p><Typography>Some platforms allow you to attach arbitrary customer data on the platform which allows you to filter, search and assign weights to your customers.</Typography></p>
       <BrandList small platformIds={[PlatformUserVoice, PlatformCanny]} />
 
       <Typography component='h4' variant='h6'>Credit system / Crowd-funding</Typography>
-      <p><Typography>Another approach is to issue credits to your customers based on their value such as monthly spend. They can then spend their credits on the features they want.</Typography></p>
+      <p><Typography>Another approach is to issue credits to your customers based on their value such as monthly spend. Instead of upvotes, they can then spend their credits on the features they want.</Typography></p>
       <BrandList small platformIds={[PlatformClearFlask]} />
-      {/* <p><Typography>Whether you choose to give control to your users with fine-grained ranking or analyze behind the scenes (or both) is dependant on your specific use case.</Typography></p> */}
 
       <ComparisonTable
         headers={[
@@ -1231,19 +1357,21 @@ const Onboarding = (props: {}) => {
         <SpeakIcon fontSize='inherit' />&nbsp;
         Engagement channels
       </Typography>
-      <p><Typography>The value of feedback is drastically different between a current customer or someone that has no intention in being your customer. One way to ensure that feedback is valuable is to ask to provide a communication channel so the customer can be notified when their feedback is addressed.</Typography></p>
+      <p><Typography>The value of feedback is drastically different between a current customer, potential customer, or someone that has no intention in being your customer. One way to ensure that feedback is valuable is to ask to provide a communication channel so they can be notified when their feedback is addressed.</Typography></p>
 
       <Typography component='h4' variant='h6'>Onboarding friction</Typography>
-      <p><Typography>Users are hesitant to provide their personal information including their email address. The more personal information you ask during sign-up will result in less feedback you will receive.</Typography></p>
-      <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the ideal solution as it allows you to seamlessly login your users in the background with no login screen.</Typography></p>
+      <p><Typography>Users are hesitant to provide their personal information including their email address.
+         The more personal information you ask will result in less feedback.</Typography></p>
+      <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the ideal solution as it allows you to seamlessly login your users in the background without ever showing a login screen.</Typography></p>
 
       <Typography component='h4' variant='h6'>Guest / Anonymous feedback</Typography>
       <p><Typography>Ideal in narrow use cases, allows your users to sign-up without providing any contact information. Use this only as a last resort as it attracts spam and leaves you with no engagement opportunity.</Typography></p>
       <p><Typography><span className={classes.emphasize}>Browser Push Notifications</span> are an alternative where your users don't have to provide their email, but you have a communication channel open.</Typography></p>
 
 
-      <Typography component='h4' variant='h6'>OAuth, SAML</Typography>
-      <p><Typography>Although OAuth and SAML allow you to login with the vast majority of external providers including Facebook and Google, some platforms have a built-in shared login for specific providers shown below.</Typography></p>
+      <Typography component='h4' variant='h6'>External service provider</Typography>
+      <p><Typography>OAuth and SAML allow you to login with the vast majority of external providers including Facebook, Google, and Github.
+        In addition, some platforms have a built-in shared login for specific providers shown below.</Typography></p>
 
       <ComparisonTable
         headers={[
@@ -1294,25 +1422,32 @@ const ImportExport = (props: {}) => {
     <React.Fragment>
       <Typography component='h2' variant='h4'>
         <ImportExportIcon fontSize='inherit' />&nbsp;
-        Import and Export: vendor lock-in
+        Vendor lock-in: import and export
       </Typography>
-      <p><Typography>Whether you are switching from another platform or you eventually will in the future, you need to consider your options now. Choose a platform that you can freely switch to and from to prevent locking in yourself to a particular platform.</Typography></p>
+      <p><Typography>Whether you are switching from another platform or you eventually will in the future, you need to consider your options now.
+        Plan ahead and choose a platform that makes switching easy and prevent locking yourself to a particular platform.</Typography></p>
 
       <FilterButton
-        label='Filter' text='platforms with Export functionality' showExamples={3}
+        label='Filter' text='Only show platforms with Export'
         select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformCanny, PlatformClearFlask, PlatformUpvoty, PlatformFider, PlatformSuggested, PlatformFeatureUpvote])}
       />
 
-
       <Typography component='h4' variant='h6'>Importing data</Typography>
-      <p><Typography>If you are already using another platform or you have customer or account data in another database, consider your import options now. Some platforms may already offer custom integrations with the particular provider you are using. Otherwise, choose a platform that can provide self-service import or contact support of that platform for a custom import job.</Typography></p>
+      <p><Typography>For importing <span className={classes.emphasize}>existing feedback</span>, several platforms allow you to import CSV formatted data. You can also reach out to support to get additional help.</Typography></p>
+      <FilterButton
+        label='Filter' text='Only show platforms with CSV Import'
+        select={false} invertSelection platformIds={new Set([PlatformUserVoice, PlatformCanny, PlatformClearFlask, PlatformNoora])}
+      />
+      <p><Typography>For synchronizing <span className={classes.emphasize}>customer traits</span> for feedback analysis, there are several <LinkScroll anchorId={'Integrations'}>integrations</LinkScroll> available as well as APIs.</Typography></p>
+      <p><Typography>For <span className={classes.emphasize}>signing in</span> your users with an existing account, there are <LinkScroll anchorId={'Onboarding'}>onboarding</LinkScroll> options available including Single Sign-On.</Typography></p>
+
 
       <ComparisonTable
         tableStyle={{ width: 'max-content' }}
         headers={[
           { content: 'Self-service' },
-          { headingId: 'export', content: 'Export' },
           { headingId: 'import', content: 'Import' },
+          { headingId: 'export', content: 'Export' },
         ]}
         data={[
           { platformId: PlatformUserVoice, headingIds: new Set(['import', 'export']) },
@@ -1338,12 +1473,13 @@ const Language = (props: {}) => {
         <TranslateIcon fontSize='inherit' />&nbsp;
         Language support
         </Typography>
-      <p><Typography></Typography></p>
+      <p><Typography>If a majority of your customers speak a certain language, consider using a platform that supports that language natively or allows you to bring your own translations.</Typography></p>
+      <p><Typography>For translating user-submitted feedback to other languages, UserVoice supports on-page translation to any langauge using Google Translate</Typography></p>
 
       <ComparisonTable
         headers={[
           { headingId: 'contribute', content: 'Contribute translation' },
-          { headingId: 'google', content: 'Google Translate' },
+          { headingId: 'google', content: 'Translate content' },
           { content: 'Languages' },
           { headingId: 'English', content: 'English' },
           { headingId: 'Arabic', content: 'Arabic' },
@@ -1467,22 +1603,27 @@ const PageLoad = (props: {}) => {
         <SpeedIcon fontSize='inherit' />&nbsp;
         Website health
       </Typography>
-      <p><Typography>Bloated and slow websites are a silent killer in User Experience. You may want to consider dropping platforms that do not consider their website performance.</Typography></p>
+      <p><Typography>Bloated and slow websites are a silent killer in User Experience. You may want to drop platforms from consideration that do not care about their website performance.</Typography></p>
 
       <p><Typography>
-        Good metrics of a healthy website are <ExternalLink url='https://web.dev/lcp/'>Largest Contentful Paint</ExternalLink> and <ExternalLink url='https://web.dev/cls/'>Cumulative Layout Shift</ExternalLink>.
+        Good standard metrics of a healthy website are <ExternalLink url='https://web.dev/lcp/'>Largest Contentful Paint</ExternalLink> and <ExternalLink url='https://web.dev/cls/'>Cumulative Layout Shift</ExternalLink>.
           These web vitals can quantify the user experience as well as improve Search Engine Optimization.
-          As most browsing is done on Mobile, both of these vitals are measured for the Mobile experience. We have analyzed the feedback page for each platform below using Google's <ExternalLink url='https://developers.google.com/speed/pagespeed/insights/'>PageSpeed Insights</ExternalLink> tool.
+          We have analyzed each platform using their mobile-version of their feedback page using Google's <ExternalLink url='https://developers.google.com/speed/pagespeed/insights/'>PageSpeed Insights</ExternalLink> tool.
         </Typography></p>
 
       <Typography component='h4' variant='h6'>Largest Contentful Paint (LCP)</Typography>
       <p><Typography>There are different strategies to determine when a page is considered to be loaded for measuring page load time. Researchers have found that across many websites, the more accurate way to determine when page is loaded is when majority of the page has been rendered. LCP is a web vital measuring exactly this.</Typography></p>
 
       <Typography component='h4' variant='h6'>Cumulative Layout Shift (CLS)</Typography>
-      <p><Typography>Unexpected movement of page content can vary between mildly annoying to accidentally clicking the wrong button. Cumulative Layout Shift is a web vital measuring how much has content shifted around from its original place.</Typography></p>
+      <p><Typography>Unexpected movement of page content can cause mild annoyance to accidentally clicking the wrong button. Cumulative Layout Shift is a web vital measuring how much has content shifted around from its original place.</Typography></p>
 
       <Typography component='h4' variant='h6'>No JavaScript support</Typography>
-      <p><Typography>A website able to render without any JavaScript is an important consideration. Typically pre-rendered websites load faster, are able to be viewed on older web browsers and play a big role in Search Engine Optimizaion</Typography></p>
+      <p><Typography>A website able to render without any JavaScript is an important consideration.
+        Typically pre-rendered websites load faster, better support for older web browsers, and play a big role in Search Engine Optimization</Typography></p>
+      <FilterButton
+        label='Filter' text='Only show platforms supporting NoJS' showExamples={0}
+        select={false} invertSelection platformIds={new Set([PlatformClearFlask, PlatformNolt, PlatformFeatureUpvote, PlatformUpvoty, PlatformHelloNext, PlatformConvas, PlatformCanny, PlatformUserVoice])}
+      />
 
       <ComparisonTable
         tableStyle={{ width: 'max-content' }}
@@ -1505,16 +1646,17 @@ const PageLoad = (props: {}) => {
           { platformId: PlatformSuggested, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={8.4} />), score: (<PageLoadSpeed val={39} />), pageshift: (<PageLoadLayoutShift val={0.074} />) } },
           { platformId: PlatformNoora, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={9.1} />), score: (<PageLoadSpeed val={11} />), pageshift: (<PageLoadLayoutShift val={0.129} />) } },
           { platformId: PlatformConflux, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={9.4} />), score: (<PageLoadSpeed val={30} />), pageshift: (<PageLoadLayoutShift val={0.706} />) } },
-          { platformId: PlatformUserVoice, headingIds: new Set([]), customContentByHeadingId: { paint: (<PageLoadSeconds val={10.8} />), score: (<PageLoadSpeed val={18} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
+          { platformId: PlatformUserVoice, headingIds: new Set(['nojs']), customContentByHeadingId: { paint: (<PageLoadSeconds val={11.0} />), score: (<PageLoadSpeed val={15} />), pageshift: (<PageLoadLayoutShift val={0} />) } },
         ]}
       />
+      <p><Typography variant='caption'>Each platform's own feedback page was analyzed using Google's online tool "PageSpeed Insights". As majority of browsing is on mobile, both LCP and CLS reflect mobile results.</Typography></p>
     </React.Fragment>
   );
 };
 const PageLoadSeconds = (props: { val: number }) => {
   return (
     <div style={{ textAlign: 'end', color: `rgb(${Math.max(0, (props.val - 2) * 50)},0,0)` }}>
-      {props.val}&nbsp;sec
+      {props.val.toFixed(1)}&nbsp;sec
     </div>
   );
 };
@@ -1546,9 +1688,12 @@ const Disclaimer = (props: {}) => {
 
 const Design = (props: {}) => {
   const classes = useStyles();
-  const [device, setDevice] = useState<Device>(Device.Desktop);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [deviceNoDefault, setDevice] = useState<Device | undefined>();
   const [hoverId, setHoverId] = useState<string>();
   const [clickedId, setClickedId] = useState<string>(PlatformClearFlask);
+  const device = deviceNoDefault || (isMobile ? Device.Mobile : Device.Desktop);
 
   const selectedId = hoverId || clickedId;
   const selectedPlatform = Platforms[selectedId];
@@ -1560,7 +1705,9 @@ const Design = (props: {}) => {
         <DesignIcon fontSize='inherit' />&nbsp;
         Look &amp; feel
       </Typography>
-      <p><Typography></Typography></p>
+      <p><Typography>If your plan is to match your website design (whitelabel), there are a few options that will allow you to fully customize every aspect of the site.</Typography></p>
+      <BrandList small platformIds={[PlatformUserVoice, PlatformClearFlask]} />
+      <p><Typography>Otherwise choose a platform that you find pleasing or one that matches your design the closest. </Typography></p>
 
       <div className={classes.designContainer}>
         <div>
@@ -1613,12 +1760,12 @@ const Customize = (props: {}) => {
     <React.Fragment>
       <Typography component='h2' variant='h4'>
         <CustomizeIcon fontSize='inherit' />&nbsp;
-        Customize
+        Customization
       </Typography>
       <p><Typography>Some tools are perfected and focused on a specific use-case (ie Canny, Nolt, FeatureUpvote) while others are feature-rich for general purpose (ie ClearFlask, UserVoice). If you cannot find the right tool, customize one to fit your needs.</Typography></p>
 
       <Typography component='h4' variant='h6'>Open-source</Typography>
-      <p><Typography>Open-source is the ultimate freedom to customize if you got the time.
+      <p><Typography>if you got the time, open-source gives you freedom for a custom solution and complete ownership.
         The only contender, Fider licensed under AGPL3, is available on <ExternalLink url='https://github.com/getfider/fider'>Github</ExternalLink>.
         Although Fider is lacking analytic features and scalable infrastructure, it is ideal for small to medium volume.</Typography></p>
       <BrandList small platformIds={[PlatformFider]} />
@@ -1631,14 +1778,14 @@ const Customize = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Workflow</Typography>
       <p><Typography>Create categories, tags and statuses to organize your feedback.
-      Create a custom status with transition rules and behavior to match your development workflow.
+      Create custom behavior for each status and define a state machine to match your development workflow.
         </Typography></p>
       <BrandList small platformIds={[PlatformClearFlask, PlatformUserVoice]} />
 
       <Typography component='h4' variant='h6'>Custom content type</Typography>
       <p><Typography>ClearFlask is built to handle custom content types.
-      There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.
-      You can create your own content types to match your needs such as <span className={classes.emphasize}>Job postings</span>, <span className={classes.emphasize}>Employee feedback</span>, <span className={classes.emphasize}>Q&amp;A</span>.
+      There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.</Typography></p>
+      <p><Typography>You can create your own content types to match your needs such as <span className={classes.emphasize}>Job postings</span>, <span className={classes.emphasize}>Employee feedback</span>, <span className={classes.emphasize}>Q&amp;A</span>.
         Create new pages and customize the menu for a custom experience.</Typography></p>
       <BrandList small platformIds={[PlatformClearFlask]} />
 
@@ -1688,57 +1835,59 @@ const OtherAlternatives = (props: {}) => {
         <AlternativesIcon fontSize='inherit' />&nbsp;
         Niche alternatives
       </Typography>
+      <p><Typography>We have covered many customer feedback platforms, but there are many more we have not. Take a look at other types of platforms that may suit your particular use case.</Typography></p>
 
       <Typography component='h3' variant='h5'>Customer-driven product management</Typography>
-      <p><Typography></Typography></p>
+      <p><Typography>Product Management tools with user feedback as part of their solution.
+        These solutions are intended for product managers to brainstorm and prioritize features with customer feedback as a source of ideas.</Typography></p>
       <div><Brand showLogo showLink platformId={PlatformAha} /></div>
       <div><Brand showLogo showLink platformId={PlatformProdPad} /></div>
       <div><Brand showLogo showLink platformId={PlatformProductBoard} /></div>
 
       <Typography component='h3' variant='h5'>Customer Relationship Management (CRM)</Typography>
       <p><Typography>A CRM compiles data from multiple sources to keep track of customers and leads. It allows businesses to learn more about their target audiences and how to best cater for their needs.</Typography></p>
-      <p><Typography>Salesforce is a leading customer management tool that includes a subproduct IdeaExchange for collecting and prioritizing ideas with a roadmap. While UseResponse is a simpler CRM tool with feedback, helpdesk, knowledge base, and live Chat.</Typography></p>
+      <p><Typography>Salesforce is a leading customer management tool that includes a subproduct IdeaExchange for collecting and prioritizing ideas with a roadmap. While UseResponse is a simpler CRM tool with feedback, helpdesk, knowledge base, and a live Chat.</Typography></p>
       <div><Brand showLogo showLink platformId={PlatformSalesforceIdeaExchange} /></div>
       <div><Brand showLogo showLink platformId={PlatformUseResponse} /></div>
 
+      <Typography component='h3' variant='h5'>Customer behavior and guidance</Typography>
+      <p><Typography>Behavioral analytics tool to better understand and optimize customer experience through their product journey with feedback, surveys and walkthroughs.</Typography></p>
+      <div><Brand showLogo showLink platformId={PlatformPendo} /></div>
+
       <Typography component='h3' variant='h5'>Crowd-funding features</Typography>
-      <p><Typography>Let your customers purchase support or feature development. Issue credits when a customer makes a purchase or donation.</Typography></p>
+      <p><Typography>Let your customers purchase support or feature development. Issue credits when a customer makes a purchase or a donation and let them spend it on what they need.</Typography></p>
       <Brand showLogo platformId={PlatformClearFlask} />
 
       <Typography component='h3' variant='h5'>Feedback for frontline workers</Typography>
       <p><Typography>Coach, motivate, and empower your frontline workers to improve customer experience.</Typography></p>
       <Brand showLogo showLink platformId={PlatformAskNicely} />
 
-      <Typography component='h3' variant='h5'>Website screenshot feedback</Typography>
+      <Typography component='h3' variant='h5'>Website bug report widget</Typography>
       <p><Typography>Get visual feedback on any web page by letting your users take screenshots and comment on specific parts of your website.</Typography></p>
       <Brand showLogo showLink platformId={PlatformUserback} />
 
-      <Typography component='h3' variant='h5'>Quick and Free Public Roadmap</Typography>
+      <Typography component='h3' variant='h5'>Quick and Free Public Roadmaps</Typography>
       <Typography component='h4' variant='h6'>Kanban board</Typography>
       <p><Typography>Display what you are working on by making your Kanban board public.</Typography></p>
       <Brand showLogo showLink platformId={PlatformTrello} />
       <Typography component='h4' variant='h6'>Spreadsheet</Typography>
-      <p><Typography>Easily create a public roadmap in a cloud-based spreadsheet.</Typography></p>
+      <p><Typography>Easily show off a roadmap on a cloud-based public spreadsheet.</Typography></p>
       <div><Brand showLogo showLink platformId={PlatformSheets} /></div>
       <div><Brand showLogo showLink platformId={PlatformExcel} /></div>
 
       <Typography component='h3' variant='h5'>WordPress plugin</Typography>
-      <p><Typography>Collect feedback with a public roadmap using your existing WordPress website</Typography></p>
+      <p><Typography>Collect feedback and show a public roadmap using your existing WordPress website</Typography></p>
       <Brand showLogo showLink platformId={PlatformSimpleFeatureRequests} />
 
-      <Typography component='h3' variant='h5'>Mobile-first widget</Typography>
+      <Typography component='h3' variant='h5'>Mobile-first feedback widget</Typography>
       <p><Typography>A survey and feedback widget embedded within your mobile app.</Typography></p>
       <div><Brand showLogo showLink platformId={PlatformUserReport} /></div>
 
-      <Typography component='h3' variant='h5'>Feedback and Roadmap without the voting</Typography>
+      <Typography component='h3' variant='h5'>Feedback and Roadmap without public voting</Typography>
       <p><Typography>Platform for a public roadmap and feedback collection with a caveat: feedback is not publicly accessible unless approved by you.
         Their ideology is strongly <ExternalLink url='https://www.shipright.co/post/feature-voting-board-messing-up-your-product'>against</ExternalLink> public voting tools as it can lead to implementing the wrong features.
         Ideal for smaller teams able to sift through all feedback</Typography></p>
       <Brand showLogo showLink platformId={PlatformShipRight} />
-
-      <Typography component='h3' variant='h5'>Customer behavior and guidance</Typography>
-      <p><Typography>Analytics tool to better understand customer behavior through their product journey with feedback, surveys and walkthroughs.</Typography></p>
-      <div><Brand showLogo showLink platformId={PlatformPendo} /></div>
 
     </React.Fragment>
   );
@@ -1940,7 +2089,7 @@ const UserCountSlider = (props: {
       <div className={classes.sliderDisclaimer}>
         <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
         <Typography variant='caption' component='div' color='textSecondary'>
-          For comparison of different definitions of active users, we estimate active/tracked users to be {percTotalUsersAreTracked * 100}% of your total users.
+          For comparison of different definitions of active users across platforms, we estimate {percTotalUsersAreTracked * 100}% of your total users will actively provide you with feedback.
           </Typography>
       </div>
     </div>
@@ -1969,28 +2118,35 @@ const FilterButton = (props: {
       invertSelection={props.invertSelection}
       renderButton={(onClick, disabled) => (
         <React.Fragment>
-          <Collapse in={!disabled}>
-            <div className={classes.filterButtonContainer}>
-              <Button
-                disabled={disabled}
-                color='primary'
-                variant='text'
-                onClick={onClick}
-              >
-                {props.label}
-              </Button>
-              {props.text && (
-                <Typography variant='caption'>{props.text}</Typography>
-              )}
-            </div>
-          </Collapse>
-          {props.showExamples && (
+          {!!props.showExamples && (
             <BrandList
               platformIds={[...examples]}
               limit={props.showExamples}
               small
             />
           )}
+          <Collapse in={!disabled}>
+            <div>
+              <Alert
+                className={classes.filterButtonAlert}
+                variant='standard'
+                icon={false}
+                severity='info'
+                action={(
+                  <Button
+                    disabled={disabled}
+                    color='inherit'
+                    // variant='text'
+                    onClick={onClick}
+                  >
+                    {props.label}
+                  </Button>
+                )}
+              >
+                {props.text}
+              </Alert>
+            </div>
+          </Collapse>
         </React.Fragment>
       )}
     />

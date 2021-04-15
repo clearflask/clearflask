@@ -49,7 +49,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   title?: string;
-  description?: string;
+  description?: string | React.ReactNode;
   image?: Img;
   imagePath?: string;
   mirror?: boolean;
