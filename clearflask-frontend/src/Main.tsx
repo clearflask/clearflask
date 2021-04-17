@@ -143,7 +143,10 @@ class Main extends Component<Props> {
                       )} />
                     ), (
                       <Route key='app' path="/" render={props => (
-                        <App slug={windowIso.location.hostname} {...props} />
+                        <React.Fragment>
+                          <SetMaxAge val={60} />
+                          <App slug={windowIso.location.hostname} {...props} />
+                        </React.Fragment>
                       )} />
                     )]) : ([(
                       <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
