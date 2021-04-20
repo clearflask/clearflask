@@ -1,5 +1,5 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography, useMediaQuery } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tooltip, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
@@ -1794,7 +1794,7 @@ const Customize = (props: {}) => {
           { headingId: 'open-source', content: 'Open Source' },
           { headingId: 'custom-content', content: 'Custom content' },
           { content: 'Workflow' },
-          { headingId: 'tag', content: 'Add/Remove Tagging' },
+          { headingId: 'tag', content: 'Add/Remove Tags' },
           // { headingId: 'rename-status', content: 'Rename statuses' },
           { headingId: 'custom-status', content: 'Add/Remove Statuses' },
           { content: 'Whitelabel' },
@@ -1886,7 +1886,7 @@ const OtherAlternatives = (props: {}) => {
       <Typography component='h3' variant='h5'>Feedback and Roadmap without public voting</Typography>
       <p><Typography>Platform for a public roadmap and feedback collection with a caveat: feedback is not publicly accessible unless approved by you.
         Their ideology is strongly <ExternalLink url='https://www.shipright.co/post/feature-voting-board-messing-up-your-product'>against</ExternalLink> public voting tools as it can lead to implementing the wrong features.
-        Ideal for smaller teams able to sift through all feedback</Typography></p>
+        Ideal for smaller teams able to sift through all feedback.</Typography></p>
       <Brand showLogo showLink platformId={PlatformShipRight} />
 
     </React.Fragment>
@@ -2166,17 +2166,19 @@ const FilterIconButton = (props: {
       platformIds={props.platformIds}
       invertSelection={props.invertSelection}
       renderButton={(onClick, disabled) => (
-        <IconButton
-          disabled={disabled}
-          color='inherit'
-          onClick={onClick}
-        >
-          <Icon
-            className={props.iconClassName}
-            fontSize='small'
+        <Tooltip title='Only show these platforms' placement='top'>
+          <IconButton
+            disabled={disabled}
             color='inherit'
-          />
-        </IconButton>
+            onClick={onClick}
+          >
+            <Icon
+              className={props.iconClassName}
+              fontSize='small'
+              color='inherit'
+            />
+          </IconButton>
+        </Tooltip>
       )}
     />
   );
@@ -2291,9 +2293,15 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform | Alternat
   return (
     <div className={classNames(classes.brandContainer, props.className)}>
       {props.showCheckbox && (
-        <Checkbox className={classNames(classes.brandCheckbox, classes.transparentTransition, props.transparentControls && classes.transparent)} size='small' color='default' checked={!hiddenPlatforms.has(platform.id)}
-          onChange={e => toggleHiddenPlatform(platform.id)}
-        />
+        <Tooltip title={`${hiddenPlatforms.has(platform.id) ? 'Show' : 'Hide'} this platform`} placement='left'>
+          <Checkbox
+            className={classNames(classes.brandCheckbox, classes.transparentTransition, props.transparentControls && classes.transparent)}
+            size='small'
+            color='default'
+            checked={!hiddenPlatforms.has(platform.id)}
+            onChange={e => toggleHiddenPlatform(platform.id)}
+          />
+        </Tooltip>
       )}
       {props.showLogo && (
         <ImgIso
