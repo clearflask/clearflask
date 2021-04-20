@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, { Component, Key } from 'react';
 import { Link } from 'react-router-dom';
 
-export const tabHoverApplyStyles = (theme: Theme): Record<string, string | CSSProperties> => ({
+export const tabHoverApplyStyles = (theme: Theme, borderSize?: number): Record<string, string | CSSProperties> => ({
   position: 'relative',
   '&::before': {
     position: 'absolute',
@@ -19,7 +19,7 @@ export const tabHoverApplyStyles = (theme: Theme): Record<string, string | CSSPr
     transition: 'border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
   },
   '&:hover::before': {
-    borderBottom: `2px solid ${theme.palette.type === 'dark' ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)'}`,
+    borderBottom: `${borderSize || 2}px solid ${theme.palette.type === 'dark' ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)'}`,
   },
 });
 

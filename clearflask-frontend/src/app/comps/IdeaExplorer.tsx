@@ -50,15 +50,16 @@ const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webp
 
 const styles = (theme: Theme) => createStyles({
   root: {
-    width: 'fit-content',
     maxWidth: '100%',
+  },
+  fitContent: {
+    width: 'fit-content',
   },
   content: {
   },
   createFormFields: {
     // (Un)comment these to align with corner
-    paddingTop: theme.spacing(1),
-    paddingRight: theme.spacing(2),
+    padding: theme.spacing(1, 2, 2, 0),
   },
   createFormField: {
     margin: theme.spacing(1),
@@ -81,27 +82,42 @@ const styles = (theme: Theme) => createStyles({
   panelSearch: {
     marginBottom: -1,
   },
+  createButtonShowBorder: {
+    borderBottom: `1px solid ${theme.palette.type === 'light'
+      // https://github.com/mui-org/material-ui/blob/master/packages/material-ui/src/Input/Input.js#L10
+      ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.7)'}`,
+  },
   createButton: {
     padding: theme.spacing(1.5, 0, 0.5),
-    margin: '0 auto -1px',
+    margin: `0 auto -1px`,
     color: theme.palette.text.hint,
     minWidth: 100,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
+  createButtonDashboard: {
+    marginLeft: theme.spacing(2),
+  },
   createButtonClickable: {
     cursor: 'pointer',
-    ...(tabHoverApplyStyles(theme)),
+    ...(tabHoverApplyStyles(theme, 1)),
+  },
+  descriptionLarge: {
+    '& .ql-container': {
+      minHeight: 60,
+    }
   },
 });
 
 interface Props {
   className?: string;
   server: Server;
+  isDashboard?: boolean;
   explorer: Client.PageExplorer;
   forceDisablePostExpand?: boolean;
   onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -156,7 +172,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     this.updateSearchText = debounce(
       (title?: string, descTextOnly?: string) => !!title && !!descTextOnly && this.setState({
         newItemSearchText:
-          `${title || ''} ${descTextOnly || ''}`.slice(0, 100),
+          `${title || ''} ${descTextOnly || ''}`.slice(0, 30),
       }),
       SimilarTypeDebounceTime);
   }
@@ -177,8 +193,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   render() {
+    const isLarge = !!this.props.isDashboard;
     const createShown = !!this.state.createOpen
-      || (!this.props.settings.demoDisableExplorerExpanded && this.props.width && isWidthUp('md', this.props.width));
+      || (!this.props.settings.demoDisableExplorerExpanded
+        && !this.props.isDashboard
+        && this.props.width && isWidthUp('md', this.props.width));
     const similarShown = createShown && (!!this.state.newItemTitle || !!this.state.newItemDescription);
 
     const search = this.props.explorer.allowSearch && (
@@ -189,6 +208,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         search={this.state.search}
         onSearchChanged={search => this.setState({ search: search })}
         explorer={this.props.explorer}
+        showInitialBorder={!!this.props.isDashboard}
       />
     );
     const similarLabel = (
@@ -209,6 +229,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             forceDisablePostExpand={true}
             server={this.props.server}
             onClickPost={this.props.onClickPost}
+            onUserClick={this.props.onUserClick}
             suppressPanel
             displayDefaults={{
               titleTruncateLines: 1,
@@ -232,9 +253,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           <PanelPost
             server={this.props.server}
             direction={Direction.Vertical}
-            widthExpand
+            widthExpand={!this.props.isDashboard}
+            showDivider={!!this.props.isDashboard}
             forceDisablePostExpand={this.props.forceDisablePostExpand}
             onClickPost={this.props.onClickPost}
+            onUserClick={this.props.onUserClick}
             panel={this.props.explorer}
             suppressPanel
             displayDefaults={{
@@ -256,7 +279,12 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
     const createVisible = !!this.props.explorer.allowCreate && (
       <div
-        className={classNames(this.props.classes.createButton, !createShown && this.props.classes.createButtonClickable)}
+        className={classNames(
+          this.props.classes.createButton,
+          !createShown && this.props.classes.createButtonClickable,
+          !!this.props.isDashboard && this.props.classes.createButtonShowBorder,
+          !!this.props.isDashboard && this.props.classes.createButtonDashboard,
+        )}
         onClick={createShown ? undefined : e => {
           this.setState({
             createOpen: !this.state.createOpen,
@@ -289,13 +317,22 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         />
       </div>
     );
-    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate();
+    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate(isLarge);
 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
-          className={classNames(this.props.className, this.props.classes.root)}
-          createSize={this.props.explorer.allowCreate ? (createShown ? 260 : 116) : 0}
+          className={classNames(
+            this.props.className,
+            this.props.classes.root,
+            !this.props.isDashboard && this.props.classes.fitContent)}
+          isDashboard={this.props.isDashboard}
+          createSize={this.props.explorer.allowCreate
+            ? (createShown
+              ? (isLarge
+                ? 468 : 260)
+              : 116)
+            : 0}
           createShown={createShown}
           similarShown={similarShown}
           similarLabel={similarLabel}
@@ -321,7 +358,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     return null;
   }
 
-  renderCreate() {
+  renderCreate(isLarge: boolean) {
     const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
     if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
@@ -331,8 +368,13 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
     const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
     return (
-      <Grid container alignItems='flex-start' className={this.props.classes.createFormFields}>
-        <Grid item xs={12} className={this.props.classes.createGridItem}>
+      <Grid
+        container
+        justify={isLarge ? 'flex-end' : undefined}
+        alignItems='flex-start'
+        className={this.props.classes.createFormFields}
+      >
+        <Grid item xs={isLarge ? 9 : 12} className={this.props.classes.createGridItem}>
           <TextField
             variant='outlined'
             size='small'
@@ -356,6 +398,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             }}
           />
         </Grid>
+        {isLarge && (
+          <Grid item xs={3} className={this.props.classes.createGridItem} />
+        )}
         <Grid item xs={12} className={this.props.classes.createGridItem}>
           <RichEditor
             onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
@@ -363,8 +408,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             size='small'
             id='createDescription'
             multiline
+            showControlsImmediately={isLarge}
             disabled={this.state.newItemIsSubmitting}
-            className={this.props.classes.createFormField}
+            className={classNames(this.props.classes.createFormField, isLarge && this.props.classes.descriptionLarge)}
             label='Details'
             iAgreeInputIsSanitized
             value={this.state.newItemDescription || ''}
@@ -389,7 +435,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           />
         </Grid>
         {categoryOptions.length > 1 && (
-          <Grid item xs={12} className={this.props.classes.createGridItem}>
+          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
             <CategorySelect
               variant='outlined'
               size='small'
@@ -403,8 +449,22 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             />
           </Grid>
         )}
+        {isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
+          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
+            <div className={this.props.classes.createFormField}>
+              <StatusSelect
+                statuses={selectedCategory?.workflow.statuses || []}
+                variant='outlined'
+                size='small'
+                disabled={this.state.newItemIsSubmitting}
+                value={this.state.newItemChosenStatusId || selectedCategory.workflow.entryStatus}
+                onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
+              />
+            </div>
+          </Grid>
+        )}
         {!!selectedCategory?.tagging.tagGroups.length && (
-          <Grid item xs={12} className={this.props.classes.createGridItem}>
+          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
             <div className={this.props.classes.createFormField}>
               <TagSelect
                 variant='outlined'
@@ -424,22 +484,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             </div>
           </Grid>
         )}
-        {isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
-          <Grid item xs={12} className={this.props.classes.createGridItem}>
-            <div className={this.props.classes.createFormField}>
-              <StatusSelect
-                statuses={selectedCategory?.workflow.statuses || []}
-                variant='outlined'
-                size='small'
-                disabled={this.state.newItemIsSubmitting}
-                value={this.state.newItemChosenStatusId || selectedCategory.workflow.entryStatus}
-                onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
-              />
-            </div>
-          </Grid>
-        )}
         {isModOrAdminLoggedIn && (
-          <Grid item xs={12} className={this.props.classes.createGridItem}>
+          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
             <UserSelection
               variant='outlined'
               size='small'
@@ -514,7 +560,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             </Collapse>
           </React.Fragment>
         )}
-        <Grid item xs={12} container justify='flex-end' className={this.props.classes.createGridItem}>
+        {isLarge && (
+          <Grid item xs={6} className={this.props.classes.createGridItem} />
+        )}
+        <Grid item xs={isLarge ? 6 : 12} container justify='center' className={this.props.classes.createGridItem}>
           <Grid item xs={4}>
             <SubmitButton
               color='primary'

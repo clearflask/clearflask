@@ -25,6 +25,8 @@ const styles = (theme: Theme) => createStyles({
         + " 'r'",
     },
   },
+  dashboard: {
+  },
   top: {
     gridArea: 't',
     alignSelf: 'end',
@@ -65,6 +67,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  isDashboard?: boolean;
   className?: string;
   createSize?: number | string;
   searchSize?: number | string;
@@ -90,7 +93,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   }
 
   render() {
-    const expandDirectionHorizontal = !this.props.width || isWidthUp('sm', this.props.width, true);
+    const expandDirectionHorizontal = !this.props.isDashboard && (!this.props.width || isWidthUp('sm', this.props.width, true));
 
     const labelContainer = (
       <Collapse in={this.props.similarShown}>
@@ -155,11 +158,19 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
             : (this.props.createShown
               ? (this.props.similarShown ? 80 : 50)
               : (this.props.createSize || 0))}
-          height={!this.props.createVisible
+          height={(!this.props.createVisible || !!this.props.isDashboard)
             ? 0
             : (this.props.createShown ? 180 : 50)}
-          widthRight={this.props.searchSize !== undefined ? (this.props.similarShown ? 0 : this.props.searchSize) : undefined}
-          heightRight={!!this.props.search ? (this.props.similarShown ? 0 : 50) : undefined}
+          widthRight={this.props.searchSize !== undefined
+            ? (this.props.similarShown
+              ? 0
+              : this.props.searchSize)
+            : undefined}
+          heightRight={!!this.props.isDashboard
+            ? 0
+            : (!!this.props.search
+              ? (this.props.similarShown ? 0 : 50)
+              : undefined)}
           header={!!expandDirectionHorizontal ? undefined : (
             <React.Fragment>
               {createVisible}
@@ -167,13 +178,15 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
             </React.Fragment>
           )}
           headerRight={!!expandDirectionHorizontal ? undefined : search}
+          grow={this.props.isDashboard ? 'left' : 'center'}
+          margins={this.props.isDashboard ? `${this.props.theme.spacing(2)}px` : undefined}
         >
-          {results}
-        </DividerCorner>
+          { results}
+        </DividerCorner >
       );
     }
     return (
-      <div className={classNames(this.props.classes.explorer, this.props.className)}>
+      <div className={classNames(this.props.classes.explorer, this.props.className, !!this.props.isDashboard && this.props.classes.dashboard)}>
         <div className={this.props.classes.top}>
           {!!expandDirectionHorizontal && createVisible}
           {expandDirectionHorizontal && this.props.similarLabel && labelContainer}

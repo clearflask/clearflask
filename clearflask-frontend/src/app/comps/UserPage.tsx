@@ -8,6 +8,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import ModStar from '../../common/ModStar';
 import UserContributions from '../../common/UserContributions';
+import UserDisplay from '../../common/UserDisplay';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
 import DividerCorner from '../utils/DividerCorner';
@@ -20,15 +21,31 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
+  pageContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+  },
+  title: {
+    margin: theme.spacing(0, 5),
+  },
   userViewTable: {
     margin: theme.spacing(1),
     width: 'auto',
+    maxWidth: '100%',
   },
   userViewTableCell: {
     borderBottom: 'none',
   },
   overview: {
     marginTop: theme.spacing(3),
+    minWidth: 300,
+    maxWidth: '100%',
+    flex: '1 1 0px',
+  },
+  userContributions: {
+    minWidth: 300,
+    maxWidth: '100%',
+    flex: '1 1 0px',
   },
 });
 interface Props {
@@ -127,14 +144,26 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
           status={userStatus}
           error={userStatus === Status.REJECTED ? 'Person not found' : undefined}
         >
-          <Typography component="h1" variant="h5" color="textPrimary">User profile</Typography>
-          {overview}
-          {user?.userId && (
-            <UserContributions
-              server={this.props.server}
-              userId={user.userId}
-            />
+          {!!user && (
+            <Typography component="h1" variant="h5" color="textPrimary" className={this.props.classes.title}>
+              <UserDisplay
+                user={user}
+                variant='text'
+                suppressTypography
+              />
+            </Typography>
           )}
+          <div className={this.props.classes.pageContainer}>
+            {overview}
+            {user?.userId && (
+              <div className={this.props.classes.userContributions}>
+                <UserContributions
+                  server={this.props.server}
+                  userId={user.userId}
+                />
+              </div>
+            )}
+          </div>
         </Loader>
       </div>
     );

@@ -7,8 +7,10 @@ import EmailIcon from '@material-ui/icons/Email';
 import NotificationsOffIcon from '@material-ui/icons/NotificationsOff';
 import FilterIcon from '@material-ui/icons/TuneSharp';
 import BrowserIcon from '@material-ui/icons/Web';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import Truncate from 'react-truncate-markup';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -19,14 +21,13 @@ import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
 import SubmitButton from '../../common/SubmitButton';
-import { DisplayUserName } from '../../common/UserDisplay';
+import UserDisplay from '../../common/UserDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   searchInput: {
-    margin: theme.spacing(1),
     width: searchWidth,
     // (Un)comment these to align with corner
     marginBottom: -1,
@@ -62,12 +63,12 @@ const styles = (theme: Theme) => createStyles({
     marginRight: theme.spacing(3),
   },
   resultContainer: {
-    margin: theme.spacing(2),
   },
-  userProperties: {
-    margin: theme.spacing(2),
-    width: (props: Props) => props.nameOnly ? 200 : MaxContentWidth,
+  table: {
+    width: (props: Props) => props.nameOnly ? 200 : undefined,
     maxWidth: '100%',
+  },
+  tableHideDividers: {
     '& .MuiTableCell-root': {
       borderBottom: 'none !important',
     },
@@ -81,6 +82,7 @@ const styles = (theme: Theme) => createStyles({
   link: {
   },
   row: {
+    verticalAlign: 'baseline',
     cursor: 'pointer',
     textDecoration: 'none',
     '&:hover $link': {
@@ -99,6 +101,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   className?: string;
   server: Server;
+  isDashboard?: boolean;
   showCreate?: boolean;
   showFilter?: boolean;
   nameOnly?: boolean;
@@ -153,8 +156,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
           ? (
             <React.Fragment>
               <Table
-                size='medium'
-                className={this.props.classes.userProperties}
+                className={classNames(this.props.classes.table, !!this.props.nameOnly && this.props.classes.tableHideDividers)}
               >
                 <TableBody>
                   {this.state.searchResult.map((user, index) => (
@@ -164,15 +166,20 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                       onClick={e => this.props.onUserClick(user.userId)}
                     >
                       <TableCell><Typography>
-                        <span
-                          className={this.props.classes.link}
-                        >{this.props.nameOnly
-                          ? DisplayUserName(user)
-                          : (user.name || 'Nameless')}</span>
+                        <UserDisplay
+                          variant='text'
+                          maxChars={20}
+                          user={user}
+                          suppressTypography
+                        />
                       </Typography></TableCell>
                       {!this.props.nameOnly && (
                         <React.Fragment>
-                          <TableCell><Typography>{user.email}</Typography></TableCell>
+                          <TableCell>
+                            <Truncate ellipsis='…' lines={1}>
+                              <Typography>{user.email}</Typography>
+                            </Truncate>
+                          </TableCell>
                           <TableCell><Typography>
                             {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}
                             {user.emailNotify && (<EmailIcon fontSize='inherit' />)}
@@ -223,6 +230,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
     return (
       <ExplorerTemplate
         className={this.props.className}
+        isDashboard={this.props.isDashboard}
         createSize={!this.props.showCreate ? this.props.titleSize : (expand ? 250 : 116)}
         createShown={!this.props.showCreate ? undefined : expand}
         createVisible={!this.props.showCreate ? (this.props.title ? (<Typography className={this.props.classes.title}>{this.props.title}</Typography>) : undefined) : (
@@ -314,7 +322,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
               </SubmitButton>
           </div>
         )}
-        searchSize={!this.props.showFilter ? undefined : searchWidth}
+        searchSize={searchWidth}
         search={(!this.props.showFilter || expand) ? undefined : (
           <SelectionPicker
             className={this.props.classes.searchInput}
@@ -323,8 +331,6 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
             isMulti
             group
             isInExplorer
-            minWidth={100}
-            maxWidth={200}
             showTags={false}
             disableFilter
             disableCloseOnSelect

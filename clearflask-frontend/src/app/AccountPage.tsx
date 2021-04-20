@@ -16,12 +16,35 @@ import DividerCorner from './utils/DividerCorner';
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
+    display: 'flex',
+    flexWrap: 'wrap',
   },
   item: {
-    margin: theme.spacing(2),
+    marginTop: theme.spacing(2),
+  },
+  itemControls: {
+    display: 'flex',
+    alignItems: 'center',
   },
   section: {
     marginTop: theme.spacing(3),
+  },
+  sectionInner: {
+    padding: theme.spacing(2),
+  },
+  title: {
+    minWidth: '100%',
+    margin: theme.spacing(0, 5),
+  },
+  settings: {
+    minWidth: 400,
+    maxWidth: '100%',
+    flex: '1 1 0px',
+  },
+  userContributions: {
+    minWidth: 300,
+    maxWidth: '100%',
+    flex: '1 1 0px',
   },
 });
 interface Props {
@@ -60,222 +83,234 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     return (
       <div className={this.props.classes.page}>
-        <Typography component="h1" variant="h5" color="textPrimary">Your profile</Typography>
-        <DividerCorner title='Account' className={this.props.classes.section}>
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
-            <Grid item xs={12} sm={6}>
-              {!!this.props.userMe.isExternal ? (
-                <Tooltip title="Cannot be changed" placement='top-start'>
-                  <Typography>{this.props.userMe.name || 'None'}</Typography>
-                </Tooltip>
-              ) : (
-                <React.Fragment>
-                  <TextField
-                    id='displayName'
-                    error={!this.props.userMe.name}
-                    value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
-                    onChange={e => this.setState({ displayName: e.target.value })}
-                  />
-                  <Button aria-label="Save" color='primary' style={{
-                    visibility:
-                      !this.state.displayName
-                        || this.state.displayName === this.props.userMe.name
-                        ? 'hidden' : undefined
-                  }} onClick={() => {
-                    if (!this.state.displayName
-                      || !this.props.userMe
-                      || this.state.displayName === this.props.userMe.name) {
-                      return;
-                    }
-                    this.props.server.dispatch().then(d => d.userUpdate({
-                      projectId: this.props.server.getProjectId(),
-                      userId: this.props.userMe!.userId,
-                      userUpdate: { name: this.state.displayName },
-                    }));
-                  }}>Save</Button>
-                </React.Fragment>
-              )}
-            </Grid>
-          </Grid>
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
-            <Grid item xs={12} sm={6}>
-              {!!this.props.userMe.isExternal ? (
-                <Tooltip title="Cannot be changed" placement='top-start'>
-                  <Typography>{this.props.userMe.email || 'None'}</Typography>
-                </Tooltip>
-              ) : (
-                <React.Fragment>
-                  <TextField
-                    id='email'
-                    value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
-                    onChange={e => this.setState({ email: e.target.value })}
-                  />
-                  <Button aria-label="Save" color='primary' style={{
-                    visibility:
-                      !this.state.email
-                        || this.state.email === this.props.userMe.email
-                        ? 'hidden' : undefined
-                  }} onClick={() => {
-                    if (!this.state.email
-                      || !this.props.userMe
-                      || this.state.email === this.props.userMe.email) {
-                      return;
-                    }
-                    this.props.server.dispatch().then(d => d.userUpdate({
-                      projectId: this.props.server.getProjectId(),
-                      userId: this.props.userMe!.userId,
-                      userUpdate: { email: this.state.email },
-                    }));
-                  }}>Save</Button>
-                </React.Fragment>
-              )}
-            </Grid>
-          </Grid>
-          {!this.props.userMe.isExternal && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  id='password'
-                  value={this.state.password || ''}
-                  onChange={e => this.setState({ password: e.target.value })}
-                  type={this.state.revealPassword ? 'text' : 'password'}
-                  disabled={!this.state.email && !this.props.userMe.email}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          aria-label='Toggle password visibility'
-                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                          disabled={!this.state.email && !this.props.userMe.email}
-                        >
-                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <Button aria-label="Save" color='primary' style={{
-                  visibility:
-                    !this.state.password
-                      || this.state.password === this.props.userMe.name
-                      ? 'hidden' : undefined
-                }} onClick={() => {
-                  if (!this.state.password
-                    || !this.props.userMe) {
-                    return;
-                  }
-                  this.props.server.dispatch().then(d => d.userUpdate({
-                    projectId: this.props.server.getProjectId(),
-                    userId: this.props.userMe!.userId,
-                    userUpdate: { password: this.state.password },
-                  })).then(() => this.setState({ password: undefined }));
-                }}>Save</Button>
+        <Typography component="h1" variant="h5" color="textPrimary" className={this.props.classes.title}>Your profile</Typography>
+        <div className={this.props.classes.settings}>
+          <DividerCorner
+            title='Account'
+            className={this.props.classes.section}
+            innerClassName={this.props.classes.sectionInner}
+          >
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                {!!this.props.userMe.isExternal ? (
+                  <Tooltip title="Cannot be changed" placement='top-start'>
+                    <Typography>{this.props.userMe.name || 'None'}</Typography>
+                  </Tooltip>
+                ) : (
+                  <React.Fragment>
+                    <TextField
+                      id='displayName'
+                      error={!this.props.userMe.name}
+                      value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
+                      onChange={e => this.setState({ displayName: e.target.value })}
+                    />
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.displayName
+                          || this.state.displayName === this.props.userMe.name
+                          ? 'hidden' : undefined
+                    }} onClick={() => {
+                      if (!this.state.displayName
+                        || !this.props.userMe
+                        || this.state.displayName === this.props.userMe.name) {
+                        return;
+                      }
+                      this.props.server.dispatch().then(d => d.userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: this.props.userMe!.userId,
+                        userUpdate: { name: this.state.displayName },
+                      }));
+                    }}>Save</Button>
+                  </React.Fragment>
+                )}
               </Grid>
             </Grid>
-          )}
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>
-              Sign out of your account
-              {!!isPushOrAnon && (
-                <Collapse in={!!this.state.signoutWarnNoEmail}>
-                  <Alert
-                    variant='outlined'
-                    severity='warning'
-                  >
-                    Please add an email before signing out or delete your account instead.
-                  </Alert>
-                </Collapse>
-              )}
-            </Typography></Grid>
-            <Grid item xs={12} sm={6}>
-              <Button
-                disabled={!!isPushOrAnon && !!this.state.signoutWarnNoEmail}
-                onClick={() => {
-                  if (isPushOrAnon) {
-                    this.setState({ signoutWarnNoEmail: true });
-                  } else {
-                    this.props.server.dispatch().then(d => d.userLogout({
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                {!!this.props.userMe.isExternal ? (
+                  <Tooltip title="Cannot be changed" placement='top-start'>
+                    <Typography>{this.props.userMe.email || 'None'}</Typography>
+                  </Tooltip>
+                ) : (
+                  <React.Fragment>
+                    <TextField
+                      id='email'
+                      value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
+                      onChange={e => this.setState({ email: e.target.value })}
+                    />
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.email
+                          || this.state.email === this.props.userMe.email
+                          ? 'hidden' : undefined
+                    }} onClick={() => {
+                      if (!this.state.email
+                        || !this.props.userMe
+                        || this.state.email === this.props.userMe.email) {
+                        return;
+                      }
+                      this.props.server.dispatch().then(d => d.userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: this.props.userMe!.userId,
+                        userUpdate: { email: this.state.email },
+                      }));
+                    }}>Save</Button>
+                  </React.Fragment>
+                )}
+              </Grid>
+            </Grid>
+            {!this.props.userMe.isExternal && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                  <TextField
+                    id='password'
+                    value={this.state.password || ''}
+                    onChange={e => this.setState({ password: e.target.value })}
+                    type={this.state.revealPassword ? 'text' : 'password'}
+                    disabled={!this.state.email && !this.props.userMe.email}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            aria-label='Toggle password visibility'
+                            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                            disabled={!this.state.email && !this.props.userMe.email}
+                          >
+                            {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <Button aria-label="Save" color='primary' style={{
+                    visibility:
+                      !this.state.password
+                        || this.state.password === this.props.userMe.name
+                        ? 'hidden' : undefined
+                  }} onClick={() => {
+                    if (!this.state.password
+                      || !this.props.userMe) {
+                      return;
+                    }
+                    this.props.server.dispatch().then(d => d.userUpdate({
                       projectId: this.props.server.getProjectId(),
-                    }));
-                  }
-                }}
-              >Sign out</Button>
+                      userId: this.props.userMe!.userId,
+                      userUpdate: { password: this.state.password },
+                    })).then(() => this.setState({ password: undefined }));
+                  }}>Save</Button>
+                </Grid>
+              </Grid>
+            )}
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>
+                Sign out of your account
+              {!!isPushOrAnon && (
+                  <Collapse in={!!this.state.signoutWarnNoEmail}>
+                    <Alert
+                      variant='outlined'
+                      severity='warning'
+                    >
+                      Please add an email before signing out or delete your account instead.
+                  </Alert>
+                  </Collapse>
+                )}
+              </Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                <Button
+                  disabled={!!isPushOrAnon && !!this.state.signoutWarnNoEmail}
+                  onClick={() => {
+                    if (isPushOrAnon) {
+                      this.setState({ signoutWarnNoEmail: true });
+                    } else {
+                      this.props.server.dispatch().then(d => d.userLogout({
+                        projectId: this.props.server.getProjectId(),
+                      }));
+                    }
+                  }}
+                >Sign out</Button>
+              </Grid>
             </Grid>
-          </Grid>
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Delete your account</Typography></Grid>
-            <Grid item xs={12} sm={6}>
-              <Button
-                onClick={() => this.setState({ deleteDialogOpen: true })}
-              >Delete</Button>
-              <Dialog
-                open={!!this.state.deleteDialogOpen}
-                onClose={() => this.setState({ deleteDialogOpen: false })}
-              >
-                <DialogTitle>Delete account?</DialogTitle>
-                <DialogContent>
-                  <DialogContentText>By deleting your account, you will be signed out of your account and your account will be permanently deleted including all of your data.</DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
-                  <Button style={{ color: this.props.theme.palette.error.main }} onClick={() => this.props.server.dispatch().then(d => d.userDelete({
-                    projectId: this.props.server.getProjectId(),
-                    userId: this.props.userMe!.userId,
-                  }))}>Delete</Button>
-                </DialogActions>
-              </Dialog>
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Delete your account</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                <Button
+                  onClick={() => this.setState({ deleteDialogOpen: true })}
+                >Delete</Button>
+                <Dialog
+                  open={!!this.state.deleteDialogOpen}
+                  onClose={() => this.setState({ deleteDialogOpen: false })}
+                >
+                  <DialogTitle>Delete account?</DialogTitle>
+                  <DialogContent>
+                    <DialogContentText>By deleting your account, you will be signed out of your account and your account will be permanently deleted including all of your data.</DialogContentText>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
+                    <Button style={{ color: this.props.theme.palette.error.main }} onClick={() => this.props.server.dispatch().then(d => d.userDelete({
+                      projectId: this.props.server.getProjectId(),
+                      userId: this.props.userMe!.userId,
+                    }))}>Delete</Button>
+                  </DialogActions>
+                </Dialog>
+              </Grid>
             </Grid>
-          </Grid>
-        </DividerCorner>
-        <DividerCorner title='Notifications' className={this.props.classes.section}>
-          {browserPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{browserPushControl}</Grid>
-            </Grid>
-          )}
-          {/* {androidPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
+          </DividerCorner>
+          <DividerCorner
+            title='Notifications'
+            className={this.props.classes.section}
+            innerClassName={this.props.classes.sectionInner}
+          >
+            {browserPushControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{browserPushControl}</Grid>
+              </Grid>
+            )}
+            {/* {androidPushControl && (
+            <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{androidPushControl}</Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{androidPushControl}</Grid>
             </Grid>
           )}
           {iosPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
+            <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{iosPushControl}</Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{iosPushControl}</Grid>
             </Grid>
           )} */}
-          {emailControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}>
-                <Typography>
-                  Email
+            {emailControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}>
+                  <Typography>
+                    Email
                   {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>{emailControl}</Grid>
-            </Grid>
-          )}
-          {categoriesWithSubscribe.length > 0 && (
-            <div className={this.props.classes.section}>
-              {categoriesWithSubscribe.map(category => (
-                <Grid container alignItems='baseline' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography>New {category.name}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    {this.renderCategorySubscribeControl(category)}
-                  </Grid>
+                  </Typography>
                 </Grid>
-              ))}
-            </div>
-          )}
-        </DividerCorner>
-        <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{emailControl}</Grid>
+              </Grid>
+            )}
+            {categoriesWithSubscribe.length > 0 && (
+              <div className={this.props.classes.section}>
+                {categoriesWithSubscribe.map(category => (
+                  <Grid container alignItems='center' className={this.props.classes.item}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography>New {category.name}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                      {this.renderCategorySubscribeControl(category)}
+                    </Grid>
+                  </Grid>
+                ))}
+              </div>
+            )}
+          </DividerCorner>
+        </div>
+        <div className={this.props.classes.userContributions}>
+          <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
+        </div>
       </div>
     );
   }

@@ -166,6 +166,7 @@ interface PropsRichEditor {
    * Be careful, when adding keyboard module, handlers somehow stop working.
    */
   multiline: true;
+  showControlsImmediately?: boolean;
 }
 interface StateRichEditor {
   hasText?: boolean;
@@ -198,6 +199,7 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
             classes: this.props.classes,
             theme: theme,
             hidePlaceholder: !shrink && !!this.props.label,
+            showControlsImmediately: this.props.showControlsImmediately,
             enqueueSnackbar: enqueueSnackbar,
             closeSnackbar: closeSnackbar,
             onFocus: e => this.setState({ isFocused: true }),
@@ -268,6 +270,7 @@ interface PropsQuill {
     stopPropagation: () => void; // Dummy method to satisfy TextField
   }) => void;
   hidePlaceholder?: boolean;
+  showControlsImmediately?: boolean;
 }
 interface StateQuill {
   activeFormats?: { [key: string]: any };
@@ -276,14 +279,22 @@ interface StateQuill {
   editLinkPrevValue?: string;
   editLinkError?: boolean;
   editLinkValue?: string;
-  showFormats?: boolean;
-  showFormatsExtended?: boolean;
+  showFormats: boolean;
+  showFormatsExtended: boolean;
 }
 class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onChange'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateQuill> implements PropsInputRef {
-  state: StateQuill = {};
   readonly editorContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
   readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
   readonly dropzoneRef: React.RefObject<DropzoneRef> = React.createRef();
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      showFormats: !!props.showControlsImmediately,
+      showFormatsExtended: !!props.showControlsImmediately,
+    };
+  }
 
   focus(): void {
     this.editorRef.current?.focus();

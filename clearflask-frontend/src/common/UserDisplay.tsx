@@ -73,17 +73,17 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
         {user}
       </Button>
     ) : (
-        <Button
-          key={`user-${this.props.user.userId}`}
-          className={this.props.classes.button}
-          disabled={this.props.disabled}
-          variant='text'
-          component={Link}
-          to={preserveEmbed(`/user/${this.props.user.userId}`, this.props.location)}
-        >
-          {user}
-        </Button>
-      );
+      <Button
+        key={`user-${this.props.user.userId}`}
+        className={this.props.classes.button}
+        disabled={this.props.disabled}
+        variant='text'
+        component={Link}
+        to={preserveEmbed(`/user/${this.props.user.userId}`, this.props.location)}
+      >
+        {user}
+      </Button>
+    );
   }
 }
 

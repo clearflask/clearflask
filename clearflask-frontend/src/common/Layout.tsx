@@ -8,7 +8,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
 
-const MENU_WIDTH = '180px';
+const MENU_WIDTH = 180;
 const styles = (theme: Theme) => createStyles({
   root: {
     flexGrow: 1,
@@ -79,6 +79,8 @@ const styles = (theme: Theme) => createStyles({
   toolbar: theme.mixins.toolbar,
   content: {
     flexGrow: 1,
+  },
+  contentMargins: {
     padding: theme.spacing(3),
   },
   grow: {
@@ -95,12 +97,16 @@ interface Props {
   preview?: React.ReactNode;
   barBottom?: React.ReactNode;
   children: React.ReactNode;
+  hideContentMargins?: boolean;
+  width?: {
+    target: 'content' | 'preview';
+    width: string | number,
+  };
 }
 
 interface State {
   mobileMenuOpen: boolean;
   mobilePreviewOpen: boolean;
-  previewWidth?: string;
 }
 
 class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
@@ -112,7 +118,6 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
     this.state = {
       mobileMenuOpen: false,
       mobilePreviewOpen: false,
-      previewWidth: '40vw',
     };
   }
 
@@ -150,6 +155,11 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
         </div>
       </React.Fragment>
     );
+    const previewWidth = !this.props.width
+      ? '40vw'
+      : (this.props.width.target === 'preview'
+        ? this.props.width.width
+        : `calc(100vw - ${MENU_WIDTH}px - ${this.props.width.width}${typeof this.props.width.width === 'number' ? 'px' : ''})`);
 
     return (
       <div ref={this.containerRef}>
@@ -218,7 +228,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
           </nav>
           <div className={this.props.classes.mainAndBarBottom}>
             <div className={this.props.classes.toolbar} />
-            <main className={this.props.classes.content}>
+            <main className={classNames(this.props.classes.content, !this.props.hideContentMargins && this.props.classes.contentMargins)}>
               {this.props.children}
               <div className={this.props.classes.toolbar} />
             </main>
@@ -239,7 +249,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
               </Toolbar>
               {this.props.preview && (
                 <Hidden smDown implementation='css'>
-                  <div style={{ width: this.state.previewWidth }}>&nbsp;</div>
+                  <div style={{ width: previewWidth }}>&nbsp;</div>
                 </Hidden>
               )}
             </Drawer>
@@ -247,7 +257,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
           {preview && (
             <React.Fragment>
               <Hidden smDown implementation='css'>
-                <div style={{ width: this.state.previewWidth }}>&nbsp;</div>
+                <div style={{ width: previewWidth }}>&nbsp;</div>
               </Hidden>
               <Hidden mdUp implementation='css'>
                 <Drawer
@@ -269,7 +279,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
               <Hidden smDown implementation='css'>
                 <Drawer
                   PaperProps={{
-                    style: { width: this.state.previewWidth }
+                    style: { width: previewWidth }
                   }}
                   classes={{
                     paper: this.props.classes.previewPaper,

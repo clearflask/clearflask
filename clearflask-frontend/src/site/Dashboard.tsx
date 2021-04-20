@@ -1,5 +1,6 @@
-import { Button, Collapse, IconButton, Typography } from '@material-ui/core';
+import { Button, Collapse, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import EmptyIcon from '@material-ui/icons/BlurOn';
 import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
@@ -9,7 +10,7 @@ import { connect, Provider } from 'react-redux';
 import { Redirect, Route, RouteComponentProps } from 'react-router';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
-import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import IdeaExplorer from '../app/comps/IdeaExplorer';
 import PostPage from '../app/comps/PostPage';
@@ -26,11 +27,10 @@ import Menu, { MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import ProjectSettings from '../common/config/settings/ProjectSettings';
 import Layout from '../common/Layout';
-import UserDisplayMe from '../common/UserDisplayMe';
 import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
-import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';
+import { initialWidth } from '../common/util/screenUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import ContactPage from './ContactPage';
@@ -43,10 +43,11 @@ import SettingsPage from './dashboard/SettingsPage';
 import UserSelection from './dashboard/UserSelection';
 import UsersPage from './dashboard/UsersPage';
 import WelcomePage from './dashboard/WelcomePage';
-import DemoApp, { getProject, Project } from './DemoApp';
+import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
+type QuickViewType = 'user' | 'post';
 
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {
@@ -66,15 +67,34 @@ const styles = (theme: Theme) => createStyles({
   projectUserSelectorMenu: {
     margin: theme.spacing(2),
   },
+  projectUserSelectorInline: {
+  },
+  projectUserSelectorInlineInputRoot: {
+    fontSize: 'inherit',
+  },
   selectProjectLabel: {
     color: theme.palette.text.secondary,
   },
   previewBarText: {
     display: 'flex',
-    alignItems: 'baseline',
+    alignItems: 'center',
+  },
+  previewEmptyMessage: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: theme.palette.text.hint,
+  },
+  previewEmptyIcon: {
+    fontSize: '3em',
+    margin: theme.spacing(3),
+  },
+  heading: {
+    margin: theme.spacing(3, 3, 0),
   },
 });
-
 interface Props {
 }
 interface ConnectProps {
@@ -90,17 +110,17 @@ interface State {
   selectedProjectId?: string;
   titleClicked?: number
   quickView?: {
-    type: 'user' | 'post';
+    type: QuickViewType;
     id: string;
   }
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
 }
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithMediaQuery, State> {
+class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
-  createProjectPromise: Promise<Project> | undefined = undefined;
-  createProject: Project | undefined = undefined;
+  createProjectPromise: Promise<DemoProject> | undefined = undefined;
+  createProject: DemoProject | undefined = undefined;
   forcePathListener: ((forcePath: string) => void) | undefined;
   readonly searchAccounts: (newValue: string) => void;
 
@@ -145,7 +165,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
   static getStripePromise(): Promise<Stripe | null> {
     if (!Dashboard.stripePromise) {
-      loadStripe.setLoadParameters({ advancedFraudSignals: false })
+      try {
+        loadStripe.setLoadParameters({ advancedFraudSignals: false });
+      } catch (e) {
+        // Frontend reloads in-place and causes stripe to be loaded multiple times
+        if (detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
+          throw e;
+        }
+      };
       Dashboard.stripePromise = loadStripe(isProd()
         ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
         : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
@@ -202,6 +229,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       }
     });
 
+    const explorerWidth = (this.props.width && isWidthUp('lg', this.props.width, true)) ? 650 : 500;
+    const quickViewEnabled = !this.props.width || isWidthUp('md', this.props.width);
+
     const projectOptions: Label[] = projects.map(p => ({
       label: p.editor.getConfig().name,
       filterString: p.editor.getConfig().name,
@@ -231,11 +261,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
     var page;
     var preview;
+    var previewDemo: 'force' | 'ifEmpty' | undefined;
     var previewBar;
     var previewBarInfo;
+    var quickViewShow: QuickViewType | undefined;
     var crumbs: { name: string, slug: string }[] | undefined;
     var allowProjectUserSelect: boolean = false;
     var showCreateProjectWarning: boolean = false;
+    var hideContentMargins: boolean = false;
+    var layoutWidth: React.ComponentProps<typeof Layout>['width'];
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
@@ -248,8 +282,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
             <DashboardHome
               server={activeProject.server}
-              onClickPost={postId => this.pageClicked('post', [postId])}
-              onUserClick={userId => this.pageClicked('user', [userId])}
+              onClickPost={postId => this.pageClicked(quickViewEnabled, 'post', [postId])}
+              onUserClick={userId => this.pageClicked(quickViewEnabled, 'user', [userId])}
             />
           </Provider>
         );
@@ -278,16 +312,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'posts':
         setTitle('Posts - Dashboard');
         allowProjectUserSelect = true;
+        hideContentMargins = true;
+        layoutWidth = { target: 'content', width: explorerWidth };
+        quickViewShow = 'post';
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <Typography component='h1' variant='h4' className={this.props.classes.heading}>Post Explorer</Typography>
             <IdeaExplorer
               server={activeProject.server}
+              isDashboard
               forceDisablePostExpand
-              onClickPost={postId => this.pageClicked('post', [postId])}
+              onClickPost={postId => this.pageClicked(quickViewEnabled, 'post', [postId])}
+              onUserClick={userId => this.pageClicked(quickViewEnabled, 'user', [userId])}
               explorer={{
                 allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
                 allowCreate: {},
@@ -332,16 +372,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'comments':
         setTitle('Comments');
         allowProjectUserSelect = true;
+        hideContentMargins = true;
+        layoutWidth = { target: 'content', width: explorerWidth };
+        quickViewShow = 'post';
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <Typography component='h1' variant='h4' className={this.props.classes.heading}>Comment Explorer</Typography>
             <CommentsPage
               server={activeProject.server}
-              onCommentClick={(postId, commentId) => this.pageClicked('post', [postId])}
-              onUserClick={userId => this.pageClicked('user', [userId])}
+              isDashboard
+              onCommentClick={(postId, commentId) => this.pageClicked(quickViewEnabled, 'post', [postId])}
+              onUserClick={userId => this.pageClicked(quickViewEnabled, 'user', [userId])}
             />
           </Provider>
         );
@@ -350,15 +395,20 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'users':
         setTitle('Users - Dashboard');
         allowProjectUserSelect = true;
+        hideContentMargins = true;
+        layoutWidth = { target: 'content', width: explorerWidth };
+        quickViewShow = 'user';
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <Typography component='h1' variant='h4' className={this.props.classes.heading}>User Explorer</Typography>
             <UsersPage
               server={activeProject.server}
-              onUserClick={userId => this.pageClicked('user', [userId])}
+              isDashboard
+              onUserClick={userId => this.pageClicked(quickViewEnabled, 'user', [userId])}
             />
           </Provider>
         );
@@ -397,7 +447,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             previewProject={this.createProject}
             projectCreated={(projectId) => {
               localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
-              this.pageClicked('created');
+              this.pageClicked(quickViewEnabled, 'created');
               this.setState({ selectedProjectId: projectId });
             }}
           />
@@ -442,7 +492,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             key={currentPage.key}
             page={currentPage}
             editor={activeProject.editor}
-            pageClicked={path => this.pageClicked(activePath, path)}
+            pageClicked={path => this.pageClicked(quickViewEnabled, activePath, path)}
           />
         );
         if (currentPage.path.length <= 0) {
@@ -451,7 +501,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               {page}
               <ProjectSettings
                 server={activeProject.server}
-                pageClicked={this.pageClicked.bind(this)}
+                pageClicked={(path, subPath) => this.pageClicked(quickViewEnabled, path, subPath)}
               />
             </React.Fragment>
           );
@@ -459,19 +509,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         previewBarInfo = (
           <div className={this.props.classes.previewBarText}>
             Preview changes live as&nbsp;
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <UserDisplayMe variant='text' />
-            </Provider>
+            {this.renderProjectUserSelect(activeProject)}
           </div>
         );
-        preview = (
-          <DemoApp
-            key={activeProject.configVersion}
-            server={activeProject.server}
-            settings={{ suppressSetTitle: true }}
-            forcePathSubscribe={listener => this.forcePathListener = listener}
-          />
-        );
+        previewDemo = 'force';
         break;
       default:
         setTitle('Page not found');
@@ -488,46 +529,60 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       this.props.history.replace('/dashboard/welcome');
     }
 
-    const quickViewEnabled = this.isQuickViewEnabled();
     if (quickViewEnabled && activeProject) {
-      switch (this.state.quickView?.type) {
+      switch (this.state.quickView?.type || quickViewShow) {
         case 'post':
-          const postId = this.state.quickView.id;
-          previewBarInfo = (
+          const postId = this.state.quickView?.id;
+          previewBarInfo = !!postId && (
             <div className={this.props.classes.previewBarText}>
               Viewing post as&nbsp;
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <UserDisplayMe variant='text' />
-              </Provider>
+              {this.renderProjectUserSelect(activeProject)}
             </div>
           );
-          preview = (
+          preview = postId ? (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostPage key={postId} server={activeProject.server} postId={postId}
                 suppressSimilar
                 PostProps={{
-                  onUserClick: userId => this.pageClicked('user', [userId]),
+                  onUserClick: userId => this.pageClicked(quickViewEnabled, 'user', [userId]),
                 }} />
             </Provider>
+          ) : (
+            this.renderPreviewEmpty(activePath !== 'comments'
+              ? 'No post selected'
+              : 'No comment selected')
           );
           break;
         case 'user':
-          const userId = this.state.quickView.id;
-          previewBarInfo = (
+          const userId = this.state.quickView?.id;
+          previewBarInfo = !!userId && (
             <div className={this.props.classes.previewBarText}>
               Viewing user profile as&nbsp;
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <UserDisplayMe variant='text' />
-              </Provider>
+              {this.renderProjectUserSelect(activeProject)}
             </div>
           );
-          preview = (
+          preview = userId ? (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserPage key={userId} server={activeProject.server} userId={userId} />
             </Provider>
+          ) : (
+            this.renderPreviewEmpty('No user selected')
           );
           break;
       }
+    }
+
+    if (!!activeProject
+      && (previewDemo === 'force'
+        || (previewDemo === 'ifEmpty' && preview === undefined))) {
+      preview = (
+        <DemoApp
+          key={activeProject.configVersion}
+          server={activeProject.server}
+          settings={{ suppressSetTitle: true }}
+          forcePathSubscribe={listener => this.forcePathListener = listener}
+        />
+      );
     }
 
     var billingHasNotification: boolean = false;
@@ -636,43 +691,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             />
           </Collapse>
         )}
-        <Collapse in={!!allowProjectUserSelect}>
-          {activeProject && (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <UserSelection
-                className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
-                server={activeProject.server}
-                allowCreate
-                allowClear
-                alwaysOverrideWithLoggedInUser
-                helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
-                placeholder='Anonymous'
-                minWidth={50}
-                maxWidth={150}
-                suppressInitialOnChange
-                onChange={userLabel => {
-                  if (activeProject) {
-                    const projectId = activeProject.projectId
-                    if (userLabel) {
-                      ServerAdmin.get().dispatchAdmin().then(d => d.userLoginAdmin({
-                        projectId,
-                        userId: userLabel.value,
-                      }));
-                    } else {
-                      if (this.state.quickView?.type === 'user'
-                        && this.state.quickView.id === activeProject.server.getStore().getState().users.loggedIn.user?.userId) {
-                        this.setState({ quickView: undefined });
-                      }
-                      activeProject.server.dispatch().then(d => d.userLogout({
-                        projectId,
-                      }));
-                    }
-                  }
-                }}
-              />
-            </Provider>
-          )}
-        </Collapse>
       </div>
     );
 
@@ -761,6 +779,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               }}>Publish</Button>
             </React.Fragment>
           ) : undefined}
+          hideContentMargins={hideContentMargins}
+          width={layoutWidth}
         >
           <Crumbs
             crumbs={crumbs}
@@ -768,7 +788,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             activeProjectSlugName='Settings'
             activeProject={activeProject}
             activeSubPath={activeSubPath}
-            pageClicked={this.pageClicked.bind(this)}
+            pageClicked={(path, subPath) => this.pageClicked(quickViewEnabled, path, subPath)}
           />
           {page}
           {activeProject && (this.state.titleClicked || 0) >= 10 && (
@@ -781,6 +801,59 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     );
   }
 
+  renderProjectUserSelect(activeProject: AdminProject) {
+    return (
+      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+        <UserSelection
+          className={this.props.classes.projectUserSelectorInline}
+          server={activeProject.server}
+          allowCreate
+          allowClear
+          alwaysOverrideWithLoggedInUser
+          placeholder='Anonymous'
+          minWidth={76} // Fits placeholder
+          maxWidth={150}
+          suppressInitialOnChange
+          SelectionPickerProps={{
+            autocompleteClasses: {
+              inputRoot: this.props.classes.projectUserSelectorInlineInputRoot,
+            }
+          }}
+          onChange={userLabel => {
+            if (userLabel) {
+              ServerAdmin.get().dispatchAdmin().then(d => d.userLoginAdmin({
+                projectId: activeProject.projectId,
+                userId: userLabel.value,
+              }));
+            } else {
+              if (this.state.quickView?.type === 'user'
+                && this.state.quickView.id === activeProject.server.getStore().getState().users.loggedIn.user?.userId) {
+                this.setState({ quickView: undefined });
+              }
+              activeProject.server.dispatch().then(d => d.userLogout({
+                projectId: activeProject.projectId,
+              }));
+            }
+          }}
+        />
+      </Provider>
+    );
+  }
+
+  renderPreviewEmpty(msg: string) {
+    return (
+      <div className={this.props.classes.previewEmptyMessage}>
+        <Typography component='div' variant='h5'>
+          {msg}
+        </Typography>
+        <EmptyIcon
+          fontSize='inherit'
+          className={this.props.classes.previewEmptyIcon}
+        />
+      </div>
+    );
+  }
+
   openFeedbackUrl(page?: string) {
     var url = `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${page || ''}`;
     if (this.props.account) {
@@ -789,8 +862,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     return url;
   }
 
-  pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
-    const quickViewEnabled = this.isQuickViewEnabled();
+  pageClicked(quickViewEnabled: boolean, path: string, subPath: ConfigEditor.Path = []): void {
     if (quickViewEnabled && (path === 'post' || path === 'user') && subPath[0]) {
       this.setState({
         quickView: {
@@ -804,10 +876,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       }
       this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
     }
-  }
-
-  isQuickViewEnabled() {
-    return this.props.mediaQuery;
   }
 
   static accountToLabel(account: AdminClient.Account): Label {
@@ -828,4 +896,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withMediaQuery(theme => theme.breakpoints.up('md'))(Dashboard)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(Dashboard)));

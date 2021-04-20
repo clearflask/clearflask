@@ -13,7 +13,7 @@ const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     alignItems: 'baseline',
-    minWidth: 'min-content',
+    maxWidth: 'min-content',
   },
   [Direction.Horizontal]: {
     ...(contentScrollApplyStyles(theme, Side.Center, false)),

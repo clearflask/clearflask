@@ -6,12 +6,12 @@ import UserExplorer from './UserExplorer';
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
-    width: 'fit-content',
   },
 });
 
 interface Props {
   server: Server;
+  isDashboard?: boolean;
   onUserClick: (userId: string) => void;
 }
 class UsersPage extends Component<Props & WithStyles<typeof styles, true>> {
@@ -20,6 +20,7 @@ class UsersPage extends Component<Props & WithStyles<typeof styles, true>> {
       <div className={this.props.classes.page}>
         <UserExplorer
           server={this.props.server}
+          isDashboard={this.props.isDashboard}
           showCreate
           showFilter
           onUserClick={this.props.onUserClick}

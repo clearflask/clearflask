@@ -60,6 +60,8 @@ interface Props {
   heightRight?: string | number;
   maxHeightRight?: string | number;
   isExplorer?: boolean
+  grow?: 'left' | 'center' | 'right';
+  margins?: string | number;
 }
 
 class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
@@ -70,12 +72,18 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={classNames(this.props.className, this.props.classes.container)}>
         <div className={this.props.classes.titles}>
+          {!!this.props.margins && (
+            <div style={{ minWidth: this.props.margins }}>
+              <Divider />
+            </div>
+          )}
           {leftPresent && (
             <div className={this.props.classes.titleContainer} style={{
               width: this.props.width !== undefined
                 ? this.props.width
                 : (this.props.title || this.props.header) ? undefined : '24px',
               maxWidth: this.props.maxWidth,
+              flexGrow: this.props.grow === 'left' ? 1 : undefined,
             }}>
               {this.props.title !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>
@@ -86,13 +94,16 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
               <Divider />
             </div>
           )}
-          <div className={this.props.classes.flexGrow} />
+          {this.props.grow === 'center' && (
+            <div className={this.props.classes.flexGrow} />
+          )}
           {rightPresent && (
             <div className={this.props.classes.titleContainer} style={{
               width: this.props.widthRight !== undefined
                 ? this.props.widthRight
                 : (this.props.titleRight || this.props.headerRight) ? undefined : '24px',
               maxWidth: this.props.maxWidthRight,
+              flexGrow: this.props.grow === 'right' ? 1 : undefined,
             }}>
               {this.props.titleRight !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>
@@ -100,6 +111,11 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
                 </Typography>
               ) : null}
               {this.props.headerRight}
+              <Divider />
+            </div>
+          )}
+          {!!this.props.margins && (
+            <div style={{ minWidth: this.props.margins }}>
               <Divider />
             </div>
           )}

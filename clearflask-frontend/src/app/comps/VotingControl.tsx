@@ -2,6 +2,7 @@ import { IconButton, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
 
@@ -33,6 +34,9 @@ const styles = (theme: Theme) => createStyles({
     lineHeight: '1em',
     fontSize: '0.9em',
   },
+  invisible: {
+    visibility: 'hidden',
+  },
   hidden: {
     visibility: 'hidden',
     height: 1,
@@ -45,7 +49,8 @@ interface Props {
   hidden?: boolean;
   voteValue?: number;
   isSubmittingVote?: Client.VoteOption;
-  votingAllowed?: boolean
+  votingAllowed?: boolean;
+  hideControls?: boolean;
   onUpvote: () => void;
   onDownvote?: () => void;
 }
@@ -56,13 +61,20 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
     const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
     const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
 
+    const votingAllowed = !!this.props.votingAllowed && !this.props.hideControls
+
     return (
       <div className={`${this.props.classes.container} ${this.props.hidden ? this.props.classes.hidden : ''} ${this.props.className || ''}`}>
         <IconButton
           color={upvoted ? 'primary' : undefined}
-          className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}
-          disabled={!this.props.votingAllowed}
-          onClick={this.props.votingAllowed ? this.props.onUpvote.bind(this) : undefined}
+          className={classNames(
+            this.props.classes.voteIconButton,
+            this.props.classes.voteIconButtonUp,
+            !!this.props.hideControls && this.props.classes.invisible,
+            !!upvoted && this.props.classes.voteIconVoted
+          )}
+          disabled={!votingAllowed}
+          onClick={votingAllowed ? this.props.onUpvote.bind(this) : undefined}
         >
           <UpvoteIcon fontSize='inherit' />
         </IconButton>
@@ -74,9 +86,15 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         {this.props.onDownvote !== undefined && (
           <IconButton
             color={downvoted ? 'primary' : undefined}
-            className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''} ${this.props.voteValue === undefined ? this.props.classes.voteIconButtonDownWithoutValue : ''}`}
-            disabled={!this.props.votingAllowed}
-            onClick={this.props.votingAllowed ? this.props.onDownvote.bind(this) : undefined}
+            className={classNames(
+              this.props.classes.voteIconButton,
+              this.props.classes.voteIconButtonDown,
+              !!downvoted && this.props.classes.voteIconVoted,
+              !!this.props.hideControls && this.props.classes.invisible,
+              this.props.voteValue === undefined && this.props.classes.voteIconButtonDownWithoutValue
+            )}
+            disabled={!votingAllowed}
+            onClick={votingAllowed ? this.props.onDownvote.bind(this) : undefined}
           >
             <DownvoteIcon fontSize='inherit' />
           </IconButton>

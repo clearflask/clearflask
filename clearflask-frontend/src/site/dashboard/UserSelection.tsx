@@ -33,6 +33,7 @@ interface Props {
   minWidth?: string | number;
   maxWidth?: string | number;
   alwaysOverrideWithLoggedInUser?: boolean;
+  SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
 interface ConnectProps {
   loggedInUserStatus?: Status;
@@ -160,6 +161,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
               this.props.onChange && this.props.onChange(newLabel);
             });
         } : undefined}
+        {...this.props.SelectionPickerProps}
       />
     );
   }

@@ -103,6 +103,7 @@ interface Props {
   logIn: () => Promise<void>;
   truncateLines?: number;
   hideAuthor?: boolean;
+  hideControls?: boolean;
   onAuthorClick?: (userId: string) => void;
   onUpdated?: () => void;
 }
@@ -182,6 +183,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
           voteValue={this.props.comment.voteValue || 0}
           isSubmittingVote={this.state.isSubmittingVote}
           votingAllowed={!!this.props.comment}
+          hideControls={this.props.hideControls}
           onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
           onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
         />

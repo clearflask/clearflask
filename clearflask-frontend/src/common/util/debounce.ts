@@ -18,4 +18,4 @@ export default function debounce<T extends any[]>(func: (...argary: T) => void, 
 
 export const SearchTypeDebounceTime = 200;
 
-export const SimilarTypeDebounceTime = 1500;
+export const SimilarTypeDebounceTime = 3000;

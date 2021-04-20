@@ -36,7 +36,7 @@ const styles = (theme: Theme) => createStyles({
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
   },
-  inputRoot: {
+  inputRootHideBorder: {
     '&::before': {
       borderBottomColor: 'transparent',
     },
@@ -51,6 +51,7 @@ interface Props {
   search?: Partial<Client.IdeaSearch>;
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
+  showInitialBorder?: boolean;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -105,7 +106,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             isInExplorer
             width={100}
             autocompleteClasses={{
-              inputRoot: this.props.classes.inputRoot,
+              inputRoot: this.props.showInitialBorder ? undefined : this.props.classes.inputRootHideBorder,
             }}
             showTags={false}
             disableFilter

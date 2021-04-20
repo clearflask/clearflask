@@ -1,4 +1,4 @@
-import { Typography } from '@material-ui/core';
+import { Divider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -8,6 +8,7 @@ import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
 import ErrorMsg from '../ErrorMsg';
+import DividerVertical from '../utils/DividerVertical';
 import Loading from '../utils/Loading';
 import Panel from './Panel';
 import Post, { MaxContentWidth } from './Post';
@@ -54,10 +55,11 @@ export interface Props {
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   widthExpand?: boolean;
+  showDivider?: boolean;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
-  direction: Direction
-  maxHeight?: string | number,
+  direction: Direction;
+  maxHeight?: string | number;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
   forceDisablePostExpand?: boolean;
@@ -134,6 +136,17 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               {...this.props.PostProps}
             />
           ));
+          if (this.props.showDivider) {
+            content = content.map(post => (
+              <React.Fragment>
+                {post}
+                {this.props.direction === Direction.Vertical
+                  ? (<Divider />)
+                  : (<DividerVertical />)
+                }
+              </React.Fragment>
+            ));
+          }
         }
         break;
     }

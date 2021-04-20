@@ -1,4 +1,4 @@
-import { Button, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Divider, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/SearchRounded';
 import React, { Component } from 'react';
@@ -17,7 +17,6 @@ const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
-    width: 'fit-content',
   },
   searchInput: {
     margin: theme.spacing(1),
@@ -33,22 +32,7 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '100%',
   },
   resultContainer: {
-    paddingTop: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
-    width: MaxContentWidth,
     maxWidth: '100%',
-  },
-  userProperties: {
-    margin: theme.spacing(2),
-  },
-  key: {
-    margin: theme.spacing(1),
-  },
-  value: {
-    margin: theme.spacing(1),
-  },
-  created: {
-    whiteSpace: 'nowrap',
   },
   searchIcon: {
     color: theme.palette.text.hint,
@@ -57,6 +41,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  isDashboard?: boolean;
   onCommentClick: (postId: string, commentId: string) => void;
   onUserClick?: (userId: string) => void;
 }
@@ -86,6 +71,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <div className={this.props.classes.page}>
         <ExplorerTemplate
+          isDashboard={this.props.isDashboard}
           searchSize={searchWidth}
           search={(
             <TextField
@@ -114,25 +100,29 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                 ? (
                   <React.Fragment>
                     {this.state.searchResult.map((comment, index) => (
-                      <Comment
-                        key={comment.commentId}
-                        server={this.props.server}
-                        onCommentClick={!!this.props.onCommentClick ? () => this.props.onCommentClick(comment.ideaId, comment.commentId) : undefined}
-                        onAuthorClick={this.props.onUserClick}
-                        comment={comment}
-                        loggedInUser={this.props.loggedInUser}
-                        logIn={() => {
-                          if (this.props.loggedInUser) {
-                            return Promise.resolve();
-                          } else {
-                            return new Promise<void>(resolve => {
-                              this.onLoggedIn = resolve
-                              this.setState({ logInOpen: true });
-                            });
-                          }
-                        }}
-                        onUpdated={() => this.search(this.state.searchText)}
-                      />
+                      <React.Fragment>
+                        <Comment
+                          key={comment.commentId}
+                          server={this.props.server}
+                          onCommentClick={!!this.props.onCommentClick ? () => this.props.onCommentClick(comment.ideaId, comment.commentId) : undefined}
+                          onAuthorClick={this.props.onUserClick}
+                          comment={comment}
+                          loggedInUser={this.props.loggedInUser}
+                          hideControls
+                          logIn={() => {
+                            if (this.props.loggedInUser) {
+                              return Promise.resolve();
+                            } else {
+                              return new Promise<void>(resolve => {
+                                this.onLoggedIn = resolve
+                                this.setState({ logInOpen: true });
+                              });
+                            }
+                          }}
+                          onUpdated={() => this.search(this.state.searchText)}
+                        />
+                        <Divider />
+                      </React.Fragment>
                     ))}
                     {!!this.state.searchCursor && (
                       <Button
