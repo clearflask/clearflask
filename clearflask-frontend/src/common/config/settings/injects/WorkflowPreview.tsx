@@ -138,7 +138,7 @@ class WorkflowPreview extends Component<Props, State> {
           style: {
             'label': 'data(label)',
             'font-size': 12,
-            'font-family': '"Roboto", "Helvetica", "Arial", sans-serif',
+            'font-family': this.props.theme.typography.fontFamily,
             'background-color': 'white',
             'border-width': '1px',
             'border-color': 'data(color)',

@@ -95,10 +95,10 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                 className={this.props.classes.buttonAndRemark}
               >
                 <Button
-                  color='primary'
+                  color='secondary'
                   variant='contained'
                   disableElevation
-                  style={{ fontWeight: 900 }}
+                  style={{ fontWeight: 900, color: 'white', }}
                   {...(this.props.buttonLink ? {
                     component: Link,
                     to: this.props.buttonLink,

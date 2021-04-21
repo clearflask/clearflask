@@ -69,7 +69,7 @@ class AppThemeProvider extends Component<Props> {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           primary: {
             main: this.props.config.style.palette.primary
-              || this.props.config.style.palette.darkMode ? '#5cb7a2' : '#218774',
+              || this.props.config.style.palette.darkMode ? '#2dbaa1' : '#218774',
           },
           ...(this.props.config.style.palette.text ? {
             text: {
@@ -83,7 +83,8 @@ class AppThemeProvider extends Component<Props> {
         },
         typography: {
           // TODO sanitize input, currently you can inject custom css with "; inject: me"
-          fontFamily: this.props.config.style.typography.fontFamily || '"Roboto", "Helvetica", "Arial", sans-serif',
+          /* If changed, change in index.html */
+          fontFamily: this.props.config.style.typography.fontFamily || '"Roboto", -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
           fontSize: this.props.config.style.typography.fontSize || 14,
         },
         transitions: {

@@ -1,10 +1,11 @@
-import { DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
@@ -13,22 +14,38 @@ import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
+import AnimBubble from './landing/AnimBubble';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
 const styles = (theme: Theme) => createStyles({
   page: {
-    margin: theme.spacing(2),
+    padding: theme.spacing(2),
     flex: '1 1 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  titleClearFlask: {
+    color: theme.palette.primary.main,
   },
   signinContainer: {
-    minWidth: 250,
+    textAlign: 'center',
+    zIndex: 5,
+    position: 'relative',
+    boxShadow: '-10px -10px 40px 0 rgba(0,0,0,0.1)',
+    padding: theme.spacing(8),
     maxWidth: 250,
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    boxSizing: 'content-box',
+    margin: theme.spacing(20, 0, 0, 1),
+    [theme.breakpoints.only('xs')]: {
+      padding: theme.spacing(4),
+    },
+  },
+  submitButton: {
+    margin: theme.spacing(2, 0),
+    display: 'block',
+  },
+  signUpHere: {
+    textDecoration: 'none',
   },
 });
 
@@ -73,11 +90,20 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
       return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
-    return (
-      <div className={this.props.classes.page}>
-        <div className={this.props.classes.signinContainer}>
-          <Typography component="h1" variant="h4" color="textPrimary">Log in</Typography>
+    const signinContainer = (
+      <Container maxWidth='md' style={{ position: 'relative' }}>
+        <AnimBubble size={350} x={420} y={70} />
+        <AnimBubble size={100} x={800} y={130} />
+        <AnimBubble size={150} x={520} y={470} />
+        <AnimBubble size={300} x={900} y={700} />
+        <AnimBubble size={500} x={1300} y={450} />
+        <Paper className={this.props.classes.signinContainer}>
+          <Typography component='h1' variant='h4' color='textPrimary'>
+            Welcome back
+            to <span className={this.props.classes.titleClearFlask}>ClearFlask</span>
+          </Typography>
           <TextField
+            variant='outlined'
             fullWidth
             required
             value={this.state.email || ''}
@@ -88,6 +114,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             disabled={this.state.isSubmitting}
           />
           <TextField
+            variant='outlined'
             fullWidth
             required
             value={this.state.pass || ''}
@@ -109,15 +136,31 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             margin='normal'
             disabled={this.state.isSubmitting}
           />
-          <DialogActions>
-            <SubmitButton
-              color='primary'
-              isSubmitting={this.state.isSubmitting}
-              disabled={!this.state.email || !this.state.pass}
-              onClick={this.onSubmit.bind(this)}
-            >Continue</SubmitButton>
-          </DialogActions>
-        </div>
+          <SubmitButton
+            wrapperClassName={this.props.classes.submitButton}
+            color='primary'
+            fullWidth
+            variant='contained'
+            disableElevation
+            isSubmitting={this.state.isSubmitting}
+            disabled={!this.state.email || !this.state.pass}
+            onClick={this.onSubmit.bind(this)}
+          >Continue</SubmitButton>
+          <Typography component="span" variant="caption" color="textPrimary">
+            No account?&nbsp;
+          </Typography>
+          <Link to='/signup' className={this.props.classes.signUpHere}>
+            <Typography component="span" variant="caption" color="primary">
+              Sign Up Here!
+          </Typography>
+          </Link>
+        </Paper>
+      </Container>
+    );
+
+    return (
+      <div className={this.props.classes.page}>
+        {signinContainer}
       </div>
     );
   }
@@ -134,7 +177,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
       this.setState({ isSubmitting: false });
     }).catch((e) => {
       if (e && e.status && e.status === 403) {
-        this.setState({ isSubmitting: false, pass: undefined });
+        this.setState({ isSubmitting: false });
       } else {
         this.setState({ isSubmitting: false });
       }

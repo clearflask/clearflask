@@ -24,7 +24,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
-import LogoImg from '../../public/img/clearflask-logo.png';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -40,6 +39,7 @@ import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
+import Logo from './Logo';
 
 const SigninPage = loadable(() => import(/* webpackChunkName: "SigninPage", webpackPrefetch: true */'./SigninPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -103,7 +103,7 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     minHeight: theme.vh(100),
-    paddingBottom: theme.spacing(6),
+    // paddingBottom: theme.spacing(6),
   },
   appBarSpacer: theme.mixins.toolbar,
   bottomBar: {
@@ -131,22 +131,10 @@ const styles = (theme: Theme) => createStyles({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  logoButton: {
-    display: 'flex',
-    alignItems: 'center',
-    margin: theme.spacing(0, 3),
-    textTransform: 'unset',
-    fontSize: '1.4em',
+  logoLink: {
     cursor: 'pointer',
     textDecoration: 'none',
-  },
-  logo: {
-    objectFit: 'contain',
-    maxWidth: '48px',
-    maxHeight: '48px',
-    width: 'auto',
-    height: 'auto',
-    padding: theme.spacing(1),
+    textTransform: 'unset',
   },
   menuItemsContainer: {
     display: 'flex',
@@ -316,18 +304,8 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
                   />
                 </Drawer>
               </Hidden>
-              <Link
-                className={this.props.classes.logoButton}
-                to='/'
-              >
-                <img
-                  alt=''
-                  className={this.props.classes.logo}
-                  src={LogoImg.src}
-                  width={LogoImg.width}
-                  height={LogoImg.height}
-                />
-                ClearFlask
+              <Link to='/' className={this.props.classes.logoLink}>
+                <Logo />
               </Link>
               <Hidden smDown implementation='css'>
                 <div className={this.props.classes.menuItemsContainer}>

@@ -514,6 +514,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   pageContent: {
     minWidth: 0,
+    marginBottom: theme.spacing(6),
   },
   emphasize: {
     fontWeight: 'bolder',

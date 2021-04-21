@@ -53,6 +53,9 @@ const theme: Theme = createMuiTheme({
     primary: {
       main: '#218774',
     },
+    secondary: {
+      main: '#2dbaa1',
+    },
   },
   overrides: {
     MuiAppBar: {
