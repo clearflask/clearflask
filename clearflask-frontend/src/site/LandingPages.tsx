@@ -358,7 +358,7 @@ export function Landing() {
           'Engage your community',
         ]}
         alignItems='center'
-        buttonTitle='See how'
+        buttonTitle='Learn more'
         buttonLink='/product/act'
         demoWrap='browser'
         demoWrapPadding={24}
