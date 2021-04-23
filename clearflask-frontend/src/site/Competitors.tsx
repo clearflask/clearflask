@@ -756,7 +756,7 @@ const Competitors = () => {
     <HiddenPlatformsContext.Provider value={hiddenPlatformsWrapper}>
 
       <Hero
-        title='Comparing Customer Feedback Platforms'
+        title='Customer Feedback Tools comparison'
         description={(
           <React.Fragment>
             There are 30+ tools that we know of in this space that vary by use case, features and price. Let's choose the right tool for your needs.
