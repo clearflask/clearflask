@@ -48,6 +48,7 @@ export class Server {
         windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
           ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
+            name: projectId,
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);

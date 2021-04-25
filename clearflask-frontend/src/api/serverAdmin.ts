@@ -50,6 +50,7 @@ export default class ServerAdmin {
         !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
           ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
+            name: 'main',
           })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
