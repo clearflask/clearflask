@@ -828,7 +828,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }}
           onChange={userLabel => {
             if (userLabel) {
-              ServerAdmin.get().dispatchAdmin().then(d => d.userLoginAdmin({
+              activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
                 projectId: activeProject.projectId,
                 userId: userLabel.value,
               }));

@@ -3,7 +3,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
 import randomUuid from '../common/util/uuid';
 import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
@@ -43,9 +43,9 @@ export class Server {
   // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
-    if (!isProd()) {
+    if (!windowIso.isSsr) {
       const composeEnhancers =
-        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+        windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
           ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
             serialize: true,
           })
