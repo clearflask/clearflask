@@ -75,16 +75,16 @@ export class Server {
     this.dispatcherClient = new Client.Dispatcher(
       msg => Server._dispatch(msg, this.store),
       new Client.Api(new Client.Configuration(apiConf), apiOverride));
-    this.dispatcherAdmin = apiOverride
-      ? new Admin.Dispatcher(
-        msg => Server._dispatch(msg, this.store),
-        new Admin.Api(new Admin.Configuration(apiConf), apiOverride))
-      : ServerAdmin.get().dispatcherAdmin
+    const adminStore = ServerAdmin.get().getStore();
+    this.dispatcherAdmin = new Admin.Dispatcher(
+      msg => Server._dispatch(msg, this.store, adminStore),
+      new Admin.Api(new Admin.Configuration(apiConf), apiOverride));
   }
 
-  static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
+  static async _dispatch(msg: any, store: Store<any, any>, storeAdmin?: Store<any, any>): Promise<any> {
     try {
       var result = await store.dispatch(msg);
+      if (storeAdmin) await storeAdmin.dispatch(msg);
     } catch (response) {
       if (detectEnv() !== Environment.PRODUCTION) {
         console.log("Dispatch error: ", msg, response);
