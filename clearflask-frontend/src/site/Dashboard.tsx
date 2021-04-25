@@ -260,6 +260,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     const activeProject = projects.find(p => p.projectId === activeProjectId);
 
     var page;
+    var onboarding = false;
     var preview;
     var previewDemo: 'force' | 'ifEmpty' | undefined;
     var previewBar;
@@ -291,6 +292,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'welcome':
         setTitle('Welcome - Dashboard');
+        onboarding = true;
         page = (
           <WelcomePage />
         );
@@ -433,6 +435,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         );
         crumbs = [{ name: 'Settings', slug: activePath }];
         break;
+      // @ts-ignore fall-through
+      case 'welcome-create':
+        onboarding = true;
       case 'create':
         setTitle('Create - Dashboard');
         if (!this.createProjectPromise) {
@@ -447,13 +452,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             previewProject={this.createProject}
             projectCreated={(projectId) => {
               localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
-              this.pageClicked(quickViewEnabled, 'created');
-              this.setState({ selectedProjectId: projectId });
+              this.setState({ selectedProjectId: projectId }, () => {
+                this.pageClicked(quickViewEnabled, 'created');
+              });
             }}
           />
         );
         crumbs = [{ name: 'Create', slug: activePath }];
-        previewBarInfo = this.createProject && 'Project preview with sample data.';
+        previewBarInfo = this.createProject && 'Preview with sample data.';
         preview = this.createProject && (
           <DemoApp
             key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
@@ -705,6 +711,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
         <Layout
+          showToolbar={!onboarding}
           toolbarLeft={(
             <div className={this.props.classes.toolbarLeft}>
               <Typography
@@ -731,7 +738,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           previewBar={previewBar}
           previewBarInfo={previewBarInfo}
           preview={preview}
-          menu={(
+          menu={!onboarding && (
             <div>
               {isSelectProjectUserInMenu && selectProjectUser}
               <Menu

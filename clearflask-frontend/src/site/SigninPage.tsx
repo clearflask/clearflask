@@ -44,6 +44,9 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2, 0),
     display: 'block',
   },
+  welcomeBack: {
+    fontWeight: 'bold',
+  },
   signUpHere: {
     textDecoration: 'none',
   },
@@ -98,7 +101,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
         <AnimBubble size={300} x={900} y={700} />
         <AnimBubble size={500} x={1300} y={450} />
         <Paper className={this.props.classes.signinContainer}>
-          <Typography component='h1' variant='h4' color='textPrimary'>
+          <Typography component='h1' variant='h4' color='textPrimary' className={this.props.classes.welcomeBack}>
             Welcome back
             to <span className={this.props.classes.titleClearFlask}>ClearFlask</span>
           </Typography>

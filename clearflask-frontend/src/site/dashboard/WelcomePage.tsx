@@ -32,7 +32,7 @@ const styles = (theme: Theme) => createStyles({
   },
   image: {
     padding: theme.spacing(4),
-    width: '100%',
+    width: '50%',
     maxWidth: 400,
     marginLeft: 'auto',
     marginRight: 'auto',
@@ -58,22 +58,25 @@ class WelcomePage extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
         <div className={this.props.classes.content}>
+          <img
+            alt=''
+            className={this.props.classes.image}
+            src={WelcomeImagePath}
+          />
           <Typography component="h1" variant="h3" color="textPrimary">Welcome!</Typography>
           <Typography component="h2" variant="h5" color="textSecondary">Let's get started and create your first project</Typography>
           <Button
             className={this.props.classes.button}
+            variant='contained'
+            disableElevation
             component={Link}
+            // style={{ fontWeight: 900, color: 'white', }}
             color='primary'
-            to='/dashboard/create'
+            to='/dashboard/welcome-create'
           >
             Create
             </Button>
         </div>
-        <img
-          alt=''
-          className={this.props.classes.image}
-          src={WelcomeImagePath}
-        />
       </div >
     );
   }

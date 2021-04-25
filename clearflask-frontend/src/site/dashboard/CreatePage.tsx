@@ -423,9 +423,6 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
     ServerMock.get().getProject(config.projectId).config.config = config;
 
     await mocker.templateMock(this.state);
-    if (this.state.step >= 2) {
-      await mocker.mockLoggedIn();
-    }
   }
 
   setStateAndPreview<K extends keyof State>(stateUpdate: Pick<State, K>) {

@@ -89,6 +89,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  showToolbar: boolean;
   toolbarLeft: React.ReactNode;
   toolbarRight?: React.ReactNode;
   menu: React.ReactNode;
@@ -147,8 +148,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
 
     const preview = this.props.preview && (
       <React.Fragment>
-        <div className={this.props.classes.toolbar} />
-        <Divider />
+        {!!this.props.showToolbar && (<div className={this.props.classes.toolbar} />)}
         {previewBar}
         <div style={{ flex: '1 1 auto' }}>
           {this.props.preview}
@@ -163,71 +163,77 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
 
     return (
       <div ref={this.containerRef}>
-        <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="Open drawer"
-              onClick={this.handleDrawerToggle.bind(this)}
-              className={this.props.classes.menuButton}
-            >
-              <MenuIcon />
-            </IconButton>
-            {this.props.toolbarLeft}
-            <div className={this.props.classes.grow} />
-            <Fade in={!!this.props.preview}>
-              <IconButton
-                color='inherit'
-                aria-label='Preview changes'
-                onClick={this.handlePreviewToggle.bind(this)}
-                className={this.props.classes.previewButton}
-              >
-                {this.state.mobilePreviewOpen ? (<PreviewOffIcon />) : (<PreviewOnIcon />)}
-              </IconButton>
-            </Fade>
-            {this.props.toolbarRight}
-          </Toolbar>
-          <Divider />
-        </AppBar>
+        {!!this.props.showToolbar && (
+          <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
+            <Toolbar>
+              {!!this.props.menu && (
+                <IconButton
+                  color="inherit"
+                  aria-label="Open drawer"
+                  onClick={this.handleDrawerToggle.bind(this)}
+                  className={this.props.classes.menuButton}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              {this.props.toolbarLeft}
+              <div className={this.props.classes.grow} />
+              <Fade in={!!this.props.preview}>
+                <IconButton
+                  color='inherit'
+                  aria-label='Preview changes'
+                  onClick={this.handlePreviewToggle.bind(this)}
+                  className={this.props.classes.previewButton}
+                >
+                  {this.state.mobilePreviewOpen ? (<PreviewOffIcon />) : (<PreviewOnIcon />)}
+                </IconButton>
+              </Fade>
+              {this.props.toolbarRight}
+            </Toolbar>
+            <Divider />
+          </AppBar>
+        )}
         <div className={this.props.classes.root}>
-          <nav className={this.props.classes.drawer}>
-            <Hidden smUp implementation='css'>
-              <Drawer
-                variant='temporary'
-                open={this.state.mobileMenuOpen}
-                onClose={this.handleDrawerToggle.bind(this)}
-                classes={{
-                  paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
-                }}
-                ModalProps={{
-                  container: () => this.containerRef.current!,
-                  keepMounted: true,
-                }}
-              >
-                <div className={this.props.classes.toolbar} />
-                <Divider />
-                {this.props.menu}
-              </Drawer>
-            </Hidden>
-            <Hidden xsDown implementation='css'>
-              <Drawer
-                classes={{
-                  paper: this.props.classes.drawerPaper,
-                }}
-                variant="permanent"
-                open
-                ModalProps={{
-                  container: () => this.containerRef.current!
-                }}
-              >
-                <div className={this.props.classes.toolbar} />
-                <Divider />
-                {this.props.menu}
-              </Drawer>
-            </Hidden>
-          </nav>
+          {!!this.props.menu && (
+            <nav className={this.props.classes.drawer}>
+              <Hidden smUp implementation='css'>
+                <Drawer
+                  variant='temporary'
+                  open={this.state.mobileMenuOpen}
+                  onClose={this.handleDrawerToggle.bind(this)}
+                  classes={{
+                    paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
+                  }}
+                  ModalProps={{
+                    container: () => this.containerRef.current!,
+                    keepMounted: true,
+                  }}
+                >
+                  <div className={this.props.classes.toolbar} />
+                  <Divider />
+                  {this.props.menu}
+                </Drawer>
+              </Hidden>
+              <Hidden xsDown implementation='css'>
+                <Drawer
+                  classes={{
+                    paper: this.props.classes.drawerPaper,
+                  }}
+                  variant="permanent"
+                  open
+                  ModalProps={{
+                    container: () => this.containerRef.current!
+                  }}
+                >
+                  <div className={this.props.classes.toolbar} />
+                  <Divider />
+                  {this.props.menu}
+                </Drawer>
+              </Hidden>
+            </nav>
+          )}
           <div className={this.props.classes.mainAndBarBottom}>
-            <div className={this.props.classes.toolbar} />
+            {!!this.props.showToolbar && (<div className={this.props.classes.toolbar} />)}
             <main className={classNames(this.props.classes.content, !this.props.hideContentMargins && this.props.classes.contentMargins)}>
               {this.props.children}
               <div className={this.props.classes.toolbar} />
