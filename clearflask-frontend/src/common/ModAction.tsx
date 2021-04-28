@@ -3,7 +3,7 @@ import React from 'react';
 import ModStar from './ModStar';
 
 interface Props {
-  label: string | React.ReactNode;
+  label?: string | React.ReactNode;
 }
 export default class ModAction extends React.Component<Props> {
   render() {

@@ -37,6 +37,7 @@ interface Props {
   disabled?: boolean;
   mandatoryTagIds?: string[];
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
+  wrapper?: (children: any) => any;
 }
 
 class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
@@ -54,7 +55,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
       this.previousHasError = !!tagSelection.error;
     }
 
-    return (
+    var result = (
       <SelectionPicker
         TextFieldProps={{
           variant: this.props.variant,
@@ -77,6 +78,12 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
         {...this.props.SelectionPickerProps}
       />
     );
+
+    if (this.props.wrapper) {
+      result = this.props.wrapper(result);
+    }
+
+    return result;
   }
 
   getTagSelection(category: Client.Category): TagSelection {

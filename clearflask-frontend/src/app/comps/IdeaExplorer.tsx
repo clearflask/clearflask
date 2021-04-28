@@ -9,7 +9,7 @@
 //   QueryParamConfig,
 // } from 'use-query-params';
 import loadable from '@loadable/component';
-import { Collapse, FormControlLabel, Grid, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Collapse, FormControlLabel, Grid, IconButton, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
@@ -22,6 +22,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
+import ModAction from '../../common/ModAction';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
@@ -143,6 +144,7 @@ interface State {
   newItemIsSubmitting?: boolean;
   search?: Partial<Client.IdeaSearch>;
   logInOpen?: boolean;
+  adminControlsExpanded?: boolean;
 }
 // class QueryState {
 //   search: QueryParamConfig<Partial<Client.IdeaSearch>> = {
@@ -158,7 +160,6 @@ interface State {
 
 
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
-  state: State = {};
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
@@ -168,6 +169,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
   constructor(props) {
     super(props);
+
+    this.state = {
+      adminControlsExpanded: props.isDashboard,
+    };
+
     props.callOnMount?.();
     this.updateSearchText = debounce(
       (title?: string, descTextOnly?: string) => !!title && !!descTextOnly && this.setState({
@@ -449,7 +455,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             />
           </Grid>
         )}
-        {isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
+        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
           <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
             <div className={this.props.classes.createFormField}>
               <StatusSelect
@@ -463,28 +469,31 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             </div>
           </Grid>
         )}
-        {!!selectedCategory?.tagging.tagGroups.length && (
-          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
-            <div className={this.props.classes.createFormField}>
-              <TagSelect
-                variant='outlined'
-                size='small'
-                label='Tags'
-                category={selectedCategory}
-                tagIds={this.state.newItemChosenTagIds}
-                isModOrAdminLoggedIn={isModOrAdminLoggedIn}
-                onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
-                onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
-                disabled={this.state.newItemIsSubmitting}
-                mandatoryTagIds={mandatoryTagIds}
-                SelectionPickerProps={{
-                  limitTags: 1,
-                }}
-              />
-            </div>
-          </Grid>
+        {!!selectedCategory && (
+          <TagSelect
+            wrapper={(children) => (
+              <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
+                <div className={this.props.classes.createFormField}>
+                  {children}
+                </div>
+              </Grid>
+            )}
+            variant='outlined'
+            size='small'
+            label='Tags'
+            category={selectedCategory}
+            tagIds={this.state.newItemChosenTagIds}
+            isModOrAdminLoggedIn={isModOrAdminLoggedIn}
+            onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
+            onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
+            disabled={this.state.newItemIsSubmitting}
+            mandatoryTagIds={mandatoryTagIds}
+            SelectionPickerProps={{
+              limitTags: 1,
+            }}
+          />
         )}
-        {isModOrAdminLoggedIn && (
+        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && (
           <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
             <UserSelection
               variant='outlined'
@@ -501,7 +510,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             />
           </Grid>
         )}
-        {isModOrAdminLoggedIn && !!selectedCategory?.subscription && (
+        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && !!selectedCategory?.subscription && (
           <React.Fragment>
             <Grid item xs={12} className={this.props.classes.createGridItem}>
               <FormControlLabel
@@ -564,7 +573,16 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           <Grid item xs={6} className={this.props.classes.createGridItem} />
         )}
         <Grid item xs={isLarge ? 6 : 12} container justify='flex-end' className={this.props.classes.createGridItem}>
-          <Grid item xs={4}>
+          <Grid item>
+            {!!isModOrAdminLoggedIn && !this.state.adminControlsExpanded && (
+              <IconButton
+                size='small'
+                color='primary'
+                onClick={e => this.setState({ adminControlsExpanded: true })}
+              >
+                <ModAction />
+              </IconButton>
+            )}
             <SubmitButton
               color='primary'
               isSubmitting={this.state.newItemIsSubmitting}
