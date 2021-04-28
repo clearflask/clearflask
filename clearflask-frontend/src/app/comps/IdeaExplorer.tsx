@@ -563,7 +563,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         {isLarge && (
           <Grid item xs={6} className={this.props.classes.createGridItem} />
         )}
-        <Grid item xs={isLarge ? 6 : 12} container justify='center' className={this.props.classes.createGridItem}>
+        <Grid item xs={isLarge ? 6 : 12} container justify='flex-end' className={this.props.classes.createGridItem}>
           <Grid item xs={4}>
             <SubmitButton
               color='primary'
