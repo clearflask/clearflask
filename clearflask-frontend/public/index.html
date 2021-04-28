@@ -11,31 +11,28 @@
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>ClearFlask</title>
     <style>
-      /* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
-      /* https://google-webfonts-helper.herokuapp.com/fonts/roboto?subsets=cyrillic,cyrillic-ext,greek,greek-ext,latin,latin-ext,vietnamese */
+      /* https://google-webfonts-helper.herokuapp.com/font/inter?subsets=cyrillic,cyrillic-ext,greek,greek-ext,latin,latin-ext,vietnamese */
+      /* inter-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
       @font-face {
-        font-family: 'Roboto';
+        font-family: 'Inter';
         font-style: normal;
         font-weight: 400;
-        font-display: swap;
-        /* IE9 Compat Modes */
-        src: url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.eot');
-        src: local('Roboto'), local('Roboto-Regular'),
-          /* IE6-IE8 */
-            url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.eot?#iefix')
+        src: url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.eot'); /* IE9 Compat Modes */
+        src: local(''),
+          url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.eot?#iefix')
             format('embedded-opentype'),
-          /* Super Modern Browsers */
-            url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2')
+          /* IE6-IE8 */
+            url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2')
             format('woff2'),
-          /* Modern Browsers */
-            url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff')
+          /* Super Modern Browsers */
+            url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff')
             format('woff'),
-          /* Safari, Android, iOS */
-            url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.ttf')
+          /* Modern Browsers */
+            url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.ttf')
             format('truetype'),
-          /* Legacy iOS */
-            url('%PUBLIC_URL%/font/roboto-v20-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.svg#Roboto')
-            format('svg');
+          /* Safari, Android, iOS */
+            url('/font/inter-v3-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.svg#Inter')
+            format('svg'); /* Legacy iOS */
       }
       .body {
         margin: 0px;
@@ -44,8 +41,8 @@
         min-height: 100vh;
       }
       html {
-        /* If changed, change in AppThemeProvider.tsx */
-        font-family: Roboto, -apple-system-body, BlinkMacSystemFont, SFUI,
+        /* If changed, change in Main.tsx, AppThemeProvider.tsx */
+        font-family: Inter, -apple-system-body, BlinkMacSystemFont, SFUI,
           HelveticaNeue, Helvetica, Arial, sans-serif;
         color: #333;
         -webkit-font-smoothing: antialiased;

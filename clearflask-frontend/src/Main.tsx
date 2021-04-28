@@ -57,6 +57,11 @@ const theme: Theme = createMuiTheme({
       main: '#2dbaa1',
     },
   },
+  typography: {
+    /* If changed, change in index.html, AppThemeProvider.tsx */
+    fontFamily: 'Inter, -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
+    fontSize: 14,
+  },
   overrides: {
     MuiAppBar: {
       colorDefault: {

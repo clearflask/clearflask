@@ -83,8 +83,8 @@ class AppThemeProvider extends Component<Props> {
         },
         typography: {
           // TODO sanitize input, currently you can inject custom css with "; inject: me"
-          /* If changed, change in index.html */
-          fontFamily: this.props.config.style.typography.fontFamily || '"Roboto", -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
+          /* If changed, change in index.html, Main.tsx */
+          fontFamily: this.props.config.style.typography.fontFamily || '"Inter", -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
           fontSize: this.props.config.style.typography.fontSize || 14,
         },
         transitions: {
