@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import ImgIso from '../../common/ImgIso';
+import Vidyard from '../../common/Vidyard';
 
 const styles = (theme: Theme) => createStyles({
   hero: {
@@ -52,6 +53,10 @@ interface Props {
   description?: string | React.ReactNode;
   image?: Img;
   imagePath?: string;
+  vidyard?: {
+    coverSrc: string;
+    uuid: string;
+  };
   mirror?: boolean;
   buttonTitle?: string;
   buttonLinkExt?: string;
@@ -62,6 +67,22 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     const imageSrc = this.props.image?.src || this.props.imagePath;
+    const media = imageSrc ? (
+      <ImgIso
+        alt=''
+        className={this.props.classes.image}
+        src={imageSrc}
+        aspectRatio={this.props.image?.aspectRatio}
+        width={!this.props.image?.aspectRatio ? '100%' : undefined}
+        maxWidth={this.props.image?.width}
+        maxHeight={this.props.image?.height}
+      />
+    ) : (this.props.vidyard ? (
+      <Vidyard
+        className={this.props.classes.image}
+        {...this.props.vidyard}
+      />
+    ) : undefined);
     return (
       <div className={this.props.classes.hero}>
         <Grid container
@@ -70,17 +91,9 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
           alignItems='center'
           direction={!!this.props.mirror ? 'row-reverse' : undefined}
         >
-          {imageSrc && (
+          {media && (
             <Grid item xs={12} md={6}>
-              <ImgIso
-                alt=''
-                className={this.props.classes.image}
-                src={imageSrc}
-                aspectRatio={this.props.image?.aspectRatio}
-                width={!this.props.image?.aspectRatio ? '100%' : undefined}
-                maxWidth={this.props.image?.width}
-                maxHeight={this.props.image?.height}
-              />
+              {media}
             </Grid>
           )}
           <Grid item xs={12} md={6} lg={5} xl={4} className={this.props.classes.heroTextContainer}>

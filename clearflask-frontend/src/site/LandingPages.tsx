@@ -75,7 +75,6 @@ import DemoStatsIdeaImg from '../../public/img/landing/demo-stats-idea.png';
 import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
 import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
-import HeroImg from '../../public/img/landing/hero.svg';
 import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
 import InstallImg from '../../public/img/landing/install.svg';
@@ -610,7 +609,10 @@ export function LandingHero() {
     <Hero
       title='Listen to your users during product development'
       description='Feedback Management Tool to prioritize your roadmap'
-      image={HeroImg}
+      vidyard={{
+        coverSrc: 'https://play.vidyard.com/EZK7e1kRjWzamC3PMMNuUh.jpg',
+        uuid: 'EZK7e1kRjWzamC3PMMNuUh',
+      }}
       mirror
       buttonTitle='Get started'
       buttonLink='/signup'
