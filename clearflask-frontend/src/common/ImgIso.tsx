@@ -22,6 +22,7 @@ const styles = (theme: Theme) => createStyles({
 export interface Props {
   alt: string;
   className?: string;
+  imgClassName?: string;
   src: string;
   height?: number | string;
   width?: number | string;
@@ -31,6 +32,7 @@ export interface Props {
   style?: React.CSSProperties;
   aspectRatio?: number;
   scale?: number;
+  imgProps?: Object;
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
@@ -38,11 +40,12 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
     var img = (
       <img
         alt={this.props.alt}
-        className={classNames(!!this.props.aspectRatio && this.props.classes.imageAspectRatio)}
+        className={classNames(this.props.imgClassName, !!this.props.aspectRatio && this.props.classes.imageAspectRatio)}
         src={this.props.src}
         height={this.props.height}
         width={this.props.width}
         style={this.props.style}
+        {...this.props.imgProps}
       />
     );
     if (this.props.aspectRatio) img = (

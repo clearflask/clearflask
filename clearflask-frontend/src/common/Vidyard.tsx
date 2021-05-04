@@ -1,6 +1,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ImgIso from './ImgIso';
 import { isTracking } from './util/detectEnv';
 import windowIso from './windowIso';
 
@@ -12,11 +13,13 @@ const styles = (theme: Theme) => createStyles({
 });
 export interface Props {
   className?: string;
-  coverSrc: string;
+  image: Img;
   uuid: string;
 }
 class Vidyard extends Component<Props & WithStyles<typeof styles, true>> {
-  componentDidMount() {
+  constructor(props) {
+    super(props);
+
     if (!windowIso.isSsr && !vidyardLoaded) {
       if (isTracking()) {
         windowIso['onVidyardAPI'] = (vidyardEmbed) => {
@@ -38,12 +41,20 @@ class Vidyard extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <img
+      <ImgIso
         className={classNames('vidyard-player-embed', this.props.className, this.props.classes.video)}
-        src={this.props.coverSrc}
-        data-uuid={this.props.uuid}
-        data-v="4"
-        data-type="inline"
+        imgClassName='vidyard-player-embed'
+        alt=''
+        src={this.props.image.src}
+        aspectRatio={this.props.image.aspectRatio}
+        width={!this.props.image.aspectRatio ? '100%' : undefined}
+        maxWidth={this.props.image.width}
+        maxHeight={this.props.image.height}
+        imgProps={{
+          'data-uuid': this.props.uuid,
+          'data-v': '4',
+          'data-type': 'inline',
+        }}
       />
     );
   }

@@ -54,7 +54,7 @@ interface Props {
   image?: Img;
   imagePath?: string;
   vidyard?: {
-    coverSrc: string;
+    image: Img;
     uuid: string;
   };
   mirror?: boolean;

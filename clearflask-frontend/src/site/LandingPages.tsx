@@ -83,6 +83,7 @@ import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
 import NotifyImg from '../../public/img/landing/notify.svg';
+import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
 import SupportImg from '../../public/img/landing/support.svg';
@@ -610,7 +611,7 @@ export function LandingHero() {
       title='Listen to your users during product development'
       description='Feedback Management Tool to prioritize your roadmap'
       vidyard={{
-        coverSrc: 'https://play.vidyard.com/EZK7e1kRjWzamC3PMMNuUh.jpg',
+        image: PromoThumb,
         uuid: 'EZK7e1kRjWzamC3PMMNuUh',
       }}
       mirror
