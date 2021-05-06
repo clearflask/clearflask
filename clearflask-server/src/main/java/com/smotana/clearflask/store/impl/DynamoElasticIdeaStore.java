@@ -14,7 +14,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -38,6 +37,9 @@ import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramResponsePoints;
+import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
@@ -63,7 +65,6 @@ import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -76,7 +77,6 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -84,21 +84,31 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -349,6 +359,64 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
+    public IdeaHistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaHistogramSeachAdmin) {
+        QueryBuilder query = searchIdeasQuery(
+                new IdeaSearchAdmin(
+                        null,
+                        ideaHistogramSeachAdmin.getFilterCategoryIds(),
+                        ideaHistogramSeachAdmin.getFilterStatusIds(),
+                        ideaHistogramSeachAdmin.getFilterTagIds(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        ideaHistogramSeachAdmin.getFilterCreatedStart(),
+                        ideaHistogramSeachAdmin.getFilterCreatedEnd(),
+                        null,
+                        null),
+                Optional.empty());
+        DateHistogramAggregationBuilder histogramAggregation = AggregationBuilders.dateHistogram("h1")
+                .field("created")
+                .minDocCount(1L)
+                .calendarInterval(DateHistogramInterval.DAY);
+        SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).source(new SearchSourceBuilder()
+                .fetchSource(false)
+                .size(0)
+                .query(query)
+                .aggregation(histogramAggregation));
+
+        log.trace("Idea histogram query: {}", searchRequest);
+
+        org.elasticsearch.action.search.SearchResponse search;
+        try {
+            search = elastic.search(searchRequest, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        return new IdeaHistogramResponse(Optional.ofNullable(search.getAggregations())
+                .flatMap(ags -> {
+                    Iterator<Aggregation> iter = ags.iterator();
+                    if (!iter.hasNext()) {
+                        return Optional.empty();
+                    }
+                    Aggregation aggregation = iter.next();
+                    if (!(aggregation instanceof ParsedDateHistogram)) {
+                        return Optional.empty();
+                    }
+                    return Optional.of((ParsedDateHistogram) aggregation);
+                })
+                .map(ParsedDateHistogram::getBuckets)
+                .stream()
+                .flatMap(Collection::stream)
+                .map((Histogram.Bucket b) -> new IdeaHistogramResponsePoints(
+                        ((ZonedDateTime) b.getKey()).toLocalDate(),
+                        BigDecimal.valueOf(b.getDocCount())))
+                .collect(ImmutableList.toImmutableList()));
+    }
+
+    @Override
     public SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt) {
         return searchIdeas(
                 projectId,
@@ -376,82 +444,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, cursorOpt);
     }
 
-    @Override
-    public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
-        org.elasticsearch.action.search.SearchResponse response;
-        try {
-            response = elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
-                    .source(new SearchSourceBuilder()
-                            .fetchSource(false)
-                            .query(QueryBuilders.termQuery("categoryId", categoryId))
-                            .aggregation(AggregationBuilders
-                                    .terms("statuses")
-                                    .field("statusId"))
-                            .aggregation(AggregationBuilders
-                                    .terms("tags")
-                                    .field("tagIds"))), RequestOptions.DEFAULT);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        long total = response.getHits().getTotalHits().value;
-        ImmutableMap.Builder<String, Long> statusesBuilder = ImmutableMap.builder();
-        ImmutableMap.Builder<String, Long> tagsBuilder = ImmutableMap.builder();
-        response.getAggregations().<Terms>get("statuses").getBuckets()
-                .forEach(bucket -> statusesBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
-        response.getAggregations().<Terms>get("tags").getBuckets()
-                .forEach(bucket -> tagsBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
-
-        return new IdeaAggregateResponse(
-                total,
-                statusesBuilder.build(),
-                tagsBuilder.build());
-    }
-
-    @Override
-    public void exportAllForProject(String projectId, Consumer<IdeaModel> consumer) {
-        StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
-                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(ideaByProjectIdSchema::fromItem)
-                .filter(idea -> projectId.equals(idea.getProjectId()))
-                .forEach(consumer);
-    }
-
-    private SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, Optional<String> requestorUserIdOpt, boolean useAccurateCursor, Optional<String> cursorOpt) {
-        Optional<SortOrder> sortOrderOpt;
-        ImmutableList<String> sortFields;
-        if (ideaSearchAdmin.getSortBy() != null) {
-            switch (ideaSearchAdmin.getSortBy()) {
-                case TOP:
-                    sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");
-                    sortOrderOpt = Optional.of(SortOrder.DESC);
-                    break;
-                case NEW:
-                    sortFields = ImmutableList.of("created");
-                    sortOrderOpt = Optional.of(SortOrder.DESC);
-                    break;
-                case TRENDING:
-                    sortFields = ImmutableList.of("trendScore", "funded", "voteValue", "expressionsValue");
-                    sortOrderOpt = Optional.of(SortOrder.DESC);
-                    break;
-                default:
-                    throw new ApiException(Response.Status.BAD_REQUEST,
-                            "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
-            }
-        } else if (Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
-            sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");
-            sortOrderOpt = Optional.of(SortOrder.DESC);
-        } else {
-            sortFields = ImmutableList.of();
-            sortOrderOpt = Optional.empty();
-        }
-
+    private QueryBuilder searchIdeasQuery(
+            IdeaSearchAdmin ideaSearchAdmin,
+            Optional<String> requestorUserIdOpt) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
@@ -465,13 +460,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
-            if (!config.enableSimilarToIdea()) {
-                return new SearchResponse(
-                        ImmutableList.of(),
-                        Optional.empty(),
-                        0L,
-                        false);
-            }
             query.must(QueryBuilders.moreLikeThisQuery(
                     new String[]{"title", "description"},
                     null,
@@ -525,6 +513,55 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             query.filter(lastActivityRangeQuery);
         }
 
+        return query;
+    }
+
+
+    private SearchResponse searchIdeas(
+            String projectId,
+            IdeaSearchAdmin ideaSearchAdmin,
+            Optional<String> requestorUserIdOpt,
+            boolean useAccurateCursor,
+            Optional<String> cursorOpt) {
+        if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())
+                && !config.enableSimilarToIdea()) {
+            return new SearchResponse(
+                    ImmutableList.of(),
+                    Optional.empty(),
+                    0L,
+                    false);
+        }
+
+        Optional<SortOrder> sortOrderOpt;
+        ImmutableList<String> sortFields;
+        if (ideaSearchAdmin.getSortBy() != null) {
+            switch (ideaSearchAdmin.getSortBy()) {
+                case TOP:
+                    sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                case NEW:
+                    sortFields = ImmutableList.of("created");
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                case TRENDING:
+                    sortFields = ImmutableList.of("trendScore", "funded", "voteValue", "expressionsValue");
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                default:
+                    throw new ApiException(Response.Status.BAD_REQUEST,
+                            "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
+            }
+        } else if (Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
+            sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");
+            sortOrderOpt = Optional.of(SortOrder.DESC);
+        } else {
+            sortFields = ImmutableList.of();
+            sortOrderOpt = Optional.empty();
+        }
+
+        QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
+
         log.trace("Idea search query: {}", query);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).source(new SearchSourceBuilder()
@@ -551,6 +588,53 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 searchResponseWithCursor.getCursorOpt(),
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
+    }
+
+    @Override
+    public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
+        org.elasticsearch.action.search.SearchResponse response;
+        try {
+            response = elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
+                    .source(new SearchSourceBuilder()
+                            .fetchSource(false)
+                            .query(QueryBuilders.termQuery("categoryId", categoryId))
+                            .aggregation(AggregationBuilders
+                                    .terms("statuses")
+                                    .field("statusId"))
+                            .aggregation(AggregationBuilders
+                                    .terms("tags")
+                                    .field("tagIds"))), RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        long total = response.getHits().getTotalHits().value;
+        ImmutableMap.Builder<String, Long> statusesBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Long> tagsBuilder = ImmutableMap.builder();
+        response.getAggregations().<Terms>get("statuses").getBuckets()
+                .forEach(bucket -> statusesBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
+        response.getAggregations().<Terms>get("tags").getBuckets()
+                .forEach(bucket -> tagsBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
+
+        return new IdeaAggregateResponse(
+                total,
+                statusesBuilder.build(),
+                tagsBuilder.build());
+    }
+
+    @Override
+    public void exportAllForProject(String projectId, Consumer<IdeaModel> consumer) {
+        StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(ideaByProjectIdSchema::fromItem)
+                .filter(idea -> projectId.equals(idea.getProjectId()))
+                .forEach(consumer);
     }
 
     @Override

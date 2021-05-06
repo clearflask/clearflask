@@ -12,6 +12,7 @@ import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
 import { initialWidth } from '../../common/util/screenUtil';
 import CategoryStats from './CategoryStats';
+import Histogram from './Histogram';
 import UserExplorer from './UserExplorer';
 
 const styles = (theme: Theme) => createStyles({
@@ -136,6 +137,11 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
     return (
       <div className={this.props.classes.page}>
         <Typography variant='h4' component='h1'>Welcome back!</Typography>
+        <Histogram
+          title='Posts'
+          server={this.props.server}
+          search={{}}
+        />
         <div className={this.props.classes.sections}>
           <CategoryStats
             className={this.props.classes.categoryStats}

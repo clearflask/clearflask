@@ -492,6 +492,23 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }])
       , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
+  ideaHistogramAdmin(request: Admin.IdeaHistogramAdminRequest): Promise<Admin.IdeaHistogramResponse> {
+    var start = request.ideaHistogramSearchAdmin.filterCreatedStart;
+    var end = request.ideaHistogramSearchAdmin.filterCreatedEnd;
+    if (!end) end = new Date();
+    if (!start) start = new Date(end.getTime() - 10 * 86400000);
+
+    var currDay: Date = new Date(start);
+    const results: Admin.IdeaHistogramResponse = {
+      points: [],
+    };
+    while (currDay.getTime() < end.getTime()) {
+      results.points.push({ ts: currDay, cnt: Math.round(Math.random() * 10) });
+      currDay = new Date(currDay.getTime() + 86400000);
+    }
+
+    return this.returnLater(results, undefined, true);
+  }
   ideaCategoryAggregateAdmin(request: Admin.IdeaCategoryAggregateAdminRequest): Promise<Admin.IdeaAggregateResponse> {
     const project = this.getProject(request.projectId);
     if (!project) return this.throwLater(404, 'Project not found');

@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
@@ -61,6 +63,8 @@ public interface IdeaStore {
     Optional<IdeaModel> getIdea(String projectId, String ideaId);
 
     ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);
+
+    IdeaHistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
     SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
 

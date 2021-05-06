@@ -65,7 +65,27 @@ components:
             filterLastActivityEnd:
               type: string
               format: date-time
-          required:
+    IdeaHistogramSearchAdmin:
+      type: object
+      properties:
+        filterCategoryIds:
+          type: array
+          items:
+            type: string
+        filterStatusIds:
+          type: array
+          items:
+            type: string
+        filterTagIds:
+          type: array
+          items:
+            type: string
+        filterCreatedStart:
+          type: string
+          format: date-time
+        filterCreatedEnd:
+          type: string
+          format: date-time
     Idea:
       type: object
       properties:
@@ -494,6 +514,46 @@ components:
                   additionalProperties:
                     type: integer
                     format: int64
+/project/{projectId}/admin/idea/histogram:
+  post:
+    operationId: ideaHistogramAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/IdeaHistogramSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaHistogramResponse
+              type: object
+              required:
+              - points
+              properties:
+                points:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - ts
+                    - cnt
+                    properties:
+                      ts:
+                        type: string
+                        format: date
+                      cnt:
+                        type: number
+                        format: int64
 /project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin

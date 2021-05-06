@@ -121,7 +121,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       && !!this.state.email
       && !requiresWorkEmail
       && !!this.state.pass;
-    const emailDisposableList = import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList');
+    // const emailDisposableList = import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList');
 
     return (
       <Container maxWidth='md' className={this.props.classes.page}>
@@ -148,7 +148,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             onChange={e => {
               const newEmail = e.target.value;
               this.setState({ email: newEmail });
-              emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
+              // emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
             }}
           />
           <Collapse in={!!requiresWorkEmail}>

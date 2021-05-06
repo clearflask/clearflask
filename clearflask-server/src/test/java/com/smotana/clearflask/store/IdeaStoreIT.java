@@ -9,6 +9,9 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramResponse;
+import com.smotana.clearflask.api.model.IdeaHistogramResponsePoints;
+import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
@@ -30,7 +33,9 @@ import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -150,6 +155,68 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea1).get();
         store.createIdea(idea2).get();
         store.createIdea(idea3).get();
+    }
+
+    @Test(timeout = 30_000L)
+    public void testHistogram() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+        IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now())
+                .build();
+        IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .build();
+        IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .build();
+        IdeaModel idea4 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now().minus(4, ChronoUnit.DAYS))
+                .build();
+        IdeaModel idea5 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c2").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now())
+                .build();
+        IdeaModel idea6 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s2").tagIds(ImmutableSet.of("t1"))
+                .created(Instant.now())
+                .build();
+        IdeaModel idea7 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t2"))
+                .created(Instant.now())
+                .build();
+        store.createIdea(idea1).get();
+        store.createIdea(idea2).get();
+        store.createIdea(idea3).get();
+        store.createIdea(idea4).get();
+        store.createIdea(idea5).get();
+        store.createIdea(idea6).get();
+        store.createIdea(idea7).get();
+
+        IdeaHistogramResponse histogram = store.histogram(projectId, IdeaHistogramSearchAdmin.builder()
+                .filterCategoryIds(ImmutableList.of("c1"))
+                .filterStatusIds(ImmutableList.of("s1"))
+                .filterTagIds(ImmutableList.of("t1"))
+                .filterCreatedStart(Instant.now().minus(3, ChronoUnit.DAYS))
+                .filterCreatedEnd(Instant.now())
+                .build());
+        assertEquals(
+                ImmutableList.of(
+                        new IdeaHistogramResponsePoints(LocalDate.now().minus(2, ChronoUnit.DAYS), BigDecimal.valueOf(2L)),
+                        new IdeaHistogramResponsePoints(LocalDate.now(), BigDecimal.valueOf(1L))),
+                histogram.getPoints());
     }
 
     @Test(timeout = 30_000L)
