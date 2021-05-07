@@ -9,11 +9,6 @@ import { Server } from '../../api/server';
 import GraphBox from './GraphBox';
 
 const styles = (theme: Theme) => createStyles({
-  chart: {
-    '& .apexcharts-tooltip': {
-      display: 'none',
-    },
-  },
 });
 interface Props {
   className?: string;
@@ -67,85 +62,64 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
     }
 
     const chart = (
-      <span className={this.props.classes.chart}>
-        <ReactApexChart
-          series={[{
-            data,
-          }]}
-          options={{
+      <ReactApexChart
+        series={[{
+          data,
+        }]}
+        options={{
+          colors: ['#2dbaa1'],
+          tooltip: {
+            // enabled: false,
+          },
+          xaxis: {
+            type: 'datetime',
+            min: this.props.xAxis?.min,
+            max: this.props.xAxis?.max,
+            labels: { show: false },
+            axisBorder: { show: false },
+          },
+          yaxis: {
+            labels: { show: false },
+          },
+          grid: {
+            show: false,
+            padding: {
+              left: 0,
+              right: 0
+            }
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          markers: {
+            size: 0,
+          },
+          chart: {
+            zoom: { autoScaleYaxis: true },
+            animations: { enabled: false },
+            toolbar: { show: false },
+            sparkline: { enabled: true },
+          },
+          stroke: {
+            curve: 'smooth',
+            width: 2,
+          },
+          fill: {
+            type: 'gradient',
             colors: ['#2dbaa1'],
-            tooltip: {
-              // enabled: false,
-            },
-            title: {
-              floating: true,
-            },
-            xaxis: {
-              type: 'datetime',
-              min: this.props.xAxis?.min,
-              max: this.props.xAxis?.max,
-              labels: { show: false },
-              axisBorder: { show: false },
-              axisTicks: { show: false },
-              floating: true,
-              tooltip: {
-                enabled: true,
-                offsetY: 5,
-              },
-            },
-            yaxis: {
-              labels: { show: false },
-              floating: true,
-              tooltip: {
-                enabled: true,
-              },
-            },
-            grid: {
-              show: false,
-              padding: {
-                left: 0,
-                right: 0
-              }
-            },
-            dataLabels: {
-              enabled: false,
-            },
-            markers: {
-              size: 0,
-            },
-            chart: {
-              zoom: { autoScaleYaxis: true },
-              animations: { enabled: false },
-              toolbar: { show: false },
-              sparkline: { enabled: true },
-            },
-            stroke: {
-              curve: 'smooth',
-              width: 2,
-            },
-            fill: {
-              type: 'gradient',
-              colors: ['#2dbaa1'],
-              gradient: {
-                shadeIntensity: 1,
-                opacityFrom: 0.6,
-                opacityTo: 0.8,
-                stops: [0, 100]
-              }
-            },
-            legend: { show: false, floating: true },
-            subtitle: { floating: true },
-            plotOptions: {
-              area: {
-                fillTo: 'end',
-              },
-            },
-          }}
-          type='area'
-          width={this.props.chartWidth}
-          height={this.props.chartHeight}
-        />
-      </span>
+            gradient: {
+              shadeIntensity: 1,
+              opacityFrom: 0.6,
+              opacityTo: 0.8,
+              stops: [0, 100]
+            }
+          },
+          legend: { show: false },
+        }}
+        type='area'
+        width={this.props.chartWidth}
+        height={this.props.chartHeight}
+      />
     );
 
     return (

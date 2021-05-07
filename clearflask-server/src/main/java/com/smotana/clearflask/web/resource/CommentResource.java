@@ -18,6 +18,8 @@ import com.smotana.clearflask.api.model.CommentSearchResponse;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaCommentSearch;
 import com.smotana.clearflask.api.model.IdeaCommentSearchResponse;
 import com.smotana.clearflask.api.model.SubscriptionListenerComment;
@@ -175,6 +177,13 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public Comment commentDeleteAdmin(String projectId, String ideaId, String commentId) {
         return commentStore.markAsDeletedComment(projectId, ideaId, commentId)
                 .getCommentModel().toComment(sanitizer);
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public HistogramResponse commentHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {
+        return userStore.histogram(projectId, histogramSearchAdmin);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})

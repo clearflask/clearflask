@@ -19,8 +19,8 @@
         <guava.version>26.0-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
-        <elastic.version>7.4.0</elastic.version>
-        <lucene.version>8.2.0</lucene.version>
+        <elastic.version>7.10.0</elastic.version>
+        <lucene.version>8.7.0</lucene.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
         <!-- If I still can't upgrade to 2.27+,

@@ -492,19 +492,50 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }])
       , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
-  ideaHistogramAdmin(request: Admin.IdeaHistogramAdminRequest): Promise<Admin.IdeaHistogramResponse> {
-    var start = request.ideaHistogramSearchAdmin.filterCreatedStart;
-    var end = request.ideaHistogramSearchAdmin.filterCreatedEnd;
+  ideaHistogramAdmin(request: Admin.IdeaHistogramAdminRequest): Promise<Admin.HistogramResponse> {
+    return this.genericHistogramAdmin(request.projectId, request.ideaHistogramSearchAdmin);
+  }
+  commentHistogramAdmin(request: Admin.CommentHistogramAdminRequest): Promise<Admin.HistogramResponse> {
+    return this.genericHistogramAdmin(request.projectId, request.histogramSearchAdmin);
+  }
+  userHistogramAdmin(request: Admin.UserHistogramAdminRequest): Promise<Admin.HistogramResponse> {
+    return this.genericHistogramAdmin(request.projectId, request.histogramSearchAdmin);
+  }
+  genericHistogramAdmin(projectId: string, search: Admin.HistogramSearchAdmin): Promise<Admin.HistogramResponse> {
+    var start = search.filterCreatedStart;
+    var end = search.filterCreatedEnd;
     if (!end) end = new Date();
-    if (!start) start = new Date(end.getTime() - 10 * 86400000);
+    if (!start) start = new Date(end.getTime() - 600 * 86400000);
 
     var currDay: Date = new Date(start);
-    const results: Admin.IdeaHistogramResponse = {
+    const results: Admin.HistogramResponse = {
       points: [],
+      hits: {
+        value: Math.round(Math.random() * 100 + 40),
+      },
     };
+    var intervalInDays: number;
+    switch (search.interval) {
+      default:
+      case 'DAY':
+        intervalInDays = 1;
+        break;
+      case 'WEEK':
+        intervalInDays = 7;
+        break;
+      case 'MONTH':
+        intervalInDays = 30;
+        break;
+      case 'QUARTER':
+        intervalInDays = 90;
+        break;
+      case 'YEAR':
+        intervalInDays = 365;
+        break;
+    }
     while (currDay.getTime() < end.getTime()) {
       results.points.push({ ts: currDay, cnt: Math.round(Math.random() * 10) });
-      currDay = new Date(currDay.getTime() + 86400000);
+      currDay = new Date(currDay.getTime() + intervalInDays * 86400000);
     }
 
     return this.returnLater(results, undefined, true);

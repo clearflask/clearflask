@@ -62,6 +62,9 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
+import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.NotificationMethodsOauth;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
@@ -197,6 +200,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
          */
         @DefaultValue("8")
         long userCounterShardCount();
+
+        @DefaultValue("true")
+        boolean enableHistograms();
     }
 
     private static final String USER_INDEX = "user";
@@ -368,6 +374,21 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "identifierHash", type.isHashed() ? hashIdentifier(identifier) : identifier))))))
                 .map(identifierUser -> getUser(projectId, identifierUser.getUserId())
                         .orElseThrow(() -> new IllegalStateException("IdentifierUser entry exists but User doesn't for type " + type.getType() + " identifier " + identifier)));
+    }
+
+    @Override
+    public HistogramResponse histogram(String projectId, HistogramSearchAdmin searchAdmin) {
+        if (!config.enableHistograms()) {
+            return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
+        }
+
+        return elasticUtil.histogram(
+                elasticUtil.getIndexName(USER_INDEX, projectId),
+                "created",
+                Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
+                Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
+                Optional.ofNullable(searchAdmin.getInterval()),
+                Optional.empty());
     }
 
     @Override

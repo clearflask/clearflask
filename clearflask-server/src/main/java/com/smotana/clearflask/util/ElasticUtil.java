@@ -11,9 +11,14 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.HistogramInterval;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramResponsePoints;
+import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -21,12 +26,27 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.LongBounds;
+import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -190,6 +210,94 @@ public class ElasticUtil {
         return new SearchResponseWithCursor(
                 searchResponse,
                 cursorOptNew.map(serverSecretCursor::encryptString));
+    }
+
+    public HistogramResponse histogram(
+            String indexName,
+            String aggregateFieldName,
+            Optional<LocalDate> startOpt,
+            Optional<LocalDate> endOpt,
+            Optional<HistogramInterval> intervalOpt,
+            Optional<QueryBuilder> queryOpt) {
+        DateHistogramInterval interval;
+        if (intervalOpt.isPresent()) {
+            switch (intervalOpt.get()) {
+                case YEAR:
+                    interval = DateHistogramInterval.YEAR;
+                    break;
+                case QUARTER:
+                    interval = DateHistogramInterval.QUARTER;
+                    break;
+                case MONTH:
+                    interval = DateHistogramInterval.MONTH;
+                    break;
+                case WEEK:
+                    interval = DateHistogramInterval.WEEK;
+                    break;
+                case DAY:
+                default:
+                    interval = DateHistogramInterval.DAY;
+                    break;
+            }
+        } else {
+            interval = DateHistogramInterval.DAY;
+        }
+
+        Optional<Long> startBound = startOpt.map(start -> start
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli());
+        Optional<Long> endBound = endOpt.map(end -> end
+                .plusDays(1)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli());
+
+        DateHistogramAggregationBuilder histogramAggregation = AggregationBuilders.dateHistogram("h1")
+                .field(aggregateFieldName)
+                .minDocCount(1L)
+                .calendarInterval(interval);
+        if (startBound.isPresent() || endBound.isPresent()) {
+            histogramAggregation.hardBounds(new LongBounds(startBound.orElse(null), endBound.orElse(null)));
+        }
+        SearchRequest searchRequest = new SearchRequest(indexName).source(new SearchSourceBuilder()
+                .fetchSource(false)
+                .query(queryOpt.orElse(null))
+                .size(0)
+                .aggregation(histogramAggregation));
+
+        log.trace("Histogram query: {}", searchRequest);
+
+        org.elasticsearch.action.search.SearchResponse search;
+        try {
+            search = elastic.search(searchRequest, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        return new HistogramResponse(Optional.ofNullable(search.getAggregations())
+                .flatMap(ags -> {
+                    Iterator<Aggregation> iter = ags.iterator();
+                    if (!iter.hasNext()) {
+                        return Optional.empty();
+                    }
+                    Aggregation aggregation = iter.next();
+                    if (!(aggregation instanceof ParsedDateHistogram)) {
+                        return Optional.empty();
+                    }
+                    return Optional.of((ParsedDateHistogram) aggregation);
+                })
+                .map(ParsedDateHistogram::getBuckets)
+                .stream()
+                .flatMap(Collection::stream)
+                .map((Histogram.Bucket b) -> new HistogramResponsePoints(
+                        ((ZonedDateTime) b.getKey()).toLocalDate(),
+                        BigDecimal.valueOf(b.getDocCount())))
+                .collect(ImmutableList.toImmutableList()),
+                new Hits(
+                        search.getHits().getTotalHits().value,
+                        search.getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO
+                                ? true : null));
     }
 
     private PaginationType choosePaginationType(

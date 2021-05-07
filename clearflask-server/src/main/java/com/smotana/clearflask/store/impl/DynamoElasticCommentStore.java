@@ -16,7 +16,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -39,6 +38,9 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
+import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
@@ -58,20 +60,16 @@ import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -132,6 +130,9 @@ public class DynamoElasticCommentStore implements CommentStore {
         double scoreWilsonConfidenceLevel();
 
         Observable<Double> scoreWilsonConfidenceLevelObservable();
+
+        @DefaultValue("true")
+        boolean enableHistograms();
     }
 
     private static final String COMMENT_INDEX = "comment";
@@ -301,6 +302,21 @@ public class DynamoElasticCommentStore implements CommentStore {
                 .collect(ImmutableMap.toImmutableMap(
                         CommentModel::getCommentId,
                         i -> i));
+    }
+
+    @Override
+    public HistogramResponse histogram(String projectId, HistogramSearchAdmin searchAdmin) {
+        if (!config.enableHistograms()) {
+            return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
+        }
+
+        return elasticUtil.histogram(
+                elasticUtil.getIndexName(COMMENT_INDEX, projectId),
+                "created",
+                Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
+                Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
+                Optional.ofNullable(searchAdmin.getInterval()),
+                Optional.empty());
     }
 
     @Override
@@ -702,7 +718,7 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     private void indexComment(SettableFuture<WriteResponse> indexingFuture, String projectId, String ideaId, String commentId) {
         Optional<CommentModel> commentOpt = getComment(projectId, ideaId, commentId);
-        if(!commentOpt.isPresent()) {
+        if (!commentOpt.isPresent()) {
             elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
         } else {

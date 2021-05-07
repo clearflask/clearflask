@@ -341,6 +341,28 @@ components:
                   type: array
                   items:
                     $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
+/project/{projectId}/admin/comment/histogram:
+  post:
+    operationId: commentHistogramAdmin
+    tags: [CommentAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/HistogramSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/HistogramResponse'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
   delete:
     operationId: commentDeleteAdmin

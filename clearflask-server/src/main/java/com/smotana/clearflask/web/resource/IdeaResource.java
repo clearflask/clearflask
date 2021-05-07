@@ -17,7 +17,7 @@ import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
-import com.smotana.clearflask.api.model.IdeaHistogramResponse;
+import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -234,7 +234,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
-    public IdeaHistogramResponse ideaHistogramAdmin(String projectId, IdeaHistogramSearchAdmin ideaHistogramSearchAdmin) {
+    public HistogramResponse ideaHistogramAdmin(String projectId, IdeaHistogramSearchAdmin ideaHistogramSearchAdmin) {
         return ideaStore.histogram(projectId, ideaHistogramSearchAdmin);
     }
 

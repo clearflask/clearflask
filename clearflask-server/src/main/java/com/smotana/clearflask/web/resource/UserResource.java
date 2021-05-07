@@ -15,6 +15,8 @@ import com.smotana.clearflask.api.model.Credits;
 import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
 import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.ForgotPassword;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.SubscriptionListenerUser;
 import com.smotana.clearflask.api.model.User;
@@ -499,6 +501,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return userStore.getUser(projectId, userId)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"))
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public HistogramResponse userHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {
+        return userStore.histogram(projectId, histogramSearchAdmin);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})

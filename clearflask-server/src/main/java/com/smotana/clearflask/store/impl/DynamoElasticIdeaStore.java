@@ -36,9 +36,9 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramResponsePoints;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -89,26 +89,17 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
-import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,6 +124,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         @DefaultValue("true")
         boolean enableSimilarToIdea();
+
+        @DefaultValue("true")
+        boolean enableHistograms();
     }
 
     private static final String IDEA_INDEX = "idea";
@@ -359,61 +353,35 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaHistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaHistogramSeachAdmin) {
+    public HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin) {
+        if (!config.enableHistograms()) {
+            return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
+        }
         QueryBuilder query = searchIdeasQuery(
                 new IdeaSearchAdmin(
                         null,
-                        ideaHistogramSeachAdmin.getFilterCategoryIds(),
-                        ideaHistogramSeachAdmin.getFilterStatusIds(),
-                        ideaHistogramSeachAdmin.getFilterTagIds(),
+                        ideaSearchAdmin.getFilterCategoryIds(),
+                        ideaSearchAdmin.getFilterStatusIds(),
+                        ideaSearchAdmin.getFilterTagIds(),
                         null,
                         null,
                         null,
                         null,
                         null,
-                        ideaHistogramSeachAdmin.getFilterCreatedStart(),
-                        ideaHistogramSeachAdmin.getFilterCreatedEnd(),
+                        null,
+                        null,
                         null,
                         null),
                 Optional.empty());
-        DateHistogramAggregationBuilder histogramAggregation = AggregationBuilders.dateHistogram("h1")
-                .field("created")
-                .minDocCount(1L)
-                .calendarInterval(DateHistogramInterval.DAY);
-        SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).source(new SearchSourceBuilder()
-                .fetchSource(false)
-                .size(0)
-                .query(query)
-                .aggregation(histogramAggregation));
 
-        log.trace("Idea histogram query: {}", searchRequest);
 
-        org.elasticsearch.action.search.SearchResponse search;
-        try {
-            search = elastic.search(searchRequest, RequestOptions.DEFAULT);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        return new IdeaHistogramResponse(Optional.ofNullable(search.getAggregations())
-                .flatMap(ags -> {
-                    Iterator<Aggregation> iter = ags.iterator();
-                    if (!iter.hasNext()) {
-                        return Optional.empty();
-                    }
-                    Aggregation aggregation = iter.next();
-                    if (!(aggregation instanceof ParsedDateHistogram)) {
-                        return Optional.empty();
-                    }
-                    return Optional.of((ParsedDateHistogram) aggregation);
-                })
-                .map(ParsedDateHistogram::getBuckets)
-                .stream()
-                .flatMap(Collection::stream)
-                .map((Histogram.Bucket b) -> new IdeaHistogramResponsePoints(
-                        ((ZonedDateTime) b.getKey()).toLocalDate(),
-                        BigDecimal.valueOf(b.getDocCount())))
-                .collect(ImmutableList.toImmutableList()));
+        return elasticUtil.histogram(
+                elasticUtil.getIndexName(IDEA_INDEX, projectId),
+                "created",
+                Optional.ofNullable(ideaSearchAdmin.getFilterCreatedStart()),
+                Optional.ofNullable(ideaSearchAdmin.getFilterCreatedEnd()),
+                Optional.ofNullable(ideaSearchAdmin.getInterval()),
+                Optional.of(query));
     }
 
     @Override

@@ -9,6 +9,8 @@ import com.smotana.clearflask.api.model.Comment;
 import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -50,6 +52,8 @@ public interface CommentStore {
     Optional<CommentModel> getComment(String projectId, String ideaId, String commentId);
 
     ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, ImmutableCollection<String> commentIds);
+
+    HistogramResponse histogram(String projectId, HistogramSearchAdmin searchAdmin);
 
     SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 

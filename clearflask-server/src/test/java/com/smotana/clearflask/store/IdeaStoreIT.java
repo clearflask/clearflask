@@ -8,9 +8,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramResponsePoints;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramResponsePoints;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
@@ -36,6 +36,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -161,42 +162,48 @@ public class IdeaStoreIT extends AbstractIT {
     public void testHistogram() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        userStore.createIndex(projectId);
+        Instant now = Instant.now();
+        IdeaModel idea0 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
+                .created(now)
+                .build();
         IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now())
+                .created(now.minus(1, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .created(now.minus(3, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .created(now.minus(3, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea4 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now().minus(4, ChronoUnit.DAYS))
+                .created(now.minus(4, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea5 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c2").statusId("s1").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now())
+                .created(now.minus(1, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea6 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s2").tagIds(ImmutableSet.of("t1"))
-                .created(Instant.now())
+                .created(now.minus(1, ChronoUnit.DAYS))
                 .build();
         IdeaModel idea7 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .categoryId("c1").statusId("s1").tagIds(ImmutableSet.of("t2"))
-                .created(Instant.now())
+                .created(now.minus(1, ChronoUnit.DAYS))
                 .build();
+        store.createIdea(idea0).get();
         store.createIdea(idea1).get();
         store.createIdea(idea2).get();
         store.createIdea(idea3).get();
@@ -205,18 +212,20 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea6).get();
         store.createIdea(idea7).get();
 
-        IdeaHistogramResponse histogram = store.histogram(projectId, IdeaHistogramSearchAdmin.builder()
+        LocalDate nowDate = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        HistogramResponse histogram = store.histogram(projectId, IdeaHistogramSearchAdmin.builder()
                 .filterCategoryIds(ImmutableList.of("c1"))
                 .filterStatusIds(ImmutableList.of("s1"))
                 .filterTagIds(ImmutableList.of("t1"))
-                .filterCreatedStart(Instant.now().minus(3, ChronoUnit.DAYS))
-                .filterCreatedEnd(Instant.now())
+                .filterCreatedStart(nowDate.minus(3, ChronoUnit.DAYS))
+                .filterCreatedEnd(nowDate.minus(1, ChronoUnit.DAYS))
                 .build());
         assertEquals(
                 ImmutableList.of(
-                        new IdeaHistogramResponsePoints(LocalDate.now().minus(2, ChronoUnit.DAYS), BigDecimal.valueOf(2L)),
-                        new IdeaHistogramResponsePoints(LocalDate.now(), BigDecimal.valueOf(1L))),
+                        new HistogramResponsePoints(nowDate.minusDays(3), BigDecimal.valueOf(2L)),
+                        new HistogramResponsePoints(nowDate.minusDays(1), BigDecimal.valueOf(1L))),
                 histogram.getPoints());
+        assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
     }
 
     @Test(timeout = 30_000L)

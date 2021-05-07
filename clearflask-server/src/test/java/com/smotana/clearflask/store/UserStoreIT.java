@@ -7,6 +7,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramResponsePoints;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -29,8 +32,11 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -252,6 +258,50 @@ public class UserStoreIT extends AbstractIT {
             assertEquals(1, searchResponse2.getUserIds().size());
             assertFalse(searchResponse2.getCursorOpt().isPresent());
         }
+    }
+
+    @Test(timeout = 30_000L)
+    public void testHistogram() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        Instant now = Instant.now();
+        UserStore.UserModel user0 = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .created(now)
+                .build();
+        UserStore.UserModel user1 = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .created(now.minus(1, ChronoUnit.DAYS))
+                .build();
+        UserStore.UserModel user2 = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .created(now.minus(3, ChronoUnit.DAYS))
+                .build();
+        UserStore.UserModel user3 = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .created(now.minus(3, ChronoUnit.DAYS))
+                .build();
+        UserStore.UserModel user4 = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .created(now.minus(4, ChronoUnit.DAYS))
+                .build();
+        store.createUser(user0).getIndexingFuture().get();
+        store.createUser(user1).getIndexingFuture().get();
+        store.createUser(user2).getIndexingFuture().get();
+        store.createUser(user3).getIndexingFuture().get();
+        store.createUser(user4).getIndexingFuture().get();
+
+        LocalDate nowDate = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        HistogramResponse histogram = store.histogram(projectId, HistogramSearchAdmin.builder()
+                .filterCreatedStart(nowDate.minus(3, ChronoUnit.DAYS))
+                .filterCreatedEnd(nowDate.minus(1, ChronoUnit.DAYS))
+                .build());
+        assertEquals(
+                ImmutableList.of(
+                        new HistogramResponsePoints(nowDate.minusDays(3), BigDecimal.valueOf(2L)),
+                        new HistogramResponsePoints(nowDate.minusDays(1), BigDecimal.valueOf(1L))),
+                histogram.getPoints());
+        assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
     }
 
     @Test(timeout = 10_000L)

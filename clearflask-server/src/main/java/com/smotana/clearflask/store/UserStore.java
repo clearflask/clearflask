@@ -7,6 +7,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.NotificationMethodsOauth;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
@@ -52,6 +54,8 @@ public interface UserStore {
     ImmutableMap<String, UserModel> getUsers(String projectId, ImmutableCollection<String> userIds);
 
     Optional<UserModel> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
+
+    HistogramResponse histogram(String projectId, HistogramSearchAdmin searchAdmin);
 
     SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 

@@ -96,14 +96,14 @@ elastic-run:
 	-m 4g \
 	-e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
 	-e "discovery.type=single-node" \
-	docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+	docker.elastic.co/elasticsearch/elasticsearch:7.10.0
 
 kibana-run:
 	docker run --rm --name clearflask-kibana \
 	-p 5601:5601 \
 	-e "ELASTICSEARCH_URL=http://host.docker.internal:9200" \
 	-e "ELASTICSEARCH_HOSTS=http://host.docker.internal:9200" \
-	docker.elastic.co/kibana/kibana:7.4.2
+	docker.elastic.co/kibana/kibana:7.10.0
 
 dynamo-run:
 	docker run --rm --name clearflask-dynamo \

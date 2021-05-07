@@ -469,6 +469,28 @@ components:
                     $ref: 'api-user.yaml#/components/schemas/UserAdmin'
                 hits:
                   $ref: 'api-idea.yaml#/components/schemas/Hits'
+/project/{projectId}/admin/user/histogram:
+  post:
+    operationId: userHistogramAdmin
+    tags: [UserAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/HistogramSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/HistogramResponse'
 /project/{projectId}/admin/user:
   post:
     operationId: userCreateAdmin

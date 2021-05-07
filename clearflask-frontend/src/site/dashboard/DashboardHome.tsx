@@ -1,19 +1,23 @@
 import { Typography, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import AllIdeasIcon from '@material-ui/icons/AllInclusive';
+import DiscussionIcon from '@material-ui/icons/ChatBubbleOutlined';
+import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
+import UsersIcon from '@material-ui/icons/PersonAdd';
+import moment from 'moment';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import PanelSearch from '../../app/comps/PanelSearch';
 import DividerCorner from '../../app/utils/DividerCorner';
-import Loader from '../../app/utils/Loader';
 import { initialWidth } from '../../common/util/screenUtil';
 import CategoryStats from './CategoryStats';
 import Histogram from './Histogram';
-import UserExplorer from './UserExplorer';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -24,8 +28,8 @@ const styles = (theme: Theme) => createStyles({
     flexWrap: 'wrap',
   },
   boardContainer: {
-    margin: theme.spacing(4, 0),
-    flexShrink: 1,
+    width: 'max-content',
+    margin: 'auto',
   },
   board: {
     display: 'flex',
@@ -78,6 +82,14 @@ const styles = (theme: Theme) => createStyles({
   bigValue: {
     fontSize: '3em',
   },
+  stats: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+  },
+  stat: {
+  },
 });
 
 interface Props {
@@ -94,7 +106,6 @@ interface ConnectProps {
 interface State {
   search?: Partial<Client.IdeaSearch>;
   expanded?: boolean;
-  usersCount?: number;
 }
 class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
@@ -134,111 +145,145 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
       showExpression: false,
       showEdit: false,
     };
+    const chartWidth = 100;
+    const chartHeight = 50;
+    const chartXAxis = {
+      min: moment().subtract(7, 'd').toDate(),
+      max: new Date(),
+    };
     return (
       <div className={this.props.classes.page}>
         <Typography variant='h4' component='h1'>Welcome back!</Typography>
-        <Histogram
-          title='Posts'
-          server={this.props.server}
-          search={{}}
-        />
-        <div className={this.props.classes.sections}>
+        <div className={this.props.classes.stats}>
+          <Histogram
+            icon={OpenIdeasIcon}
+            title='Open ideas'
+            server={this.props.server}
+            className={this.props.classes.stat}
+            chartWidth={chartWidth}
+            chartHeight={chartHeight}
+            xAxis={chartXAxis}
+            search={d => d.ideaHistogramAdmin({
+              projectId: this.props.server.getProjectId(),
+              ideaHistogramSearchAdmin: {
+                interval: Admin.HistogramInterval.DAY,
+                filterCreatedStart: moment().subtract(7, 'd').toDate(),
+              }
+            })}
+          />
+          <Histogram
+            icon={AllIdeasIcon}
+            title='All Posts'
+            server={this.props.server}
+            className={this.props.classes.stat}
+            chartWidth={chartWidth}
+            chartHeight={chartHeight}
+            xAxis={chartXAxis}
+            search={d => d.ideaHistogramAdmin({
+              projectId: this.props.server.getProjectId(),
+              ideaHistogramSearchAdmin: {
+                interval: Admin.HistogramInterval.DAY,
+                filterCreatedStart: moment().subtract(7, 'd').toDate(),
+              }
+            })}
+          />
+          <Histogram
+            icon={DiscussionIcon}
+            title='Comments'
+            server={this.props.server}
+            className={this.props.classes.stat}
+            chartWidth={chartWidth}
+            chartHeight={chartHeight}
+            xAxis={chartXAxis}
+            search={d => d.commentHistogramAdmin({
+              projectId: this.props.server.getProjectId(),
+              histogramSearchAdmin: {
+                interval: Admin.HistogramInterval.DAY,
+                filterCreatedStart: moment().subtract(7, 'd').toDate(),
+              }
+            })}
+          />
+          <Histogram
+            icon={UsersIcon}
+            title='Identified Users'
+            server={this.props.server}
+            className={this.props.classes.stat}
+            chartWidth={chartWidth}
+            chartHeight={chartHeight}
+            xAxis={chartXAxis}
+            search={d => d.userHistogramAdmin({
+              projectId: this.props.server.getProjectId(),
+              histogramSearchAdmin: {
+                interval: Admin.HistogramInterval.DAY,
+                filterCreatedStart: moment().subtract(7, 'd').toDate(),
+              }
+            })}
+          />
+        </div>
+        <div className={this.props.classes.stats}>
           <CategoryStats
             className={this.props.classes.categoryStats}
             server={this.props.server}
-            maxContentHeight={300}
           />
-          <div className={this.props.classes.spacer} />
-          <DividerCorner
-            className={this.props.classes.users}
-            title='Users'
-            width='70%'
-          >
-            <div className={this.props.classes.resultsContainer}>
-              <DividerCorner
-                className={this.props.classes.resultsItem}
-                innerClassName={this.props.classes.resultsItemInner}
-                title='Total'
-              >
-                <Loader loaded={this.state.usersCount !== undefined}>
-                  <Typography className={this.props.classes.bigValue}>
-                    {this.state.usersCount}
-                  </Typography>
-                </Loader>
-              </DividerCorner>
-              <UserExplorer
-                className={this.props.classes.userExplorer}
-                title='New'
-                titleSize={70}
-                server={this.props.server}
-                nameOnly
-                onUserClick={this.props.onUserClick}
-                hideShowMore
-                maxContentHeight={300}
-                onResults={results => this.setState({ usersCount: results.hits?.value })}
-              />
-            </div>
-          </DividerCorner>
-          <div className={this.props.classes.spacer} />
-          <DividerCorner
-            className={this.props.classes.boardContainer}
-            header={(
-              <Typography className={this.props.classes.title}>Content</Typography>
-            )}
-            width='70%'
-            widthRight={116}
-            headerRight={(
-              <PanelSearch
-                className={this.props.classes.search}
-                server={this.props.server}
-                search={this.state.search}
-                placeholder='Filter'
-                onSearchChanged={search => this.setState({ search: search })}
-                explorer={{
-                  search: {},
-                  display: {},
-                  allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-                }}
-              />
-            )}
-          >
-            <div className={this.props.classes.board}>
-              {this.renderPanel('Trending', {
-                search: {
-                  ...this.state.search,
-                  sortBy: Client.IdeaSearchSortByEnum.Trending,
-                },
-                display: {
-                  ...display,
-                  // showFunding: true,
-                  // showVoting: true,
-                },
-              })}
-              {this.renderPanel('New', {
-                search: {
-                  ...this.state.search,
-                  sortBy: Client.IdeaSearchSortByEnum.New,
-                },
-                display: {
-                  ...display,
-                  // showCreated: true,
-                  // showAuthor: true,
-                },
-              })}
-              {this.renderPanel('Top', {
-                search: {
-                  ...this.state.search,
-                  sortBy: Client.IdeaSearchSortByEnum.Top,
-                },
-                display: {
-                  ...display,
-                  // showFunding: true,
-                  // showVoting: true,
-                },
-              })}
-            </div>
-          </DividerCorner>
         </div>
+        <DividerCorner
+          className={this.props.classes.boardContainer}
+          header={(
+            <Typography className={this.props.classes.title}>Content</Typography>
+          )}
+          width='70%'
+          widthRight={116}
+          headerRight={(
+            <PanelSearch
+              className={this.props.classes.search}
+              server={this.props.server}
+              search={this.state.search}
+              placeholder='Filter'
+              onSearchChanged={search => this.setState({ search: search })}
+              explorer={{
+                search: {},
+                display: {},
+                allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+              }}
+            />
+          )}
+        >
+          <div className={this.props.classes.board}>
+            {this.renderPanel('Trending', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.Trending,
+              },
+              display: {
+                ...display,
+                // showFunding: true,
+                // showVoting: true,
+              },
+            })}
+            {this.renderPanel('New', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.New,
+              },
+              display: {
+                ...display,
+                // showCreated: true,
+                // showAuthor: true,
+              },
+            })}
+            {this.renderPanel('Top', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.Top,
+              },
+              display: {
+                ...display,
+                // showFunding: true,
+                // showVoting: true,
+              },
+            })}
+          </div>
+        </DividerCorner>
       </div>
     );
   }
