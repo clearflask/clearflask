@@ -14,12 +14,6 @@ const styles = (theme: Theme) => createStyles({
       boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
       border: '1px solid ' + theme.palette.grey[300],
       padding: theme.spacing(0, 1.5),
-      '& .apexcharts-tooltip-text-label': {
-        fontSize: '1.2em',
-      },
-      '& .apexcharts-tooltip-text-value': {
-        fontSize: '1.3em',
-      },
     },
   },
 });
@@ -81,7 +75,10 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>> {
             labels: labels,
             tooltip: {
               enabled: true,
-
+              style: {
+                fontFamily: this.props.theme.typography.fontFamily,
+                fontSize: '1em',
+              },
             },
             dataLabels: {
               enabled: true,

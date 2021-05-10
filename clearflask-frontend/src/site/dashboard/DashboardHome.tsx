@@ -153,7 +153,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
     };
     return (
       <div className={this.props.classes.page}>
-        <Typography variant='h4' component='h1'>Welcome back!</Typography>
         <div className={this.props.classes.stats}>
           <Histogram
             icon={OpenIdeasIcon}

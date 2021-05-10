@@ -13,16 +13,19 @@ export const withMediaQuery = (
   return <Component {...props} mediaQuery={mediaQuery} />;
 };
 
-export type WithMediaQueries = {
-  mediaQueries: { [name: string]: boolean };
+export type WithMediaQueries<Queries extends string> = {
+  mediaQueries: { [name in Queries]: boolean };
 };
 
 /** Untested */
-export const withMediaQueries = (
-  queries: { [name: string]: (string | ((theme: Theme) => string)) },
+export const withMediaQueries = <Queries extends string, Props>(
+  queriesMapper: (props: Props) => Record<Queries, (string | ((theme: Theme) => string))>,
   options?: Options,
 ) => Component => props => {
   const mediaQueries = {};
-  Object.keys(queries).forEach(name => mediaQueries[name] = useMediaQuery(queries[name], options));
+  const queries = queriesMapper(props);
+  Object.keys(queries).forEach(query => {
+    mediaQueries[query] = useMediaQuery(queries[query], options)
+  });
   return <Component {...props} mediaQueries={mediaQueries} />;
 };

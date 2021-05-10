@@ -1,7 +1,9 @@
-import { Badge, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
+import { Badge, IconButton, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import ExpandIcon from '@material-ui/icons/ExpandLess';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import * as ConfigEditor from '../configEditor';
@@ -47,13 +49,30 @@ const styles = (theme: Theme) => createStyles({
   link: {
     color: 'currentColor',
   },
+  text: {
+    position: 'relative', // for expandButton
+  },
+  expandButton: {
+    position: 'absolute',
+    padding: theme.spacing(1),
+    left: theme.spacing(0.5),
+    top: '50%',
+    transform: 'translate(-100%, -50%)',
+  },
+  expandIcon: {
+    transform: 'rotate(90deg)',
+    transition: theme.transitions.create('transform'),
+  },
+  expandIconExpanded: {
+    transform: 'rotate(180deg)',
+  },
 });
 
 interface Props extends ListProps {
   items: (MenuProject | MenuItem | MenuHeading)[];
   activePath: string;
   activeSubPath: ConfigEditor.Path;
-  onAnyClick: () => void;
+  onAnyClick?: () => void;
 }
 
 class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>> {
@@ -137,12 +156,15 @@ interface PropsPage {
   overrideName?: string | React.ReactNode | undefined;
   activePath?: ConfigEditor.Path;
   slug: string;
-  onAnyClick: () => void;
+  onAnyClick?: () => void;
   offset?: number;
   hasUnsavedChanges?: boolean;
 }
-
-class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof styles, true>> {
+interface StatePage {
+  expanded?: boolean;
+}
+class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof styles, true>, StatePage> {
+  state: StatePage = {};
   unsubscribe?: () => void;
 
   componentDidMount() {
@@ -154,7 +176,13 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
   }
 
   render() {
-    const expanded = this.isExpanded(this.props.page.path);
+    const hasChildren = this.props.page.getChildren().pages.some(p => !!p.value)
+      || this.props.page.getChildren().groups.some(p => !!p.value);
+    const expandedDontShow = !hasChildren || this.props.page.path.length < 1;
+    const expanded = expandedDontShow
+      || (this.state.expanded !== undefined
+        ? this.state.expanded
+        : this.isSelectedOrParent(this.props.page.path));
     const padding = paddingForLevel(this.props.offset || 0, this.props.page.path);
     const color = this.props.page.getColor();
     const { classes, ...menuProps } = this.props;
@@ -165,11 +193,31 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
           button
           component={Link}
           to={`/dashboard/${[this.props.slug, ...this.props.page.path].join('/')}`}
-          onClick={() => this.props.onAnyClick()}
+          onClick={() => {
+            this.props.onAnyClick && this.props.onAnyClick();
+            if (!this.state.expanded) {
+              this.setState({ expanded: true });
+            }
+          }}
         >
           <ListItemText style={padding} primary={(
             <React.Fragment>
-              <span style={{ color }}>
+              <span className={this.props.classes.text} style={{ color }}>
+                {!expandedDontShow && (
+                  <IconButton
+                    className={this.props.classes.expandButton}
+                    onClick={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      this.setState({ expanded: !this.state.expanded });
+                    }}
+                  >
+                    <ExpandIcon
+                      fontSize='inherit'
+                      className={classNames(this.props.classes.expandIcon, !!expanded && this.props.classes.expandIconExpanded)}
+                    />
+                  </IconButton>
+                )}
                 {this.props.overrideName !== undefined ? this.props.overrideName : this.props.page.getDynamicName()}
               </span>
               {this.props.hasUnsavedChanges && (
@@ -200,7 +248,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
     );
   }
 
-  isExpanded(path: ConfigEditor.Path): boolean {
+  isSelectedOrParent(path: ConfigEditor.Path): boolean {
     if (!this.props.activePath || this.props.activePath.length < path.length) {
       return false;
     }
@@ -231,7 +279,7 @@ interface PropsPageGroup {
   pageGroup: ConfigEditor.PageGroup;
   activePath?: ConfigEditor.Path;
   slug: string;
-  onAnyClick: () => void;
+  onAnyClick?: () => void;
 }
 
 class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<typeof styles, true>> {

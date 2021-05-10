@@ -852,10 +852,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   configGetAllAndUserBindAllAdmin(): Promise<Admin.ConfigAndBindAllResult> {
     if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
     const byProjectId = {};
-    Object.keys(this.db).forEach(projectId => byProjectId[projectId] = {
-      config: this.db[projectId].config,
-      user: this.db[projectId].loggedInUser,
-    })
+    Object.keys(this.db)
+      .filter(projectId => !projectId.startsWith('demo-'))
+      .forEach(projectId => byProjectId[projectId] = {
+        config: this.db[projectId].config,
+        user: this.db[projectId].loggedInUser,
+      })
     return this.returnLater({
       byProjectId,
     });

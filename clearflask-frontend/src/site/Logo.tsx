@@ -2,21 +2,22 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import LogoImg from '../../public/img/clearflask-logo.png';
+import ImgIso from '../common/ImgIso';
 
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     alignItems: 'center',
-    margin: theme.spacing(0, 3),
+    margin: (props: Props) => !props.suppressMargins ? theme.spacing(0, 3) : undefined,
     fontSize: '1.4em',
   },
   image: {
-    objectFit: 'contain',
-    maxWidth: '48px',
-    maxHeight: '48px',
-    width: 'auto',
-    height: 'auto',
-    padding: theme.spacing(1),
+    width: 32,
+    height: 32,
+    marginRight: 8,
+  },
+  clear: {
+    color: theme.palette.text.primary,
   },
   flask: {
     color: theme.palette.primary.main,
@@ -24,19 +25,24 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  suppressMargins?: boolean;
 }
 class Logo extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     var logo = (
       <div className={this.props.classes.container}>
-        <img
+        <ImgIso
           alt=''
           className={this.props.classes.image}
           src={LogoImg.src}
+          aspectRatio={LogoImg.aspectRatio}
           width={LogoImg.width}
           height={LogoImg.height}
+          maxWidth={LogoImg.width}
+          maxHeight={LogoImg.height}
         />
-        Clear<span className={this.props.classes.flask}>Flask</span>
+        <span className={this.props.classes.clear}>Clear</span>
+        <span className={this.props.classes.flask}>Flask</span>
       </div>
     );
 

@@ -1,25 +1,15 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { AppBar, Button, Container, Divider, Drawer, Grid, Grow, Hidden, IconButton, Link as MuiLink, MenuItem, SvgIconTypeMap, Toolbar } from '@material-ui/core';
-import { OverridableComponent } from '@material-ui/core/OverridableComponent';
+import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import GrowIcon from '@material-ui/icons/AccessibilityNew';
-import InstallIcon from '@material-ui/icons/AccountTree';
-import CustomizeIcon from '@material-ui/icons/Brush';
 import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
 import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
-import InternalFeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
-import ContentCreatorIcon from '@material-ui/icons/LiveTv';
 import MenuIcon from '@material-ui/icons/Menu';
 import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
-import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
-import WidgetIcon from '@material-ui/icons/Widgets';
-// import CareersIcon from '@material-ui/icons/Work';
-import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
@@ -31,10 +21,9 @@ import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import DemoOnboardingLogin from '../app/DemoOnboardingLogin';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
-import ClosablePopper from '../common/ClosablePopper';
+import { MenuButton, MenuDropdown, MenuItems } from '../common/menus';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
-import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
@@ -62,28 +51,6 @@ const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "Land
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
-
-interface MenuDropdown {
-  type: 'dropdown';
-  title: string;
-  items: Array<MenuButton | MenuHeader | MenuDivider>;
-}
-interface MenuButton {
-  icon?: OverridableComponent<SvgIconTypeMap>,
-  iconClassName?: string,
-  type: 'button';
-  title: string;
-  link: string;
-  linkIsExternal?: boolean;
-  scrollState?: string;
-}
-interface MenuHeader {
-  type: 'header';
-  title: string;
-}
-interface MenuDivider {
-  type: 'divider';
-}
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -131,6 +98,9 @@ const styles = (theme: Theme) => createStyles({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
+  bottomNavigationDivider: {
+    minHeight: theme.spacing(1.5),
+  },
   logoLink: {
     cursor: 'pointer',
     textDecoration: 'none',
@@ -144,52 +114,10 @@ const styles = (theme: Theme) => createStyles({
   roadmapIcon: {
     transform: 'rotate(180deg)',
   },
-  button: {
-    borderRadius: 10,
-    display: 'flex',
-    justifyContent: 'flex-start',
-    padding: theme.spacing(0.5, 2),
-    textTransform: 'unset',
-  },
-  buttonInsideDropdown: {
-    margin: theme.spacing(2),
-    padding: theme.spacing(0, 2),
-  },
-  buttonInsideDrawer: {
-    height: 40,
-    margin: theme.spacing(2),
-    padding: theme.spacing(0, 2),
-  },
-  buttonOuter: {
-    margin: theme.spacing(0, 1),
-  },
-  buttonIcon: {
-    margin: theme.spacing(1, 3, 1, 0),
-  },
-  dropdownContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  menuPopper: {
-    padding: theme.spacing(1),
-    maxWidth: 300,
-  },
-  menuPopperPaper: {
-    transform: 'translateX(-50%)',
-    borderRadius: 10,
-    marginTop: theme.spacing(1),
-  },
-  bottomNavigationDivider: {
-    minHeight: theme.spacing(1.5),
-  },
   menuItemsDrawer: {
     display: 'block',
     width: 240,
     paddingBottom: theme.spacing(2),
-  },
-  menuItemDividerInsideDrawer: {
-    margin: theme.spacing(4),
   },
 });
 const useStyles = makeStyles(styles);
@@ -219,10 +147,10 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/act', title: 'Act', icon: ActIcon },
           { type: 'divider' },
-          { type: 'button', link: '/product/customize', title: 'Customize', icon: CustomizeIcon },
-          { type: 'button', link: '/product/install', title: 'Install', icon: InstallIcon },
-          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us', icon: GrowIcon },
-          { type: 'button', link: '/product/integrations', title: 'Integrations', icon: WidgetIcon },
+          { type: 'button', link: '/product/customize', title: 'Customize' },
+          { type: 'button', link: '/product/install', title: 'Install' },
+          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
+          { type: 'button', link: '/product/integrations', title: 'Integrations' },
           { type: 'divider' },
           { type: 'button', link: '/product/compare', title: 'Compare', icon: CompareIcon },
         ]
@@ -233,9 +161,9 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/solutions/product-roadmap', title: 'Product Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
           { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
           { type: 'divider' },
-          { type: 'button', link: '/solutions/idea-management', title: 'Idea Management', icon: IdeasIcon },
-          { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum', icon: ContentCreatorIcon },
-          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback', icon: InternalFeedbackIcon },
+          { type: 'button', link: '/solutions/idea-management', title: 'Idea Management' },
+          { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum' },
+          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback' },
         ]
       },
       {
@@ -452,11 +380,13 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
                               <div key={subIndex} className={this.props.classes.bottomHeader}>{subItem.title}</div>
                             );
                           case 'button':
-                            return subItem.linkIsExternal ? (
-                              <MuiLink key={subIndex} href={subItem.link} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>
-                            ) : (
-                              <NavLink key={subIndex} to={subItem.link} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>
-                            );
+                            if (subItem['linkIsExternal'] !== undefined) {
+                              return (<MuiLink key={subIndex} href={subItem['link']} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>);
+                            } else if (subItem['link'] !== undefined) {
+                              return (<NavLink key={subIndex} to={subItem['link']} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>);
+                            } else {
+                              return (<MuiLink key={subIndex} onClick={subItem['onClick']} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>);
+                            }
                           case 'divider':
                             return (
                               <div className={this.props.classes.bottomNavigationDivider} />
@@ -483,228 +413,6 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       : url;
   }
 }
-
-interface MenuDropdownButtonProps {
-  dropdown: MenuDropdown;
-  isOuter?: boolean;
-}
-interface MenuDropdownButtonState {
-  open?: boolean;
-  hover?: boolean;
-}
-class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & WithStyles<typeof styles, true>, MenuDropdownButtonState> {
-  state: MenuDropdownButtonState = {};
-  lastEventId = 0;
-
-  render() {
-    const onMouseOverButton = () => {
-      this.setState({ hover: true });
-      const lastEventId = ++this.lastEventId;
-      setTimeout(() => lastEventId === this.lastEventId
-        && this.state.hover
-        && this.setState({ open: true }), 1);
-    };
-    const onMouseOverPopper = () => {
-      ++this.lastEventId; // Cancel any events including mouse out
-    };
-    const onMouseOut = () => {
-      this.setState({ hover: false });
-      const lastEventId = ++this.lastEventId;
-      setTimeout(() => lastEventId === this.lastEventId
-        && !this.state.hover
-        && this.setState({ open: false }), 1);
-    };
-    return (
-      <div className={this.props.classes.dropdownContainer}>
-        <Button
-          size='large'
-          className={classNames(this.props.classes.button, this.props.isOuter && this.props.classes.buttonOuter)}
-          onClick={() => {
-            ++this.lastEventId;
-            this.setState({ open: true })
-          }}
-          onMouseOver={onMouseOverButton}
-          onMouseOut={onMouseOut}
-        >
-          {this.props.dropdown.title}
-        </Button>
-        <ClosablePopper
-          paperClassName={this.props.classes.menuPopperPaper}
-          className={this.props.classes.menuPopper}
-          clickAway
-          disableCloseButton
-          open={!!this.state.open}
-          onClose={() => {
-            ++this.lastEventId;
-            if (!this.state.open) this.setState({ open: false });
-          }}
-          onMouseOver={onMouseOverPopper}
-          onMouseOut={onMouseOut}
-          transitionCmpt={Grow}
-          transitionProps={{
-            style: { transformOrigin: '50% 0 0' },
-            timeout: this.props.theme.transitions.duration.shortest,
-          }}
-          placement='bottom'
-          modifiers={{
-            preventOverflow: { enabled: false },
-            flip: { enabled: false },
-          }}
-        >
-          <MenuItems
-            items={this.props.dropdown.items}
-            onClick={() => {
-              ++this.lastEventId;
-              this.setState({ open: false })
-            }}
-            insideDropdown
-          />
-        </ClosablePopper>
-      </div>
-    );
-  }
-}
-const MenuDropdownButton = withStyles(styles, { withTheme: true })(MenuDropdownButtonRaw);
-
-function MenuItems(props: {
-  items: Array<MenuButton | MenuHeader | MenuDivider | MenuDropdown>;
-  onClick?: () => void;
-  insideDrawer?: boolean;
-  insideDropdown?: boolean;
-}) {
-  const isOuter = !props.insideDropdown && !props.insideDrawer;
-  return (
-    <React.Fragment>
-      {props.items.map((item, index) => {
-        switch (item.type) {
-          case 'header':
-            return (
-              <MenuItemHeader
-                insideDrawer={props.insideDrawer}
-                item={item}
-              />
-            );
-          case 'button':
-            return (
-              <MenuItemButton
-                item={item}
-                onClick={props.onClick}
-                isOuter={isOuter}
-                insideDropdown={props.insideDropdown}
-                insideDrawer={props.insideDrawer}
-              />
-            );
-          case 'divider':
-            return (
-              <MenuItemDivider
-                insideDropdown={props.insideDropdown}
-                insideDrawer={props.insideDrawer}
-                item={item}
-              />
-            );
-          case 'dropdown':
-            if (props.insideDrawer) {
-              return (
-                <React.Fragment>
-                  <MenuItemHeader
-                    insideDrawer={props.insideDrawer}
-                    item={{ type: 'header', title: item.title }}
-                  />
-                  <MenuItems
-                    key={item.title}
-                    items={item.items}
-                    onClick={props.onClick}
-                    insideDrawer={props.insideDrawer}
-                    insideDropdown={props.insideDropdown}
-                  />
-                </React.Fragment>
-              );
-            } else {
-              return (
-                <MenuDropdownButton
-                  key={item.title}
-                  dropdown={item}
-                  isOuter={isOuter}
-                />
-              );
-            }
-          default:
-            return null;
-        }
-      })}
-    </React.Fragment>
-  );
-};
-
-function MenuItemButton(props: {
-  item: MenuButton;
-  onClick?: () => void;
-  isOuter?: boolean;
-  insideDropdown?: boolean;
-  insideDrawer?: boolean;
-}) {
-  const classes = useStyles();
-  const Icon = props.item.icon
-  return (
-    <Button
-      size='large'
-      key={props.item.title}
-      className={classNames(
-        classes.button,
-        props.isOuter && classes.buttonOuter,
-        props.insideDropdown && classes.buttonInsideDropdown,
-        props.insideDrawer && classes.buttonInsideDrawer)}
-      component={(props.item.linkIsExternal ? MuiLink : Link) as any}
-      {...(props.item.linkIsExternal
-        ? {
-          href: props.item.link,
-          underline: 'none',
-        } : {
-          to: {
-            pathname: props.item.link,
-            state: props.item.scrollState ? { [SCROLL_TO_STATE_KEY]: props.item.scrollState } : undefined,
-          }
-        })}
-      onClick={props.onClick}
-    >
-      {Icon && (
-        <Icon className={classNames(classes.buttonIcon, props.item.iconClassName)} />)}
-      {props.item.title}
-    </Button>
-  );
-};
-
-function MenuItemHeader(props: {
-  insideDrawer?: boolean;
-  item: MenuHeader;
-}) {
-  return (
-    <React.Fragment>
-      <MenuItem
-        key={props.item.title}
-        disabled
-        style={{
-          justifyContent: props.insideDrawer ? 'flex-start' : 'center',
-          minHeight: 48,
-        }}
-      >{props.item.title}</MenuItem>
-      <Divider />
-    </React.Fragment>
-  );
-};
-
-function MenuItemDivider(props: {
-  insideDrawer?: boolean;
-  insideDropdown?: boolean;
-  item: MenuDivider;
-}) {
-  const classes = useStyles();
-  return props.insideDrawer ? (
-    <div className={classes.menuItemDividerInsideDrawer} />
-  ) : (
-    <Divider />
-  );
-};
 
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {

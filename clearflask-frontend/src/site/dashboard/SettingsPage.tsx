@@ -74,7 +74,6 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
             /></Grid>
           </Grid>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Account sign out</Typography></Grid>
             <Grid item xs={12} sm={6}>
               <Button
                 disabled={this.state.isSubmitting}

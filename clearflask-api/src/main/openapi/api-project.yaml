@@ -1,7 +1,7 @@
 components:
   schemas:
     Config:
-      x-clearflask-page: { name: 'Project', description: 'These are your project settings. You can preview your changes on the right hand side, but keep in mind the preview is manipulating live data. Publish when you are ready.', nameFromProp: 'name' }
+      x-clearflask-page: { name: 'Advanced', description: 'These are your project settings. You can preview your changes on the right hand side, but keep in mind the preview is manipulating live data. Publish when you are ready.' }
       description: Config properties visible both to client app and admins.
       type: object
       required:

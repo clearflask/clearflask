@@ -1,24 +1,34 @@
-import { AppBar, Divider, Drawer, Fade, Hidden, IconButton, Toolbar } from '@material-ui/core';
+import { AppBar, Divider, Drawer, IconButton, Toolbar, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import CloseIcon from '@material-ui/icons/Close';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 import MenuIcon from '@material-ui/icons/Menu';
-import PreviewOnIcon from '@material-ui/icons/Visibility';
-import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
+import { contentScrollApplyStyles } from './ContentScroll';
+import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
+export interface LayoutSize {
+  breakWidth?: number;
+  width?: number | string;
+  maxWidth?: number;
+}
+export interface Section {
+  size?: LayoutSize;
+  content: React.ReactNode;
+}
+export interface PreviewSection extends Section {
+  bar?: React.ReactNode;
+}
+
+const BOX_MARGIN = 36;
+const BOX_BORDER_WIDTH = 1;
+
+type MediaQueries = 'enableBoxLayout' | 'overflowPreview' | 'overflowMenu';
 const MENU_WIDTH = 180;
 const styles = (theme: Theme) => createStyles({
-  root: {
-    flexGrow: 1,
-    display: 'flex',
-  },
-  mainAndBarBottom: {
-    display: 'flex',
-    flexDirection: 'column' as 'column',
-    flexGrow: 1,
-  },
+
   barBottomPaper: {
     display: 'flex',
     flexDirection: 'row' as 'row',
@@ -28,7 +38,6 @@ const styles = (theme: Theme) => createStyles({
     zIndex: 1, // Allow other things like Color picker to overlap this
   },
   barBottom: {
-    flex: '1 0',
   },
   drawer: {
     [theme.breakpoints.up('sm')]: {
@@ -57,6 +66,8 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(0.5, 1),
     color: theme.palette.text.secondary,
     alignItems: 'center',
+  },
+  previewBarBorder: {
     borderBottom: '1px dashed ' + theme.palette.grey[300],
   },
   previewBarItem: {
@@ -67,50 +78,108 @@ const styles = (theme: Theme) => createStyles({
   },
   menuButton: {
     marginRight: 20,
-    [theme.breakpoints.up('sm')]: {
-      display: 'none',
-    },
   },
-  previewButton: {
-    [theme.breakpoints.up('md')]: {
-      display: 'none',
-    },
-  },
-  toolbar: theme.mixins.toolbar,
-  content: {
-    flexGrow: 1,
-  },
+  toolbarSpacer: theme.mixins.toolbar,
   contentMargins: {
     padding: theme.spacing(3),
+  },
+  page: {
+    height: '100vh',
+    maxHeight: '100vh',
+    width: '100vw',
+    maxWidth: '100vw',
+    overflow: 'hidden',
   },
   grow: {
     flexGrow: 1,
   },
+  horizontal: {
+    display: 'flex',
+    alignItems: 'stretch',
+    minHeight: 0,
+  },
+  fakeHorizontalMarginCollapse: {
+    '& > *:not(:first-child)': {
+      marginLeft: 0,
+    },
+  },
+  vertical: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'stretch',
+    minHeight: 0,
+  },
+  box: {
+  },
+  boxLayout: {
+    margin: BOX_MARGIN,
+    boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
+    border: '1px solid ' + theme.palette.grey[300],
+    display: 'flex',
+    alignItems: 'stretch',
+    '& > *:not(:first-child)': {
+      borderLeft: '1px solid ' + theme.palette.grey[300],
+    },
+  },
+  section: {
+    ...contentScrollApplyStyles(theme, undefined, true),
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+  content: {
+  },
+  menu: {
+  },
+  preview: {
+  },
+  contentSize: {
+    flexBasis: (props: Props) => props.main.size?.breakWidth || 'content',
+    width: (props: Props) => props.main.size?.width,
+    maxWidth: (props: Props) => props.main.size?.maxWidth,
+  },
+  menuSize: {
+    flexBasis: (props: Props) => props.menu?.size?.breakWidth || 'content',
+    width: (props: Props) => props.menu?.size?.width,
+    maxWidth: (props: Props) => props.menu?.size?.maxWidth,
+  },
+  previewSize: {
+    flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
+    width: (props: Props) => props.preview?.size?.width,
+    maxWidth: (props: Props) => props.preview?.size?.maxWidth,
+  },
+  leftPanel: {
+    boxSizing: 'content-box',
+    maxWidth: (props: Props & WithMediaQueries<MediaQueries>) => {
+      if (!props.main.size?.maxWidth
+        || (!props.mediaQueries.overflowMenu && !props.menu?.size?.maxWidth)) {
+        return undefined; // Let it grow forever
+      }
+      return props.main.size.maxWidth + ((props.mediaQueries.overflowMenu || !props.menu?.size?.maxWidth)
+        ? 0 : props.menu.size.maxWidth);
+    },
+  },
+  rightPanel: {
+    boxSizing: 'content-box',
+    maxWidth: (props: Props) => props.preview?.size?.maxWidth,
+  },
 });
-
 interface Props {
-  showToolbar: boolean;
+  main: Section;
+  toolbarShow: boolean;
   toolbarLeft: React.ReactNode;
   toolbarRight?: React.ReactNode;
-  menu: React.ReactNode;
-  previewBar?: React.ReactNode;
-  previewBarInfo?: React.ReactNode;
-  preview?: React.ReactNode;
+  menu?: Section;
+  previewShow?: boolean;
+  previewShowChanged: (show: boolean) => void;
+  preview?: PreviewSection;
   barBottom?: React.ReactNode;
   children: React.ReactNode;
-  hideContentMargins?: boolean;
-  width?: {
-    target: 'content' | 'preview';
-    width: string | number,
-  };
+  contentMargins?: boolean;
 }
-
 interface State {
   mobileMenuOpen: boolean;
-  mobilePreviewOpen: boolean;
 }
-
-class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
+class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyles<typeof styles, true> & WithWidthProps, State> {
   readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
   readonly containerRef = React.createRef<HTMLDivElement>();
 
@@ -118,55 +187,67 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
     super(props);
     this.state = {
       mobileMenuOpen: false,
-      mobilePreviewOpen: false,
     };
   }
 
-  static getDerivedStateFromProps(props: React.ComponentProps<typeof Layout>, state: State): Partial<State> | null {
-    // Clear mobile preview if navigated to a page that doesn't have mobile preview
-    // So if you click back to a page that does, the preview is not open already
-    if (!props.preview && !!state.mobilePreviewOpen) {
-      return { mobilePreviewOpen: undefined };
-    }
-    return null;
-  }
-
   render() {
-    const previewBar = (this.props.previewBar || this.props.previewBarInfo) && (
+    const overflowPreview = this.props.mediaQueries.overflowPreview;
+    const overflowMenu = this.props.mediaQueries.overflowMenu;
+
+    const previewBar = (!!this.props.preview?.bar || !!overflowPreview) && (
       <React.Fragment>
-        {this.props.previewBar ? this.props.previewBar : (
-          <div className={this.props.classes.previewBar}>
-            <InfoIcon className={this.props.classes.previewBarItem} />
-            <div className={this.props.classes.previewBarItem}>
-              {this.props.previewBarInfo}
-            </div>
-          </div>
-        )}
-        {/* <Divider /> */}
+        <div className={classNames(
+          this.props.classes.previewBar,
+          !!this.props.preview?.bar && this.props.classes.previewBarBorder,
+        )}>
+          {!!overflowPreview && (
+            <IconButton
+              color='inherit'
+              aria-label=''
+              onClick={this.handlePreviewToggle.bind(this)}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+          {!!this.props.preview?.bar && (
+            <React.Fragment>
+              <InfoIcon className={this.props.classes.previewBarItem} />
+              <div className={this.props.classes.previewBarItem}>
+                {this.props.preview.bar}
+              </div>
+            </React.Fragment>
+          )}
+        </div>
       </React.Fragment>
     );
 
     const preview = this.props.preview && (
-      <React.Fragment>
-        {!!this.props.showToolbar && (<div className={this.props.classes.toolbar} />)}
+      <div className={classNames(this.props.classes.section, this.props.classes.preview, this.props.classes.previewSize, this.props.classes.vertical)}>
         {previewBar}
         <div style={{ flex: '1 1 auto' }}>
-          {this.props.preview}
+          {this.props.preview.content}
         </div>
-      </React.Fragment>
+      </div>
     );
-    const previewWidth = !this.props.width
-      ? '40vw'
-      : (this.props.width.target === 'preview'
-        ? this.props.width.width
-        : `calc(100vw - ${MENU_WIDTH}px - ${this.props.width.width}${typeof this.props.width.width === 'number' ? 'px' : ''})`);
+
+    const menu = !!this.props.menu && (
+      <div className={classNames(this.props.classes.section, this.props.classes.menu, this.props.classes.menuSize)}>
+        {this.props.menu.content}
+      </div>
+    );
+
+    const content = (
+      <div className={classNames(this.props.classes.section, this.props.classes.content, this.props.classes.contentSize, !!this.props.contentMargins && this.props.classes.contentMargins)}>
+        {this.props.main.content}
+      </div>
+    );
 
     return (
       <div ref={this.containerRef}>
-        {!!this.props.showToolbar && (
+        {!!this.props.toolbarShow && (
           <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
             <Toolbar>
-              {!!this.props.menu && (
+              {!!overflowMenu && !!menu && (
                 <IconButton
                   color="inherit"
                   aria-label="Open drawer"
@@ -178,131 +259,90 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
               )}
               {this.props.toolbarLeft}
               <div className={this.props.classes.grow} />
-              <Fade in={!!this.props.preview}>
-                <IconButton
-                  color='inherit'
-                  aria-label='Preview changes'
-                  onClick={this.handlePreviewToggle.bind(this)}
-                  className={this.props.classes.previewButton}
-                >
-                  {this.state.mobilePreviewOpen ? (<PreviewOffIcon />) : (<PreviewOnIcon />)}
-                </IconButton>
-              </Fade>
               {this.props.toolbarRight}
             </Toolbar>
             <Divider />
           </AppBar>
         )}
-        <div className={this.props.classes.root}>
-          {!!this.props.menu && (
-            <nav className={this.props.classes.drawer}>
-              <Hidden smUp implementation='css'>
-                <Drawer
-                  variant='temporary'
-                  open={this.state.mobileMenuOpen}
-                  onClose={this.handleDrawerToggle.bind(this)}
-                  classes={{
-                    paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
-                  }}
-                  ModalProps={{
-                    container: () => this.containerRef.current!,
-                    keepMounted: true,
-                  }}
-                >
-                  <div className={this.props.classes.toolbar} />
-                  <Divider />
-                  {this.props.menu}
-                </Drawer>
-              </Hidden>
-              <Hidden xsDown implementation='css'>
-                <Drawer
-                  classes={{
-                    paper: this.props.classes.drawerPaper,
-                  }}
-                  variant="permanent"
-                  open
-                  ModalProps={{
-                    container: () => this.containerRef.current!
-                  }}
-                >
-                  <div className={this.props.classes.toolbar} />
-                  <Divider />
-                  {this.props.menu}
-                </Drawer>
-              </Hidden>
-            </nav>
-          )}
-          <div className={this.props.classes.mainAndBarBottom}>
-            {!!this.props.showToolbar && (<div className={this.props.classes.toolbar} />)}
-            <main className={classNames(this.props.classes.content, !this.props.hideContentMargins && this.props.classes.contentMargins)}>
-              {this.props.children}
-              <div className={this.props.classes.toolbar} />
-            </main>
-            {this.props.barBottom && (<div className={this.props.classes.toolbar} />)}
+        {overflowMenu && !!menu && (
+          <nav className={this.props.classes.drawer}>
             <Drawer
+              variant='temporary'
+              open={this.state.mobileMenuOpen}
+              onClose={this.handleDrawerToggle.bind(this)}
               classes={{
-                paper: this.props.classes.barBottomPaper,
+                paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
               }}
-              anchor='bottom'
-              variant="persistent"
-              open={!!this.props.barBottom}
               ModalProps={{
-                container: () => this.containerRef.current!
+                container: () => this.containerRef.current!,
+                keepMounted: true,
               }}
             >
-              <Toolbar className={this.props.classes.barBottom}>
-                {this.props.barBottom}
-              </Toolbar>
-              {this.props.preview && (
-                <Hidden smDown implementation='css'>
-                  <div style={{ width: previewWidth }}>&nbsp;</div>
-                </Hidden>
-              )}
+              {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
+              {menu}
             </Drawer>
+          </nav>
+        )}
+        {overflowPreview && !!preview && (
+          <Drawer
+            variant='persistent'
+            SlideProps={{ mountOnEnter: true }}
+            anchor='right'
+            open={!!this.props.previewShow}
+            onClose={this.handleDrawerToggle.bind(this)}
+            classes={{
+              paper: this.props.classes.previewMobilePaper,
+            }}
+            ModalProps={{
+              container: () => this.containerRef.current!
+            }}
+          >
+            {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
+            {preview}
+          </Drawer>
+        )}
+        <div className={classNames(this.props.classes.page, this.props.classes.vertical)}>
+          {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
+          <div className={classNames(
+            this.props.classes.grow,
+            this.props.classes.horizontal,
+            this.props.classes.fakeHorizontalMarginCollapse,
+          )}>
+            {this.boxLayout(this.props.classes.leftPanel,
+              <React.Fragment>
+                {!overflowMenu && !!menu && (
+                  menu
+                )}
+                <div className={classNames(this.props.classes.vertical, this.props.classes.grow)}>
+                  {content}
+                  {!!this.props.barBottom && (
+                    <div className={this.props.classes.barBottom}>
+                      <Divider />
+                      {this.props.barBottom}
+                    </div>
+                  )}
+                </div>
+              </React.Fragment>
+            )}
+            {!overflowPreview && !!preview && (
+              this.boxLayout(this.props.classes.rightPanel, preview)
+            )}
           </div>
-          {preview && (
-            <React.Fragment>
-              <Hidden smDown implementation='css'>
-                <div style={{ width: previewWidth }}>&nbsp;</div>
-              </Hidden>
-              <Hidden mdUp implementation='css'>
-                <Drawer
-                  variant='persistent'
-                  SlideProps={{ mountOnEnter: true }}
-                  anchor='right'
-                  open={this.state.mobilePreviewOpen}
-                  onClose={this.handleDrawerToggle.bind(this)}
-                  classes={{
-                    paper: this.props.classes.previewMobilePaper,
-                  }}
-                  ModalProps={{
-                    container: () => this.containerRef.current!
-                  }}
-                >
-                  {preview}
-                </Drawer>
-              </Hidden>
-              <Hidden smDown implementation='css'>
-                <Drawer
-                  PaperProps={{
-                    style: { width: previewWidth }
-                  }}
-                  classes={{
-                    paper: this.props.classes.previewPaper,
-                  }}
-                  anchor='right'
-                  variant="permanent"
-                  open
-                  ModalProps={{
-                    container: () => this.containerRef.current!
-                  }}
-                >
-                  {preview}
-                </Drawer>
-              </Hidden>
-            </React.Fragment>
-          )}
         </div>
+      </div>
+    );
+  }
+
+  boxLayout(className: string, content: React.ReactNode): React.ReactNode {
+    const enableBoxLayout = this.props.mediaQueries.enableBoxLayout;
+    return (
+      <div className={classNames(
+        className,
+        this.props.classes.grow,
+        this.props.classes.horizontal,
+        this.props.classes.box,
+        !!enableBoxLayout && this.props.classes.boxLayout)}>
+        {content}
       </div>
     );
   }
@@ -312,8 +352,22 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
   };
 
   handlePreviewToggle() {
-    this.setState({ mobilePreviewOpen: !this.state.mobilePreviewOpen });
+    this.props.previewShowChanged(!this.props.previewShow);
   };
 }
 
-export default withStyles(styles, { withTheme: true })(Layout);
+export default withMediaQueries<MediaQueries, Props>(props => {
+  const menuMinWidth = props.menu?.size?.breakWidth || 0;
+  const contentMinWidth = props.main.size?.breakWidth || 0;
+  const previewMinWidth = props.preview?.size?.breakWidth || 0;
+  const boxMinWidth = (BOX_MARGIN + BOX_BORDER_WIDTH)
+    // Both left and right side
+    * 2
+    // Count content and maybe preview
+    * (!!props.preview ? 2 : 1);
+  return {
+    enableBoxLayout: `(min-width:${contentMinWidth + menuMinWidth + previewMinWidth + boxMinWidth}px)`,
+    overflowPreview: `(max-width:${contentMinWidth + menuMinWidth + previewMinWidth}px)`,
+    overflowMenu: `(max-width:${contentMinWidth + menuMinWidth}px)`,
+  };
+})(withStyles(styles, { withTheme: true })(Layout));

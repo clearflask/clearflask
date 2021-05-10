@@ -13,6 +13,12 @@ const styles = (theme: Theme) => createStyles({
     '& .apexcharts-tooltip': {
       display: 'none',
     },
+    '& .apexcharts-xaxistooltip': {
+      background: theme.palette.background.paper,
+      '&::after': {
+        borderBottomColor: theme.palette.background.paper,
+      }
+    },
   },
 });
 interface Props {
@@ -91,13 +97,17 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
               tooltip: {
                 enabled: true,
                 offsetY: 5,
+                style: {
+                  fontFamily: this.props.theme.typography.fontFamily,
+                  fontSize: '1em',
+                },
               },
             },
             yaxis: {
               labels: { show: false },
               floating: true,
               tooltip: {
-                enabled: true,
+                enabled: false,
               },
             },
             grid: {
