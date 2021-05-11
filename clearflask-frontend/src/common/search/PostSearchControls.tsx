@@ -1,4 +1,4 @@
-import { Checkbox, FormControlLabel, FormHelperText, Radio, Typography } from '@material-ui/core';
+import { Checkbox, FormControlLabel, Radio, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
 import * as Client from '../../api/client';
@@ -8,10 +8,17 @@ const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
+    margin: theme.spacing(3),
+    minWidth: 'min-content',
   },
   group: {
+    margin: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
+    minWidth: 'min-content',
+  },
+  label: {
+    wordBreak: 'break-word',
   },
 });
 interface Props {
@@ -47,12 +54,19 @@ class PostSearchControls extends React.Component<Props & WithStyles<typeof style
               key={`group-${group.groupName || 'noname'}`}
               className={this.props.classes.group}
             >
-              <Typography variant='caption'>{group.groupName}</Typography>
+              <Typography variant='subtitle1' component='div'>{group.groupName}</Typography>
               {group.labels.map(label => (
                 <FormControlLabel
                   key={`label-${label.label}`}
-                  label={(<FormHelperText component='span'>{label.label}</FormHelperText>)}
                   style={{ color: label.color }}
+                  label={(
+                    <Typography
+                      variant='body2'
+                      component='div'
+                      className={this.props.classes.label}>
+                      {label.label}
+                    </Typography>
+                  )}
                   control={(
                     <Control
                       size='small'

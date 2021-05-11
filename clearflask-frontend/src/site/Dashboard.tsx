@@ -361,7 +361,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         menu = {
-          size: { breakWidth: 180, maxWidth: 300 },
+          size: { breakWidth: 200, flexGrow: 1, width: 'max-content', maxWidth: 250 },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostFilter
@@ -374,7 +374,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ),
         };
         main = {
-          size: { breakWidth: 300, maxWidth: 1024 },
+          size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostList
@@ -506,7 +506,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }
         });
         menu = {
-          size: { breakWidth: 180 },
+          size: { width: 'max-content', maxWidth: 350 },
           content: (
             <React.Fragment>
               <Menu
@@ -574,7 +574,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         };
 
         main = {
-          size: { breakWidth: 350 },
+          size: { breakWidth: 350, flexGrow: 1 },
           content: (
             <React.Fragment>
               <Crumbs
@@ -776,11 +776,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               />
             </React.Fragment>
           }
-          previewSize={{ minWidth: 300, maxWidth: 1024 }}
           previewShow={!!this.state.previewShow}
           previewShowChanged={show => this.setState({ previewShow: show })}
           preview={preview}
-          menuSize={{ minWidth: 180, maxWidth: 250 }}
           menu={menu}
           barBottom={(activePath === 'settings' && activeProject && activeProject.hasUnsavedChanges()) ? (
             <React.Fragment>
@@ -799,7 +797,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </React.Fragment>
           ) : undefined}
           contentMargins={!hideContentMargins}
-          contentSize={{ minWidth: 300, maxWidth: 1024 }}
           main={main}
         />
       </Elements>
@@ -850,7 +847,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: {},
+      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
       bar: (
         <div className={this.props.classes.previewBarText}>
           Viewing post as&nbsp;
@@ -874,7 +871,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: {},
+      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
       bar: (
         <div className={this.props.classes.previewBarText}>
           Viewing user profile as&nbsp;
@@ -945,7 +942,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
   renderPreviewEmpty(msg: string): PreviewSection {
     return {
-      size: { breakWidth: 300, maxWidth: 1024 },
+      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
       content: (
         <div className={this.props.classes.previewEmptyMessage}>
           <Typography component='div' variant='h5'>

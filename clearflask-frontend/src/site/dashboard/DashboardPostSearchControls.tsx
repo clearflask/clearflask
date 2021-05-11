@@ -7,7 +7,6 @@ import PostSearchControls from '../../common/search/PostSearchControls';
 
 const styles = (theme: Theme) => createStyles({
 });
-
 interface Props {
   server: Server;
   search?: Partial<Client.IdeaSearch>;

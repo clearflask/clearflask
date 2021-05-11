@@ -8,11 +8,11 @@ import { Label } from '../../app/comps/SelectionPicker';
  */
 
 export enum PostFilterType {
-  Search = 'search',
-  Sort = 'sort',
-  Category = 'category',
-  Tag = 'tag',
-  Status = 'status',
+  Search = 'Search',
+  Sort = 'Sort',
+  Category = 'Category',
+  Tag = 'Tag',
+  Status = 'Status',
 }
 export type GroupedLabels = Array<{
   groupName: string;

@@ -12,6 +12,7 @@ import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 export interface LayoutSize {
   breakWidth?: number;
   width?: number | string;
+  flexGrow?: number;
   maxWidth?: number;
 }
 export interface Section {
@@ -123,31 +124,35 @@ const styles = (theme: Theme) => createStyles({
   },
   section: {
     ...contentScrollApplyStyles(theme, undefined, true),
-    flexGrow: 1,
     flexShrink: 1,
   },
   content: {
-  },
-  menu: {
-  },
-  preview: {
-  },
-  contentSize: {
+    flexGrow: (props: Props) => props.main?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.main.size?.breakWidth || 'content',
     width: (props: Props) => props.main.size?.width,
     maxWidth: (props: Props) => props.main.size?.maxWidth,
   },
-  menuSize: {
+  menu: {
+    flexGrow: (props: Props) => props.menu?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.menu?.size?.breakWidth || 'content',
     width: (props: Props) => props.menu?.size?.width,
     maxWidth: (props: Props) => props.menu?.size?.maxWidth,
   },
-  previewSize: {
+  preview: {
+    flexGrow: (props: Props) => props.preview?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
     width: (props: Props) => props.preview?.size?.width,
     maxWidth: (props: Props) => props.preview?.size?.maxWidth,
   },
   leftPanel: {
+    flexBasis: (props: Props & WithMediaQueries<MediaQueries>) => {
+      if (!props.main?.size?.breakWidth
+        || (!props.mediaQueries.overflowMenu && !props.menu?.size?.breakWidth)) {
+        return 'content';
+      }
+      return `${(props.menu?.size?.breakWidth || 0) + props.main.size.breakWidth}px`;
+    },
+    flexGrow: (props: Props) => (props.menu?.size?.flexGrow || 0) + (props.main?.size?.flexGrow || 0),
     boxSizing: 'content-box',
     maxWidth: (props: Props & WithMediaQueries<MediaQueries>) => {
       if (!props.main.size?.maxWidth
@@ -159,6 +164,8 @@ const styles = (theme: Theme) => createStyles({
     },
   },
   rightPanel: {
+    flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
+    flexGrow: (props: Props) => props.preview?.size?.flexGrow || 0,
     boxSizing: 'content-box',
     maxWidth: (props: Props) => props.preview?.size?.maxWidth,
   },
@@ -222,7 +229,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     );
 
     const preview = this.props.preview && (
-      <div className={classNames(this.props.classes.section, this.props.classes.preview, this.props.classes.previewSize, this.props.classes.vertical)}>
+      <div className={classNames(this.props.classes.section, this.props.classes.preview, this.props.classes.vertical)}>
         {previewBar}
         <div style={{ flex: '1 1 auto' }}>
           {this.props.preview.content}
@@ -231,13 +238,13 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     );
 
     const menu = !!this.props.menu && (
-      <div className={classNames(this.props.classes.section, this.props.classes.menu, this.props.classes.menuSize)}>
+      <div className={classNames(this.props.classes.section, this.props.classes.menu)}>
         {this.props.menu.content}
       </div>
     );
 
     const content = (
-      <div className={classNames(this.props.classes.section, this.props.classes.content, this.props.classes.contentSize, !!this.props.contentMargins && this.props.classes.contentMargins)}>
+      <div className={classNames(this.props.classes.section, this.props.classes.content, !!this.props.contentMargins && this.props.classes.contentMargins)}>
         {this.props.main.content}
       </div>
     );
@@ -338,7 +345,6 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     return (
       <div className={classNames(
         className,
-        this.props.classes.grow,
         this.props.classes.horizontal,
         this.props.classes.box,
         !!enableBoxLayout && this.props.classes.boxLayout)}>
