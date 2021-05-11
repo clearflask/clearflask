@@ -43,7 +43,7 @@ import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirect
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
-import PostFilter from './dashboard/PostFilter';
+import PostFilter from './dashboard/DashboardPostSearchControls';
 import PostList from './dashboard/PostList';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
@@ -153,6 +153,10 @@ interface State {
     type: PreviewType,
     id?: string,
   };
+  // Below is state for individual pages
+  // It's not very nice to be here in one place, but it does allow for state
+  // to persist between page clicks
+  explorerPostSearch?: Partial<AdminClient.IdeaSearch>;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -360,7 +364,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           size: { breakWidth: 180, maxWidth: 300 },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostFilter key={activeProject.server.getProjectId()} server={activeProject.server} />
+              <PostFilter
+                key={activeProject.server.getProjectId()}
+                server={activeProject.server}
+                search={this.state.explorerPostSearch}
+                onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
+              />
             </Provider>
           ),
         };
@@ -368,7 +377,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           size: { breakWidth: 300, maxWidth: 1024 },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostList key={activeProject.server.getProjectId()} server={activeProject.server} />
+              <PostList
+                key={activeProject.server.getProjectId()}
+                server={activeProject.server}
+                search={this.state.explorerPostSearch}
+                onClickPost={postId => this.pageClicked('post', [postId])}
+                onUserClick={userId => this.pageClicked('user', [userId])}
+              />
             </Provider>
           ),
         };
@@ -402,7 +417,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         main = {
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostList key={activeProject.server.getProjectId()} server={activeProject.server} />
+              TODO
             </Provider>
           ),
         };

@@ -95,11 +95,11 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
 
     const signinContainer = (
       <Container maxWidth='md' style={{ position: 'relative' }}>
-        <AnimBubble size={350} x={420} y={70} />
-        <AnimBubble size={100} x={800} y={130} />
-        <AnimBubble size={150} x={520} y={470} />
-        <AnimBubble size={300} x={900} y={700} />
-        <AnimBubble size={500} x={1300} y={450} />
+        <AnimBubble delay='0ms' duration='400ms' size={350} x={420} y={70} />
+        <AnimBubble delay='20ms' duration='200ms' size={100} x={800} y={130} />
+        <AnimBubble delay='40ms' duration='300ms' size={150} x={520} y={470} />
+        <AnimBubble delay='100ms' duration='500ms' size={300} x={900} y={700} />
+        <AnimBubble delay='100ms' duration='500ms' size={500} x={1300} y={450} />
         <Paper className={this.props.classes.signinContainer}>
           <Typography component='h1' variant='h4' color='textPrimary' className={this.props.classes.welcomeBack}>
             Welcome back

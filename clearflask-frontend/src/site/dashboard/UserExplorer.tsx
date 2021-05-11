@@ -16,10 +16,11 @@ import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import { MaxContentWidth } from '../../app/comps/Post';
-import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import SelectionPicker from '../../app/comps/SelectionPicker';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import { labelsToSearch, searchToLabels } from '../../common/search/searchUtil';
 import SubmitButton from '../../common/SubmitButton';
 import UserDisplay from '../../common/UserDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
@@ -148,7 +149,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
     const expand = !!this.state.createRefFocused || !!this.state.newUserName;
     const enableSubmit = !!this.state.newUserName;
 
-    const searchOptions = this.searchToLabels(this.state.searchOptions);
+    const searchOptions = searchToLabels(this.state.searchOptions);
 
     var content = (
       <div className={this.props.classes.resultContainer}>
@@ -340,7 +341,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
             popupColumnCount={3}
             PopperProps={{ placement: 'bottom-end' }}
             onValueChange={labels => {
-              this.setState({ searchOptions: this.labelsToSearch(labels) });
+              this.setState({ searchOptions: labelsToSearch(labels) });
               this.updateSearchText(this.state.searchText);
             }}
             inputValue={this.state.searchInput || ''}
@@ -378,74 +379,6 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
         });
         this.props.onResults && this.props.onResults(result);
       });
-  }
-
-
-  searchToLabels(search?: Partial<Admin.UserSearchAdmin>): { options: Label[], selected: Label[] } {
-    const result = {
-      options: [] as Label[],
-      selected: [] as Label[],
-    };
-
-    const modOnly: Label = {
-      groupBy: 'Filter',
-      label: 'Moderators',
-      value: 'Mods',
-    };
-    result.options.push(modOnly);
-    if (search?.isMod) result.selected.push(modOnly);
-
-    const sortCreated: Label = {
-      groupBy: 'Sort',
-      label: 'Created',
-      value: Admin.UserSearchAdminSortByEnum.Created,
-    }
-    result.options.push(sortCreated);
-    if (search?.sortBy === Admin.UserSearchAdminSortByEnum.Created) result.selected.push(sortCreated);
-
-    const sortFundsAvailable: Label = {
-      groupBy: 'Sort',
-      label: 'Balance',
-      value: Admin.UserSearchAdminSortByEnum.FundsAvailable,
-    }
-    result.options.push(sortFundsAvailable);
-    if (search?.sortBy === Admin.UserSearchAdminSortByEnum.FundsAvailable) result.selected.push(sortFundsAvailable);
-
-    const orderAsc: Label = {
-      groupBy: 'Order',
-      label: 'Ascending',
-      value: Admin.UserSearchAdminSortOrderEnum.Asc,
-    }
-    result.options.push(orderAsc);
-    if (search?.sortOrder === Admin.UserSearchAdminSortOrderEnum.Asc) result.selected.push(orderAsc);
-
-    const orderDesc: Label = {
-      groupBy: 'Order',
-      label: 'Descending',
-      value: Admin.UserSearchAdminSortOrderEnum.Desc,
-    }
-    result.options.push(orderDesc);
-    if (search?.sortOrder === Admin.UserSearchAdminSortOrderEnum.Desc) result.selected.push(orderDesc);
-
-    return result;
-  }
-
-  labelsToSearch(labels: Label[]): Partial<Admin.UserSearchAdmin> {
-    const search: Partial<Admin.UserSearchAdmin> = {};
-    labels.forEach(label => {
-      if (label.groupBy === 'Filter') {
-        if (label.value === 'Mods') search.isMod = true;
-      }
-      if (label.groupBy === 'Sort') {
-        if (label.value === Admin.UserSearchAdminSortByEnum.Created) search.sortBy = Admin.UserSearchAdminSortByEnum.Created;
-        if (label.value === Admin.UserSearchAdminSortByEnum.FundsAvailable) search.sortBy = Admin.UserSearchAdminSortByEnum.FundsAvailable;
-      }
-      if (label.groupBy === 'Order') {
-        if (label.value === Admin.UserSearchAdminSortOrderEnum.Asc) search.sortOrder = Admin.UserSearchAdminSortOrderEnum.Asc;
-        if (label.value === Admin.UserSearchAdminSortOrderEnum.Desc) search.sortOrder = Admin.UserSearchAdminSortOrderEnum.Desc;
-      }
-    });
-    return search;
   }
 }
 

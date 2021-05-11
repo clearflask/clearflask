@@ -6,19 +6,13 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
+import { isFilterControllable, PostFilterType, postLabelsToSearch, postSearchToLabels } from '../../common/search/searchUtil';
 import { SearchTypeDebounceTime } from '../../common/util/debounce';
 import minmax from '../../common/util/mathutil';
 import { initialWidth } from '../../common/util/screenUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
-import SelectionPicker, { Label } from './SelectionPicker';
+import SelectionPicker from './SelectionPicker';
 
-export enum FilterType {
-  Search = 'search',
-  Sort = 'sort',
-  Category = 'category',
-  Tag = 'tag',
-  Status = 'status',
-}
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -66,7 +60,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
   _isMounted: boolean = false;
   readonly updateSearchText = debounce(
     (searchText?: string) => {
-      if (!this.isFilterControllable(FilterType.Search)) return;
+      if (!isFilterControllable(this.props.explorer, PostFilterType.Search)) return;
       this.props.onSearchChanged({
         ...this.props.search,
         searchText: searchText,
@@ -83,8 +77,8 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
   }
 
   render() {
-    const controls = this.getControls();
-    const isSearchable = this.isFilterControllable(FilterType.Search);
+    const controls = postSearchToLabels(this.props.config, this.props.explorer, this.props.search);
+    const isSearchable = isFilterControllable(this.props.explorer, PostFilterType.Search);
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
@@ -112,7 +106,10 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             disableFilter
             disableCloseOnSelect
             disableClearOnValueChange
-            onValueChange={labels => this.onValueChange(labels)}
+            onValueChange={labels => {
+              const partialSearch = postLabelsToSearch(labels.map(l => l.value));
+              this.props.onSearchChanged(partialSearch);
+            }}
             formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
             dropdownIcon={FilterIcon}
             popupColumnCount={minmax(
@@ -124,193 +121,6 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         </div>
       </InViewObserver>
     );
-  }
-
-  onValueChange(labels: Label[]) {
-    const partialSearch: Partial<Client.IdeaSearch> = {};
-    labels.forEach(label => {
-      const type = this.getType(label);
-      if (!this.isFilterControllable(type)) return;
-      const data = this.getData(label);
-      switch (type) {
-        case FilterType.Search:
-          partialSearch.searchText = data;
-          break;
-        case FilterType.Sort:
-          partialSearch.sortBy = data as Client.IdeaSearchSortByEnum;
-          break;
-        case FilterType.Category:
-          if (!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
-          partialSearch.filterCategoryIds.push(data);
-          break;
-        case FilterType.Status:
-          if (!partialSearch.filterStatusIds) partialSearch.filterStatusIds = [];
-          partialSearch.filterStatusIds.push(data);
-          break;
-        default:
-          if (!partialSearch.filterTagIds) partialSearch.filterTagIds = [];
-          partialSearch.filterTagIds.push(data);
-          break;
-      }
-    });
-    this.props.onSearchChanged(partialSearch);
-  }
-
-  getControls(): { values: Label[], options: Label[], permanent: Label[], groups: number } {
-    const controls = {
-      values: [] as Label[],
-      options: [] as Label[],
-      permanent: [] as Label[],
-      groups: 0
-    };
-
-    if (!this.props.config) return controls;
-
-    // sort
-    if (!this.isFilterControllable(FilterType.Sort)) {
-      const label: Label = this.getLabel(FilterType.Sort, this.props.explorer.search.sortBy!, this.props.explorer.search.sortBy!);
-      controls.permanent.push(label);
-    } else {
-      controls.groups++;
-      Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
-        const label: Label = this.getLabel(FilterType.Sort, sortBy, sortBy);
-        controls.options.push(label);
-        if (this.props.search && this.props.search.sortBy === sortBy) {
-          controls.values.push(label);
-        }
-      });
-    }
-
-    var hasAny;
-
-    // category
-    var searchableCategories: Client.Category[] = [];
-    if (!this.isFilterControllable(FilterType.Category)) {
-      (this.props.explorer.search.filterCategoryIds || []).forEach(categoryId => {
-        const category = this.props.config!.content.categories.find(c => c.categoryId === categoryId);
-        if (!category) return;
-        searchableCategories.push(category);
-        const label: Label = this.getLabel(FilterType.Category, category.categoryId, category.name, category.color);
-        controls.permanent.push(label);
-      });
-    } else {
-      hasAny = false;
-      if (!this.props.search || !this.props.search.filterCategoryIds || this.props.search.filterCategoryIds.length === 0) {
-        searchableCategories = this.props.config.content.categories;
-      }
-      this.props.config.content.categories.forEach(category => {
-        hasAny = true;
-        const label: Label = this.getLabel(FilterType.Category, category.categoryId, category.name, category.color);
-        controls.options.push(label);
-        if (this.props.search && this.props.search.filterCategoryIds && this.props.search.filterCategoryIds.includes(category.categoryId)) {
-          controls.values.push(label);
-          searchableCategories.push(category);
-        }
-      });
-      if (hasAny) controls.groups++;
-    }
-
-    // status
-    if (!this.isFilterControllable(FilterType.Status)) {
-      searchableCategories.forEach(category => {
-        category.workflow.statuses.forEach(status => {
-          if (this.props.explorer.search.filterStatusIds && this.props.explorer.search.filterStatusIds.includes(status.statusId)) {
-            const label: Label = this.getLabel(FilterType.Status, status.statusId, status.name, status.color);
-            controls.permanent.push(label);
-          }
-        })
-      });
-    } else {
-      hasAny = false;
-      searchableCategories.forEach(category => {
-        category.workflow.statuses.forEach(status => {
-          hasAny = true;
-          const label: Label = this.getLabel(FilterType.Status, status.statusId, status.name, status.color);
-          controls.options.push(label);
-          if (this.props.search && this.props.search.filterStatusIds && this.props.search.filterStatusIds.includes(status.statusId)) {
-            controls.values.push(label);
-          }
-        })
-      });
-      if (hasAny) controls.groups++;
-    }
-
-    // tag
-    if (!this.isFilterControllable(FilterType.Tag)) {
-      searchableCategories.forEach(category => {
-        category.tagging.tags.forEach(tag => {
-          if (this.props.explorer.search.filterTagIds && this.props.explorer.search.filterTagIds.includes(tag.tagId)) {
-            const label: Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name, tag.color);
-            controls.permanent.push(label);
-          }
-        })
-      });
-    } else {
-      hasAny = false;
-      const filterTagIds = new Set(this.props.explorer.search.filterTagIds);
-      searchableCategories.forEach(category => {
-        category.tagging.tagGroups.forEach(tagGroup => {
-          const matchingCount: number = tagGroup.tagIds.reduce((count, nextTagId) => count + (filterTagIds.has(nextTagId) ? 1 : 0), 0);
-          const permanent = matchingCount > 0
-            && (tagGroup.minRequired || 0) <= matchingCount
-            && (tagGroup.maxRequired || tagGroup.tagIds.length) >= matchingCount;
-          tagGroup.tagIds.forEach(tagId => {
-            const tag = category.tagging.tags.find(t => t.tagId === tagId);
-            if (!tag) return;
-            const label: Label = this.getLabel(tagGroup.name, tag.tagId, tag.name, tag.color);
-            if (permanent) {
-              controls.permanent.push(label);
-            } else {
-              hasAny = true;
-              controls.options.push(label);
-              if (this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
-                controls.values.push(label);
-              }
-            }
-          })
-        })
-      });
-      if (hasAny) controls.groups++;
-    }
-
-    // search is not added as a chip
-
-    return controls;
-  }
-
-  getLabel(type: FilterType | string, data: string, name: string, color?: string): Label {
-    return {
-      label: name,
-      filterString: name,
-      value: `${type}:${data}`,
-      groupBy: type,
-      color: color,
-    };
-  }
-
-  getType(label: Label): FilterType | string {
-    return label.value.substr(0, label.value.indexOf(':'));
-  }
-
-  getData(label: Label): string {
-    return label.value.substr(label.value.indexOf(':') + 1);
-  }
-
-  isFilterControllable(type: FilterType | string): boolean {
-    switch (type) {
-      case FilterType.Search:
-        return this.props.explorer.allowSearch?.enableSearchText !== undefined ? this.props.explorer.allowSearch.enableSearchText : this.props.explorer.search.searchText === undefined;
-      case FilterType.Sort:
-        return this.props.explorer.allowSearch?.enableSort !== undefined ? this.props.explorer.allowSearch.enableSort : !this.props.explorer.search.sortBy;
-      case FilterType.Category:
-        return this.props.explorer.allowSearch?.enableSearchByCategory !== undefined ? this.props.explorer.allowSearch.enableSearchByCategory : (!this.props.explorer.search.filterCategoryIds || this.props.explorer.search.filterCategoryIds.length <= 0);
-      case FilterType.Tag:
-        return this.props.explorer.allowSearch?.enableSearchByTag !== undefined ? this.props.explorer.allowSearch.enableSearchByTag : true;
-      case FilterType.Status:
-        return this.props.explorer.allowSearch?.enableSearchByStatus !== undefined ? this.props.explorer.allowSearch.enableSearchByStatus : (!this.props.explorer.search.filterStatusIds || this.props.explorer.search.filterStatusIds.length <= 0);
-      default:
-        return true;
-    }
   }
 
   async demoSearchAnimate(searchTerms: Array<{
