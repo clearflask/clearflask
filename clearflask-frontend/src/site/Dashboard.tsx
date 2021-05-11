@@ -361,7 +361,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         menu = {
-          size: { breakWidth: 200, flexGrow: 1, width: 'max-content', maxWidth: 250 },
+          size: { breakWidth: 200, flexGrow: 1, width: 'max-content', maxWidth: 'max-content' },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostFilter
