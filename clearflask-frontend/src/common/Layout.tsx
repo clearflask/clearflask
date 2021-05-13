@@ -129,6 +129,9 @@ const styles = (theme: Theme) => createStyles({
     flexGrow: 1,
     ...contentScrollApplyStyles(theme, undefined, true),
   },
+  section: {
+    minWidth: 0,
+  },
   content: {
     flexGrow: (props: Props) => props.main?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.main.size?.breakWidth || 'content',
@@ -212,6 +215,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     const preview = this.props.preview && (
       <div className={classNames(
         enableBoxLayout && this.props.classes.boxLayout,
+        this.props.classes.section,
         this.props.classes.preview,
         this.props.classes.vertical,
       )}>
@@ -225,6 +229,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     const menu = !!this.props.menu && (
       <div className={classNames(
         enableBoxLayout && this.props.classes.boxLayout,
+        this.props.classes.section,
         this.props.classes.menu,
         this.props.classes.vertical,
       )}>
@@ -237,6 +242,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     const content = (
       <div className={classNames(
         enableBoxLayout && this.props.classes.boxLayout,
+        this.props.classes.section,
         this.props.classes.content,
         this.props.classes.vertical,
       )}>

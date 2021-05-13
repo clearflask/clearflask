@@ -4,7 +4,6 @@ import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } fro
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
-import ModAction from '../../common/ModAction';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
@@ -156,7 +155,7 @@ export const CommentDelete = withTheme((props: {
               })
               .catch(e => setSubmitting(false))
           }}>
-          {props.asAdmin ? (<ModAction label='Delete' />) : 'Delete'}
+          Delete
         </SubmitButton>
       </DialogActions>
     </Dialog>

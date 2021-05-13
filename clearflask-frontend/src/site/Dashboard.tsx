@@ -361,7 +361,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         menu = {
-          size: { breakWidth: 200, flexGrow: 1, width: 'max-content', maxWidth: 'max-content' },
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostFilter
@@ -374,7 +374,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ),
         };
         main = {
-          size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
+          size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <PostList
@@ -574,7 +574,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         };
 
         main = {
-          size: { breakWidth: 350, flexGrow: 1 },
+          size: { breakWidth: 350, flexGrow: 100 },
           content: (
             <React.Fragment>
               <Crumbs
@@ -782,7 +782,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           menu={menu}
           barBottom={(activePath === 'settings' && activeProject && activeProject.hasUnsavedChanges()) ? (
             <React.Fragment>
-              <Typography style={{ flexGrow: 1 }}>You have unsaved changes</Typography>
+              <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
               <Button color='primary' onClick={() => {
                 const currentProject = activeProject;
                 ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
@@ -847,7 +847,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
+      size: { breakWidth: 600, flexGrow: 100, maxWidth: 1024 },
       bar: (
         <div className={this.props.classes.previewBarText}>
           Viewing post as&nbsp;
@@ -871,7 +871,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
+      size: { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
       bar: (
         <div className={this.props.classes.previewBarText}>
           Viewing user profile as&nbsp;
@@ -942,7 +942,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
   renderPreviewEmpty(msg: string): PreviewSection {
     return {
-      size: { breakWidth: 350, flexGrow: 1, maxWidth: 1024 },
+      size: { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
       content: (
         <div className={this.props.classes.previewEmptyMessage}>
           <Typography component='div' variant='h5'>

@@ -3,8 +3,10 @@ import { Button, Chip, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
+import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
+import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
-import SpeechIcon from '@material-ui/icons/CommentOutlined';
+import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
@@ -20,7 +22,6 @@ import { cssBlurry, ReduxState, Server, StateSettings, Status } from '../../api/
 import ClosablePopper from '../../common/ClosablePopper';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
-import ModAction from '../../common/ModAction';
 import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
@@ -38,6 +39,7 @@ import CommentReply from './CommentReply';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
+import MyButton from './MyButton';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
@@ -55,39 +57,25 @@ const styles = (theme: Theme) => createStyles({
   },
   post: {
     margin: theme.spacing(0.5),
-    display: 'grid',
+    display: 'flex',
+    flexDirection: 'column',
     width: (props: Props) => props.widthExpand ? MaxContentWidth : undefined,
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
-    gridTemplateColumns: 'auto 1fr',
-    gridTemplateRows: 'auto 1fr',
-    gridTemplateAreas:
-      "'. f'"
-      + " 'v c'"
-      + " 'bc bc'"
-      + " 'o o'",
   },
   postContent: {
     gridArea: 'c',
     display: 'flex',
     flexDirection: 'column',
     margin: theme.spacing(1),
-    minWidth: 0,
-  },
-  postVoting: {
-    gridArea: 'v',
   },
   postFunding: {
-    gridArea: 'f',
-    minWidth: 0,
   },
   postContentBeforeComments: {
     gridArea: 'bc',
-    minWidth: 0,
     paddingTop: theme.spacing(4),
   },
   postComments: {
     gridArea: 'o',
-    minWidth: 0,
   },
   votingControl: {
     margin: theme.spacing(0, 0, 0, 0.5),
@@ -150,12 +138,6 @@ const styles = (theme: Theme) => createStyles({
   responseList: {
     color: theme.palette.text.secondary,
   },
-  editButton: {
-    padding: `3px ${theme.spacing(0.5)}px`,
-    whiteSpace: 'nowrap',
-    minWidth: 'unset',
-    color: theme.palette.text.secondary,
-  },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
@@ -175,34 +157,6 @@ const styles = (theme: Theme) => createStyles({
   author: {
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
-  },
-  editIconButton: {
-    padding: '0px',
-    color: theme.palette.text.secondary,
-  },
-  voteIconButton: {
-    fontSize: '2em',
-    padding: '0px',
-    color: theme.palette.text.secondary,
-  },
-  voteIconButtonUp: {
-    borderRadius: '80% 80% 50% 50%',
-  },
-  voteIconButtonDown: {
-    borderRadius: '50% 50% 80% 80%',
-  },
-  voteIconVoted: {
-    color: theme.palette.primary.main + '!important', // important overrides disabled
-    transform: 'scale(1.25)',
-  },
-  voteCount: {
-    lineHeight: '1em',
-    fontSize: '0.9em',
-  },
-  expressionContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
   },
   expressionInner: {
     padding: '4px 6px',
@@ -238,6 +192,9 @@ const styles = (theme: Theme) => createStyles({
   expressionPopperPaper: {
     paddingBottom: theme.spacing(1),
     flexWrap: 'wrap',
+  },
+  expressionEmojiAsIcon: {
+    filter: 'grayscale(100%)',
   },
   fundMoreButton: {
     height: 'auto',
@@ -286,15 +243,10 @@ const styles = (theme: Theme) => createStyles({
   bottomBarLine: {
     display: 'flex',
     flexWrap: 'wrap',
-    alignItems: 'center', // TODO properly center items, neither center nor baseline works here
+    alignItems: 'center',
   },
   grow: {
     flexGrow: 1,
-  },
-  bottomBar: {
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
   },
   commentSection: {
     marginTop: theme.spacing(2),
@@ -314,10 +266,6 @@ const styles = (theme: Theme) => createStyles({
   },
   addCommentFieldExpanded: {
     width: 400,
-  },
-  addCommentButton: {
-    margin: theme.spacing(4),
-    color: theme.palette.text.secondary,
   },
   nothing: {
     margin: theme.spacing(4),
@@ -466,9 +414,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <Loader skipFade className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
           <div className={this.props.classes.post}>
-            <div className={this.props.classes.postVoting}>
-              {this.renderVoting(variant)}
-            </div>
             <div className={this.props.classes.postFunding}>
               {this.renderFunding(variant)}
             </div>
@@ -477,13 +422,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 <React.Fragment>
                   <div className={this.props.classes.titleContainer}>
                     {this.renderTitle(variant)}
-                    {this.renderStatus(variant)}
                   </div>
                   {this.renderDescription(variant)}
                   {this.renderResponse(variant)}
                 </React.Fragment>
               ))}
               {this.renderBottomBar(variant)}
+              {this.renderActions(variant)}
             </div>
             {this.props.contentBeforeComments && (
               <div className={this.props.classes.postContentBeforeComments}>
@@ -512,25 +457,22 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderBottomBar(variant: PostVariant) {
     const leftSide = [
-      this.renderExpression(variant),
+      this.renderVotingCount(variant),
+      this.renderExpressionCount(variant),
+      this.renderCommentCount(variant),
+      this.renderStatus(variant),
     ].filter(notEmpty);
     const rightSide = [
       this.renderAuthor(variant),
       this.renderCategory(variant),
       ...(this.renderTags(variant) || []),
-      this.renderCommentCount(variant),
       this.renderCreatedDatetime(variant),
     ].filter(notEmpty);
-    // Only show edit button if something else is shown too in list variant
-    if (variant === 'page' || leftSide.length + rightSide.length > 0) {
-      const edit = this.renderEdit(variant);
-      if (edit) rightSide.push(edit);
-    }
 
     if (leftSide.length + rightSide.length === 0) return null;
 
     return (
-      <div className={this.props.classes.bottomBar}>
+      <div className={this.props.classes.bottomBarLine}>
         <div className={this.props.classes.bottomBarLine}>
           <Delimited>
             {leftSide}
@@ -542,6 +484,30 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             {rightSide}
           </Delimited>
         </div>
+      </div>
+    );
+  }
+
+  renderActions(variant: PostVariant) {
+    const actions = [
+      this.renderExpression(variant),
+      this.renderVoting(variant),
+      this.renderCommentAdd(variant),
+    ].filter(notEmpty);
+
+    // Only show edit button if something else is shown too in list variant
+    if (variant === 'page' || actions.length > 0) {
+      const edit = this.renderEdit(variant);
+      if (edit) actions.push(edit);
+    }
+
+    if (actions.length === 0) return null;
+
+    return (
+      <div className={this.props.classes.bottomBarLine}>
+        <Delimited delimiter={(<React.Fragment>&nbsp;&nbsp;&nbsp;</React.Fragment>)}>
+          {actions}
+        </Delimited>
       </div>
     );
   }
@@ -592,6 +558,27 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
+  renderCommentAdd(variant: PostVariant) {
+    if (variant !== 'page'
+      || !this.props.idea
+      || !this.props.category
+      || !this.props.category.support.comment) return null;
+    const commentsAllowed: boolean = !this.props.idea.statusId
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableComments !== true;
+    if (!commentsAllowed) return null;
+
+    return (
+      <MyButton
+        key='addComment'
+        buttonVariant='post'
+        Icon={SpeechIcon}
+        onClick={e => this.setState({ commentExpanded: true })}
+      >
+        Comment
+      </MyButton>
+    );
+  }
+
   renderComments(variant: PostVariant) {
     if (variant !== 'page'
       || !this.props.idea
@@ -613,25 +600,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     };
 
     return (
-      <div className={this.props.classes.commentSection}>
-        {commentsAllowed && (
-          <Button key='addComment' variant='text' className={this.props.classes.addCommentButton}
-            onClick={e => this.setState({ commentExpanded: true })}>
-            <Typography variant='caption'>Comment</Typography>
-          </Button>
-        )}
-        {this.props.idea.commentCount > 0 && (
-          <CommentList
-            server={this.props.server}
-            logIn={logIn}
-            ideaId={this.props.idea.ideaId}
-            expectedCommentCount={this.props.idea.childCommentCount}
-            parentCommentId={undefined}
-            newCommentsAllowed={commentsAllowed}
-            loggedInUser={this.props.loggedInUser}
-            onAuthorClick={this.props.onUserClick ? (commentId, userId) => this.props.onUserClick && this.props.onUserClick(userId) : undefined}
-          />
-        )}
+      <div key='comments' className={this.props.classes.commentSection}>
         {commentsAllowed && (
           <Collapse
             in={this.state.commentExpanded}
@@ -648,6 +617,18 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             />
           </Collapse>
         )}
+        {this.props.idea.commentCount > 0 && (
+          <CommentList
+            server={this.props.server}
+            logIn={logIn}
+            ideaId={this.props.idea.ideaId}
+            expectedCommentCount={this.props.idea.childCommentCount}
+            parentCommentId={undefined}
+            newCommentsAllowed={commentsAllowed}
+            loggedInUser={this.props.loggedInUser}
+            onAuthorClick={this.props.onUserClick ? (commentId, userId) => this.props.onUserClick && this.props.onUserClick(userId) : undefined}
+          />
+        )}
       </div>
     );
   }
@@ -660,15 +641,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || (!isMod && !isAuthor)
       || this.props.display?.showEdit === false) return null;
 
-    const labelEdit = isAuthor
-      ? 'Edit'
-      : (<ModAction label='Edit' />);
     return (
       <React.Fragment key='edit'>
-        <Button variant='text' className={this.props.classes.editButton}
-          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
-          <Typography variant='caption'>{labelEdit}</Typography>
-        </Button>
+        <MyButton
+          buttonVariant='post'
+          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}
+        >
+          Edit
+        </MyButton>
         {this.state.editExpanded !== undefined && (
           <PostEdit
             key={this.props.idea.ideaId}
@@ -742,15 +722,34 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderVoting(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showVoting === false
+  renderVotingCount(variant: PostVariant) {
+    if (variant !== 'list'
+      || this.props.display?.showVoting === false
       || !this.props.idea
       || !this.props.category
-      || !this.props.category.support.vote) return null;
+      || !this.props.category.support.vote
+      || (this.props.display?.showVoting === undefined && (this.props.idea.voteValue || 1) === 1)
+    ) return null;
+
+    const Icon = (this.props.idea.voteValue || 0) >= 0 ? UpvoteIcon : DownvoteIcon;
+    return (
+      <Typography className={this.props.classes.commentCount} variant='caption'>
+        <Icon fontSize='inherit' />
+          &nbsp;
+        {Math.abs(this.props.idea.voteValue || 0)}
+      </Typography>
+    );
+  }
+
+  renderVoting(variant: PostVariant) {
+    if (variant !== 'page'
+      || this.props.display?.showVoting === false
+      || !this.props.idea
+      || !this.props.category
+      || !this.props.category.support.vote
+    ) return null;
     const votingAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableVoting !== true;
-    if (!votingAllowed
-      && !this.props.idea.voteValue) return null;
 
     return (
       <div
@@ -766,7 +765,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           vote={this.props.vote}
           voteValue={this.props.idea.voteValue || 0}
           isSubmittingVote={this.state.isSubmittingVote}
-          votingAllowed={votingAllowed}
+          votingAllowed={votingAllowed && variant === 'page'}
           onUpvote={() => this.upvote()}
           onDownvote={this.props.category.support.vote.enableDownvotes ? () => this.downvote() : undefined}
         />
@@ -944,12 +943,38 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     }, callback);
   }
 
+  renderExpressionCount(variant: PostVariant) {
+    if (variant !== 'list'
+      || this.props.display?.showExpression === false
+      || !this.props.idea
+      || !this.props.category?.support.express
+      || (this.props.display?.showExpression === undefined && Object.keys(this.props.idea.expressions || {}).length === 0)
+    ) return null;
+
+    const [topEmoji, topEmojiCount] = Object.entries(this.props.idea.expressions || {})
+      .reduce((l, r) => l[1] > r[1] ? l : r, ['', 0]);
+    return (
+      <Typography key='expressionTop' className={this.props.classes.commentCount} variant='caption'>
+        {(!!topEmoji && !!topEmojiCount) ? (
+          <span className={this.props.classes.expressionEmojiAsIcon}>
+            {topEmoji}
+          </span>
+        ) : (
+          <AddEmojiIcon fontSize='inherit' />
+        )}
+            &nbsp;
+        {topEmojiCount || 0}
+      </Typography>
+    );
+  }
+
   expressBarRef: React.RefObject<HTMLDivElement> = React.createRef();
   renderExpression(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showExpression === false
+    if (variant !== 'page'
+      || this.props.display?.showExpression === false
       || !this.props.idea
-      || !this.props.category
-      || !this.props.category.support.express) return null;
+      || !this.props.category?.support.express
+    ) return null;
     const expressionAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableExpressions !== true;
     if (!expressionAllowed

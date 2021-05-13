@@ -1,10 +1,11 @@
-import { IconButton, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
-import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
+import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
+import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
+import MyButton from './MyButton';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -12,27 +13,21 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
-  voteIconButton: {
-    fontSize: '2em',
-    padding: '0px',
-    color: theme.palette.text.secondary,
-  },
-  voteIconButtonUp: {
-    borderRadius: '80% 80% 50% 50%',
-  },
-  voteIconButtonDown: {
-    borderRadius: '50% 50% 80% 80%',
-  },
-  voteIconButtonDownWithoutValue: {
+  voteButtonDownWithoutValue: {
     marginTop: -8,
   },
-  voteIconVoted: {
+  voteVoted: {
     color: theme.palette.primary.main + '!important', // important overrides disabled
-    transform: 'scale(1.25)',
   },
   voteValue: {
     lineHeight: '1em',
     fontSize: '0.9em',
+  },
+  voteValueStandalone: {
+    padding: theme.spacing(0.25, 0),
+    border: '1px solid rgba(0,0,0,0.02)',
+    borderLeft: 'none',
+    borderRight: 'none',
   },
   invisible: {
     visibility: 'hidden',
@@ -41,6 +36,25 @@ const styles = (theme: Theme) => createStyles({
     visibility: 'hidden',
     height: 1,
   },
+  voteButtonUpvoteBesideDownvoteButton: {
+    borderRight: 'none !important',
+    paddingRight: theme.spacing(0.7),
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  voteButtonDownvote: {
+    // marginLeft: -1,
+    paddingLeft: theme.spacing(0.7),
+    borderLeft: 'none !important',
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  readOnlyContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    margin: theme.spacing(0.5),
+  }
 });
 
 interface Props {
@@ -63,43 +77,53 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
 
     const votingAllowed = !!this.props.votingAllowed && !this.props.hideControls
 
+    if (!votingAllowed) {
+      const Icon = (this.props.voteValue || 0) >= 0 ? UpvoteIcon : DownvoteIcon;
+      return (
+        <Typography className={this.props.classes.readOnlyContainer} variant='caption'>
+          <Icon fontSize='inherit' />
+          &nbsp;
+          {Math.abs(this.props.voteValue || 0)}
+        </Typography>
+      );
+    }
+
+    const upvote = (
+      <MyButton
+        buttonVariant='post'
+        Icon={UpvoteIcon}
+        color={upvoted ? 'primary' : undefined}
+        className={classNames(
+          !!upvoted && this.props.classes.voteVoted,
+          this.props.onDownvote !== undefined && this.props.classes.voteButtonUpvoteBesideDownvoteButton,
+        )}
+        onClick={this.props.onUpvote}
+      >
+        {this.props.onDownvote === undefined ? this.props.voteValue || 0 : undefined}
+      </MyButton>
+    );
+
+    if (this.props.onDownvote === undefined) {
+      return upvote;
+    }
+
     return (
-      <div className={`${this.props.classes.container} ${this.props.hidden ? this.props.classes.hidden : ''} ${this.props.className || ''}`}>
-        <IconButton
-          color={upvoted ? 'primary' : undefined}
+      <React.Fragment>
+        {upvote}
+        <span className={this.props.classes.voteValueStandalone}>
+          {this.props.voteValue || 0}
+        </span>
+        <MyButton
+          buttonVariant='post'
+          Icon={DownvoteIcon}
+          color={downvoted ? 'primary' : undefined}
           className={classNames(
-            this.props.classes.voteIconButton,
-            this.props.classes.voteIconButtonUp,
-            !!this.props.hideControls && this.props.classes.invisible,
-            !!upvoted && this.props.classes.voteIconVoted
+            this.props.classes.voteButtonDownvote,
+            !!downvoted && this.props.classes.voteVoted,
           )}
-          disabled={!votingAllowed}
-          onClick={votingAllowed ? this.props.onUpvote.bind(this) : undefined}
-        >
-          <UpvoteIcon fontSize='inherit' />
-        </IconButton>
-        {this.props.voteValue !== undefined && (
-          <Typography variant='overline' className={this.props.classes.voteValue}>
-            {this.props.voteValue}
-          </Typography>
-        )}
-        {this.props.onDownvote !== undefined && (
-          <IconButton
-            color={downvoted ? 'primary' : undefined}
-            className={classNames(
-              this.props.classes.voteIconButton,
-              this.props.classes.voteIconButtonDown,
-              !!downvoted && this.props.classes.voteIconVoted,
-              !!this.props.hideControls && this.props.classes.invisible,
-              this.props.voteValue === undefined && this.props.classes.voteIconButtonDownWithoutValue
-            )}
-            disabled={!votingAllowed}
-            onClick={votingAllowed ? this.props.onDownvote.bind(this) : undefined}
-          >
-            <DownvoteIcon fontSize='inherit' />
-          </IconButton>
-        )}
-      </div>
+          onClick={this.props.onDownvote}
+        />
+      </React.Fragment>
     );
   }
 }

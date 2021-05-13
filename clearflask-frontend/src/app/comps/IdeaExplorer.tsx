@@ -9,7 +9,7 @@
 //   QueryParamConfig,
 // } from 'use-query-params';
 import loadable from '@loadable/component';
-import { Collapse, FormControlLabel, Grid, IconButton, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, FormControlLabel, Grid, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
@@ -22,7 +22,6 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
-import ModAction from '../../common/ModAction';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
@@ -575,13 +574,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         <Grid item xs={isLarge ? 6 : 12} container justify='flex-end' className={this.props.classes.createGridItem}>
           <Grid item>
             {!!isModOrAdminLoggedIn && !this.state.adminControlsExpanded && (
-              <IconButton
-                size='small'
-                color='primary'
+              <Button
                 onClick={e => this.setState({ adminControlsExpanded: true })}
               >
-                <ModAction />
-              </IconButton>
+                More
+              </Button>
             )}
             <SubmitButton
               color='primary'

@@ -12,14 +12,15 @@ export enum Direction {
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
-    alignItems: 'baseline',
     maxWidth: 'min-content',
   },
   [Direction.Horizontal]: {
+    alignItems: 'baseline',
     ...(contentScrollApplyStyles(theme, Side.Center, false)),
   },
   [Direction.Vertical]: {
     flexDirection: 'column',
+    alignItems: 'stretch',
     ...(contentScrollApplyStyles(theme, Side.Center, true)),
   },
 });

@@ -30,6 +30,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
           search: {},
           hideIfEmpty: false,
         }}
+        widthExpand
         searchOverride={this.props.search}
         server={this.props.server}
         // displayDefaults={displayDefaults}

@@ -1,4 +1,4 @@
-import { Button, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DeletedIcon from '@material-ui/icons/Clear';
 import classNames from 'classnames';
@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
-import ModAction from '../../common/ModAction';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
@@ -16,6 +15,7 @@ import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
+import MyButton from './MyButton';
 import { MaxContentWidth } from './Post';
 import VotingControl from './VotingControl';
 
@@ -23,20 +23,14 @@ const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(2, 2, 2, 0),
     maxWidth: MaxContentWidth,
-    display: 'grid',
-    gridTemplateColumns: 'auto 1fr',
-    gridTemplateRows: '1fr auto',
-    gridTemplateAreas:
-      "'v c'"
-      + " 'v f'",
+    display: 'flex',
+    flexDirection: 'column',
   },
   content: {
-    gridArea: 'c',
     alignSelf: 'end',
     minWidth: 0,
   },
   votingControl: {
-    gridArea: 'v',
     margin: theme.spacing(0, 2),
     position: 'relative',
   },
@@ -48,8 +42,14 @@ const styles = (theme: Theme) => createStyles({
     transform: 'translateX(-50%) translateY(-50%)',
     color: theme.palette.grey[theme.palette.type === 'light' ? 200 : 600],
   },
+  votingControlDeletedContainer: {
+    display: 'flex',
+  },
+  votingControlDeletedIconContainer: {
+    width: 50,
+    height: '100%',
+  },
   footer: {
-    gridArea: 'f',
     minWidth: 0,
   },
   clickable: {
@@ -74,12 +74,6 @@ const styles = (theme: Theme) => createStyles({
   },
   unknownUser: {
     fontStyle: 'italic',
-  },
-  editButton: {
-    padding: `3px ${theme.spacing(0.5)}px`,
-    whiteSpace: 'nowrap',
-    minWidth: 'unset',
-    color: theme.palette.text.secondary,
   },
   grow: {
     flexGrow: 1,
@@ -134,10 +128,21 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
         {content}
       </div>
     );
+
+    if (!!this.props.comment && !this.props.comment.content) {
+      content = (
+        <div className={this.props.classes.votingControlDeletedContainer}>
+          <div className={this.props.classes.votingControlDeletedIconContainer}>
+            <DeletedIcon fontSize='inherit' className={this.props.classes.votingControlDeletedIcon} />
+          </div>
+          {content}
+        </div>
+      );
+    }
+
     return (
       <div className={classNames(this.props.classes.comment, this.props.className)}>
         {content}
-        {this.renderVotingControl()}
         <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
       </div>
     );
@@ -170,24 +175,17 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
   }
 
   renderVotingControl() {
-    if (!this.props.comment) return null;
-    const hidden = !this.props.comment.content;
+    if (!this.props.comment?.content) return null;
     return (
-      <div className={this.props.classes.votingControl}>
-        {hidden && (
-          <DeletedIcon fontSize='inherit' className={this.props.classes.votingControlDeletedIcon} />
-        )}
-        <VotingControl
-          vote={this.props.comment.vote}
-          hidden={hidden}
-          voteValue={this.props.comment.voteValue || 0}
-          isSubmittingVote={this.state.isSubmittingVote}
-          votingAllowed={!!this.props.comment}
-          hideControls={this.props.hideControls}
-          onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
-          onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
-        />
-      </div>
+      <VotingControl
+        vote={this.props.comment.vote}
+        voteValue={this.props.comment.voteValue || 0}
+        isSubmittingVote={this.state.isSubmittingVote}
+        votingAllowed={!!this.props.comment}
+        hideControls={this.props.hideControls}
+        onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
+        onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
+      />
     );
   }
 
@@ -209,14 +207,15 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     if (!this.props.comment) return null;
 
     const leftSide = [
-      this.renderAuthor(),
-      this.renderCreatedDatetime(),
-      this.renderEdited(),
+      this.renderVotingControl(),
       this.renderReply(),
       this.renderAdminDelete(),
       this.renderEdit(),
     ].filter(notEmpty);
     const rightSide = [
+      this.renderAuthor(),
+      this.renderCreatedDatetime(),
+      this.renderEdited(),
     ].filter(notEmpty);
 
     if (leftSide.length + rightSide.length === 0) return null;
@@ -239,10 +238,13 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       || !this.props.onReplyClicked) return null;
 
     return (
-      <Button key='reply' variant='text' className={this.props.classes.editButton}
-        onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}>
-        <Typography variant='caption'>Reply</Typography>
-      </Button>
+      <MyButton
+        key='reply'
+        buttonVariant='post'
+        onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}
+      >
+        Reply
+      </MyButton>
     );
   }
 
@@ -255,12 +257,12 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <React.Fragment key='adminDelete'>
-        <Button variant='text' className={this.props.classes.editButton}
-          onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}>
-          <Typography variant='caption'>
-            <ModAction label='Delete' />
-          </Typography>
-        </Button>
+        <MyButton
+          buttonVariant='post'
+          onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}
+        >
+          Delete
+        </MyButton>
         {this.state.adminDeleteExpanded !== undefined && (
           <CommentDelete
             key={this.props.comment.commentId}
@@ -286,10 +288,12 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <React.Fragment key='edit'>
-        <Button variant='text' className={this.props.classes.editButton}
-          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
-          <Typography variant='caption'>Edit</Typography>
-        </Button>
+        <MyButton
+          buttonVariant='post'
+          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}
+        >
+          Edit
+        </MyButton>
         {this.state.editExpanded !== undefined && (
           <CommentEdit
             key={this.props.comment.commentId}

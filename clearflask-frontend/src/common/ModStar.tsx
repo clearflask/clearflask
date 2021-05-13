@@ -29,7 +29,9 @@ class ModStar extends React.Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={this.props.classes.container}>
         {this.props.name}
-        <ModIcon fontSize='inherit' style={{ fontSize: this.props.overrideIconFontSize || '0.8em' }} />
+        <sup>
+          <ModIcon fontSize='inherit' style={{ fontSize: this.props.overrideIconFontSize || '0.8em' }} />
+        </sup>
       </div>
     );
   }

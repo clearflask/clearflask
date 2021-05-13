@@ -68,13 +68,6 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
                 : undefined}
             />
-            {comment.childCommentCount > 0 && (
-              <CommentList
-                {...this.props}
-                expectedCommentCount={comment.childCommentCount}
-                parentCommentId={comment.commentId}
-              />
-            )}
             <Collapse
               in={!!this.state[`replyOpen${comment.commentId}`]}
               mountOnEnter
@@ -91,6 +84,13 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
               />
             </Collapse>
+            {comment.childCommentCount > 0 && (
+              <CommentList
+                {...this.props}
+                expectedCommentCount={comment.childCommentCount}
+                parentCommentId={comment.commentId}
+              />
+            )}
           </React.Fragment>
         ))}
         <Loader loaded={this.props.commentsStatus !== Status.PENDING} error={this.props.commentsStatus === Status.REJECTED ? "Failed to load" : undefined}>

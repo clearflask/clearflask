@@ -14,8 +14,10 @@ const styles = (theme: Theme) => createStyles({
   addCommentForm: {
     display: 'inline-flex',
     flexDirection: 'column',
-    margin: theme.spacing(4),
+    margin: theme.spacing(1, 0),
     alignItems: 'flex-end',
+    minWidth: 300,
+    maxWidth: 'inherit',
   },
   addCommentField: {
     transition: theme.transitions.create('width'),
