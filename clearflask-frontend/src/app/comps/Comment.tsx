@@ -21,7 +21,7 @@ import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
-    margin: theme.spacing(2, 2, 2, 0),
+    margin: theme.spacing(2),
     maxWidth: MaxContentWidth,
     display: 'flex',
     flexDirection: 'column',
@@ -49,9 +49,6 @@ const styles = (theme: Theme) => createStyles({
     width: 50,
     height: '100%',
   },
-  footer: {
-    minWidth: 0,
-  },
   clickable: {
     '&:hover': {
       textDecoration: 'underline',
@@ -62,7 +59,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
   },
-  bottomBarLine: {
+  barLine: {
     display: 'flex',
     alignItems: 'center',
   },
@@ -72,8 +69,11 @@ const styles = (theme: Theme) => createStyles({
   edited: {
     fontStyle: 'italic',
   },
-  unknownUser: {
+  unknownAuthor: {
     fontStyle: 'italic',
+  },
+  authorLabel: {
+    fontSize: '1.2em'
   },
   grow: {
     flexGrow: 1,
@@ -142,8 +142,9 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <div className={classNames(this.props.classes.comment, this.props.className)}>
+        <div>{this.renderHeader()}</div>
         {content}
-        <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
+        <div>{this.renderBottomBar()}</div>
       </div>
     );
   }
@@ -203,6 +204,25 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     });
   }
 
+  renderHeader() {
+    if (!this.props.comment) return null;
+
+    const content = [
+      this.renderAuthor(),
+      this.renderCreatedDatetime(),
+      this.renderEdited(),
+    ].filter(notEmpty);
+    if (content.length === 0) return null;
+
+    return (
+      <div className={this.props.classes.barLine}>
+        <Delimited>
+          {content}
+        </Delimited>
+      </div>
+    );
+  }
+
   renderBottomBar() {
     if (!this.props.comment) return null;
 
@@ -212,22 +232,12 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       this.renderAdminDelete(),
       this.renderEdit(),
     ].filter(notEmpty);
-    const rightSide = [
-      this.renderAuthor(),
-      this.renderCreatedDatetime(),
-      this.renderEdited(),
-    ].filter(notEmpty);
-
-    if (leftSide.length + rightSide.length === 0) return null;
+    if (leftSide.length === 0) return null;
 
     return (
-      <div className={this.props.classes.bottomBarLine}>
+      <div className={this.props.classes.barLine}>
         <Delimited>
           {leftSide}
-        </Delimited>
-        <div className={this.props.classes.grow} />
-        <Delimited>
-          {rightSide}
         </Delimited>
       </div>
     );
@@ -323,21 +333,22 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
   renderAuthor() {
     if (!this.props.comment || this.props.hideAuthor) return null;
-    if (!this.props.comment.authorUserId || !this.props.comment.authorName) {
-      return (
-        <Typography key='author' className={`${this.props.classes.barItem} ${this.props.classes.unknownUser}`} variant='caption'>
-          Unknown
-        </Typography>
-      );
-    }
 
+    const unknownUser = !this.props.comment.authorUserId || !this.props.comment.authorName;
     return (
-      <Typography key='author' className={this.props.classes.barItem} style={{ margin: 0, }} variant='caption'>
+      <Typography
+        key='author'
+        className={classNames(
+          unknownUser && this.props.classes.unknownAuthor,
+        )}
+      >
         <UserDisplay
+          labelClassName={this.props.classes.authorLabel}
+          suppressTypography
           onClick={this.props.onAuthorClick}
           user={{
-            userId: this.props.comment.authorUserId,
-            name: this.props.comment.authorName,
+            userId: this.props.comment.authorUserId || 'Unknown',
+            name: this.props.comment.authorName || 'Unknown',
             isMod: this.props.comment.authorIsMod
           }}
         />

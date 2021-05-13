@@ -1,5 +1,6 @@
 import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -7,7 +8,7 @@ import * as Client from '../api/client';
 import ModStar from './ModStar';
 import { preserveEmbed } from './util/historyUtil';
 
-export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, maxChars: number = -1) => {
+export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, maxChars: number = -1): string => {
   if (!user) {
     return 'Anonymous';
   }
@@ -28,6 +29,9 @@ export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, max
 };
 
 const styles = (theme: Theme) => createStyles({
+  label: {
+    textTransform: 'capitalize',
+  },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
@@ -36,6 +40,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  labelClassName?: string;
   variant?: 'button' | 'text';
   maxChars?: number;
   user: {
@@ -50,7 +55,14 @@ interface Props {
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     var user = (
-      <ModStar name={DisplayUserName(this.props.user, this.props.maxChars)} isMod={this.props.user.isMod} />
+      <ModStar isMod={this.props.user.isMod} name={
+        <span className={classNames(
+          this.props.labelClassName,
+          this.props.classes.label,
+        )}>
+          {DisplayUserName(this.props.user, this.props.maxChars)}
+        </span>
+      } />
     );
     if (!this.props.suppressTypography) {
       user = (

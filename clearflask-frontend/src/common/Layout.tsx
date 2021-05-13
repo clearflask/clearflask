@@ -38,8 +38,6 @@ const styles = (theme: Theme) => createStyles({
     },
     zIndex: 1, // Allow other things like Color picker to overlap this
   },
-  barBottom: {
-  },
   drawer: {
     [theme.breakpoints.up('sm')]: {
       width: MENU_WIDTH,
@@ -162,6 +160,7 @@ interface Props {
   previewShow?: boolean;
   previewShowChanged: (show: boolean) => void;
   preview?: PreviewSection;
+  barTop?: React.ReactNode;
   barBottom?: React.ReactNode;
   children: React.ReactNode;
   contentMargins?: boolean;
@@ -246,6 +245,12 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
         this.props.classes.content,
         this.props.classes.vertical,
       )}>
+        {!!this.props.barTop && (
+          <div>
+            {this.props.barTop}
+            <Divider />
+          </div>
+        )}
         <div className={classNames(
           this.props.classes.scroll,
           this.props.classes.grow,
@@ -254,7 +259,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           {this.props.main.content}
         </div>
         {!!this.props.barBottom && (
-          <div className={this.props.classes.barBottom}>
+          <div>
             <Divider />
             {this.props.barBottom}
           </div>

@@ -1,6 +1,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Component } from 'react';
 import { connect } from 'react-redux';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
@@ -10,7 +11,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
-  search?: Partial<Client.IdeaSearch>;
+  search?: Partial<Admin.IdeaSearchAdmin>;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
 }
@@ -31,7 +32,8 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
           hideIfEmpty: false,
         }}
         widthExpand
-        searchOverride={this.props.search}
+        showDivider
+        searchOverride={this.props.search as Client.IdeaSearch /* TODO */}
         server={this.props.server}
         // displayDefaults={displayDefaults}
         onClickPost={this.props.onClickPost}

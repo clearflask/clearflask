@@ -19,7 +19,7 @@ export type GroupedLabels = Array<{
   controlType: 'search' | 'radio' | 'check';
   labels: Array<Label>;
 }>;
-export const groupLabels = (labels: Label[]): GroupedLabels => {
+export const groupLabels = (labels: Label[], forceSingleCategory?: boolean): GroupedLabels => {
   const results: GroupedLabels = [];
   const groupLookup: { [groupName: string]: GroupedLabels[0] } = {};
   labels.forEach(label => {
@@ -30,7 +30,8 @@ export const groupLabels = (labels: Label[]): GroupedLabels => {
       var controlType: GroupedLabels[0]['controlType'] = 'check';
       if (type === PostFilterType.Search) {
         controlType = 'search';
-      } else if (type === PostFilterType.Sort) {
+      } else if (type === PostFilterType.Sort
+        || (!!forceSingleCategory && type === PostFilterType.Category)) {
         controlType = 'radio';
       }
 
@@ -62,6 +63,7 @@ export const postSearchToLabels = (
   config?: Client.Config,
   explorer?: Client.PageExplorer,
   searchModified?: Partial<Client.IdeaSearch>,
+  forceSingleCategory?: boolean,
 ): PostLabels => {
   const controls: PostLabels = {
     values: [],
@@ -71,6 +73,41 @@ export const postSearchToLabels = (
   };
 
   if (!config || !explorer) return controls;
+
+  // category
+  var searchableCategories: Client.Category[] = [];
+  if (!isFilterControllable(explorer, PostFilterType.Category)) {
+    (explorer.search.filterCategoryIds || []).forEach(categoryId => {
+      const category = config!.content.categories.find(c => c.categoryId === categoryId);
+      if (!category) return;
+      searchableCategories.push(category);
+      const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
+      controls.permanent.push(label);
+    });
+  } else if (config.content.categories?.length || 0 <= 1) {
+    searchableCategories = [...config.content.categories];
+    config.content.categories.forEach(category => {
+      const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
+      controls.permanent.push(label);
+    });
+  } else {
+    if (!searchModified?.filterCategoryIds?.length) {
+      searchableCategories = [...config.content.categories];
+    }
+    var hasAny = false;
+    var hasAnyEnabled = false;
+    config.content.categories.forEach(category => {
+      hasAny = true;
+      const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
+      controls.options.push(label);
+      if ((!forceSingleCategory || !hasAnyEnabled) && searchModified?.filterCategoryIds?.includes(category.categoryId)) {
+        hasAnyEnabled = true;
+        controls.values.push(label);
+        searchableCategories.push(category);
+      }
+    });
+    if (hasAny) controls.groups++;
+  }
 
   // sort
   if (!isFilterControllable(explorer, PostFilterType.Sort)) {
@@ -87,35 +124,6 @@ export const postSearchToLabels = (
     });
   }
 
-  var hasAny;
-
-  // category
-  var searchableCategories: Client.Category[] = [];
-  if (!isFilterControllable(explorer, PostFilterType.Category)) {
-    (explorer.search.filterCategoryIds || []).forEach(categoryId => {
-      const category = config!.content.categories.find(c => c.categoryId === categoryId);
-      if (!category) return;
-      searchableCategories.push(category);
-      const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
-      controls.permanent.push(label);
-    });
-  } else {
-    hasAny = false;
-    if (!searchModified || !searchModified.filterCategoryIds || searchModified.filterCategoryIds.length === 0) {
-      searchableCategories = config.content.categories;
-    }
-    config.content.categories.forEach(category => {
-      hasAny = true;
-      const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
-      controls.options.push(label);
-      if (searchModified && searchModified.filterCategoryIds && searchModified.filterCategoryIds.includes(category.categoryId)) {
-        controls.values.push(label);
-        searchableCategories.push(category);
-      }
-    });
-    if (hasAny) controls.groups++;
-  }
-
   // status
   if (!isFilterControllable(explorer, PostFilterType.Status)) {
     searchableCategories.forEach(category => {
@@ -127,7 +135,7 @@ export const postSearchToLabels = (
       })
     });
   } else {
-    hasAny = false;
+    var hasAny = false;
     searchableCategories.forEach(category => {
       category.workflow.statuses.forEach(status => {
         hasAny = true;
@@ -152,7 +160,7 @@ export const postSearchToLabels = (
       })
     });
   } else {
-    hasAny = false;
+    var hasAny = false;
     const filterTagIds = new Set(explorer.search.filterTagIds);
     searchableCategories.forEach(category => {
       category.tagging.tagGroups.forEach(tagGroup => {
@@ -183,7 +191,7 @@ export const postSearchToLabels = (
 
   return controls;
 }
-export const postLabelsToSearch = (labelValues: string[]): Partial<Client.IdeaSearch> => {
+export const postLabelsToSearch = (labelValues: string[], forceSingleCategory?: boolean): Partial<Client.IdeaSearch> => {
   const partialSearch: Partial<Client.IdeaSearch> = {};
   labelValues.forEach(value => {
     const [type, data] = value.split(':');
@@ -195,8 +203,12 @@ export const postLabelsToSearch = (labelValues: string[]): Partial<Client.IdeaSe
         partialSearch.sortBy = data as Client.IdeaSearchSortByEnum;
         break;
       case PostFilterType.Category:
-        if (!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
-        partialSearch.filterCategoryIds.push(data);
+        if (forceSingleCategory) {
+          partialSearch.filterCategoryIds = [data];
+        } else {
+          if (!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
+          partialSearch.filterCategoryIds.push(data);
+        }
         break;
       case PostFilterType.Status:
         if (!partialSearch.filterStatusIds) partialSearch.filterStatusIds = [];

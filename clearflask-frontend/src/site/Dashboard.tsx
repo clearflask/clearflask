@@ -43,7 +43,7 @@ import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirect
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
-import PostFilter from './dashboard/DashboardPostSearchControls';
+import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import PostList from './dashboard/PostList';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
@@ -156,7 +156,8 @@ interface State {
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
-  explorerPostSearch?: Partial<AdminClient.IdeaSearch>;
+  explorerPostSearch?: Partial<AdminClient.IdeaSearchAdmin>;
+  explorerPostFilter?: Partial<AdminClient.IdeaSearchAdmin>;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -302,6 +303,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
 
     var main: Section | undefined;
+    var barTop: React.ReactNode | undefined;
+    var barBottom: React.ReactNode | undefined;
     var onboarding = false;
     var preview: PreviewSection | undefined;
     var previewTypeIfEmpty: PreviewType | undefined;
@@ -309,7 +312,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var menu: Section | undefined;
     var showProjectLink: boolean = false;
     var showCreateProjectWarning: boolean = false;
-    var hideContentMargins: boolean = false;
+    var showContentMargins: boolean = false;
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
@@ -364,11 +367,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostFilter
+              <DashboardPostFilterControls
                 key={activeProject.server.getProjectId()}
+                type='filter'
                 server={activeProject.server}
-                search={this.state.explorerPostSearch}
-                onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
+                search={this.state.explorerPostFilter}
+                onSearchChanged={explorerPostFilter => this.setState({ explorerPostFilter })}
               />
             </Provider>
           ),
@@ -380,13 +384,27 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <PostList
                 key={activeProject.server.getProjectId()}
                 server={activeProject.server}
-                search={this.state.explorerPostSearch}
+                search={{
+                  ...this.state.explorerPostSearch,
+                  ...this.state.explorerPostFilter,
+                }}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
               />
             </Provider>
           ),
         };
+        barTop = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <DashboardPostFilterControls
+              key={activeProject.server.getProjectId()}
+              type='search'
+              server={activeProject.server}
+              search={this.state.explorerPostSearch}
+              onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
+            />
+          </Provider>
+        );
         previewTypeIfEmpty = 'post';
         previewWhitelist = new Set(['post', 'user', 'post-create']);
         showProjectLink = true;
@@ -484,7 +502,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           this.forcePathListener(forcePath);
         }
         setTitle(currentPage.getDynamicName());
-
 
         // Superadmin account switcher
         const accountToLabel = (account: AdminClient.Account): Label => {
@@ -599,6 +616,24 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </React.Fragment>
           )
         };
+
+        barBottom = (activeProject?.hasUnsavedChanges()) ? (
+          <React.Fragment>
+            <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
+            <Button color='primary' onClick={() => {
+              const currentProject = activeProject;
+              ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
+                projectId: currentProject.projectId,
+                versionLast: currentProject.configVersion,
+                configAdmin: currentProject.editor.getConfig(),
+              })
+                .then((versionedConfigAdmin) => {
+                  currentProject.resetUnsavedChanges(versionedConfigAdmin)
+                }));
+            }}>Publish</Button>
+          </React.Fragment>
+        ) : undefined;
+
         previewWhitelist = new Set('preview-changes');
         previewTypeIfEmpty = 'preview-changes'
         break;
@@ -780,23 +815,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           previewShowChanged={show => this.setState({ previewShow: show })}
           preview={preview}
           menu={menu}
-          barBottom={(activePath === 'settings' && activeProject && activeProject.hasUnsavedChanges()) ? (
-            <React.Fragment>
-              <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
-              <Button color='primary' onClick={() => {
-                const currentProject = activeProject;
-                ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
-                  projectId: currentProject.projectId,
-                  versionLast: currentProject.configVersion,
-                  configAdmin: currentProject.editor.getConfig(),
-                })
-                  .then((versionedConfigAdmin) => {
-                    currentProject.resetUnsavedChanges(versionedConfigAdmin)
-                  }));
-              }}>Publish</Button>
-            </React.Fragment>
-          ) : undefined}
-          contentMargins={!hideContentMargins}
+          barTop={barTop}
+          barBottom={barBottom}
+          contentMargins={!!showContentMargins}
           main={main}
         />
       </Elements>

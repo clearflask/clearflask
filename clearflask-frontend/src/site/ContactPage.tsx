@@ -1,6 +1,10 @@
+import MomentUtils from '@date-io/moment';
 import { Box, Button, CardActions, CardHeader, Checkbox, Container, FormControlLabel, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { DateTimePicker } from '@material-ui/pickers/DateTimePicker';
+import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
 import classNames from 'classnames';
+import moment from 'moment-timezone';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps, withRouter } from 'react-router';
@@ -9,7 +13,6 @@ import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import Promised from '../common/Promised';
 import SubmitButton from '../common/SubmitButton';
 import { preloadImage } from '../common/util/imageUtil';
 
@@ -193,59 +196,39 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                             label={field.title}
                           />
                         ) : (field.type === 'datetime' ? (
-                          <Promised
-                            promise={Promise.all<unknown, unknown, unknown, unknown>([
-                              import(/* webpackChunkName: "DateTimePicker", webpackPrefetch: true */'@material-ui/pickers/DateTimePicker'),
-                              import(/* webpackChunkName: "MuiPickersUtilsProvider", webpackPrefetch: true */'@material-ui/pickers/MuiPickersUtilsProvider'),
-                              import(/* webpackChunkName: "moment", webpackPrefetch: true */'@date-io/moment'),
-                              /** Add timezone to dates */
-                              import(/* webpackChunkName: "moment-timezone", webpackPrefetch: true */'moment-timezone'),
-                            ])}
-                            render={(libs: any) => {
-                              const DateTimePicker = libs[0].DateTimePicker;
-                              const MuiPickersUtilsProvider = libs[1].default;
-                              const MomentUtils = libs[2].default;
-                              const moment = libs[3].default;
-
-                              const cutoff = new Date();
-                              cutoff.setDate(cutoff.getDate() + 2);
-
-                              return (
-                                <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
-                                  <DateTimePicker
-                                    disablePast
-                                    variant='inline'
-                                    inputVariant='outlined'
-                                    size='small'
-                                    views={['date', 'hours']}
-                                    ampm={false}
-                                    disableToolbar
-                                    format='MMMM Do H:mm'
-                                    autoOk
-                                    initialFocusedDate={new Date()}
-                                    className={this.props.classes.field}
-                                    disabled={this.state.isSubmitting}
-                                    label={field.title}
-                                    emptyLabel={field.placeholder}
-                                    shouldDisableDate={(date) => {
-                                      if (!date) return true;
-                                      if (date.isBefore(cutoff)) return true;
-                                      const weekday = date.format('dddd');
-                                      if (weekday === 'Saturday' || weekday === 'Sunday') return true;
-                                      return false
-                                    }}
-                                    helperText={field.helperText}
-                                    value={this.state[`field_${form.type}_${field.attrName}`] || null}
-                                    onChange={val => {
-                                      val.tz(moment.tz.guess())
-                                      val = val ? val.minutes(0).seconds(0) : val;
-                                      return this.setState({ [`field_${form.type}_${field.attrName}`]: val })
-                                    }}
-                                  />
-                                </MuiPickersUtilsProvider>
-                              )
-                            }}
-                          />
+                          <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
+                            <DateTimePicker
+                              disablePast
+                              variant='inline'
+                              inputVariant='outlined'
+                              size='small'
+                              views={['date', 'hours']}
+                              ampm={false}
+                              disableToolbar
+                              format='MMMM Do H:mm'
+                              autoOk
+                              initialFocusedDate={new Date()}
+                              className={this.props.classes.field}
+                              disabled={this.state.isSubmitting}
+                              label={field.title}
+                              emptyLabel={field.placeholder}
+                              shouldDisableDate={(date) => {
+                                if (!date) return true;
+                                if (date.isBefore(moment().add(2, 'd'))) return true;
+                                const weekday = date.format('dddd');
+                                if (weekday === 'Saturday' || weekday === 'Sunday') return true;
+                                return false
+                              }}
+                              helperText={field.helperText}
+                              value={this.state[`field_${form.type}_${field.attrName}`] || null}
+                              onChange={val => {
+                                if (!val) return;
+                                val.tz(moment.tz.guess())
+                                val = val ? val.minutes(0).seconds(0) : val;
+                                return this.setState({ [`field_${form.type}_${field.attrName}`]: val })
+                              }}
+                            />
+                          </MuiPickersUtilsProvider>
                         ) : (
                           <TextField
                             variant='outlined'
