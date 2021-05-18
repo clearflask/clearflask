@@ -1,4 +1,4 @@
-import { AppBar, Divider, Drawer, IconButton, Toolbar, WithWidthProps } from '@material-ui/core';
+import { AppBar, Button, Divider, Drawer, IconButton, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/Close';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
@@ -9,6 +9,13 @@ import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles } from './ContentScroll';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
+export interface Header {
+  title?: string;
+  action: {
+    label: string;
+    onClick: () => void;
+  };
+}
 export interface LayoutSize {
   breakWidth?: number;
   width?: number | string;
@@ -25,11 +32,27 @@ export interface PreviewSection extends Section {
 
 const BOX_MARGIN = 36;
 const BOX_BORDER_WIDTH = 1;
+const HEADER_HEIGHT = 60;
 
 type MediaQueries = 'enableBoxLayout' | 'overflowPreview' | 'overflowMenu';
 const MENU_WIDTH = 180;
 const styles = (theme: Theme) => createStyles({
-
+  header: {
+    position: 'absolute',
+    top: 0,
+    height: HEADER_HEIGHT,
+    transform: 'translate(0, -100%)',
+    display: 'flex',
+    padding: theme.spacing(0, 3),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    left: theme.spacing(1),
+  },
+  headerRight: {
+    right: theme.spacing(1),
+  },
   barBottomPaper: {
     display: 'flex',
     flexDirection: 'row' as 'row',
@@ -74,6 +97,7 @@ const styles = (theme: Theme) => createStyles({
   },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
+    boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
   },
   menuButton: {
     marginRight: 20,
@@ -101,20 +125,24 @@ const styles = (theme: Theme) => createStyles({
     position: 'relative',
     zIndex: 0,
   },
+  boxLayoutWithHeaderMargin: {
+    marginTop: BOX_MARGIN / 3 + HEADER_HEIGHT + 'px' + '!important',
+  },
+  headerMargin: {
+    marginTop: HEADER_HEIGHT + 'px' + '!important',
+    borderTop: '1px solid ' + theme.palette.grey[300],
+  },
   boxLayout: {
     margin: BOX_MARGIN,
     border: '1px solid ' + theme.palette.grey[300],
+    boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
+  },
+  hideShadows: {
     position: 'relative',
-    '&:after': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: -1,
-      boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
-    },
+    backgroundColor: theme.palette.background.default,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100%',
   },
   vertical: {
     display: 'flex',
@@ -136,15 +164,19 @@ const styles = (theme: Theme) => createStyles({
     width: (props: Props) => props.main.size?.width,
     maxWidth: (props: Props) => props.main.size?.maxWidth,
   },
+  menuMergeWithContent: {
+    marginRight: - (BOX_MARGIN + 1),
+  },
   menu: {
-    marginRight: (props: Props & WithMediaQueries<MediaQueries>) => (!props.mediaQueries.enableBoxLayout || props.mediaQueries.overflowMenu) ? undefined : -(BOX_MARGIN + 1),
+    borderRight: '1px solid ' + theme.palette.grey[300],
     flexGrow: (props: Props) => props.menu?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.menu?.size?.breakWidth || 'content',
     width: (props: Props) => props.menu?.size?.width,
     maxWidth: (props: Props) => props.menu?.size?.maxWidth,
   },
   preview: {
-    marginLeft: (props: Props & WithMediaQueries<MediaQueries>) => (!props.mediaQueries.enableBoxLayout || props.mediaQueries.overflowPreview) ? undefined : 0,
+    marginLeft: 0, // boxLayout collapse margins inside flex
+    borderLeft: '1px solid ' + theme.palette.grey[300],
     flexGrow: (props: Props) => props.preview?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
     width: (props: Props) => props.preview?.size?.width,
@@ -152,6 +184,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  header: Header;
   main: Section;
   toolbarShow: boolean;
   toolbarLeft: React.ReactNode;
@@ -184,8 +217,25 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     const overflowMenu = this.props.mediaQueries.overflowMenu;
     const enableBoxLayout = this.props.mediaQueries.enableBoxLayout;
 
+    const title = !!this.props.header?.title ? (
+      <div className={classNames(this.props.classes.header, this.props.classes.headerLeft)}>
+        <Typography variant='h4' component='h1'>{this.props.header.title}</Typography>
+      </div>
+    ) : undefined;
+    const action = !!this.props.header?.action ? (
+      <div className={classNames(this.props.classes.header, this.props.classes.headerRight)}>
+        <Button
+          variant='contained'
+          disableElevation
+          color='primary'
+          onClick={this.props.header.action.onClick}
+        >{this.props.header.action.label}</Button>
+      </div>
+    ) : undefined;
+    const showHeader = !!title || !!action;
+
     const previewBar = (!!this.props.preview?.bar || !!overflowPreview) && (
-      <React.Fragment>
+      <>
         <div className={classNames(
           this.props.classes.previewBar,
           !!this.props.preview?.bar && this.props.classes.previewBarBorder,
@@ -200,15 +250,15 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
             </IconButton>
           )}
           {!!this.props.preview?.bar && (
-            <React.Fragment>
+            <>
               <InfoIcon className={this.props.classes.previewBarItem} />
               <div className={this.props.classes.previewBarItem}>
                 {this.props.preview.bar}
               </div>
-            </React.Fragment>
+            </>
           )}
         </div>
-      </React.Fragment>
+      </>
     );
 
     const preview = this.props.preview && (
@@ -218,52 +268,66 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
         this.props.classes.preview,
         this.props.classes.vertical,
       )}>
-        {previewBar}
-        <div className={this.props.classes.scroll}>
-          {this.props.preview.content}
+        <div className={this.props.classes.hideShadows}>
+          {previewBar}
+          <div className={this.props.classes.scroll}>
+            {this.props.preview.content}
+          </div>
         </div>
       </div>
     );
 
     const menu = !!this.props.menu && (
       <div className={classNames(
+        enableBoxLayout && !overflowMenu && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
+        !enableBoxLayout && !overflowMenu && showHeader && this.props.classes.headerMargin,
         enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.menu,
+        enableBoxLayout && !overflowMenu && this.props.classes.menuMergeWithContent,
         this.props.classes.vertical,
       )}>
-        <div className={this.props.classes.scroll}>
-          {this.props.menu.content}
+        <div className={this.props.classes.hideShadows}>
+          {!overflowMenu && (title)}
+          <div className={this.props.classes.scroll}>
+            {this.props.menu.content}
+          </div>
         </div>
       </div>
     );
 
     const content = (
       <div className={classNames(
+        enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
+        !enableBoxLayout && showHeader && this.props.classes.headerMargin,
         enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.content,
         this.props.classes.vertical,
       )}>
-        {!!this.props.barTop && (
-          <div>
-            {this.props.barTop}
-            <Divider />
+        <div className={this.props.classes.hideShadows}>
+          {(!!overflowMenu || !menu) && (title)}
+          {action}
+          {!!this.props.barTop && (
+            <div>
+              {this.props.barTop}
+              <Divider />
+            </div>
+          )}
+          <div className={classNames(
+            this.props.classes.scroll,
+            this.props.classes.grow,
+            !!this.props.contentMargins && this.props.classes.contentMargins,
+          )}>
+            {this.props.main.content}
           </div>
-        )}
-        <div className={classNames(
-          this.props.classes.scroll,
-          this.props.classes.grow,
-          !!this.props.contentMargins && this.props.classes.contentMargins,
-        )}>
-          {this.props.main.content}
+          {!!this.props.barBottom && (
+            <div>
+              <Divider />
+              {this.props.barBottom}
+            </div>
+          )}
         </div>
-        {!!this.props.barBottom && (
-          <div>
-            <Divider />
-            {this.props.barBottom}
-          </div>
-        )}
       </div>
     );
 
@@ -356,17 +420,30 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
 }
 
 export default withMediaQueries<MediaQueries, Props>(props => {
-  const menuMinWidth = props.menu?.size?.breakWidth || 0;
-  const contentMinWidth = props.main.size?.breakWidth || 0;
-  const previewMinWidth = props.preview?.size?.breakWidth || 0;
-  const boxMinWidth = (BOX_MARGIN + BOX_BORDER_WIDTH)
-    // Both left and right side
-    * 2
-    // Count content and maybe preview
-    * (!!props.preview ? 2 : 1);
+  const sizeMenu = props.menu?.size?.breakWidth || 0;
+  const sizePreview = props.preview?.size?.breakWidth || 0;
+  const sizeContentBox = (BOX_MARGIN + BOX_BORDER_WIDTH) * 2;
+  const sizePreviewBox = (BOX_MARGIN + BOX_BORDER_WIDTH);
+
+  // content
+  const sizeContent = props.main.size?.breakWidth || 0;
+  // content box
+  const sizeContentWithBox = sizeContent + sizeContentBox;
+  // content menu
+  const sizeContentAndMenu = sizeContent + sizeMenu;
+  // content menu box
+  const sizeContentAndMenuWithBox = sizeContent + sizeMenu + sizeContentBox;
+  // content menu preview
+  const sizeContentAndMenuAndPreview = sizeContent + sizeMenu + sizePreview;
+  // content menu preview box
+  const sizeContentAndMenuWithBoxAndPreviewWithBox = sizeContent + sizeMenu + sizeContentBox + sizePreview + sizePreviewBox;
+
   return {
-    enableBoxLayout: `(min-width:${contentMinWidth + menuMinWidth + previewMinWidth + boxMinWidth}px)`,
-    overflowPreview: `(max-width:${contentMinWidth + menuMinWidth + previewMinWidth}px)`,
-    overflowMenu: `(max-width:${contentMinWidth + menuMinWidth}px)`,
+    enableBoxLayout:
+      `(min-width: ${sizeContentWithBox}px) and (max-width: ${sizeContentAndMenu}px),`
+      + `(min-width: ${sizeContentAndMenuWithBox}px) and (max-width: ${sizeContentAndMenuAndPreview}px),`
+      + `(min-width: ${sizeContentAndMenuWithBoxAndPreviewWithBox}px)`,
+    overflowPreview: `(max-width: ${sizeContentAndMenuAndPreview}px)`,
+    overflowMenu: `(max-width: ${sizeContentAndMenu}px)`,
   };
 })(withStyles(styles, { withTheme: true })(Layout));

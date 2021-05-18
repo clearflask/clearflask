@@ -74,7 +74,7 @@ export default class DemoApp extends Component<Props> {
     return (
       <MemoryRouter initialEntries={this.props.intialSubPath ? [`${this.props.intialSubPath || '/'}`] : undefined}>
         <Route path="/" render={props => (
-          <React.Fragment>
+          <>
             {this.props.forcePathSubscribe && (
               <ForceUrl forcePathSubscribe={this.props.forcePathSubscribe} />
             )}
@@ -86,7 +86,7 @@ export default class DemoApp extends Component<Props> {
               serverOverride={this.props.server}
               settings={this.props.settings}
             />
-          </React.Fragment>
+          </>
         )} />
       </MemoryRouter>
     );

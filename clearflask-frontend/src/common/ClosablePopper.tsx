@@ -147,7 +147,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     } : undefined;
 
     return (
-      <React.Fragment>
+      <>
         <Popper
           placement={placement || 'right-start'}
           anchorEl={this.props.anchorEl !== undefined
@@ -224,7 +224,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
           )}
         </Popper>
         <div ref={this.anchorRef} />
-      </React.Fragment>
+      </>
     );
   }
 }

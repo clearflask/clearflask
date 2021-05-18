@@ -23,7 +23,7 @@ class PrivateProjectLogin extends Component<Props & ConnectProps> {
     const showLogin = isLoaded && isPrivate && !isLoggedIn;
 
     return (
-      <React.Fragment>
+      <>
         {showContent ? this.props.children : null}
         <LogIn
           key='login'
@@ -35,7 +35,7 @@ class PrivateProjectLogin extends Component<Props & ConnectProps> {
             userBind: {},
           }))}
         />
-      </React.Fragment>
+      </>
     );
   }
 }

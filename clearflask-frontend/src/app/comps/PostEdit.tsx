@@ -1,9 +1,11 @@
 import loadable from '@loadable/component';
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import React, { Component, useRef, useState } from 'react';
+import { shallowEqual, useSelector } from 'react-redux';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { Server } from '../../api/server';
+import { ReduxState, Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
@@ -19,8 +21,23 @@ const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webp
 const styles = (theme: Theme) => createStyles({
   row: {
     padding: theme.spacing(2),
-  }
+  },
+  saveButtonContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  saveButtonActionContainer: {
+    display: 'flex',
+    alignItems: 'baseline',
+    alignSelf: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  saveButton: {
+    justifySelf: 'flex-end',
+  },
 });
+const useStyles = makeStyles(styles);
 interface Props {
   server: Server;
   category: Client.Category;
@@ -44,8 +61,6 @@ interface State {
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
-  readonly richEditorDescriptionImageUploadRef = React.createRef<RichEditorImageUpload>();
-  readonly richEditorResponseImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   render() {
     const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
@@ -66,7 +81,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     ].filter(notEmpty).join(' and ') || undefined;
 
     return (
-      <React.Fragment>
+      <>
         <Dialog
           open={this.props.open || false}
           onClose={this.props.onClose.bind(this)}
@@ -78,14 +93,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <DialogContent>
             <Grid container alignItems='baseline'>
               <Grid item xs={isModOrAdminLoggedIn ? 8 : 12} className={this.props.classes.row}>
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Title'
-                  fullWidth
+                <PostEditTitle
                   value={(this.state.title === undefined ? this.props.idea.title : this.state.title) || ''}
-                  onChange={e => this.setState({ title: e.target.value })}
+                  onChange={title => this.setState({ title })}
+                  isSubmitting={this.state.isSubmitting}
                 />
               </Grid>
               {isModOrAdminLoggedIn && (
@@ -104,73 +115,47 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 </Grid>
               )}
               <Grid item xs={12} className={this.props.classes.row}>
-                <RichEditor
-                  onUploadImage={(file) => this.richEditorDescriptionImageUploadRef.current?.onUploadImage(file)}
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Description'
-                  fullWidth
-                  iAgreeInputIsSanitized
-                  value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
-                  onChange={e => this.setState({ description: e.target.value })}
-                  multiline
-                  rows={1}
-                  rowsMax={15}
-                />
-                <RichEditorImageUpload
-                  ref={this.richEditorDescriptionImageUploadRef}
+                <PostEditDescription
                   server={this.props.server}
-                  asAuthorId={isModOrAdminLoggedIn ? this.props.idea.authorUserId : undefined}
+                  value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
+                  onChange={description => this.setState({ description })}
+                  postAuthorId={isModOrAdminLoggedIn ? this.props.idea.authorUserId : undefined}
+                  isSubmitting={this.state.isSubmitting}
                 />
               </Grid>
               {isModOrAdminLoggedIn && (
-                <React.Fragment>
+                <>
                   <Grid item xs={12} className={this.props.classes.row}>
-                    <RichEditor
-                      onUploadImage={(file) => this.richEditorResponseImageUploadRef.current?.onUploadImage(file)}
-                      variant='outlined'
-                      size='small'
-                      disabled={this.state.isSubmitting}
-                      label='Response'
-                      fullWidth
-                      iAgreeInputIsSanitized
-                      value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
-                      onChange={e => this.setState({ response: e.target.value })}
-                      multiline
-                      rows={1}
-                      rowsMax={3}
-                    />
-                    <RichEditorImageUpload
-                      ref={this.richEditorResponseImageUploadRef}
+                    <PostEditResponse
                       server={this.props.server}
-                      asAuthorId={this.props.loggedInUser?.userId}
+                      value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
+                      onChange={response => this.setState({ response })}
+                      isSubmitting={this.state.isSubmitting}
                     />
                   </Grid>
                   {(isModOrAdminLoggedIn && this.props.category.workflow.statuses.length > 0) && (
                     <Grid item xs={12} sm={4} className={this.props.classes.row}>
-                      <StatusSelect
-                        statuses={this.props.category.workflow.statuses}
-                        variant='outlined'
-                        size='small'
-                        initialStatusId={this.props.idea.statusId}
-                        value={this.state.statusId || this.props.idea.statusId}
+                      <PostEditStatus
+                        initialValue={this.props.idea.statusId}
+                        value={this.state.statusId}
+                        server={this.props.server}
+                        categoryId={this.props.category.categoryId}
                         onChange={(statusId) => this.setState({ statusId })}
+                        isSubmitting={this.state.isSubmitting}
                       />
                     </Grid>
                   )}
                   {this.props.category.tagging.tags.length > 0 && (
                     <Grid item xs={12} sm={8} className={this.props.classes.row}>
-                      <TagSelect
-                        variant='outlined'
-                        size='small'
-                        label='Tags'
-                        disabled={this.state.isSubmitting}
-                        category={this.props.category}
-                        tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
-                        isModOrAdminLoggedIn={isModOrAdminLoggedIn}
-                        onChange={tagIds => this.setState({ tagIds: tagIds })}
-                        onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
+                      <PostEditTags
+                        value={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
+                        server={this.props.server}
+                        categoryId={this.props.category.categoryId}
+                        onChange={(tagIds, errorStr) => this.setState({
+                          tagIds,
+                          tagIdsHasError: !!errorStr,
+                        })}
+                        isSubmitting={this.state.isSubmitting}
                       />
                     </Grid>
                   )}
@@ -215,7 +200,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       />
                     </Collapse>
                   </Grid>
-                </React.Fragment>
+                </>
               )}
             </Grid>
           </DialogContent>
@@ -302,10 +287,374 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               }}>Delete</SubmitButton>
           </DialogActions>
         </Dialog>
-      </React.Fragment>
+      </>
     );
   }
 }
-
 export default withStyles(styles, { withTheme: true })(
   withMediaQuery(theme => theme.breakpoints.down('xs'))(PostEdit));
+
+export const PostEditTitleInline = (props: {
+  server: Server;
+  post: Client.Idea;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const [title, setTitle] = useState<string | undefined>();
+  const [isSubmitting, setSubmitting] = useState<boolean>(false);
+
+  const changed = title !== undefined;
+  return (
+    <PostSaveButton
+      open={changed}
+      isSubmitting={isSubmitting}
+      onClick={() => {
+        setSubmitting(true);
+        postSave(
+          props.server,
+          props.post.ideaId,
+          { title },
+          () => { setTitle(undefined); setSubmitting(false); },
+          () => setSubmitting(false),
+        );
+      }}
+    >
+      <PostEditTitle
+        value={(title === undefined ? props.post.title : title) || ''}
+        onChange={title => setTitle(title)}
+        isSubmitting={isSubmitting}
+        TextFieldProps={props.TextFieldProps}
+      />
+    </PostSaveButton>
+  );
+}
+
+export const PostEditDescriptionInline = (props: {
+  server: Server;
+  post: Client.Idea;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const [description, setDescription] = useState<string | undefined>();
+  const [isSubmitting, setSubmitting] = useState<boolean>(false);
+
+  const changed = description !== undefined;
+  return (
+    <PostSaveButton
+      open={changed}
+      isSubmitting={isSubmitting}
+      onClick={() => {
+        setSubmitting(true);
+        postSave(
+          props.server,
+          props.post.ideaId,
+          { description },
+          () => { setDescription(undefined); setSubmitting(false); },
+          () => setSubmitting(false),
+        );
+      }}
+    >
+      <PostEditDescription
+        value={(description === undefined ? props.post.description : description) || ''}
+        onChange={description => setDescription(description)}
+        isSubmitting={isSubmitting}
+        server={props.server}
+        postAuthorId={props.post.authorUserId}
+        TextFieldProps={props.TextFieldProps}
+      />
+    </PostSaveButton>
+  );
+}
+
+export const PostEditTitle = (props: {
+  value?: string;
+  onChange: (value: string) => void;
+  isSubmitting?: boolean;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  return (
+    <TextField
+      variant='outlined'
+      size='small'
+      label='Title'
+      fullWidth
+      value={props.value === undefined ? '' : props.value}
+      onChange={e => props.onChange(e.target.value)}
+      disabled={props.isSubmitting}
+      {...props.TextFieldProps}
+    />
+  );
+}
+
+export const PostEditDescription = (props: {
+  value?: string;
+  postAuthorId?: string;
+  server: Server;
+  onChange: (value: string) => void;
+  isSubmitting?: boolean;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const imageUploadRef = useRef<RichEditorImageUpload>(null);
+  return (
+    <>
+      <RichEditor
+        onUploadImage={(file) => imageUploadRef.current?.onUploadImage(file)}
+        variant='outlined'
+        size='small'
+        disabled={props.isSubmitting}
+        label='Description'
+        fullWidth
+        iAgreeInputIsSanitized
+        value={props.value === undefined ? '' : props.value}
+        onChange={e => props.onChange(e.target.value)}
+        multiline
+        rows={1}
+        rowsMax={15}
+        {...props.TextFieldProps}
+      />
+      <RichEditorImageUpload
+        ref={imageUploadRef}
+        server={props.server}
+        asAuthorId={props.server.isModOrAdminLoggedIn() ? props.postAuthorId : undefined}
+      />
+    </>
+  );
+}
+
+export const PostEditStatusAndResponseInline = (props: {
+  server: Server;
+  post?: Client.Idea;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const [statusId, setStatusId] = useState<string | undefined>();
+  const [response, setResponse] = useState<string | undefined>();
+  const [isSubmitting, setSubmitting] = useState<boolean>(false);
+  if (!props.post) return null;
+  return (
+    <PostSaveButton
+      open={statusId !== undefined || response !== undefined}
+      isSubmitting={isSubmitting}
+      showNotify
+      onClick={(doNotify) => {
+        setSubmitting(true);
+        postSave(
+          props.server,
+          props.post!.ideaId,
+          {
+            ...(statusId !== undefined ? { statusId } : {}),
+            ...(response !== undefined ? { response } : {}),
+            suppressNotifications: !doNotify,
+          },
+          () => { setStatusId(undefined); setResponse(undefined); setSubmitting(false); },
+          () => setSubmitting(false),
+        );
+      }}
+    >
+      <PostEditStatus
+        server={props.server}
+        categoryId={props.post.categoryId}
+        initialValue={props.post.statusId}
+        value={statusId}
+        onChange={statusId => setStatusId(statusId)}
+        isSubmitting={isSubmitting}
+        TextFieldProps={props.TextFieldProps}
+      />
+      <PostEditResponse
+        server={props.server}
+        value={response === undefined ? props.post.response : response}
+        onChange={response => setResponse(response)}
+        isSubmitting={isSubmitting}
+        TextFieldProps={props.TextFieldProps}
+      />
+    </PostSaveButton>
+  );
+}
+
+export const PostEditResponse = (props: {
+  value?: string;
+  server: Server;
+  onChange: (value: string) => void;
+  isSubmitting?: boolean;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const imageUploadRef = useRef<RichEditorImageUpload>(null);
+  return (
+    <>
+      <RichEditor
+        onUploadImage={(file) => imageUploadRef.current?.onUploadImage(file)}
+        variant='outlined'
+        size='small'
+        disabled={props.isSubmitting}
+        label='Response'
+        fullWidth
+        iAgreeInputIsSanitized
+        value={props.value === undefined ? '' : props.value}
+        onChange={e => props.onChange(e.target.value)}
+        multiline
+        rows={1}
+        rowsMax={3}
+        {...props.TextFieldProps}
+      />
+      <RichEditorImageUpload
+        ref={imageUploadRef}
+        server={props.server}
+      />
+    </>
+  );
+}
+
+export const PostEditStatus = (props: {
+  initialValue?: string;
+  value?: string;
+  server: Server;
+  categoryId: string;
+  onChange: (value?: string) => void;
+  isSubmitting?: boolean;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
+  if (!category?.workflow.statuses.length) return null;
+  return (
+    <StatusSelect
+      statuses={category?.workflow.statuses || []}
+      variant='outlined'
+      size='small'
+      label='Status'
+      initialStatusId={props.initialValue}
+      value={props.value}
+      onChange={props.onChange}
+      disabled={props.isSubmitting}
+      SelectionPickerProps={{
+        TextFieldProps: {
+          fullWidth: true,
+          ...props.TextFieldProps,
+        },
+      }}
+    />
+  );
+}
+
+export const PostEditTagsInline = (props: {
+  server: Server;
+  post?: Client.Idea;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const [unsavedTagIds, setUnsavedTagIds] = useState<string[] | undefined>();
+  const [isSubmitting, setSubmitting] = useState<boolean>(false);
+  if (!props.post) return null;
+  return (
+    <PostEditTags
+      value={unsavedTagIds || props.post.tagIds}
+      server={props.server}
+      categoryId={props.post.categoryId}
+      onChange={(tagIds, errorStr) => {
+        if (!!errorStr) {
+          setUnsavedTagIds(tagIds);
+        } else {
+          setSubmitting(true);
+          postSave(
+            props.server,
+            props.post!.ideaId,
+            { tagIds },
+            () => {
+              !!unsavedTagIds && setUnsavedTagIds(undefined);
+              setSubmitting(false);
+            },
+            () => setSubmitting(false),
+          );
+        }
+      }}
+      isSubmitting={isSubmitting}
+      TextFieldProps={props.TextFieldProps}
+    />
+  );
+}
+
+export const PostEditTags = (props: {
+  value?: string[];
+  server: Server;
+  categoryId: string;
+  onChange: (value: string[], errorStr?: string) => void;
+  isSubmitting?: boolean;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+}) => {
+  const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
+  const isModOrAdminLoggedIn = props.server.isModOrAdminLoggedIn();
+  if (!category?.tagging.tagGroups?.some(g => g.userSettable || isModOrAdminLoggedIn)) return null;
+  return (
+    <TagSelect
+      variant='outlined'
+      size='small'
+      label='Tags'
+      disabled={props.isSubmitting}
+      category={category}
+      tagIds={props.value}
+      isModOrAdminLoggedIn={isModOrAdminLoggedIn}
+      onChange={props.onChange}
+      SelectionPickerProps={{
+        TextFieldProps: {
+          fullWidth: true,
+          ...props.TextFieldProps,
+        },
+      }}
+    />
+  );
+}
+
+const postSave = (
+  server: Server,
+  ideaId: string,
+  update: Client.IdeaUpdate | Admin.IdeaUpdateAdmin,
+  onSaved: () => void,
+  onFailure: () => void,
+) => {
+  (server.isModOrAdminLoggedIn()
+    ? server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
+      projectId: server.getProjectId(),
+      ideaId,
+      ideaUpdateAdmin: update,
+    }))
+    : server.dispatch().then(d => d.ideaUpdate({
+      projectId: server.getProjectId(),
+      ideaId,
+      ideaUpdate: update as Client.IdeaUpdate,
+    })))
+    .then(idea => onSaved())
+    .catch(e => onFailure())
+}
+
+export const PostSaveButton = (props: {
+  children?: any;
+  open?: boolean;
+  showNotify?: boolean;
+  isSubmitting?: boolean;
+  onClick: (doNotify: boolean) => void;
+}) => {
+  const classes = useStyles();
+  const [doNotify, setNotify] = useState<boolean>(!!props.showNotify);
+  return (
+    <div className={classes.saveButtonContainer}>
+      {props.children}
+      <Collapse in={!!props.open}>
+        <div className={classes.saveButtonActionContainer}>
+          {props.showNotify && (
+            <FormControlLabel
+              disabled={props.isSubmitting}
+              control={(
+                <Switch
+                  checked={doNotify}
+                  onChange={(e, checked) => setNotify(!doNotify)}
+                  color='primary'
+                />
+              )}
+              label={'Send notification'}
+            />
+          )}
+          <SubmitButton
+            isSubmitting={props.isSubmitting}
+            color='primary'
+            onClick={() => props.onClick(doNotify)}
+          >Save</SubmitButton>
+        </div>
+      </Collapse>
+    </div>
+  );
+}

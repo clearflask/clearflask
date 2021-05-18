@@ -758,7 +758,7 @@ const Competitors = () => {
       <Hero
         title='Customer Feedback Tools comparison'
         description={(
-          <React.Fragment>
+          <>
             There are 30+ tools that we know of in this space that vary by use case, features and price. Let's choose the right tool for your needs.
             <div className={classes.heroBrandList}>
               {[
@@ -766,7 +766,7 @@ const Competitors = () => {
                 ...Object.values(AlternativePlatforms),
                 Platforms[PlatformClearFlask],
               ].map((platform, index) => (
-                <React.Fragment>
+                <>
                   {brandListBreaks.has(index) && (
                     <div className={classes.heroBrandListBreak} />
                   )}
@@ -778,10 +778,10 @@ const Competitors = () => {
                     maxWidth={platform.logo.width}
                     maxHeight={platform.logo.height}
                   />
-                </React.Fragment>
+                </>
               ))}
             </div>
-          </React.Fragment>
+          </>
         )}
         image={CompareImg}
       />
@@ -915,7 +915,7 @@ const TableOfContents = (props: {}) => {
   var anchorSeen: boolean = !anchorId;
 
   return (
-    <React.Fragment>
+    <>
       <Typography component='div' variant='h6' className={classes.tocHeading}>Contents</Typography>
       <Scrollspy
         items={TableOfContentsAnchors.map(item => item.id)}
@@ -962,7 +962,7 @@ const TableOfContents = (props: {}) => {
           })}
         </Tabs>
       </Scrollspy>
-    </React.Fragment>
+    </>
   );
 };
 
@@ -982,7 +982,7 @@ const CompetitorSelect = (props: {}) => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <div>
 
       </div>
@@ -1000,14 +1000,14 @@ const CompetitorSelect = (props: {}) => {
         onClick={() => setHiddenPlatforms(new Set())}
         size='small'
       >Reset</Button>
-    </React.Fragment>
+    </>
   );
 };
 
 const Intro = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>Why do you need feedback?</Typography>
       <p><Typography>So you’ve created a product and now you want to know which area you should focus on.
          A great source of inspiration is your own customers, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
@@ -1017,14 +1017,14 @@ const Intro = (props: {}) => {
         The right tool will not only help in <span className={classes.emphasize}>collecting and grouping ideas</span> together, but also <span className={classes.emphasize}>prioritizing feedback</span> based on customer value or other factors that are important to you.</Typography></p>
       <p><Typography>Your customers will appreciate being involved in your product development and feel their ideas are being heard.</Typography></p>
       <p><Typography>Let's talk about how to choose the right feedback tool for you.</Typography></p>
-    </React.Fragment>
+    </>
   );
 };
 
 const Volume = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <PeopleIcon fontSize='inherit' />&nbsp;
         How many users?
@@ -1068,7 +1068,7 @@ const Volume = (props: {}) => {
         platformIds={Object.keys(Platforms).filter(id => id !== PlatformUserVoice)}
         limit={4}
       />
-    </React.Fragment>
+    </>
   );
 };
 
@@ -1081,7 +1081,7 @@ const PricingCompare = (props: {}) => {
   const classes = useStyles();
   const [markIndex, setMarkIndex] = useState<number>(1);
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <PaymentIcon fontSize='inherit' />&nbsp;
         What is your budget?
@@ -1100,7 +1100,7 @@ const PricingCompare = (props: {}) => {
           />
         </div>
       </div>
-    </React.Fragment>
+    </>
   );
 };
 const getPrice = (platform: Platform, totalUsers: number): { platform: Platform, price: number } => {
@@ -1257,7 +1257,7 @@ const Price = (props: {
 const MajorFeatures = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <FeaturesIcon fontSize='inherit' />&nbsp;
         Which features matter to you?
@@ -1298,14 +1298,14 @@ const MajorFeatures = (props: {}) => {
           { platformId: PlatformFider, headingIds: new Set(['ideas']) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const VotingMechanism = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <AnalyzeIcon fontSize='inherit' />&nbsp;
         Prioritization of feedback
@@ -1346,14 +1346,14 @@ const VotingMechanism = (props: {}) => {
           { platformId: PlatformOther, headingIds: new Set(['up']) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const Onboarding = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <SpeakIcon fontSize='inherit' />&nbsp;
         Engagement channels
@@ -1413,14 +1413,14 @@ const Onboarding = (props: {}) => {
           { platformId: PlatformRoadmapSpace, headingIds: new Set(['email']) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const ImportExport = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <ImportExportIcon fontSize='inherit' />&nbsp;
         Vendor lock-in: import and export
@@ -1462,14 +1462,14 @@ const ImportExport = (props: {}) => {
           { platformId: PlatformOther, headingIds: new Set([]) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const Language = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <TranslateIcon fontSize='inherit' />&nbsp;
         Language support
@@ -1522,14 +1522,14 @@ const Language = (props: {}) => {
           { platformId: PlatformOther, headingIds: new Set(['English']) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const Integrations = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <IntegrationsIcon fontSize='inherit' />&nbsp;
         Integrations
@@ -1592,14 +1592,14 @@ const Integrations = (props: {}) => {
           { platformId: PlatformConvas, headingIds: new Set([]) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const PageLoad = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <SpeedIcon fontSize='inherit' />&nbsp;
         Website health
@@ -1651,7 +1651,7 @@ const PageLoad = (props: {}) => {
         ]}
       />
       <p><Typography variant='caption'>Each platform's own feedback page was analyzed using Google's online tool "PageSpeed Insights". As majority of browsing is on mobile, both LCP and CLS reflect mobile results.</Typography></p>
-    </React.Fragment>
+    </>
   );
 };
 const PageLoadSeconds = (props: { val: number }) => {
@@ -1679,11 +1679,11 @@ const PageLoadLayoutShift = (props: { val: number }) => {
 const Disclaimer = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h6'>Disclaimer</Typography>
       <p><Typography variant='body2'>If your tool is not listed here or you found a mistake, please <Link to='/contact/general'>contact</Link> us.</Typography></p>
       <p><Typography variant='body2'>Our mission is to highlight each platform's strengths and weaknesses. However, the information contained in this article represents the views and opinions of our researcher and may not reflect reality.</Typography></p>
-    </React.Fragment>
+    </>
   );
 };
 
@@ -1701,7 +1701,7 @@ const Design = (props: {}) => {
   const img = device === Device.Desktop ? selectedPlatform.desktop : selectedPlatform.mobile;
 
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <DesignIcon fontSize='inherit' />&nbsp;
         Look &amp; feel
@@ -1751,14 +1751,14 @@ const Design = (props: {}) => {
           }}
         />
       </div>
-    </React.Fragment>
+    </>
   );
 };
 
 const Customize = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <CustomizeIcon fontSize='inherit' />&nbsp;
         Customization
@@ -1824,14 +1824,14 @@ const Customize = (props: {}) => {
           { platformId: PlatformConvas, headingIds: new Set(['custom-domain', 'widget']) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
 const OtherAlternatives = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <AlternativesIcon fontSize='inherit' />&nbsp;
         Niche alternatives
@@ -1890,14 +1890,14 @@ const OtherAlternatives = (props: {}) => {
         Ideal for smaller teams able to sift through all feedback.</Typography></p>
       <Brand showLogo showLink platformId={PlatformShipRight} />
 
-    </React.Fragment>
+    </>
   );
 };
 
 const TemplateDeleteMe = (props: {}) => {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Typography component='h2' variant='h4'>
         <FeaturesIcon fontSize='inherit' />&nbsp;
         a
@@ -1912,7 +1912,7 @@ const TemplateDeleteMe = (props: {}) => {
           { platformId: PlatformUserVoice, headingIds: new Set([]) },
         ]}
       />
-    </React.Fragment>
+    </>
   );
 };
 
@@ -1940,10 +1940,10 @@ const ComparisonTable = (props: {
           {props.headers.map(header => {
             if (!header.headingId) {
               return (
-                <React.Fragment>
+                <>
                   <TableCell key={`divider-${header.headingId}`} className={classes.tableDivider}></TableCell>
                   <TableCell key={`grouping-${header.headingId}`}></TableCell>
-                </React.Fragment>
+                </>
               );
             }
 
@@ -1979,10 +1979,10 @@ const ComparisonTable = (props: {
             {props.headers.map(header => {
               if (!header.headingId) {
                 return (
-                  <React.Fragment>
+                  <>
                     <TableCell key={`divider-${header.headingId}`} className={classes.tableDivider}><div /></TableCell>
                     <TableCell key={`grouping-${header.headingId}`} className={classNames(classes.tableHeading, classes.tableGrouping)}>{header.content}</TableCell>
-                  </React.Fragment>
+                  </>
                 );
               }
 
@@ -2118,7 +2118,7 @@ const FilterButton = (props: {
       platformIds={props.platformIds}
       invertSelection={props.invertSelection}
       renderButton={(onClick, disabled) => (
-        <React.Fragment>
+        <>
           {!!props.showExamples && (
             <BrandList
               platformIds={[...examples]}
@@ -2148,7 +2148,7 @@ const FilterButton = (props: {
               </Alert>
             </div>
           </Collapse>
-        </React.Fragment>
+        </>
       )}
     />
   );

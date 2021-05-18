@@ -20,7 +20,7 @@ import SelectionPicker from '../../app/comps/SelectionPicker';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
-import { labelsToSearch, searchToLabels } from '../../common/search/searchUtil';
+import { userLabelsToSearch, userSearchToLabels } from '../../common/search/searchUtil';
 import SubmitButton from '../../common/SubmitButton';
 import UserDisplay from '../../common/UserDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
@@ -149,13 +149,13 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
     const expand = !!this.state.createRefFocused || !!this.state.newUserName;
     const enableSubmit = !!this.state.newUserName;
 
-    const searchOptions = searchToLabels(this.state.searchOptions);
+    const searchOptions = userSearchToLabels(this.state.searchOptions);
 
     var content = (
       <div className={this.props.classes.resultContainer}>
         {this.state.searchResult && this.state.searchResult.length > 0
           ? (
-            <React.Fragment>
+            <>
               <Table
                 className={classNames(this.props.classes.table, !!this.props.nameOnly && this.props.classes.tableHideDividers)}
               >
@@ -175,7 +175,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                         />
                       </Typography></TableCell>
                       {!this.props.nameOnly && (
-                        <React.Fragment>
+                        <>
                           <TableCell>
                             <Truncate ellipsis='…' lines={1}>
                               <Typography>{user.email}</Typography>
@@ -195,7 +195,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                                 credits={this.props.credits || { formats: [] }} />)}
                             </Typography></TableCell>
                           )}
-                        </React.Fragment>
+                        </>
                       )}
                     </TableRow>
                   ))}
@@ -209,7 +209,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                   Show more
                 </Button>
               )}
-            </React.Fragment>
+            </>
           ) : (
             <div className={this.props.classes.nothing}>
               <Loader loaded={this.state.searchResult !== undefined}>
@@ -341,7 +341,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
             popupColumnCount={3}
             PopperProps={{ placement: 'bottom-end' }}
             onValueChange={labels => {
-              this.setState({ searchOptions: labelsToSearch(labels) });
+              this.setState({ searchOptions: userLabelsToSearch(labels) });
               this.updateSearchText(this.state.searchText);
             }}
             inputValue={this.state.searchInput || ''}

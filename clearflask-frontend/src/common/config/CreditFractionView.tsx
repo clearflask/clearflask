@@ -33,7 +33,7 @@ class CreditFractionView extends Component<Props> {
     const nValFormatted = nFormat ? creditFormatVal(this.props.numerator, nFormat, isSuffixSame) : this.props.numerator;
     const dValFormatted = this.props.denominator !== undefined && dFormat ? creditFormatVal(this.props.denominator, dFormat) : this.props.denominator;
     return (
-      <React.Fragment>
+      <>
         <Typography variant='body1'>
           <span className={this.props.numeratorClassName}>
             <CreditVal
@@ -49,18 +49,18 @@ class CreditFractionView extends Component<Props> {
             lineHeight: 'normal',
           }}>
             {this.props.denominator !== undefined && (
-              <React.Fragment>
+              <>
                 &nbsp;/&nbsp;
                 <CreditVal
                   valFormatted={dValFormatted}
                   isNegative={this.props.denominator < 0}
                 />
-              </React.Fragment>
+              </>
             )}
           &nbsp;{this.props.additionalSuffix}
           </span>
         </Typography>
-      </React.Fragment>
+      </>
     );
   }
 }

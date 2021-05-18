@@ -98,7 +98,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     <Typography>{this.props.userMe.name || 'None'}</Typography>
                   </Tooltip>
                 ) : (
-                  <React.Fragment>
+                  <>
                     <TextField
                       id='displayName'
                       error={!this.props.userMe.name}
@@ -122,7 +122,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         userUpdate: { name: this.state.displayName },
                       }));
                     }}>Save</Button>
-                  </React.Fragment>
+                  </>
                 )}
               </Grid>
             </Grid>
@@ -134,7 +134,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     <Typography>{this.props.userMe.email || 'None'}</Typography>
                   </Tooltip>
                 ) : (
-                  <React.Fragment>
+                  <>
                     <TextField
                       id='email'
                       value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
@@ -157,7 +157,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         userUpdate: { email: this.state.email },
                       }));
                     }}>Save</Button>
-                  </React.Fragment>
+                  </>
                 )}
               </Grid>
             </Grid>

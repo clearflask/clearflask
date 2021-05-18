@@ -1,8 +1,10 @@
 import { Divider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
+import { MarginProperty } from 'csstype';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { notEmpty } from '../../common/util/arrayUtil';
@@ -34,30 +36,39 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
   },
+  widthExpandMarginSupplied: {
+    padding: (props: Props) => props.widthExpandMargin,
+  },
   widthExpandMargin: {
     [theme.breakpoints.only('xs')]: {
-      margin: theme.spacing(4, 2),
+      margin: theme.spacing(2, 2),
+      '&:first-child': { marginTop: theme.spacing(4) },
+      '&:last-child': { marginBottom: theme.spacing(4) },
     },
     [theme.breakpoints.only('sm')]: {
-      margin: theme.spacing(4, 2),
+      margin: theme.spacing(2, 2),
+      '&:first-child': { marginTop: theme.spacing(4) },
+      '&:last-child': { marginBottom: theme.spacing(4) },
     },
     [theme.breakpoints.up('md')]: {
-      margin: theme.spacing(6, 4),
-    },
-    '&:not(:last-child)': {
-      marginBottom: 0,
+      margin: theme.spacing(3, 4),
+      '&:first-child': { marginTop: theme.spacing(6) },
+      '&:last-child': { marginBottom: theme.spacing(6) },
     },
   },
 });
 
 export interface Props {
   className?: string;
+  postClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   widthExpand?: boolean;
+  widthExpandMargin?: MarginProperty<string | number>;
   showDivider?: boolean;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
+  searchOverrideAdmin?: Partial<Admin.IdeaSearchAdmin>;
   direction: Direction;
   maxHeight?: string | number;
   onClickPost?: (postId: string) => void;
@@ -71,7 +82,6 @@ interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   searchResult: SearchResult;
-  searchMerged: Client.IdeaSearch;
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
@@ -82,13 +92,15 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 
   render() {
+    const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
+      ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
     switch (this.props.searchResult.status) {
       default:
       case Status.REJECTED:
         content = (
-          <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
+          <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
             <ErrorMsg msg='Failed to load' />
           </div>
         );
@@ -96,7 +108,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       case Status.PENDING:
         if (hideIfEmpty) return null;
         content = (
-          <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
+          <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
             <Loading />
           </div>
         );
@@ -105,7 +117,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         if (hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
         if (this.props.searchResult.ideas.length === 0) {
           content = (
-            <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
+            <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
               <Typography variant='overline'>Nothing found</Typography>
             </div>
           )
@@ -122,7 +134,10 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           }
           content = this.props.searchResult.ideas.map(idea => (
             <Post
-              className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin)}
+              className={classNames(
+                this.props.widthExpand && widthExpandMarginClassName,
+                this.props.postClassName,
+              )}
               key={idea.ideaId}
               server={this.props.server}
               idea={idea}
@@ -138,13 +153,13 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           ));
           if (this.props.showDivider) {
             content = content.map(post => (
-              <React.Fragment>
+              <>
                 {post}
                 {this.props.direction === Direction.Vertical
                   ? (<Divider />)
                   : (<DividerVertical />)
                 }
-              </React.Fragment>
+              </>
             ));
           }
         }
@@ -168,6 +183,7 @@ export default keyMapper(
   (ownProps: Props) => getSearchKey({
     ...ownProps.panel.search,
     ...ownProps.searchOverride,
+    ...ownProps.searchOverrideAdmin,
   }),
   connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
     const newProps: ConnectProps = {
@@ -178,21 +194,31 @@ export default keyMapper(
         ideas: [],
         cursor: undefined,
       } as SearchResult,
-      searchMerged: {
-        ...ownProps.panel.search,
-        ...ownProps.searchOverride,
-      },
     };
 
-    const searchKey = getSearchKey(newProps.searchMerged);
+    const searchMerged: Client.IdeaSearch | Admin.IdeaSearchAdmin = {
+      ...ownProps.panel.search,
+      ...ownProps.searchOverride,
+      ...ownProps.searchOverrideAdmin,
+    };
+    const searchKey = getSearchKey(searchMerged);
     const bySearch = state.ideas.bySearch[searchKey];
     if (!bySearch) {
-      newProps.callOnMount = () => {
-        ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
-          projectId: state.projectId!,
-          ideaSearch: newProps.searchMerged,
-        }));
-      };
+      if (!ownProps.searchOverrideAdmin) {
+        newProps.callOnMount = () => {
+          ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
+            projectId: state.projectId!,
+            ideaSearch: searchMerged as Client.IdeaSearch,
+          }));
+        };
+      } else {
+        newProps.callOnMount = () => {
+          ownProps.server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
+            projectId: state.projectId!,
+            ideaSearchAdmin: searchMerged as Admin.IdeaSearchAdmin,
+          }));
+        };
+      }
     } else {
       const missingVotesByIdeaIds: string[] = [];
       newProps.searchResult.status = bySearch.status;
@@ -203,7 +229,8 @@ export default keyMapper(
         if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
         return idea.idea;
       }).filter(notEmpty);
-      if (state.users.loggedIn.status === Status.FULFILLED
+      if (!ownProps.searchOverrideAdmin // Don't get votes if calling admin search
+        && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user
         && missingVotesByIdeaIds.length > 0) {
         newProps.callOnMount = () => {

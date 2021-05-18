@@ -98,9 +98,9 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
             <div className={this.props.classes.resultContainer}>
               {this.state.searchResult && this.state.searchResult.length > 0
                 ? (
-                  <React.Fragment>
+                  <>
                     {this.state.searchResult.map((comment, index) => (
-                      <React.Fragment>
+                      <>
                         <Comment
                           key={comment.commentId}
                           server={this.props.server}
@@ -122,7 +122,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                           onUpdated={() => this.search(this.state.searchText)}
                         />
                         <Divider />
-                      </React.Fragment>
+                      </>
                     ))}
                     {!!this.state.searchCursor && (
                       <Button
@@ -132,7 +132,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                         Show more
                       </Button>
                     )}
-                  </React.Fragment>
+                  </>
                 ) : (
                   <div className={this.props.classes.nothing}>
                     <Loader loaded={this.state.searchResult !== undefined}>

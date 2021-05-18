@@ -103,7 +103,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
     if (this.props.category?.subscription?.hellobar && this.props.category) {
       const isSubscribed = this.props.loggedInUser?.categorySubscriptions?.includes(this.props.category.categoryId);
       subscribeToMe = (
-        <React.Fragment>
+        <>
           {this.props.category.subscription.hellobar.message && (
             <Typography>{this.props.category.subscription.hellobar.message}</Typography>
           )}
@@ -146,7 +146,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
               });
             }}
           />
-        </React.Fragment>
+        </>
       );
       subscribeToMe = !!this.props.category.subscription.hellobar.title ? (
         <DividerCorner

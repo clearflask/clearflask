@@ -440,41 +440,56 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({ ...idea, vote: vote || {} });
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaWithVoteSearchResponse> {
+    return this.ideaSearchGeneric({
+      ...request,
+      ideaSearchAdmin: {
+        ...request.ideaSearch as any,
+      },
+    });
+  }
+  ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
+    return this.ideaSearchGeneric(request);
+  }
+  ideaSearchGeneric(request: Admin.IdeaSearchAdminRequest): Promise<Client.IdeaWithVoteSearchResponse> {
     var searchText;
-    if (!!request.ideaSearch.similarToIdeaId) {
-      const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaSearch.similarToIdeaId);
+    if (!!request.ideaSearchAdmin.similarToIdeaId) {
+      const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaSearchAdmin.similarToIdeaId);
       if (!idea) return this.throwLater(404, 'Idea not found');
       searchText = idea.title.split(' ')[0] || '';
     } else {
-      searchText = request.ideaSearch.searchText;
+      searchText = request.ideaSearchAdmin.searchText;
     }
     const allIdeas: Admin.Idea[] = this.getProject(request.projectId).ideas;
-    const ideas: Admin.Idea[] = request.ideaSearch.fundedByMeAndActive
+    const ideas: Admin.Idea[] = request.ideaSearchAdmin.fundedByMeAndActive
       ? this.getProject(request.projectId).votes
         .filter(v => v.fundAmount && v.fundAmount > 0)
         .map(v => allIdeas.find(i => i.ideaId === v.ideaId)!)
       : allIdeas;
     const categories = this.getProject(request.projectId).config.config.content.categories;
     return this.returnLater(this.filterCursor(this.sort(ideas
-      .filter(idea => request.ideaSearch.filterAuthorId === undefined
-        || (idea.authorUserId === request.ideaSearch.filterAuthorId))
-      .filter(idea => !request.ideaSearch.fundedByMeAndActive
+      .filter(idea => request.ideaSearchAdmin.filterAuthorId === undefined
+        || (idea.authorUserId === request.ideaSearchAdmin.filterAuthorId))
+      .filter(idea => !request.ideaSearchAdmin.fundedByMeAndActive
         || !idea.statusId
         || categories.find(c => c.categoryId === idea.categoryId)!
           .workflow
           .statuses
           .find(s => s.statusId === idea.statusId)!
           .disableFunding !== true)
-      .filter(idea => !request.ideaSearch.filterTagIds
-        || request.ideaSearch.filterTagIds.length === 0
-        || request.ideaSearch.filterTagIds.filter(tagId =>
+      .filter(idea => request.ideaSearchAdmin.filterCreatedStart === undefined
+        || (idea.created >= request.ideaSearchAdmin.filterCreatedStart))
+      .filter(idea => request.ideaSearchAdmin.filterCreatedEnd === undefined
+        || (idea.created <= request.ideaSearchAdmin.filterCreatedEnd))
+      .filter(idea => !request.ideaSearchAdmin.filterTagIds
+        || request.ideaSearchAdmin.filterTagIds.length === 0
+        || request.ideaSearchAdmin.filterTagIds.filter(tagId =>
           idea.tagIds && idea.tagIds.includes(tagId)
         ).length > 0)
-      .filter(idea => !request.ideaSearch.filterCategoryIds
-        || request.ideaSearch.filterCategoryIds.includes(idea.categoryId))
-      .filter(idea => request.ideaSearch.filterStatusIds === undefined
-        || request.ideaSearch.filterStatusIds.length === 0
-        || (idea.statusId && request.ideaSearch.filterStatusIds.includes(idea.statusId)))
+      .filter(idea => !request.ideaSearchAdmin.filterCategoryIds
+        || request.ideaSearchAdmin.filterCategoryIds.includes(idea.categoryId))
+      .filter(idea => request.ideaSearchAdmin.filterStatusIds === undefined
+        || request.ideaSearchAdmin.filterStatusIds.length === 0
+        || (idea.statusId && request.ideaSearchAdmin.filterStatusIds.includes(idea.statusId)))
       .filter(idea => searchText === undefined
         || idea.title.indexOf(searchText) >= 0
         || (idea.description || '').indexOf(searchText) >= 0)
@@ -484,13 +499,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         return { ...idea, vote: vote || {} };
       })
       , [(l, r) => {
-        switch (request.ideaSearch.sortBy) {
-          default: case Admin.IdeaSearchSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
-          case Admin.IdeaSearchSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
-          case Admin.IdeaSearchSortByEnum.New: return r.created.getTime() - l.created.getTime();
+        switch (request.ideaSearchAdmin.sortBy) {
+          default: case Admin.IdeaSearchAdminSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
+          case Admin.IdeaSearchAdminSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
+          case Admin.IdeaSearchAdminSortByEnum.New: return r.created.getTime() - l.created.getTime();
         }
       }])
-      , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
+      , request.ideaSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
   ideaHistogramAdmin(request: Admin.IdeaHistogramAdminRequest): Promise<Admin.HistogramResponse> {
     return this.genericHistogramAdmin(request.projectId, request.ideaHistogramSearchAdmin);
@@ -817,9 +832,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.Idea> {
     return this.ideaGetAdmin(request);
-  }
-  ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
-    throw new Error("Method not implemented.");
   }
   ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.Idea> {
     const idea = this.getImmutable(

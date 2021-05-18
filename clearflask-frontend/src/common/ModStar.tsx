@@ -1,7 +1,7 @@
 import { SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import StarIcon from '@material-ui/icons/Star';
+import StarIcon from '@material-ui/icons/StarRounded';
 import React from 'react';
 
 const styles = (theme: Theme) => createStyles({

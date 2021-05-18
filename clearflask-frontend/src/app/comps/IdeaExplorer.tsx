@@ -483,8 +483,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             category={selectedCategory}
             tagIds={this.state.newItemChosenTagIds}
             isModOrAdminLoggedIn={isModOrAdminLoggedIn}
-            onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
-            onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
+            onChange={(tagIds, errorStr) => this.setState({
+              newItemChosenTagIds: tagIds,
+              newItemTagSelectHasError: !!errorStr,
+            })}
             disabled={this.state.newItemIsSubmitting}
             mandatoryTagIds={mandatoryTagIds}
             SelectionPickerProps={{
@@ -510,7 +512,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           </Grid>
         )}
         {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && !!selectedCategory?.subscription && (
-          <React.Fragment>
+          <>
             <Grid item xs={12} className={this.props.classes.createGridItem}>
               <FormControlLabel
                 disabled={this.state.newItemIsSubmitting}
@@ -566,7 +568,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 />
               </Grid>
             </Collapse>
-          </React.Fragment>
+          </>
         )}
         {isLarge && (
           <Grid item xs={6} className={this.props.classes.createGridItem} />

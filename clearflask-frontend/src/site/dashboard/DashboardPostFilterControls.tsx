@@ -1,6 +1,4 @@
-import { InputBase } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import SearchIcon from '@material-ui/icons/Search';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -23,7 +21,6 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   server: Server;
-  type: 'search' | 'filter';
   search?: Partial<Admin.IdeaSearchAdmin>;
   onSearchChanged: (search: Partial<Admin.IdeaSearchAdmin>) => void;
 }
@@ -36,21 +33,7 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
   state: State = {};
 
   render() {
-    return this.props.type === 'search' ? (
-      <div className={this.props.classes.search}>
-        <SearchIcon
-          className={this.props.classes.searchIcon}
-          color='inherit'
-        />
-        <InputBase
-          className={this.props.classes.searchText}
-          placeholder='Search by any field'
-          fullWidth
-          value={this.props.search?.searchText || ''}
-          onChange={e => this.props.onSearchChanged({ searchText: e.target.value })}
-        />
-      </div>
-    ) : (
+    return (
       <PostFilterControls
         config={this.props.config}
         forceSingleCategory

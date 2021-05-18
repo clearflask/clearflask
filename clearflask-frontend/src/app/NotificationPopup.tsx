@@ -16,7 +16,7 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
 
   render() {
     return (
-      <React.Fragment>
+      <>
         <ClosablePopper
           open={!!this.props.anchorEl}
           onClose={this.props.onClose.bind(this)}
@@ -28,7 +28,7 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
         >
           <NotificationList server={this.props.server} isInsidePaper />
         </ClosablePopper>
-      </React.Fragment>
+      </>
     );
   }
 }

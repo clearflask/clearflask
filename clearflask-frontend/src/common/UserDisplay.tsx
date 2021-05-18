@@ -10,7 +10,7 @@ import { preserveEmbed } from './util/historyUtil';
 
 export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, maxChars: number = -1): string => {
   if (!user) {
-    return 'Anonymous';
+    return 'Unknown';
   }
   var displayName = user['name'];
   if (!displayName && user['email']) {
@@ -38,12 +38,15 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 'unset',
     textTransform: 'unset',
   },
+  mod: {
+    color: theme.palette.primary.main,
+  },
 });
 interface Props {
   labelClassName?: string;
   variant?: 'button' | 'text';
   maxChars?: number;
-  user: {
+  user?: {
     userId: string;
     name?: string;
     isMod?: boolean;
@@ -51,19 +54,24 @@ interface Props {
   onClick?: (userId: string) => void;
   disabled?: boolean;
   suppressTypography?: boolean;
+  suppressStar?: boolean;
 }
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     var user = (
-      <ModStar isMod={this.props.user.isMod} name={
-        <span className={classNames(
-          this.props.labelClassName,
-          this.props.classes.label,
-        )}>
-          {DisplayUserName(this.props.user, this.props.maxChars)}
-        </span>
-      } />
+      <span className={classNames(
+        this.props.labelClassName,
+        this.props.classes.label,
+        this.props.user?.isMod && this.props.classes.mod,
+      )}>
+        {DisplayUserName(this.props.user, this.props.maxChars)}
+      </span>
     );
+    if (!this.props.suppressStar) {
+      var user = (
+        <ModStar isMod={this.props.user?.isMod} name={user} />
+      );
+    }
     if (!this.props.suppressTypography) {
       user = (
         <Typography noWrap variant='caption'>
@@ -71,7 +79,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
         </Typography>
       );
     }
-    if (this.props.variant === 'text') {
+    if (!this.props.user || this.props.variant === 'text') {
       return user;
     }
     return this.props.onClick ? (
@@ -80,7 +88,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
         className={this.props.classes.button}
         disabled={this.props.disabled}
         variant='text'
-        onClick={e => this.props.onClick && this.props.onClick(this.props.user.userId)}
+        onClick={e => this.props.onClick && !!this.props.user?.userId && this.props.onClick(this.props.user.userId)}
       >
         {user}
       </Button>

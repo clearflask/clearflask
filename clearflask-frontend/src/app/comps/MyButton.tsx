@@ -17,7 +17,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
     lineHeight: '24px',
     '&:not(:hover)': {
-      borderColor: 'rgba(0,0,0,0.02)',
+      borderColor: 'rgba(0,0,0,0)',
     },
   },
   iconPost: {
@@ -56,7 +56,7 @@ class MyButton extends Component<Props & React.ComponentProps<typeof Button> & W
         )}
       >
         {!!Icon && (
-          <React.Fragment>
+          <>
             <Icon
               fontSize='inherit'
               className={classNames(
@@ -66,14 +66,14 @@ class MyButton extends Component<Props & React.ComponentProps<typeof Button> & W
               )}
             />
             {React.Children.count(this.props.children) > 0 && (
-              <React.Fragment>&nbsp;</React.Fragment>
+              <>&nbsp;</>
             )}
-          </React.Fragment>
+          </>
         )}
         {React.Children.count(this.props.children) > 0 ? (
           this.props.children
         ) : (
-          <React.Fragment>&#8203;</React.Fragment>
+          <>&#8203;</>
         )}
       </Button>
     );

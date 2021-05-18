@@ -71,7 +71,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
       );
 
     var editForm = (
-      <React.Fragment>
+      <>
         <DialogContent>
           <Grid container alignItems='baseline'>
             <Grid item xs={8} className={this.props.classes.row}>
@@ -330,7 +330,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               }}>Delete</SubmitButton>
           </DialogActions>
         </Dialog>
-      </React.Fragment>
+      </>
     );
 
     editForm = this.props.isInsideDialog ? (
@@ -339,10 +339,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         {editForm}
       </div>
     ) : (
-        <DividerCorner title='Edit User' className={classNames(this.props.className, this.props.classes.dividerCorner)}>
-          {editForm}
-        </DividerCorner>
-      );
+      <DividerCorner title='Edit User' className={classNames(this.props.className, this.props.classes.dividerCorner)}>
+        {editForm}
+      </DividerCorner>
+    );
 
     return editForm;
   }

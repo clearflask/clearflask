@@ -28,7 +28,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
       filterAuthorId: this.props.userId,
     };
     return (
-      <React.Fragment>
+      <>
         <PanelPost
           className={this.props.classes.panel}
           direction={Direction.Horizontal}
@@ -58,7 +58,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
           direction={Direction.Horizontal}
           hideAuthor
         />
-      </React.Fragment>
+      </>
     );
   }
 }

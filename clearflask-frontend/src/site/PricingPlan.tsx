@@ -106,10 +106,10 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
               &nbsp;
               <Typography variant='subtitle1'>
                 {perk.desc}
-                {!!perk.terms && (<React.Fragment>
+                {!!perk.terms && (<>
                   &nbsp;
                   <HelpPopper description={perk.terms} />
-                </React.Fragment>)}
+                </>)}
               </Typography>
             </div>
           ))}
@@ -160,7 +160,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   renderPriceTag() {
     if (this.props.customPrice !== undefined && !this.props.plan.pricing) {
       return (
-        <React.Fragment>
+        <>
           <div className={this.props.classes.cardPricing}>
             <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
             &nbsp;&nbsp;
@@ -172,7 +172,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`High-volume`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
           </div>
-        </React.Fragment>
+        </>
       );
     }
 
@@ -214,15 +214,15 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     var extraMau: any = null;
     if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
       extraMau = (
-        <React.Fragment>
+        <>
           <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
           <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
-        </React.Fragment>
+        </>
       );
     }
 
     return (
-      <React.Fragment>
+      <>
         <div className={this.props.classes.cardPricing}>
           <Typography component='h2' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
           <Typography component='h2' variant='h4'>{monthlyPrice}</Typography>
@@ -234,7 +234,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             {billed}
           </div>
         )}
-      </React.Fragment>
+      </>
     );
   }
 }

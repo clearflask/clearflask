@@ -123,10 +123,6 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         disabled={this.props.disabled}
         clearOnBlur
         inputValue={this.state.input || ''}
-        TextFieldProps={{
-          variant: this.props.variant,
-          size: this.props.size,
-        }}
         onFocus={() => {
           if (this.state.options === undefined
             && this.state.searching === undefined
@@ -162,6 +158,11 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
             });
         } : undefined}
         {...this.props.SelectionPickerProps}
+        TextFieldProps={{
+          variant: this.props.variant,
+          size: this.props.size,
+          ...this.props.SelectionPickerProps?.TextFieldProps,
+        }}
       />
     );
   }

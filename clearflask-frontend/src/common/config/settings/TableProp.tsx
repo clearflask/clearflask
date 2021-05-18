@@ -97,7 +97,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     }
 
     var content = (
-      <React.Fragment>
+      <>
         {rows.length > 0 && (
           <div className={this.props.classes.table}>
             <Table style={{ width: 'inherit' }}>
@@ -122,7 +122,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
             <AddIcon />
           </IconButton>
         </div>
-      </React.Fragment>
+      </>
     );
     const label = (
       <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>

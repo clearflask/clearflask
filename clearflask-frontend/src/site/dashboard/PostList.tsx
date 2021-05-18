@@ -5,10 +5,17 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
+import { buttonHover } from '../../common/util/cssUtil';
 
 const styles = (theme: Theme) => createStyles({
+  post: {
+    ...buttonHover(theme),
+    '&:hover $title': {
+      textDecoration: 'underline',
+    },
+    cursor: 'pointer',
+  }
 });
-
 interface Props {
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
@@ -26,18 +33,31 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
     return (
       <PanelPost
         direction={Direction.Vertical}
+        postClassName={this.props.classes.post}
         panel={{
-          display: {},
+          display: {
+            titleTruncateLines: 2,
+            descriptionTruncateLines: 2,
+            responseTruncateLines: 0,
+            showCommentCount: true,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: true,
+            showTags: true,
+            showVoting: true,
+            showFunding: false,
+            showExpression: true,
+            showEdit: false,
+          },
           search: {},
           hideIfEmpty: false,
         }}
         widthExpand
+        widthExpandMargin={this.props.theme.spacing(2)}
         showDivider
-        searchOverride={this.props.search as Client.IdeaSearch /* TODO */}
+        searchOverrideAdmin={this.props.search}
         server={this.props.server}
-        // displayDefaults={displayDefaults}
         onClickPost={this.props.onClickPost}
-        onUserClick={this.props.onUserClick}
       />
     );
   }

@@ -32,22 +32,22 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
     heading: 'What are tracked users?',
     body: (
-      <React.Fragment>
+      <>
         <p>
           A user signed up on ClearFlask becomes tracked when they provide you with feedback by posting, commenting or voting.
           Typically about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked.
         </p>
-      </React.Fragment>
+      </>
     ),
   },
   {
     heading: 'Can I import/export data?',
     body: (
-      <React.Fragment>
+      <>
         <p>
           Yes, you can switch between providers whenever you need to. We provide both import and export functionality via CSV format. Contact us for help.
         </p>
-      </React.Fragment>
+      </>
     ),
   },
 ];
@@ -267,10 +267,10 @@ const FeatureListItem = (props: {
       <TableCell key='feature'>
         {props.name}
         {props.helpText && (
-          <React.Fragment>
+          <>
             &nbsp;
             <HelpPopper description={props.helpText} />
-          </React.Fragment>
+          </>
         )}
       </TableCell>
       {props.planContents.map((content, index) => (

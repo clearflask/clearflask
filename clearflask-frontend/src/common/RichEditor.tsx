@@ -499,7 +499,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
         }}
       >
         {(!this.state.editLinkPrevValue || this.state.editLinkEditing) ? (
-          <React.Fragment>
+          <>
             <div>Enter link:</div>
             <TextField
               autoFocus
@@ -552,9 +552,9 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                 });
               }}
             >Save</Button>
-          </React.Fragment>
+          </>
         ) : (
-          <React.Fragment>
+          <>
             <div>Visit</div>
             <a
               href={this.state.editLinkPrevValue}
@@ -575,7 +575,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                 })
               }}
             >Edit</Button>
-          </React.Fragment>
+          </>
         )}
         {(!!this.state.editLinkPrevValue) && (
           <Button

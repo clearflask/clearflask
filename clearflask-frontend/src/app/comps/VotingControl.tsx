@@ -108,7 +108,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
     }
 
     return (
-      <React.Fragment>
+      <>
         {upvote}
         <span className={this.props.classes.voteValueStandalone}>
           {this.props.voteValue || 0}
@@ -123,7 +123,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
           )}
           onClick={this.props.onDownvote}
         />
-      </React.Fragment>
+      </>
     );
   }
 }

@@ -29,7 +29,7 @@ class HelpPopper extends Component<Props, State> {
 
   render() {
     return (
-      <React.Fragment>
+      <>
         <Button
           className={this.props.classes.iconButton}
           onClick={e => this.setState({ open: this.state.open ? undefined : e.currentTarget })}
@@ -63,7 +63,7 @@ class HelpPopper extends Component<Props, State> {
             </Fade>
           )}
         </Popper>
-      </React.Fragment>
+      </>
     );
   }
 }

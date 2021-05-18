@@ -167,10 +167,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     var cardNumber, cardExpiry, cardStateIcon;
     if (!!this.props.accountBilling?.payment) {
       cardNumber = (
-        <React.Fragment>
+        <>
           <span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;</span>
           {this.props.accountBilling.payment.last4}
-        </React.Fragment>
+        </>
       );
       var expiryColor;
       if (new Date().getFullYear() % 100 >= this.props.accountBilling.payment.expiryYear % 100) {
@@ -216,9 +216,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           paymentTitle = 'Automatic renewal is active';
           if (this.props.accountBilling?.billingPeriodEnd) {
             paymentDesc = (
-              <React.Fragment>
+              <>
                 Your first payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />.
-              </React.Fragment>
+              </>
             );
           } else {
             paymentDesc = `Your first payment will be automatically billed at the end of the trial period.`;
@@ -241,9 +241,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           planTitle = 'Your plan is active until your trial ends';
           if (this.props.accountBilling?.billingPeriodEnd) {
             planDesc = (
-              <React.Fragment>
+              <>
                 You have full access to your {this.props.accountBilling.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
-              </React.Fragment>
+              </>
             );
           } else {
             planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
@@ -277,9 +277,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
         if (this.props.accountBilling?.billingPeriodEnd) {
           planTitle = (
-            <React.Fragment>
+            <>
               Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
-            </React.Fragment>
+            </>
           );
         } else {
           planTitle = 'Your plan is active until the end of the billing cycle';
@@ -358,7 +358,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       }
     };
     const paymentAction = paymentStripeAction ? (
-      <React.Fragment>
+      <>
         <Message
           className={this.props.classes.paymentActionMessage}
           message='One of your payments requires additional information'
@@ -379,7 +379,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           onClose={paymentActionOnClose}
         >
           {this.state.paymentActionMessage ? (
-            <React.Fragment>
+            <>
               <DialogContent>
                 <Message
                   message={this.state.paymentActionMessage}
@@ -389,7 +389,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <DialogActions>
                 <Button onClick={paymentActionOnClose}>Dismiss</Button>
               </DialogActions>
-            </React.Fragment>
+            </>
           ) : (this.state.paymentActionUrl ? (
             <iframe
               title='Complete outstanding payment action'
@@ -406,7 +406,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </div>
           ))}
         </Dialog>
-      </React.Fragment>
+      </>
     ) : undefined;
 
     const hasPayable = (this.props.accountBilling?.accountPayable || 0) > 0;
@@ -418,7 +418,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             {creditCard}
             <Box display='grid' gridTemplateAreas='"payTtl payAmt" "rcvTtl rcvAmt"' alignItems='center' gridGap='10px 10px'>
               {hasPayable && (
-                <React.Fragment>
+                <>
                   <Box gridArea='payTtl'><Typography component='div'>Credits:</Typography></Box>
                   <Box gridArea='payAmt' display='flex'>
                     <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
@@ -426,10 +426,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       {this.props.accountBilling?.accountPayable || 0}
                     </Typography>
                   </Box>
-                </React.Fragment>
+                </>
               )}
               {(hasReceivable || !hasPayable) && (
-                <React.Fragment>
+                <>
                   <Box gridArea='rcvTtl'><Typography component='div'>Overdue:</Typography></Box>
                   <Box gridArea='rcvAmt' display='flex'>
                     <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
@@ -437,7 +437,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       {this.props.accountBilling?.accountReceivable || 0}
                     </Typography>
                   </Box>
-                </React.Fragment>
+                </>
               )}
             </Box>
           </div>
@@ -501,7 +501,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         >
           <ElementsConsumer>
             {({ elements, stripe }) => (
-              <React.Fragment>
+              <>
                 <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
                 <DialogContent className={this.props.classes.center}>
                   <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
@@ -521,7 +521,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     onClick={() => this.onPaymentSubmit(elements!, stripe!)}
                   >Add</SubmitButton>
                 </DialogActions>
-              </React.Fragment>
+              </>
             )}
           </ElementsConsumer>
         </Dialog>
@@ -665,10 +665,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <Typography variant='h6' component='div'>{planTitle}</Typography>
             <Typography>{planDesc}</Typography>
             {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
-              <React.Fragment>
+              <>
                 <Typography variant='h6' component='div' className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
                 <Typography>{endOfTermChangeToPlanDesc}</Typography>
-              </React.Fragment>
+              </>
             )}
             {showPlanChange && (
               <div className={this.props.classes.sectionButtons}>
@@ -691,7 +691,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </div>
             )}
             {this.props.isSuperAdmin && (
-              <React.Fragment>
+              <>
                 <Dialog
                   open={!!this.state.showFlatYearlyChange}
                   onClose={() => this.setState({ showFlatYearlyChange: undefined })}
@@ -735,7 +735,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     onClick={() => this.setState({ showFlatYearlyChange: true })}
                   >Flatten</Button>
                 </div>
-              </React.Fragment>
+              </>
             )}
           </div>
         </div>

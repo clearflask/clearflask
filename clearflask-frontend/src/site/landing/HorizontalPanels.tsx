@@ -34,11 +34,11 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
     const contentsSize = childrenSize + padLeftSize + padRightSize;
     const childrenMapper: (mapper: (content: React.ReactNode, index: number) => React.ReactNode) => React.ReactNode = (mapper) => {
       return (
-        <React.Fragment>
+        <>
           {isHorizontal ? [...Array(padLeftSize)].map((c, i) => mapper((<div />), i)) : null}
           {React.Children.map(this.props.children, (c, i) => mapper(c, (isHorizontal ? padLeftSize : 0) + i))}
           {isHorizontal ? [...Array(padRightSize)].map((c, i) => mapper((<div />), padLeftSize + childrenSize + i)) : undefined}
-        </React.Fragment>
+        </>
       );
     }
 

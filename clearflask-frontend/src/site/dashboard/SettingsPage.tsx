@@ -39,7 +39,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
       return 'Need to login to see this page';
     }
     return (
-      <React.Fragment>
+      <>
         <DividerCorner title='Account details' className={this.props.classes.details}>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
@@ -142,7 +142,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
             </Grid>
           </UpgradeWrapper>
         </DividerCorner>
-      </React.Fragment>
+      </>
     );
   }
 }

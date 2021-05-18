@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
+import AvatarDisplay from '../../common/AvatarDisplay';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
@@ -19,12 +20,15 @@ import MyButton from './MyButton';
 import { MaxContentWidth } from './Post';
 import VotingControl from './VotingControl';
 
+const AvatarContainerSize = 30;
+const AvatarSize = 25;
 const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(2),
     maxWidth: MaxContentWidth,
     display: 'flex',
     flexDirection: 'column',
+    paddingLeft: AvatarContainerSize,
   },
   content: {
     alignSelf: 'end',
@@ -66,20 +70,37 @@ const styles = (theme: Theme) => createStyles({
   commentDeleted: {
     color: theme.palette.text.hint,
   },
+  created: {
+    color: theme.palette.text.hint,
+  },
   edited: {
+    color: theme.palette.text.hint,
     fontStyle: 'italic',
   },
   unknownAuthor: {
     fontStyle: 'italic',
   },
   authorLabel: {
-    fontSize: '1.2em'
+    fontSize: '0.9em'
   },
   grow: {
     flexGrow: 1,
   },
   pre: {
     whiteSpace: 'pre-wrap',
+  },
+  authorContainer: {
+    position: 'relative',
+  },
+  avatarContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    transform: 'translate(-100%, -50%)',
+    width: AvatarContainerSize,
+  },
+  avatarDisplay: {
+    margin: 'auto',
   },
   ...cssBlurry,
 });
@@ -216,7 +237,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <div className={this.props.classes.barLine}>
-        <Delimited>
+        <Delimited delimiter=' '>
           {content}
         </Delimited>
       </div>
@@ -324,7 +345,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <Typography key='edited' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
-        {!this.props.comment.authorUserId ? 'deleted' : 'edited'}
+        {!this.props.comment.authorUserId ? 'Deleted' : 'Edited'}
         &nbsp;
         <TimeAgo date={this.props.comment.edited} />
       </Typography>
@@ -334,25 +355,33 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
   renderAuthor() {
     if (!this.props.comment || this.props.hideAuthor) return null;
 
-    const unknownUser = !this.props.comment.authorUserId || !this.props.comment.authorName;
+    const user = (!this.props.comment.authorUserId || !this.props.comment.authorName) ? undefined : {
+      userId: this.props.comment.authorUserId,
+      name: this.props.comment.authorName,
+      isMod: this.props.comment.authorIsMod
+    };
     return (
-      <Typography
-        key='author'
-        className={classNames(
-          unknownUser && this.props.classes.unknownAuthor,
-        )}
-      >
+      <div className={this.props.classes.authorContainer}>
+        <div className={this.props.classes.avatarContainer}>
+          <div className={this.props.classes.avatarDisplay}>
+            <AvatarDisplay
+              size={AvatarSize}
+              user={user}
+            />
+          </div>
+        </div>
         <UserDisplay
-          labelClassName={this.props.classes.authorLabel}
+          key='author'
+          labelClassName={classNames(
+            !user && this.props.classes.unknownAuthor,
+            this.props.classes.authorLabel,
+          )}
           suppressTypography
+          suppressStar
           onClick={this.props.onAuthorClick}
-          user={{
-            userId: this.props.comment.authorUserId || 'Unknown',
-            name: this.props.comment.authorName || 'Unknown',
-            isMod: this.props.comment.authorIsMod
-          }}
+          user={user}
         />
-      </Typography>
+      </div>
     );
   }
 
@@ -360,7 +389,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     if (!this.props.comment) return null;
 
     return (
-      <Typography key='created' className={this.props.classes.barItem} variant='caption'>
+      <Typography key='created' className={classNames(this.props.classes.barItem, this.props.classes.created)} variant='caption'>
         <TimeAgo date={this.props.comment.created} />
       </Typography>
     );

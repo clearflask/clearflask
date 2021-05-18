@@ -164,7 +164,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
 
 
     const display = (
-      <React.Fragment>
+      <>
         {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}
         {demo}
         {this.props.controls && (
@@ -178,7 +178,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             </div>
           </DividerCorner>
         )}
-      </React.Fragment>
+      </>
     );
 
     if (this.props.type === 'demoOnly') {

@@ -10,6 +10,9 @@ import GraphBox from './GraphBox';
 
 const styles = (theme: Theme) => createStyles({
   chart: {
+    '& .apexcharts-svg': {
+      overflow: 'visible', // Edges of points get cut off without this
+    },
     '& .apexcharts-tooltip': {
       display: 'none',
     },

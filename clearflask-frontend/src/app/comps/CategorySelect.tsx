@@ -35,10 +35,6 @@ class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> 
     return (
       <SelectionPicker
         className={this.props.className}
-        TextFieldProps={{
-          variant: this.props.variant,
-          size: this.props.size,
-        }}
         label={this.props.label}
         placeholder={this.props.placeholder}
         disabled={this.props.disabled}
@@ -56,6 +52,11 @@ class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> 
         maxWidth={this.props.maxWidth}
         onValueChange={labels => labels[0] && this.props.onChange(labels[0]?.value)}
         {...this.props.SelectionPickerProps}
+        TextFieldProps={{
+          variant: this.props.variant,
+          size: this.props.size,
+          ...this.props.SelectionPickerProps?.TextFieldProps,
+        }}
       />
     );
   }

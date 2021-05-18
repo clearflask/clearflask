@@ -231,10 +231,10 @@ export default class Property extends Component<Props> {
         var content;
         if (prop.required) {
           content = (
-            <React.Fragment>
+            <>
               {description}
               {link}
-            </React.Fragment>
+            </>
           );
         } else {
           content = (

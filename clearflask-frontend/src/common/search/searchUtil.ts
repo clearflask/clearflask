@@ -256,7 +256,7 @@ export interface UserLabels {
   options: Label[];
   selected: Label[];
 }
-export const searchToLabels = (search?: Partial<Admin.UserSearchAdmin>): UserLabels => {
+export const userSearchToLabels = (search?: Partial<Admin.UserSearchAdmin>): UserLabels => {
   const result: UserLabels = {
     options: [],
     selected: [],
@@ -304,7 +304,7 @@ export const searchToLabels = (search?: Partial<Admin.UserSearchAdmin>): UserLab
 
   return result;
 }
-export const labelsToSearch = (labels: Label[]): Partial<Admin.UserSearchAdmin> => {
+export const userLabelsToSearch = (labels: Label[]): Partial<Admin.UserSearchAdmin> => {
   const search: Partial<Admin.UserSearchAdmin> = {};
   labels.forEach(label => {
     if (label.groupBy === 'Filter') {

@@ -45,15 +45,11 @@ class StatusSelect extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <SelectionPicker
         className={this.props.className}
-        TextFieldProps={{
-          variant: this.props.variant,
-          size: this.props.size,
-        }}
         placeholder={this.props.placeholder}
         disabled={this.props.disabled}
         errorMsg={this.props.errorText}
         noOptionsMessage='No options'
-        forceDropdownIcon={false}
+        // forceDropdownIcon={false}
         width='100%'
         label={this.props.label || 'Status'}
         showTags
@@ -65,6 +61,11 @@ class StatusSelect extends Component<Props & WithStyles<typeof styles, true>> {
         onValueChange={labels => labels[0] && this.props.onChange((labels[0]?.value === this.props.initialStatusId
           ? undefined : labels[0]?.value))}
         {...this.props.SelectionPickerProps}
+        TextFieldProps={{
+          variant: this.props.variant,
+          size: this.props.size,
+          ...this.props.SelectionPickerProps?.TextFieldProps,
+        }}
       />
     );
   }

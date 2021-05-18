@@ -42,7 +42,7 @@ class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles
       setAppTitle(this.props.projectName, this.props.titleText);
     }
     return (
-      <React.Fragment>
+      <>
         <div className={this.props.classes.animationContainer}>
           <div className={this.props.classes.page}>
             <div className={this.props.classes.anchor}>
@@ -53,7 +53,7 @@ class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles
         {!!this.props.showFooter && (
           <Footer customPageSlug={this.props.customPageSlug} />
         )}
-      </React.Fragment>
+      </>
     );
   }
 }

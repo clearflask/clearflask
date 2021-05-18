@@ -139,14 +139,14 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
                 to='/contact/sales'
               >Talk to us</Button>
             ) : (
-              <React.Fragment>
+              <>
                 <div className={this.props.classes.valueHorizontal}>
                   <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
                   <Typography component='div' variant='h4'>{this.formatNumber(price)}</Typography>
                   <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
                 </div>
                 <Typography component='div' variant='subtitle2' color='textSecondary'>{this.formatNumber(mau)}&nbsp;tracked*</Typography>
-              </React.Fragment>
+              </>
             )}
           </div>
         </div>

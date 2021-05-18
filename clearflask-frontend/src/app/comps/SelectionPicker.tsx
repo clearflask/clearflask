@@ -112,7 +112,7 @@ interface Props {
   onValueCreate?: (name: string) => void;
   showCreateAtTop?: boolean;
   className?: string;
-  TextFieldProps?: React.ComponentProps<typeof TextField>;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
   inputValue?: string;
   menuIsOpen?: boolean;
   // undefined: default, boolean: force show or hide
@@ -180,17 +180,17 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
             {...(getTagProps ? getTagProps({ index }) : {})}
           >{option.label}</div>
         ) : (
-            <Chip
-              className={this.props.classes.chip}
-              variant='outlined'
-              label={option.label}
-              size='small'
-              style={{
-                color: option.color,
-              }}
-              {...(getTagProps ? getTagProps({ index }) : {})}
-            />
-          )}
+          <Chip
+            className={this.props.classes.chip}
+            variant='outlined'
+            label={option.label}
+            size='small'
+            style={{
+              color: option.color,
+            }}
+            {...(getTagProps ? getTagProps({ index }) : {})}
+          />
+        )}
       </Fade>
     ));
     return (
@@ -393,7 +393,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
                 ...this.props.TextFieldProps?.InputProps,
                 readOnly: this.props.disableInput || this.props.TextFieldProps?.InputProps?.readOnly,
                 startAdornment: (
-                  <React.Fragment>
+                  <>
                     {this.props.TextFieldProps?.InputProps?.endAdornment || null}
                     {!!this.props.showTags
                       && !this.props.isMulti
@@ -403,13 +403,13 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
                     {!!this.props.alwaysWrapChipsInput && !!paramsStartAdornment?.length && (
                       <div className={this.props.classes.flexWrapBreak} />
                     )}
-                  </React.Fragment>
+                  </>
                 ),
                 endAdornment: (
-                  <React.Fragment>
+                  <>
                     {this.props.TextFieldProps?.InputProps?.endAdornment || null}
                     {params.InputProps.endAdornment}
-                  </React.Fragment>
+                  </>
                 ),
               }}
             />

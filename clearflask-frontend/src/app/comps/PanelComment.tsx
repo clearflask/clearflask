@@ -111,7 +111,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
         break;
     }
     return (
-      <React.Fragment>
+      <>
         <Panel
           className={this.props.className}
           title={this.props.title}
@@ -131,7 +131,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
             this.onLoggedIn = undefined;
           }}
         />
-      </React.Fragment>
+      </>
     );
   }
 }

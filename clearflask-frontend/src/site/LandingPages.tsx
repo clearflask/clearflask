@@ -282,7 +282,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 export function Landing() {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <LandingHero />
 
       <Block
@@ -476,13 +476,13 @@ export function Landing() {
       </HorizontalPanels> */}
       <LandingSales />
       {/* <LandingGraveyard /> */}
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingGraveyard() {
   return (
-    <React.Fragment>
+    <>
       <div style={{ height: '100vh' }} />
       <Hero title='Landing components graveyard' />
 
@@ -601,7 +601,7 @@ export function LandingGraveyard() {
       <LandingCollectFeedbackHero />
       <LandingEngagementHero />
       <LandingCustomizeHero />
-    </React.Fragment>
+    </>
   );
 }
 
@@ -657,7 +657,7 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
   const anchorRef = useRef<HTMLButtonElement>(null);
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <IconButton
         onClick={() => setDemoOpen(true)}
         ref={anchorRef}
@@ -681,7 +681,7 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
           frameBorder={0}
         />
       </ClosablePopper>
-    </React.Fragment>
+    </>
   );
 }
 
@@ -822,7 +822,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
 
 export function LandingCollectFeedback() {
   return (
-    <React.Fragment>
+    <>
       <LandingCollectFeedbackHero isHero />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
@@ -902,14 +902,14 @@ export function LandingCollectFeedback() {
         buttonTitle='Continue'
         buttonLink='/product/analyze'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 
 export function LandingPrioritization() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Analyze feedback'
         description='Organize all the data you collected to make the right decision'
@@ -1039,7 +1039,7 @@ export function LandingPrioritization() {
         buttonTitle='See how'
         buttonLink='/product/act'
       />
-    </React.Fragment>
+    </>
   );
 }
 
@@ -1144,7 +1144,7 @@ export function LandingEngagementHero(props: { isHero?: boolean }) {
 }
 export function LandingEngagement() {
   return (
-    <React.Fragment>
+    <>
       <LandingEngagementHero isHero />
 
       <Block
@@ -1220,7 +1220,7 @@ export function LandingEngagement() {
         buttonTitle='See how'
         buttonLink='/product/customize'
       />
-    </React.Fragment>
+    </>
   );
 }
 
@@ -1245,7 +1245,7 @@ export function LandingCustomizeHero(props: { isHero?: boolean }) {
 export function LandingCustomize() {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <LandingCustomizeHero isHero />
       <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
         <Container maxWidth='xs'>
@@ -1395,14 +1395,14 @@ export function LandingCustomize() {
         buttonTitle='See how'
         buttonLink='/product/install'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingIntegrations() {
   const classes = useStyles();
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Integrations'
         description='Use with your existing tools.'
@@ -1545,13 +1545,13 @@ export function LandingIntegrations() {
         />
         <div />
       </HorizontalPanels>
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingFeatureRequestTracking() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Feature Request Tracking'
         description='Tool to keep organized and drive your product forward'
@@ -1630,7 +1630,7 @@ export function LandingFeatureRequestTracking() {
           buttonLink='/solutions/feature-crowdfunding'
         />
       </HorizontalPanels>
-    </React.Fragment>
+    </>
   );
 }
 
@@ -1641,7 +1641,7 @@ export function LandingFeatureRequestTracking() {
 // - Custom (Game ideas): Semi-finals, Selected
 export function LandingPublicRoadmap() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Product Roadmap'
         description='Transparency between development and customers for stronger ties with your community.'
@@ -1730,13 +1730,13 @@ export function LandingPublicRoadmap() {
         buttonTitle='See more customizations'
         buttonLink='/product/customize'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingCrowdFunding() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Feature Crowdfunding'
         description='Credit-system to reward your paying customers with a voice to shape your product.'
@@ -1824,7 +1824,7 @@ export function LandingCrowdFunding() {
         buttonTitle='See how'
         buttonLink='/solutions/feature-request-tracking'
       />
-    </React.Fragment >
+    </>
   );
 }
 
@@ -1933,7 +1933,7 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
 
 export function LandingInternalFeedback() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Internal Feedback'
         description='Collect feedback from within your organization or customer-base'
@@ -2020,13 +2020,13 @@ export function LandingInternalFeedback() {
         buttonTitle='See a Roadmap'
         buttonLink='/solutions/product-roadmap'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingIdeaManagement() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Idea Management'
         description='Collect and organize ideas from your users, customers or coworkers'
@@ -2119,13 +2119,13 @@ export function LandingIdeaManagement() {
         buttonTitle='See how'
         buttonLink='/product/act'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingContentCreator() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Content Creator Forum'
         description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
@@ -2301,13 +2301,13 @@ export function LandingContentCreator() {
         mirror
         alignItems='center'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 export function LandingGrowWithUs() {
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Scale with us'
         description='Built on scalable infrastructure to grow with your needs.'
@@ -2412,7 +2412,7 @@ export function LandingGrowWithUs() {
         buttonTitle='See all integrations'
         buttonLink='/product/integrations'
       />
-    </React.Fragment>
+    </>
   );
 }
 
@@ -2420,7 +2420,7 @@ export function LandingInstall() {
   const classes = useStyles();
   const onboardingDemoRef = useRef(null);
   return (
-    <React.Fragment>
+    <>
       <Hero
         title='Install'
         description='How you can connect ClearFlask with your website or app'
@@ -2434,9 +2434,9 @@ export function LandingInstall() {
           type='column'
           title='Portal'
           description={(
-            <React.Fragment>
+            <>
               Link directly from your app or website to your ClearFlask portal. Optionally use a custom domain <b>feedback.yoursite.com</b>
-            </React.Fragment>
+            </>
           )}
           fakeBrowserProps={{
             fixedHeight: 200,
@@ -2556,13 +2556,13 @@ export function LandingInstall() {
         buttonTitle='See how'
         buttonLink='/product/scale-with-us'
       />
-    </React.Fragment>
+    </>
   );
 }
 
 // export function LandingAboutUs() {
 //   return (
-//     <React.Fragment>
+//     <>
 //       <Hero
 //         title='Smotana company'
 //         description='Our team at Smotana is based out of Mongolia. We are working on local projects as well'
@@ -2583,7 +2583,7 @@ export function LandingInstall() {
 //         }}
 //         mirror
 //       />
-//     </React.Fragment>
+//     </>
 //   );
 // }
 
@@ -2604,8 +2604,8 @@ export function LandingSales() {
 }
 export function LandingPricing() {
   return (
-    <React.Fragment>
+    <>
       <PricingPage />
-    </React.Fragment>
+    </>
   );
 }

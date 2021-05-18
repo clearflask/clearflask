@@ -52,14 +52,14 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     }
 
     return (
-      <React.Fragment>
+      <>
         {footer}
         <div className={this.props.classes.footerSpacing}>
           <div className={classNames(this.props.classes.footerWrapper, this.props.classes.poweredBy)}>
             <PoweredBy />
           </div>
         </div>
-      </React.Fragment>
+      </>
     );
   }
 }

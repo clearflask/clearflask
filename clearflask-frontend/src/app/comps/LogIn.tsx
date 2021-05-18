@@ -162,7 +162,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     var dialogContent;
     if (!!this.props.loggedInUser) {
       dialogContent = (
-        <React.Fragment>
+        <>
           <DialogContent>
             <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser.name || this.props.loggedInUser.email || 'Anonymous'}</span></DialogContentText>
           </DialogContent>
@@ -172,7 +172,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             )}
             <Button color='primary' onClick={this.props.onLoggedInAndClose.bind(this)}>Continue</Button>
           </DialogActions>
-        </React.Fragment>
+        </>
       );
     } else {
       const signupAllowed = notifOpts.size > 0;
@@ -213,7 +213,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
       dialogContent = (
-        <React.Fragment>
+        <>
           <DialogContent>
             <Collapse in={!isLogin}>
               <div
@@ -586,7 +586,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               <Button onClick={() => this.setState({ emailVerifyDialog: undefined })}>Cancel</Button>
             </DialogActions>
           </Dialog>
-        </React.Fragment>
+        </>
       );
     }
 

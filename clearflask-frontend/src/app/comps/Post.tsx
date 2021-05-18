@@ -45,7 +45,7 @@ import VotingControl from './VotingControl';
 
 const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
-export type PostVariant = 'list' | 'page';
+export type PostVariant = 'list' | 'page' | 'dashboard';
 export const MaxContentWidth = 600;
 
 const styles = (theme: Theme) => createStyles({
@@ -103,10 +103,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     textTransform: 'none',
   },
-  expandable: {
-    '&:hover $title': {
-      textDecoration: 'underline',
-    },
+  clickable: {
     cursor: 'pointer',
     textDecoration: 'none'
   },
@@ -319,6 +316,10 @@ const styles = (theme: Theme) => createStyles({
       opacity: 0.1,
     },
   },
+  properties: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
   ...cssBlurry,
 });
 interface Props {
@@ -408,27 +409,32 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       </Loader>
     );
 
-    const variant = this.state.currentVariant;
-
+    const isOnlyPostOnClick = (this.props.onClickPost && !this.props.onClickTag && !this.props.onClickCategory && !this.props.onClickStatus && !this.props.onUserClick);
     return (
       <Loader skipFade className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
-          <div className={this.props.classes.post}>
+          <div
+            className={classNames(
+              this.props.classes.post,
+              isOnlyPostOnClick && this.props.classes.clickable
+            )}
+            onClick={isOnlyPostOnClick ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
+          >
             <div className={this.props.classes.postFunding}>
-              {this.renderFunding(variant)}
+              {this.renderFunding()}
             </div>
             <div className={this.props.classes.postContent}>
-              {this.renderTitleAndDescription(variant, (
-                <React.Fragment>
+              {this.renderTitleAndDescription((
+                <>
                   <div className={this.props.classes.titleContainer}>
-                    {this.renderTitle(variant)}
+                    {this.renderTitle()}
                   </div>
-                  {this.renderDescription(variant)}
-                  {this.renderResponse(variant)}
-                </React.Fragment>
+                  {this.renderDescription()}
+                  {this.renderResponse()}
+                </>
               ))}
-              {this.renderBottomBar(variant)}
-              {this.renderActions(variant)}
+              {this.renderBottomBar()}
+              {this.renderActions()}
             </div>
             {this.props.contentBeforeComments && (
               <div className={this.props.classes.postContentBeforeComments}>
@@ -436,7 +442,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               </div>
             )}
             <div className={this.props.classes.postComments}>
-              {this.renderComments(variant)}
+              {this.renderComments()}
             </div>
           </div>
           <LogIn
@@ -455,18 +461,18 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderBottomBar(variant: PostVariant) {
+  renderBottomBar() {
     const leftSide = [
-      this.renderVotingCount(variant),
-      this.renderExpressionCount(variant),
-      this.renderCommentCount(variant),
-      this.renderStatus(variant),
+      this.renderVotingCount(),
+      this.renderExpressionCount(),
+      this.renderCommentCount(),
+      this.renderStatus(),
     ].filter(notEmpty);
     const rightSide = [
-      this.renderAuthor(variant),
-      this.renderCategory(variant),
-      ...(this.renderTags(variant) || []),
-      this.renderCreatedDatetime(variant),
+      this.renderAuthor(),
+      this.renderCategory(),
+      ...(this.renderTags() || []),
+      this.renderCreatedDatetime(),
     ].filter(notEmpty);
 
     if (leftSide.length + rightSide.length === 0) return null;
@@ -488,16 +494,16 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderActions(variant: PostVariant) {
+  renderActions() {
     const actions = [
-      this.renderExpression(variant),
-      this.renderVoting(variant),
-      this.renderCommentAdd(variant),
+      this.renderExpression(),
+      this.renderVoting(),
+      this.renderCommentAdd(),
     ].filter(notEmpty);
 
     // Only show edit button if something else is shown too in list variant
-    if (variant === 'page' || actions.length > 0) {
-      const edit = this.renderEdit(variant);
+    if (this.props.variant === 'page' || actions.length > 0) {
+      const edit = this.renderEdit();
       if (edit) actions.push(edit);
     }
 
@@ -505,15 +511,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <div className={this.props.classes.bottomBarLine}>
-        <Delimited delimiter={(<React.Fragment>&nbsp;&nbsp;&nbsp;</React.Fragment>)}>
+        <Delimited delimiter={(<>&nbsp;&nbsp;&nbsp;</>)}>
           {actions}
         </Delimited>
       </div>
     );
   }
 
-  renderAuthor(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showAuthor === false
+  renderAuthor() {
+    if (this.props.variant !== 'page' && this.props.display && this.props.display.showAuthor === false
       || !this.props.idea) return null;
 
     return (
@@ -530,8 +536,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderCreatedDatetime(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showCreated === false
+  renderCreatedDatetime() {
+    if (this.props.variant !== 'page' && this.props.display && this.props.display.showCreated === false
       || !this.props.idea) return null;
 
     return (
@@ -541,9 +547,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderCommentCount(variant: PostVariant) {
+  renderCommentCount() {
     if (this.props.display?.showCommentCount === false
-      || variant === 'page'
+      || this.props.variant === 'page'
       || !this.props.idea
       || (this.props.display?.showCommentCount === undefined && !this.props.idea.commentCount)
       || !this.props.category
@@ -558,8 +564,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderCommentAdd(variant: PostVariant) {
-    if (variant !== 'page'
+  renderCommentAdd() {
+    if (this.props.variant !== 'page'
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.comment) return null;
@@ -579,8 +585,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderComments(variant: PostVariant) {
-    if (variant !== 'page'
+  renderComments() {
+    if (this.props.variant !== 'page'
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.comment) return null;
@@ -633,7 +639,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderEdit(variant: PostVariant) {
+  renderEdit() {
     const isMod = this.props.server.isModOrAdminLoggedIn();
     const isAuthor = this.props.idea && this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId;
     if (!this.props.idea
@@ -665,8 +671,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderStatus(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showStatus === false
+  renderStatus() {
+    if (this.props.variant !== 'page' && this.props.display && this.props.display.showStatus === false
       || !this.props.idea
       || !this.props.idea.statusId
       || !this.props.category) return null;
@@ -675,20 +681,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!status) return null;
 
     return (
-      <React.Fragment>
+      <>
         &nbsp;
-        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
+        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || this.props.variant === 'page'}
           onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
           <Typography variant='caption' style={{ color: status.color }}>
             {status.name}
           </Typography>
         </Button>
-      </React.Fragment>
+      </>
     );
   }
 
-  renderTags(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showTags === false
+  renderTags() {
+    if (this.props.variant !== 'page' && this.props.display && this.props.display.showTags === false
       || !this.props.idea
       || this.props.idea.tagIds.length === 0
       || !this.props.category) return null;
@@ -697,7 +703,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
       .filter(tag => !!tag)
       .map(tag => (
-        <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
+        <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || this.props.variant === 'page'}
           onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
           <Typography variant='caption' style={{ color: tag!.color }}>
             {tag!.name}
@@ -706,14 +712,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ));
   }
 
-  renderCategory(variant: PostVariant) {
-    if (variant === 'page'
+  renderCategory() {
+    if (this.props.variant === 'page'
       || this.props.display && this.props.display.showCategoryName === false
       || !this.props.idea
       || !this.props.category) return null;
 
     return (
-      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant !== 'list'}
+      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || this.props.variant !== 'list'}
         onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
         <Typography variant='caption' style={{ color: this.props.category.color }}>
           {this.props.category.name}
@@ -722,8 +728,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderVotingCount(variant: PostVariant) {
-    if (variant !== 'list'
+  renderVotingCount() {
+    if (this.props.variant !== 'list'
       || this.props.display?.showVoting === false
       || !this.props.idea
       || !this.props.category
@@ -741,8 +747,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderVoting(variant: PostVariant) {
-    if (variant !== 'page'
+  renderVoting() {
+    if (this.props.variant !== 'page'
       || this.props.display?.showVoting === false
       || !this.props.idea
       || !this.props.category
@@ -765,7 +771,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           vote={this.props.vote}
           voteValue={this.props.idea.voteValue || 0}
           isSubmittingVote={this.state.isSubmittingVote}
-          votingAllowed={votingAllowed && variant === 'page'}
+          votingAllowed={votingAllowed && this.props.variant === 'page'}
           onUpvote={() => this.upvote()}
           onDownvote={this.props.category.support.vote.enableDownvotes ? () => this.downvote() : undefined}
         />
@@ -818,8 +824,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
-  renderFunding(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showFunding === false
+  renderFunding() {
+    if (this.props.variant === 'dashboard'
+      || this.props.variant !== 'page' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
@@ -943,8 +950,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     }, callback);
   }
 
-  renderExpressionCount(variant: PostVariant) {
-    if (variant !== 'list'
+  renderExpressionCount() {
+    if (this.props.variant !== 'list'
       || this.props.display?.showExpression === false
       || !this.props.idea
       || !this.props.category?.support.express
@@ -969,8 +976,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   expressBarRef: React.RefObject<HTMLDivElement> = React.createRef();
-  renderExpression(variant: PostVariant) {
-    if (variant !== 'page'
+  renderExpression() {
+    if (this.props.variant !== 'page'
       || this.props.display?.showExpression === false
       || !this.props.idea
       || !this.props.category?.support.express
@@ -1110,43 +1117,43 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderTitle(variant: PostVariant) {
+  renderTitle() {
     if (!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='h5' component='h1' className={`${this.props.classes.title} ${variant === 'page' ? this.props.classes.titlePage : ((this.props.display?.descriptionTruncateLines || 0) <= 0 ? this.props.classes.titleListWithoutDescription : this.props.classes.titleList)} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-        {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
+      <Typography variant='h5' component='h1' className={`${this.props.classes.title} ${this.props.variant !== 'list' ? this.props.classes.titlePage : ((this.props.display?.descriptionTruncateLines || 0) <= 0 ? this.props.classes.titleListWithoutDescription : this.props.classes.titleList)} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+        {this.props.variant === 'list' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<TruncateEllipsis ellipsis='…' lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
           : this.props.idea.title}
       </Typography>
     );
   }
 
-  renderDescription(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines <= 0
+  renderDescription() {
+    if (this.props.variant === 'list' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines <= 0
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
-      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-        {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
+      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${this.props.variant !== 'list' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+        {this.props.variant === 'list' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<TruncateFade variant='body1' lines={this.props.display.descriptionTruncateLines}>
-            <div><RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={variant === 'list'} /></div>
+            <div><RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={this.props.variant === 'list'} /></div>
           </TruncateFade>)
-          : <RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={variant === 'list'} />}
+          : <RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={this.props.variant === 'list'} />}
       </Typography>
     );
   }
 
-  renderResponse(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
+  renderResponse() {
+    if (this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
       || !this.props.idea
       || !this.props.idea.response) return null;
     return (
       <div className={this.props.classes.responseContainer}>
         <Typography variant='caption' component={'span'} className={this.props.classes.responsePrefixText}>
           {this.props.idea.responseAuthorUserId && this.props.idea.responseAuthorName ? (
-            <React.Fragment>
-              {variant === 'list' ? (
+            <>
+              {this.props.variant === 'list' ? (
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
                 <UserDisplay
@@ -1159,30 +1166,31 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 />
               )}
               :&nbsp;&nbsp;
-            </React.Fragment>
+            </>
           ) : (
-            <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
+            <>Admin reply:&nbsp;&nbsp;</>
           )}
         </Typography>
-        <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-          {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
+        <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${this.props.variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+          {this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}>
-              <div><RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={variant === 'list'} /></div>
+              <div><RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={this.props.variant === 'list'} /></div>
             </TruncateFade>)
-            : <RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={variant === 'list'} />}
+            : <RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={this.props.variant === 'list'} />}
         </Typography>
       </div>
     );
   }
 
-  renderTitleAndDescription(variant: PostVariant, children: React.ReactNode) {
-    if (variant === 'page'
+  renderTitleAndDescription(children: React.ReactNode) {
+    if (this.props.variant === 'page'
+      || this.props.variant === 'dashboard'
       || !this.props.expandable
       || !!this.props.onClickPost
       || !this.props.idea
       || !!this.props.settings.demoDisablePostOpen) return (
         <div
-          className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.expandable)}
+          className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.clickable)}
           onClick={this.props.onClickPost ? () => this.props.onClickPost && this.props.idea
             && this.props.onClickPost(this.props.idea.ideaId) : undefined}
         >
@@ -1192,7 +1200,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <Link
-        className={classNames(this.props.classes.titleAndDescription, this.props.classes.expandable)}
+        className={classNames(this.props.classes.titleAndDescription, this.props.classes.clickable)}
         to={preserveEmbed(`/post/${this.props.idea.ideaId}`, this.props.location)}
       >
         {children}

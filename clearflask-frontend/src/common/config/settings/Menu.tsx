@@ -107,7 +107,7 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
                 {...componentProps}
               >
                 <ListItemText style={paddingForLevel(item.offset)} primary={(
-                  <React.Fragment>
+                  <>
                     <span>{item.name}</span>
                     <Badge
                       color='primary'
@@ -116,7 +116,7 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
                     >
                       &nbsp;&nbsp;
                     </Badge>
-                  </React.Fragment>
+                  </>
                 )} />
               </ListItem>
             );
@@ -201,7 +201,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
           }}
         >
           <ListItemText style={padding} primary={(
-            <React.Fragment>
+            <>
               <span className={this.props.classes.text} style={{ color }}>
                 {!expandedDontShow && (
                   <IconButton
@@ -228,7 +228,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
                   &nbsp;&nbsp;
                 </Badge>
               )}
-            </React.Fragment>
+            </>
           )} />
         </ListItem>
         <Collapse in={expanded} timeout="auto" unmountOnExit>

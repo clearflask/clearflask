@@ -33,7 +33,7 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
       this.gaInitialized = true;
     }
     return (
-      <React.Fragment>
+      <>
         <HotjarWrapperCustomer />
         {this.props.googleAnalytics && (
           <Route path='/' render={({ location }) => {
@@ -42,7 +42,7 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
             return null;
           }} />
         )}
-      </React.Fragment>
+      </>
     );
   }
 

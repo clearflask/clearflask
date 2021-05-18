@@ -16,7 +16,6 @@ import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
-import PostPage from '../app/comps/PostPage';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
@@ -30,8 +29,9 @@ import ProjectSettings from '../common/config/settings/ProjectSettings';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { PreviewSection, Section } from '../common/Layout';
+import Layout, { Header, PreviewSection, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
+import UserFilterControls from '../common/search/UserFilterControls';
 import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
@@ -43,10 +43,13 @@ import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirect
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
+import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
+import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
+import UserList from './dashboard/UserList';
 import UserSelection from './dashboard/UserSelection';
 import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
@@ -156,8 +159,10 @@ interface State {
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
-  explorerPostSearch?: Partial<AdminClient.IdeaSearchAdmin>;
   explorerPostFilter?: Partial<AdminClient.IdeaSearchAdmin>;
+  explorerPostSearch?: string;
+  usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
+  usersUserSearch?: string;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -302,6 +307,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     const activeProject = projects.find(p => p.projectId === activeProjectId);
 
 
+    var header: Header | undefined;
     var main: Section | undefined;
     var barTop: React.ReactNode | undefined;
     var barBottom: React.ReactNode | undefined;
@@ -363,13 +369,19 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
+        header = {
+          title: 'Explore',
+          action: {
+            label: 'Create',
+            onClick: () => { },
+          },
+        };
         menu = {
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <DashboardPostFilterControls
                 key={activeProject.server.getProjectId()}
-                type='filter'
                 server={activeProject.server}
                 search={this.state.explorerPostFilter}
                 onSearchChanged={explorerPostFilter => this.setState({ explorerPostFilter })}
@@ -385,8 +397,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 key={activeProject.server.getProjectId()}
                 server={activeProject.server}
                 search={{
-                  ...this.state.explorerPostSearch,
                   ...this.state.explorerPostFilter,
+                  searchText: this.state.explorerPostSearch,
                 }}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
@@ -395,15 +407,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ),
         };
         barTop = (
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <DashboardPostFilterControls
-              key={activeProject.server.getProjectId()}
-              type='search'
-              server={activeProject.server}
-              search={this.state.explorerPostSearch}
-              onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
-            />
-          </Provider>
+          <DashboardSearchControls
+            key={'post-search-bar' + activeProject.server.getProjectId()}
+            searchText={this.state.explorerPostSearch}
+            onSearchChanged={searchText => this.setState({ explorerPostSearch: searchText })}
+          />
         );
         previewTypeIfEmpty = 'post';
         previewWhitelist = new Set(['post', 'user', 'post-create']);
@@ -432,14 +440,48 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        main = {
+        header = {
+          title: 'Users',
+          action: {
+            label: 'Create',
+            onClick: () => { },
+          },
+        };
+        menu = {
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              TODO
+              <UserFilterControls
+                key={activeProject.server.getProjectId()}
+                search={this.state.usersUserFilter}
+                onSearchChanged={usersUserFilter => this.setState({ usersUserFilter })}
+              />
             </Provider>
           ),
         };
-        previewTypeIfEmpty = 'post';
+        main = {
+          size: { breakWidth: 250, flexGrow: 20, maxWidth: 250 },
+          content: (
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <UserList
+                server={activeProject.server}
+                search={{
+                  ...this.state.usersUserFilter,
+                  searchText: this.state.usersUserSearch,
+                }}
+                onUserClick={userId => this.pageClicked('user', [userId])}
+              />
+            </Provider>
+          ),
+        };
+        barTop = (
+          <DashboardSearchControls
+            key={'user-search-bar' + activeProject.server.getProjectId()}
+            searchText={this.state.usersUserSearch}
+            onSearchChanged={searchText => this.setState({ usersUserSearch: searchText })}
+          />
+        );
+        previewTypeIfEmpty = 'user';
         previewWhitelist = new Set(['post', 'user']);
         showProjectLink = true;
         break;
@@ -525,7 +567,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         menu = {
           size: { width: 'max-content', maxWidth: 350 },
           content: (
-            <React.Fragment>
+            <>
               <Menu
                 items={[
                   // { type: 'item', slug: '', name: 'Home' } as MenuItem,
@@ -586,14 +628,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   }}
                 />
               )}
-            </React.Fragment>
+            </>
           ),
         };
 
         main = {
           size: { breakWidth: 350, flexGrow: 100 },
           content: (
-            <React.Fragment>
+            <>
               <Crumbs
                 activeProjectSlug='settings'
                 activeProjectSlugName='Settings'
@@ -613,12 +655,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   pageClicked={(path, subPath) => this.pageClicked(path, subPath)}
                 />
               )}
-            </React.Fragment>
+            </>
           )
         };
 
         barBottom = (activeProject?.hasUnsavedChanges()) ? (
-          <React.Fragment>
+          <>
             <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
             <Button color='primary' onClick={() => {
               const currentProject = activeProject;
@@ -631,7 +673,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   currentProject.resetUnsavedChanges(versionedConfigAdmin)
                 }));
             }}>Publish</Button>
-          </React.Fragment>
+          </>
         ) : undefined;
 
         previewWhitelist = new Set('preview-changes');
@@ -703,6 +745,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
         <Layout
+          header={header}
           toolbarShow={!onboarding}
           toolbarLeft={(
             <div className={this.props.classes.toolbarLeft}>
@@ -769,7 +812,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </div>
           )}
           toolbarRight={
-            <React.Fragment>
+            <>
               <MenuItems
                 items={[
                   ...(!!projectLink ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
@@ -809,7 +852,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   }
                 ]}
               />
-            </React.Fragment>
+            </>
           }
           previewShow={!!this.state.previewShow}
           previewShowChanged={show => this.setState({ previewShow: show })}
@@ -869,19 +912,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     return {
       size: { breakWidth: 600, flexGrow: 100, maxWidth: 1024 },
-      bar: (
-        <div className={this.props.classes.previewBarText}>
-          Viewing post as&nbsp;
-          {this.renderProjectUserSelect(project)}
-        </div>
-      ),
+      // bar: (
+      //   <div className={this.props.classes.previewBarText}>
+      //     Viewing post as&nbsp;
+      //     {this.renderProjectUserSelect(project)}
+      //   </div>
+      // ),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <PostPage key={postId} server={project.server} postId={postId}
-            suppressSimilar
-            PostProps={{
-              onUserClick: userId => this.pageClicked('user', [userId]),
-            }} />
+          <DashboardPost
+            key={postId}
+            server={project.server}
+            postId={postId}
+            onClickPost={postId => this.pageClicked('post', [postId])}
+            onUserClick={userId => this.pageClicked('user', [userId])}
+          />
         </Provider>
       ),
     };

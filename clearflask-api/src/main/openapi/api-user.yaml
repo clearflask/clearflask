@@ -73,6 +73,8 @@ components:
         created:
           type: string
           format: date-time
+        pic:
+          type: string
     UserMe:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'

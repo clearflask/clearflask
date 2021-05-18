@@ -172,10 +172,10 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
               ? (this.props.similarShown ? 0 : 50)
               : undefined)}
           header={!!expandDirectionHorizontal ? undefined : (
-            <React.Fragment>
+            <>
               {createVisible}
               {createCollapsible}
-            </React.Fragment>
+            </>
           )}
           headerRight={!!expandDirectionHorizontal ? undefined : search}
           grow={this.props.isDashboard ? 'left' : 'center'}

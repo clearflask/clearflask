@@ -123,7 +123,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
     this.state.expressionAllowed && supportButtonGroupVal.push('expression');
 
     return (
-      <React.Fragment>
+      <>
         <Typography variant='h4' component='h1'>Create a new project</Typography>
         <Typography variant='body1' component='p'>Each project has separate settings, content, and users.</Typography>
         <Stepper activeStep={this.state.step} orientation='vertical'>
@@ -397,7 +397,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
             </StepContent>
           </Step>
         </Stepper>
-      </React.Fragment>
+      </>
     );
   }
 

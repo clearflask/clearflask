@@ -66,12 +66,12 @@ class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true
           <div className={this.props.classes.button} />
           <div className={this.props.classes.button} />
           {(this.props.showAddressBar || this.props.addresBarContent) && (
-            <React.Fragment>
+            <>
               <div className={this.props.classes.addrbar}>
                 <LockSimpleIcon fontSize='inherit' className={this.props.classes.lockIcon} />
                 {this.props.addresBarContent}
               </div>
-            </React.Fragment>
+            </>
           )}
         </div>
         <div className={this.props.classes.content} style={{

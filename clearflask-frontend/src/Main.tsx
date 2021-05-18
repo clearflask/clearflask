@@ -141,20 +141,20 @@ class Main extends Component<Props> {
                   <Switch>
                     {isProject ? ([(
                       <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                        <React.Fragment>
+                        <>
                           <SetMaxAge val={24 * 60 * 60} />
                           <PostStatus
                             {...props}
                             postId={props.match.params['postId'] || ''}
                           />
-                        </React.Fragment>
+                        </>
                       )} />
                     ), (
                       <Route key='app' path="/" render={props => (
-                        <React.Fragment>
+                        <>
                           <SetMaxAge val={60} />
                           <App slug={windowIso.location.hostname} {...props} />
-                        </React.Fragment>
+                        </>
                       )} />
                     )]) : ([(
                       <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (

@@ -35,7 +35,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
     const canSubmit = this.state.content !== undefined;
 
     return (
-      <React.Fragment>
+      <>
         <Dialog
           open={this.props.open || false}
           onClose={this.props.onClose.bind(this)}
@@ -108,7 +108,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             this.props.onUpdated && this.props.onUpdated();
           }}
         />
-      </React.Fragment>
+      </>
     );
   }
 }

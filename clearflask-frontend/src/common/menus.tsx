@@ -167,7 +167,7 @@ export function MenuItems(props: {
 }) {
   const isOuter = !props.insideDropdown && !props.insideDrawer;
   return (
-    <React.Fragment>
+    <>
       {props.items.map((item, index) => {
         switch (item.type) {
           case 'header':
@@ -198,7 +198,7 @@ export function MenuItems(props: {
           case 'dropdown':
             if (props.insideDrawer) {
               return (
-                <React.Fragment>
+                <>
                   <MenuItemHeader
                     insideDrawer={props.insideDrawer}
                     item={{ type: 'header', title: item.title }}
@@ -210,7 +210,7 @@ export function MenuItems(props: {
                     insideDrawer={props.insideDrawer}
                     insideDropdown={props.insideDropdown}
                   />
-                </React.Fragment>
+                </>
               );
             } else {
               return (
@@ -225,7 +225,7 @@ export function MenuItems(props: {
             return null;
         }
       })}
-    </React.Fragment>
+    </>
   );
 };
 
@@ -276,10 +276,10 @@ export function MenuItemButton(props: {
     >
       {props.item.title}
       {Icon && (
-        <React.Fragment>
+        <>
           <div style={{ flex: '1 0' }} />
           <Icon fontSize='inherit' className={classNames(classes.buttonIcon, props.item.iconClassName)} />
-        </React.Fragment>
+        </>
       )}
     </Button>
   );
@@ -290,7 +290,7 @@ export function MenuItemHeader(props: {
   item: MenuHeader;
 }) {
   return (
-    <React.Fragment>
+    <>
       <MenuItem
         key={props.item.title}
         disabled
@@ -300,7 +300,7 @@ export function MenuItemHeader(props: {
         }}
       >{props.item.title}</MenuItem>
       <Divider />
-    </React.Fragment>
+    </>
   );
 };
 

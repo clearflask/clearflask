@@ -32,8 +32,7 @@ interface Props {
   category: Client.Category;
   tagIds?: string[];
   isModOrAdminLoggedIn: boolean;
-  onChange: (tagIds: string[]) => void;
-  onErrorChange: (hasError: boolean) => void;
+  onChange: (tagIds: string[], errorStr?: string) => void;
   disabled?: boolean;
   mandatoryTagIds?: string[];
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
@@ -41,26 +40,15 @@ interface Props {
 }
 
 class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
-  previousHasError: boolean = false;
-
   render() {
-    const tagSelection = this.getTagSelection(this.props.category);
+    const tagSelection = this.getTagSelection(this.props.category, this.props.tagIds);
 
     if (tagSelection.options.length <= 0) {
       return null;
     };
 
-    if (!!tagSelection.error !== this.previousHasError) {
-      this.props.onErrorChange(!!tagSelection.error);
-      this.previousHasError = !!tagSelection.error;
-    }
-
     var result = (
       <SelectionPicker
-        TextFieldProps={{
-          variant: this.props.variant,
-          size: this.props.size,
-        }}
         label={this.props.label}
         placeholder={this.props.placeholder}
         disabled={this.props.disabled}
@@ -72,10 +60,17 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
         disableInput
         isMulti
         width='100%'
-        onValueChange={labels => this.props.onChange(
-          [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]
-        )}
+        onValueChange={labels => {
+          const newTagIds = [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))];
+          const tagSelection = this.getTagSelection(this.props.category, newTagIds);
+          this.props.onChange(newTagIds, tagSelection.error);
+        }}
         {...this.props.SelectionPickerProps}
+        TextFieldProps={{
+          variant: this.props.variant,
+          size: this.props.size,
+          ...this.props.SelectionPickerProps?.TextFieldProps,
+        }}
       />
     );
 
@@ -86,7 +81,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
     return result;
   }
 
-  getTagSelection(category: Client.Category): TagSelection {
+  getTagSelection(category: Client.Category, tagIds?: string[]): TagSelection {
     const moreThanOneTag = category.tagging.tagGroups.length > 1;
     const tagSelection: TagSelection = {
       values: [],
@@ -115,7 +110,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
               color: tag.color,
             };
             tagSelection.options.push(label);
-            if (this.props.tagIds && this.props.tagIds.includes(tag.tagId)) {
+            if (tagIds && tagIds.includes(tag.tagId)) {
               selectedCount++;
               tagSelection.values.push(label);
             }

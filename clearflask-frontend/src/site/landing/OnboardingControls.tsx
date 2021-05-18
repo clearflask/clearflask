@@ -124,7 +124,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
           <ToggleButton value={SignupMethods.Oauth}>OAuth</ToggleButton>
         </ToggleButtonGroup>
         {this.props.showDisplayNameControls && (
-          <React.Fragment>
+          <>
             <Typography variant='caption' display='block'>Display name</Typography>
             <ToggleButtonGroup
               {...{ size: 'small' }}
@@ -142,7 +142,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
               <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Opt</ToggleButton>
               <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Req</ToggleButton>
             </ToggleButtonGroup>
-          </React.Fragment>
+          </>
         )}
       </div>
     );

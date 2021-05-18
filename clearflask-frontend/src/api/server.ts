@@ -259,13 +259,15 @@ export class Server {
   }
 }
 
-export const getSearchKey = (search: object): string => {
+export const getSearchKey = (search?: object): string => {
+  var searchKey = 'sk';
+  if (search === undefined) return searchKey;
   const keys = Object.keys(search);
   // Consistently return the same key by sorting by keys
   keys.sort();
-  var searchKey = 'sk';
   keys.forEach(key => {
-    const val = search[key];
+    var val = search[key];
+    if (val instanceof Date) val = val + '';
     const isArray = Array.isArray(val);
     const isObject = typeof val === 'object';
     if (val === undefined
@@ -490,7 +492,10 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         },
       };
     case Client.ideaSearchActionStatus.Pending:
-      searchKey = getSearchKey(action.meta.request.ideaSearch);
+    case Admin.ideaSearchAdminActionStatus.Pending:
+      searchKey = getSearchKey(action.type === Admin.ideaSearchAdminActionStatus.Pending
+        ? action.meta.request.ideaSearchAdmin
+        : action.meta.request.ideaSearch);
       return {
         ...state,
         bySearch: {
@@ -502,7 +507,10 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         }
       };
     case Client.ideaSearchActionStatus.Rejected:
-      searchKey = getSearchKey(action.meta.request.ideaSearch);
+    case Admin.ideaSearchAdminActionStatus.Rejected:
+      searchKey = getSearchKey(action.type === Admin.ideaSearchAdminActionStatus.Rejected
+        ? action.meta.request.ideaSearchAdmin
+        : action.meta.request.ideaSearch);
       return {
         ...state,
         bySearch: {
@@ -514,12 +522,15 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         }
       };
     case Client.ideaSearchActionStatus.Fulfilled:
-      searchKey = getSearchKey(action.meta.request.ideaSearch);
+    case Admin.ideaSearchAdminActionStatus.Fulfilled:
+      searchKey = getSearchKey(action.type === Admin.ideaSearchAdminActionStatus.Fulfilled
+        ? action.meta.request.ideaSearchAdmin
+        : action.meta.request.ideaSearch);
       return {
         ...state,
         byId: {
           ...state.byId,
-          ...action.payload.results.reduce(
+          ...(action.payload.results as Client.Idea[]).reduce<any>(
             (ideasById, idea) => {
               ideasById[idea.ideaId] = {
                 idea: idea,
@@ -535,15 +546,15 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
             ideaIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
               ? [ // Append results to existing idea ids
                 ...(state.bySearch[searchKey].ideaIds || []),
-                ...action.payload.results.map(idea => idea.ideaId),
+                ...(action.payload.results as Client.Idea[]).map(idea => idea.ideaId),
               ] : ( // Replace results if cursor doesn't match
-                action.payload.results.map(idea => idea.ideaId)
+                (action.payload.results as Client.Idea[]).map(idea => idea.ideaId)
               ),
             cursor: action.payload.cursor,
           }
         },
         maxFundAmountSeen: Math.max(
-          action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
+          (action.payload.results as Client.Idea[]).reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
           state.maxFundAmountSeen),
       };
     case Client.ideaVoteUpdateActionStatus.Pending:
@@ -903,7 +914,15 @@ export interface StateUsers {
   byId: {
     [userId: string]: {
       status: Status;
-      user?: Client.User;
+      user?: Client.User | Admin.UserAdmin;
+    }
+  };
+  // TODO eventually we should invalidate these searches over time
+  bySearch: {
+    [searchKey: string]: {
+      status: Status,
+      userIds?: string[],
+      cursor?: string,
     }
   };
   loggedIn: {
@@ -913,11 +932,38 @@ export interface StateUsers {
 }
 const stateUsersDefault = {
   byId: {},
+  bySearch: {},
   loggedIn: {},
 };
 function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions): StateUsers {
+  var searchKey;
   switch (action.type) {
+    case Admin.userSearchAdminActionStatus.Pending:
+      searchKey = getSearchKey(action.meta.request.userSearchAdmin);
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            status: Status.PENDING,
+          }
+        }
+      };
+    case Admin.userSearchAdminActionStatus.Rejected:
+      searchKey = getSearchKey(action.meta.request.userSearchAdmin);
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            status: Status.REJECTED,
+          }
+        }
+      };
     case Admin.userSearchAdminActionStatus.Fulfilled:
+      searchKey = getSearchKey(action.meta.request.userSearchAdmin);
       return {
         ...state,
         byId: {
@@ -930,7 +976,21 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
               };
               return usersById;
             }, {}),
-        }
+        },
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            status: Status.FULFILLED,
+            userIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
+              ? [ // Append results to existing user ids
+                ...(state.bySearch[searchKey].userIds || []),
+                ...(action.payload.results.map(user => user.userId)),
+              ] : ( // Replace results if cursor doesn't match
+                action.payload.results.map(user => user.userId)
+              ),
+            cursor: action.payload.cursor,
+          }
+        },
       };
     case Admin.userUpdateAdminActionStatus.Pending:
     case Client.userGetActionStatus.Pending:
