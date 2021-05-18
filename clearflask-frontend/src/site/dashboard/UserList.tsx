@@ -1,5 +1,6 @@
 import { Divider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -7,10 +8,9 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import ErrorMsg from '../../app/ErrorMsg';
 import Loading from '../../app/utils/Loading';
-import AvatarDisplay from '../../common/AvatarDisplay';
-import UserDisplay from '../../common/UserDisplay';
+import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
-import { buttonHover } from '../../common/util/cssUtil';
+import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
 import keyMapper from '../../common/util/keyMapper';
 
 interface SearchResult {
@@ -30,22 +30,16 @@ const styles = (theme: Theme) => createStyles({
   },
   user: {
     ...buttonHover(theme),
-    '&:hover $title': {
-      textDecoration: 'underline',
-    },
-    cursor: 'pointer',
     padding: theme.spacing(2, 4),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
   },
-  name: {
-    marginLeft: theme.spacing(2),
+  userSelected: {
+    ...buttonSelected(theme),
   },
 });
 interface Props {
   server: Server;
   search?: Partial<Admin.UserSearchAdmin>;
+  selectedUserId?: string;
   onUserClick: (userId: string) => void;
 }
 interface ConnectProps {
@@ -87,21 +81,14 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
         } else {
           return this.props.searchResult.users.map(user => (
             <React.Fragment key={user.userId}>
-              <div
-                className={this.props.classes.user}
+              <UserWithAvatarDisplay
+                className={classNames(
+                  this.props.classes.user,
+                  this.props.selectedUserId === user.userId && this.props.classes.userSelected,
+                )}
+                user={user}
                 onClick={() => this.props.onUserClick(user.userId)}
-              >
-                <AvatarDisplay
-                  user={user}
-                />
-                <UserDisplay
-                  labelClassName={this.props.classes.name}
-                  suppressTypography
-                  suppressStar
-                  variant='text'
-                  user={user}
-                />
-              </div>
+              />
               <Divider />
             </React.Fragment>
           ));

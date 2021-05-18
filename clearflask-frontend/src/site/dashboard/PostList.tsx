@@ -5,7 +5,7 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
-import { buttonHover } from '../../common/util/cssUtil';
+import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
 
 const styles = (theme: Theme) => createStyles({
   post: {
@@ -14,11 +14,15 @@ const styles = (theme: Theme) => createStyles({
       textDecoration: 'underline',
     },
     cursor: 'pointer',
-  }
+  },
+  postSelected: {
+    ...buttonSelected(theme),
+  },
 });
 interface Props {
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
+  selectedPostId?: string;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
 }
@@ -34,6 +38,8 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
       <PanelPost
         direction={Direction.Vertical}
         postClassName={this.props.classes.post}
+        selectedPostId={this.props.selectedPostId}
+        selectedPostClassName={this.props.classes.postSelected}
         panel={{
           display: {
             titleTruncateLines: 2,

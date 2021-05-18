@@ -458,11 +458,13 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
             <div className={this.props.classes.createFormField}>
               <StatusSelect
-                statuses={selectedCategory?.workflow.statuses || []}
+                show='all'
+                workflow={selectedCategory?.workflow}
                 variant='outlined'
                 size='small'
                 disabled={this.state.newItemIsSubmitting}
-                value={this.state.newItemChosenStatusId || selectedCategory.workflow.entryStatus}
+                initialStatusId={selectedCategory.workflow.entryStatus}
+                statusId={this.state.newItemChosenStatusId}
                 onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
               />
             </div>

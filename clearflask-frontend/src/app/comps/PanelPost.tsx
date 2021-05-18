@@ -76,6 +76,8 @@ export interface Props {
   forceDisablePostExpand?: boolean;
   suppressPanel?: boolean;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
+  selectedPostId?: string;
+  selectedPostClassName?: string;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -137,6 +139,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               className={classNames(
                 this.props.widthExpand && widthExpandMarginClassName,
                 this.props.postClassName,
+                this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
               )}
               key={idea.ideaId}
               server={this.props.server}

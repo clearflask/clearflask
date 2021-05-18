@@ -10,9 +10,10 @@ interface Props {
   size?: 'small' | 'medium',
   label?: string;
   placeholder?: string;
+  show: 'next' | 'all';
+  workflow?: Client.Workflow;
   initialStatusId?: string;
-  statuses: Client.IdeaStatus[];
-  value?: string;
+  statusId?: string;
   onChange: (statusId?: string) => void;
   disabled?: boolean;
   errorText?: string;
@@ -21,26 +22,35 @@ interface Props {
 }
 class StatusSelect extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    const nextStatusValues: Label[] = [];
-    const nextStatusOptions: Label[] = [];
-    const status: Client.IdeaStatus | undefined = this.props.initialStatusId ? this.props.statuses.find(s => s.statusId === this.props.initialStatusId) : undefined;
-    var nextStatuses: Client.IdeaStatus[] | undefined;
-    if (!!status) {
-      var nextStatusIds = new Set(status.nextStatusIds);
-      this.props.initialStatusId && nextStatusIds.add(this.props.initialStatusId);
-      if (nextStatusIds && nextStatusIds.size > 0) {
-        nextStatuses = status ? this.props.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
-      }
+    const initialStatus: Client.IdeaStatus | undefined = this.props.initialStatusId ? this.props.workflow?.statuses.find(s => s.statusId === this.props.initialStatusId) : undefined;
+    var options: Client.IdeaStatus[] | undefined;
+    if (this.props.show === 'all') {
+      options = this.props.workflow?.statuses;
+    } else if (!initialStatus) {
+      const entryStatus = this.props.workflow?.entryStatus ? this.props.workflow.statuses.find(s => s.statusId === this.props.workflow!.entryStatus) : undefined;
+      options = !!entryStatus
+        ? [entryStatus]
+        : this.props.workflow?.statuses;
     } else {
-      nextStatuses = this.props.statuses;
+      if (!!initialStatus.nextStatusIds?.length) {
+        const nextStatusIds = new Set([...initialStatus.nextStatusIds, initialStatus.statusId]);
+        options = this.props.workflow?.statuses.filter(s => nextStatusIds.has(s.statusId));
+      } else {
+        options = [initialStatus];
+      }
     }
-    nextStatuses && nextStatuses.forEach(s => {
+
+    const selectedStatusId = this.props.statusId || initialStatus?.statusId;
+    const selectedLabel: Label[] = [];
+    const optionsLabels: Label[] = [];
+    options && options.forEach(s => {
       const label: Label = this.getLabel(s);
-      nextStatusOptions.push(label);
-      if (this.props.value === s.statusId) {
-        nextStatusValues.push(label);
+      optionsLabels.push(label);
+      if (s.statusId === selectedStatusId) {
+        selectedLabel.push(label);
       }
     });
+    const noOptions = selectedLabel.length === optionsLabels.length;
 
     return (
       <SelectionPicker
@@ -54,10 +64,11 @@ class StatusSelect extends Component<Props & WithStyles<typeof styles, true>> {
         label={this.props.label || 'Status'}
         showTags
         bareTags
+        formatHeader={noOptions ? inputValue => 'No options' : undefined}
         disableClearable
         disableInput
-        value={nextStatusValues}
-        options={nextStatusOptions}
+        value={selectedLabel}
+        options={optionsLabels}
         onValueChange={labels => labels[0] && this.props.onChange((labels[0]?.value === this.props.initialStatusId
           ? undefined : labels[0]?.value))}
         {...this.props.SelectionPickerProps}

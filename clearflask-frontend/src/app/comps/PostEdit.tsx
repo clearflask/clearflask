@@ -1,5 +1,5 @@
 import loadable from '@loadable/component';
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import React, { Component, useRef, useState } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
@@ -22,19 +22,13 @@ const styles = (theme: Theme) => createStyles({
   row: {
     padding: theme.spacing(2),
   },
-  saveButtonContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  },
   saveButtonActionContainer: {
     display: 'flex',
-    alignItems: 'baseline',
-    alignSelf: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    width: '100%',
   },
-  saveButton: {
-    justifySelf: 'flex-end',
+  saveButtonActionSubmit: {
+    alignSelf: 'flex-end',
   },
 });
 const useStyles = makeStyles(styles);
@@ -422,15 +416,20 @@ export const PostEditDescription = (props: {
 export const PostEditStatusAndResponseInline = (props: {
   server: Server;
   post?: Client.Idea;
-  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  TextFieldPropsStatus?: Partial<React.ComponentProps<typeof TextField>>;
+  TextFieldPropsResponse?: Partial<React.ComponentProps<typeof TextField>>;
+  // If unset, response can be edited from previous
+  // If set, a blank response is open when status is changed
+  showResponseOnlyWithStatus?: boolean;
 }) => {
   const [statusId, setStatusId] = useState<string | undefined>();
   const [response, setResponse] = useState<string | undefined>();
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
   if (!props.post) return null;
+  const changed = statusId !== undefined || response !== undefined;
   return (
     <PostSaveButton
-      open={statusId !== undefined || response !== undefined}
+      open={changed}
       isSubmitting={isSubmitting}
       showNotify
       onClick={(doNotify) => {
@@ -455,15 +454,22 @@ export const PostEditStatusAndResponseInline = (props: {
         value={statusId}
         onChange={statusId => setStatusId(statusId)}
         isSubmitting={isSubmitting}
-        TextFieldProps={props.TextFieldProps}
+        TextFieldProps={props.TextFieldPropsStatus}
       />
-      <PostEditResponse
-        server={props.server}
-        value={response === undefined ? props.post.response : response}
-        onChange={response => setResponse(response)}
-        isSubmitting={isSubmitting}
-        TextFieldProps={props.TextFieldProps}
-      />
+      <Collapse in={changed || !props.showResponseOnlyWithStatus}>
+        <PostEditResponse
+          server={props.server}
+          value={response !== undefined
+            ? response
+            : (props.showResponseOnlyWithStatus ? undefined : props.post.response)}
+          onChange={response => setResponse((response === undefined || response === '') ? undefined : response)}
+          isSubmitting={isSubmitting}
+          TextFieldProps={{
+            placeholder: props.showResponseOnlyWithStatus ? 'Add a response' : undefined,
+            ...props.TextFieldPropsResponse,
+          }}
+        />
+      </Collapse>
     </PostSaveButton>
   );
 }
@@ -514,15 +520,17 @@ export const PostEditStatus = (props: {
   if (!category?.workflow.statuses.length) return null;
   return (
     <StatusSelect
-      statuses={category?.workflow.statuses || []}
+      show='next'
+      workflow={category?.workflow}
       variant='outlined'
       size='small'
       label='Status'
       initialStatusId={props.initialValue}
-      value={props.value}
+      statusId={props.value}
       onChange={props.onChange}
       disabled={props.isSubmitting}
       SelectionPickerProps={{
+        width: undefined,
         TextFieldProps: {
           fullWidth: true,
           ...props.TextFieldProps,
@@ -578,7 +586,7 @@ export const PostEditTags = (props: {
 }) => {
   const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
   const isModOrAdminLoggedIn = props.server.isModOrAdminLoggedIn();
-  if (!category?.tagging.tagGroups?.some(g => g.userSettable || isModOrAdminLoggedIn)) return null;
+  if (!category || !CategoryTagsSelectable(category, isModOrAdminLoggedIn)) return null;
   return (
     <TagSelect
       variant='outlined'
@@ -590,6 +598,8 @@ export const PostEditTags = (props: {
       isModOrAdminLoggedIn={isModOrAdminLoggedIn}
       onChange={props.onChange}
       SelectionPickerProps={{
+        disableClearable: true,
+        width: undefined,
         TextFieldProps: {
           fullWidth: true,
           ...props.TextFieldProps,
@@ -598,6 +608,10 @@ export const PostEditTags = (props: {
     />
   );
 }
+export const CategoryTagsSelectable = (
+  category?: Client.Category,
+  isModOrAdminLoggedIn?: boolean,
+): boolean => !!category?.tagging.tagGroups?.some(g => g.userSettable || !!isModOrAdminLoggedIn)
 
 const postSave = (
   server: Server,
@@ -631,7 +645,7 @@ export const PostSaveButton = (props: {
   const classes = useStyles();
   const [doNotify, setNotify] = useState<boolean>(!!props.showNotify);
   return (
-    <div className={classes.saveButtonContainer}>
+    <>
       {props.children}
       <Collapse in={!!props.open}>
         <div className={classes.saveButtonActionContainer}>
@@ -639,22 +653,24 @@ export const PostSaveButton = (props: {
             <FormControlLabel
               disabled={props.isSubmitting}
               control={(
-                <Switch
+                <Checkbox
                   checked={doNotify}
                   onChange={(e, checked) => setNotify(!doNotify)}
-                  color='primary'
+                  color='default'
+                  size='small'
                 />
               )}
-              label={'Send notification'}
+              label='Notify subscribers'
             />
           )}
           <SubmitButton
+            wrapperClassName={classes.saveButtonActionSubmit}
             isSubmitting={props.isSubmitting}
             color='primary'
             onClick={() => props.onClick(doNotify)}
           >Save</SubmitButton>
         </div>
       </Collapse>
-    </div>
+    </>
   );
 }

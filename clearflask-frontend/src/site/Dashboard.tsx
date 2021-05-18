@@ -161,8 +161,10 @@ interface State {
   // to persist between page clicks
   explorerPostFilter?: Partial<AdminClient.IdeaSearchAdmin>;
   explorerPostSearch?: string;
+  explorerPreview?: { type: 'create' } | { type: 'post', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
+  usersPreview?: { type: 'create' } | { type: 'user', id: string },
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -313,8 +315,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var barBottom: React.ReactNode | undefined;
     var onboarding = false;
     var preview: PreviewSection | undefined;
-    var previewTypeIfEmpty: PreviewType | undefined;
-    var previewWhitelist: Set<string> | undefined;
     var menu: Section | undefined;
     var showProjectLink: boolean = false;
     var showCreateProjectWarning: boolean = false;
@@ -402,6 +402,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 }}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
+                selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
               />
             </Provider>
           ),
@@ -413,8 +414,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             onSearchChanged={searchText => this.setState({ explorerPostSearch: searchText })}
           />
         );
-        previewTypeIfEmpty = 'post';
-        previewWhitelist = new Set(['post', 'user', 'post-create']);
+
+        if (this.state.explorerPreview?.type === 'create') {
+          preview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.explorerPreview?.type === 'post') {
+          preview = this.renderPreviewPost(this.state.explorerPreview.id, activeProject);
+        } else {
+          preview = this.renderPreviewEmpty('No post selected');
+        }
+
         showProjectLink = true;
         break;
       case 'roadmap':
@@ -431,7 +439,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </Provider>
           ),
         };
-        previewWhitelist = new Set(['post', 'user', 'post-create']);
+
         showProjectLink = true;
         break;
       case 'users':
@@ -469,6 +477,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   ...this.state.usersUserFilter,
                   searchText: this.state.usersUserSearch,
                 }}
+                selectedUserId={this.state.usersPreview?.type === 'user' ? this.state.usersPreview.id : undefined}
                 onUserClick={userId => this.pageClicked('user', [userId])}
               />
             </Provider>
@@ -481,8 +490,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             onSearchChanged={searchText => this.setState({ usersUserSearch: searchText })}
           />
         );
-        previewTypeIfEmpty = 'user';
-        previewWhitelist = new Set(['post', 'user']);
+
+        if (this.state.usersPreview?.type === 'create') {
+          preview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.usersPreview?.type === 'user') {
+          preview = this.renderPreviewUser(this.state.usersPreview.id, activeProject)
+        } else {
+          preview = this.renderPreviewEmpty('No user selected');
+        }
+
         showProjectLink = true;
         break;
       case 'billing':
@@ -518,8 +534,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             />
           ),
         };
-        previewWhitelist = new Set('create-demo');
-        previewTypeIfEmpty = 'create-demo';
+        preview = this.renderPreviewCreateDemo();
         break;
       case 'settings':
         showProjectLink = true;
@@ -675,9 +690,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             }}>Publish</Button>
           </>
         ) : undefined;
-
-        previewWhitelist = new Set('preview-changes');
-        previewTypeIfEmpty = 'preview-changes'
+        preview = this.renderPreviewChangesDemo(activeProject);
         break;
       default:
         setTitle('Page not found');
@@ -687,36 +700,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     if (showCreateProjectWarning) {
       main = { content: (<ErrorPage msg='Oops, you have to create a project first' />) };
       this.props.history.replace('/dashboard/welcome');
-    }
-
-    // Complicated way to figure out which preview page to show:
-    // - Show whatever is in state
-    // - Unless whitelist is set and doesn't contain it
-    // - Then show previewTypeIfEmpty if nothing else is showing
-    var previewOverriden = this.state.preview;
-    if (previewOverriden && previewWhitelist && !previewWhitelist.has(previewOverriden?.type)) {
-      previewOverriden = undefined;
-    }
-    if (!previewOverriden && !!previewTypeIfEmpty) {
-      previewOverriden = { type: previewTypeIfEmpty };
-    }
-    if (previewOverriden) {
-      switch (previewOverriden.type) {
-        case 'post-create':
-          preview = this.renderPreviewPostCreate(activeProject);
-          break;
-        case 'user':
-          preview = previewOverriden.id
-            ? this.renderPreviewUser(previewOverriden.id, activeProject)
-            : this.renderPreviewEmpty('No user selected');
-          break;
-        case 'post':
-          preview = previewOverriden.id
-            ? this.renderPreviewPost(previewOverriden.id, activeProject)
-            : this.renderPreviewEmpty('No post selected');
-          break;
-        default:
-      }
     }
 
     var billingHasNotification: boolean = false;
@@ -1032,15 +1015,18 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
-    if ((path === 'post' || path === 'user')) {
-      const id = !!subPath[0] ? subPath[0] + '' : undefined;
+    if (path === 'post') {
       this.setState({
-        previewShow: true,
-        preview: {
-          type: path,
-          id,
-        },
-      });
+        explorerPreview: !!subPath[0]
+          ? { type: 'post', id: subPath[0] + '' }
+          : { type: 'create' },
+      }, () => this.props.history.push('/dashboard/explorer'));
+    } else if (path === 'user') {
+      this.setState({
+        usersPreview: !!subPath[0]
+          ? { type: 'user', id: subPath[0] + '' }
+          : { type: 'create' },
+      }, () => this.props.history.push('/dashboard/users'));
     } else {
       this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
     }

@@ -3,25 +3,38 @@ import { Checkbox, FormControlLabel, Radio, Typography } from '@material-ui/core
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CalendarIcon from '@material-ui/icons/Event';
 import { KeyboardDatePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
+import classNames from 'classnames';
 import moment from 'moment';
 import React from 'react';
 import { Label } from '../../app/comps/SelectionPicker';
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    display: 'flex',
-    flexDirection: 'column',
-    margin: theme.spacing(2),
+    margin: theme.spacing(4),
     minWidth: 'min-content',
   },
   group: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(3, 2),
     display: 'flex',
     flexDirection: 'column',
     minWidth: 'min-content',
+    alignItems: 'stretch',
+  },
+  groupHorizontal: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'stretch',
+    margin: theme.spacing(1.5, 2),
+  },
+  groupHorizontalWrap: {
+    flexWrap: 'wrap',
   },
   label: {
     wordBreak: 'break-word',
+  },
+  title: {
+    color: theme.palette.text.hint,
+    marginBottom: theme.spacing(0.5),
   },
   datesVertical: {
     display: 'flex',
@@ -90,9 +103,7 @@ export const FilterControlSelect = (props: {
       key={`group-${props.name || 'noname'}`}
       className={classes.group}
     >
-      {props.name && (
-        <Typography variant='subtitle1' component='div'>{props.name}</Typography>
-      )}
+      <FilterControlTitle name={props.name} />
       {props.labels.map(label => (
         <FormControlLabel
           key={`label-${label.label}`}
@@ -144,7 +155,7 @@ export const FilterControlDateRange = (props: {
   return (
     <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
       <div className={classes.group}>
-        <Typography variant='subtitle1' component='div'>Range</Typography>
+        <FilterControlTitle name='Range' />
         <div className={classes.datesVertical}>
           <FilterControlDatePicker
             name='From'
@@ -206,6 +217,10 @@ export const FilterControlDatePicker = (props: {
       autoOk
       keyboardIcon={(
         <CalendarIcon className={classes.dateIcon} fontSize='inherit' />)}
+      InputProps={{
+        disableUnderline: true,
+      }}
+      InputAdornmentProps={{ position: 'start' }}
       disableToolbar
       initialFocusedDate={new Date()}
       placeholder={props.name}
@@ -219,18 +234,37 @@ export const FilterControlDatePicker = (props: {
 
 export const FilterControlBase = (props: {
   name?: string;
-  children: any;
+  children?: any;
+  oneLine?: boolean;
+  oneLineAllowWrap?: boolean;
 }) => {
   const classes = useStyles();
   return (
     <div
       key={`group-${props.name || 'noname'}`}
-      className={classes.group}
+      className={classNames(
+        classes.group,
+        !!props.oneLine && classes.groupHorizontal,
+        !!props.oneLineAllowWrap && classes.groupHorizontalWrap,
+      )}
     >
       {props.name && (
-        <Typography variant='subtitle1' component='div'>{props.name}</Typography>
+        <FilterControlTitle name={props.name} />
       )}
       {props.children}
     </div>
+  );
+}
+
+export const FilterControlTitle = (props: {
+  name?: string;
+}) => {
+  const classes = useStyles();
+  return !props.name ? null : (
+    <Typography
+      className={classes.title}
+      variant='subtitle1'
+      component='div'
+    >{props.name}</Typography>
   );
 }
