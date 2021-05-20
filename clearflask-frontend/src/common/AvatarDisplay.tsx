@@ -1,5 +1,5 @@
 import { Avatar, Badge } from '@material-ui/core';
-import { createStyles, fade, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, darken, lighten, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import StarIcon from '@material-ui/icons/StarRounded';
 import classNames from 'classnames';
 import React from 'react';
@@ -52,10 +52,12 @@ const styles = (theme: Theme) => createStyles({
   modAvatarContainer: {
     width: 18,
     height: 18,
-    backgroundColor: (props: Props) => props.isInsidePaper ? theme.palette.background.paper : theme.palette.background.default,
   },
   modAvatar: {
     fontSize: '0.8em'
+  },
+  badge: {
+    padding: 0,
   },
   avatar: {
     width: (props: Props) => props.size !== undefined ? props.size : 25,
@@ -63,8 +65,18 @@ const styles = (theme: Theme) => createStyles({
     textTransform: 'uppercase',
     backgroundColor: (props: Props) => {
       const color = DeterministicColorFromUser(props.user);
-      return !color ? undefined : fade(color, 0.5)
+      return !color ? undefined
+        : (theme.palette.type === 'dark'
+          ? darken(color, 0.5)
+          : lighten(color, 0.5));
     },
+  },
+  backgroundColor: {
+    backgroundColor: (props: Props) => props.backgroundColor === 'inherit'
+      ? 'inherit'
+      : (props.backgroundColor === 'paper') ? theme.palette.background.paper
+        : theme.palette.background.default,
+    transition: 'inherit',
   },
 });
 interface Props {
@@ -78,7 +90,7 @@ interface Props {
   } | Client.User;
   onClick?: (userId: string) => void;
   disabled?: boolean;
-  isInsidePaper?: boolean;
+  backgroundColor?: 'default' | 'paper' | 'inherit';
 }
 class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
@@ -94,13 +106,17 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
     if (this.props.user?.isMod) {
       avatar = (
         <Badge
+          classes={{
+            root: this.props.classes.backgroundColor,
+            badge: classNames(this.props.classes.badge, this.props.classes.backgroundColor),
+          }}
           overlap='circle'
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'right',
           }}
           badgeContent={(
-            <Avatar alt='Moderator' className={this.props.classes.modAvatarContainer}>
+            <Avatar alt='Moderator' className={classNames(this.props.classes.backgroundColor, this.props.classes.modAvatarContainer)}>
               <StarIcon className={this.props.classes.modAvatar} fontSize='inherit' color='primary' />
             </Avatar>
             // <div className={this.props.classes.modAvatarContainer}>

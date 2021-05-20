@@ -8,7 +8,7 @@ import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
-import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerCorner from '../utils/DividerCorner';
@@ -16,7 +16,7 @@ import DividerCorner from '../utils/DividerCorner';
 const styles = (theme: Theme) => createStyles({
   transactionsTable: {
     whiteSpace: 'nowrap',
-    ...(contentScrollApplyStyles(theme)),
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
   },
 });
 

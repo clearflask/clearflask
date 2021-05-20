@@ -367,7 +367,7 @@ components:
               type: number
               format: double
         templates:
-          x-clearflask-prop: { order: 3, name: 'Advanced customization', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating languge.' }
+          x-clearflask-prop: { order: 3, name: 'Custom Templates', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating languge.' }
           title: Template
           type: object
           required:

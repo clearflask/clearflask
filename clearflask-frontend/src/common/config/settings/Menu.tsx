@@ -12,6 +12,7 @@ export interface MenuHeading {
   type: 'heading';
   text: string | React.ReactNode;
   offset?: number;
+  hasUnsavedChanges?: boolean;
 }
 
 export interface MenuItem {
@@ -66,6 +67,9 @@ const styles = (theme: Theme) => createStyles({
   expandIconExpanded: {
     transform: 'rotate(180deg)',
   },
+  menuItem: {
+    padding: theme.spacing(0.5, 3),
+  },
 });
 
 interface Props extends ListProps {
@@ -102,7 +106,7 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
                 disabled={item.disabled}
                 selected={item.slug === this.props.activePath}
                 onClick={this.props.onAnyClick}
-                className={this.props.classes.link}
+                className={classNames(this.props.classes.link, this.props.classes.menuItem)}
                 component={component}
                 {...componentProps}
               >
@@ -135,8 +139,23 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
             );
           } else if (item.type === 'heading') {
             return (
-              <ListItem key={`${index}-${item.text}`} disabled>
-                <ListItemText style={paddingForLevel(item.offset)} primary={item.text} />
+              <ListItem
+                key={`${index}-${item.text}`}
+                disabled
+                className={this.props.classes.menuItem}
+              >
+                <ListItemText style={paddingForLevel(item.offset)} primary={(
+                  <>
+                    {item.text}
+                    <Badge
+                      color='primary'
+                      variant='dot'
+                      invisible={!item.hasUnsavedChanges}
+                    >
+                      &nbsp;&nbsp;
+                    </Badge>
+                  </>
+                )} />
               </ListItem>
             );
           } else {
@@ -178,7 +197,8 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
   render() {
     const hasChildren = this.props.page.getChildren().pages.some(p => !!p.value)
       || this.props.page.getChildren().groups.some(p => !!p.value);
-    const expandedDontShow = !hasChildren || this.props.page.path.length < 1;
+    const autoExpandLevel = 0; // Disabled for now
+    const expandedDontShow = !hasChildren || this.props.page.path.length < autoExpandLevel;
     const expanded = expandedDontShow
       || (this.state.expanded !== undefined
         ? this.state.expanded
@@ -190,6 +210,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
         <ListItem
           selected={this.isSelected(this.props.page.path)}
+          className={this.props.classes.menuItem}
           button
           component={Link}
           to={`/dashboard/${[this.props.slug, ...this.props.page.path].join('/')}`}
@@ -300,7 +321,10 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
     return (
       <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
         <div>
-          <ListItem disabled>
+          <ListItem
+            className={this.props.classes.menuItem}
+            disabled
+          >
             <ListItemText
               style={padding}
               primary={this.props.pageGroup.name} />

@@ -2,7 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React from 'react';
-import { contentScrollApplyStyles, Side } from './ContentScroll';
+import { contentScrollApplyStyles, Orientation, Side } from './ContentScroll';
 
 const contentBackgroundColor = (theme: Theme): string => theme.palette.grey[theme.palette.type === 'dark' ? 900 : 100];
 /**
@@ -34,7 +34,12 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
   '& pre:not(.ql-direction-rtl), & pre.ql-direction-rtl': {
     margin: theme.spacing(1, 0),
     backgroundColor: contentBackgroundColor(theme),
-    ...(contentScrollApplyStyles(theme, Side.Center, false, contentBackgroundColor(theme))),
+    ...contentScrollApplyStyles({
+      theme,
+      side: Side.Center,
+      orientation: Orientation.Horizontal,
+      backgroundColor: contentBackgroundColor(theme),
+    }),
     borderRadius: 4,
     marginLeft: theme.spacing(0.5),
     padding: theme.spacing(1.5),

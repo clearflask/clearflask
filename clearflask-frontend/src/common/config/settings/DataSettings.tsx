@@ -7,13 +7,13 @@ import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import Dropzone from 'react-dropzone';
 import { Provider } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
 import { Server } from '../../../api/server';
 import ServerAdmin from '../../../api/serverAdmin';
 import { CategorySelectWithConnect } from '../../../app/comps/CategorySelect';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
-import * as ConfigEditor from '../../../common/config/configEditor';
 import UserSelection from '../../../site/dashboard/UserSelection';
-import { contentScrollApplyStyles } from '../../ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../../ContentScroll';
 import SubmitButton from '../../SubmitButton';
 import { csvPreviewLines } from '../../util/csvUtil';
 import Property from './Property';
@@ -41,7 +41,7 @@ const styles = (theme: Theme) => createStyles({
   tableContainer: {
     width: 'max-content',
     whiteSpace: 'nowrap',
-    ...(contentScrollApplyStyles(theme)),
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
   },
   omitBorder: {
     border: 'none',
@@ -79,7 +79,6 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
-  pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
 }
 interface State {
   importIsSubmitting?: boolean;
@@ -104,7 +103,7 @@ interface State {
   deleteIsSubmitting?: boolean;
   deleteDialogOpen?: boolean;
 }
-class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
+class DataSettings extends Component<Props & WithStyles<typeof styles, true> & WithSnackbarProps & RouteComponentProps, State> {
   state: State = {};
   unsubscribe?: () => void;
 
@@ -253,12 +252,12 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
                       ))}
                     </TableRow>
                   )) : (
-                      <TableRow key='row-more'>
-                        <TableCell key='cell-more' colSpan={line.length} className={this.props.classes.omitBorder}>
-                          ...
+                    <TableRow key='row-more'>
+                      <TableCell key='cell-more' colSpan={line.length} className={this.props.classes.omitBorder}>
+                        ...
                         </TableCell>
-                      </TableRow>
-                    ))}
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -382,8 +381,8 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
           >Export</SubmitButton>
         </div>
         <div className={this.props.classes.container}>
-          <InputLabel>Delete {projectName}</InputLabel>
-          <FormHelperText style={{ minWidth: Property.inputMinWidth }}>Permanently deletes {projectName} and all user content.</FormHelperText>
+          <InputLabel>Delete Project</InputLabel>
+          <FormHelperText style={{ minWidth: Property.inputMinWidth }}>Permanently deletes {projectName}, settings, users, and all content.</FormHelperText>
           <Button
             disabled={this.state.deleteIsSubmitting}
             style={{ color: !this.state.deleteIsSubmitting ? this.props.theme.palette.error.main : undefined }}
@@ -413,7 +412,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
                         deleteIsSubmitting: false,
                         deleteDialogOpen: false,
                       });
-                      this.props.pageClicked('create');
+                      this.props.history.push('/dashboard');
                     })
                     .catch(e => this.setState({ deleteIsSubmitting: false }));
                 }}>Delete</SubmitButton>
@@ -425,4 +424,4 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true> 
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withSnackbar(ProjectSettings));
+export default withStyles(styles, { withTheme: true })(withSnackbar(withRouter(DataSettings)));

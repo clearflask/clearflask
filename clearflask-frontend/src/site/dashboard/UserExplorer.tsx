@@ -19,7 +19,7 @@ import { MaxContentWidth } from '../../app/comps/Post';
 import SelectionPicker from '../../app/comps/SelectionPicker';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
-import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { userLabelsToSearch, userSearchToLabels } from '../../common/search/searchUtil';
 import SubmitButton from '../../common/SubmitButton';
 import UserDisplay from '../../common/UserDisplay';
@@ -95,7 +95,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
   },
   scroll: {
-    ...contentScrollApplyStyles(theme, undefined, true),
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
 });
 

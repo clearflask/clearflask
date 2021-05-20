@@ -79,7 +79,7 @@ import UserReportImg from '../../public/img/landing/compare/userreport.png';
 import DesktopUserVoiceImg from '../../public/img/landing/compare/uservoice-desktop.jpg';
 import MobileUserVoiceImg from '../../public/img/landing/compare/uservoice-mobile.jpg';
 import UserVoiceImg from '../../public/img/landing/compare/uservoice.png';
-import { contentScrollApplyStyles } from '../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import DeviceContainer, { Device } from '../common/DeviceContainer';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
@@ -499,7 +499,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   stickyScroll: {
     display: 'flex',
     flexDirection: 'column',
-    ...contentScrollApplyStyles(theme, undefined, true),
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
   competitorSelectReset: {
     alignSelf: 'flex-end',
@@ -551,7 +551,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   table: {
     maxWidth: '100%',
     width: 'min-content',
-    ...contentScrollApplyStyles(theme),
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
   },
   hiddenPlatform: {
     filter: 'grayscale(100%)',

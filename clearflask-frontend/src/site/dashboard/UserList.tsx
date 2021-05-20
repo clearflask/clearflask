@@ -31,6 +31,8 @@ const styles = (theme: Theme) => createStyles({
   user: {
     ...buttonHover(theme),
     padding: theme.spacing(2, 4),
+    backgroundColor: theme.palette.background.default,
+
   },
   userSelected: {
     ...buttonSelected(theme),
@@ -82,6 +84,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
           return this.props.searchResult.users.map(user => (
             <React.Fragment key={user.userId}>
               <UserWithAvatarDisplay
+                backgroundColor='inherit'
                 className={classNames(
                   this.props.classes.user,
                   this.props.selectedUserId === user.userId && this.props.classes.userSelected,

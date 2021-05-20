@@ -6,7 +6,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
-import { contentScrollApplyStyles } from './ContentScroll';
+import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
 export interface Header {
@@ -21,6 +21,7 @@ export interface LayoutSize {
   width?: number | string;
   flexGrow?: number;
   maxWidth?: number | string;
+  scroll?: Orientation;
 }
 export interface Section {
   size?: LayoutSize;
@@ -153,7 +154,15 @@ const styles = (theme: Theme) => createStyles({
   scroll: {
     minHeight: 0,
     flexGrow: 1,
-    ...contentScrollApplyStyles(theme, undefined, true),
+  },
+  [`scroll-${Orientation.Both}`]: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Both }),
+  },
+  [`scroll-${Orientation.Horizontal}`]: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
+  },
+  [`scroll-${Orientation.Vertical}`]: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
   section: {
     minWidth: 0,
@@ -270,7 +279,10 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
       )}>
         <div className={this.props.classes.hideShadows}>
           {previewBar}
-          <div className={this.props.classes.scroll}>
+          <div className={classNames(
+            this.props.classes.scroll,
+            this.props.classes[`scroll-${this.props.preview.size?.scroll || Orientation.Vertical}`],
+          )}>
             {this.props.preview.content}
           </div>
         </div>
@@ -289,7 +301,10 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
       )}>
         <div className={this.props.classes.hideShadows}>
           {!overflowMenu && (title)}
-          <div className={this.props.classes.scroll}>
+          <div className={classNames(
+            this.props.classes.scroll,
+            this.props.classes[`scroll-${this.props.menu.size?.scroll || Orientation.Vertical}`],
+          )}>
             {this.props.menu.content}
           </div>
         </div>
@@ -316,6 +331,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           )}
           <div className={classNames(
             this.props.classes.scroll,
+            this.props.classes[`scroll-${this.props.main.size?.scroll || Orientation.Vertical}`],
             this.props.classes.grow,
             !!this.props.contentMargins && this.props.classes.contentMargins,
           )}>

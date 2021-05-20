@@ -29,7 +29,7 @@ const UserWithAvatarDisplay = (props: {
     pic?: string;
   } | Client.User;
   disabled?: boolean;
-  isInsidePaper?: boolean;
+  backgroundColor?: 'default' | 'paper' | 'inherit';
 }) => {
   const classes = useStyles();
   return (
@@ -43,7 +43,7 @@ const UserWithAvatarDisplay = (props: {
     >
       <AvatarDisplay
         user={props.user}
-        isInsidePaper={props.isInsidePaper}
+        backgroundColor={props.backgroundColor}
       />
       <UserDisplay
         labelClassName={classes.name}

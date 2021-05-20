@@ -217,18 +217,18 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                 <Collapse in={upgradeRequired} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
                   <UpgradeAlert />
                 </Collapse>
+                <FormControlLabel
+                  label={this.checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
+                  className={this.props.classes.onboardOption}
+                  control={(
+                    <Checkbox
+                      color='primary'
+                      checked={!!this.state.ssoAllowed}
+                      onChange={e => this.setStateAndPreview({ ssoAllowed: !this.state.ssoAllowed })}
+                    />
+                  )}
+                />
                 <Collapse in={!!this.state.projectPrivate} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
-                  <FormControlLabel
-                    label={this.checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.ssoAllowed}
-                        onChange={e => this.setStateAndPreview({ ssoAllowed: !this.state.ssoAllowed })}
-                      />
-                    )}
-                  />
                   <FormControlLabel
                     label={(
                       <span className={this.props.classes.inlineTextField}>

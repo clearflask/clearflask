@@ -7,13 +7,17 @@ import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import ErrorMsg from '../ErrorMsg';
 
 const styles = (theme: Theme) => createStyles({
   table: (props: Props) => ({
     whiteSpace: 'nowrap',
-    ...(contentScrollApplyStyles(theme, undefined, undefined, props.isInsidePaper ? theme.palette.background.paper : undefined)),
+    ...contentScrollApplyStyles({
+      theme,
+      orientation: Orientation.Horizontal,
+      backgroundColor: props.isInsidePaper ? theme.palette.background.paper : undefined,
+    }),
   }),
   noNotificationsLabel: {
     margin: theme.spacing(3),

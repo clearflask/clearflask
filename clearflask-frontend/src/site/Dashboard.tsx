@@ -22,20 +22,18 @@ import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 import * as ConfigEditor from '../common/config/configEditor';
-import Crumbs from '../common/config/settings/Crumbs';
-import Menu, { MenuItem, MenuProject } from '../common/config/settings/Menu';
+import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
-import ProjectSettings from '../common/config/settings/ProjectSettings';
+import { Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { Header, PreviewSection, Section } from '../common/Layout';
+import Layout, { Header, LayoutSize, PreviewSection, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
-import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
-import { redirectIso } from '../common/util/routerUtil';
+import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -47,6 +45,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsComponents, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -58,6 +57,10 @@ import Logo from './Logo';
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
 type PreviewType = 'user' | 'post' | 'post-create' | 'create-demo' | 'preview-changes';
+const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 1024 };
+const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024 };
+const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024 };
+const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Both };
 
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {
@@ -134,6 +137,11 @@ const styles = (theme: Theme) => createStyles({
   },
   accountSwitcher: {
     margin: theme.spacing(4, 'auto', 0),
+  },
+  unsavedChangesBar: {
+    display: 'flex',
+    alignItems: 'center',
+    margin: theme.spacing(1, 2),
   },
 });
 interface Props {
@@ -373,7 +381,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           title: 'Explore',
           action: {
             label: 'Create',
-            onClick: () => { },
+            onClick: () => this.pageClicked('post'),
           },
         };
         menu = {
@@ -420,7 +428,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         } else if (this.state.explorerPreview?.type === 'post') {
           preview = this.renderPreviewPost(this.state.explorerPreview.id, activeProject);
         } else {
-          preview = this.renderPreviewEmpty('No post selected');
+          preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
         }
 
         showProjectLink = true;
@@ -452,7 +460,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           title: 'Users',
           action: {
             label: 'Create',
-            onClick: () => { },
+            onClick: () => this.pageClicked('user'),
           },
         };
         menu = {
@@ -492,22 +500,20 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         );
 
         if (this.state.usersPreview?.type === 'create') {
-          preview = this.renderPreviewPostCreate(activeProject);
+          preview = this.renderPreviewUserCreate(activeProject);
         } else if (this.state.usersPreview?.type === 'user') {
           preview = this.renderPreviewUser(this.state.usersPreview.id, activeProject)
         } else {
-          preview = this.renderPreviewEmpty('No user selected');
+          preview = this.renderPreviewEmpty('No user selected', UserPreviewSize);
         }
 
         showProjectLink = true;
         break;
       case 'billing':
-        setTitle('Billing - Dashboard');
-        main = { content: (<BillingPage stripePromise={Dashboard.getStripePromise()} />) };
+        main = { content: (<RedirectIso to='/dashboard/settings/account/billing' />) };
         break;
       case 'account':
-        setTitle('Account - Dashboard');
-        main = { content: (<SettingsPage />) };
+        main = { content: (<RedirectIso to='/dashboard/settings/account/profile' />) };
         break;
       // @ts-ignore fall-through
       case 'welcome-create':
@@ -543,23 +549,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        try {
-          var currentPage = activeProject.editor.getPage(activeSubPath);
-        } catch (ex) {
-          setTitle('Settings - Dashboard');
-          main = { content: (<ErrorPage msg='Oops, page failed to load' />) };
-          break;
-        }
-        if (!!this.forcePathListener
-          && activeSubPath.length >= 3
-          && activeSubPath[0] === 'layout'
-          && activeSubPath[1] === 'pages') {
-          const pageIndex = activeSubPath[2];
-          const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
-          this.forcePathListener(forcePath);
-        }
-        setTitle(currentPage.getDynamicName());
-
         // Superadmin account switcher
         const accountToLabel = (account: AdminClient.Account): Label => {
           return {
@@ -580,25 +569,33 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }
         });
         menu = {
-          size: { width: 'max-content', maxWidth: 350 },
+          size: { breakWidth: 200, width: 'max-content', maxWidth: 350 },
           content: (
             <>
               <Menu
                 items={[
-                  // { type: 'item', slug: '', name: 'Home' } as MenuItem,
-                  // { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
-                  // { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
-                  // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
-                  activeProject ? {
+                  { type: 'heading', text: 'Account' } as MenuHeading,
+                  { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
+                  { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
+                  { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/users', name: 'Users', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/components', name: 'Components', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
+                  {
                     type: 'project',
                     name: 'Advanced',
-                    slug: 'settings',
+                    slug: 'settings/project/advanced',
+                    offset: 1,
                     projectId: activeProject.server.getProjectId(),
                     page: activeProject.editor.getPage([]),
-                    hasUnsavedChanges: activeProject.hasUnsavedChanges()
-                  } as MenuProject
-                    : { type: 'item', slug: 'settings', name: 'Project Settings' } as MenuItem,
-                ].filter(notEmpty)}
+                  } as MenuProject,
+                ]}
                 activePath={activePath}
                 activeSubPath={activeSubPath}
               />
@@ -647,54 +644,132 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ),
         };
 
-        main = {
-          size: { breakWidth: 350, flexGrow: 100 },
-          content: (
-            <>
-              <Crumbs
-                activeProjectSlug='settings'
-                activeProjectSlugName='Settings'
-                activeProject={activeProject}
-                activeSubPath={activeSubPath}
-                pageClicked={(path, subPath) => this.pageClicked(path, subPath)}
-              />
-              <Page
-                key={currentPage.key}
-                page={currentPage}
-                editor={activeProject.editor}
-                pageClicked={path => this.pageClicked(activePath, path)}
-              />
-              {currentPage.path.length <= 0 && (
-                <ProjectSettings
-                  server={activeProject.server}
-                  pageClicked={(path, subPath) => this.pageClicked(path, subPath)}
-                />
-              )}
-            </>
-          )
-        };
+        if (activeSubPath[0] === 'project' && activeSubPath[1] === 'advanced') {
+          const pagePath = activeSubPath.slice(2);
+          try {
+            var currentPage = activeProject.editor.getPage(pagePath);
+          } catch (ex) {
+            setTitle('Settings - Dashboard');
+            main = { content: (<ErrorPage msg='Oops, page failed to load' />) };
+            break;
+          }
+          if (!!this.forcePathListener
+            && pagePath.length >= 3
+            && pagePath[0] === 'layout'
+            && pagePath[1] === 'pages') {
+            const pageIndex = pagePath[2];
+            const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
+            this.forcePathListener(forcePath);
+          }
+          setTitle(currentPage.getDynamicName());
 
-        barBottom = (activeProject?.hasUnsavedChanges()) ? (
-          <>
-            <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
-            <Button color='primary' onClick={() => {
-              const currentProject = activeProject;
-              ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
-                projectId: currentProject.projectId,
-                versionLast: currentProject.configVersion,
-                configAdmin: currentProject.editor.getConfig(),
-              })
-                .then((versionedConfigAdmin) => {
-                  currentProject.resetUnsavedChanges(versionedConfigAdmin)
-                }));
-            }}>Publish</Button>
-          </>
-        ) : undefined;
-        preview = this.renderPreviewChangesDemo(activeProject);
+
+          main = {
+            size: ProjectSettingsMainSize,
+            content: (
+              <ProjectSettingsBase>
+                <Page
+                  key={currentPage.key}
+                  page={currentPage}
+                  editor={activeProject.editor}
+                  pageClicked={path => this.pageClicked(activePath, path)}
+                />
+              </ProjectSettingsBase>
+            )
+          };
+        } else if (activeSubPath[0] === 'account') {
+          switch (activeSubPath[1]) {
+            case 'profile':
+              setTitle('Account - Dashboard');
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<SettingsPage />),
+              };
+              break;
+            case 'billing':
+              setTitle('Billing - Dashboard');
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<BillingPage stripePromise={Dashboard.getStripePromise()} />),
+              };
+              break;
+          }
+        } else if (activeSubPath[0] === 'project') {
+          switch (activeSubPath[1]) {
+            case 'branding':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsBranding server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'domain':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsDomain server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'users':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'components':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsComponents server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'feedback':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsFeedback server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'roadmap':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsRoadmap server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'changelog':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsChangelog server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'data':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsData server={activeProject.server} />),
+              };
+              break;
+          }
+        }
+
+        if (activeSubPath[0] === 'project') {
+          barBottom = (activeProject?.hasUnsavedChanges()) ? (
+            <div className={this.props.classes.unsavedChangesBar}>
+              <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
+              <Button color='primary' onClick={() => {
+                const currentProject = activeProject;
+                ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
+                  projectId: currentProject.projectId,
+                  versionLast: currentProject.configVersion,
+                  configAdmin: currentProject.editor.getConfig(),
+                })
+                  .then((versionedConfigAdmin) => {
+                    currentProject.resetUnsavedChanges(versionedConfigAdmin)
+                  }));
+              }}>Publish</Button>
+            </div>
+          ) : undefined;
+          preview = this.renderPreviewChangesDemo(activeProject);
+        }
         break;
       default:
         setTitle('Page not found');
-        main = { content: (<ErrorPage msg='Oops, cannot find project' />) };
+        main = { content: (<ErrorPage msg='Oops, cannot find page' />) };
         break;
     }
     if (showCreateProjectWarning) {
@@ -844,7 +919,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           barTop={barTop}
           barBottom={barBottom}
           contentMargins={!!showContentMargins}
-          main={main}
+          main={main || { content: (<ErrorPage msg='Oops, cannot find page' />) }}
         />
       </Elements>
     );
@@ -894,7 +969,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: { breakWidth: 600, flexGrow: 100, maxWidth: 1024 },
+      size: PostPreviewSize,
       // bar: (
       //   <div className={this.props.classes.previewBarText}>
       //     Viewing post as&nbsp;
@@ -920,7 +995,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
+      size: UserPreviewSize,
       bar: (
         <div className={this.props.classes.previewBarText}>
           Viewing user profile as&nbsp;
@@ -940,11 +1015,26 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: {},
+      size: PostPreviewSize,
       bar: '',
       content: (
         <div>
           TODO post create
+        </div>
+      ),
+    };
+  }
+
+  renderPreviewUserCreate(project?: AdminProject): PreviewSection {
+    if (!project) {
+      return this.renderPreviewEmpty('No project selected');
+    }
+    return {
+      size: UserPreviewSize,
+      bar: '',
+      content: (
+        <div>
+          TODO user create
         </div>
       ),
     };
@@ -971,7 +1061,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return this.renderPreviewEmpty('No project selected');
     }
     return {
-      size: {},
+      size: ProjectPreviewSize,
       bar: (
         <div className={this.props.classes.previewBarText}>
           Preview changes live as&nbsp;
@@ -989,9 +1079,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     };
   }
 
-  renderPreviewEmpty(msg: string): PreviewSection {
+  renderPreviewEmpty(msg: string, size?: LayoutSize): PreviewSection {
     return {
-      size: { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
+      size: size || { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
       content: (
         <div className={this.props.classes.previewEmptyMessage}>
           <Typography component='div' variant='h5'>
@@ -1017,12 +1107,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
     if (path === 'post') {
       this.setState({
+        previewShow: true,
         explorerPreview: !!subPath[0]
           ? { type: 'post', id: subPath[0] + '' }
           : { type: 'create' },
       }, () => this.props.history.push('/dashboard/explorer'));
     } else if (path === 'user') {
       this.setState({
+        previewShow: true,
         usersPreview: !!subPath[0]
           ? { type: 'user', id: subPath[0] + '' }
           : { type: 'create' },

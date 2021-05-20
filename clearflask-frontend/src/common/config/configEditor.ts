@@ -354,6 +354,9 @@ export const parsePath = (pathStr: string | undefined, delimiter: string | RegEx
       return isNaN(pNum) ? pStr : pNum;
     });
 }
+export const pathToString = (path: Path) => {
+  return path.join('.');
+}
 export const pathEquals = (l: Path, r: Path) => {
   return l.length === r.length && l.every((val, index) => val === r[index]);
 }
@@ -559,7 +562,7 @@ export class EditorImpl implements Editor {
   }
 
   getCacheKey(path: Path): string {
-    return path.join(':');
+    return pathToString(path);
   }
 
   getSubSchema(path: Path, schema: any = Schema): any {
@@ -927,7 +930,7 @@ export class EditorImpl implements Editor {
       }
       return page.cachedChildren;
     };
-    const pathStr = path.join('.');
+    const pathStr = pathToString(path);
     const localSubscribers: { [subscriberId: string]: () => void } = {};
     var dynamicNameUnsubscribe: (() => void) | undefined = undefined;
     var colorUnsubscribe: (() => void) | undefined = undefined;
@@ -1062,7 +1065,7 @@ export class EditorImpl implements Editor {
       }
       return pageGroup.cachedChildPages;
     };
-    const pathStr = path.join('.');
+    const pathStr = pathToString(path);
     const localSubscribers: { [subscriberId: string]: () => void } = {};
 
     const pageGroup: PageGroup = {
@@ -1231,7 +1234,7 @@ export class EditorImpl implements Editor {
         property.errorMsg = undefined;
       }
     };
-    const pathStr = path.join('.');
+    const pathStr = pathToString(path);
     const base = {
       key: randomUuid(),
       name: pathStr,

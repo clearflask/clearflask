@@ -1,7 +1,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
-import { contentScrollApplyStyles, Side } from '../../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation, Side } from '../../common/ContentScroll';
 import DividerCorner from '../utils/DividerCorner';
 
 export enum Direction {
@@ -16,12 +16,12 @@ const styles = (theme: Theme) => createStyles({
   },
   [Direction.Horizontal]: {
     alignItems: 'baseline',
-    ...(contentScrollApplyStyles(theme, Side.Center, false)),
+    ...contentScrollApplyStyles({ theme, side: Side.Center, orientation: Orientation.Horizontal }),
   },
   [Direction.Vertical]: {
     flexDirection: 'column',
     alignItems: 'stretch',
-    ...(contentScrollApplyStyles(theme, Side.Center, true)),
+    ...contentScrollApplyStyles({ theme, side: Side.Center, orientation: Orientation.Vertical }),
   },
 });
 
