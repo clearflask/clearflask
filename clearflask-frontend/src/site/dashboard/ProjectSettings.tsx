@@ -44,7 +44,7 @@ export const ProjectSettingsInstall = (props: {
   return (
     <ProjectSettingsBase title='Branding'>
       <p>TODO show project link, encourage linking to it on website</p>
-      <p>TODO Show how to embed widget</p>
+      <p>TODO Show how to embed widget, Select page to embed, ie feature requests, roadmap, etc...</p>
       <p>TODO Show how to embed idea status</p>
     </ProjectSettingsBase>
   );
@@ -69,7 +69,7 @@ export const ProjectSettingsDomain = (props: {
 }) => {
   const classes = useStyles();
   return (
-    <ProjectSettingsBase title='Branding'>
+    <ProjectSettingsBase title='Custom Domain'>
       <PropertyByPath editor={props.editor} path={['slug']} />
       <PropertyByPath editor={props.editor} path={['domain']} />
     </ProjectSettingsBase>
@@ -81,29 +81,25 @@ export const ProjectSettingsUsers = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   return (
-    <ProjectSettingsBase title='Data'>
+    <ProjectSettingsBase title='Users'>
       <p>TODO Copy over onboarding from CreatePage</p>
     </ProjectSettingsBase>
   );
 }
 
-export const ProjectSettingsComponents = (props: {
-  server: Server;
-  editor: ConfigEditor.Editor;
-}) => {
-  return (
-    <ProjectSettingsBase title='Data'>
-      <p>TODO Enable/disable components</p>
-    </ProjectSettingsBase>
-  );
-}
 export const ProjectSettingsFeedback = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
   return (
-    <ProjectSettingsBase title='Data'>
-      <p>TODO</p>
+    <ProjectSettingsBase title='Feedback'>
+      <p>TODO enable</p>
+      <p>TODO Categories, foreach:</p>
+      <p>TODO - name (deduce url path)</p>
+      <p>TODO - name</p>
+      <p>TODO - tags</p>
+      <p>TODO - Create form</p>
+      <p>TODO rename statuses (for all categories)</p>
     </ProjectSettingsBase>
   );
 }
@@ -112,8 +108,9 @@ export const ProjectSettingsRoadmap = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   return (
-    <ProjectSettingsBase title='Data'>
-      <p>TODO</p>
+    <ProjectSettingsBase title='Roadmap'>
+      <p>TODO enable</p>
+      <p>TODO rename panels</p>
     </ProjectSettingsBase>
   );
 }
@@ -122,8 +119,9 @@ export const ProjectSettingsChangelog = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   return (
-    <ProjectSettingsBase title='Data'>
-      <p>TODO</p>
+    <ProjectSettingsBase title='Changelog'>
+      <p>TODO enable</p>
+      <p>TODO tags</p>
     </ProjectSettingsBase>
   );
 }

@@ -45,7 +45,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsComponents, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -582,10 +582,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/users', name: 'Users', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/components', name: 'Components', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
                   {
                     type: 'project',
@@ -712,12 +711,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               main = {
                 size: ProjectSettingsMainSize,
                 content: (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />),
-              };
-              break;
-            case 'components':
-              main = {
-                size: ProjectSettingsMainSize,
-                content: (<ProjectSettingsComponents server={activeProject.server} editor={activeProject.editor} />),
               };
               break;
             case 'feedback':
