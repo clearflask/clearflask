@@ -47,7 +47,7 @@ const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',
     background: {
-      default: '#fff',
+      default: 'rgba(255,255,255,0)',
       paper: '#fff',
     },
     primary: {

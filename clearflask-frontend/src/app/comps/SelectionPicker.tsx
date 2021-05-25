@@ -104,6 +104,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  style?: React.CSSProperties;
   isMulti?: boolean;
   disableInput?: boolean;
   value: Label[];
@@ -302,6 +303,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
           ? this.props.inputValue
           : (this.state.inputValue || '')}
         onInputChange={onInputChange}
+        style={this.props.style}
         className={this.props.className}
         limitTags={this.props.limitTags}
         disabled={this.props.disabled}

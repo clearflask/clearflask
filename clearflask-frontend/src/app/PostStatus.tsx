@@ -1,5 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import OpenIcon from '@material-ui/icons/OpenInNew';
+import { FontWeightProperty } from 'csstype';
 import QueryString from 'query-string';
 import React, { Component } from 'react';
 import { RouteComponentProps } from 'react-router';
@@ -15,7 +16,7 @@ export class PostStatusConfigDef {
   fontFamily?: string;
   color?: string;
   backgroundColor?: string;
-  fontWeight?: number;
+  fontWeight?: FontWeightProperty;
   alignItems?: string;
   justifyContent?: string;
   textTransform?: string;
@@ -146,7 +147,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 color: statusConfig.color || status.color,
                 fontSize: statusConfig.fontSize,
                 fontFamily: statusConfig.fontFamily,
-                backgroundColor: statusConfig.backgroundColor,
+                backgroundColor: statusConfig.backgroundColor || 'transparent',
                 fontWeight: statusConfig.fontWeight,
                 alignItems: statusConfig.alignItems,
                 justifyContent: statusConfig.justifyContent,

@@ -54,7 +54,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     const selectedUserLabel = props.loggedInUserLabel;
     this.state = { selectedUserLabel };
     if (selectedUserLabel && !props.suppressInitialOnChange) {
-      this.props.onChange && this.props.onChange(selectedUserLabel);
+      props.onChange && props.onChange(selectedUserLabel);
     }
     const searchDebounced = debounce(
       (newValue: string) => this.props.server.dispatchAdmin()

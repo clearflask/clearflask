@@ -95,7 +95,7 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
               <TimeAgo date={this.props.post.created} />
             ))}
 
-            <div className={this.props.classes.space} />
+            {/* <div className={this.props.classes.space} /> */}
 
             {this.props.category && this.renderPropertyBase('Category', (
               <div style={{ color: this.props.category.color }}>
@@ -136,7 +136,7 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
               />
             </FilterControlBase>
 
-            <div className={this.props.classes.space} />
+            {/* <div className={this.props.classes.space} /> */}
 
             {!!postLink && this.renderPropertyTextField(
               'Link',

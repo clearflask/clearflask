@@ -70,6 +70,9 @@ const styles = (theme: Theme) => createStyles({
   menuItem: {
     padding: theme.spacing(0.5, 3),
   },
+  isSelected: {
+    color: theme.palette.primary.main + '!important',
+  },
 });
 
 interface Props extends ListProps {
@@ -81,6 +84,7 @@ interface Props extends ListProps {
 
 class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    const activeSlug = [this.props.activePath, ...this.props.activeSubPath].join('/');
     return (
       <List dense component='nav' style={{ padding: '0px' }}>
         {this.props.items.map((item, index) => {
@@ -99,14 +103,19 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
                 target: '_blank',
               };
             }
+            const isSelected = item.slug === activeSlug;
             return (
               <ListItem
                 key={`${index}-${item.slug || item.ext || 'empty'}`}
                 button
                 disabled={item.disabled}
-                selected={item.slug === this.props.activePath}
+                // selected={isSelected}
                 onClick={this.props.onAnyClick}
-                className={classNames(this.props.classes.link, this.props.classes.menuItem)}
+                className={classNames(
+                  this.props.classes.link,
+                  this.props.classes.menuItem,
+                  isSelected && this.props.classes.isSelected,
+                )}
                 component={component}
                 {...componentProps}
               >
@@ -125,6 +134,11 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
               </ListItem>
             );
           } else if (item.type === 'project') {
+            const activePath = !activeSlug.startsWith(item.slug) ? undefined
+              : activeSlug.slice(item.slug.length)
+                .split('/')
+                .filter(value => value !== '')
+                .map(value => /^\d+$/.test(value) ? parseInt(value) : value);
             return (
               <MenuPage
                 key={`${index}-${item.page.key}`}
@@ -132,7 +146,7 @@ class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>
                 offset={item.offset}
                 page={item.page}
                 hasUnsavedChanges={item.hasUnsavedChanges}
-                activePath={item.slug === this.props.activePath ? this.props.activeSubPath : undefined}
+                activePath={activePath}
                 slug={item.slug}
                 onAnyClick={this.props.onAnyClick}
               />
@@ -206,11 +220,15 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
     const padding = paddingForLevel(this.props.offset || 0, this.props.page.path);
     const color = this.props.page.getColor();
     const { classes, ...menuProps } = this.props;
+    const isSelected = this.isSelected(this.props.page.path);
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
         <ListItem
-          selected={this.isSelected(this.props.page.path)}
-          className={this.props.classes.menuItem}
+          // selected={isSelected}
+          className={classNames(
+            this.props.classes.menuItem,
+            isSelected && this.props.classes.isSelected,
+          )}
           button
           component={Link}
           to={`/dashboard/${[this.props.slug, ...this.props.page.path].join('/')}`}

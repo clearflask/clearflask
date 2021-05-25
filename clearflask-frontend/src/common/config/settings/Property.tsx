@@ -23,6 +23,7 @@ interface Props {
   key: string;
   prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property;
   bare?: boolean;
+  suppressDescription?: boolean;
   width?: string
   pageClicked: (path: ConfigEditor.Path) => void;
   isInsideMuiTable?: boolean;
@@ -44,6 +45,7 @@ export default class Property extends Component<Props> {
 
   render() {
     const prop = this.props.prop;
+    const propDescription = this.props.suppressDescription ? undefined : prop.description;
     const name = prop.name || prop.pathStr;
     var marginTop = 30;
     var propertySetter;
@@ -124,7 +126,7 @@ export default class Property extends Component<Props> {
                     }}
                   />
                 </div>
-                {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+                {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
               </div>
             );
             break OUTER;
@@ -163,7 +165,7 @@ export default class Property extends Component<Props> {
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
-            helperText={prop.errorMsg || (!this.props.bare && prop.description)}
+            helperText={prop.errorMsg || (!this.props.bare && propDescription)}
             margin='none'
             multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
               || prop.subType === ConfigEditor.PropSubType.Rich) as any}
@@ -225,8 +227,8 @@ export default class Property extends Component<Props> {
             </IconButton>
           </div>
         );
-        const description = (prop.description || prop.errorMsg)
-          ? (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)
+        const description = (propDescription || prop.errorMsg)
+          ? (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)
           : null;
         var content;
         if (prop.required) {
@@ -275,7 +277,7 @@ export default class Property extends Component<Props> {
           propertySetter = (
             <div>
               {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+              {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
               <div>
                 <FormControlLabel
                   control={(
@@ -359,7 +361,7 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
           </FormControl>
         );
         break;
@@ -384,7 +386,7 @@ export default class Property extends Component<Props> {
                 size: 'small',
               }}
               label={this.props.bare ? undefined : prop.name}
-              helperText={this.props.bare ? undefined : prop.description}
+              helperText={this.props.bare ? undefined : propDescription}
               placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
               errorMsg={prop.errorMsg}
               value={values}
@@ -404,7 +406,7 @@ export default class Property extends Component<Props> {
               data={prop}
               errorMsg={prop.errorMsg}
               label={!this.props.bare && name}
-              helperText={!this.props.bare && prop.description}
+              helperText={!this.props.bare && propDescription}
               width={this.props.width}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={this.props.requiresUpgrade}
@@ -446,7 +448,7 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <div style={{ marginBottom: '10px' }}>
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>
@@ -494,7 +496,7 @@ export default class Property extends Component<Props> {
             }}
             disableClearable={prop.required}
             label={this.props.bare ? undefined : prop.name}
-            helperText={this.props.bare ? undefined : prop.description}
+            helperText={this.props.bare ? undefined : propDescription}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             errorMsg={prop.errorMsg}
             value={values}

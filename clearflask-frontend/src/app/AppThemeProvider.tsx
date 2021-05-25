@@ -69,7 +69,11 @@ class AppThemeProvider extends Component<Props> {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           primary: {
             main: this.props.config.style.palette.primary
-              || this.props.config.style.palette.darkMode ? '#2dbaa1' : '#218774',
+              || (this.props.config.style.palette.darkMode ? '#2dbaa1' : '#218774'),
+          },
+          secondary: {
+            main: this.props.config.style.palette.primary
+              || (this.props.config.style.palette.darkMode ? '#2dbaa1' : '#218774'),
           },
           ...(this.props.config.style.palette.text ? {
             text: {

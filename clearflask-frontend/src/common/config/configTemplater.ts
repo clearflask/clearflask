@@ -1,7 +1,14 @@
 import * as Admin from "../../api/admin";
+import { StateConf } from "../../api/server";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
+
+export const configStateEqual = (left?: StateConf, right?: StateConf): boolean => {
+  return left?.status === right?.status
+    && left?.conf?.projectId === right?.conf?.projectId
+    && left?.ver === right?.ver
+};
 
 // TODO Home
 // TODO FAQ
@@ -63,7 +70,7 @@ export default class Templater {
       ...opts,
     });
     this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');
-    this.styleWhite();
+    // this.styleWhite();
   }
 
   createTemplate(opts: CreateTemplateOptions = createTemplateOptionsDefault) {

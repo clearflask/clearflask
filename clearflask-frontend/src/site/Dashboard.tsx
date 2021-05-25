@@ -45,7 +45,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -676,6 +676,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               </ProjectSettingsBase>
             )
           };
+          preview = this.renderPreviewChangesDemo(activeProject);
         } else if (activeSubPath[0] === 'account') {
           switch (activeSubPath[1]) {
             case 'profile':
@@ -695,10 +696,18 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }
         } else if (activeSubPath[0] === 'project') {
           switch (activeSubPath[1]) {
+            case 'install':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsInstall server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
             case 'branding':
               main = {
                 size: ProjectSettingsMainSize,
-                content: (<ProjectSettingsBranding server={activeProject.server} editor={activeProject.editor} />),
+                content: (
+                  <ProjectSettingsBranding server={activeProject.server} editor={activeProject.editor} />
+                ),
               };
               break;
             case 'domain':
@@ -744,20 +753,26 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           barBottom = (activeProject?.hasUnsavedChanges()) ? (
             <div className={this.props.classes.unsavedChangesBar}>
               <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
-              <Button color='primary' onClick={() => {
-                const currentProject = activeProject;
-                ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
-                  projectId: currentProject.projectId,
-                  versionLast: currentProject.configVersion,
-                  configAdmin: currentProject.editor.getConfig(),
-                })
-                  .then((versionedConfigAdmin) => {
-                    currentProject.resetUnsavedChanges(versionedConfigAdmin)
-                  }));
-              }}>Publish</Button>
+              <Button
+                variant='contained'
+                disableElevation
+                color='primary'
+                onClick={() => {
+                  const currentProject = activeProject;
+                  ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
+                    projectId: currentProject.projectId,
+                    versionLast: currentProject.configVersion,
+                    configAdmin: currentProject.editor.getConfig(),
+                  })
+                    .then((versionedConfigAdmin) => {
+                      currentProject.resetUnsavedChanges(versionedConfigAdmin)
+                    }));
+                }}
+              >
+                Publish
+              </Button>
             </div>
           ) : undefined;
-          preview = this.renderPreviewChangesDemo(activeProject);
         }
         break;
       default:
@@ -1055,12 +1070,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     return {
       size: ProjectPreviewSize,
-      bar: (
-        <div className={this.props.classes.previewBarText}>
-          Preview changes live as&nbsp;
-          {this.renderProjectUserSelect(project)}
-        </div>
-      ),
+      bar: 'Preview changes live',
       content: (
         <DemoApp
           key={project.configVersion}

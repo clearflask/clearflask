@@ -1,5 +1,5 @@
 import { Badge, Divider, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import NotificationsIcon from '@material-ui/icons/Notifications';
@@ -122,7 +122,7 @@ const styles = (theme: Theme) => createStyles({
     marginTop: -1,
   },
 });
-
+const useStyles = makeStyles(styles);
 interface Props {
   server: Server;
   pageSlug: string;
@@ -241,29 +241,6 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         />
       );
     } else {
-      var name: any = this.props.config?.name && (
-        <Typography variant='h6'>
-          {this.props.config && this.props.config.name}
-        </Typography>
-      );
-      if (this.props.config && this.props.config.website) {
-        name = (
-          <MuiLink className={this.props.classes.logoText} color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
-            {name}
-          </MuiLink>
-        );
-      }
-      var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
-        <div className={this.props.classes.logo}>
-          {this.props.config.logoUrl && (
-            <img alt='' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
-          )}
-          <div className={this.props.classes.logoTextContainer}>
-            {name}
-          </div>
-        </div>
-      ) : undefined;
-
       // TODO this should only show when Admin logged in, not mod
       const settingsButton = this.props.server.isModOrAdminLoggedIn() && (
         <IconButton
@@ -349,7 +326,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         <div className={this.props.classes.headerSpacing}>
           <div className={this.props.classes.header}>
             <div className={this.props.classes.logoAndMenu}>
-              {logo}
+              <HeaderLogo config={this.props.config} />
               {menu}
             </div>
             {rightSide}
@@ -383,6 +360,37 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       }
     }
   }
+}
+
+
+export const HeaderLogo = (props: {
+  config?: Client.Config,
+}) => {
+  const classes = useStyles();
+
+  var name: any = props.config?.name && (
+    <Typography variant='h6'>
+      {props.config && props.config.name}
+    </Typography>
+  );
+  if (props.config && props.config.website) {
+    name = (
+      <MuiLink className={classes.logoText} color='inherit' href={props.config.website} underline='none' rel='noopener nofollow'>
+        {name}
+      </MuiLink>
+    );
+  }
+
+  return props.config && (props.config.logoUrl || props.config.name) ? (
+    <div className={classes.logo}>
+      {props.config.logoUrl && (
+        <img alt='' src={props.config.logoUrl} className={classes.logoImg} />
+      )}
+      <div className={classes.logoTextContainer}>
+        {name}
+      </div>
+    </div>
+  ) : null;
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
