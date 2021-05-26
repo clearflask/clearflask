@@ -5,7 +5,7 @@ import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd } from "./template/feedback";
 import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
-import { pageDelete } from "./template/templateUtils";
+import { _pageDelete } from "./template/templateUtils";
 
 export type ConfirmationResponseId = string;
 export interface ConfirmationResponse {
@@ -81,7 +81,7 @@ export default class Templater {
     return new Templater(editor, confirmationHandler);
   }
 
-  pageDelete = pageDelete;
+  _pageDelete = _pageDelete;
 
   feedbackGet = feedbackGet;
   feedbackOn = feedbackOn;

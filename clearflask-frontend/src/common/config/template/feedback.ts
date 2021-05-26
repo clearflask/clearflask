@@ -187,5 +187,5 @@ export async function feedbackSubcategoryAdd(this: Templater, name: string): Pro
   return this.feedbackOn();
 }
 export async function feedbackOff(this: Templater, feedback: FeedbackInstance): Promise<void> {
-  feedback.subcategories?.forEach(subcat => subcat.page && this.pageDelete(subcat.page.page.pageId))
+  feedback.subcategories?.forEach(subcat => subcat.page && this._pageDelete(subcat.page.page.pageId))
 }

@@ -109,5 +109,5 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
   return roadmap;
 }
 export async function roadmapOff(this: Templater, roadmap: RoadmapInstance): Promise<void> {
-  this.pageDelete(roadmap.page.pageId);
+  this._pageDelete(roadmap.page.pageId);
 }

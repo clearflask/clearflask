@@ -2,7 +2,7 @@ import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
 
 // Deletes a page and all corresponding menu items
-export async function pageDelete(this: Templater, pageId: string): Promise<void> {
+export async function _pageDelete(this: Templater, pageId: string): Promise<void> {
   // Delete all references of page in Menu
   const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
   while (true) {
