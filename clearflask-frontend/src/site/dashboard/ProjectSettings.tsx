@@ -378,13 +378,23 @@ export const ProjectSettingsInstallStatusConfig = (props: {
 
   const fontSize = (
     <ProjectSettingsInstallStatusConfigSelect
-      label='Size'
+      label='Text'
       selectedValue={props.config.fontSize + ''}
       onChange={value => onChange('fontSize', value)}
       options={[
-        { label: 'Small', value: '8px' },
-        { label: 'Normal', value: '14px' },
-        { label: 'Large', value: '30px' },
+        { label: '8px', value: '8px' },
+        { label: '9px', value: '9px' },
+        { label: '10px', value: '10px' },
+        { label: '11px', value: '11px' },
+        { label: '12px', value: '12px' },
+        { label: '13px', value: '13px' },
+        { label: '14px', value: '14px' },
+        { label: '15px', value: '15px' },
+        { label: '16px', value: '16px' },
+        { label: '17px', value: '17px' },
+        { label: '18px', value: '18px' },
+        { label: '19px', value: '19px' },
+        { label: '20px', value: '20px' },
       ]}
     />
   );
@@ -581,7 +591,7 @@ export const ProjectSettingsBrandingPreview = (props: {}) => {
   const configState = useSelector<ReduxState, StateConf>(state => state.conf, configStateEqual);
   return (
     <div style={{ padding: 20 }}>
-      <HeaderLogo config={configState.conf} />
+      <HeaderLogo config={configState.conf} targetBlank suppressLogoLink />
     </div>
   );
 }
@@ -633,6 +643,18 @@ export const ProjectSettingsUsers = (props: {
   return (
     <ProjectSettingsBase title='Users'>
       <p>TODO Copy over onboarding from CreatePage</p>
+    </ProjectSettingsBase>
+  );
+}
+
+export const ProjectSettingsLanding = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  return (
+    <ProjectSettingsBase title='Landing'>
+      <p>TODO choose: home page, or another page as main; if home page chosen:</p>
+      <p>TODO Add contact link (email or url)</p>
     </ProjectSettingsBase>
   );
 }

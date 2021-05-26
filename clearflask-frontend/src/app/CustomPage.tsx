@@ -1,8 +1,10 @@
-import { Typography } from '@material-ui/core';
+import { Button, IconButton, Link as MuiLink, Paper, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
@@ -13,6 +15,14 @@ import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
+
+interface LandingLink {
+  title?: string;
+  links: Array<{
+    name?: string;
+    to: string;
+  }>;
+}
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -67,8 +77,26 @@ const styles = (theme: Theme) => createStyles({
   explorer: {
     margin: 'auto',
   },
+  landing: {
+    margin: 'auto',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landingPaper: {
+    flex: '1 1 150px',
+    maxWidth: 250,
+    height: 300,
+    display: 'flex',
+    boxShadow: '-10px -10px 40px 0 rgba(0,0,0,0.1)',
+    margin: theme.spacing(2),
+    padding: theme.spacing(2),
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
-
 interface Props {
   server: Server;
   pageSlug: string;
@@ -97,9 +125,81 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         />
       );
     } else if (this.props.page) {
+      var landingCmpt;
       var panelsCmpt;
       var boardCmpt;
       var explorerCmpt;
+
+      // ### LANDING
+      if (!!this.props.page.landing) {
+        const links: Array<LandingLink> = [];
+        if (this.props.page.landing.menuLinks) {
+          this.props.config?.layout.menu.forEach(menu => {
+            const link: LandingLink = {
+              title: menu.name,
+              links: [],
+            };
+            menu.pageIds.forEach(pageId => {
+              const page = this.props.config?.layout.pages.find(p => p.pageId === pageId);
+              if (!page) return;
+              if (!link.title) link.title = page.name;
+              link.links.push({
+                to: page.slug,
+              });
+            })
+            links.push(link);
+          });
+        }
+        this.props.page.landing.links?.forEach(customLink => {
+          links.push({
+            title: customLink.title,
+            links: [{ to: customLink.url }],
+          });
+        })
+        landingCmpt = (
+          <div className={this.props.classes.landing}>
+            {links.map((link, index) => {
+              return (
+                <Paper
+                  key={index}
+                  className={this.props.classes.landingPaper}
+                >
+                  {!!link.title && (
+                    <Typography variant='h4' component='h2'>{link.title}</Typography>
+                  )}
+                  {link.links.map((link, linkIndex) => {
+                    const linkProps = link.to.includes('://') ? {
+                      component: MuiLink,
+                      href: link.to,
+                      underline: 'none',
+                    } : {
+                      component: Link,
+                      to: link.to,
+                    };
+                    return !!link.name ? (
+                      <Button
+                        key={linkIndex}
+                        variant='contained'
+                        disableElevation
+                        {...linkProps}
+                      >
+                        {link.name}
+                      </Button>
+                    ) : (
+                      <IconButton
+                        key={linkIndex}
+                        {...linkProps}
+                      >
+                        <GoIcon color='inherit' />
+                      </IconButton>
+                    );
+                  })}
+                </Paper>
+              );
+            })}
+          </div>
+        );
+      }
 
       // ### PANELS
       if (this.props.page.panels.length > 0) {
@@ -222,6 +322,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       page = (
         <div className={this.props.classes.page}>
           {top}
+          {landingCmpt}
           {panelsCmpt}
           {boardCmpt}
           {explorerCmpt}

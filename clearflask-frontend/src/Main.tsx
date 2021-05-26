@@ -47,7 +47,12 @@ const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',
     background: {
-      default: 'rgba(255,255,255,0)',
+      // This is a very contested line, whether to have this white or transparent...
+      // Transparent is useful in PostStatus that allows transparency through an IFrame
+      // Everywhere else, it's more useful to have a solid color in order to cover up shadows and other things.
+      default: windowIso.location.pathname.startsWith('/embed-status')
+        ? 'rgba(255,255,255,0)'
+        : '#fff',
       paper: '#fff',
     },
     primary: {

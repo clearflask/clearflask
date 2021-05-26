@@ -85,7 +85,9 @@ export interface xCfProp {
   falseAsUndefined?: boolean;
   /** Applicable to arrays only. Prevent re-ordering of items by user. */
   disableReordering?: boolean;
+  /** Label to show when value is true */
   trueLabel?: string;
+  /** Label to show when value is false */
   falseLabel?: string;
 }
 export enum PropSubType {

@@ -1,9 +1,7 @@
 import { Button, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import AccountIcon from '@material-ui/icons/AccountCircle';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
-import BillingIcon from '@material-ui/icons/CreditCard';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
@@ -45,7 +43,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -582,6 +580,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/users', name: 'Users', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
@@ -720,6 +719,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               main = {
                 size: ProjectSettingsMainSize,
                 content: (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />),
+              };
+              break;
+            case 'landing':
+              main = {
+                size: ProjectSettingsMainSize,
+                content: (<ProjectSettingsLanding server={activeProject.server} editor={activeProject.editor} />),
               };
               break;
             case 'feedback':
@@ -901,10 +906,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                       { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings', title: 'Settings', icon: SettingsIcon },
-                      { type: 'button', link: '/dashboard/account', title: 'Account', icon: AccountIcon },
-                      { type: 'button', link: '/dashboard/billing', title: 'Billing', icon: BillingIcon },
                       { type: 'divider' },
-                      { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Docs' },
+                      { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
                       { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
                       { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
                       { type: 'divider' },

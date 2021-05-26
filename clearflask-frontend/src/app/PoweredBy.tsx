@@ -1,4 +1,4 @@
-import { Link } from '@material-ui/core';
+import { Link as MuiLink } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 
@@ -19,12 +19,12 @@ class PoweredBy extends Component<WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <Link underline='none' target="_blank" href='https://clearflask.com/'>
+      <MuiLink underline='none' target="_blank" href='https://clearflask.com/'>
         <div className={this.props.classes.container}>
           <div className={this.props.classes.poweredBy}>Powered by&nbsp;</div>
           <div className={this.props.classes.name}>ClearFlask</div>
         </div>
-      </Link>
+      </MuiLink>
     );
   }
 }

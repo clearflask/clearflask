@@ -542,6 +542,30 @@ components:
               description:
                 x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
+              landing:
+                x-clearflask-prop: { order: 5, name: 'Landing', description: 'Intended for a landing page, hide the navigation menu and instead show a set of large links for each page.' }
+                type: object
+                required:
+                - menuLinks
+                - links
+                properties:
+                  menuLinks:
+                    x-clearflask-prop: { order: 0, name: 'Menu links', description: 'Shows a link for each menu item', defaultValue: true }
+                    type: boolean
+                  links:
+                    x-clearflask-prop: { order: 1, name: 'Additional links', description: 'Add additional custom links.' }
+                    type: array
+                    items:
+                      type: object
+                      required:
+                      - url
+                      properties:
+                        title:
+                          x-clearflask-prop: { order: 0, name: 'Name', description: 'Text to show for this link', placeholder: 'Name' }
+                          type: string
+                        url:
+                          x-clearflask-prop: { order: 1, name: 'Link', description: 'Link where to direct users. Can be an internal link to another page, external link or a custom protocol such as an email address.', placeholder: 'https://' }
+                          type: string
               panels:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: ['title'] }
                 type: array

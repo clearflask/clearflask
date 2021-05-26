@@ -1,7 +1,8 @@
-import { Badge, Divider, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
+import { Badge, Collapse, Divider, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
+import ReturnIcon from '@material-ui/icons/KeyboardBackspaceOutlined';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import SettingsIcon from '@material-ui/icons/Settings';
 import React, { Component } from 'react';
@@ -38,6 +39,10 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
+  },
+  returnIcon: {
+    marginLeft: theme.spacing(-1.5),
+    color: theme.palette.text.hint,
   },
   headerSpacing: {
     width: '100%',
@@ -88,8 +93,11 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 48, // Minimize reflow for square images
     padding: theme.spacing(1),
   },
-  logoTextContainer: {
+  logoTextLinkWrapper: {
     flex: '1 0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    textDecoration: 'none'
   },
   logoText: {
     whiteSpace: 'nowrap',
@@ -155,6 +163,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
   }
 
   render() {
+    const isLanding = !!this.props.page?.landing;
+
     var menu;
     if (this.props.config?.style.templates?.menu) {
       menu = (
@@ -213,21 +223,23 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       });
       menu = (
         <div className={this.props.classes.menu}>
-          <Tabs
-            // centered
-            variant='standard'
-            scrollButtons='off'
-            classes={{
-              flexContainer: this.props.classes.tabsFlexContainer,
-              indicator: this.props.classes.indicator,
-            }}
-            value={currentTabValue}
-            onChange={(event, value) => this.props.pageChanged(value)}
-            indicatorColor="primary"
-            textColor="primary"
-          >
-            {tabs}
-          </Tabs>
+          <Collapse in={!isLanding}>
+            <Tabs
+              // centered
+              variant='standard'
+              scrollButtons='off'
+              classes={{
+                flexContainer: this.props.classes.tabsFlexContainer,
+                indicator: this.props.classes.indicator,
+              }}
+              value={currentTabValue}
+              onChange={(event, value) => this.props.pageChanged(value)}
+              indicatorColor="primary"
+              textColor="primary"
+            >
+              {tabs}
+            </Tabs>
+          </Collapse>
         </div>
       );
     }
@@ -254,7 +266,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       var rightSide;
       if (this.props.config && this.props.loggedInUser) {
         rightSide = (
-          <div className={this.props.classes.actions}>
+          <Collapse classes={{ wrapperInner: this.props.classes.actions }} in={!isLanding}>
             <IconButton
               className={this.props.classes.actionButton}
               aria-label='Notifications'
@@ -294,7 +306,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               </Badge>
             </IconButton>
             {settingsButton}
-          </div>
+          </Collapse>
         );
       } else if (this.props.config && !this.props.loggedInUser) {
         rightSide = (
@@ -365,30 +377,54 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
 
 export const HeaderLogo = (props: {
   config?: Client.Config,
+  targetBlank?: boolean;
+  suppressLogoLink?: boolean;
 }) => {
   const classes = useStyles();
 
-  var name: any = props.config?.name && (
-    <Typography variant='h6'>
+  const name = !props.config?.name ? undefined : (
+    <Typography variant='h6' className={classes.logoText}>
       {props.config && props.config.name}
     </Typography>
   );
-  if (props.config && props.config.website) {
-    name = (
-      <MuiLink className={classes.logoText} color='inherit' href={props.config.website} underline='none' rel='noopener nofollow'>
-        {name}
-      </MuiLink>
-    );
-  }
+
+  const logo = !props.config?.logoUrl ? undefined : (
+    <img alt='' src={props.config.logoUrl} className={classes.logoImg} />
+  );
+
+  const logoAndName = props.suppressLogoLink ? (
+    <>
+      {logo}
+      {name}
+    </>
+  ) : (
+    <Link className={classes.logoTextLinkWrapper} to='/'>
+      {logo}
+      {name}
+    </Link>
+  );
+
+  const website = !props.config?.website ? undefined
+    : (props.config.website.match(/http(s):\/\//)
+      ? props.config.website
+      : `https://${props.config.website}`)
 
   return props.config && (props.config.logoUrl || props.config.name) ? (
     <div className={classes.logo}>
-      {props.config.logoUrl && (
-        <img alt='' src={props.config.logoUrl} className={classes.logoImg} />
+      {!!website && (
+        <IconButton
+          className={classes.returnIcon}
+          component={MuiLink}
+          color='inherit'
+          href={website}
+          underline='none'
+          rel='noopener nofollow'
+          target={props.targetBlank ? '_blank' : undefined}
+        >
+          <ReturnIcon color='inherit' />
+        </IconButton>
       )}
-      <div className={classes.logoTextContainer}>
-        {name}
-      </div>
+      {logoAndName}
     </div>
   ) : null;
 }

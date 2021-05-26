@@ -57,6 +57,7 @@ const styles = (theme: Theme) => createStyles({
     transform: 'scale(.8)',
     width: '125%',
     height: '125%',
+    overflow: 'hidden',
   },
   desktopOutside: {
     display: 'flex',
@@ -89,6 +90,7 @@ const styles = (theme: Theme) => createStyles({
     transform: 'scale(.64)',
     width: '156.25%',
     height: '156.25%',
+    overflow: 'hidden',
   },
   desktopBottom: {
     display: 'block',

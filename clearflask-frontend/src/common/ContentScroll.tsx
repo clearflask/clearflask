@@ -100,6 +100,7 @@ export const contentScrollApplyStyles = (props: {
       break;
   }
   return {
+    backgroundColor,
     background: backgrounds.join(','),
     overflowY: orientation !== Orientation.Horizontal ? 'scroll' : 'hidden',
     overflowX: orientation !== Orientation.Vertical ? 'scroll' : 'hidden',

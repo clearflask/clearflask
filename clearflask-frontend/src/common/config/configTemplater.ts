@@ -3,6 +3,22 @@ import { StateConf } from "../../api/server";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
+import { feedbackGet, feedbackOff, feedbackOn } from "./template/feedback";
+import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
+import { pageDelete } from "./template/templateUtils";
+
+export type ConfirmationResponseId = string;
+export interface ConfirmationResponse {
+  id?: string;
+  title: string;
+  type?: 'cancel';
+}
+export interface Confirmation {
+  title: string;
+  description: string;
+  responses: Array<ConfirmationResponse>;
+}
+export type ConfirmationHandler = (confirmation: Confirmation) => Promise<ConfirmationResponseId>;
 
 export const configStateEqual = (left?: StateConf, right?: StateConf): boolean => {
   return left?.status === right?.status
@@ -54,13 +70,43 @@ export const createTemplateOptionsDefault: CreateTemplateOptions = {
 
 export default class Templater {
   editor: ConfigEditor.Editor;
+  confirmationHandler?: ConfirmationHandler;
 
-  constructor(editor: ConfigEditor.Editor) {
+  constructor(editor: ConfigEditor.Editor, confirmationHandler?: ConfirmationHandler) {
     this.editor = editor;
+    this.confirmationHandler = confirmationHandler;
   }
 
-  static get(editor: ConfigEditor.Editor): Templater {
-    return new Templater(editor);
+  static get(editor: ConfigEditor.Editor, confirmationHandler?: ConfirmationHandler): Templater {
+    return new Templater(editor, confirmationHandler);
+  }
+
+  pageDelete = pageDelete;
+
+  feedbackGet = feedbackGet;
+  feedbackOn = feedbackOn;
+  feedbackOff = feedbackOff;
+
+  roadmapGet = roadmapGet;
+  roadmapOn = roadmapOn;
+  roadmapOff = roadmapOff;
+
+  // During template changes, user confirmation is required.
+  // IE: Change to a roadmap column is requested, but we are unsure which Board
+  // should be updated. User is asked which board corresponds to the right Roadmap.
+  async _getConfirmation(confirmation: Confirmation, cancelTitle?: string): Promise<ConfirmationResponseId | undefined> {
+    if (!!cancelTitle) {
+      confirmation.responses.push({
+        title: cancelTitle,
+        type: 'cancel',
+      });
+    }
+    if (this.confirmationHandler) {
+      try {
+        return this.confirmationHandler(confirmation);
+      } catch (e) { }
+    }
+    return undefined;
   }
 
   demo(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
