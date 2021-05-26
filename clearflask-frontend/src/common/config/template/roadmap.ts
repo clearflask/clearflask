@@ -12,28 +12,35 @@ export interface RoadmapInstance {
 export async function roadmapGet(this: Templater): Promise<RoadmapInstance | undefined> {
   const feedback = (await this.feedbackGet())
   if (!feedback) throw new Error('Feedback not enabled');
-  const postCategoryId = feedback.categoryId;
+  const postCategoryId = feedback.category.categoryId;
 
-  var pagesWithBoards = this.editor.getConfig().layout.pages.filter(page =>
-    !!page.board
-    && page.board.panels.length > 0
-    && page.board.panels.every(p => p.search.filterCategoryIds?.some(cId => cId === postCategoryId)));
-  const pageWithRoadmap = pagesWithBoards.find(p => p.pageId.startsWith(RoadmapPageIdPrefix));
-  if (pageWithRoadmap) pagesWithBoards = [pageWithRoadmap];
+  var potentialPageWithBoard = this.editor.getConfig().layout.pages
+    .filter(page => !!page.board && page.pageId.startsWith(RoadmapPageIdPrefix));
 
-  if (pagesWithBoards.length === 0) {
+  if (potentialPageWithBoard.length === 0) {
+    potentialPageWithBoard = this.editor.getConfig().layout.pages
+      .filter(page => !!page.board && page.board.panels.length > 0
+        && page.board.panels.every(p => p.search.filterCategoryIds?.some(cId => cId === postCategoryId)));
+  }
+
+  if (potentialPageWithBoard.length === 0) {
+    potentialPageWithBoard = this.editor.getConfig().layout.pages
+      .filter(page => !!page.board && page.board.panels.length === 0);
+  }
+
+  if (potentialPageWithBoard.length === 0) {
     return undefined;
-  } else if (pagesWithBoards.length === 1) {
-    const roadmapPage = pagesWithBoards[0]!;
+  } else if (potentialPageWithBoard.length === 1) {
+    const roadmapPage = potentialPageWithBoard[0]!;
     return {
       page: roadmapPage as any,
-      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPage.pageId);
+      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPage.pageId),
     };
   } else {
     const roadmapPageId = await this._getConfirmation({
       title: 'Which one is a Roadmap?',
       description: 'We are having trouble determining where your Roadmap is located. Please select the page that with your Roadmap to edit it.',
-      responses: pagesWithBoards.map(pageWithBoard => ({
+      responses: potentialPageWithBoard.map(pageWithBoard => ({
         id: pageWithBoard.pageId,
         title: pageWithBoard.name,
       })),
@@ -41,7 +48,7 @@ export async function roadmapGet(this: Templater): Promise<RoadmapInstance | und
     if (!roadmapPageId) return undefined;
     return {
       page: this.editor.getConfig().layout.pages.find(p => p.pageId === roadmapPageId) as any,
-      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPageId);
+      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPageId),
     };
   }
 }
@@ -53,12 +60,12 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
 
     const feedback = (await this.feedbackGet())
     if (!feedback) throw new Error('Feedback not enabled');
-    const postCategoryId = feedback.categoryId;
+    const postCategoryId = feedback.category.categoryId;
 
     const feedbackStatuses = feedback.category.workflow.statuses;
-    const status1: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Planned/)) || feedbackStatuses[0];
-    const status2: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/In progress/)) || feedbackStatuses[1];
-    const status3: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Completed/)) || feedbackStatuses[2];
+    const status1: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Planned/i)) || feedbackStatuses[0];
+    const status2: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/In progress/i)) || feedbackStatuses[1];
+    const status3: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Completed/i)) || feedbackStatuses[2];
 
     const roadmapPageId = RoadmapPageIdPrefix + randomUuid();
     const postDisplay: Admin.PostDisplay = {

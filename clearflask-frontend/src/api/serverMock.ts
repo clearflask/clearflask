@@ -482,14 +482,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         || (idea.created <= request.ideaSearchAdmin.filterCreatedEnd))
       .filter(idea => !request.ideaSearchAdmin.filterTagIds
         || request.ideaSearchAdmin.filterTagIds.length === 0
-        || request.ideaSearchAdmin.filterTagIds.filter(tagId =>
-          idea.tagIds && idea.tagIds.includes(tagId)
-        ).length > 0)
+        || (request.ideaSearchAdmin.filterTagIds.filter(tagId => idea.tagIds && idea.tagIds.includes(tagId)).length > 0
+          !== !!request.ideaSearchAdmin.invertTag))
       .filter(idea => !request.ideaSearchAdmin.filterCategoryIds
-        || request.ideaSearchAdmin.filterCategoryIds.includes(idea.categoryId))
+        || (request.ideaSearchAdmin.filterCategoryIds.includes(idea.categoryId)
+          !== !!request.ideaSearchAdmin.invertCategory))
       .filter(idea => request.ideaSearchAdmin.filterStatusIds === undefined
         || request.ideaSearchAdmin.filterStatusIds.length === 0
-        || (idea.statusId && request.ideaSearchAdmin.filterStatusIds.includes(idea.statusId)))
+        || ((idea.statusId && request.ideaSearchAdmin.filterStatusIds.includes(idea.statusId))
+          !== !!request.ideaSearchAdmin.invertStatus))
       .filter(idea => searchText === undefined
         || idea.title.indexOf(searchText) >= 0
         || (idea.description || '').indexOf(searchText) >= 0)

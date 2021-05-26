@@ -3,7 +3,7 @@ import { StateConf } from "../../api/server";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
-import { feedbackGet, feedbackOff, feedbackOn } from "./template/feedback";
+import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd } from "./template/feedback";
 import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
 import { pageDelete } from "./template/templateUtils";
 
@@ -85,6 +85,7 @@ export default class Templater {
 
   feedbackGet = feedbackGet;
   feedbackOn = feedbackOn;
+  feedbackSubcategoryAdd = feedbackSubcategoryAdd;
   feedbackOff = feedbackOff;
 
   roadmapGet = roadmapGet;
@@ -845,18 +846,21 @@ export default class Templater {
         tagGroupId: randomUuid(), name: 'Platform', userSettable: true, tagIds: [],
       }));
   }
-  tagging(categoryIndex: number, tags: Admin.Tag[], tagGroup: Admin.TagGroup) {
+  tagging(categoryIndex: number, tags: Admin.Tag[], tagGroup?: Admin.TagGroup) {
     const tagsProp = this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'tagging', 'tags']);
     tags.forEach(tag => (tagsProp.insert() as ConfigEditor.ObjectProperty).setRaw(tag))
-    this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
-      ...tagGroup, tagIds: tags.map(tag => tag.tagId),
-    }));
+    if (tagGroup) {
+      this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
+        ...tagGroup, tagIds: tags.map(tag => tag.tagId),
+      }));
+    }
   }
 
   readonly workflowColorNeutral = '#3B67AE';
   readonly workflowColorProgress = '#AE9031';
   readonly workflowColorComplete = '#3A8E31';
   readonly workflowColorFail = '#B44A4B';
+  readonly workflowColorNew = 'rgba(0, 0, 0, 0.23)';
   workflowFeatures(categoryIndex: number, withFunding: boolean = true, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
     const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });

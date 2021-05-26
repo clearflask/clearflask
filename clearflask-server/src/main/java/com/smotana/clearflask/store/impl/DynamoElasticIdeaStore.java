@@ -87,6 +87,7 @@ import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -361,8 +362,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 new IdeaSearchAdmin(
                         null,
                         ideaSearchAdmin.getFilterCategoryIds(),
+                        null,
                         ideaSearchAdmin.getFilterStatusIds(),
+                        null,
                         ideaSearchAdmin.getFilterTagIds(),
+                        null,
                         null,
                         null,
                         null,
@@ -391,8 +395,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 new IdeaSearchAdmin(
                         ideaSearch.getSortBy() == null ? null : IdeaSearchAdmin.SortByEnum.valueOf(ideaSearch.getSortBy().name()),
                         ideaSearch.getFilterCategoryIds(),
+                        ideaSearch.getInvertCategory(),
                         ideaSearch.getFilterStatusIds(),
+                        ideaSearch.getInvertStatus(),
                         ideaSearch.getFilterTagIds(),
+                        ideaSearch.getInvertTag(),
                         ideaSearch.getFilterAuthorId(),
                         ideaSearch.getSearchText(),
                         ideaSearch.getFundedByMeAndActive(),
@@ -447,15 +454,30 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         if (ideaSearchAdmin.getFilterCategoryIds() != null && !ideaSearchAdmin.getFilterCategoryIds().isEmpty()) {
-            query.filter(QueryBuilders.termsQuery("categoryId", ideaSearchAdmin.getFilterCategoryIds().toArray()));
+            TermsQueryBuilder termsCategory = QueryBuilders.termsQuery("categoryId", ideaSearchAdmin.getFilterCategoryIds().toArray());
+            if (ideaSearchAdmin.getInvertCategory() == Boolean.TRUE) {
+                query.mustNot(termsCategory);
+            } else {
+                query.filter(termsCategory);
+            }
         }
 
         if (ideaSearchAdmin.getFilterStatusIds() != null && !ideaSearchAdmin.getFilterStatusIds().isEmpty()) {
-            query.filter(QueryBuilders.termsQuery("statusId", ideaSearchAdmin.getFilterStatusIds().toArray()));
+            TermsQueryBuilder termsStatus = QueryBuilders.termsQuery("statusId", ideaSearchAdmin.getFilterStatusIds().toArray());
+            if (ideaSearchAdmin.getInvertStatus() == Boolean.TRUE) {
+                query.mustNot(termsStatus);
+            } else {
+                query.filter(termsStatus);
+            }
         }
 
         if (ideaSearchAdmin.getFilterTagIds() != null && !ideaSearchAdmin.getFilterTagIds().isEmpty()) {
-            query.filter(QueryBuilders.termsQuery("tagIds", ideaSearchAdmin.getFilterTagIds().toArray()));
+            TermsQueryBuilder termsTag = QueryBuilders.termsQuery("tagIds", ideaSearchAdmin.getFilterTagIds().toArray());
+            if (ideaSearchAdmin.getInvertTag() == Boolean.TRUE) {
+                query.mustNot(termsTag);
+            } else {
+                query.filter(termsTag);
+            }
         }
 
         if (ideaSearchAdmin.getFilterCreatedStart() != null || ideaSearchAdmin.getFilterCreatedEnd() != null) {

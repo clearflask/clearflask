@@ -5,42 +5,51 @@ components:
       type: object
       properties:
         sortBy:
-          x-clearflask-prop: { order: 2, name: 'Sort', description: 'Display ideas by this sort order', defaultValue: 'Trending' }
+          x-clearflask-prop: { order: 3, name: 'Sort', description: 'Display ideas by this sort order', defaultValue: 'Trending' }
           type: string
           enum:
             - Trending
             - Top
             - New
         filterCategoryIds:
-          x-clearflask-prop: { order: 1, name: 'Content', description: 'Display only posts from these categories' }
+          x-clearflask-prop: { order: 1, name: 'Category', description: 'Display only posts from these categories' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
+        invertCategory:
+          x-clearflask-prop: { order: 2, name: 'Invert category', description: 'Invert selection of matching categories' }
+          type: boolean
         filterStatusIds:
-          x-clearflask-prop: { order: 3, name: 'Status', description: 'Display only ideas having these statuses' }
+          x-clearflask-prop: { order: 4, name: 'Status', description: 'Display only ideas having these statuses' }
           x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
+        invertStatus:
+          x-clearflask-prop: { order: 5, name: 'Invert status', description: 'Invert selection of matching statuses' }
+          type: boolean
         filterTagIds:
-          x-clearflask-prop: { order: 4, name: 'Tag', description: 'Display only ideas having these tags' }
+          x-clearflask-prop: { order: 6, name: 'Tag', description: 'Display only posts with these tags' }
           x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
+        invertTag:
+          x-clearflask-prop: { order: 7, name: 'Invert tag', description: 'Invert selection of matching tags' }
+          type: boolean
         filterAuthorId:
           x-clearflask-hide: true
           type: string
         searchText:
-          x-clearflask-prop: { order: 5, name: 'Search query', description: 'Filter results matching this search term' }
+          x-clearflask-prop: { order: 8, name: 'Search query', description: 'Filter results matching this search term' }
           type: string
         fundedByMeAndActive:
           x-clearflask-hide: true
-          x-clearflask-prop: { order: 6, name: 'Funded by me', description: 'Ideas funded by me and can be adjust' }
+          x-clearflask-prop: { order: 9, name: 'Funded by me', description: 'Ideas funded by me and can be adjust' }
           type: boolean
         limit:
-          x-clearflask-prop: { order: 7, name: 'Limit', description: 'Optionally set a limit on how many results to return' }
+          x-clearflask-prop: { order: 10, name: 'Limit', description: 'Optionally set a limit on how many results to return' }
           minimum: 1
           maximum: 50
           type: integer
