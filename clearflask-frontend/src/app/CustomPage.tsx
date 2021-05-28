@@ -1,5 +1,5 @@
 import { Button, IconButton, Link as MuiLink, Paper, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -97,6 +97,7 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
   },
 });
+const useStyles = makeStyles(styles);
 interface Props {
   server: Server;
   pageSlug: string;
@@ -234,49 +235,12 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
       // ### BOARD
       if (this.props.page.board) {
-        const board = this.props.page.board;
-        var panels: any = board.panels.map((panel, panelIndex) => (
-          <PanelPost
-            key={getSearchKey(panel.search)}
-            className={this.props.classes.boardPanel}
-            maxHeight={this.props.theme.vh(80)}
-            direction={Direction.Vertical}
-            panel={panel}
-            server={this.props.server}
-            displayDefaults={{
-              titleTruncateLines: 1,
-              descriptionTruncateLines: 0,
-              showCommentCount: false,
-              showCategoryName: false,
-              showCreated: false,
-              showAuthor: false,
-              showStatus: false,
-              showTags: false,
-              showVoting: false,
-              showFunding: false,
-              showExpression: false,
-            }} />
+        var panels: any = this.props.page.board.panels.map((panel, panelIndex) => (
+          <BoardPanel server={this.props.server} panel={panel} />
         ));
-        if (board.title) {
-          boardCmpt = (
-            <DividerCorner
-              className={classNames(this.props.classes.boardContainer, this.props.classes.spacing)}
-              title={board.title}
-              height='100%'
-              maxHeight={120}
-            >
-              <div className={classNames(this.props.classes.board, this.props.classes.boardInCorner)}>
-                {panels}
-              </div>
-            </DividerCorner>
-          );
-        } else {
-          boardCmpt = (
-            <div className={classNames(this.props.classes.boardContainer, this.props.classes.board, this.props.classes.spacing)}>
-              {panels}
-            </div>
-          );
-        }
+        boardCmpt = (
+          <BoardContainer server={this.props.server} board={this.props.page.board} panels={panels} />
+        );
       }
 
       // ### EXPLORER
@@ -336,6 +300,69 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       </Loader>
     );
   }
+}
+
+export const BoardContainer = (props: {
+  server: Server,
+  board: Client.PageBoard,
+  panels?: any[];
+  overrideTitle?: React.ReactNode;
+}) => {
+  const classes = useStyles();
+
+  if (props.board.title) {
+    return (
+      <DividerCorner
+        className={classNames(classes.boardContainer, classes.spacing)}
+        title={props.overrideTitle || props.board.title}
+        height='100%'
+        maxHeight={120}
+      >
+        <div className={classNames(classes.board, classes.boardInCorner)}>
+          {props.panels}
+        </div>
+      </DividerCorner>
+    );
+  } else {
+    return (
+      <div className={classNames(classes.boardContainer, classes.board, classes.spacing)}>
+        {props.panels}
+      </div>
+    );
+  }
+}
+
+export const BoardPanel = (props: {
+  server: Server,
+  panel: Client.PagePanelWithHideIfEmpty,
+  PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  return (
+    <PanelPost
+      key={getSearchKey(props.panel.search)}
+      className={classes.boardPanel}
+      maxHeight={theme.vh(80)}
+      direction={Direction.Vertical}
+      panel={props.panel}
+      server={props.server}
+      displayDefaults={{
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showFunding: false,
+        showExpression: false,
+      }}
+      {...props.PanelPostProps}
+    />
+  );
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {

@@ -92,10 +92,15 @@ export default class Templater {
   roadmapOn = roadmapOn;
   roadmapOff = roadmapOff;
 
+  confirmationCache: { [question: string]: string } = {};
   // During template changes, user confirmation is required.
   // IE: Change to a roadmap column is requested, but we are unsure which Board
   // should be updated. User is asked which board corresponds to the right Roadmap.
   async _getConfirmation(confirmation: Confirmation, cancelTitle?: string): Promise<ConfirmationResponseId | undefined> {
+    const answerCached = this.confirmationCache[confirmation.title + confirmation.description];
+    if (answerCached && confirmation.responses.some(r => r.id === answerCached)) {
+      return answerCached;
+    }
     if (!!cancelTitle) {
       confirmation.responses.push({
         title: cancelTitle,

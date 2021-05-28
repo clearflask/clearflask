@@ -63,6 +63,7 @@ export interface Props {
   postClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
+  overrideTitle?: React.ReactNode;
   widthExpand?: boolean;
   widthExpandMargin?: MarginProperty<string | number>;
   showDivider?: boolean;
@@ -73,7 +74,7 @@ export interface Props {
   maxHeight?: string | number;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
-  forceDisablePostExpand?: boolean;
+  disableOnClick?: boolean;
   suppressPanel?: boolean;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   selectedPostId?: string;
@@ -146,7 +147,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               idea={idea}
               widthExpand={this.props.widthExpand}
               expandable
-              forceDisablePostExpand={this.props.forceDisablePostExpand}
+              disableOnClick={this.props.disableOnClick}
               onClickPost={this.props.onClickPost}
               onUserClick={this.props.onUserClick}
               display={display}
@@ -171,7 +172,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     content = this.props.suppressPanel ? content : (
       <Panel
         className={this.props.className}
-        title={this.props.panel['title']}
+        title={this.props.overrideTitle || this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}
       >

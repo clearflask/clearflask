@@ -115,7 +115,6 @@ interface Props {
   server: Server;
   isDashboard?: boolean;
   explorer: Client.PageExplorer;
-  forceDisablePostExpand?: boolean;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
 }
@@ -231,7 +230,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             panel={this.props.explorer}
             searchOverride={searchOverride}
             widthExpand
-            forceDisablePostExpand={true}
             server={this.props.server}
             onClickPost={this.props.onClickPost}
             onUserClick={this.props.onUserClick}
@@ -260,7 +258,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             direction={Direction.Vertical}
             widthExpand={!this.props.isDashboard}
             showDivider={!!this.props.isDashboard}
-            forceDisablePostExpand={this.props.forceDisablePostExpand}
             onClickPost={this.props.onClickPost}
             onUserClick={this.props.onUserClick}
             panel={this.props.explorer}

@@ -1,6 +1,7 @@
-import { FormControlLabel, Switch, Typography } from '@material-ui/core';
+import { Button, Collapse, FormControlLabel, Switch, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
-import React, { useState } from 'react';
+import { Alert, AlertTitle } from '@material-ui/lab';
+import React, { Component, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import * as Client from '../../api/client';
@@ -10,15 +11,19 @@ import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import { BoardContainer, BoardPanel } from '../../app/CustomPage';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
 import * as ConfigEditor from '../../common/config/configEditor';
-import { configStateEqual } from '../../common/config/configTemplater';
+import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
 import DataSettings from '../../common/config/settings/DataSettings';
 import Property from '../../common/config/settings/Property';
 import { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
+import { FeedbackInstance } from '../../common/config/template/feedback';
+import { RoadmapInstance } from '../../common/config/template/roadmap';
 import FakeBrowser from '../../common/FakeBrowser';
+import debounce from '../../common/util/debounce';
 import { escapeHtml } from '../../common/util/htmlUtil';
 import windowIso from '../../common/windowIso';
 import PostSelection from './PostSelection';
@@ -77,6 +82,11 @@ const styles = (theme: Theme) => createStyles({
   },
   statusPreviewStatus: {
     flex: '1 1 200px',
+  },
+  roadmapPanelContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    '& > *:not(:first-child)': { marginLeft: theme.spacing(2) },
   },
 });
 const useStyles = makeStyles(styles);
@@ -572,8 +582,7 @@ export const ProjectSettingsBranding = (props: {
                 hideIfEmpty: false,
               }}
               server={props.server}
-              onClickPost={() => { }}
-              onUserClick={() => { }}
+              disableOnClick
             />
           </BrowserPreview>
         )}
@@ -665,7 +674,30 @@ export const ProjectSettingsFeedback = (props: {
 }) => {
   return (
     <ProjectSettingsBase title='Feedback'>
-      <p>TODO enable</p>
+      <TemplateWrapper<FeedbackInstance | undefined>
+        editor={props.editor}
+        mapper={templater => templater.feedbackGet()}
+        render={(templater, feedback) => (
+          <>
+            <FormControlLabel
+              label={!!feedback?.hasAllPages ? 'Enabled' : 'Disabled'}
+              control={(
+                <Switch
+                  checked={!!feedback?.hasAllPages}
+                  onChange={(e, checked) => !!feedback?.hasAllPages
+                    ? templater.feedbackOff(feedback)
+                    : templater.feedbackOn()}
+                  color='primary'
+                />
+              )}
+            />
+            <Collapse in={!!feedback?.hasAllPages}>
+
+            </Collapse>
+          </>
+        )
+        }
+      />
       <p>TODO Categories, foreach:</p>
       <p>TODO - name (deduce url path)</p>
       <p>TODO - name</p>
@@ -679,10 +711,78 @@ export const ProjectSettingsRoadmap = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   return (
     <ProjectSettingsBase title='Roadmap'>
-      <p>TODO enable</p>
-      <p>TODO rename panels</p>
+      <TemplateWrapper<RoadmapInstance | undefined>
+        editor={props.editor}
+        mapper={templater => templater.roadmapGet()}
+        render={(templater, roadmap) => (
+          <>
+            <FormControlLabel
+              label={!!roadmap ? 'Enabled' : 'Disabled'}
+              control={(
+                <Switch
+                  checked={!!roadmap}
+                  onChange={(e, checked) => !!roadmap
+                    ? templater.roadmapOff(roadmap)
+                    : templater.roadmapOn()}
+                  color='primary'
+                />
+              )}
+            />
+            {roadmap && (
+              <>
+                <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+                  <BoardContainer
+                    overrideTitle={(
+                      <PropertyByPathReduxless
+                        planId={planId}
+                        width={200}
+                        overrideName='Title'
+                        editor={props.editor}
+                        path={['layout', 'pages', roadmap?.pageIndex, 'board', 'title']}
+                      />
+                    )}
+                    server={props.server}
+                    board={roadmap.page.board}
+                    panels={roadmap?.page.board.panels.map((panel, panelIndex) => (
+                      <BoardPanel
+                        server={props.server}
+                        panel={panel}
+                        PanelPostProps={{
+                          disableOnClick: true,
+                          overrideTitle: (
+                            <>
+                              <PropertyByPathReduxless
+                                planId={planId}
+                                width='auto'
+                                overrideDescription=''
+                                overrideName='Title'
+                                editor={props.editor}
+                                path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
+                              />
+                              <PropertyByPathReduxless
+                                planId={planId}
+                                width='auto'
+                                overrideDescription=''
+                                overrideName='Title'
+                                editor={props.editor}
+                                path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']}
+                              />
+                            </>
+                          ),
+                        }}
+                      />
+                    ))}
+                  />
+                </Provider>
+              </>
+            )}
+          </>
+        )
+        }
+      />
     </ProjectSettingsBase>
   );
 }
@@ -796,16 +896,94 @@ const BrowserPreviewInternal = (props: {
 }
 
 
-const PropertyByPath = (props: {
+
+class TemplateWrapper<T> extends Component<{
+  editor: ConfigEditor.Editor;
+  mapper: (templater: Templater) => Promise<T>;
+  render: (templater: Templater, response: T) => any;
+}, {
+  confirmation?: Confirmation;
+  confirm?: (response: ConfirmationResponseId) => void;
+  mappedValue?: { val: T };
+}> {
+  unsubscribe?: () => void;
+  templater: Templater;
+  remapDebounced: () => void;
+
+  constructor(props) {
+    super(props);
+
+    this.state = {};
+
+    this.templater = Templater.get(
+      props.editor,
+      (confirmation) => new Promise<ConfirmationResponseId>(resolve => this.setState({
+        confirmation,
+        confirm: resolve,
+      })));
+
+    const refreshMappedValue = () => {
+      this.props.mapper(this.templater)
+        .then(mappedValue => this.setState({ mappedValue: { val: mappedValue } }));
+    }
+
+    this.remapDebounced = debounce(() => {
+      refreshMappedValue();
+    }, 10);
+
+    refreshMappedValue();
+  }
+
+  componentDidMount() {
+    this.unsubscribe = this.props.editor.subscribe(() => this.remapDebounced());
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
+  }
+
+  render() {
+    return (
+      <>
+        <Collapse in={!!this.state.confirmation}>
+          <Alert
+            severity='warning'
+            action={this.state.confirmation?.responses.map(response => (
+              <Button
+                size='small'
+                color='inherit'
+                style={{ color: response.type === 'cancel' ? 'red' : undefined }}
+              >
+                {response.type}
+              </Button>
+            ))}
+          >
+            <AlertTitle>{this.state.confirmation?.title}</AlertTitle>
+            {this.state.confirmation?.description}
+          </Alert>
+        </Collapse>
+        {this.state.mappedValue && this.props.render(this.templater, this.state.mappedValue.val)}
+      </>
+    );
+  }
+}
+const PropertyByPath = (props: Omit<React.ComponentProps<typeof PropertyByPathReduxless>, 'planId'>) => {
+  var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  return (<PropertyByPathReduxless planId={planId} {...props} />);
+}
+
+const PropertyByPathReduxless = (props: {
+  planId: string | undefined;
   editor: ConfigEditor.Editor;
   path: ConfigEditor.Path;
-  suppressDescription?: boolean;
+  overrideName?: string;
+  overrideDescription?: string;
+  width?: string | number;
 }) => {
   const history = useHistory();
-  const plan = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
 
   var propertyRequiresUpgrade: ((propertyPath: ConfigEditor.Path) => boolean) | undefined;
-  const restrictedProperties = plan && RestrictedProperties[plan];
+  const restrictedProperties = props.planId && RestrictedProperties[props.planId];
   if (restrictedProperties) {
     propertyRequiresUpgrade = (path) => restrictedProperties.some(restrictedPath =>
       ConfigEditor.pathEquals(restrictedPath, path));
@@ -815,10 +993,11 @@ const PropertyByPath = (props: {
     <Property
       key={ConfigEditor.pathToString(props.path)}
       prop={props.editor.get(props.path)}
-      suppressDescription={props.suppressDescription}
       pageClicked={path => history.push(`/dashboard/settings/advanced/${path.join('/')}`)}
       requiresUpgrade={propertyRequiresUpgrade}
-      width='350px'
+      width={props.width || 350}
+      overrideName={props.overrideName}
+      overrideDescription={props.overrideDescription}
     />
   );
 }

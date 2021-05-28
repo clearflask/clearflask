@@ -23,15 +23,16 @@ interface Props {
   key: string;
   prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property;
   bare?: boolean;
-  suppressDescription?: boolean;
-  width?: string
+  width?: string | number;
   pageClicked: (path: ConfigEditor.Path) => void;
   isInsideMuiTable?: boolean;
   requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
+  overrideName?: string;
+  overrideDescription?: string;
 }
 
 export default class Property extends Component<Props> {
-  static inputMinWidth = '224px';
+  static inputMinWidth = 224;
   readonly colorRef = React.createRef<HTMLDivElement>();
   unsubscribe?: () => void;
 
@@ -45,8 +46,11 @@ export default class Property extends Component<Props> {
 
   render() {
     const prop = this.props.prop;
-    const propDescription = this.props.suppressDescription ? undefined : prop.description;
-    const name = prop.name || prop.pathStr;
+    const description = prop.description !== undefined ? prop.description : prop.description;
+    const name = this.props.overrideName !== undefined ? this.props.overrideName : prop.name || prop.pathStr;
+    const inputMinWidth = typeof this.props.width === 'number'
+      ? Math.min(Property.inputMinWidth, this.props.width)
+      : Property.inputMinWidth;
     var marginTop = 30;
     var propertySetter;
     var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
@@ -99,7 +103,7 @@ export default class Property extends Component<Props> {
                           autoComplete: 'off',
                         },
                         style: {
-                          minWidth: Property.inputMinWidth,
+                          minWidth: inputMinWidth,
                           width: this.props.width,
                         },
                         error: !!prop.errorMsg,
@@ -126,7 +130,7 @@ export default class Property extends Component<Props> {
                     }}
                   />
                 </div>
-                {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
+                {(!this.props.bare && description || prop.errorMsg) && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)}
               </div>
             );
             break OUTER;
@@ -165,7 +169,7 @@ export default class Property extends Component<Props> {
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
-            helperText={prop.errorMsg || (!this.props.bare && propDescription)}
+            helperText={prop.errorMsg || (!this.props.bare && description)}
             margin='none'
             multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
               || prop.subType === ConfigEditor.PropSubType.Rich) as any}
@@ -176,7 +180,7 @@ export default class Property extends Component<Props> {
             }}
             InputProps={{
               style: {
-                minWidth: Property.inputMinWidth,
+                minWidth: inputMinWidth,
                 width: this.props.width,
               },
               readOnly: prop.subType === ConfigEditor.PropSubType.Emoji || prop.subType === ConfigEditor.PropSubType.Id,
@@ -196,7 +200,7 @@ export default class Property extends Component<Props> {
             }}
             FormHelperTextProps={{
               style: {
-                minWidth: Property.inputMinWidth,
+                minWidth: inputMinWidth,
                 width: this.props.width,
               },
             }}
@@ -227,14 +231,14 @@ export default class Property extends Component<Props> {
             </IconButton>
           </div>
         );
-        const description = (propDescription || prop.errorMsg)
-          ? (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)
+        const descriptionOrError = (description || prop.errorMsg)
+          ? (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)
           : null;
         var content;
         if (prop.required) {
           content = (
             <>
-              {description}
+              {descriptionOrError}
               {link}
             </>
           );
@@ -253,7 +257,7 @@ export default class Property extends Component<Props> {
                   label={description}
                   style={{
                     width: this.props.width,
-                    minWidth: Property.inputMinWidth,
+                    minWidth: inputMinWidth,
                   }}
                 />
               </div>
@@ -277,7 +281,7 @@ export default class Property extends Component<Props> {
           propertySetter = (
             <div>
               {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-              {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
+              {(!this.props.bare && description || prop.errorMsg) && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)}
               <div>
                 <FormControlLabel
                   control={(
@@ -294,7 +298,7 @@ export default class Property extends Component<Props> {
                   </FormHelperText>)}
                   style={{
                     width: this.props.width,
-                    minWidth: Property.inputMinWidth,
+                    minWidth: inputMinWidth,
                   }}
                 />
               </div>
@@ -327,7 +331,7 @@ export default class Property extends Component<Props> {
             variant='outlined'
             size='small'
             style={{
-              minWidth: Property.inputMinWidth,
+              minWidth: inputMinWidth,
               width: this.props.width,
             }}
           >
@@ -361,7 +365,7 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
+            {(!this.props.bare && description || prop.errorMsg) && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)}
           </FormControl>
         );
         break;
@@ -385,8 +389,8 @@ export default class Property extends Component<Props> {
                 variant: 'outlined',
                 size: 'small',
               }}
-              label={this.props.bare ? undefined : prop.name}
-              helperText={this.props.bare ? undefined : propDescription}
+              label={this.props.bare ? undefined : name}
+              helperText={this.props.bare ? undefined : description}
               placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
               errorMsg={prop.errorMsg}
               value={values}
@@ -394,7 +398,7 @@ export default class Property extends Component<Props> {
               isMulti
               clearOnBlur
               width={this.props.width || 'max-content'}
-              minWidth={Property.inputMinWidth}
+              minWidth={inputMinWidth}
               onValueChange={labels => prop
                 .setRaw(labels.map(label => label.value))}
             />
@@ -406,7 +410,7 @@ export default class Property extends Component<Props> {
               data={prop}
               errorMsg={prop.errorMsg}
               label={!this.props.bare && name}
-              helperText={!this.props.bare && propDescription}
+              helperText={!this.props.bare && description}
               width={this.props.width}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={this.props.requiresUpgrade}
@@ -435,11 +439,11 @@ export default class Property extends Component<Props> {
                   color='default'
                 />
               )}
-              label={!this.props.bare && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+              label={!this.props.bare && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
               style={{
                 marginBottom: '-10px',
                 width: this.props.width,
-                minWidth: Property.inputMinWidth,
+                minWidth: inputMinWidth,
               }}
             />
           </div>
@@ -448,7 +452,7 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <div style={{ marginBottom: '10px' }}>
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-            {(!this.props.bare && propDescription || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || propDescription}</FormHelperText>)}
+            {(!this.props.bare && description || prop.errorMsg) && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>
@@ -495,8 +499,8 @@ export default class Property extends Component<Props> {
               size: 'small',
             }}
             disableClearable={prop.required}
-            label={this.props.bare ? undefined : prop.name}
-            helperText={this.props.bare ? undefined : propDescription}
+            label={this.props.bare ? undefined : name}
+            helperText={this.props.bare ? undefined : description}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             errorMsg={prop.errorMsg}
             value={values}
@@ -505,7 +509,7 @@ export default class Property extends Component<Props> {
             bareTags={prop.type === ConfigEditor.PropertyType.Link}
             isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
             width={this.props.width || 'max-content'}
-            minWidth={Property.inputMinWidth}
+            minWidth={inputMinWidth}
             onValueChange={onValueChange}
             onValueCreate={onValueCreate}
           />

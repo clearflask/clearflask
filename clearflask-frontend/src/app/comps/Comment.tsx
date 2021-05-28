@@ -119,6 +119,7 @@ interface Props {
   truncateLines?: number;
   hideAuthor?: boolean;
   hideControls?: boolean;
+  disableOnClick?: boolean;
   onAuthorClick?: (userId: string) => void;
   onUpdated?: () => void;
 }
@@ -378,6 +379,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
           )}
           suppressTypography
           suppressStar
+          variant={this.props.disableOnClick ? 'text' : 'button'}
           onClick={this.props.onAuthorClick}
           user={user}
         />

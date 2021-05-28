@@ -24,6 +24,7 @@ interface Props {
   loggedInUser?: Client.User;
   logIn: () => Promise<void>;
   onAuthorClick?: (commentId: string, userId: string) => void;
+  disableOnClick?: boolean;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -64,7 +65,8 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
               replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
               onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
               logIn={this.props.logIn}
-              onAuthorClick={!!this.props.onAuthorClick
+              disableOnClick={this.props.disableOnClick}
+              onAuthorClick={(this.props.onAuthorClick && !this.props.disableOnClick)
                 ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
                 : undefined}
             />

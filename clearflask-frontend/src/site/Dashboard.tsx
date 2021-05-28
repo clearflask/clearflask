@@ -58,7 +58,7 @@ type PreviewType = 'user' | 'post' | 'post-create' | 'create-demo' | 'preview-ch
 const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 1024 };
 const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024 };
 const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024 };
-const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Both };
+const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
 
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {

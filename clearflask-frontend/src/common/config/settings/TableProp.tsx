@@ -33,7 +33,7 @@ interface Props {
   label?: React.ReactNode;
   helperText?: React.ReactNode;
   errorMsg?: string;
-  width?: string
+  width?: string | number;
   pageClicked: (path: ConfigEditor.Path) => void;
   requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
 }

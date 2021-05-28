@@ -938,7 +938,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {
     const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === request.userId);
-    if (userIdIndex === undefined) return this.throwLater(404, 'User not found');
+    if (userIdIndex === -1) return this.throwLater(404, 'User not found');
     this.getProject(request.projectId).users.splice(userIdIndex, 1);
     if (this.getProject(request.projectId).loggedInUser?.userId === request.userId) {
       this.getProject(request.projectId).loggedInUser = undefined;

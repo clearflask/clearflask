@@ -334,7 +334,7 @@ interface Props {
    * and post is expanded to full screen.
    */
   expandable?: boolean;
-  forceDisablePostExpand?: boolean;
+  disableOnClick?: boolean;
   display?: Client.PostDisplay;
   widthExpand?: boolean;
   contentBeforeComments?: React.ReactNode;
@@ -416,9 +416,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           <div
             className={classNames(
               this.props.classes.post,
-              isOnlyPostOnClick && this.props.classes.clickable
+              (isOnlyPostOnClick && !this.props.disableOnClick) && this.props.classes.clickable
             )}
-            onClick={isOnlyPostOnClick ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
+            onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
           >
             <div className={this.props.classes.postFunding}>
               {this.renderFunding()}
@@ -526,7 +526,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
         <UserDisplay
-          onClick={this.props.onUserClick}
+          variant={this.props.disableOnClick ? 'text' : 'text'}
+          onClick={this.props.disableOnClick ? this.props.onUserClick : undefined}
           user={{
             userId: this.props.idea.authorUserId,
             name: this.props.idea.authorName,
@@ -635,7 +636,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             parentCommentId={undefined}
             newCommentsAllowed={commentsAllowed}
             loggedInUser={this.props.loggedInUser}
-            onAuthorClick={this.props.onUserClick ? (commentId, userId) => this.props.onUserClick && this.props.onUserClick(userId) : undefined}
+            disableOnClick={this.props.disableOnClick}
+            onAuthorClick={(this.props.onUserClick && !this.props.disableOnClick) ? (commentId, userId) => this.props.onUserClick && this.props.onUserClick(userId) : undefined}
           />
         )}
       </div>
@@ -687,8 +689,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <>
         &nbsp;
-        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || this.props.variant !== 'list'}
-          onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
+        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || this.props.disableOnClick || this.props.variant !== 'list'}
+          onClick={e => this.props.onClickStatus && !this.props.disableOnClick && this.props.onClickStatus(status.statusId)}>
           <Typography variant='caption' style={{ color: status.color }}>
             {status.name}
           </Typography>
@@ -707,8 +709,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
       .filter(tag => !!tag)
       .map(tag => (
-        <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || this.props.variant !== 'list'}
-          onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
+        <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || this.props.disableOnClick || this.props.variant !== 'list'}
+          onClick={e => this.props.onClickTag && !this.props.disableOnClick && this.props.onClickTag(tag!.tagId)}>
           <Typography variant='caption' style={{ color: tag!.color }}>
             {tag!.name}
           </Typography>
@@ -723,8 +725,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.category) return null;
 
     return (
-      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || this.props.variant !== 'list'}
-        onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
+      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || this.props.disableOnClick || this.props.variant !== 'list'}
+        onClick={e => this.props.onClickCategory && !this.props.disableOnClick && this.props.onClickCategory(this.props.category!.categoryId)}>
         <Typography variant='caption' style={{ color: this.props.category.color }}>
           {this.props.category.name}
         </Typography>
@@ -1161,6 +1163,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
                 <UserDisplay
+                  variant={this.props.disableOnClick ? 'text' : 'button'}
                   onClick={this.props.onUserClick}
                   user={{
                     userId: this.props.idea.responseAuthorUserId,
@@ -1190,11 +1193,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.props.variant !== 'list'
       || !this.props.expandable
       || !!this.props.onClickPost
+      || !!this.props.disableOnClick
       || !this.props.idea
       || !!this.props.settings.demoDisablePostOpen) return (
         <div
-          className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.clickable)}
-          onClick={this.props.onClickPost ? () => this.props.onClickPost && this.props.idea
+          className={classNames(
+            this.props.classes.titleAndDescription,
+            this.props.onClickPost && !this.props.disableOnClick && this.props.classes.clickable,
+          )}
+          onClick={(this.props.onClickPost && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea
             && this.props.onClickPost(this.props.idea.ideaId) : undefined}
         >
           {children}
