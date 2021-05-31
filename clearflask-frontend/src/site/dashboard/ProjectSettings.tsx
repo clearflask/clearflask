@@ -1,15 +1,15 @@
-import { Button, Checkbox, Collapse, FormControlLabel, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControlLabel, IconButton, InputAdornment, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EditIcon from '@material-ui/icons/Edit';
 import { Alert, AlertTitle } from '@material-ui/lab';
 import classNames from 'classnames';
-import React, { Component, useState } from 'react';
+import React, { Component, useEffect, useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf } from '../../api/server';
-import { ReduxStateAdmin } from '../../api/serverAdmin';
+import { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
@@ -739,9 +739,8 @@ export const ProjectSettingsFeedback = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
-  const [tagGroupExpanded, setTagGroupExpanded] = useState<number | undefined>();
-  const [subcatExpanded, setSubcatExpanded] = useState<number | undefined>();
-  const [statusExpanded, setStatusExpanded] = useState<number | undefined>();
+  const [expandedType, setExpandedType] = useState<'tag' | 'subcat' | 'status' | undefined>();
+  const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   const [tagIds, setTagIds] = useState<Array<string> | undefined>();
   return (
     <ProjectSettingsBase title='Feedback'>
@@ -749,7 +748,8 @@ export const ProjectSettingsFeedback = (props: {
         editor={props.editor}
         mapper={templater => templater.feedbackGet()}
         render={(templater, feedback) => {
-          const previewSubcat = subcatExpanded === undefined ? undefined : feedback?.subcategories[subcatExpanded];
+          const previewSubcat = (expandedType === 'subcat' && expandedIndex !== undefined)
+            ? feedback?.subcategories[expandedIndex] : undefined;
           return !feedback ? (
             <Button
               className={classes.createFeedbackButton}
@@ -763,111 +763,8 @@ export const ProjectSettingsFeedback = (props: {
           ) : (
             <>
               <Section
-                title='Workflow'
-                description='Define statuses to apply to your feedback to keep track of your progress.'
-                preview={!!feedback.categoryAndIndex.category.workflow.statuses.length && (
-                  <WorkflowPreview
-                    editor={props.editor}
-                    categoryIndex={feedback.categoryAndIndex.index}
-                    hideCorner
-                    // static
-                    isVertical
-                    width={350}
-                    height={500}
-                    border
-                  // scroll
-                  />
-                )}
-                content={(
-                  <>
-                    <div className={classes.feedbackAccordionContainer}>
-                      {feedback.categoryAndIndex.category.workflow.statuses.map((status, statusIndex) => (
-                        <ProjectSettingsFeedbackStatus
-                          server={props.server}
-                          editor={props.editor}
-                          feedback={feedback}
-                          status={status}
-                          statusIndex={statusIndex}
-                          expanded={statusIndex === statusExpanded}
-                          onExpandedChange={() => setStatusExpanded(statusIndex === statusExpanded ? undefined : statusIndex)}
-                        />
-                      ))}
-                    </div>
-                    <ProjectSettingsAddWithName
-                      label='New status'
-                      withAccordion
-                      onAdd={name => {
-                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'workflow', 'statuses'])
-                          .insert()
-                          .setRaw(Admin.IdeaStatusToJSON({
-                            statusId: randomUuid(),
-                            name: name,
-                            disableFunding: false,
-                            disableVoting: false,
-                            disableExpressions: false,
-                            disableIdeaEdits: false,
-                            disableComments: false,
-                          }));
-                      }}
-                    />
-                  </>
-                )}
-              />
-              <Section
-                title='Tagging'
-                preview={(
-                  <TagSelect
-                    className={classes.tagPreviewContainer}
-                    wrapper={c => (
-                      <BrowserPreview server={props.server}>{c}</BrowserPreview>
-                    )}
-                    variant='outlined'
-                    size='small'
-                    label='Try selecting tags'
-                    category={feedback.categoryAndIndex.category}
-                    tagIds={tagIds}
-                    isModOrAdminLoggedIn={false}
-                    onChange={(tagIds, errorStr) => setTagIds(tagIds)}
-                    SelectionPickerProps={{
-                      width: undefined,
-                    }}
-                  />
-                )}
-                content={(
-                  <>
-                    <div className={classes.feedbackAccordionContainer}>
-                      {feedback.categoryAndIndex.category.tagging.tagGroups.map((tagGroup, tagGroupIndex) => (
-                        <ProjectSettingsFeedbackTagGroup
-                          server={props.server}
-                          editor={props.editor}
-                          feedback={feedback}
-                          tagGroup={tagGroup}
-                          tagGroupIndex={tagGroupIndex}
-                          expanded={tagGroupIndex === tagGroupExpanded}
-                          onExpandedChange={() => setTagGroupExpanded(tagGroupIndex === tagGroupExpanded ? undefined : tagGroupIndex)}
-                        />
-                      ))}
-                    </div>
-                    <ProjectSettingsAddWithName
-                      label='New tag group'
-                      withAccordion
-                      onAdd={newTagGroup => {
-                        setTagGroupExpanded(feedback.categoryAndIndex.category.tagging.tagGroups.length);
-                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups'])
-                          .insert()
-                          .setRaw(Admin.TagGroupToJSON({
-                            name: newTagGroup,
-                            tagGroupId: randomUuid(),
-                            userSettable: true,
-                            tagIds: [],
-                          }));
-                      }}
-                    />
-                  </>
-                )}
-              />
-              <Section
                 title='Subcategories'
+                description='Separate feedback into distinct types such as "Features" and "Bugs".'
                 preview={(
                   <>
                     {!!previewSubcat?.pageAndIndex && (
@@ -896,8 +793,15 @@ export const ProjectSettingsFeedback = (props: {
                           templater={templater}
                           feedback={feedback}
                           subcat={subcat}
-                          expanded={subcatIndex === subcatExpanded}
-                          onExpandedChange={() => setSubcatExpanded(subcatIndex === subcatExpanded ? undefined : subcatIndex)}
+                          expanded={expandedType === 'subcat' && expandedIndex === subcatIndex}
+                          onExpandedChange={() => {
+                            if (expandedType === 'subcat' && expandedIndex === subcatIndex) {
+                              setExpandedIndex(undefined)
+                            } else {
+                              setExpandedType('subcat');
+                              setExpandedIndex(subcatIndex)
+                            }
+                          }}
                         />
                       ))}
                     </div>
@@ -905,8 +809,131 @@ export const ProjectSettingsFeedback = (props: {
                       label='New subcategory'
                       withAccordion
                       onAdd={newSubcat => {
-                        setSubcatExpanded(feedback.subcategories.length);
+                        setExpandedType('subcat');
+                        setExpandedIndex(feedback.subcategories.length)
                         templater.feedbackSubcategoryAdd(newSubcat);
+                      }}
+                    />
+                  </>
+                )}
+              />
+              <Section
+                title='Workflow'
+                description='Define how you will handle incoming feedback and keep track of progress using custom statuses.'
+                preview={!!feedback.categoryAndIndex.category.workflow.statuses.length && (
+                  <WorkflowPreview
+                    editor={props.editor}
+                    categoryIndex={feedback.categoryAndIndex.index}
+                    hideCorner
+                    // static
+                    isVertical
+                    width={350}
+                    height={500}
+                    border
+                  // scroll
+                  />
+                )}
+                content={(
+                  <>
+                    <div className={classes.feedbackAccordionContainer}>
+                      {feedback.categoryAndIndex.category.workflow.statuses.map((status, statusIndex) => (
+                        <ProjectSettingsFeedbackStatus
+                          server={props.server}
+                          editor={props.editor}
+                          feedback={feedback}
+                          status={status}
+                          statusIndex={statusIndex}
+                          expanded={expandedType === 'status' && expandedIndex === statusIndex}
+                          onExpandedChange={() => {
+                            if (expandedType === 'status' && expandedIndex === statusIndex) {
+                              setExpandedIndex(undefined)
+                            } else {
+                              setExpandedType('status');
+                              setExpandedIndex(statusIndex)
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <ProjectSettingsAddWithName
+                      label='New status'
+                      withAccordion
+                      onAdd={name => {
+                        setExpandedType('status');
+                        setExpandedIndex(feedback.categoryAndIndex.category.workflow.statuses.length)
+                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'workflow', 'statuses'])
+                          .insert()
+                          .setRaw(Admin.IdeaStatusToJSON({
+                            statusId: randomUuid(),
+                            name: name,
+                            disableFunding: false,
+                            disableVoting: false,
+                            disableExpressions: false,
+                            disableIdeaEdits: false,
+                            disableComments: false,
+                          }));
+                      }}
+                    />
+                  </>
+                )}
+              />
+              <Section
+                title='Tagging'
+                description='Use tags to finely organize feedback.'
+                preview={(
+                  <TagSelect
+                    className={classes.tagPreviewContainer}
+                    wrapper={c => (
+                      <BrowserPreview server={props.server}>{c}</BrowserPreview>
+                    )}
+                    variant='outlined'
+                    size='small'
+                    label='Try selecting tags'
+                    category={feedback.categoryAndIndex.category}
+                    tagIds={tagIds}
+                    isModOrAdminLoggedIn={false}
+                    onChange={(tagIds, errorStr) => setTagIds(tagIds)}
+                    SelectionPickerProps={{
+                      width: undefined,
+                    }}
+                  />
+                )}
+                content={(
+                  <>
+                    <div className={classes.feedbackAccordionContainer}>
+                      {feedback.categoryAndIndex.category.tagging.tagGroups.map((tagGroup, tagGroupIndex) => (
+                        <ProjectSettingsFeedbackTagGroup
+                          server={props.server}
+                          editor={props.editor}
+                          feedback={feedback}
+                          tagGroup={tagGroup}
+                          tagGroupIndex={tagGroupIndex}
+                          expanded={expandedType === 'tag' && expandedIndex === tagGroupIndex}
+                          onExpandedChange={() => {
+                            if (expandedType === 'tag' && expandedIndex === tagGroupIndex) {
+                              setExpandedIndex(undefined)
+                            } else {
+                              setExpandedType('tag');
+                              setExpandedIndex(tagGroupIndex)
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <ProjectSettingsAddWithName
+                      label='New tag group'
+                      withAccordion
+                      onAdd={newTagGroup => {
+                        setExpandedType('tag');
+                        setExpandedIndex(feedback.categoryAndIndex.category.tagging.tagGroups.length)
+                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups'])
+                          .insert()
+                          .setRaw(Admin.TagGroupToJSON({
+                            name: newTagGroup,
+                            tagGroupId: randomUuid(),
+                            userSettable: true,
+                            tagIds: [],
+                          }));
                       }}
                     />
                   </>
@@ -931,9 +958,16 @@ export const ProjectSettingsFeedbackStatus = (props: {
   const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
   const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
+  const [statusName, setStatusName] = useDebounceProp<string>(
+    nameProp.value || '',
+    text => nameProp.set(text));
+  const [statusColor, setStatusColor] = useDebounceProp<string>(
+    colorProp.value || '',
+    text => colorProp.set(text));
   return (
     <MyAccordion
       key={props.status.statusId}
+      TransitionProps={{ unmountOnExit: true }}
       expanded={props.expanded}
       onChange={() => props.onExpandedChange()}
       name={(
@@ -949,10 +983,10 @@ export const ProjectSettingsFeedbackStatus = (props: {
               label='Status Name'
               variant='outlined'
               size='small'
-              textValue={nameProp.value}
-              onTextChange={text => nameProp.set(text)}
-              colorValue={colorProp.value}
-              onColorChange={color => colorProp.set(color)}
+              textValue={statusName}
+              onTextChange={text => setStatusName(text)}
+              colorValue={statusColor}
+              onColorChange={color => setStatusColor(color)}
               InputProps={{
                 style: {
                   minWidth: Property.inputMinWidth,
@@ -990,26 +1024,28 @@ export const ProjectSettingsFeedbackSubcategory = (props: {
   expanded: boolean;
   onExpandedChange: () => void;
 }) => {
-  const classes = useStyles();
   const tag = props.subcat.tagId ? props.feedback.categoryAndIndex.category.tagging.tags.find(t => t.tagId === props.subcat.tagId) : undefined;
   const page = props.subcat.pageAndIndex?.page;
-  const name = tag?.name || page?.name || 'Unnamed';
+  const [subcatName, setSubcatName] = useDebounceProp<string>(
+    tag?.name || page?.name || 'No name',
+    text => props.templater.feedbackSubcategoryRename(props.feedback, props.subcat, text));
   return (
     <MyAccordion
       key={tag?.tagId || 'uncat'}
+      TransitionProps={{ unmountOnExit: true }}
       expanded={props.expanded}
       onChange={() => props.onExpandedChange()}
       name={(
         <PropertyShowOrEdit
           allowEdit={props.expanded}
-          show={name}
+          show={subcatName}
           edit={(
             <TextField
               label='Subcategory name'
               size='small'
               variant='outlined'
-              value={name}
-              onChange={e => props.templater.feedbackSubcategoryRename(props.feedback, props.subcat, e.target.value)}
+              value={subcatName}
+              onChange={e => setSubcatName(e.target.value)}
               InputProps={{
                 style: {
                   minWidth: Property.inputMinWidth,
@@ -1057,11 +1093,14 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
   expanded: boolean;
   onExpandedChange: () => void;
 }) => {
+  const [minRequired, setMinRequired] = useState<number | undefined>(props.tagGroup.minRequired);
+  const [maxRequired, setMaxRequired] = useState<number | undefined>(props.tagGroup.maxRequired);
   const tagsWithIndexes = props.feedback.categoryAndIndex.category.tagging.tags
     .map((tag, index) => ({ tag, index }));
   return (
     <MyAccordion
       key={props.tagGroup.tagGroupId}
+      TransitionProps={{ unmountOnExit: true }}
       expanded={props.expanded}
       onChange={() => props.onExpandedChange()}
       name={(
@@ -1080,17 +1119,48 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
         />
       )}
     >
+      <Collapse in={props.tagGroup.tagIds.length > 1}>
+        <Typography>Number of required tags</Typography>
+        <Slider
+          marks
+          valueLabelDisplay='auto'
+          value={[
+            minRequired !== undefined ? minRequired : 0,
+            maxRequired !== undefined ? maxRequired : props.tagGroup.tagIds.length,
+          ]}
+          min={0}
+          max={props.tagGroup.tagIds.length}
+          onChange={(e, value) => {
+            const min = Math.min(value[0], value[1]);
+            const max = Math.max(value[0], value[1]);
+            setMinRequired(min);
+            setMaxRequired(max);
+          }}
+          onChangeCommitted={(e, value) => {
+            const min = Math.min(value[0], value[1]);
+            const max = Math.max(value[0], value[1]);
+            setTimeout(() => {
+              (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'minRequired']) as ConfigEditor.IntegerProperty)
+                .set(min === 0 ? undefined : min);
+              (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'maxRequired']) as ConfigEditor.IntegerProperty)
+                .set(max === props.tagGroup.tagIds.length ? undefined : max);
+            }, 10);
+          }}
+        />
+      </Collapse>
       {props.tagGroup.tagIds
         .map(tagId => tagsWithIndexes.find(t => t.tag.tagId === tagId))
         .filter(notEmpty)
         .map(tagWithIndex => (
-          <ProjectSettingsFeedbackTag
-            server={props.server}
-            editor={props.editor}
-            categoryIndex={props.feedback.categoryAndIndex.index}
-            tag={tagWithIndex.tag}
-            tagIndex={tagWithIndex.index}
-          />
+          <Collapse in={true} appear>
+            <ProjectSettingsFeedbackTag
+              server={props.server}
+              editor={props.editor}
+              categoryIndex={props.feedback.categoryAndIndex.index}
+              tag={tagWithIndex.tag}
+              tagIndex={tagWithIndex.index}
+            />
+          </Collapse>
         ))}
       <ProjectSettingsAddWithName
         key='New tag'
@@ -1120,16 +1190,22 @@ export const ProjectSettingsFeedbackTag = (props: {
   const classes = useStyles();
   const nameProp = (props.editor.getProperty(['content', 'categories', props.categoryIndex, 'tagging', 'tags', props.tagIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.categoryIndex, 'tagging', 'tags', props.tagIndex, 'color']) as ConfigEditor.StringProperty);
+  const [tagName, setTagName] = useDebounceProp<string>(
+    nameProp.value || '',
+    text => nameProp.set(text));
+  const [tagColor, setTagColor] = useDebounceProp<string>(
+    colorProp.value || '',
+    text => colorProp.set(text));
   return (
     <TextFieldWithColorPicker
       className={classes.feedbackTag}
       label='Tag Name'
       variant='outlined'
       size='small'
-      textValue={nameProp.value}
-      onTextChange={text => nameProp.set(text)}
-      colorValue={props.tag.color}
-      onColorChange={color => colorProp.set(color)}
+      textValue={tagName}
+      onTextChange={text => setTagName(text)}
+      colorValue={tagColor}
+      onColorChange={color => setTagColor(color)}
       InputProps={{
         style: {
           minWidth: Property.inputMinWidth,
@@ -1142,6 +1218,7 @@ export const ProjectSettingsFeedbackTag = (props: {
 
 export const ProjectSettingsAddWithName = (props: {
   label: string;
+  placeholder?: string;
   onAdd: (value: string) => void;
   withAccordion?: boolean;
 }) => {
@@ -1153,6 +1230,7 @@ export const ProjectSettingsAddWithName = (props: {
       className={classNames(props.withAccordion && classes.feedbackAddWithAccordion)}
       size='small'
       variant='outlined'
+      placeholder={props.placeholder}
       value={value || ''}
       onChange={e => setValue(e.target.value)}
       InputProps={{
@@ -1600,3 +1678,17 @@ const PropertyShowOrEdit = (props: {
     </>
   );
 };
+
+const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): [T, (val: T) => void] => {
+  const [val, setVal] = useState<T>(initialValue);
+
+  const setterDebouncedRef = useRef(setter);
+  useEffect(() => {
+    setterDebouncedRef.current = debounce(setter, DemoUpdateDelay);
+  }, []);
+
+  return [val, val => {
+    setVal(val);
+    setterDebouncedRef.current?.(val);
+  }];
+}

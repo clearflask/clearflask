@@ -4,11 +4,13 @@ import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import React, { Component } from 'react';
+import { DemoUpdateDelay } from '../../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
 import { importFailed, importSuccess } from '../../../Main';
 import MyColorPicker from '../../MyColorPicker';
 import Overlay from '../../Overlay';
+import debounce from '../../util/debounce';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
@@ -33,12 +35,33 @@ interface Props {
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
   // If property uses a TableProp, will inject these properties
   TablePropProps?: Partial<React.ComponentProps<typeof TableProp>>;
+  setImmediately?: boolean;
 }
-
-export default class Property extends Component<Props> {
+interface State {
+  value?: any;
+}
+export default class Property extends Component<Props, State> {
   static inputMinWidth = 224;
   readonly colorRef = React.createRef<HTMLDivElement>();
   unsubscribe?: () => void;
+  propSet;
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      value: props.prop.value,
+    };
+    if (!!props.setImmediately) {
+      this.propSet = props.prop.set;
+    } else {
+      const setDebounced = debounce(props.prop.set, DemoUpdateDelay);
+      this.propSet = value => {
+        this.setState({ value });
+        setDebounced(value);
+      };
+    }
+  }
 
   componentDidMount() {
     this.unsubscribe = this.props.prop.subscribe(this.forceUpdate.bind(this));
@@ -55,7 +78,7 @@ export default class Property extends Component<Props> {
     const inputMinWidth = this.props.inputMinWidth !== undefined ? this.props.inputMinWidth : Property.inputMinWidth;
     var marginTop = this.props.marginTop !== undefined ? this.props.marginTop : 30;
     var propertySetter;
-    var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
+    var shrink = (this.state.value !== undefined && this.state.value !== '') ? true : undefined;
 
     if (prop.type !== ConfigEditor.PageGroupType
       && prop.type !== ConfigEditor.PageType
@@ -82,7 +105,7 @@ export default class Property extends Component<Props> {
                     name='color'
                     placeholder='#FFF'
                     defaultValue={prop.defaultValue}
-                    value={prop.value || ''}
+                    value={this.state.value || ''}
                     onChange={color => (prop as ConfigEditor.StringProperty).set(color || undefined)}
                     error={!!prop.errorMsg}
                     InputLabelProps={{
@@ -139,8 +162,8 @@ export default class Property extends Component<Props> {
             id={prop.pathStr}
             label={!this.props.bare && name}
             {...({ iAgreeInputIsSanitized: true })}
-            value={prop.value || ''}
-            onChange={e => prop.set(e.target.value as never)}
+            value={this.state.value || ''}
+            onChange={e => this.propSet(e.target.value as never)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             helperText={prop.errorMsg || (!this.props.bare && description)}
@@ -159,13 +182,13 @@ export default class Property extends Component<Props> {
               },
               readOnly: prop.subType === ConfigEditor.PropSubType.Emoji || prop.subType === ConfigEditor.PropSubType.Id,
               onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
-                if (!prop.value) prop.set(randomUuid());
+                if (!this.state.value) this.propSet(randomUuid());
               } : undefined,
               endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
                 <InputAdornment position='end'>
                   <IconButton
                     aria-label='Re-generate key'
-                    onClick={() => prop.set(randomUuid())}
+                    onClick={() => this.propSet(randomUuid())}
                   >
                     <KeyRefreshIcon fontSize='small' />
                   </IconButton>
@@ -187,7 +210,7 @@ export default class Property extends Component<Props> {
               isInsideMuiTable={this.props.isInsideMuiTable}
               popup={(
                 <EmojiPicker
-                  onSelect={emoji => prop.set(((emoji as BaseEmoji).native) as never)}
+                  onSelect={emoji => this.propSet(((emoji as BaseEmoji).native) as never)}
                 />
               )}
             >
@@ -224,8 +247,8 @@ export default class Property extends Component<Props> {
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={!!prop.value}
-                      onChange={(e, checked) => prop.set(checked ? true : undefined)}
+                      checked={!!this.state.value}
+                      onChange={(e, checked) => this.propSet(checked ? true : undefined)}
                       color='default'
                     />
                   )}
@@ -236,7 +259,7 @@ export default class Property extends Component<Props> {
                   }}
                 />
               </div>
-              <Collapse in={prop.value}>
+              <Collapse in={this.state.value}>
                 {link}
               </Collapse>
             </div>
@@ -261,13 +284,13 @@ export default class Property extends Component<Props> {
                 <FormControlLabel
                   control={(
                     <Switch
-                      checked={!!prop.value}
-                      onChange={(e, checked) => prop.set(checked)}
+                      checked={!!this.state.value}
+                      onChange={(e, checked) => this.propSet(checked)}
                       color='default'
                     />
                   )}
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>
-                    {!!prop.value
+                    {!!this.state.value
                       ? (prop.trueLabel || 'Enabled')
                       : (prop.falseLabel || 'Disabled')}
                   </FormHelperText>)}
@@ -289,18 +312,18 @@ export default class Property extends Component<Props> {
             { name: 'Enabled', value: 'true' },
             { name: 'Disabled', value: 'false' },
           ];
-          if (prop.value === undefined) {
+          if (this.state.value === undefined) {
             currentItem = items.find(item => item.value === 'undefined');
-          } else if (prop.value === true) {
+          } else if (this.state.value === true) {
             currentItem = items.find(item => item.value === 'true');
-          } else if (prop.value === false) {
+          } else if (this.state.value === false) {
             currentItem = items.find(item => item.value === 'false');
           }
         } else {
           items = prop.items;
-          currentItem = items.find(item => item.value === prop.value);
+          currentItem = items.find(item => item.value === this.state.value);
         }
-        shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
+        shrink = !!(this.state.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl
             variant='outlined'
@@ -313,22 +336,22 @@ export default class Property extends Component<Props> {
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
               label={!this.props.bare ? name : undefined}
-              value={prop.value !== undefined && currentItem.value ? currentItem.value : ''}
+              value={this.state.value !== undefined && currentItem.value ? currentItem.value : ''}
               onChange={e => {
                 if (prop.type === ConfigEditor.PropertyType.Boolean) {
                   switch (e.target.value) {
                     case 'undefined':
-                      prop.set(undefined as never)
+                      this.propSet(undefined as never)
                       break;
                     case 'true':
-                      prop.set(true as never)
+                      this.propSet(true as never)
                       break;
                     case 'false':
-                      prop.set(false as never)
+                      this.propSet(false as never)
                       break;
                   }
                 } else {
-                  prop.set((e.target.value) as never)
+                  this.propSet((e.target.value) as never)
                 }
               }}
               error={!!prop.errorMsg}
@@ -398,7 +421,7 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PropertyType.Object:
         const subProps = (
-          <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
+          <Collapse in={this.state.value} style={{ marginLeft: '30px' }}>
             {prop.childProperties && prop.childProperties
               .filter(childProp => !childProp.hide)
               .map(childProp => (
@@ -412,12 +435,12 @@ export default class Property extends Component<Props> {
             <FormControlLabel
               control={(
                 <Switch
-                  checked={!!prop.value}
-                  onChange={(e, checked) => prop.set(checked ? true : undefined)}
+                  checked={!!this.state.value}
+                  onChange={(e, checked) => this.propSet(checked ? true : undefined)}
                   color='default'
                 />
               )}
-              label={!this.props.bare && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+              label={!this.props.bare && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!this.state.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
               style={{
                 marginBottom: '-10px',
                 width: this.props.width,
@@ -440,9 +463,9 @@ export default class Property extends Component<Props> {
       case ConfigEditor.PropertyType.LinkMulti:
         const onValueChange = labels => {
           if (prop.type === ConfigEditor.PropertyType.LinkMulti) {
-            prop.set(new Set<string>(labels.map(o => o.value)));
+            this.propSet(new Set<string>(labels.map(o => o.value)));
           } else {
-            prop.set(labels.length === 0 ? undefined : labels[0].value);
+            this.propSet(labels.length === 0 ? undefined : labels[0].value);
           }
         };
         const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
@@ -457,11 +480,11 @@ export default class Property extends Component<Props> {
               color: o.color,
             });
           });
-        if (prop.value !== undefined) {
+        if (this.state.value !== undefined) {
           (prop.type === ConfigEditor.PropertyType.Link
-            ? [prop.getOptions().find(o => o.id === prop.value)]
+            ? [prop.getOptions().find(o => o.id === this.state.value)]
               .filter(o => o !== undefined)
-            : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
+            : prop.getOptions().filter(o => (this.state.value as Set<string>).has(o.id)))
             .forEach(o => {
               values.push({
                 label: o!.name,

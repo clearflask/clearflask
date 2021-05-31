@@ -125,7 +125,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
               tagSelection.error = `Choose ${tagGroup.minRequired} ${tagGroup.name} tags`;
             }
           } else {
-            tagSelection.error = `Choose at least ${tagGroup.maxRequired} ${tagGroup.name} tags`;
+            tagSelection.error = `Choose at least ${tagGroup.minRequired} ${tagGroup.name} tags`;
           }
         } else if (tagGroup.maxRequired !== undefined && selectedCount > tagGroup.maxRequired) {
           if (tagGroup.maxRequired === 1) {
