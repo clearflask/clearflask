@@ -25,6 +25,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string,
   variant?: 'outlined' | 'filled' | 'standard',
   size?: 'small' | 'medium',
   label?: string;
@@ -49,6 +50,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
 
     var result = (
       <SelectionPicker
+        className={this.props.className}
         label={this.props.label}
         placeholder={this.props.placeholder}
         disabled={this.props.disabled}

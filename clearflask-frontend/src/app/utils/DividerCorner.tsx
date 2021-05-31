@@ -62,6 +62,7 @@ interface Props {
   isExplorer?: boolean
   grow?: 'left' | 'center' | 'right';
   margins?: string | number;
+  suppressDivider?: boolean;
 }
 
 class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
@@ -74,7 +75,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
         <div className={this.props.classes.titles}>
           {!!this.props.margins && (
             <div style={{ minWidth: this.props.margins }}>
-              <Divider />
+              {!this.props.suppressDivider && (<Divider />)}
             </div>
           )}
           {leftPresent && (
@@ -91,7 +92,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
                 </Typography>
               ) : null}
               {this.props.header}
-              <Divider />
+              {!this.props.suppressDivider && (<Divider />)}
             </div>
           )}
           {this.props.grow === 'center' && (
@@ -111,25 +112,27 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
                 </Typography>
               ) : null}
               {this.props.headerRight}
-              <Divider />
+              {!this.props.suppressDivider && (<Divider />)}
             </div>
           )}
           {!!this.props.margins && (
             <div style={{ minWidth: this.props.margins }}>
-              <Divider />
+              {!this.props.suppressDivider && (<Divider />)}
             </div>
           )}
         </div>
         <div className={this.props.classes.contentContainer}>
           {leftPresent && (
             <div style={{ display: 'flex' }}>
-              <DividerVertical
-                className={this.props.classes.heightTransition}
-                style={{
-                  height: this.props.height !== undefined ? this.props.height : '24px',
-                  maxHeight: this.props.maxHeight,
-                }}
-              />
+              {!this.props.suppressDivider && (
+                <DividerVertical
+                  className={this.props.classes.heightTransition}
+                  style={{
+                    height: this.props.height !== undefined ? this.props.height : '24px',
+                    maxHeight: this.props.maxHeight,
+                  }}
+                />
+              )}
             </div>
           )}
           <div className={classNames(this.props.innerClassName, this.props.classes.flexGrow)}>
@@ -137,13 +140,15 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
           </div>
           {rightPresent && (
             <div style={{ display: 'flex' }}>
-              <DividerVertical
-                className={this.props.classes.heightTransition}
-                style={{
-                  height: this.props.heightRight !== undefined ? this.props.heightRight : '24px',
-                  maxHeight: this.props.maxHeightRight,
-                }}
-              />
+              {!this.props.suppressDivider && (
+                <DividerVertical
+                  className={this.props.classes.heightTransition}
+                  style={{
+                    height: this.props.heightRight !== undefined ? this.props.heightRight : '24px',
+                    maxHeight: this.props.maxHeightRight,
+                  }}
+                />
+              )}
             </div>
           )}
         </div>

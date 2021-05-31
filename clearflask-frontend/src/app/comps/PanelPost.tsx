@@ -64,6 +64,7 @@ export interface Props {
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   overrideTitle?: React.ReactNode;
+  preContent?: React.ReactNode;
   widthExpand?: boolean;
   widthExpandMargin?: MarginProperty<string | number>;
   showDivider?: boolean;
@@ -176,6 +177,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}
       >
+        {this.props.preContent}
         {content}
       </Panel>
     );

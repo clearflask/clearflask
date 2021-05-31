@@ -3,11 +3,11 @@ import { StateConf } from "../../api/server";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
-import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd } from "./template/feedback";
+import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd, feedbackSubcategoryRename } from "./template/feedback";
 import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
 import { _pageDelete } from "./template/templateUtils";
 
-export type ConfirmationResponseId = string;
+export type ConfirmationResponseId = string | undefined;
 export interface ConfirmationResponse {
   id?: string;
   title: string;
@@ -68,6 +68,7 @@ export const createTemplateOptionsDefault: CreateTemplateOptions = {
   emailAllowed: true,
 };
 
+const confirmationCache: { [question: string]: ConfirmationResponseId } = {};
 export default class Templater {
   editor: ConfigEditor.Editor;
   confirmationHandler?: ConfirmationHandler;
@@ -85,6 +86,7 @@ export default class Templater {
 
   feedbackGet = feedbackGet;
   feedbackOn = feedbackOn;
+  feedbackSubcategoryRename = feedbackSubcategoryRename;
   feedbackSubcategoryAdd = feedbackSubcategoryAdd;
   feedbackOff = feedbackOff;
 
@@ -92,24 +94,28 @@ export default class Templater {
   roadmapOn = roadmapOn;
   roadmapOff = roadmapOff;
 
-  confirmationCache: { [question: string]: string } = {};
   // During template changes, user confirmation is required.
   // IE: Change to a roadmap column is requested, but we are unsure which Board
   // should be updated. User is asked which board corresponds to the right Roadmap.
   async _getConfirmation(confirmation: Confirmation, cancelTitle?: string): Promise<ConfirmationResponseId | undefined> {
-    const answerCached = this.confirmationCache[confirmation.title + confirmation.description];
-    if (answerCached && confirmation.responses.some(r => r.id === answerCached)) {
-      return answerCached;
-    }
     if (!!cancelTitle) {
       confirmation.responses.push({
         title: cancelTitle,
         type: 'cancel',
       });
     }
+
+    const question = confirmation.title + confirmation.description;
+    const answerCached = confirmationCache[question];
+    if (answerCached !== undefined && confirmation.responses.some(r => r.id === answerCached)) {
+      return answerCached;
+    }
+
     if (this.confirmationHandler) {
       try {
-        return this.confirmationHandler(confirmation);
+        const answer = await this.confirmationHandler(confirmation);
+        confirmationCache[question] = answer;
+        return answer;
       } catch (e) { }
     }
     return undefined;

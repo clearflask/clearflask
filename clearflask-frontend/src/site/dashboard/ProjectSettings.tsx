@@ -1,32 +1,46 @@
-import { Button, Collapse, FormControlLabel, Switch, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControlLabel, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
+import AddIcon from '@material-ui/icons/AddRounded';
+import EditIcon from '@material-ui/icons/Edit';
 import { Alert, AlertTitle } from '@material-ui/lab';
+import classNames from 'classnames';
 import React, { Component, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import * as Client from '../../api/client';
+import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf } from '../../api/server';
 import { ReduxStateAdmin } from '../../api/serverAdmin';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
-import { BoardContainer, BoardPanel } from '../../app/CustomPage';
+import TagSelect from '../../app/comps/TagSelect';
+import CustomPage, { BoardContainer, BoardPanel } from '../../app/CustomPage';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
 import DataSettings from '../../common/config/settings/DataSettings';
+import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import Property from '../../common/config/settings/Property';
+import TableProp from '../../common/config/settings/TableProp';
 import { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
-import { FeedbackInstance } from '../../common/config/template/feedback';
+import { FeedbackInstance, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import FakeBrowser from '../../common/FakeBrowser';
+import MyAccordion from '../../common/MyAccordion';
+import MyColorPicker from '../../common/MyColorPicker';
+import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
+import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
 import { escapeHtml } from '../../common/util/htmlUtil';
+import randomUuid from '../../common/util/uuid';
 import windowIso from '../../common/windowIso';
 import PostSelection from './PostSelection';
+
+const propertyWidth = 250;
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -83,10 +97,50 @@ const styles = (theme: Theme) => createStyles({
   statusPreviewStatus: {
     flex: '1 1 200px',
   },
+  feedbackAccordionContainer: {
+    margin: theme.spacing(4, 0),
+  },
+  feedbackAddWithAccordion: {
+    margin: theme.spacing(0),
+  },
+  roadmapAddTitleButton: {
+    display: 'block',
+    marginTop: theme.spacing(4),
+  },
+  roadmapPanelAddTitleButton: {
+    display: 'block',
+    marginTop: theme.spacing(1),
+  },
   roadmapPanelContainer: {
     display: 'flex',
     flexWrap: 'wrap',
     '& > *:not(:first-child)': { marginLeft: theme.spacing(2) },
+  },
+  filterStatus: {
+    padding: theme.spacing(2, 2, 0),
+  },
+  filterStatusInput: {
+    borderColor: 'transparent',
+  },
+  showOrEdit: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  showOrEditButton: {
+    marginLeft: theme.spacing(1),
+  },
+  feedbackTag: {
+    marginBottom: theme.spacing(3),
+  },
+  tagPreviewContainer: {
+    padding: theme.spacing(4, 2),
+  },
+  subcatPreviewExplorer: {
+    width: 'max-content',
+    height: 'max-content',
+  },
+  createFeedbackButton: {
+    margin: theme.spacing(4, 2),
   },
 });
 const useStyles = makeStyles(styles);
@@ -130,7 +184,7 @@ export const ProjectSettingsInstall = (props: {
   });
   return (
     <ProjectSettingsBase title='Install'>
-      <Preview
+      <Section
         title='Portal'
         preview={(
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
@@ -143,7 +197,7 @@ export const ProjectSettingsInstall = (props: {
           </>
         )}
       />
-      <Preview
+      <Section
         title='Widget'
         preview={(
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
@@ -162,7 +216,7 @@ export const ProjectSettingsInstall = (props: {
           </>
         )}
       />
-      <Preview
+      <Section
         title='Status'
         preview={(
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
@@ -283,7 +337,7 @@ export const ProjectSettingsInstallWidgetPath = (props: {
   widgetPath?: string;
   setWidgetPath: (widgetPath: string | undefined) => void;
 }) => {
-  const pages = useSelector<ReduxState, Client.Page[] | undefined>(state => state.conf.conf?.layout.pages, shallowEqual) || [];
+  const pages = useSelector<ReduxState, Admin.Page[] | undefined>(state => state.conf.conf?.layout.pages, shallowEqual) || [];
   const selectedValue: Label[] = [];
   const options: Label[] = [];
 
@@ -388,7 +442,7 @@ export const ProjectSettingsInstallStatusConfig = (props: {
 
   const fontSize = (
     <ProjectSettingsInstallStatusConfigSelect
-      label='Text'
+      label='Text size'
       selectedValue={props.config.fontSize + ''}
       onChange={value => onChange('fontSize', value)}
       options={[
@@ -410,7 +464,7 @@ export const ProjectSettingsInstallStatusConfig = (props: {
   );
   const fontFamily = (
     <ProjectSettingsInstallStatusConfigSelect
-      label='Family'
+      label='Font'
       selectedValue={props.config.fontFamily}
       onChange={value => onChange('fontFamily', value)}
       options={[
@@ -422,31 +476,17 @@ export const ProjectSettingsInstallStatusConfig = (props: {
     />
   );
   const color = (
-    <ProjectSettingsInstallStatusConfigSelect
-      label='Text'
-      selectedValue={props.config.color}
-      onChange={value => onChange('color', value)}
-      options={[
-        { label: 'Match status', value: '' },
-        { label: 'Grey', value: 'grey' },
-        { label: 'Red', value: 'red' },
-        { label: 'Blue', value: 'blue' },
-        { label: 'Green', value: 'green' },
-      ]}
+    <ProjectSettingsInstallStatusConfigSelectColor
+      label='Text color'
+      selectedValue={props.config.color || ''}
+      onChange={value => onChange('color', value || '')}
     />
   );
   const backgroundColor = (
-    <ProjectSettingsInstallStatusConfigSelect
-      label='Background'
-      selectedValue={props.config.backgroundColor}
-      onChange={value => onChange('backgroundColor', value)}
-      options={[
-        { label: 'Transparent', value: 'transparent' },
-        { label: 'White', value: 'white' },
-        { label: 'Red', value: 'lightcoral' },
-        { label: 'Blue', value: 'aqua' },
-        { label: 'Green', value: 'lightgreen' },
-      ]}
+    <ProjectSettingsInstallStatusConfigSelectColor
+      label='Background color'
+      selectedValue={(props.config.backgroundColor === 'transparent' || !props.config.backgroundColor) ? '' : props.config.backgroundColor}
+      onChange={value => onChange('backgroundColor', value || 'transparent')}
     />
   );
   const fontWeight = (
@@ -499,10 +539,10 @@ export const ProjectSettingsInstallStatusConfig = (props: {
   );
   return (
     <>
-      <p className={classes.statusConfigLine}><Typography variant='subtitle1' component='span'>Font:</Typography> {fontFamily}{textTransform}</p>
-      <p className={classes.statusConfigLine}><Typography variant='subtitle1' component='span'>Size:</Typography> {fontSize}{fontWeight}</p>
-      <p className={classes.statusConfigLine}><Typography variant='subtitle1' component='span'>Color:</Typography> {color}{backgroundColor}</p>
-      <p className={classes.statusConfigLine}><Typography variant='subtitle1' component='span'>Align:</Typography>{alignItems}{justifyContent}</p>
+      <p className={classes.statusConfigLine}> {color}{backgroundColor}</p>
+      <p className={classes.statusConfigLine}> {fontSize}{fontWeight}</p>
+      <p className={classes.statusConfigLine}> {fontFamily}{textTransform}</p>
+      <p className={classes.statusConfigLine}>{justifyContent}{alignItems}</p>
     </>
   );
 }
@@ -521,7 +561,7 @@ export const ProjectSettingsInstallStatusConfigSelect = (props: {
       options={props.options}
       disableInput
       label={props.label}
-      width='max-content'
+      width={100}
       showTags
       bareTags
       disableClearable
@@ -529,6 +569,33 @@ export const ProjectSettingsInstallStatusConfigSelect = (props: {
       TextFieldProps={{
         variant: 'outlined',
         size: 'small',
+      }}
+    />
+  );
+}
+export const ProjectSettingsInstallStatusConfigSelectColor = (props: {
+  label?: string;
+  selectedValue: string;
+  onChange: (selectedValue: string) => void;
+}) => {
+  const theme = useTheme();
+  return (
+    <MyColorPicker
+      style={{ margin: theme.spacing(1, 1) }}
+      clearable
+      preview
+      placeholder='#FFF'
+      label={props.label}
+      value={props.selectedValue}
+      onChange={color => props.onChange(color)}
+      TextFieldProps={{
+        variant: 'outlined',
+        size: 'small',
+        InputProps: {
+          style: {
+            width: 216,
+          },
+        },
       }}
     />
   );
@@ -541,7 +608,7 @@ export const ProjectSettingsBranding = (props: {
   const classes = useStyles();
   return (
     <ProjectSettingsBase title='Branding'>
-      <Preview
+      <Section
         title='Logo'
         preview={(
           <BrowserPreview server={props.server}>
@@ -556,7 +623,7 @@ export const ProjectSettingsBranding = (props: {
           </>
         )}
       />
-      <Preview
+      <Section
         title='Palette'
         preview={(
           <BrowserPreview server={props.server}>
@@ -608,10 +675,9 @@ export const ProjectSettingsDomain = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  const classes = useStyles();
   return (
     <ProjectSettingsBase title='Custom Domain'>
-      <Preview
+      <Section
         preview={(
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
             <ProjectSettingsDomainPreview server={props.server} />
@@ -672,45 +738,452 @@ export const ProjectSettingsFeedback = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const classes = useStyles();
+  const [tagGroupExpanded, setTagGroupExpanded] = useState<number | undefined>();
+  const [subcatExpanded, setSubcatExpanded] = useState<number | undefined>();
+  const [statusExpanded, setStatusExpanded] = useState<number | undefined>();
+  const [tagIds, setTagIds] = useState<Array<string> | undefined>();
   return (
     <ProjectSettingsBase title='Feedback'>
       <TemplateWrapper<FeedbackInstance | undefined>
         editor={props.editor}
         mapper={templater => templater.feedbackGet()}
-        render={(templater, feedback) => (
-          <>
-            <FormControlLabel
-              label={!!feedback?.hasAllPages ? 'Enabled' : 'Disabled'}
-              control={(
-                <Switch
-                  checked={!!feedback?.hasAllPages}
-                  onChange={(e, checked) => !!feedback?.hasAllPages
-                    ? templater.feedbackOff(feedback)
-                    : templater.feedbackOn()}
-                  color='primary'
-                />
-              )}
-            />
-            <Collapse in={!!feedback?.hasAllPages}>
-
-            </Collapse>
-          </>
-        )
-        }
+        render={(templater, feedback) => {
+          const previewSubcat = subcatExpanded === undefined ? undefined : feedback?.subcategories[subcatExpanded];
+          return !feedback ? (
+            <Button
+              className={classes.createFeedbackButton}
+              variant='contained'
+              color='primary'
+              disableElevation
+              onClick={() => templater.feedbackOn()}
+            >
+              Create feedback
+            </Button>
+          ) : (
+            <>
+              <Section
+                title='Workflow'
+                description='Define statuses to apply to your feedback to keep track of your progress.'
+                preview={!!feedback.categoryAndIndex.category.workflow.statuses.length && (
+                  <WorkflowPreview
+                    editor={props.editor}
+                    categoryIndex={feedback.categoryAndIndex.index}
+                    hideCorner
+                    // static
+                    isVertical
+                    width={350}
+                    height={500}
+                    border
+                  // scroll
+                  />
+                )}
+                content={(
+                  <>
+                    <div className={classes.feedbackAccordionContainer}>
+                      {feedback.categoryAndIndex.category.workflow.statuses.map((status, statusIndex) => (
+                        <ProjectSettingsFeedbackStatus
+                          server={props.server}
+                          editor={props.editor}
+                          feedback={feedback}
+                          status={status}
+                          statusIndex={statusIndex}
+                          expanded={statusIndex === statusExpanded}
+                          onExpandedChange={() => setStatusExpanded(statusIndex === statusExpanded ? undefined : statusIndex)}
+                        />
+                      ))}
+                    </div>
+                    <ProjectSettingsAddWithName
+                      label='New status'
+                      withAccordion
+                      onAdd={name => {
+                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'workflow', 'statuses'])
+                          .insert()
+                          .setRaw(Admin.IdeaStatusToJSON({
+                            statusId: randomUuid(),
+                            name: name,
+                            disableFunding: false,
+                            disableVoting: false,
+                            disableExpressions: false,
+                            disableIdeaEdits: false,
+                            disableComments: false,
+                          }));
+                      }}
+                    />
+                  </>
+                )}
+              />
+              <Section
+                title='Tagging'
+                preview={(
+                  <TagSelect
+                    className={classes.tagPreviewContainer}
+                    wrapper={c => (
+                      <BrowserPreview server={props.server}>{c}</BrowserPreview>
+                    )}
+                    variant='outlined'
+                    size='small'
+                    label='Try selecting tags'
+                    category={feedback.categoryAndIndex.category}
+                    tagIds={tagIds}
+                    isModOrAdminLoggedIn={false}
+                    onChange={(tagIds, errorStr) => setTagIds(tagIds)}
+                    SelectionPickerProps={{
+                      width: undefined,
+                    }}
+                  />
+                )}
+                content={(
+                  <>
+                    <div className={classes.feedbackAccordionContainer}>
+                      {feedback.categoryAndIndex.category.tagging.tagGroups.map((tagGroup, tagGroupIndex) => (
+                        <ProjectSettingsFeedbackTagGroup
+                          server={props.server}
+                          editor={props.editor}
+                          feedback={feedback}
+                          tagGroup={tagGroup}
+                          tagGroupIndex={tagGroupIndex}
+                          expanded={tagGroupIndex === tagGroupExpanded}
+                          onExpandedChange={() => setTagGroupExpanded(tagGroupIndex === tagGroupExpanded ? undefined : tagGroupIndex)}
+                        />
+                      ))}
+                    </div>
+                    <ProjectSettingsAddWithName
+                      label='New tag group'
+                      withAccordion
+                      onAdd={newTagGroup => {
+                        setTagGroupExpanded(feedback.categoryAndIndex.category.tagging.tagGroups.length);
+                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups'])
+                          .insert()
+                          .setRaw(Admin.TagGroupToJSON({
+                            name: newTagGroup,
+                            tagGroupId: randomUuid(),
+                            userSettable: true,
+                            tagIds: [],
+                          }));
+                      }}
+                    />
+                  </>
+                )}
+              />
+              <Section
+                title='Subcategories'
+                preview={(
+                  <>
+                    {!!previewSubcat?.pageAndIndex && (
+                      <BrowserPreview server={props.server} scroll={Orientation.Both} FakeBrowserProps={{
+                        fixedWidth: 350,
+                        fixedHeight: 500,
+                      }}>
+                        <div className={classes.subcatPreviewExplorer}>
+                          <CustomPage
+                            key={`${props.server.getProjectId()}-${previewSubcat.tagId || 'uncat'}`}
+                            server={props.server}
+                            pageSlug={previewSubcat.pageAndIndex.page.slug}
+                          />
+                        </div>
+                      </BrowserPreview>
+                    )}
+                  </>
+                )}
+                content={(
+                  <>
+                    <div className={classes.feedbackAccordionContainer}>
+                      {feedback.subcategories.map((subcat, subcatIndex) => (
+                        <ProjectSettingsFeedbackSubcategory
+                          server={props.server}
+                          editor={props.editor}
+                          templater={templater}
+                          feedback={feedback}
+                          subcat={subcat}
+                          expanded={subcatIndex === subcatExpanded}
+                          onExpandedChange={() => setSubcatExpanded(subcatIndex === subcatExpanded ? undefined : subcatIndex)}
+                        />
+                      ))}
+                    </div>
+                    <ProjectSettingsAddWithName
+                      label='New subcategory'
+                      withAccordion
+                      onAdd={newSubcat => {
+                        setSubcatExpanded(feedback.subcategories.length);
+                        templater.feedbackSubcategoryAdd(newSubcat);
+                      }}
+                    />
+                  </>
+                )}
+              />
+            </>
+          );
+        }}
       />
-      <p>TODO Categories, foreach:</p>
-      <p>TODO - name (deduce url path)</p>
-      <p>TODO - name</p>
-      <p>TODO - tags</p>
-      <p>TODO - Create form</p>
-      <p>TODO rename statuses (for all categories)</p>
     </ProjectSettingsBase>
   );
 }
+export const ProjectSettingsFeedbackStatus = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  feedback: FeedbackInstance;
+  status: Admin.IdeaStatus;
+  statusIndex: number;
+  expanded: boolean;
+  onExpandedChange: () => void;
+}) => {
+  const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
+  const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
+  const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
+  return (
+    <MyAccordion
+      key={props.status.statusId}
+      expanded={props.expanded}
+      onChange={() => props.onExpandedChange()}
+      name={(
+        <PropertyShowOrEdit
+          allowEdit={props.expanded}
+          show={(
+            <span style={{ color: props.status.color }}>
+              {props.status.name}
+            </span>
+          )}
+          edit={(
+            <TextFieldWithColorPicker
+              label='Status Name'
+              variant='outlined'
+              size='small'
+              textValue={nameProp.value}
+              onTextChange={text => nameProp.set(text)}
+              colorValue={colorProp.value}
+              onColorChange={color => colorProp.set(color)}
+              InputProps={{
+                style: {
+                  minWidth: Property.inputMinWidth,
+                  width: propertyWidth,
+                },
+              }}
+            />
+          )}
+        />
+      )}
+    >
+      <FormControlLabel label='Default status' control={(
+        <Checkbox size='small' color='primary'
+          checked={initialStatusIdProp.value === props.status.statusId}
+          disabled={initialStatusIdProp.value === props.status.statusId}
+          onChange={e => initialStatusIdProp.set(props.status.statusId)}
+        />
+      )} />
+      <PropertyByPath
+        marginTop={16}
+        overrideName='Next statuses'
+        overrideDescription=''
+        editor={props.editor}
+        path={['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'nextStatusIds']}
+      />
+    </MyAccordion>
+  );
+}
+export const ProjectSettingsFeedbackSubcategory = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  templater: Templater;
+  feedback: FeedbackInstance;
+  subcat: FeedbackSubCategoryInstance;
+  expanded: boolean;
+  onExpandedChange: () => void;
+}) => {
+  const classes = useStyles();
+  const tag = props.subcat.tagId ? props.feedback.categoryAndIndex.category.tagging.tags.find(t => t.tagId === props.subcat.tagId) : undefined;
+  const page = props.subcat.pageAndIndex?.page;
+  const name = tag?.name || page?.name || 'Unnamed';
+  return (
+    <MyAccordion
+      key={tag?.tagId || 'uncat'}
+      expanded={props.expanded}
+      onChange={() => props.onExpandedChange()}
+      name={(
+        <PropertyShowOrEdit
+          allowEdit={props.expanded}
+          show={name}
+          edit={(
+            <TextField
+              label='Subcategory name'
+              size='small'
+              variant='outlined'
+              value={name}
+              onChange={e => props.templater.feedbackSubcategoryRename(props.feedback, props.subcat, e.target.value)}
+              InputProps={{
+                style: {
+                  minWidth: Property.inputMinWidth,
+                  width: propertyWidth,
+                },
+              }}
+            />
+          )}
+        />
+      )}
+    >
+      <FormControlLabel
+        label={!!props.subcat.pageAndIndex ? 'Shown' : 'Hidden'}
+        control={(
+          <Switch
+            checked={!!props.subcat.pageAndIndex}
+            onChange={(e, checked) => !!props.subcat.pageAndIndex
+              ? props.templater.feedbackOff(props.feedback, props.subcat)
+              : props.templater.feedbackOn(props.subcat)}
+            color='primary'
+          />
+        )}
+      />
+      {!!props.subcat.pageAndIndex && (
+        <>
+          <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'title']} />
+          <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'description']} />
+          {!!props.subcat.pageAndIndex.page.explorer?.allowCreate && (
+            <>
+              <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
+              <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
+            </>
+          )}
+        </>
+      )}
+    </MyAccordion>
+  );
+}
+export const ProjectSettingsFeedbackTagGroup = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  feedback: FeedbackInstance;
+  tagGroup: Admin.TagGroup;
+  tagGroupIndex: number;
+  expanded: boolean;
+  onExpandedChange: () => void;
+}) => {
+  const tagsWithIndexes = props.feedback.categoryAndIndex.category.tagging.tags
+    .map((tag, index) => ({ tag, index }));
+  return (
+    <MyAccordion
+      key={props.tagGroup.tagGroupId}
+      expanded={props.expanded}
+      onChange={() => props.onExpandedChange()}
+      name={(
+        <PropertyShowOrEdit
+          allowEdit={props.expanded}
+          show={props.tagGroup.name}
+          edit={(
+            <PropertyByPath
+              marginTop={0}
+              overrideName='Tag Group Name'
+              overrideDescription=''
+              editor={props.editor}
+              path={['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'name']}
+            />
+          )}
+        />
+      )}
+    >
+      {props.tagGroup.tagIds
+        .map(tagId => tagsWithIndexes.find(t => t.tag.tagId === tagId))
+        .filter(notEmpty)
+        .map(tagWithIndex => (
+          <ProjectSettingsFeedbackTag
+            server={props.server}
+            editor={props.editor}
+            categoryIndex={props.feedback.categoryAndIndex.index}
+            tag={tagWithIndex.tag}
+            tagIndex={tagWithIndex.index}
+          />
+        ))}
+      <ProjectSettingsAddWithName
+        key='New tag'
+        label='New tag'
+        onAdd={newTag => {
+          const tagId = randomUuid();
+          ((props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tags']) as ConfigEditor.ArrayProperty)
+            .insert() as ConfigEditor.ObjectProperty)
+            .setRaw(Admin.TagToJSON({
+              tagId,
+              name: newTag,
+            }));
+          (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'tagIds']) as ConfigEditor.LinkMultiProperty)
+            .insert(tagId);
+        }}
+      />
+    </MyAccordion>
+  );
+}
+export const ProjectSettingsFeedbackTag = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  categoryIndex: number;
+  tag: Admin.Tag;
+  tagIndex: number;
+}) => {
+  const classes = useStyles();
+  const nameProp = (props.editor.getProperty(['content', 'categories', props.categoryIndex, 'tagging', 'tags', props.tagIndex, 'name']) as ConfigEditor.StringProperty);
+  const colorProp = (props.editor.getProperty(['content', 'categories', props.categoryIndex, 'tagging', 'tags', props.tagIndex, 'color']) as ConfigEditor.StringProperty);
+  return (
+    <TextFieldWithColorPicker
+      className={classes.feedbackTag}
+      label='Tag Name'
+      variant='outlined'
+      size='small'
+      textValue={nameProp.value}
+      onTextChange={text => nameProp.set(text)}
+      colorValue={props.tag.color}
+      onColorChange={color => colorProp.set(color)}
+      InputProps={{
+        style: {
+          minWidth: Property.inputMinWidth,
+          width: propertyWidth,
+        },
+      }}
+    />
+  );
+}
+
+export const ProjectSettingsAddWithName = (props: {
+  label: string;
+  onAdd: (value: string) => void;
+  withAccordion?: boolean;
+}) => {
+  const classes = useStyles();
+  const [value, setValue] = useState<string | undefined>();
+  return (
+    <TextField
+      label={props.label}
+      className={classNames(props.withAccordion && classes.feedbackAddWithAccordion)}
+      size='small'
+      variant='outlined'
+      value={value || ''}
+      onChange={e => setValue(e.target.value)}
+      InputProps={{
+        style: {
+          minWidth: Property.inputMinWidth,
+          width: propertyWidth,
+        },
+        endAdornment: (
+          <InputAdornment position='end'>
+            <IconButton
+              disabled={!value}
+              onClick={() => {
+                if (!value) return;
+                props.onAdd(value);
+                setValue(undefined);
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+    />
+  );
+}
+
 export const ProjectSettingsRoadmap = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const classes = useStyles();
   var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   return (
     <ProjectSettingsBase title='Roadmap'>
@@ -734,14 +1207,30 @@ export const ProjectSettingsRoadmap = (props: {
             {roadmap && (
               <>
                 <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+                  {!roadmap.page.board.title && (
+                    <Button
+                      className={classes.roadmapAddTitleButton}
+                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageIndex, 'board', 'title']) as ConfigEditor.StringProperty)
+                        .set('Roadmap')}
+                    >
+                      Add title
+                    </Button>
+                  )}
                   <BoardContainer
                     overrideTitle={(
-                      <PropertyByPathReduxless
-                        planId={planId}
-                        width={200}
-                        overrideName='Title'
-                        editor={props.editor}
-                        path={['layout', 'pages', roadmap?.pageIndex, 'board', 'title']}
+                      <PropertyShowOrEdit
+                        allowEdit={true}
+                        show={(roadmap.page.board.title)}
+                        edit={(
+                          <PropertyByPathReduxless
+                            marginTop={0}
+                            planId={planId}
+                            width={200}
+                            overrideName='Title'
+                            editor={props.editor}
+                            path={['layout', 'pages', roadmap.pageIndex, 'board', 'title']}
+                          />
+                        )}
                       />
                     )}
                     server={props.server}
@@ -752,23 +1241,48 @@ export const ProjectSettingsRoadmap = (props: {
                         panel={panel}
                         PanelPostProps={{
                           disableOnClick: true,
-                          overrideTitle: (
+                          overrideTitle: !panel.title ? undefined : (
+                            <PropertyShowOrEdit
+                              allowEdit={true}
+                              show={(panel.title)}
+                              edit={(
+                                <PropertyByPathReduxless
+                                  marginTop={0}
+                                  planId={planId}
+                                  width='auto'
+                                  overrideDescription=''
+                                  overrideName='Title'
+                                  editor={props.editor}
+                                  path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']}
+                                />
+                              )}
+                            />
+                          ),
+                          preContent: (
                             <>
+                              {!panel.title && (
+                                <Button
+                                  className={classes.roadmapPanelAddTitleButton}
+                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
+                                    .set(roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0])?.name || 'Title')}
+                                >
+                                  Add title
+                                </Button>
+                              )}
                               <PropertyByPathReduxless
+                                marginTop={0}
                                 planId={planId}
                                 width='auto'
-                                overrideDescription=''
-                                overrideName='Title'
                                 editor={props.editor}
                                 path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
-                              />
-                              <PropertyByPathReduxless
-                                planId={planId}
-                                width='auto'
-                                overrideDescription=''
-                                overrideName='Title'
-                                editor={props.editor}
-                                path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']}
+                                bare
+                                TextFieldProps={{
+                                  placeholder: 'Filter',
+                                  classes: { root: classes.filterStatus },
+                                  InputProps: {
+                                    classes: { notchedOutline: classes.filterStatusInput },
+                                  },
+                                }}
                               />
                             </>
                           ),
@@ -810,10 +1324,11 @@ export const ProjectSettingsData = (props: {
   );
 }
 
-const Preview = (props: {
+const Section = (props: {
   title?: string;
+  description?: string;
   content: any;
-  preview: any;
+  preview?: any;
 }) => {
   const classes = useStyles();
   return (
@@ -822,12 +1337,17 @@ const Preview = (props: {
         {!!props.title && (
           <Typography variant='h5' component='h2' className={classes.previewTitle}>{props.title}</Typography>
         )}
+        {!!props.description && (
+          <Typography variant='body1' component='div'>{props.description}</Typography>
+        )}
         {props.content}
       </div>
       <div className={classes.previewSpacer} />
-      <div className={classes.previewPreview}>
-        {props.preview}
-      </div>
+      {props.preview && (
+        <div className={classes.previewPreview}>
+          {props.preview}
+        </div>
+      )}
     </div>
   );
 }
@@ -839,7 +1359,9 @@ const BrowserPreview = (props: {
   suppressThemeProvider?: boolean;
   code?: string;
   addresBar?: 'website';
+  scroll?: Orientation;
 }) => {
+  const theme = useTheme();
   const classes = useStyles();
   var preview = props.children;
   if (!props.suppressThemeProvider) {
@@ -849,13 +1371,23 @@ const BrowserPreview = (props: {
         seed={props.server.getProjectId()}
         isInsideContainer={true}
         supressCssBaseline={true}
+        containerStyle={!props.scroll ? undefined : {
+          ...contentScrollApplyStyles({
+            theme,
+            orientation: props.scroll,
+          }),
+        }}
       >
         {preview}
       </AppThemeProvider>
     );
   }
   preview = (
-    <BrowserPreviewInternal FakeBrowserProps={props.FakeBrowserProps} addresBar={props.addresBar} code={props.code}>
+    <BrowserPreviewInternal
+      FakeBrowserProps={props.FakeBrowserProps}
+      addresBar={props.addresBar}
+      code={props.code}
+    >
       {preview}
     </BrowserPreviewInternal>
   );
@@ -874,6 +1406,7 @@ const BrowserPreviewInternal = (props: {
   addresBar?: 'website';
   FakeBrowserProps?: React.ComponentProps<typeof FakeBrowser>;
 }) => {
+  const theme = useTheme();
   const classes = useStyles();
   const darkMode = useSelector<ReduxState, boolean>(state => !!state?.conf?.conf?.style.palette.darkMode, shallowEqual);
   const website = useSelector<ReduxState, string | undefined>(state => state?.conf?.conf?.website, shallowEqual);
@@ -908,7 +1441,6 @@ class TemplateWrapper<T> extends Component<{
 }> {
   unsubscribe?: () => void;
   templater: Templater;
-  remapDebounced: () => void;
 
   constructor(props) {
     super(props);
@@ -922,20 +1454,20 @@ class TemplateWrapper<T> extends Component<{
         confirm: resolve,
       })));
 
+  }
+
+  componentDidMount() {
     const refreshMappedValue = () => {
       this.props.mapper(this.templater)
         .then(mappedValue => this.setState({ mappedValue: { val: mappedValue } }));
     }
 
-    this.remapDebounced = debounce(() => {
+    const remapDebounced = debounce(() => {
       refreshMappedValue();
     }, 10);
+    this.unsubscribe = this.props.editor.subscribe(() => remapDebounced());
 
     refreshMappedValue();
-  }
-
-  componentDidMount() {
-    this.unsubscribe = this.props.editor.subscribe(() => this.remapDebounced());
   }
 
   componentWillUnmount() {
@@ -945,24 +1477,40 @@ class TemplateWrapper<T> extends Component<{
   render() {
     return (
       <>
-        <Collapse in={!!this.state.confirmation}>
+        <Collapse in={!!this.state.confirm}>
           <Alert
+            style={{ maxWidth: 500 }}
             severity='warning'
-            action={this.state.confirmation?.responses.map(response => (
-              <Button
-                size='small'
-                color='inherit'
-                style={{ color: response.type === 'cancel' ? 'red' : undefined }}
-              >
-                {response.type}
-              </Button>
-            ))}
           >
             <AlertTitle>{this.state.confirmation?.title}</AlertTitle>
             {this.state.confirmation?.description}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+            }}>
+              {this.state.confirmation?.responses.map(response => (
+                <Button
+                  size='small'
+                  color='inherit'
+                  style={{
+                    textTransform: 'none',
+                    color: response.type === 'cancel' ? 'darkred' : undefined,
+                  }}
+                  onClick={() => {
+                    this.state.confirm?.(response.id);
+                    this.setState({ confirm: undefined });
+                  }}
+                >
+                  {response.title}
+                </Button>
+              ))}
+            </div>
           </Alert>
         </Collapse>
-        {this.state.mappedValue && this.props.render(this.templater, this.state.mappedValue.val)}
+        <Collapse in={!this.state.confirm}>
+          {this.state.mappedValue && this.props.render(this.templater, this.state.mappedValue.val)}
+        </Collapse>
       </>
     );
   }
@@ -978,7 +1526,12 @@ const PropertyByPathReduxless = (props: {
   path: ConfigEditor.Path;
   overrideName?: string;
   overrideDescription?: string;
+  marginTop?: number;
   width?: string | number;
+  inputMinWidth?: string | number;
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  TablePropProps?: Partial<React.ComponentProps<typeof TableProp>>;
+  bare?: boolean;
 }) => {
   const history = useHistory();
 
@@ -993,11 +1546,57 @@ const PropertyByPathReduxless = (props: {
     <Property
       key={ConfigEditor.pathToString(props.path)}
       prop={props.editor.get(props.path)}
-      pageClicked={path => history.push(`/dashboard/settings/advanced/${path.join('/')}`)}
+      pageClicked={path => history.push(`/dashboard/settings/project/advanced/${path.join('/')}`)}
       requiresUpgrade={propertyRequiresUpgrade}
-      width={props.width || 350}
+      marginTop={props.marginTop}
+      width={props.width || propertyWidth}
+      inputMinWidth={props.inputMinWidth}
       overrideName={props.overrideName}
       overrideDescription={props.overrideDescription}
+      TextFieldProps={props.TextFieldProps}
+      TablePropProps={props.TablePropProps}
+      bare={props.bare}
     />
   );
 }
+
+
+const PropertyShowOrEdit = (props: {
+  allowEdit: boolean;
+  show: React.ReactNode;
+  edit: React.ReactNode;
+}) => {
+  const classes = useStyles();
+  const [editing, setEditing] = useState<boolean>(false);
+  if (!props.allowEdit && editing) setEditing(false);
+  return (
+    <>
+      <Collapse in={!editing}>
+        <div className={classes.showOrEdit}>
+          {props.show}
+          {props.allowEdit && (
+            <IconButton
+              className={classes.showOrEditButton}
+              size='small'
+              onClick={e => {
+                setEditing(true);
+                e.stopPropagation();
+              }}
+              onFocus={e => e.stopPropagation()}
+            >
+              <EditIcon />
+            </IconButton>
+          )}
+        </div>
+      </Collapse>
+      <Collapse in={editing}>
+        <div
+          onClick={e => e.stopPropagation()}
+          onFocus={e => e.stopPropagation()}
+        >
+          {props.edit}
+        </div>
+      </Collapse>
+    </>
+  );
+};

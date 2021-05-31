@@ -5,6 +5,7 @@ import MoveDownIcon from '@material-ui/icons/ArrowDownward';
 import MoveUpIcon from '@material-ui/icons/ArrowUpward';
 import DeleteIcon from '@material-ui/icons/Delete';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import Property from './Property';
@@ -13,6 +14,8 @@ const styles = (theme: Theme) => createStyles({
   table: {
     border: '1px solid ' + theme.palette.grey[300],
     display: 'inline-block',
+  },
+  tableMargins: {
     marginLeft: '30px',
     marginTop: '15px',
   },
@@ -30,12 +33,16 @@ interface Props {
   styleOuter?: React.CSSProperties;
   key: string;
   data: ConfigEditor.PageGroup | ConfigEditor.ArrayProperty;
+  bare?: boolean;
   label?: React.ReactNode;
   helperText?: React.ReactNode;
   errorMsg?: string;
   width?: string | number;
-  pageClicked: (path: ConfigEditor.Path) => void;
+  pageClicked?: (path: ConfigEditor.Path) => void;
   requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
+  hideReorder?: boolean;
+  hideDelete?: boolean;
+  hideAdd?: boolean;
 }
 
 class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
@@ -54,7 +61,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     const rows: React.ReactNode[] = [];
     if (this.props.data.type === 'pagegroup') {
       const pageGroup: ConfigEditor.PageGroup = this.props.data;
-      if (pageGroup.getChildPages().length > 0) header.push(this.renderHeaderCellShowLink());
+      if (pageGroup.getChildPages().length > 0 && this.props.pageClicked) header.push(this.renderHeaderCellShowLink());
       pageGroup.getChildPages().forEach((childPage, childPageIndex, arr) => {
         const row: React.ReactNode[] = [];
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
@@ -65,7 +72,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           }
           row.push(this.renderDataCell(prop));
         });
-        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, arr.length, true));
+        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, arr.length, this.props.pageClicked));
       });
     } else if (this.props.data.childType === ConfigEditor.PropertyType.Object) {
       const arrayProp: ConfigEditor.ArrayProperty = this.props.data;
@@ -81,7 +88,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
               }
               row.push(this.renderDataCell(grandchildProp));
             });
-          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length, false));
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length));
         });
     } else {
       const arrayProp: ConfigEditor.ArrayProperty = this.props.data;
@@ -92,14 +99,17 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
             header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
           }
           const row = [this.renderDataCell(childProp)];
-          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length, false));
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length));
         });
     }
 
     var content = (
       <>
         {rows.length > 0 && (
-          <div className={this.props.classes.table}>
+          <div className={classNames(
+            this.props.classes.table,
+            !this.props.bare && this.props.classes.tableMargins,
+          )}>
             <Table style={{ width: 'inherit' }}>
               {header.length > 0 && (
                 <TableHead>
@@ -115,19 +125,21 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
             </Table>
           </div>
         )}
-        <div style={{ marginLeft: '30px' }}>
-          <IconButton aria-label="Add" onClick={() => {
-            this.props.data.insert();
-          }}>
-            <AddIcon />
-          </IconButton>
-        </div>
+        {!this.props.hideAdd && (
+          <div style={{ marginLeft: '30px' }}>
+            <IconButton aria-label='Add' onClick={() => {
+              this.props.data.insert();
+            }}>
+              <AddIcon />
+            </IconButton>
+          </div>
+        )}
       </>
     );
-    const label = (
+    const label = !this.props.bare && (
       <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>
     );
-    const helperText = (this.props.errorMsg || this.props.helperText) && (
+    const helperText = (this.props.errorMsg || (!this.props.bare && this.props.helperText)) && (
       <div><div className={this.props.classes.helperText}>
         <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
       </div></div>
@@ -135,13 +147,15 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     if (this.props.data.required) {
       return (
         <div>
-          <div style={{
-            width: this.props.width,
-            minWidth: Property.inputMinWidth,
-          }}>
-            {label}
-            {helperText}
-          </div>
+          {(label || helperText) && (
+            <div style={{
+              width: this.props.width,
+              minWidth: Property.inputMinWidth,
+            }}>
+              {label}
+              {helperText}
+            </div>
+          )}
           {content}
         </div>
       );
@@ -172,13 +186,14 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     }
   }
 
-  renderRow(rowCells, key: string, index: number, total: number, showLink: boolean) {
+  renderRow(rowCells, key: string, index: number, total: number, onPageClick?: (path: ConfigEditor.Path) => void) {
+    const allowReorder = !this.props.data.disableReordering && !this.props.hideReorder;
     return (
       <TableRow key={key}>
-        {showLink && (
+        {onPageClick && (
           <TableCell key={'more' + key} align='center' padding='checkbox'>
             <IconButton aria-label="More" onClick={() => {
-              this.props.pageClicked([...this.props.data.path, index]);
+              onPageClick([...this.props.data.path, index]);
             }}>
               <MoreIcon />
             </IconButton>
@@ -189,7 +204,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           <div style={{
             display: 'flex',
           }}>
-            {!this.props.data.disableReordering && (
+            {allowReorder && (
               <div style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -206,22 +221,24 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
                 </IconButton>
               </div>
             )}
-            <div style={{
-              display: 'flex',
-              flexDirection: !this.props.data.disableReordering ? 'column' : 'row',
-            }}>
-              {/* TODO Duplication needs to regenerate ids, for now remove this functionality <IconButton aria-label="Duplicate" onClick={() => {
-                this.props.data.duplicate(index);
+            {!this.props.hideDelete && (
+              <div style={{
+                display: 'flex',
+                flexDirection: allowReorder ? 'column' : 'row',
               }}>
-                import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
-                <DuplicateIcon />
-              </IconButton> */}
-              <IconButton aria-label="Delete" onClick={() => {
-                this.props.data.delete(index);
-              }}>
-                <DeleteIcon />
-              </IconButton>
-            </div>
+                {/* TODO Duplication needs to regenerate ids, for now remove this functionality <IconButton aria-label="Duplicate" onClick={() => {
+                  this.props.data.duplicate(index);
+                }}>
+                  import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
+                  <DuplicateIcon />
+                </IconButton> */}
+                <IconButton aria-label="Delete" onClick={() => {
+                  this.props.data.delete(index);
+                }}>
+                  <DeleteIcon />
+                </IconButton>
+              </div>
+            )}
           </div>
         </TableCell>
       </TableRow>

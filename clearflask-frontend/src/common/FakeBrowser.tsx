@@ -5,7 +5,7 @@ import { LightAsync as SyntaxHighlighter } from 'react-syntax-highlighter';
 import highlightLanguageHtml from 'react-syntax-highlighter/dist/esm/languages/hljs/htmlbars';
 import highlightStyleDark from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-dark';
 import highlightStyleLight from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-light';
-import { contentScrollApplyStyles, Orientation } from './ContentScroll';
+import { contentScrollApplyStyles, ContentScrollProps, Orientation } from './ContentScroll';
 import LockSimpleIcon from './icon/LockSimpleIcon';
 
 SyntaxHighlighter.registerLanguage('html', highlightLanguageHtml);
@@ -73,6 +73,7 @@ interface Props {
   codeContent?: string;
   codeLanguage?: 'html';
   codeMaxHeight?: number | string;
+  scroll?: Omit<ContentScrollProps, 'theme'> & Partial<Pick<ContentScrollProps, 'theme'>>;
 }
 class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true>> {
   render() {
@@ -115,6 +116,10 @@ class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true
           )}
         </div>
         <div className={this.props.classes.content} style={{
+          ...(!this.props.scroll ? {} : contentScrollApplyStyles({
+            theme: this.props.theme,
+            ...this.props.scroll,
+          })),
         }}>
           {this.props.children}
         </div>

@@ -1449,7 +1449,7 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/integrations'
+          buttonLink='/dashboard/settings/project/advanced/integrations'
         />
         <BlockContent
           variant='content'
@@ -1464,7 +1464,7 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/integrations'
+          buttonLink='/dashboard/settings/project/advanced/integrations'
         />
       </HorizontalPanels>
       <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md'>
@@ -1481,7 +1481,7 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/integrations'
+          buttonLink='/dashboard/settings/project/advanced/integrations'
         />
         <BlockContent
           variant='content'

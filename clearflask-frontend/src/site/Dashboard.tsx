@@ -670,7 +670,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   key={currentPage.key}
                   page={currentPage}
                   editor={activeProject.editor}
-                  pageClicked={path => this.pageClicked(activePath, path)}
+                  pageClicked={path => this.pageClicked(activePath, ['project', 'advanced', ...path])}
                 />
               </ProjectSettingsBase>
             )

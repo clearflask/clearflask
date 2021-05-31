@@ -1,15 +1,13 @@
 import loadable from '@loadable/component';
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
-import DeleteIcon from '@material-ui/icons/CloseRounded';
 import VisitPageIcon from '@material-ui/icons/MoreHoriz';
-import PaintbrushIcon from '@material-ui/icons/Palette';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
-import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
 import { importFailed, importSuccess } from '../../../Main';
+import MyColorPicker from '../../MyColorPicker';
 import Overlay from '../../Overlay';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
@@ -23,12 +21,18 @@ interface Props {
   key: string;
   prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property;
   bare?: boolean;
+  marginTop?: number;
+  inputMinWidth?: string | number;
   width?: string | number;
-  pageClicked: (path: ConfigEditor.Path) => void;
+  pageClicked?: (path: ConfigEditor.Path) => void;
   isInsideMuiTable?: boolean;
   requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
   overrideName?: string;
   overrideDescription?: string;
+  // If property uses a TextField-like component, will inject these properties
+  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  // If property uses a TableProp, will inject these properties
+  TablePropProps?: Partial<React.ComponentProps<typeof TableProp>>;
 }
 
 export default class Property extends Component<Props> {
@@ -46,12 +50,10 @@ export default class Property extends Component<Props> {
 
   render() {
     const prop = this.props.prop;
-    const description = prop.description !== undefined ? prop.description : prop.description;
+    const description = this.props.overrideDescription !== undefined ? this.props.overrideDescription : prop.description;
     const name = this.props.overrideName !== undefined ? this.props.overrideName : prop.name || prop.pathStr;
-    const inputMinWidth = typeof this.props.width === 'number'
-      ? Math.min(Property.inputMinWidth, this.props.width)
-      : Property.inputMinWidth;
-    var marginTop = 30;
+    const inputMinWidth = this.props.inputMinWidth !== undefined ? this.props.inputMinWidth : Property.inputMinWidth;
+    var marginTop = this.props.marginTop !== undefined ? this.props.marginTop : 30;
     var propertySetter;
     var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
 
@@ -73,7 +75,9 @@ export default class Property extends Component<Props> {
                 flexDirection: 'column',
               }}>
                 <div ref={this.colorRef} style={{ position: 'relative' }}> {/* Div-wrapped so the absolutely positioned picker shows up in the right place */}
-                  <ColorPicker
+                  <MyColorPicker
+                    preview
+                    clearable={!prop.required}
                     label={!this.props.bare ? name : undefined}
                     name='color'
                     placeholder='#FFF'
@@ -81,52 +85,22 @@ export default class Property extends Component<Props> {
                     value={prop.value || ''}
                     onChange={color => (prop as ConfigEditor.StringProperty).set(color || undefined)}
                     error={!!prop.errorMsg}
-                    // Hack to modify material-ui-color-picker to fix bug
-                    // where a click inside the empty space inside the
-                    // picker would dismiss the picker.
-                    onFocus={() => setTimeout(() => {
-                      var ptr: any = this.colorRef;
-                      ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
-                      ptr && (ptr.position = 'relative');
-                    }, 500)}
                     InputLabelProps={{
                       shrink: shrink,
                       error: !!prop.errorMsg,
                     }}
                     TextFieldProps={{
-                      value: prop.value || '',
                       variant: 'outlined',
                       size: 'small',
                       InputProps: {
                         readOnly: true,
-                        inputProps: {
-                          autoComplete: 'off',
-                        },
                         style: {
                           minWidth: inputMinWidth,
                           width: this.props.width,
                         },
                         error: !!prop.errorMsg,
-                        endAdornment: (
-                          <InputAdornment position='end'>
-                            <IconButton
-                              aria-label='Clear'
-                              style={{
-                                visibility: !prop.required && prop.value ? undefined : 'hidden',
-                              }}
-                              onClick={() => prop.set(undefined)}
-                            >
-                              <DeleteIcon fontSize='small' />
-                            </IconButton>
-                            <PaintbrushIcon
-                              style={{
-                                color: prop.value === undefined ? undefined : (prop.value + ''),
-                              }}
-                              fontSize='small'
-                            />
-                          </InputAdornment>
-                        ),
                       },
+                      ...this.props.TextFieldProps,
                     }}
                   />
                 </div>
@@ -204,6 +178,7 @@ export default class Property extends Component<Props> {
                 width: this.props.width,
               },
             }}
+            {...this.props.TextFieldProps}
           />
         );
         if (prop.subType === ConfigEditor.PropSubType.Emoji) {
@@ -222,10 +197,10 @@ export default class Property extends Component<Props> {
         }
         break;
       case ConfigEditor.PageType:
-        const link = (
+        const link = !!this.props.pageClicked && (
           <div>
             <IconButton aria-label="Open" onClick={() => {
-              this.props.pageClicked(prop.path);
+              this.props.pageClicked && this.props.pageClicked(prop.path);
             }}>
               <VisitPageIcon />
             </IconButton>
@@ -254,7 +229,7 @@ export default class Property extends Component<Props> {
                       color='default'
                     />
                   )}
-                  label={description}
+                  label={!!description && (<FormHelperText >{description}</FormHelperText>)}
                   style={{
                     width: this.props.width,
                     minWidth: inputMinWidth,
@@ -388,6 +363,7 @@ export default class Property extends Component<Props> {
               TextFieldProps={{
                 variant: 'outlined',
                 size: 'small',
+                ...this.props.TextFieldProps,
               }}
               label={this.props.bare ? undefined : name}
               helperText={this.props.bare ? undefined : description}
@@ -409,11 +385,13 @@ export default class Property extends Component<Props> {
               key={prop.key}
               data={prop}
               errorMsg={prop.errorMsg}
-              label={!this.props.bare && name}
-              helperText={!this.props.bare && description}
+              label={name}
+              helperText={description}
               width={this.props.width}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={this.props.requiresUpgrade}
+              bare={this.props.bare}
+              {...this.props.TablePropProps}
             />
           );
         }
@@ -497,6 +475,7 @@ export default class Property extends Component<Props> {
             TextFieldProps={{
               variant: 'outlined',
               size: 'small',
+              ...this.props.TextFieldProps,
             }}
             disableClearable={prop.required}
             label={this.props.bare ? undefined : name}

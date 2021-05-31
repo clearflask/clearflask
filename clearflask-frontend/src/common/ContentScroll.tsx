@@ -7,19 +7,19 @@ export enum Orientation {
   Horizontal = 'horizontal',
   Both = 'both',
 }
-
 export enum Side {
   Center = 'center',
   Left = 'left',
   Right = 'right',
 }
-
-export const contentScrollApplyStyles = (props: {
+export interface ContentScrollProps {
   theme: Theme;
   orientation: Orientation;
   side?: Side;
   backgroundColor?: string;
-}): Record<string, string | CSSProperties> => {
+}
+
+export const contentScrollApplyStyles = (props: ContentScrollProps): Record<string, string | CSSProperties> => {
   const theme = props.theme;
   const side = props.side || Side.Center;
   const orientation = props.orientation || Orientation.Horizontal;

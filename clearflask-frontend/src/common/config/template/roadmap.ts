@@ -2,17 +2,19 @@ import * as Admin from "../../../api/admin";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
+import { CategoryAndIndex } from "./feedback";
 
 const RoadmapPageIdPrefix = 'roadmap-';
 export interface RoadmapInstance {
-  page: Admin.Page & Required<Pick<Admin.Page, 'board'>>,
-  pageIndex: number,
+  categoryAndIndex: CategoryAndIndex;
+  page: Admin.Page & Required<Pick<Admin.Page, 'board'>>;
+  pageIndex: number;
 }
 
 export async function roadmapGet(this: Templater): Promise<RoadmapInstance | undefined> {
   const feedback = (await this.feedbackGet())
   if (!feedback) throw new Error('Feedback not enabled');
-  const postCategoryId = feedback.category.categoryId;
+  const postCategoryId = feedback.categoryAndIndex.category.categoryId;
 
   var potentialPageWithBoard = this.editor.getConfig().layout.pages
     .filter(page => !!page.board && page.pageId.startsWith(RoadmapPageIdPrefix));
@@ -33,6 +35,7 @@ export async function roadmapGet(this: Templater): Promise<RoadmapInstance | und
   } else if (potentialPageWithBoard.length === 1) {
     const roadmapPage = potentialPageWithBoard[0]!;
     return {
+      categoryAndIndex: feedback.categoryAndIndex,
       page: roadmapPage as any,
       pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPage.pageId),
     };
@@ -47,6 +50,7 @@ export async function roadmapGet(this: Templater): Promise<RoadmapInstance | und
     }, 'Cancel');
     if (!roadmapPageId) return undefined;
     return {
+      categoryAndIndex: feedback.categoryAndIndex,
       page: this.editor.getConfig().layout.pages.find(p => p.pageId === roadmapPageId) as any,
       pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPageId),
     };
@@ -60,9 +64,9 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
 
     const feedback = (await this.feedbackGet())
     if (!feedback) throw new Error('Feedback not enabled');
-    const postCategoryId = feedback.category.categoryId;
+    const postCategoryId = feedback.categoryAndIndex.category.categoryId;
 
-    const feedbackStatuses = feedback.category.workflow.statuses;
+    const feedbackStatuses = feedback.categoryAndIndex.category.workflow.statuses;
     const status1: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Planned/i)) || feedbackStatuses[0];
     const status2: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/In progress/i)) || feedbackStatuses[1];
     const status3: Admin.IdeaStatus | undefined = feedbackStatuses.find(s => s.name.match(/Completed/i)) || feedbackStatuses[2];

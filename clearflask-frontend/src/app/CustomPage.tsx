@@ -305,7 +305,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 export const BoardContainer = (props: {
   server: Server,
   board: Client.PageBoard,
-  panels?: any[];
+  panels?: any;
   overrideTitle?: React.ReactNode;
 }) => {
   const classes = useStyles();

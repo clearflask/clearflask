@@ -1,18 +1,14 @@
-import loadable from '@loadable/component';
 import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
-import Loading from '../../../app/utils/Loading';
-import { importFailed, importSuccess } from '../../../Main';
 import * as ConfigEditor from '../configEditor';
 import CreditPreview from './injects/CreditPreview';
+import WorkflowPreview from './injects/WorkflowPreview';
 import PresetWidget from './PresetWidget';
 import Property from './Property';
 import { RestrictedProperties } from './UpgradeWrapper';
-
-const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'./injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -68,7 +64,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
               prop={child}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={propertyRequiresUpgrade}
-              width='350px'
+              width={350}
             />
           ))}
       </div>

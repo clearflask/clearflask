@@ -1,15 +1,23 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core';
+import classNames from 'classnames';
 import Cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import React, { Component } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import ErrorMsg from '../../../../app/ErrorMsg';
 import DividerCorner from '../../../../app/utils/DividerCorner';
+import { contentScrollApplyStyles, Orientation } from '../../../ContentScroll';
 import * as ConfigEditor from '../../configEditor';
 
 const styles = (theme: Theme) => createStyles({
-  graph: {
+  border: {
     border: '1px solid ' + theme.palette.grey[300],
+    borderRadius: 4,
+  },
+  scroll: {
+    width: '100%',
+    height: '100%',
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Both }),
   },
 });
 
@@ -20,6 +28,9 @@ interface Props extends WithStyles<typeof styles, true> {
   hideCorner?: boolean;
   width?: number | string;
   height?: number | string;
+  static?: boolean;
+  scroll?: boolean;
+  border?: boolean;
 }
 
 interface State {
@@ -118,10 +129,19 @@ class WorkflowPreview extends Component<Props, State> {
         key={nodes.length + edges.length}
         minZoom={1}
         maxZoom={2}
+        autounselectify={!!this.props.static}
+        userZoomingEnabled={!this.props.static}
+        userPanningEnabled={!this.props.static}
+        autoungrabify={!!this.props.static}
+        boxSelectionEnabled={!this.props.static}
         elements={[
           ...nodes,
           ...edges.filter(e => seenStatusIds.has(e.data.source) && seenStatusIds.has(e.data.target))
         ]}
+        className={classNames(
+          this.props.border && this.props.classes.border,
+          this.props.scroll && this.props.classes.scroll,
+        )}
         style={{
           'min-width': '250px',
           width: this.props.width || '100%',

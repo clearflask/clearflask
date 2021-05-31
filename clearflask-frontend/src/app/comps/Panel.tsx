@@ -23,6 +23,14 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'stretch',
     ...contentScrollApplyStyles({ theme, side: Side.Center, orientation: Orientation.Vertical }),
   },
+  cornerlessHorizontal: {
+    height: '90%',
+    maxHeight: 300,
+  },
+  cornerlessVertical: {
+    width: '90%',
+    maxWidth: 300,
+  },
 });
 
 interface Props {
@@ -54,6 +62,13 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
         >
           {content}
         </DividerCorner>
+      );
+    } else {
+      content = (
+        <div className={this.props.direction === Direction.Horizontal
+          ? this.props.classes.cornerlessHorizontal : this.props.classes.cornerlessVertical}>
+          {content}
+        </div>
       );
     }
 
