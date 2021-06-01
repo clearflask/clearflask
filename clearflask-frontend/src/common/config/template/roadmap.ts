@@ -108,6 +108,12 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       menuId: randomUuid(), pageIds: [roadmapPageId],
     }));
 
+
+    const landing = await this.landingGet();
+    if (landing) {
+      this.landingOn(new Set([roadmapPageId]));
+    }
+
     roadmap = (await this.roadmapGet())!;
   }
   return roadmap;

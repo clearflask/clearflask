@@ -1,13 +1,14 @@
-import { Button, IconButton, Link as MuiLink, Paper, Typography } from '@material-ui/core';
+import { CardActionArea, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
+import { preserveEmbed } from '../common/util/historyUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -15,14 +16,6 @@ import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
-
-interface LandingLink {
-  title?: string;
-  links: Array<{
-    name?: string;
-    to: string;
-  }>;
-}
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -83,18 +76,29 @@ const styles = (theme: Theme) => createStyles({
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   landingPaper: {
     flex: '1 1 150px',
+    marginTop: theme.spacing(6),
     maxWidth: 250,
     height: 300,
     display: 'flex',
-    boxShadow: '-10px -10px 40px 0 rgba(0,0,0,0.1)',
+    // boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
+    border: '1px solid ' + theme.palette.grey[300],
     margin: theme.spacing(2),
     padding: theme.spacing(2),
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  landingLinkDescription: {
+    margin: theme.spacing(0, 1),
+  },
+  landingLinkGoIcon: {
+    alignSelf: 'flex-end',
+    margin: theme.spacing(1, 4, 0, 0),
+    fontSize: '3em',
   },
 });
 const useStyles = makeStyles(styles);
@@ -108,7 +112,7 @@ interface ConnectProps {
   pageNotFound: boolean;
   page?: Client.Page;
 }
-class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
 
   render() {
     if (this.props.pageNotFound) {
@@ -133,69 +137,45 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
       // ### LANDING
       if (!!this.props.page.landing) {
-        const links: Array<LandingLink> = [];
-        if (this.props.page.landing.menuLinks) {
-          this.props.config?.layout.menu.forEach(menu => {
-            const link: LandingLink = {
-              title: menu.name,
-              links: [],
-            };
-            menu.pageIds.forEach(pageId => {
-              const page = this.props.config?.layout.pages.find(p => p.pageId === pageId);
-              if (!page) return;
-              if (!link.title) link.title = page.name;
-              link.links.push({
-                to: page.slug,
-              });
-            })
-            links.push(link);
-          });
-        }
-        this.props.page.landing.links?.forEach(customLink => {
-          links.push({
-            title: customLink.title,
-            links: [{ to: customLink.url }],
-          });
-        })
         landingCmpt = (
           <div className={this.props.classes.landing}>
-            {links.map((link, index) => {
+            {this.props.page.landing.links?.map((link, index) => {
+              const linkToSlug = !link.linkToPageId ? undefined
+                : this.props.config?.layout.pages.find(p => p.pageId === link.linkToPageId)?.slug;
+              var linkProps: object | undefined;
+              if (linkToSlug) {
+                linkProps = {
+                  component: Link,
+                  to: preserveEmbed(`/${linkToSlug}`, this.props.location),
+                };
+              } else if (link.url) {
+                linkProps = {
+                  component: MuiLink,
+                  href: link.url,
+                  underline: 'none',
+                };
+              } else {
+                return null;
+              }
               return (
-                <Paper
-                  key={index}
+                <CardActionArea
+                  onClick={e => { }}
+                  key={`${link.linkToPageId || link.url}`}
                   className={this.props.classes.landingPaper}
+                  {...linkProps}
                 >
                   {!!link.title && (
                     <Typography variant='h4' component='h2'>{link.title}</Typography>
                   )}
-                  {link.links.map((link, linkIndex) => {
-                    const linkProps = link.to.includes('://') ? {
-                      component: MuiLink,
-                      href: link.to,
-                      underline: 'none',
-                    } : {
-                      component: Link,
-                      to: link.to,
-                    };
-                    return !!link.name ? (
-                      <Button
-                        key={linkIndex}
-                        variant='contained'
-                        disableElevation
-                        {...linkProps}
-                      >
-                        {link.name}
-                      </Button>
-                    ) : (
-                      <IconButton
-                        key={linkIndex}
-                        {...linkProps}
-                      >
-                        <GoIcon color='inherit' />
-                      </IconButton>
-                    );
-                  })}
-                </Paper>
+                  {!!link.description && (
+                    <Typography variant='body1' component='div' className={this.props.classes.landingLinkDescription}>{link.description}</Typography>
+                  )}
+                  <GoIcon
+                    className={this.props.classes.landingLinkGoIcon}
+                    color='inherit'
+                    fontSize='inherit'
+                  />
+                </CardActionArea>
               );
             })}
           </div>
@@ -387,4 +367,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(CustomPage));
+})(withStyles(styles, { withTheme: true })(withRouter(CustomPage)));

@@ -4,6 +4,7 @@ import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd, feedbackSubcategoryRename } from "./template/feedback";
+import { landingGet, landingOff, landingOn } from "./template/landing";
 import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
 import { _pageDelete } from "./template/templateUtils";
 
@@ -94,6 +95,10 @@ export default class Templater {
   roadmapOn = roadmapOn;
   roadmapOff = roadmapOff;
 
+  landingGet = landingGet;
+  landingOn = landingOn;
+  landingOff = landingOff;
+
   // During template changes, user confirmation is required.
   // IE: Change to a roadmap column is requested, but we are unsure which Board
   // should be updated. User is asked which board corresponds to the right Roadmap.
@@ -124,7 +129,7 @@ export default class Templater {
   demo(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
     this.createTemplate({
       infoName: 'Sandbox App',
-      infoLogo: '/favicon.ico',
+      infoLogo: '/img/clearflask-logo.png',
       ...opts,
     });
     this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');

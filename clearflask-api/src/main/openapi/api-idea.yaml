@@ -18,7 +18,7 @@ components:
           items:
             type: string
         invertCategory:
-          x-clearflask-prop: { order: 2, name: 'Invert category', description: 'Invert selection of matching categories' }
+          x-clearflask-prop: { order: 2, name: 'Invert category', description: 'Invert selection of matching categories', falseAsUndefined: true }
           type: boolean
         filterStatusIds:
           x-clearflask-prop: { order: 4, name: 'Status', description: 'Display only ideas having these statuses' }
@@ -27,7 +27,7 @@ components:
           items:
             type: string
         invertStatus:
-          x-clearflask-prop: { order: 5, name: 'Invert status', description: 'Invert selection of matching statuses' }
+          x-clearflask-prop: { order: 5, name: 'Invert status', description: 'Invert selection of matching statuses', falseAsUndefined: true }
           type: boolean
         filterTagIds:
           x-clearflask-prop: { order: 6, name: 'Tag', description: 'Display only posts with these tags' }
@@ -36,7 +36,7 @@ components:
           items:
             type: string
         invertTag:
-          x-clearflask-prop: { order: 7, name: 'Invert tag', description: 'Invert selection of matching tags' }
+          x-clearflask-prop: { order: 7, name: 'Invert tag', description: 'Invert selection of matching tags', falseAsUndefined: true }
           type: boolean
         filterAuthorId:
           x-clearflask-hide: true

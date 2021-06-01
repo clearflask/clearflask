@@ -7,7 +7,7 @@ import Templater from "../configTemplater";
 
 const FeedbackCategoryIdPrefix = 'feedback-';
 const FeedbackSubCategoryTagIdPrefix = 'subcategory-';
-interface PageAndIndex {
+export interface PageAndIndex {
   page: Admin.Page,
   index: number,
 }
@@ -68,18 +68,19 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
     subcategories: [],
   };
 
+  const categoryTags = feedbackCategory.category.tagging.tags.filter(t => t.tagId.startsWith(FeedbackSubCategoryTagIdPrefix));
+
   const findPageAndIndex = async (category: Admin.Category, tag?: Admin.Tag): Promise<PageAndIndex | undefined> => {
     const expectedFilterTagIds = tag
       // Ensure that this page is filtering out tag exactly
       ? [tag.tagId]
       // Or if this is a case of backwards compatibility where we are looking for the absence of a tag,
       // ensure that this page is filtering out all other category tags
-      : category.tagging.tags.filter(t => !t.tagId.startsWith(FeedbackSubCategoryTagIdPrefix)).map(t => t.tagId);
+      : categoryTags.map(t => t.tagId);
     const expectedInvertTag = !!tag ? false : (expectedFilterTagIds.length > 0 ? true : undefined);
     const potentialPages: PageAndIndex[] = this.editor.getConfig().layout.pages
       .map((page, index) => ({ page, index }))
-      .filter(p => p.page.explorer?.search.filterCategoryIds?.length === 1
-        && p.page.explorer.search.filterCategoryIds[0] === category.categoryId
+      .filter(p => p.page.explorer
         && (expectedInvertTag === undefined || !!p.page.explorer.search.invertTag === expectedInvertTag)
         && expectedFilterTagIds.length === (p.page.explorer.search.filterTagIds?.length || 0)
         && expectedFilterTagIds.every(expectedTagId => p.page.explorer?.search.filterTagIds?.some(tId => tId === expectedTagId))
@@ -112,12 +113,11 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
     feedback.subcategories.push({ pageAndIndex });
   }
 
-  feedbackCategory.category.tagging.tags.filter(t => t.tagId.startsWith(FeedbackSubCategoryTagIdPrefix))
-    .forEach(async t => {
-      const pageAndIndex = await findPageAndIndex(feedbackCategory!.category, t);
-      if (!!pageAndIndex) feedback.hasAnyPages = true;
-      feedback.subcategories.push({ tagId: t.tagId, pageAndIndex });
-    });
+  await Promise.all(categoryTags.map(async t => {
+    const pageAndIndex = await findPageAndIndex(feedbackCategory!.category, t);
+    if (!!pageAndIndex) feedback.hasAnyPages = true;
+    feedback.subcategories.push({ tagId: t.tagId, pageAndIndex });
+  }));
 
   return feedback;
 }
@@ -212,15 +212,37 @@ export async function feedbackOn(this: Templater, onlySingleSubcat?: FeedbackSub
     }
   }
 
+  const landing = await this.landingGet();
+  if (landing) {
+    const subcatsForLandingPage = feedback.subcategories
+      .filter(subcat => !onlySingleSubcat || subcat.tagId === onlySingleSubcat.tagId)
+      .map(subcat => subcat.pageAndIndex?.page.pageId)
+      .filter(notEmpty);
+    if (subcatsForLandingPage.length) {
+      this.landingOn(new Set(subcatsForLandingPage));
+    }
+  }
+
   return feedback;
 }
 export async function feedbackSubcategoryAdd(this: Templater, name: string): Promise<FeedbackInstance> {
   var feedback = await this.feedbackGet();
   if (!feedback) throw new Error('Feedback is not enabled');
   const categoryIndex = this.editor.getConfig().content.categories
-    .findIndex(c => c.categoryId === feedback!.categoryAndIndex.category.categoryId)
-  this.tagging(categoryIndex, [{ name, tagId: FeedbackSubCategoryTagIdPrefix + randomUuid() }]);
-  return this.feedbackOn();
+    .findIndex(c => c.categoryId === feedback!.categoryAndIndex.category.categoryId);
+  const tagId = FeedbackSubCategoryTagIdPrefix + randomUuid();
+  this.tagging(categoryIndex, [{ name, tagId }]);
+
+  // For backwards compat, catch-all subcat needs to be updated to filter out this new subcat
+  const catchAllSubcat = feedback.subcategories.find(subcat => !subcat.tagId);
+  if (catchAllSubcat?.pageAndIndex?.page.explorer) {
+    this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', catchAllSubcat.pageAndIndex.index, 'explorer', 'search', 'filterTagIds'])
+      .insert(tagId);
+    const invertTagProp = this._get<ConfigEditor.BooleanProperty>(['layout', 'pages', catchAllSubcat.pageAndIndex.index, 'explorer', 'search', 'invertTag']);
+    if (!invertTagProp.value) invertTagProp.set(true);
+  }
+
+  return this.feedbackOn({ tagId });
 }
 export function feedbackSubcategoryRename(this: Templater, feedback: FeedbackInstance, subcat: FeedbackSubCategoryInstance, name: string) {
   if (subcat.tagId) {

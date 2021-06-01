@@ -546,25 +546,29 @@ components:
                 x-clearflask-prop: { order: 5, name: 'Landing', description: 'Intended for a landing page, hide the navigation menu and instead show a set of large links for each page.' }
                 type: object
                 required:
-                - menuLinks
                 - links
                 properties:
-                  menuLinks:
-                    x-clearflask-prop: { order: 0, name: 'Menu links', description: 'Shows a link for each menu item', defaultValue: true }
-                    type: boolean
                   links:
                     x-clearflask-prop: { order: 1, name: 'Additional links', description: 'Add additional custom links.' }
                     type: array
                     items:
+                      title: LandingLink
                       type: object
                       required:
-                      - url
+                      - title
                       properties:
                         title:
-                          x-clearflask-prop: { order: 0, name: 'Name', description: 'Text to show for this link', placeholder: 'Name' }
+                          x-clearflask-prop: { order: 0, name: 'Name', description: 'Headline to show for this link', placeholder: 'Name' }
+                          type: string
+                        description:
+                          x-clearflask-prop: { order: 1, name: 'Description', description: 'Description to show for this link', placeholder: 'Description' }
+                          type: string
+                        linkToPageId:
+                          x-clearflask-prop: { order: 1, name: 'Page Link', description: 'Interal link to another page.' }
+                          x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
                           type: string
                         url:
-                          x-clearflask-prop: { order: 1, name: 'Link', description: 'Link where to direct users. Can be an internal link to another page, external link or a custom protocol such as an email address.', placeholder: 'https://' }
+                          x-clearflask-prop: { order: 2, name: 'External Link', description: 'External link where to direct your users to an external link such as your website or an email address.', placeholder: 'https://' }
                           type: string
               panels:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: ['title'] }
@@ -688,7 +692,7 @@ components:
                 type: integer
                 format: int64
               userSettable:
-                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Tags in this group can be set by the user', defaultValue: true }
+                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Tags in this group can be set by the user', trueLabel: 'Allowed by user', falseLabel: 'Only admins', defaultValue: true }
                 type: boolean
               tagIds:
                 x-clearflask-prop: { order: 5, name: 'Tags', description: 'Select tags that belong to this group' }

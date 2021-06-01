@@ -8,7 +8,7 @@ export default function MyColorPicker(props: {
   clearable?: boolean;
   preview?: boolean;
   component?: any;
-} & React.ComponentProps<typeof ColorPicker>) {
+} & Omit<React.ComponentProps<typeof ColorPicker>, 'InputProps'>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { clearable, preview, component, ...ColorPickerProps } = props;
   const ColorPickerCmpt = component || ColorPicker;

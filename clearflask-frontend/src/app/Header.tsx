@@ -5,6 +5,7 @@ import AccountIcon from '@material-ui/icons/AccountCircle';
 import ReturnIcon from '@material-ui/icons/KeyboardBackspaceOutlined';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import SettingsIcon from '@material-ui/icons/Settings';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -19,6 +20,8 @@ import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';
 import NotificationBadge from './NotificationBadge';
 import NotificationPopup from './NotificationPopup';
+
+const largeLogoFactor = 1.7;
 
 const styles = (theme: Theme) => createStyles({
   header: {
@@ -91,7 +94,13 @@ const styles = (theme: Theme) => createStyles({
     height: 'auto',
     width: 'auto',
     minWidth: 48, // Minimize reflow for square images
+    minHeight: 48, // Minimize reflow for square images
     padding: theme.spacing(1),
+    transition: theme.transitions.create(['min-width', 'min-height']),
+  },
+  logoImgLarge: {
+    minWidth: largeLogoFactor * 48,
+    minHeight: largeLogoFactor * 48, // Minimize reflow for square images
   },
   logoTextLinkWrapper: {
     flex: '1 0 auto',
@@ -104,6 +113,10 @@ const styles = (theme: Theme) => createStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     textDecoration: 'none',
+    transition: theme.transitions.create('font-size'),
+  },
+  logoTextLarge: {
+    fontSize: `${largeLogoFactor}em`,
   },
   actions: {
     minHeight: 48,
@@ -128,6 +141,10 @@ const styles = (theme: Theme) => createStyles({
   },
   menuDivider: {
     marginTop: -1,
+    transition: theme.transitions.create('height'),
+  },
+  menuDividerLanding: {
+    height: 0,
   },
 });
 const useStyles = makeStyles(styles);
@@ -338,12 +355,15 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         <div className={this.props.classes.headerSpacing}>
           <div className={this.props.classes.header}>
             <div className={this.props.classes.logoAndMenu}>
-              <HeaderLogo config={this.props.config} />
+              <HeaderLogo config={this.props.config} large={isLanding} />
               {menu}
             </div>
             {rightSide}
           </div>
-          <Divider className={this.props.classes.menuDivider} />
+          <Divider className={classNames(
+            this.props.classes.menuDivider,
+            isLanding && this.props.classes.menuDividerLanding,
+          )} />
         </div>
       );
     }
@@ -379,17 +399,24 @@ export const HeaderLogo = (props: {
   config?: Client.Config,
   targetBlank?: boolean;
   suppressLogoLink?: boolean;
+  large?: boolean;
 }) => {
   const classes = useStyles();
 
   const name = !props.config?.name ? undefined : (
-    <Typography variant='h6' className={classes.logoText}>
+    <Typography variant='h6' className={classNames(
+      classes.logoText,
+      props.large && classes.logoTextLarge,
+    )}>
       {props.config && props.config.name}
     </Typography>
   );
 
   const logo = !props.config?.logoUrl ? undefined : (
-    <img alt='' src={props.config.logoUrl} className={classes.logoImg} />
+    <img alt='' src={props.config.logoUrl} className={classNames(
+      classes.logoImg,
+      props.large && classes.logoImgLarge,
+    )} />
   );
 
   const logoAndName = props.suppressLogoLink ? (

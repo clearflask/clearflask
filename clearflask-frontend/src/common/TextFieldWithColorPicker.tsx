@@ -24,27 +24,32 @@ export default function TextFieldWithColorPicker(props: {
       showPicker={showPicker}
       setShowPicker={setShowPicker}
 
+      {...MyColorPickerProps}
       TextFieldProps={{
         value: textValue || '',
         onClick: e => { },
         onChange: e => onTextChange(e.target.value),
+        ...MyColorPickerProps.TextFieldProps,
         InputProps: {
+          ...MyColorPickerProps.TextFieldProps?.InputProps,
           endAdornment: (
-            <IconButton
-              aria-label='Color'
-              onClick={() => setShowPicker(!showPicker)}
-            >
-              <PaintbrushIcon
-                style={{
-                  color: colorValue === undefined ? undefined : colorValue,
-                }}
-                fontSize='small'
-              />
-            </IconButton>
+            <>
+              <IconButton
+                aria-label='Color'
+                onClick={() => setShowPicker(!showPicker)}
+              >
+                <PaintbrushIcon
+                  style={{
+                    color: colorValue === undefined ? undefined : colorValue,
+                  }}
+                  fontSize='small'
+                />
+              </IconButton>
+              {MyColorPickerProps?.InputProps?.endAdornment}
+            </>
           ),
         },
       }}
-      {...MyColorPickerProps}
     />
   );
 }

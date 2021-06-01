@@ -1,4 +1,4 @@
-import { Button, Checkbox, Collapse, FormControlLabel, IconButton, InputAdornment, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControlLabel, FormLabel, IconButton, InputAdornment, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EditIcon from '@material-ui/icons/Edit';
@@ -27,6 +27,7 @@ import Property from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
 import { FeedbackInstance, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
+import { LandingInstance } from '../../common/config/template/landing';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import FakeBrowser from '../../common/FakeBrowser';
@@ -103,6 +104,9 @@ const styles = (theme: Theme) => createStyles({
   feedbackAddWithAccordion: {
     margin: theme.spacing(0),
   },
+  feedbackTagGroupProperty: {
+    marginBottom: theme.spacing(2),
+  },
   roadmapAddTitleButton: {
     display: 'block',
     marginTop: theme.spacing(4),
@@ -135,7 +139,7 @@ const styles = (theme: Theme) => createStyles({
   tagPreviewContainer: {
     padding: theme.spacing(4, 2),
   },
-  subcatPreviewExplorer: {
+  previewExplorer: {
     width: 'max-content',
     height: 'max-content',
   },
@@ -726,8 +730,73 @@ export const ProjectSettingsLanding = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const classes = useStyles();
   return (
     <ProjectSettingsBase title='Landing'>
+      <TemplateWrapper<LandingInstance | undefined>
+        editor={props.editor}
+        mapper={templater => templater.landingGet()}
+        render={(templater, landing) => (
+          <>
+            <FormControlLabel
+              label={!!landing ? 'Enabled' : 'Disabled'}
+              control={(
+                <Switch
+                  checked={!!landing}
+                  onChange={(e, checked) => !!landing
+                    ? templater.landingOff(landing)
+                    : templater.landingOn()}
+                  color='primary'
+                />
+              )}
+            />
+            {landing && (
+              <>
+                <Section
+                  title='Links'
+                  description='Modify the landing page links to point to your roadmap, feedback or your support email.'
+                  preview={(
+                    <BrowserPreview server={props.server} scroll={Orientation.Both} FakeBrowserProps={{
+                      fixedWidth: 350,
+                      fixedHeight: 500,
+                    }}>
+                      <div className={classes.previewExplorer}>
+                        <CustomPage
+                          key={props.server.getProjectId()}
+                          server={props.server}
+                          pageSlug={landing.pageAndIndex.page.slug}
+                        />
+                      </div>
+                    </BrowserPreview>
+                  )}
+                  content={(
+                    <>
+                      <div className={classes.feedbackAccordionContainer}>
+                        {props.editor.getConfig().layout.pages[landing.pageAndIndex.index]?.landing?.links.map(link => (
+                          <div
+                            key={link.linkToPageId || link.url}
+                          >
+                            TODO
+                            {link.title}
+                          </div>
+                        ))}
+                      </div>
+                      <ProjectSettingsAddWithName
+                        label='New subcategory'
+                        withAccordion
+                        onAdd={newSubcat => {
+                          // TODO
+                        }}
+                      />
+                    </>
+                  )}
+                />
+              </>
+            )}
+          </>
+        )
+        }
+      />
       <p>TODO choose: home page, or another page as main; if home page chosen:</p>
       <p>TODO Add contact link (email or url)</p>
     </ProjectSettingsBase>
@@ -772,7 +841,7 @@ export const ProjectSettingsFeedback = (props: {
                         fixedWidth: 350,
                         fixedHeight: 500,
                       }}>
-                        <div className={classes.subcatPreviewExplorer}>
+                        <div className={classes.previewExplorer}>
                           <CustomPage
                             key={`${props.server.getProjectId()}-${previewSubcat.tagId || 'uncat'}`}
                             server={props.server}
@@ -987,11 +1056,13 @@ export const ProjectSettingsFeedbackStatus = (props: {
               onTextChange={text => setStatusName(text)}
               colorValue={statusColor}
               onColorChange={color => setStatusColor(color)}
-              InputProps={{
-                style: {
-                  minWidth: Property.inputMinWidth,
-                  width: propertyWidth,
-                },
+              TextFieldProps={{
+                InputProps: {
+                  style: {
+                    minWidth: Property.inputMinWidth,
+                    width: propertyWidth,
+                  },
+                }
               }}
             />
           )}
@@ -1093,6 +1164,7 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
   expanded: boolean;
   onExpandedChange: () => void;
 }) => {
+  const classes = useStyles();
   const [minRequired, setMinRequired] = useState<number | undefined>(props.tagGroup.minRequired);
   const [maxRequired, setMaxRequired] = useState<number | undefined>(props.tagGroup.maxRequired);
   const tagsWithIndexes = props.feedback.categoryAndIndex.category.tagging.tags
@@ -1119,34 +1191,44 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
         />
       )}
     >
-      <Collapse in={props.tagGroup.tagIds.length > 1}>
-        <Typography>Number of required tags</Typography>
-        <Slider
-          marks
-          valueLabelDisplay='auto'
-          value={[
-            minRequired !== undefined ? minRequired : 0,
-            maxRequired !== undefined ? maxRequired : props.tagGroup.tagIds.length,
-          ]}
-          min={0}
-          max={props.tagGroup.tagIds.length}
-          onChange={(e, value) => {
-            const min = Math.min(value[0], value[1]);
-            const max = Math.max(value[0], value[1]);
-            setMinRequired(min);
-            setMaxRequired(max);
-          }}
-          onChangeCommitted={(e, value) => {
-            const min = Math.min(value[0], value[1]);
-            const max = Math.max(value[0], value[1]);
-            setTimeout(() => {
-              (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'minRequired']) as ConfigEditor.IntegerProperty)
-                .set(min === 0 ? undefined : min);
-              (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'maxRequired']) as ConfigEditor.IntegerProperty)
-                .set(max === props.tagGroup.tagIds.length ? undefined : max);
-            }, 10);
-          }}
+      <div className={classes.feedbackTagGroupProperty}>
+        <PropertyByPath
+          marginTop={0}
+          overrideName='User settable'
+          editor={props.editor}
+          path={['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'userSettable']}
         />
+      </div>
+      <Collapse in={props.tagGroup.tagIds.length > 1}>
+        <div className={classes.feedbackTagGroupProperty}>
+          <FormLabel>Number of required tags</FormLabel>
+          <Slider
+            marks
+            valueLabelDisplay='auto'
+            value={[
+              minRequired !== undefined ? minRequired : 0,
+              maxRequired !== undefined ? maxRequired : props.tagGroup.tagIds.length,
+            ]}
+            min={0}
+            max={props.tagGroup.tagIds.length}
+            onChange={(e, value) => {
+              const min = Math.min(value[0], value[1]);
+              const max = Math.max(value[0], value[1]);
+              setMinRequired(min);
+              setMaxRequired(max);
+            }}
+            onChangeCommitted={(e, value) => {
+              const min = Math.min(value[0], value[1]);
+              const max = Math.max(value[0], value[1]);
+              setTimeout(() => {
+                (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'minRequired']) as ConfigEditor.IntegerProperty)
+                  .set(min === 0 ? undefined : min);
+                (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'maxRequired']) as ConfigEditor.IntegerProperty)
+                  .set(max === props.tagGroup.tagIds.length ? undefined : max);
+              }, 10);
+            }}
+          />
+        </div>
       </Collapse>
       {props.tagGroup.tagIds
         .map(tagId => tagsWithIndexes.find(t => t.tag.tagId === tagId))
@@ -1206,10 +1288,12 @@ export const ProjectSettingsFeedbackTag = (props: {
       onTextChange={text => setTagName(text)}
       colorValue={tagColor}
       onColorChange={color => setTagColor(color)}
-      InputProps={{
-        style: {
-          minWidth: Property.inputMinWidth,
-          width: propertyWidth,
+      TextFieldProps={{
+        InputProps: {
+          style: {
+            minWidth: Property.inputMinWidth,
+            width: propertyWidth,
+          },
         },
       }}
     />
