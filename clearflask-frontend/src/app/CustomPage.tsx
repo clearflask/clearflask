@@ -4,11 +4,12 @@ import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Link, RouteComponentProps, withRouter } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
 import { preserveEmbed } from '../common/util/historyUtil';
+import { getProjectLink } from '../site/Dashboard';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -24,8 +25,10 @@ const styles = (theme: Theme) => createStyles({
   spacing: {
     marginTop: theme.spacing(4),
   },
-  spacingTitleAndDescription: {
+  titleAndDescription: {
     maxWidth: 400,
+  },
+  spacingTitleAndDescription: {
     margin: theme.spacing(4, 16, 0),
     [theme.breakpoints.down('xs')]: {
       marginLeft: theme.spacing(4),
@@ -112,7 +115,7 @@ interface ConnectProps {
   pageNotFound: boolean;
   page?: Client.Page;
 }
-class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
+class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
     if (this.props.pageNotFound) {
@@ -139,45 +142,13 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (!!this.props.page.landing) {
         landingCmpt = (
           <div className={this.props.classes.landing}>
-            {this.props.page.landing.links?.map((link, index) => {
-              const linkToSlug = !link.linkToPageId ? undefined
-                : this.props.config?.layout.pages.find(p => p.pageId === link.linkToPageId)?.slug;
-              var linkProps: object | undefined;
-              if (linkToSlug) {
-                linkProps = {
-                  component: Link,
-                  to: preserveEmbed(`/${linkToSlug}`, this.props.location),
-                };
-              } else if (link.url) {
-                linkProps = {
-                  component: MuiLink,
-                  href: link.url,
-                  underline: 'none',
-                };
-              } else {
-                return null;
-              }
-              return (
-                <CardActionArea
-                  onClick={e => { }}
-                  key={`${link.linkToPageId || link.url}`}
-                  className={this.props.classes.landingPaper}
-                  {...linkProps}
-                >
-                  {!!link.title && (
-                    <Typography variant='h4' component='h2'>{link.title}</Typography>
-                  )}
-                  {!!link.description && (
-                    <Typography variant='body1' component='div' className={this.props.classes.landingLinkDescription}>{link.description}</Typography>
-                  )}
-                  <GoIcon
-                    className={this.props.classes.landingLinkGoIcon}
-                    color='inherit'
-                    fontSize='inherit'
-                  />
-                </CardActionArea>
-              );
-            })}
+            {this.props.page.landing.links?.map((link, index) => (
+              <LandingLink
+                server={this.props.server}
+                config={this.props.config}
+                link={link}
+              />
+            ))}
           </div>
         );
       }
@@ -237,35 +208,13 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         );
       }
 
-      var title;
-      if (this.props.page.title) {
-        title = (
-          <Typography component="h1" variant="h5" color="textPrimary">{this.props.page.title}</Typography>
-        );
-      }
-
-      var desc;
-      if (this.props.page.description) {
-        desc = (
-          <div className={this.props.classes.description}>
-            <RichViewer key={this.props.page.description} iAgreeInputIsSanitized html={this.props.page.description} />
-          </div>
-        );
-      }
-
-      var top;
-      if (title || desc) {
-        top = (
-          <div className={this.props.classes.spacingTitleAndDescription}>
-            {title}
-            {desc}
-          </div>
-        );
-      }
+      const titleDescription = (
+        <PageTitleDescription page={this.props.page} />
+      );
 
       page = (
         <div className={this.props.classes.page}>
-          {top}
+          {titleDescription}
           {landingCmpt}
           {panelsCmpt}
           {boardCmpt}
@@ -310,6 +259,99 @@ export const BoardContainer = (props: {
       </div>
     );
   }
+}
+
+export const PageTitleDescription = (props: {
+  page: Client.Page;
+  suppressSpacing?: boolean;
+}) => {
+  const classes = useStyles();
+
+  var title;
+  if (props.page.title) {
+    title = (
+      <Typography component="h1" variant="h5" color="textPrimary">{props.page.title}</Typography>
+    );
+  }
+
+  var desc;
+  if (props.page.description) {
+    desc = (
+      <div className={classes.description}>
+        <RichViewer key={props.page.description} iAgreeInputIsSanitized html={props.page.description} />
+      </div>
+    );
+  }
+
+  if (!title && !desc) return null;
+
+  const titleAndDescription = (
+    <div className={classNames(
+      !props.suppressSpacing && classes.spacingTitleAndDescription,
+      classes.titleAndDescription,
+    )}>
+      {title}
+      {desc}
+    </div>
+  );
+
+  return titleAndDescription;
+}
+
+export const LandingLink = (props: {
+  server: Server,
+  config?: Client.Config;
+  link?: Client.LandingLink;
+  openInNew?: boolean;
+}) => {
+  const location = useLocation();
+  const classes = useStyles();
+
+  if (!props.link) return null;
+  var linkToSlug = !props.link.linkToPageId ? undefined
+    : props.config?.layout.pages.find(p => p.pageId === props.link?.linkToPageId)?.slug;
+  var linkUrl = props.link.url;
+  if (linkToSlug !== undefined && props.openInNew && props.config) {
+    linkUrl = `${getProjectLink(props.config)}/${linkToSlug}`;
+    linkToSlug = undefined;
+  }
+  var linkProps: object | undefined;
+  if (linkToSlug) {
+    linkProps = {
+      component: Link,
+      to: preserveEmbed(`/${linkToSlug}`, location),
+    };
+  } else if (linkUrl) {
+    linkProps = {
+      component: MuiLink,
+      color: 'inherit',
+      href: linkUrl,
+      underline: 'none',
+      rel: 'noreferrer noopener',
+      ...(props.openInNew ? { target: '_blank' } : {}),
+    };
+  } else {
+    return null;
+  }
+  return (
+    <CardActionArea
+      key={`${props.link.linkToPageId || props.link.url}`}
+      className={classes.landingPaper}
+      {...linkProps}
+    >
+      {!!props.link.title && (
+        <Typography variant='h4' component='h2'>{props.link.title}</Typography>
+      )}
+      {!!props.link.description && (
+        <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{props.link.description}</Typography>
+      )}
+      <GoIcon
+        className={classes.landingLinkGoIcon}
+        color='inherit'
+        fontSize='inherit'
+      />
+    </CardActionArea>
+  );
 }
 
 export const BoardPanel = (props: {
@@ -367,4 +409,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(withRouter(CustomPage)));
+})(withStyles(styles, { withTheme: true })(CustomPage));

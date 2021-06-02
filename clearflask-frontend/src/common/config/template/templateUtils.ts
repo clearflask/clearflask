@@ -22,6 +22,12 @@ export async function _pageDelete(this: Templater, pageId: string): Promise<void
     }
   }
 
+  this.editor.getConfig().layout.pages
+    .forEach((page, pageIndex) => page.landing?.links
+      .forEach((link, linkIndex) => link.linkToPageId === pageId
+        && this._get<ConfigEditor.ArrayProperty>(['layout', 'pages', pageIndex, 'landing', 'links'])
+          .delete(linkIndex)));
+
   // Delete the actual page
   const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
   for (var pageIndex = this.editor.getConfig().layout.pages.length - 1; pageIndex >= 0; pageIndex--) {

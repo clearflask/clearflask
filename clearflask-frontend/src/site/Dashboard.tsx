@@ -31,6 +31,7 @@ import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { escapeHtml } from '../common/util/htmlUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
 import setTitle from '../common/util/titleUtil';
@@ -51,6 +52,10 @@ import UserSelection from './dashboard/UserSelection';
 import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
 import Logo from './Logo';
+
+export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
+  return `${windowIso.location.protocol}//${escapeHtml(config.domain) || `${escapeHtml(config.slug)}.${windowIso.location.host}`}`
+}
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
@@ -585,9 +590,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
+                  { type: 'heading', text: 'Advanced' } as MenuHeading,
                   {
                     type: 'project',
-                    name: 'Advanced',
+                    name: 'Project',
                     slug: 'settings/project/advanced',
                     offset: 1,
                     projectId: activeProject.server.getProjectId(),
@@ -806,9 +812,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
 
     const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
-    const projectLink = (!!activeProjectConf && !!showProjectLink) ? (
-      `${windowIso.location.protocol}//${activeProjectConf.domain || `${activeProjectConf.slug}.${windowIso.location.host}`}`
-    ) : undefined;
+    const projectLink = (!!activeProjectConf && !!showProjectLink)
+      ? getProjectLink(activeProjectConf) : undefined;
 
     return (
       <Elements stripe={Dashboard.getStripePromise()}>

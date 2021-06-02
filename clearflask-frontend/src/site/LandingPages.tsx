@@ -2440,7 +2440,7 @@ export function LandingInstall() {
           )}
           fakeBrowserProps={{
             fixedHeight: 200,
-            addresBarContent: 'feedback.yoursite.com',
+            addressBarContent: 'feedback.yoursite.com',
             // darkMode: true,
           }}
         />
@@ -2449,7 +2449,7 @@ export function LandingInstall() {
           title='Widget'
           description='Embed within your website using IFrames either entire ClearFlask portal or individual pages.'
           demo={(
-            <FakeBrowser fixedHeight={200} addresBarContent='yoursite.com'>
+            <FakeBrowser fixedHeight={200} addressBarContent='yoursite.com'>
               <div className={classes.demoEmbedButtons}>
                 <LandingDemoEmbed><FeedbackIcon /></LandingDemoEmbed>
                 <Hr vertical margins='35px' length='100px'>or</Hr>
@@ -2464,7 +2464,7 @@ export function LandingInstall() {
           title='Embed Status'
           description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
           demo={(
-            <FakeBrowser fixedHeight={200} addresBarContent='yoursite.com'>
+            <FakeBrowser fixedHeight={200} addressBarContent='yoursite.com'>
               <div className={classes.demoStatusEmbedContainer}>
                 <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
                 <PostStatusIframe

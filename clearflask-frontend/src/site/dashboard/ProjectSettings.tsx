@@ -1,4 +1,4 @@
-import { Button, Checkbox, Collapse, FormControlLabel, FormLabel, IconButton, InputAdornment, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, IconButton, InputAdornment, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EditIcon from '@material-ui/icons/Edit';
@@ -15,7 +15,7 @@ import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import TagSelect from '../../app/comps/TagSelect';
-import CustomPage, { BoardContainer, BoardPanel } from '../../app/CustomPage';
+import CustomPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescription } from '../../app/CustomPage';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
@@ -36,9 +36,8 @@ import MyColorPicker from '../../common/MyColorPicker';
 import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
-import { escapeHtml } from '../../common/util/htmlUtil';
 import randomUuid from '../../common/util/uuid';
-import windowIso from '../../common/windowIso';
+import { getProjectLink } from '../Dashboard';
 import PostSelection from './PostSelection';
 
 const propertyWidth = 250;
@@ -143,8 +142,35 @@ const styles = (theme: Theme) => createStyles({
     width: 'max-content',
     height: 'max-content',
   },
+  previewLandingLink: {
+    margin: 'auto'
+  },
+  previewPageTitleDescription: {
+    margin: theme.spacing(2)
+  },
   createFeedbackButton: {
     margin: theme.spacing(4, 2),
+  },
+  landingLinkContainer: {
+    marginTop: theme.spacing(2),
+    display: 'flex',
+    alignItems: 'stretch',
+  },
+  landingLinkPageTextfield: {
+    padding: '4.5px!important',
+  },
+  landingLinkTextfield: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  landingLinkTypeSelect: {
+    width: 87,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    marginRight: -1,
+    '& > fieldset': {
+      borderRightColor: 'transparent',
+    },
   },
 });
 const useStyles = makeStyles(styles);
@@ -253,16 +279,16 @@ export const ProjectSettingsInstallPortalPreview = (props: {
   server: Server;
 }) => {
   const theme = useTheme();
-  const domain = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.domain, shallowEqual);
-  const slug = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.slug, shallowEqual);
-  const projectLink = `${windowIso.location.protocol}//${escapeHtml(domain) || `${escapeHtml(slug)}.${windowIso.location.host}`}`;
+  const config = useSelector<ReduxState, Admin.Config | undefined>(state => state.conf.conf, shallowEqual);
+  if (!config) return null;
+  const projectLink = getProjectLink(config);
   const html = `<a href="${projectLink}" target="_blank">`
     + `\n  Click me to open in a new window`
     + `\n</a>`;
   return (
     <BrowserPreview
       server={props.server}
-      addresBar='website'
+      addressBar='website'
       code={html}
       suppressStoreProvider
     >
@@ -280,7 +306,8 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
   const theme = useTheme();
   const domain = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.domain, shallowEqual);
   const slug = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.slug, shallowEqual);
-  const projectLink = `${windowIso.location.protocol}//${escapeHtml(domain) || `${escapeHtml(slug)}.${windowIso.location.host}`}${props.widgetPath || ''}`;
+  if (slug === undefined) return null;
+  const projectLink = `${getProjectLink({ domain, slug })}${props.widgetPath || ''}`;
   var html;
   var content;
   if (props.popup) {
@@ -328,7 +355,7 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
   return (
     <BrowserPreview
       server={props.server}
-      addresBar='website'
+      addressBar='website'
       code={html}
       suppressStoreProvider
     >
@@ -423,7 +450,7 @@ export const ProjectSettingsInstallStatusPreview = (props: {
   return (
     <BrowserPreview
       server={props.server}
-      addresBar='website'
+      addressBar='website'
       code={html}
       suppressStoreProvider
     >
@@ -701,14 +728,14 @@ export const ProjectSettingsDomainPreview = (props: {
   server: Server;
 }) => {
   const classes = useStyles();
-  const domain = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.domain, shallowEqual);
-  const slug = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.slug, shallowEqual);
-  const projectLink = `${windowIso.location.protocol}//${domain || `${slug}.${windowIso.location.host}`}`;
+  const config = useSelector<ReduxState, Admin.Config | undefined>(state => state.conf.conf, shallowEqual);
+  if (!config) return null;
+  const projectLink = getProjectLink(config);
   return (
     <BrowserPreview server={props.server} suppressStoreProvider FakeBrowserProps={{
-      addresBarContent: (
+      addressBarContent: (
         <span className={classes.projectLink}>
-          { projectLink}
+          {projectLink}
         </span>),
     }}>
     </BrowserPreview>
@@ -731,6 +758,8 @@ export const ProjectSettingsLanding = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
+  const [expandedType, setExpandedType] = useState<'link' | undefined>();
+  const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   return (
     <ProjectSettingsBase title='Landing'>
       <TemplateWrapper<LandingInstance | undefined>
@@ -753,39 +782,108 @@ export const ProjectSettingsLanding = (props: {
             {landing && (
               <>
                 <Section
+                  title='Welcome message'
+                  description='Modify the landing page links to point to your roadmap, feedback, contact email or your own link.'
+                  preview={(
+                    <>
+                      <BrowserPreview
+                        server={props.server}
+                        scroll={Orientation.Both}
+                        addressBar='project'
+                        projectPath={landing.pageAndIndex.page.slug}
+                        FakeBrowserProps={{
+                          fixedWidth: 350,
+                        }}
+                      >
+                        <div className={classNames(classes.previewPageTitleDescription, classes.previewExplorer)}>
+                          <PageTitleDescription page={landing.pageAndIndex.page} suppressSpacing />
+                        </div>
+                      </BrowserPreview>
+                    </>
+                  )}
+                  content={(
+                    <>
+                      <PropertyByPath
+                        overrideName='Title'
+                        overrideDescription=''
+                        editor={props.editor}
+                        path={['layout', 'pages', landing.pageAndIndex.index, 'title']}
+                      />
+                      <PropertyByPath
+                        overrideName='Description'
+                        overrideDescription=''
+                        editor={props.editor}
+                        path={['layout', 'pages', landing.pageAndIndex.index, 'description']}
+                      />
+                    </>
+                  )}
+                />
+                <Section
                   title='Links'
                   description='Modify the landing page links to point to your roadmap, feedback or your support email.'
                   preview={(
-                    <BrowserPreview server={props.server} scroll={Orientation.Both} FakeBrowserProps={{
-                      fixedWidth: 350,
-                      fixedHeight: 500,
-                    }}>
-                      <div className={classes.previewExplorer}>
-                        <CustomPage
-                          key={props.server.getProjectId()}
+                    <>
+                      {expandedType === 'link' && expandedIndex !== undefined && (
+                        <BrowserPreview
                           server={props.server}
-                          pageSlug={landing.pageAndIndex.page.slug}
-                        />
-                      </div>
-                    </BrowserPreview>
+                          scroll={Orientation.Both}
+                          addressBar='project'
+                          projectPath={landing.pageAndIndex.page.slug}
+                          FakeBrowserProps={{
+                            fixedWidth: 350,
+                            fixedHeight: 400,
+                          }}
+                        >
+                          <div className={classNames(classes.previewLandingLink, classes.previewExplorer)}>
+                            <LandingLink
+                              server={props.server}
+                              config={props.editor.getConfig()}
+                              link={landing.pageAndIndex.page.landing?.links[expandedIndex]}
+                              openInNew
+                            />
+                          </div>
+                        </BrowserPreview>
+                      )}
+                    </>
                   )}
                   content={(
                     <>
                       <div className={classes.feedbackAccordionContainer}>
-                        {props.editor.getConfig().layout.pages[landing.pageAndIndex.index]?.landing?.links.map(link => (
-                          <div
-                            key={link.linkToPageId || link.url}
-                          >
-                            TODO
-                            {link.title}
-                          </div>
+                        {props.editor.getConfig().layout.pages[landing.pageAndIndex.index]?.landing?.links.map((link, linkIndex) => (
+                          <ProjectSettingsLandingLink
+                            server={props.server}
+                            editor={props.editor}
+                            templater={templater}
+                            landing={landing}
+                            link={link}
+                            linkIndex={linkIndex}
+                            expanded={expandedType === 'link' && expandedIndex === linkIndex}
+                            onExpandedChange={() => {
+                              if (expandedType === 'link' && expandedIndex === linkIndex) {
+                                setExpandedIndex(undefined)
+                              } else {
+                                setExpandedType('link');
+                                setExpandedIndex(linkIndex)
+                              }
+                            }}
+                          />
                         ))}
                       </div>
                       <ProjectSettingsAddWithName
-                        label='New subcategory'
+                        label='New link'
                         withAccordion
-                        onAdd={newSubcat => {
-                          // TODO
+                        onAdd={newLink => {
+                          setExpandedType('link');
+                          setExpandedIndex(landing.pageAndIndex.page.landing?.links.length || 0);
+                          ((props.editor.getProperty(['layout', 'pages', landing.pageAndIndex.index, 'landing', 'links']) as ConfigEditor.ArrayProperty)
+                            .insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
+                              title: newLink,
+                              ...(props.editor.getConfig().website ? {
+                                url: props.editor.getConfig().website,
+                              } : (props.editor.getConfig().layout.pages.length ? {
+                                linkToPageId: props.editor.getConfig().layout.pages[0]?.pageId,
+                              } : {}))
+                            }));
                         }}
                       />
                     </>
@@ -797,9 +895,130 @@ export const ProjectSettingsLanding = (props: {
         )
         }
       />
-      <p>TODO choose: home page, or another page as main; if home page chosen:</p>
-      <p>TODO Add contact link (email or url)</p>
     </ProjectSettingsBase>
+  );
+}
+export const ProjectSettingsLandingLink = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  templater: Templater;
+  landing: LandingInstance;
+  link: Admin.LandingLink;
+  linkIndex: number;
+  expanded: boolean;
+  onExpandedChange: () => void;
+}) => {
+  const classes = useStyles();
+  const urlProp = (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'url']) as ConfigEditor.StringProperty);
+  const linkToPageIdProp = (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'linkToPageId']) as ConfigEditor.LinkProperty);
+  const [link, setLink] = useDebounceProp<Pick<Admin.LandingLink, 'url' | 'linkToPageId'>>(
+    props.link,
+    link => {
+      urlProp.set(link.url);
+      linkToPageIdProp.set(link.linkToPageId);
+    });
+  const [linkType, setLinkType] = useState<'page' | 'url' | 'email'>(!!link.url
+    ? (link.url.startsWith('mailto://') ? 'email' : 'url')
+    : 'page');
+  return (
+    <MyAccordion
+      key={props.link.linkToPageId || props.link.url}
+      TransitionProps={{ unmountOnExit: true }}
+      expanded={props.expanded}
+      onChange={() => props.onExpandedChange()}
+      name={(
+        <PropertyShowOrEdit
+          allowEdit={props.expanded}
+          show={props.link.title}
+          edit={(
+            <PropertyByPath
+              marginTop={0}
+              overrideName='Title'
+              overrideDescription=''
+              editor={props.editor}
+              path={['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'title']}
+            />
+          )}
+        />
+      )}
+    >
+      <PropertyByPath
+        marginTop={0}
+        overrideName='Description'
+        overrideDescription=''
+        editor={props.editor}
+        path={['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'description']}
+      />
+      <div className={classes.landingLinkContainer}>
+        <FormControl
+          variant='outlined'
+          size='small'
+        >
+          <Select
+            className={classes.landingLinkTypeSelect}
+            value={linkType}
+            onChange={e => {
+              switch (e.target.value) {
+                case 'page':
+                  setLink({ linkToPageId: props.editor.getConfig().layout.pages.find(p => !p.landing)?.pageId })
+                  setLinkType('page')
+                  break;
+                case 'email':
+                  setLink({ url: props.editor.getConfig().website ? `mailto://support@${props.editor.getConfig().website!.replace(/^https?:\/\//, '')}` : '' })
+                  setLinkType('email')
+                  break;
+                case 'url':
+                  setLink({ url: props.editor.getConfig().website || '' })
+                  setLinkType('url')
+                  break;
+              }
+            }}
+          >
+            <MenuItem value='page'>Page</MenuItem>
+            <MenuItem value='url'>URL</MenuItem>
+            <MenuItem value='email'>Email</MenuItem>
+          </Select>
+        </FormControl>
+        {linkType === 'page' ? (
+          <PropertyByPath
+            marginTop={0}
+            overrideName=''
+            overrideDescription=''
+            editor={props.editor}
+            path={['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'linkToPageId']}
+            TextFieldProps={{
+              InputProps: {
+                classes: {
+                  root: classNames(classes.landingLinkTextfield, classes.landingLinkPageTextfield),
+                }
+              },
+            }}
+            width={164}
+            inputMinWidth={164}
+            SelectionPickerProps={{ disableInput: true }}
+          />
+        ) : (
+          <TextField
+            size='small'
+            variant='outlined'
+            value={linkType === 'url' ? link.url : link.url?.replace(/^mailto:\/\//, '')}
+            placeholder={linkType === 'url' ? 'https://' : 'support@example.com'}
+            onChange={e => setLink({
+              url: linkType === 'url' ? e.target.value || '' : `mailto://${e.target.value || ''}`
+            })}
+            InputProps={{
+              style: {
+                maxWidth: 164,
+                width: 164,
+              },
+              classes: {
+                root: classes.landingLinkTextfield,
+              },
+            }}
+          />
+        )}
+      </div>
+    </MyAccordion>
   );
 }
 
@@ -837,10 +1056,16 @@ export const ProjectSettingsFeedback = (props: {
                 preview={(
                   <>
                     {!!previewSubcat?.pageAndIndex && (
-                      <BrowserPreview server={props.server} scroll={Orientation.Both} FakeBrowserProps={{
-                        fixedWidth: 350,
-                        fixedHeight: 500,
-                      }}>
+                      <BrowserPreview
+                        server={props.server}
+                        scroll={Orientation.Both}
+                        addressBar='project'
+                        projectPath={previewSubcat.pageAndIndex.page.slug}
+                        FakeBrowserProps={{
+                          fixedWidth: 350,
+                          fixedHeight: 500,
+                        }}
+                      >
                         <div className={classes.previewExplorer}>
                           <CustomPage
                             key={`${props.server.getProjectId()}-${previewSubcat.tagId || 'uncat'}`}
@@ -1142,12 +1367,12 @@ export const ProjectSettingsFeedbackSubcategory = (props: {
       />
       {!!props.subcat.pageAndIndex && (
         <>
-          <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'title']} />
-          <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'description']} />
+          <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'title']} />
+          <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'description']} />
           {!!props.subcat.pageAndIndex.page.explorer?.allowCreate && (
             <>
-              <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
-              <PropertyByPath editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
+              <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
+              <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
             </>
           )}
         </>
@@ -1520,7 +1745,8 @@ const BrowserPreview = (props: {
   suppressStoreProvider?: boolean;
   suppressThemeProvider?: boolean;
   code?: string;
-  addresBar?: 'website';
+  addressBar?: 'website' | 'project';
+  projectPath?: string;
   scroll?: Orientation;
 }) => {
   const theme = useTheme();
@@ -1547,7 +1773,8 @@ const BrowserPreview = (props: {
   preview = (
     <BrowserPreviewInternal
       FakeBrowserProps={props.FakeBrowserProps}
-      addresBar={props.addresBar}
+      addressBar={props.addressBar}
+      projectPath={props.projectPath}
       code={props.code}
     >
       {preview}
@@ -1565,23 +1792,36 @@ const BrowserPreview = (props: {
 const BrowserPreviewInternal = (props: {
   children?: any;
   code?: string;
-  addresBar?: 'website';
+  addressBar?: 'website' | 'project';
+  projectPath?: string;
   FakeBrowserProps?: React.ComponentProps<typeof FakeBrowser>;
 }) => {
-  const theme = useTheme();
   const classes = useStyles();
+  const config = useSelector<ReduxState, Admin.Config | undefined>(state => state.conf.conf, shallowEqual);
   const darkMode = useSelector<ReduxState, boolean>(state => !!state?.conf?.conf?.style.palette.darkMode, shallowEqual);
   const website = useSelector<ReduxState, string | undefined>(state => state?.conf?.conf?.website, shallowEqual);
-  const addresBar = props.addresBar === 'website'
-    ? (website || 'yoursite.com')
-    : undefined;
+
+
+  var addressBar;
+  switch (props.addressBar) {
+    case 'website':
+      addressBar = (website || 'yoursite.com');
+      break;
+    case 'project':
+      addressBar = !config ? '' : getProjectLink(config);
+      if (!!props.projectPath) {
+        if (!props.projectPath.startsWith('/')) addressBar += '/';
+        addressBar += props.projectPath;
+      }
+      break;
+  }
   return (
     <FakeBrowser
       fixedWidth={350}
       codeMaxHeight={150}
       className={classes.browserPreview}
       darkMode={darkMode}
-      addresBarContent={addresBar}
+      addressBarContent={addressBar}
       codeContent={props.code}
       {...props.FakeBrowserProps}
     >
@@ -1693,6 +1933,7 @@ const PropertyByPathReduxless = (props: {
   inputMinWidth?: string | number;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
   TablePropProps?: Partial<React.ComponentProps<typeof TableProp>>;
+  SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
   bare?: boolean;
 }) => {
   const history = useHistory();
@@ -1717,6 +1958,7 @@ const PropertyByPathReduxless = (props: {
       overrideDescription={props.overrideDescription}
       TextFieldProps={props.TextFieldProps}
       TablePropProps={props.TablePropProps}
+      SelectionPickerProps={props.SelectionPickerProps}
       bare={props.bare}
     />
   );

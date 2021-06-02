@@ -100,8 +100,8 @@ export const contentScrollApplyStyles = (props: ContentScrollProps): Record<stri
       break;
   }
   return {
-    backgroundColor,
     background: backgrounds.join(','),
+    backgroundColor,
     overflowY: orientation !== Orientation.Horizontal ? 'scroll' : 'hidden',
     overflowX: orientation !== Orientation.Vertical ? 'scroll' : 'hidden',
     backgroundAttachment: 'local, local, scroll, scroll',

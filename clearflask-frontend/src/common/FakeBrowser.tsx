@@ -31,15 +31,16 @@ const styles = (theme: Theme) => createStyles({
     marginRight: 0,
   },
   addrbar: {
-    backgroundColor: (props: Props) => props.darkMode ? theme.palette.grey[400] : 'white',
     marginLeft: 10,
     borderRadius: 4,
     padding: '1px 10px',
     color: theme.palette.text.hint,
     display: 'flex',
     alignItems: 'center',
-    minWidth: 'max-content',
-    width: 200,
+    whiteSpace: 'nowrap',
+    minWidth: 200,
+    width: 'max-content',
+    maxWidth: '100%',
   },
   content: {
     backgroundColor: (props: Props) => props.darkMode ? 'black' : 'white',
@@ -69,7 +70,7 @@ interface Props {
   fixedHeight?: number | string;
   contentPadding?: number | string;
   showAddressBar?: boolean;
-  addresBarContent?: React.ReactNode;
+  addressBarContent?: React.ReactNode;
   codeContent?: string;
   codeLanguage?: 'html';
   codeMaxHeight?: number | string;
@@ -100,17 +101,25 @@ class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true
       );
     }
 
+    const addrBarBackgroundColor = this.props.darkMode ? this.props.theme.palette.grey[400] : 'white';
+
     return (
       <div className={classNames(this.props.classes.container, this.props.className)}>
         <div className={this.props.classes.navbar}>
           <div className={this.props.classes.button} />
           <div className={this.props.classes.button} />
           <div className={this.props.classes.button} />
-          {(this.props.showAddressBar || this.props.addresBarContent) && (
+          {(this.props.showAddressBar || this.props.addressBarContent) && (
             <>
-              <div className={this.props.classes.addrbar}>
+              <div className={this.props.classes.addrbar} style={{
+                ...contentScrollApplyStyles({
+                  theme: this.props.theme,
+                  orientation: Orientation.Horizontal,
+                  backgroundColor: addrBarBackgroundColor,
+                }),
+              }}>
                 <LockSimpleIcon fontSize='inherit' className={this.props.classes.lockIcon} />
-                {this.props.addresBarContent}
+                {this.props.addressBarContent}
               </div>
             </>
           )}

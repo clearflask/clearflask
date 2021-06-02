@@ -14,6 +14,7 @@ import FilterControls, { FilterControlBase } from '../../common/search/FilterCon
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import keyMapper from '../../common/util/keyMapper';
 import windowIso from '../../common/windowIso';
+import { getProjectLink } from '../Dashboard';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -67,8 +68,8 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
       label: '',
       className: this.props.classes.property,
     };
-    const postLink = (!this.props.slug || !this.props.post) ? undefined
-      : `${windowIso.location.protocol}//${this.props.domain || `${this.props.slug}.${windowIso.location.host}`}/post/${this.props.post.ideaId}`;
+    const postLink = (this.props.slug === undefined || !this.props.post) ? undefined
+      : `${getProjectLink({ domain: this.props.domain, slug: this.props.slug })}/post/${this.props.post.ideaId}`;
     return (
       <div className={this.props.classes.container}>
         <Post

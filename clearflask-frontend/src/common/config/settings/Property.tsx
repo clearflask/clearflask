@@ -35,6 +35,8 @@ interface Props {
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
   // If property uses a TableProp, will inject these properties
   TablePropProps?: Partial<React.ComponentProps<typeof TableProp>>;
+  // If property uses a SelectionPicker, will inject these properties
+  SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
   setImmediately?: boolean;
 }
 interface State {
@@ -400,6 +402,7 @@ export default class Property extends Component<Props, State> {
               minWidth={inputMinWidth}
               onValueChange={labels => prop
                 .setRaw(labels.map(label => label.value))}
+              {...this.props.SelectionPickerProps}
             />
           );
         } else {
@@ -500,6 +503,7 @@ export default class Property extends Component<Props, State> {
               size: 'small',
               ...this.props.TextFieldProps,
             }}
+            disableInput={!prop.allowCreate}
             disableClearable={prop.required}
             label={this.props.bare ? undefined : name}
             helperText={this.props.bare ? undefined : description}
@@ -514,6 +518,7 @@ export default class Property extends Component<Props, State> {
             minWidth={inputMinWidth}
             onValueChange={onValueChange}
             onValueCreate={onValueCreate}
+            {...this.props.SelectionPickerProps}
           />
         );
         break;
