@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../api/server';
 import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
+import DynamicMuiIcon from '../common/icon/DynamicMuiIcon';
 import InViewObserver from '../common/InViewObserver';
 import { notEmpty } from '../common/util/arrayUtil';
 import windowIso from '../common/windowIso';
@@ -72,6 +73,12 @@ const styles = (theme: Theme) => createStyles({
       padding: '6px 24px',
     },
     ...(tabHoverApplyStyles(theme)),
+  },
+  tabWrapper: {
+    flexDirection: 'row',
+    '& > svg': {
+      margin: theme.spacing(0, 1, 0, 0),
+    },
   },
   tabsFlexContainer: {
     alignItems: 'center',
@@ -200,6 +207,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         if (menu.pageIds.length === 1) {
           const page = this.props.config!.layout.pages.find(p => p.pageId === menu.pageIds[0]);
           if (page === undefined) return null;
+          const icon = menu.icon || page.icon;
           return (
             <Tab
               key={page.slug}
@@ -208,9 +216,17 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               to={`/${page.slug}`}
               value={page.slug}
               disableRipple
-              label={menu.name || page.name}
+              label={(
+                <>
+                  {!!icon && (
+                    <DynamicMuiIcon name={icon} />
+                  )}
+                  {menu.name || page.name}
+                </>
+              )}
               classes={{
                 root: this.props.classes.tabRoot,
+                wrapper: this.props.classes.tabWrapper,
               }}
             />
           );
@@ -223,7 +239,11 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           if (this.props.page && this.props.page.pageId === page.pageId) {
             currentTabValue = menu.menuId;
           }
-          return { name: page.name, val: page.slug };
+          return {
+            name: page.name,
+            val: page.slug,
+            icon: page.icon,
+          };
         })
           .filter(notEmpty);
         return (
@@ -233,6 +253,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             value={menu.menuId}
             selectedValue={this.props.page && this.props.page.slug}
             label={menu.name}
+            icon={!menu.icon ? undefined : (<DynamicMuiIcon name={menu.icon} />)}
             links={dropdownItems}
             onDropdownTabSelect={value => this.props.pageChanged(value)}
           />

@@ -207,7 +207,10 @@ export async function feedbackOn(this: Templater, onlySingleSubcat?: FeedbackSub
     if (existingMenuIndex === -1) {
       const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
       (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-        menuId: randomUuid(), name: 'Feedback', pageIds: subcatsWithoutMenu.map(subcat => subcat.pageAndIndex!.page.pageId),
+        menuId: randomUuid(),
+        name: 'Feedback',
+        icon: 'RecordVoiceOver',
+        pageIds: subcatsWithoutMenu.map(subcat => subcat.pageAndIndex!.page.pageId),
       }));
     } else {
       const menuItemNameProp = this._get<ConfigEditor.StringProperty>(['layout', 'menu', existingMenuIndex, 'name']);

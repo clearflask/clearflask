@@ -86,6 +86,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     if (!!onlyPageIds && !onlyPageIds.has(subcat.pageAndIndex.page.pageId)) return;
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: subcat.pageAndIndex.page.name,
+      icon: 'RecordVoiceOver',
       description: 'How can we improve our product?',
       linkToPageId: subcat.pageAndIndex.page.pageId,
     }));

@@ -124,6 +124,7 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
       pageId: changelogPageId,
       name: 'Changelog',
       slug: 'changelog',
+      icon: 'ChangeHistory',
       panels: [],
       board: undefined,
       explorer: {

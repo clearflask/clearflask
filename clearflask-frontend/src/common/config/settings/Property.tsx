@@ -8,6 +8,7 @@ import { DemoUpdateDelay } from '../../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
 import { importFailed, importSuccess } from '../../../Main';
+import DynamicMuiIcon from '../../icon/DynamicMuiIcon';
 import MyColorPicker from '../../MyColorPicker';
 import Overlay from '../../Overlay';
 import debounce from '../../util/debounce';
@@ -195,7 +196,11 @@ export default class Property extends Component<Props, State> {
                     <KeyRefreshIcon fontSize='small' />
                   </IconButton>
                 </InputAdornment>
-              ) : undefined,
+              ) : (prop.subType === ConfigEditor.PropSubType.Icon ? (
+                <InputAdornment position='end'>
+                  <DynamicMuiIcon name={this.state.value || ''} />
+                </InputAdornment>
+              ) : undefined),
             }}
             FormHelperTextProps={{
               style: {

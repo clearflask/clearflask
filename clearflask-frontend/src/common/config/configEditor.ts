@@ -101,6 +101,7 @@ export enum PropSubType {
   KeyGen = 'keygen',
   Multiline = 'multiline',
   Rich = 'rich',
+  Icon = 'icon',
 }
 export interface xCfPropLink {
   /** Path to array */

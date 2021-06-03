@@ -4,6 +4,7 @@ import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component, Key } from 'react';
 import { Link } from 'react-router-dom';
+import DynamicMuiIcon from './icon/DynamicMuiIcon';
 
 export const tabHoverApplyStyles = (theme: Theme, borderSize?: number): Record<string, string | CSSProperties> => ({
   position: 'relative',
@@ -37,6 +38,8 @@ const styles = (theme: Theme) => createStyles({
   },
   select: {
     height: '48px',
+    // Align with regular Tab component
+    paddingTop: 1,
     // Get rid of text cursor
     cursor: 'inherit',
     // Get rid of permanent underline
@@ -57,10 +60,16 @@ const styles = (theme: Theme) => createStyles({
     paddingRight: '20px',
     textTransform: 'uppercase',
     textAlign: 'center',
-    color: theme.palette.text.primary,
+    color: theme.palette.text.secondary,
     // Get rid of focused background color
     '&:focus': {
       background: 'inherit'
+    },
+    // Icon
+    display: 'flex',
+    alignItems: 'center',
+    '& > svg': {
+      margin: theme.spacing(0, 1, 0, 0),
     },
   },
   tabButtonSelected: {
@@ -74,8 +83,13 @@ const styles = (theme: Theme) => createStyles({
 interface Props extends WithStyles<typeof styles, true> {
   className?: string;
   key?: Key;
+  icon?: React.ReactNode,
   label?: string;
-  links: Array<{ name: string; val: string }>;
+  links: Array<{
+    name: string;
+    val: string;
+    icon?: string;
+  }>;
   // Only here to satisfy outer Tabs component to determine if tab is selected
   value?: string;
   selectedValue?: string;
@@ -94,6 +108,7 @@ class DropdownTab extends Component<Props> {
           key={link.name + link.val}
           value={link.val}
         >
+          {link.icon && (<DynamicMuiIcon name={link.icon} />)}
           {link.name}
         </MenuItem>
       );
@@ -111,7 +126,11 @@ class DropdownTab extends Component<Props> {
             key={this.props.key}
             onChange={e => this.props.onDropdownTabSelect(e.target.value as string)}
             inputProps={{
-              className: classNames(this.props.classes.tabButton, anySelected && this.props.classes.tabButtonSelected, this.props.className),
+              className: classNames(
+                this.props.classes.tabButton,
+                anySelected && this.props.classes.tabButtonSelected,
+                this.props.className
+              ),
               id: id,
             }}
             displayEmpty
@@ -127,7 +146,10 @@ class DropdownTab extends Component<Props> {
               anchorReference: 'anchorEl',
             }}
           >
-            {this.props.label && (<MenuItem style={{ display: 'none' }} divider disabled value='__NOT_SELECTED__'>{this.props.label}</MenuItem>)}
+            {this.props.label && (<MenuItem style={{ display: 'none' }} divider disabled value='__NOT_SELECTED__'>
+              {this.props.icon}
+              {this.props.label}
+            </MenuItem>)}
             {items}
           </Select>
         </FormControl>

@@ -102,6 +102,16 @@ export default class ServerAdmin {
           subscribers.forEach(subscriber => subscriber());
         }
       });
+      !windowIso.isSsr && windowIso.addEventListener('beforeunload', e => {
+        if (!hasUnsavedChanges) return undefined;
+        const confirmationMessage = 'If you leave before publishing, your changes will be lost.';
+        //Gecko + IE
+        if ((e || windowIso['event'])) {
+          (e || windowIso['event']).returnValue = confirmationMessage;
+        }
+        //Gecko + Webkit, Safari, Chrome etc.
+        return confirmationMessage;
+      });
       project = {
         projectId: projectId,
         configVersion: versionedConfig.version,

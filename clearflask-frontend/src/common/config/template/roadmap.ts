@@ -91,6 +91,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       pageId: roadmapPageId,
       name: 'Roadmap',
       slug: 'roadmap',
+      icon: 'Roadmap',
       panels: [],
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',

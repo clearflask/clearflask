@@ -1,4 +1,4 @@
-import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, IconButton, InputAdornment, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
@@ -931,11 +931,13 @@ export const ProjectSettingsLandingLink = (props: {
   const classes = useStyles();
   const urlProp = (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'url']) as ConfigEditor.StringProperty);
   const linkToPageIdProp = (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'linkToPageId']) as ConfigEditor.LinkProperty);
-  const [link, setLink] = useDebounceProp<Pick<Admin.LandingLink, 'url' | 'linkToPageId'>>(
+  const iconProp = (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'icon']) as ConfigEditor.StringProperty);
+  const [link, setLink] = useDebounceProp<Pick<Admin.LandingLink, 'url' | 'linkToPageId' | 'icon'>>(
     props.link,
     link => {
       urlProp.set(link.url);
       linkToPageIdProp.set(link.linkToPageId);
+      iconProp.set(link.icon || undefined);
     });
   const [linkType, setLinkType] = useState<'page' | 'url' | 'email'>(!!link.url
     ? (link.url.startsWith('mailto://') ? 'email' : 'url')
@@ -984,7 +986,10 @@ export const ProjectSettingsLandingLink = (props: {
                   setLinkType('page')
                   break;
                 case 'email':
-                  setLink({ url: props.editor.getConfig().website ? `mailto://support@${props.editor.getConfig().website!.replace(/^https?:\/\//, '')}` : '' })
+                  setLink({
+                    icon: 'AlternateEmail',
+                    url: props.editor.getConfig().website ? `mailto://support@${props.editor.getConfig().website!.replace(/^https?:\/\//, '')}` : ''
+                  })
                   setLinkType('email')
                   break;
                 case 'url':
@@ -1038,6 +1043,14 @@ export const ProjectSettingsLandingLink = (props: {
           />
         )}
       </div>
+      <PropertyByPath
+        marginTop={16}
+        overrideName='Override Icon'
+        overrideDescription=''
+        editor={props.editor}
+        path={['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'icon']}
+      />
+      <IconPickerHelperText />
     </MyAccordion>
   );
 }
@@ -1050,6 +1063,9 @@ export const ProjectSettingsFeedback = (props: {
   const [expandedType, setExpandedType] = useState<'tag' | 'subcat' | 'status' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   const [tagIds, setTagIds] = useState<Array<string> | undefined>();
+  const intro = (
+    <Typography variant='body1' component='div'>Collect useful feedback from your users</Typography>
+  );
   return (
     <ProjectSettingsBase title='Feedback'>
       <TemplateWrapper<FeedbackInstance | undefined>
@@ -1059,20 +1075,24 @@ export const ProjectSettingsFeedback = (props: {
           const previewSubcat = (expandedType === 'subcat' && expandedIndex !== undefined)
             ? feedback?.subcategories[expandedIndex] : undefined;
           return !feedback ? (
-            <Button
-              className={classes.createFeedbackButton}
-              variant='contained'
-              color='primary'
-              disableElevation
-              onClick={() => templater.feedbackOn()}
-            >
-              Create feedback
+            <>
+              {intro}
+              <Button
+                className={classes.createFeedbackButton}
+                variant='contained'
+                color='primary'
+                disableElevation
+                onClick={() => templater.feedbackOn()}
+              >
+                Create feedback
             </Button>
+            </>
           ) : (
             <>
+              {intro}
               <Section
                 title='Subcategories'
-                description='Separate feedback into distinct types such as "Features" and "Bugs".'
+                description='Collect feedback on separate pages for distinct purposes such as Features, Bugs, Translations, or Platform. For minor differences, use Tags instead.'
                 preview={(
                   <>
                     {!!previewSubcat?.pageAndIndex && (
@@ -1193,7 +1213,7 @@ export const ProjectSettingsFeedback = (props: {
               />
               <Section
                 title='Tagging'
-                description='Use tags to finely organize feedback.'
+                description='Use tags to finely organize feedback. First create a Tag grouping (such as "Platform") and then add individual tags (such as "Mobile" and "Desktop")'
                 preview={(
                   <TagSelect
                     className={classes.tagPreviewContainer}
@@ -1395,6 +1415,8 @@ export const ProjectSettingsFeedbackSubcategory = (props: {
               <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
             </>
           )}
+          <PropertyByPath overrideName='Menu Icon' overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'icon']} />
+          <IconPickerHelperText />
         </>
       )}
     </MyAccordion>
@@ -1599,6 +1621,7 @@ export const ProjectSettingsRoadmap = (props: {
         mapper={templater => templater.roadmapGet()}
         render={(templater, roadmap) => (
           <>
+            <Typography variant='body1' component='div'>Make your roadmap public to show your upcoming and in-progress tasks</Typography>
             <FormControlLabel
               label={!!roadmap ? 'Enabled' : 'Disabled'}
               control={(
@@ -1718,6 +1741,7 @@ export const ProjectSettingsChangelog = (props: {
         mapper={templater => templater.changelogGet()}
         render={(templater, changelog) => (
           <>
+            <Typography variant='body1' component='div'>Publish released features and let your customers subscribe to changes</Typography>
             <FormControlLabel
               label={!!changelog?.pageAndIndex ? 'Enabled' : 'Disabled'}
               control={(
@@ -1958,6 +1982,22 @@ class TemplateWrapper<T> extends Component<{
     );
   }
 }
+
+const IconPickerHelperText = () => {
+  return (
+    <FormHelperText>
+      Find an icon name&nbsp;
+      <MuiLink
+        underline='none'
+        color='primary'
+        target="_blank"
+        href='https://material-ui.com/components/material-icons/'
+        rel='noopener nofollow'
+      >here</MuiLink>.
+    </FormHelperText>
+  );
+}
+
 const PropertyByPath = (props: Omit<React.ComponentProps<typeof PropertyByPathReduxless>, 'planId'>) => {
   var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   return (<PropertyByPathReduxless planId={planId} {...props} />);

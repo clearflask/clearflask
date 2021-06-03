@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
+import DynamicMuiIcon from '../common/icon/DynamicMuiIcon';
 import RichViewer from '../common/RichViewer';
 import { preserveEmbed } from '../common/util/historyUtil';
 import { getProjectLink } from '../site/Dashboard';
@@ -96,10 +97,9 @@ const styles = (theme: Theme) => createStyles({
       marginLeft: 0,
       marginRight: -1,
     },
-    paddingTop: 80,
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   landingLinkTitle: {
     [theme.breakpoints.down('xs')]: {
@@ -107,20 +107,30 @@ const styles = (theme: Theme) => createStyles({
     },
   },
   landingLinkDescription: {
+    color: theme.palette.text.secondary,
     margin: theme.spacing(0.5, 1),
     [theme.breakpoints.down('xs')]: {
       fontSize: '0.9rem',
     },
   },
-  landingLinkGoIcon: {
+  landingLinkIcon: {
+    color: theme.palette.text.secondary,
+    fontSize: '4em',
+    // marginBottom: theme.spacing(1),
+    [theme.breakpoints.down('xs')]: {
+      fontSize: '3em',
+    },
+  },
+  landingLinkGo: {
+    color: theme.palette.primary.main,
+    fontSize: '3em',
+    [theme.breakpoints.down('xs')]: {
+      fontSize: '2em',
+    },
     alignSelf: 'flex-end',
     margin: theme.spacing(1, 4, 0, 0),
     [theme.breakpoints.down('xs')]: {
       marginRight: theme.spacing(1),
-    },
-    fontSize: '3em',
-    [theme.breakpoints.down('xs')]: {
-      fontSize: '2em',
     },
   },
 });
@@ -330,8 +340,9 @@ export const LandingLink = (props: {
   const classes = useStyles();
 
   if (!props.link) return null;
-  var linkToSlug = !props.link.linkToPageId ? undefined
-    : props.config?.layout.pages.find(p => p.pageId === props.link?.linkToPageId)?.slug;
+  var linkToPage = !props.link.linkToPageId ? undefined
+    : props.config?.layout.pages.find(p => p.pageId === props.link?.linkToPageId);
+  var linkToSlug = linkToPage?.slug;
   var linkUrl = props.link.url;
   if (linkToSlug !== undefined && props.openInNew && props.config) {
     linkUrl = `${getProjectLink(props.config)}/${linkToSlug}`;
@@ -355,12 +366,23 @@ export const LandingLink = (props: {
   } else {
     return null;
   }
+
+  const icon: string | undefined = props.link.icon || linkToPage?.icon;
+
   return (
     <CardActionArea
       key={`${props.link.linkToPageId || props.link.url}`}
       className={classes.landingPaper}
       {...linkProps}
     >
+      {!!icon && (
+        <DynamicMuiIcon
+          name={icon}
+          className={classes.landingLinkIcon}
+          color='inherit'
+          fontSize='inherit'
+        />
+      )}
       {!!props.link.title && (
         <Typography variant='h4' component='h2' className={classes.landingLinkTitle}>{props.link.title}</Typography>
       )}
@@ -368,7 +390,7 @@ export const LandingLink = (props: {
         <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{props.link.description}</Typography>
       )}
       <GoIcon
-        className={classes.landingLinkGoIcon}
+        className={classes.landingLinkGo}
         color='inherit'
         fontSize='inherit'
       />

@@ -509,6 +509,9 @@ components:
               name:
                 x-clearflask-prop: { order: 1, name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
                 type: string
+              icon:
+                x-clearflask-prop: { order: 3, subType: 'icon', name: 'Icon', description: 'Icon name to display. Defaults to page icon if only a sigle page is linked. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                type: string
         pages:
           x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames: ['name', 'slug'], description: 'List of all pages. After creating a page, you may add the page to the menu below.'}
           type: array
@@ -542,6 +545,9 @@ components:
               description:
                 x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
+              icon:
+                x-clearflask-prop: { order: 5, subType: 'icon', name: 'Icon', description: 'Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                type: string
               landing:
                 x-clearflask-prop: { order: 5, name: 'Landing', description: 'Intended for a landing page, hide the navigation menu and instead show a set of large links for each page.' }
                 type: object
@@ -563,12 +569,15 @@ components:
                         description:
                           x-clearflask-prop: { order: 1, name: 'Description', description: 'Description to show for this link', placeholder: 'Description' }
                           type: string
+                        icon:
+                          x-clearflask-prop: { order: 2, subType: 'icon', name: 'Icon', description: 'Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                          type: string
                         linkToPageId:
-                          x-clearflask-prop: { order: 1, name: 'Page Link', description: 'Interal link to another page.' }
+                          x-clearflask-prop: { order: 3, name: 'Page Link', description: 'Interal link to another page.' }
                           x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
                           type: string
                         url:
-                          x-clearflask-prop: { order: 2, name: 'External Link', description: 'External link where to direct your users to an external link such as your website or an email address.', placeholder: 'https://' }
+                          x-clearflask-prop: { order: 4, name: 'External Link', description: 'External link where to direct your users to an external link such as your website or an email address.', placeholder: 'https://' }
                           type: string
               panels:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: ['title'] }
