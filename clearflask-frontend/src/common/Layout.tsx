@@ -94,7 +94,10 @@ const styles = (theme: Theme) => createStyles({
     borderBottom: '1px dashed ' + theme.palette.grey[300],
   },
   previewBarItem: {
-    margin: theme.spacing(1),
+    margin: theme.spacing(0, 1),
+  },
+  previewBarContent: {
+    flexGrow: 1,
   },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
@@ -200,6 +203,7 @@ interface Props {
   toolbarRight?: React.ReactNode;
   menu?: Section;
   previewShow?: boolean;
+  previewForceShowClose?: boolean;
   previewShowChanged: (show: boolean) => void;
   preview?: PreviewSection;
   barTop?: React.ReactNode;
@@ -249,7 +253,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           this.props.classes.previewBar,
           !!this.props.preview?.bar && this.props.classes.previewBarBorder,
         )}>
-          {!!overflowPreview && (
+          {(!!overflowPreview || !!this.props.previewForceShowClose) && (
             <IconButton
               color='inherit'
               aria-label=''
@@ -257,11 +261,12 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
             >
               <CloseIcon />
             </IconButton>
-          )}
+          ) || (
+              <InfoIcon className={this.props.classes.previewBarItem} />
+            )}
           {!!this.props.preview?.bar && (
             <>
-              <InfoIcon className={this.props.classes.previewBarItem} />
-              <div className={this.props.classes.previewBarItem}>
+              <div className={classNames(this.props.classes.previewBarContent, this.props.classes.previewBarItem)}>
                 {this.props.preview.bar}
               </div>
             </>

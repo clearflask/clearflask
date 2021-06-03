@@ -40,6 +40,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         postClassName={this.props.classes.post}
         selectedPostId={this.props.selectedPostId}
         selectedPostClassName={this.props.classes.postSelected}
+        suppressPanel
         panel={{
           display: {
             titleTruncateLines: 2,

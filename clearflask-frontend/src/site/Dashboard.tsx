@@ -1,8 +1,10 @@
-import { Button, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
+import CodeIcon from '@material-ui/icons/Code';
 import SettingsIcon from '@material-ui/icons/Settings';
+import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -20,6 +22,7 @@ import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 import * as ConfigEditor from '../common/config/configEditor';
+import ConfigView from '../common/config/settings/ConfigView';
 import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import { Orientation } from '../common/ContentScroll';
@@ -59,7 +62,6 @@ export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
-type PreviewType = 'user' | 'post' | 'post-create' | 'create-demo' | 'preview-changes';
 const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 1024 };
 const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024 };
 const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024 };
@@ -163,13 +165,10 @@ interface State {
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
   previewShow?: boolean;
-  preview?: {
-    type: PreviewType,
-    id?: string,
-  };
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
+  settingsPreviewChanges?: 'live' | 'code';
   explorerPostFilter?: Partial<AdminClient.IdeaSearchAdmin>;
   explorerPostSearch?: string;
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
@@ -326,6 +325,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var barBottom: React.ReactNode | undefined;
     var onboarding = false;
     var preview: PreviewSection | undefined;
+    var previewOnClose: (() => void) | undefined;
     var menu: Section | undefined;
     var showProjectLink: boolean = false;
     var showCreateProjectWarning: boolean = false;
@@ -681,7 +681,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               </ProjectSettingsBase>
             )
           };
-          preview = this.renderPreviewChangesDemo(activeProject);
         } else if (activeSubPath[0] === 'account') {
           switch (activeSubPath[1]) {
             case 'profile':
@@ -764,10 +763,24 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           barBottom = (activeProject?.hasUnsavedChanges()) ? (
             <div className={this.props.classes.unsavedChangesBar}>
               <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
+              {!this.state.settingsPreviewChanges && (
+                <Button
+                  variant='text'
+                  color='default'
+                  style={{ marginLeft: 8 }}
+                  onClick={() => this.setState({
+                    previewShow: true,
+                    settingsPreviewChanges: 'live',
+                  })}
+                >
+                  Preview
+                </Button>
+              )}
               <Button
                 variant='contained'
                 disableElevation
                 color='primary'
+                style={{ marginLeft: 8 }}
                 onClick={() => {
                   const currentProject = activeProject;
                   ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
@@ -776,7 +789,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     configAdmin: currentProject.editor.getConfig(),
                   })
                     .then((versionedConfigAdmin) => {
-                      currentProject.resetUnsavedChanges(versionedConfigAdmin)
+                      currentProject.resetUnsavedChanges(versionedConfigAdmin);
+                      this.setState({ settingsPreviewChanges: undefined });
                     }));
                 }}
               >
@@ -784,6 +798,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               </Button>
             </div>
           ) : undefined;
+        }
+
+        if (!!this.state.settingsPreviewChanges) {
+          previewOnClose = () => this.setState({ settingsPreviewChanges: undefined });
+          preview = this.renderPreviewChangesDemo(activeProject,
+            activeSubPath[0] === 'project' && activeSubPath[1] === 'advanced',
+            this.state.settingsPreviewChanges === 'code' ? activeProject : undefined);
         }
         break;
       default:
@@ -900,10 +921,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                             const selectedProjectId = p.projectId;
                             if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
                               localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
-                              this.setState({
-                                selectedProjectId,
-                                preview: undefined,
-                              });
+                              this.setState({ selectedProjectId });
                             }
                           }, title: p.editor.getConfig().name
                         }
@@ -929,8 +947,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </>
           }
           previewShow={!!this.state.previewShow}
-          previewShowChanged={show => this.setState({ previewShow: show })}
+          previewShowChanged={show => {
+            this.setState({ previewShow: show });
+            !show && previewOnClose?.();
+          }}
           preview={preview}
+          previewForceShowClose={!!previewOnClose}
           menu={menu}
           barTop={barTop}
           barBottom={barBottom}
@@ -966,10 +988,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 userId: userLabel.value,
               }));
             } else {
-              if (this.state.preview?.type === 'user'
-                && this.state.preview.id === activeProject.server.getStore().getState().users.loggedIn.user?.userId) {
-                this.setState({ preview: undefined });
-              }
               activeProject.server.dispatch().then(d => d.userLogout({
                 projectId: activeProject.projectId,
               }));
@@ -1072,20 +1090,34 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     };
   }
 
-  renderPreviewChangesDemo(project?: AdminProject): PreviewSection {
+  renderPreviewChangesDemo(project?: AdminProject, allowCode?: boolean, showCodeForProject?: AdminProject): PreviewSection {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
     return {
       size: ProjectPreviewSize,
-      bar: 'Preview changes live',
-      content: (
+      bar: (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          Preview changes live
+          <div style={{ flexGrow: 1 }} />
+          {!!allowCode && (
+            <IconButton onClick={() => this.setState({
+              settingsPreviewChanges: !!showCodeForProject ? 'live' : 'code',
+            })}>
+              {!!showCodeForProject ? <VisibilityIcon /> : <CodeIcon />}
+            </IconButton>
+          )}
+        </div>
+      ),
+      content: !showCodeForProject ? (
         <DemoApp
           key={project.configVersion}
           server={project.server}
           settings={{ suppressSetTitle: true }}
           forcePathSubscribe={listener => this.forcePathListener = listener}
         />
+      ) : (
+        <ConfigView server={showCodeForProject.server} editor={showCodeForProject.editor} />
       ),
     };
   }

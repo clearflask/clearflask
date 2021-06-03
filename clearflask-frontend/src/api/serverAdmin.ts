@@ -85,6 +85,10 @@ export default class ServerAdmin {
     return Server.__dispatch(props, this.dispatcherAdmin);
   }
 
+  getProject(projectId: string): Project | undefined {
+    return this.projects[projectId];
+  }
+
   getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {
     const projectId = versionedConfig.config.projectId;
     var project = this.projects[projectId];

@@ -1,5 +1,6 @@
 import * as Admin from "../../api/admin";
 import { StateConf } from "../../api/server";
+import { textToHtml } from "../util/richEditorUtil";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
@@ -155,7 +156,7 @@ export default class Templater {
               tagName: 'Idea',
               pageName: 'Ideas',
               pageTitle: 'Give us feedback',
-              pageDescription: 'We want to hear your ideas to improve our product.',
+              pageDescription: textToHtml('We want to hear your ideas to improve our product.'),
             },
             {
               tagName: 'Bug',
@@ -561,7 +562,7 @@ export default class Templater {
       const name = tagOption?.pageName || tagOption?.tagName || 'Feedback';
       const slug = name.toLowerCase();
       const title = tagOption?.pageTitle || 'Give us feedback';
-      const description = tagOption?.pageDescription || 'We want to hear your ideas to improve our product.';
+      const description = tagOption?.pageDescription || textToHtml('We want to hear your ideas to improve our product.');
       const filterTagIds = tagOption ? [tagNameToId[tagOption.tagName]] : undefined;
       pagesProp.insert().setRaw(Admin.PageToJSON({
         pageId: postPageId,
