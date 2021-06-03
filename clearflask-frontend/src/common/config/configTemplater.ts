@@ -3,6 +3,7 @@ import { StateConf } from "../../api/server";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
+import { changelogGet, changelogOff, changelogOn } from "./template/changelog";
 import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd, feedbackSubcategoryRename } from "./template/feedback";
 import { landingGet, landingOff, landingOn } from "./template/landing";
 import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
@@ -98,6 +99,10 @@ export default class Templater {
   landingGet = landingGet;
   landingOn = landingOn;
   landingOff = landingOff;
+
+  changelogGet = changelogGet;
+  changelogOn = changelogOn;
+  changelogOff = changelogOff;
 
   // During template changes, user confirmation is required.
   // IE: Change to a roadmap column is requested, but we are unsure which Board

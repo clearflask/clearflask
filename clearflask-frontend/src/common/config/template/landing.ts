@@ -74,7 +74,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     && !landingLinkToPageIds.has(roadmap.page.pageId)) {
     (landingLinksProp.insert(0) as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: 'Roadmap',
-      description: 'See what we are working on next.',
+      description: "See what we're working on next.",
       linkToPageId: roadmap?.page.pageId,
     }));
   }
@@ -86,10 +86,22 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     if (!!onlyPageIds && !onlyPageIds.has(subcat.pageAndIndex.page.pageId)) return;
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: subcat.pageAndIndex.page.name,
-      description: 'Let us know how we can improve our product.',
+      description: 'How can we improve our product?',
       linkToPageId: subcat.pageAndIndex.page.pageId,
     }));
   })
+
+
+  const changelog = await this.changelogGet();
+  if (changelog?.pageAndIndex
+    && (!onlyPageIds || onlyPageIds.has(changelog.pageAndIndex.page.pageId))
+    && !landingLinkToPageIds.has(changelog.pageAndIndex.page.pageId)) {
+    (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
+      title: 'Changelog',
+      description: 'Check out our recent updates.',
+      linkToPageId: changelog.pageAndIndex.page.pageId,
+    }));
+  }
 
   return landing;
 }

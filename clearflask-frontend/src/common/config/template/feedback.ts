@@ -38,7 +38,8 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
 
   if (potentialFeedbackCategories.length === 0) {
     potentialFeedbackCategories = this.editor.getConfig().content.categories
-      .map((category, index) => ({ category, index }));
+      .map((category, index) => ({ category, index }))
+      .filter(c => !c.category.subscription && !!c.category.userCreatable);
   }
 
   var feedbackCategory: CategoryAndIndex | undefined;
@@ -71,6 +72,7 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
   const categoryTags = feedbackCategory.category.tagging.tags.filter(t => t.tagId.startsWith(FeedbackSubCategoryTagIdPrefix));
 
   const findPageAndIndex = async (category: Admin.Category, tag?: Admin.Tag): Promise<PageAndIndex | undefined> => {
+    const isOnlyCategory = this.editor.getConfig().content.categories.length <= 1;
     const expectedFilterTagIds = tag
       // Ensure that this page is filtering out tag exactly
       ? [tag.tagId]
@@ -81,6 +83,10 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
     const potentialPages: PageAndIndex[] = this.editor.getConfig().layout.pages
       .map((page, index) => ({ page, index }))
       .filter(p => p.page.explorer
+        // Filter by category if more than one category exists
+        && (isOnlyCategory
+          || (p.page.explorer.search.filterCategoryIds?.length === 1
+            && p.page.explorer.search.filterCategoryIds[0] === category.categoryId))
         && (expectedInvertTag === undefined || !!p.page.explorer.search.invertTag === expectedInvertTag)
         && expectedFilterTagIds.length === (p.page.explorer.search.filterTagIds?.length || 0)
         && expectedFilterTagIds.every(expectedTagId => p.page.explorer?.search.filterTagIds?.some(tId => tId === expectedTagId))

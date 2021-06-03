@@ -5,6 +5,7 @@ import Templater from "../configTemplater";
 import { CategoryAndIndex } from "./feedback";
 
 const RoadmapPageIdPrefix = 'roadmap-';
+
 export interface RoadmapInstance {
   categoryAndIndex: CategoryAndIndex;
   page: Admin.Page & Required<Pick<Admin.Page, 'board'>>;
@@ -90,7 +91,6 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       pageId: roadmapPageId,
       name: 'Roadmap',
       slug: 'roadmap',
-      title: 'Our plan for the future',
       panels: [],
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',

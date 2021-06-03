@@ -36,7 +36,7 @@ interface Props {
   containerStyle?: React.CSSProperties,
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
-  breakpoints?: { [key in Breakpoint]: number };
+  forceBreakpoint?: Breakpoint;
   appRootId: string;
   seed: string;
   // connect
@@ -52,6 +52,17 @@ class AppThemeProvider extends Component<Props> {
       case Client.PaletteExpressionColorEnum.Washed:
         expressionGrayscale = 50;
         break;
+    }
+    var breakpoints;
+    if (this.props.forceBreakpoint) {
+      breakpoints = {};
+      var bpSeen;
+      ['xs', 'sm', 'md', 'lg', 'xl'].forEach(bp => {
+        breakpoints[bp] = !bpSeen ? 0 : 10000;
+        if (!bpSeen && bp === this.props.forceBreakpoint) {
+          bpSeen = true;
+        };
+      })
     }
     var theme: Theme | undefined;
     if (this.props.config) {
@@ -106,8 +117,8 @@ class AppThemeProvider extends Component<Props> {
           }),
         },
         breakpoints: {
-          ...(this.props.breakpoints !== undefined ? {
-            values: this.props.breakpoints,
+          ...(breakpoints ? {
+            values: breakpoints,
           } : {}),
         },
         props: {

@@ -82,13 +82,7 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
             seed='onboardingDemo'
             isInsideContainer={true}
             supressCssBaseline={true}
-            breakpoints={this.state.device === Device.Mobile ? {
-              'xs': 0,
-              'sm': 10000,
-              'md': 10000,
-              'lg': 10000,
-              'xl': 10000,
-            } : undefined}
+            forceBreakpoint={this.state.device === Device.Mobile ? 'xs' : undefined}
           >
             <div id='onboardingDemo' className={this.props.classes.content}>
               {this.state.loginOpen ? (

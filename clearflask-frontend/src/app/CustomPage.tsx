@@ -83,31 +83,52 @@ const styles = (theme: Theme) => createStyles({
   },
   landingPaper: {
     flex: '1 1 150px',
-    marginTop: theme.spacing(6),
     maxWidth: 250,
     height: 300,
     display: 'flex',
     // boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
     border: '1px solid ' + theme.palette.grey[300],
-    margin: theme.spacing(2),
+    margin: theme.spacing(6, 2, 2),
     padding: theme.spacing(2),
+    [theme.breakpoints.down('xs')]: {
+      // marginLeft: theme.spacing(1),
+      // marginRight: theme.spacing(1),
+      marginLeft: 0,
+      marginRight: -1,
+    },
+    paddingTop: 80,
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+  },
+  landingLinkTitle: {
+    [theme.breakpoints.down('xs')]: {
+      ...theme.typography.h5,
+    },
   },
   landingLinkDescription: {
-    margin: theme.spacing(0, 1),
+    margin: theme.spacing(0.5, 1),
+    [theme.breakpoints.down('xs')]: {
+      fontSize: '0.9rem',
+    },
   },
   landingLinkGoIcon: {
     alignSelf: 'flex-end',
     margin: theme.spacing(1, 4, 0, 0),
+    [theme.breakpoints.down('xs')]: {
+      marginRight: theme.spacing(1),
+    },
     fontSize: '3em',
+    [theme.breakpoints.down('xs')]: {
+      fontSize: '2em',
+    },
   },
 });
 const useStyles = makeStyles(styles);
 interface Props {
   server: Server;
   pageSlug: string;
+  landingLinkOpenInNew?: boolean;
 }
 interface ConnectProps {
   configver?: string;
@@ -147,6 +168,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                 server={this.props.server}
                 config={this.props.config}
                 link={link}
+                openInNew={this.props.landingLinkOpenInNew}
               />
             ))}
           </div>
@@ -340,7 +362,7 @@ export const LandingLink = (props: {
       {...linkProps}
     >
       {!!props.link.title && (
-        <Typography variant='h4' component='h2'>{props.link.title}</Typography>
+        <Typography variant='h4' component='h2' className={classes.landingLinkTitle}>{props.link.title}</Typography>
       )}
       {!!props.link.description && (
         <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{props.link.description}</Typography>

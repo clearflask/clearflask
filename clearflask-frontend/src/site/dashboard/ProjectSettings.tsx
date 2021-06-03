@@ -1,5 +1,6 @@
 import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, IconButton, InputAdornment, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
+import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EditIcon from '@material-ui/icons/Edit';
 import { Alert, AlertTitle } from '@material-ui/lab';
@@ -26,6 +27,7 @@ import WorkflowPreview from '../../common/config/settings/injects/WorkflowPrevie
 import Property from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
+import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
@@ -767,6 +769,7 @@ export const ProjectSettingsLanding = (props: {
         mapper={templater => templater.landingGet()}
         render={(templater, landing) => (
           <>
+            <Typography variant='body1' component='div'>Show a dedicated welcome page for your visitors</Typography>
             <FormControlLabel
               label={!!landing ? 'Enabled' : 'Disabled'}
               control={(
@@ -781,6 +784,23 @@ export const ProjectSettingsLanding = (props: {
             />
             {landing && (
               <>
+                <BrowserPreview
+                  server={props.server}
+                  scroll={Orientation.Both}
+                  addressBar='project'
+                  projectPath={landing.pageAndIndex.page.slug}
+                  forceBreakpoint='xs'
+                  FakeBrowserProps={{
+                    fixedWidth: 650,
+                  }}
+                >
+                  <CustomPage
+                    key={props.server.getProjectId()}
+                    server={props.server}
+                    pageSlug={landing.pageAndIndex.page.slug}
+                    landingLinkOpenInNew
+                  />
+                </BrowserPreview>
                 <Section
                   title='Welcome message'
                   description='Modify the landing page links to point to your roadmap, feedback, contact email or your own link.'
@@ -1693,8 +1713,27 @@ export const ProjectSettingsChangelog = (props: {
 }) => {
   return (
     <ProjectSettingsBase title='Changelog'>
-      <p>TODO enable</p>
-      <p>TODO tags</p>
+      <TemplateWrapper<ChangelogInstance | undefined>
+        editor={props.editor}
+        mapper={templater => templater.changelogGet()}
+        render={(templater, changelog) => (
+          <>
+            <FormControlLabel
+              label={!!changelog?.pageAndIndex ? 'Enabled' : 'Disabled'}
+              control={(
+                <Switch
+                  checked={!!changelog?.pageAndIndex}
+                  onChange={(e, checked) => !!changelog?.pageAndIndex
+                    ? templater.changelogOff(changelog)
+                    : templater.changelogOn()}
+                  color='primary'
+                />
+              )}
+            />
+          </>
+        )
+        }
+      />
     </ProjectSettingsBase>
   );
 }
@@ -1748,9 +1787,9 @@ const BrowserPreview = (props: {
   addressBar?: 'website' | 'project';
   projectPath?: string;
   scroll?: Orientation;
+  forceBreakpoint?: Breakpoint;
 }) => {
   const theme = useTheme();
-  const classes = useStyles();
   var preview = props.children;
   if (!props.suppressThemeProvider) {
     preview = (
@@ -1759,6 +1798,7 @@ const BrowserPreview = (props: {
         seed={props.server.getProjectId()}
         isInsideContainer={true}
         supressCssBaseline={true}
+        forceBreakpoint={props.forceBreakpoint}
         containerStyle={!props.scroll ? undefined : {
           ...contentScrollApplyStyles({
             theme,
@@ -1885,7 +1925,8 @@ class TemplateWrapper<T> extends Component<{
             severity='warning'
           >
             <AlertTitle>{this.state.confirmation?.title}</AlertTitle>
-            {this.state.confirmation?.description}
+            <p>{this.state.confirmation?.description}</p>
+            <p>This usually happens when you change defaults in the Advanced settings.</p>
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
