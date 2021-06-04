@@ -1100,7 +1100,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         <div style={{ display: 'flex', alignItems: 'center' }}>
           Preview changes live
           <div style={{ flexGrow: 1 }} />
-          {!!allowCode && (
+          {(!!allowCode || !!showCodeForProject) && (
             <IconButton onClick={() => this.setState({
               settingsPreviewChanges: !!showCodeForProject ? 'live' : 'code',
             })}>
