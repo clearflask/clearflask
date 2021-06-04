@@ -9,25 +9,19 @@ import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import { Path, pathEquals } from '../configEditor';
 
 /** If changed, also change in KillBillPlanStore.java */
+const GrowthRestrictedProperties: Path[] = [
+  ['users', 'onboarding', 'notificationMethods', 'sso'],
+  ['users', 'onboarding', 'notificationMethods', 'oauth'],
+  ['users', 'onboarding', 'visibility'],
+  ['style', 'templates'],
+  ['integrations', 'googleAnalytics'],
+  ['integrations', 'hotjar'],
+  ['integrations', 'intercom'],
+];
+/** If changed, also change in KillBillPlanStore.java */
 export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
-  'growth-monthly': [
-    ['users', 'onboarding', 'notificationMethods', 'sso'],
-    ['users', 'onboarding', 'notificationMethods', 'oauth'],
-    ['users', 'onboarding', 'visibility'],
-    ['style', 'templates'],
-    ['integrations', 'googleAnalytics'],
-    ['integrations', 'hotjar'],
-    ['integrations', 'intercom'],
-  ],
-  'growth2-monthly': [
-    ['users', 'onboarding', 'notificationMethods', 'sso'],
-    ['users', 'onboarding', 'notificationMethods', 'oauth'],
-    ['users', 'onboarding', 'visibility'],
-    ['style', 'templates'],
-    ['integrations', 'googleAnalytics'],
-    ['integrations', 'hotjar'],
-    ['integrations', 'intercom'],
-  ],
+  'growth-monthly': GrowthRestrictedProperties,
+  'growth2-monthly': GrowthRestrictedProperties,
 };
 
 export enum Action {
@@ -67,6 +61,7 @@ interface Props {
   children: React.ReactNode;
   propertyPath?: Path;
   action?: Action;
+  accountBasePlanId?: string;
 }
 interface ConnectProps {
   accountBasePlanId?: string;
@@ -131,6 +126,6 @@ export const UpgradeAlert = (props: { className?: string }) => (
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
-    accountBasePlanId: state.account.account.account?.basePlanId,
+    accountBasePlanId: ownProps.accountBasePlanId || state.account.account.account?.basePlanId,
   };
 })(withStyles(styles, { withTheme: true })(UpgradeWrapper));

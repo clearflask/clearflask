@@ -13,9 +13,10 @@ export interface MenuDropdown {
   items: Array<MenuButton | MenuHeader | MenuDivider>;
 }
 export type MenuButton = {
-  icon?: OverridableComponent<SvgIconTypeMap>,
-  iconClassName?: string,
+  icon?: OverridableComponent<SvgIconTypeMap>;
+  iconClassName?: string;
   type: 'button';
+  primary?: boolean;
   title: string;
   scrollState?: string;
 } & ({
@@ -267,6 +268,9 @@ export function MenuItemButton(props: {
     <Button
       size='large'
       key={props.item.title}
+      color={props.item.primary ? 'primary' : undefined}
+      variant={props.item.primary ? 'contained' : undefined}
+      disableElevation
       className={classNames(
         classes.button,
         props.isOuter && classes.buttonOuter,

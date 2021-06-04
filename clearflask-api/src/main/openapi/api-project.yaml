@@ -1,7 +1,7 @@
 components:
   schemas:
     Config:
-      x-clearflask-page: { name: 'Advanced', description: 'These are your project settings. You can preview your changes on the right hand side, but keep in mind the preview is manipulating live data. Publish when you are ready.' }
+      x-clearflask-page: { name: 'General' }
       description: Config properties visible both to client app and admins.
       type: object
       required:
@@ -229,7 +229,10 @@ components:
                   x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
                   type: string
                 redirectUrl:
-                  x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
+                  x-clearflask-prop: { order: 2, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
+                  type: string
+                icon:
+                  x-clearflask-prop: { order: 1, subType: 'icon', name: 'Icon', description: 'Icon name to display. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'Launch' }
                   type: string
             oauth:
               x-clearflask-prop: { order: 4, name: 'OAuth', description: 'Authenticate users to an OAuth2 compatible service provider. Your OAuth provider will require a callback URL which you should set as https://<subdomain>.clearflask.com/oauth and/or https://<domain>/oauth depending on what you are planning on using.' }
@@ -254,6 +257,9 @@ components:
                     type: string
                   buttonTitle:
                     x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Set the user-visible button title with the name of your provider.', defaultValue: 'My provider' }
+                    type: string
+                  icon:
+                    x-clearflask-prop: { order: 1, subType: 'icon', name: 'Icon', description: 'Icon name to display. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'Facebook' }
                     type: string
                   clientId:
                     x-clearflask-prop: { order: 2, name: 'Client ID', decription: 'Given by your OAuth Provider as Client ID.' }
@@ -816,6 +822,10 @@ components:
               x-clearflask-hide: true
               x-clearflask-prop: { order: 3, name: 'Identity Verification Secret (Optional)', description: 'Verification prevents third parties from impersonating your logged-in users and seeing their conversations. Paste in your identity verification secret here. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
               type: string
+            notYetPublished: # Flag to keep track of when config has been published on the dashboard
+              x-clearflask-hide: true
+              x-clearflask-prop: { defaultValue: true, falseAsUndefined: true }
+              type: boolean
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object

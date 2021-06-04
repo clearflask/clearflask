@@ -7,7 +7,6 @@ import WarnIcon from '@material-ui/icons/Warning';
 import { Color } from '@material-ui/lab';
 import { CardNumberElement, ElementsConsumer } from '@stripe/react-stripe-js';
 import { PaymentIntent, Stripe, StripeElements, StripeError } from '@stripe/stripe-js';
-import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
@@ -18,7 +17,6 @@ import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
-import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
 import AcceptTerms from '../../common/AcceptTerms';
 import CreditCard from '../../common/CreditCard';
@@ -30,6 +28,7 @@ import { initialWidth } from '../../common/util/screenUtil';
 import windowIso from '../../common/windowIso';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
+import { ProjectSettingsBase, Section } from './ProjectSettings';
 
 /** If changed, also change in KillBilling.java */
 interface PaymentStripeAction {
@@ -106,7 +105,7 @@ const styles = (theme: Theme) => createStyles({
     marginTop: theme.spacing(2),
   },
   paymentActionMessage: {
-    margin: theme.spacing(4),
+    margin: theme.spacing(4, 0),
   },
 });
 interface Props {
@@ -412,8 +411,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const hasPayable = (this.props.accountBilling?.accountPayable || 0) > 0;
     const hasReceivable = (this.props.accountBilling?.accountReceivable || 0) > 0;
     const payment = (
-      <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>
-        <div className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+      <Section
+        title='Payment'
+        preview={(
           <div className={this.props.classes.creditCardContainer}>
             {creditCard}
             <Box display='grid' gridTemplateAreas='"payTtl payAmt" "rcvTtl rcvAmt"' alignItems='center' gridGap='10px 10px'>
@@ -441,9 +441,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               )}
             </Box>
           </div>
+        )}
+        content={(
           <div className={this.props.classes.actionContainer}>
-            <Typography variant='h6' component='div'>{paymentTitle}</Typography>
-            <Typography>{paymentDesc}</Typography>
+            <p><Typography variant='h6' color='textPrimary' component='div'>{paymentTitle}</Typography></p>
+            <Typography color='textSecondary'>{paymentDesc}</Typography>
             <div className={this.props.classes.sectionButtons}>
               {showContactSupport && (
                 <Button
@@ -492,99 +494,99 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               )}
             </div>
             {paymentAction}
-          </div>
-        </div>
-        <Dialog
-          open={!!this.state.showAddPayment}
-          keepMounted
-          onClose={() => this.setState({ showAddPayment: undefined })}
-        >
-          <ElementsConsumer>
-            {({ elements, stripe }) => (
-              <>
-                <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
-                <DialogContent className={this.props.classes.center}>
-                  <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
-                  <Collapse in={!!this.state.stripePaymentError}>
-                    <Message message={this.state.stripePaymentError} severity='error' />
-                  </Collapse>
-                </DialogContent>
-                <AcceptTerms />
-                <DialogActions>
-                  <Button onClick={() => this.setState({ showAddPayment: undefined })}>
-                    Cancel
+            <Dialog
+              open={!!this.state.showAddPayment}
+              keepMounted
+              onClose={() => this.setState({ showAddPayment: undefined })}
+            >
+              <ElementsConsumer>
+                {({ elements, stripe }) => (
+                  <>
+                    <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
+                    <DialogContent className={this.props.classes.center}>
+                      <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
+                      <Collapse in={!!this.state.stripePaymentError}>
+                        <Message message={this.state.stripePaymentError} severity='error' />
+                      </Collapse>
+                    </DialogContent>
+                    <AcceptTerms />
+                    <DialogActions>
+                      <Button onClick={() => this.setState({ showAddPayment: undefined })}>
+                        Cancel
                   </Button>
-                  <SubmitButton
-                    isSubmitting={this.state.isSubmitting}
-                    disabled={!this.state.stripePaymentFilled || !elements || !stripe}
-                    color='primary'
-                    onClick={() => this.onPaymentSubmit(elements!, stripe!)}
-                  >Add</SubmitButton>
-                </DialogActions>
-              </>
-            )}
-          </ElementsConsumer>
-        </Dialog>
-        <Dialog
-          open={!!this.state.showCancelSubscription}
-          keepMounted
-          onClose={() => this.setState({ showCancelSubscription: undefined })}
-        >
-          <DialogTitle>Stop subscription</DialogTitle>
-          <DialogContent className={this.props.classes.center}>
-            <DialogContentText>Stop automatic billing of your subscription. Any ongoing subscription will continue to work until it expires.</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
-              Cancel
+                      <SubmitButton
+                        isSubmitting={this.state.isSubmitting}
+                        disabled={!this.state.stripePaymentFilled || !elements || !stripe}
+                        color='primary'
+                        onClick={() => this.onPaymentSubmit(elements!, stripe!)}
+                      >Add</SubmitButton>
+                    </DialogActions>
+                  </>
+                )}
+              </ElementsConsumer>
+            </Dialog>
+            <Dialog
+              open={!!this.state.showCancelSubscription}
+              keepMounted
+              onClose={() => this.setState({ showCancelSubscription: undefined })}
+            >
+              <DialogTitle>Stop subscription</DialogTitle>
+              <DialogContent className={this.props.classes.center}>
+                <DialogContentText>Stop automatic billing of your subscription. Any ongoing subscription will continue to work until it expires.</DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
+                  Cancel
             </Button>
-            <SubmitButton
-              isSubmitting={this.state.isSubmitting}
-              style={{ color: this.props.theme.palette.error.main }}
-              onClick={() => {
-                this.setState({ isSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    cancelEndOfTerm: true,
-                  },
-                }).then(() => d.accountBillingAdmin({})))
-                  .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
-                  .catch(er => this.setState({ isSubmitting: false }));
-              }}
-            >Stop subscription</SubmitButton>
-          </DialogActions>
-        </Dialog>
-        <Dialog
-          open={!!this.state.showResumePlan}
-          keepMounted
-          onClose={() => this.setState({ showResumePlan: undefined })}
-        >
-          <DialogTitle>Resume subscription</DialogTitle>
-          <DialogContent className={this.props.classes.center}>
-            <DialogContentText>{resumePlanDesc}</DialogContentText>
-          </DialogContent>
-          <AcceptTerms />
-          <DialogActions>
-            <Button onClick={() => this.setState({ showResumePlan: undefined })}>
-              Cancel
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  style={{ color: this.props.theme.palette.error.main }}
+                  onClick={() => {
+                    this.setState({ isSubmitting: true });
+                    ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                      accountUpdateAdmin: {
+                        cancelEndOfTerm: true,
+                      },
+                    }).then(() => d.accountBillingAdmin({})))
+                      .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
+                      .catch(er => this.setState({ isSubmitting: false }));
+                  }}
+                >Stop subscription</SubmitButton>
+              </DialogActions>
+            </Dialog>
+            <Dialog
+              open={!!this.state.showResumePlan}
+              keepMounted
+              onClose={() => this.setState({ showResumePlan: undefined })}
+            >
+              <DialogTitle>Resume subscription</DialogTitle>
+              <DialogContent className={this.props.classes.center}>
+                <DialogContentText>{resumePlanDesc}</DialogContentText>
+              </DialogContent>
+              <AcceptTerms />
+              <DialogActions>
+                <Button onClick={() => this.setState({ showResumePlan: undefined })}>
+                  Cancel
             </Button>
-            <SubmitButton
-              isSubmitting={this.state.isSubmitting}
-              color='primary'
-              onClick={() => {
-                this.setState({ isSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    resume: true,
-                  },
-                }).then(() => d.accountBillingAdmin({})))
-                  .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
-                  .catch(er => this.setState({ isSubmitting: false }));
-              }}
-            >Resume subscription</SubmitButton>
-          </DialogActions>
-        </Dialog>
-      </DividerCorner>
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  color='primary'
+                  onClick={() => {
+                    this.setState({ isSubmitting: true });
+                    ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                      accountUpdateAdmin: {
+                        resume: true,
+                      },
+                    }).then(() => d.accountBillingAdmin({})))
+                      .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
+                      .catch(er => this.setState({ isSubmitting: false }));
+                  }}
+                >Resume subscription</SubmitButton>
+              </DialogActions>
+            </Dialog>
+          </div>
+        )}
+      />
     );
 
     const nextInvoicesCursor = this.state.invoices === undefined
@@ -595,55 +597,59 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       ...(this.state.invoices || []),
     ];
     const invoices = invoicesItems.length <= 0 ? undefined : (
-      <div className={this.props.classes.sectionInvoices}>
-        <DividerCorner title='Invoices' height='100%' className={classNames(this.props.classes.billingHistoryTable, this.props.classes.spacing)}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell key='due'>Due</TableCell>
-                <TableCell key='status'>Status</TableCell>
-                <TableCell key='amount'>Amount</TableCell>
-                <TableCell key='desc'>Description</TableCell>
-                <TableCell key='invoiceLink'>Invoice</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {invoicesItems.map((invoiceItem, index) => (
-                <TableRow key={index}>
-                  <TableCell key='due'><Typography>{new Date(invoiceItem.date).toLocaleDateString()}</Typography></TableCell>
-                  <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
-                  <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
-                  <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
-                  <TableCell key='invoiceLink'>
-                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
-                  </TableCell>
+      <Section
+        title='Invoices'
+        content={(
+          <>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell key='due'>Due</TableCell>
+                  <TableCell key='status'>Status</TableCell>
+                  <TableCell key='amount'>Amount</TableCell>
+                  <TableCell key='desc'>Description</TableCell>
+                  <TableCell key='invoiceLink'>Invoice</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DividerCorner>
-        {nextInvoicesCursor && (
-          <Button
-            style={{ margin: 'auto', display: 'block' }}
-            onClick={() => ServerAdmin.get().dispatchAdmin()
-              .then(d => d.invoicesSearchAdmin({ cursor: nextInvoicesCursor }))
-              .then(results => this.setState({
-                invoices: [
-                  ...(this.state.invoices || []),
-                  ...results.results,
-                ],
-                invoicesCursor: results.cursor,
-              }))}
-          >
-            Show more
-          </Button>
+              </TableHead>
+              <TableBody>
+                {invoicesItems.map((invoiceItem, index) => (
+                  <TableRow key={index}>
+                    <TableCell key='due'><Typography>{new Date(invoiceItem.date).toLocaleDateString()}</Typography></TableCell>
+                    <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
+                    <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
+                    <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
+                    <TableCell key='invoiceLink'>
+                      <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {nextInvoicesCursor && (
+              <Button
+                style={{ margin: 'auto', display: 'block' }}
+                onClick={() => ServerAdmin.get().dispatchAdmin()
+                  .then(d => d.invoicesSearchAdmin({ cursor: nextInvoicesCursor }))
+                  .then(results => this.setState({
+                    invoices: [
+                      ...(this.state.invoices || []),
+                      ...results.results,
+                    ],
+                    invoicesCursor: results.cursor,
+                  }))}
+              >
+                Show more
+              </Button>
+            )}
+          </>
         )}
-      </div>
+      />
     );
 
     const plan = (
-      <DividerCorner title='Plan' height='90%' className={this.props.classes.spacing}>
-        <div className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+      <Section
+        title='Plan'
+        preview={(
           <div className={this.props.classes.planContainer}>
             <PricingPlan
               selected
@@ -661,13 +667,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </Box>
             )}
           </div>
+        )}
+        content={(
           <div className={this.props.classes.actionContainer}>
-            <Typography variant='h6' component='div'>{planTitle}</Typography>
-            <Typography>{planDesc}</Typography>
+            <p><Typography variant='h6' component='div' color='textPrimary'>{planTitle}</Typography></p>
+            <Typography color='textSecondary'>{planDesc}</Typography>
             {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
               <>
-                <Typography variant='h6' component='div' className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
-                <Typography>{endOfTermChangeToPlanDesc}</Typography>
+                <p><Typography variant='h6' component='div' color='textPrimary' className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography></p>
+                <Typography color='textSecondary'>{endOfTermChangeToPlanDesc}</Typography>
               </>
             )}
             {showPlanChange && (
@@ -687,7 +695,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   }}
                 >
                   Switch plan
-                </Button>
+              </Button>
               </div>
             )}
             {this.props.isSuperAdmin && (
@@ -737,40 +745,40 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </div>
               </>
             )}
-          </div>
-        </div>
-        <BillingChangePlanDialog
-          open={!!this.state.showPlanChange}
-          onClose={() => this.setState({ showPlanChange: undefined })}
-          onSubmit={basePlanId => {
-            if (isTracking()) {
-              ReactGA.event({
-                category: 'billing',
-                action: 'click-plan-switch-submit',
-                label: basePlanId,
-              });
-            }
+            <BillingChangePlanDialog
+              open={!!this.state.showPlanChange}
+              onClose={() => this.setState({ showPlanChange: undefined })}
+              onSubmit={basePlanId => {
+                if (isTracking()) {
+                  ReactGA.event({
+                    category: 'billing',
+                    action: 'click-plan-switch-submit',
+                    label: basePlanId,
+                  });
+                }
 
-            this.setState({ isSubmitting: true });
-            ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-              accountUpdateAdmin: {
-                basePlanId,
-              },
-            }).then(() => d.accountBillingAdmin({})))
-              .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
-              .catch(er => this.setState({ isSubmitting: false }));
-          }}
-          isSubmitting={!!this.state.isSubmitting}
-        />
-      </DividerCorner>
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    basePlanId,
+                  },
+                }).then(() => d.accountBillingAdmin({})))
+                  .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+              isSubmitting={!!this.state.isSubmitting}
+            />
+          </div>
+        )}
+      />
     );
 
     return (
-      <div className={this.props.classes.page}>
+      <ProjectSettingsBase title='Billing'>
         {plan}
         {payment}
         {invoices}
-      </div>
+      </ProjectSettingsBase>
     );
   }
 

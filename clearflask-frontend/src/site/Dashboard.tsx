@@ -1,4 +1,4 @@
-import { Button, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -32,6 +32,7 @@ import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { Header, LayoutSize, PreviewSection, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
+import SubmitButton from '../common/SubmitButton';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -47,7 +48,21 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers } from './dashboard/ProjectSettings';
+import {
+  ProjectSettingsBase,
+  ProjectSettingsBranding,
+  ProjectSettingsChangelog,
+  ProjectSettingsData,
+  ProjectSettingsDomain,
+  ProjectSettingsFeedback,
+  ProjectSettingsInstall,
+  ProjectSettingsLanding,
+  ProjectSettingsRoadmap,
+  ProjectSettingsUsers,
+  ProjectSettingsUsersOauth,
+  ProjectSettingsUsersOnboarding,
+  ProjectSettingsUsersSso
+} from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -165,6 +180,9 @@ interface State {
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
   previewShow?: boolean;
+  publishDialogShown?: boolean;
+  publishDialogSubmitting?: boolean;
+  publishDialogInviteMods?: string[];
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
@@ -581,19 +599,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
                   { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
-                  { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/users', name: 'Users', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/onboard', name: 'Onboard', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
                   { type: 'heading', text: 'Advanced' } as MenuHeading,
                   {
                     type: 'project',
-                    name: 'Project',
+                    name: 'General',
                     slug: 'settings/project/advanced',
                     offset: 1,
                     projectId: activeProject.server.getProjectId(),
@@ -720,11 +740,23 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 content: (<ProjectSettingsDomain server={activeProject.server} editor={activeProject.editor} />),
               };
               break;
-            case 'users':
-              main = {
-                size: ProjectSettingsMainSize,
-                content: (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />),
-              };
+            case 'onboard':
+              if (activeSubPath[2] === 'sso') {
+                main = {
+                  size: ProjectSettingsMainSize,
+                  content: (<ProjectSettingsUsersSso server={activeProject.server} editor={activeProject.editor} />),
+                };
+              } else if (activeSubPath[2] === 'oauth') {
+                main = {
+                  size: ProjectSettingsMainSize,
+                  content: (<ProjectSettingsUsersOauth server={activeProject.server} editor={activeProject.editor} />),
+                };
+              } else {
+                main = {
+                  size: ProjectSettingsMainSize,
+                  content: (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />),
+                };
+              }
               break;
             case 'landing':
               main = {
@@ -781,18 +813,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 disableElevation
                 color='primary'
                 style={{ marginLeft: 8 }}
-                onClick={() => {
-                  const currentProject = activeProject;
-                  ServerAdmin.get().dispatchAdmin().then(d => d.configSetAdmin({
-                    projectId: currentProject.projectId,
-                    versionLast: currentProject.configVersion,
-                    configAdmin: currentProject.editor.getConfig(),
-                  })
-                    .then((versionedConfigAdmin) => {
-                      currentProject.resetUnsavedChanges(versionedConfigAdmin);
-                      this.setState({ settingsPreviewChanges: undefined });
-                    }));
-                }}
+                onClick={() => this.publishChanges(activeProject)
+                  .then(versionedConfigAdmin => this.setState({ settingsPreviewChanges: undefined }))}
               >
                 Publish
               </Button>
@@ -832,6 +854,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
     }
 
+    const notYetPublished = !!activeProject?.editor.getConfig().notYetPublished;
     const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
     const projectLink = (!!activeProjectConf && !!showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
@@ -912,7 +935,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             <>
               <MenuItems
                 items={[
-                  ...(!!projectLink ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
+                  ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
+                  ...((!!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
                   {
                     type: 'dropdown', title: this.props.account.name, items: [
                       ...(projects.filter(p => p.projectId !== activeProjectId).map(p => (
@@ -959,8 +983,80 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           contentMargins={!!showContentMargins}
           main={main || { content: (<ErrorPage msg='Oops, cannot find page' />) }}
         />
+        {!!activeProject && notYetPublished && (
+          <Dialog
+            open={!!this.state.publishDialogShown}
+            onClose={() => this.setState({ publishDialogShown: false })}
+          >
+            <DialogTitle>Publish</DialogTitle>
+            <DialogContent>
+              <DialogContentText>Choose how your users will access your portal</DialogContentText>
+              <ProjectSettingsUsersOnboarding
+                server={activeProject.server}
+                editor={activeProject.editor}
+                onPageClicked={() => this.setState({ publishDialogShown: false })}
+                inviteMods={this.state.publishDialogInviteMods || []}
+                setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
+              <SubmitButton
+                isSubmitting={this.state.publishDialogSubmitting}
+                color='primary'
+                variant='contained'
+                disableElevation
+                onClick={async e => {
+                  if (!activeProject) return;
+                  this.setState({ publishDialogSubmitting: true });
+                  (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
+                  try {
+                    await this.publishChanges(activeProject);
+                  } catch (e) {
+                    this.setState({ publishDialogSubmitting: false });
+                    return;
+                  }
+                  const d = await activeProject.server.dispatchAdmin();
+                  const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
+                  try {
+                    for (const mod of this.state.publishDialogInviteMods || []) {
+                      d.userCreateAdmin({
+                        projectId: activeProject.server.getProjectId(),
+                        userCreateAdmin: {
+                          email: mod,
+                        },
+                      });
+                      inviteModsRemaining.delete(mod);
+                    }
+                  } catch (e) {
+                    this.setState({ publishDialogSubmitting: false });
+                    return;
+                  } finally {
+                    this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
+                  }
+                  !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                  this.setState({
+                    publishDialogSubmitting: false,
+                    publishDialogShown: false,
+                    settingsPreviewChanges: undefined,
+                  });
+                }}>Publish and Visit</SubmitButton>
+            </DialogActions>
+          </Dialog>
+        )}
       </Elements>
     );
+  }
+
+  async publishChanges(currentProject: AdminProject): Promise<AdminClient.VersionedConfigAdmin> {
+    const d = await ServerAdmin.get().dispatchAdmin();
+    const versionedConfigAdmin = await d.configSetAdmin({
+      projectId: currentProject.projectId,
+      versionLast: currentProject.configVersion,
+      configAdmin: currentProject.editor.getConfig(),
+    });
+    currentProject.resetUnsavedChanges(versionedConfigAdmin);
+    return versionedConfigAdmin;
   }
 
   renderProjectUserSelect(activeProject: AdminProject) {

@@ -214,7 +214,16 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
           }
 
           if (reason === 'create-option') {
-            this.props.onValueCreate && this.props.onValueCreate(val as any as string);
+            var createdText: string = '';
+            if (typeof val === 'string') {
+              createdText = val;
+            } else if (Array.isArray(val)) {
+              const valParsed = val[val.length - 1];
+              if (typeof valParsed === 'string') {
+                createdText = valParsed;
+              }
+            }
+            !!createdText && this.props.onValueCreate && this.props.onValueCreate(createdText);
             onInputChange(undefined, '', 'clear');
           } else if (reason === 'clear' || reason === 'blur') {
             this.props.onValueChange([]);

@@ -24,7 +24,7 @@ const DynamicMuiIcon = (props: {
   return (
     <Promised
       key={name}
-      promise={import(/* webpackMode: "lazy-once" */`@material-ui/icons/${name}.js`)
+      promise={import(/* webpackChunkName: "DynamicMuiIcons", webpackMode: "lazy-once" */`@material-ui/icons/${name}.js`)
         .catch(err => null)
         .then(i => i?.default)}
       render={Icon => Icon && (<Icon {...iconProps} />)}

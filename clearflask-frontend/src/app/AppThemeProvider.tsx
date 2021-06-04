@@ -33,7 +33,7 @@ export const ComponentPropsOverrides: ComponentsProps = {
 };
 
 interface Props {
-  containerStyle?: React.CSSProperties,
+  containerStyle?: (theme: Theme) => React.CSSProperties,
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
   forceBreakpoint?: Breakpoint;
@@ -149,9 +149,9 @@ class AppThemeProvider extends Component<Props> {
           {!this.props.supressCssBaseline && (<CssBaseline />)}
           <div style={{
             height: '100%',
+            ...(this.props.containerStyle?.(theme) || {}),
             background: theme.palette.background.default,
             color: theme.palette.text.primary,
-            ...(this.props.containerStyle || {}),
           }}>
             {this.props.children}
           </div>

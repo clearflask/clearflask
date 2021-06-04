@@ -1,4 +1,4 @@
-import * as Admin from '../../api/admin';
+import { ConfigAdmin } from '../../api/admin/models/ConfigAdmin';
 import Schema from '../../api/schema/schema.json';
 import stringToSlug from '../util/slugger';
 import randomUuid from '../util/uuid';
@@ -367,8 +367,8 @@ export const pathEquals = (l: Path, r: Path) => {
 export interface Editor {
 
   clone(): Editor;
-  getConfig(): Admin.ConfigAdmin;
-  setConfig(config: Admin.ConfigAdmin);
+  getConfig(): ConfigAdmin;
+  setConfig(config: ConfigAdmin);
   clearConfig();
   notify();
 
@@ -386,15 +386,15 @@ export interface Editor {
 }
 
 export class EditorImpl implements Editor {
-  config: Admin.ConfigAdmin;
+  config: ConfigAdmin;
   cache: any = {};
   globalSubscribers: { [subscriberId: string]: () => void } = {};
 
-  constructor(config?: Admin.ConfigAdmin) {
+  constructor(config?: ConfigAdmin) {
     if (config !== undefined) {
       this.config = config;
     } else {
-      this.config = {} as Admin.ConfigAdmin;
+      this.config = {} as ConfigAdmin;
       this.getPage([]).setDefault();
     }
   }
@@ -423,18 +423,18 @@ export class EditorImpl implements Editor {
     Object.values(this.globalSubscribers).forEach(notify => notify());
   }
 
-  getConfig(): Admin.ConfigAdmin {
+  getConfig(): ConfigAdmin {
     return this.config;
   }
 
-  setConfig(config: Admin.ConfigAdmin) {
+  setConfig(config: ConfigAdmin) {
     this.config = config;
     this.cacheInvalidate([]);
     this.notify();
   }
 
-  clearConfig(): Admin.ConfigAdmin {
-    this.config = {} as Admin.ConfigAdmin;
+  clearConfig(): ConfigAdmin {
+    this.config = {} as ConfigAdmin;
     this.getPage([]).setDefault();
     this.cacheInvalidate([]);
     this.notify();
@@ -1260,7 +1260,7 @@ export class EditorImpl implements Editor {
         if (propSchema.enum) {
           const items: EnumItem[] = this.getEnumItems(propSchema);
           property = {
-            defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : propSchema.enum[0]) : undefined,
+            defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? propSchema.enum[0] : undefined),
             ...base,
             type: PropertyType.Enum,
             value: value,
@@ -1278,7 +1278,7 @@ export class EditorImpl implements Editor {
         } else if (propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
           property = {
-            defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : [...xPropLink.linkPath, 0]) : undefined,
+            defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? [...xPropLink.linkPath, 0] : undefined),
             ...xPropLink,
             ...base,
             type: PropertyType.Link,
@@ -1343,7 +1343,7 @@ export class EditorImpl implements Editor {
           if (xProp && xProp.subType === PropSubType.Id) {
             defaultValue = base.defaultValue !== undefined ? base.defaultValue : randomUuid();
           } else {
-            defaultValue = isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : '') : undefined;
+            defaultValue = xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? '' : undefined);
           }
           var setDefaultStringFun = setDefaultFun;
           var setStringFun = setFun;
@@ -1403,7 +1403,7 @@ export class EditorImpl implements Editor {
       case 'number':
       case 'integer':
         property = {
-          defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : 0) : undefined,
+          defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? 0 : undefined),
           ...base,
           type: propSchema.type,
           value: value,
@@ -1425,7 +1425,7 @@ export class EditorImpl implements Editor {
         break;
       case 'boolean':
         property = {
-          defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : false) : undefined,
+          defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? false : undefined),
           ...base,
           type: PropertyType.Boolean,
           value: value,
@@ -1449,7 +1449,7 @@ export class EditorImpl implements Editor {
           }
           const xPropLink = propSchema[OpenApiTags.PropLink];
           property = {
-            defaultValue: isRequired ? (base.defaultValue !== undefined ? new Set<string>(base.defaultValue) : new Set<string>()) : undefined,
+            defaultValue: base.defaultValue !== undefined ? new Set<string>(base.defaultValue) : (isRequired ? new Set<string>() : undefined),
             ...xPropLink,
             ...base,
             type: PropertyType.LinkMulti,
@@ -1561,7 +1561,7 @@ export class EditorImpl implements Editor {
           return childProperties;
         }
         property = {
-          defaultValue: isRequired ? true : undefined,
+          defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? true : undefined),
           ...base,
           type: PropertyType.Array,
           value: value === undefined ? undefined : true,
@@ -1608,10 +1608,10 @@ export class EditorImpl implements Editor {
             const arr = this.getOrDefaultValue(path, []);
             if (index !== undefined) {
               arr.splice(index, 0, undefined);
-              this.cacheInvalidateChildren(path);
             } else {
               arr.push(undefined);
             }
+            this.cacheInvalidateChildren(path);
             const arrayProperty: ArrayProperty = (property as ArrayProperty);
             arrayProperty.childProperties = fetchChildPropertiesArray();
             const newProperty = arrayProperty.childProperties![
@@ -1707,7 +1707,7 @@ export class EditorImpl implements Editor {
             return childProperties;
           }
           property = {
-            defaultValue: isRequired ? true : undefined,
+            defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? true : undefined),
             ...base,
             type: PropertyType.Dict,
             value: value === undefined ? undefined : true,
@@ -1790,7 +1790,7 @@ export class EditorImpl implements Editor {
           return childProperties;
         }
         property = {
-          defaultValue: isRequired ? true : undefined,
+          defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? true : undefined),
           ...base,
           type: PropertyType.Object,
           value: value === undefined ? undefined : true,

@@ -20,6 +20,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import AcceptTerms from '../../common/AcceptTerms';
 import Hr from '../../common/Hr';
+import DynamicMuiIcon from '../../common/icon/DynamicMuiIcon';
 import GuestIcon from '../../common/icon/GuestIcon';
 import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import WebNotification from '../../common/notification/webNotification';
@@ -229,7 +230,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       onClick={!onlySingleOption ? this.onClickSsoNotif.bind(this) : e => this.setState({ notificationType: NotificationType.SSO })}
                       disabled={this.state.isSubmitting}
                     >
-                      <ListItemIcon><NewWindowIcon /></ListItemIcon>
+                      <ListItemIcon>
+                        {!onboarding?.notificationMethods.sso?.icon
+                          ? (<NewWindowIcon />)
+                          : (<DynamicMuiIcon name={onboarding?.notificationMethods.sso?.icon} />)}
+                      </ListItemIcon>
                       <ListItemText primary={onboarding?.notificationMethods.sso?.buttonTitle
                         || this.props.config?.name
                         || 'External'} />
@@ -251,7 +256,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           })}
                         disabled={this.state.isSubmitting}
                       >
-                        <ListItemIcon><NewWindowIcon /></ListItemIcon>
+                        <ListItemIcon>
+                          {!oauthOpt.icon
+                            ? (<NewWindowIcon />)
+                            : (<DynamicMuiIcon name={oauthOpt.icon} />)}
+                        </ListItemIcon>
                         <ListItemText primary={oauthOpt.buttonTitle} />
                       </ListItem>
                       <Collapse in={onlySingleOption}>

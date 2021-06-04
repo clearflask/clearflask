@@ -200,12 +200,12 @@ class App extends Component<Props> {
           seed={projectId}
           isInsideContainer={this.props.isInsideContainer}
           supressCssBaseline={this.props.supressCssBaseline}
-          containerStyle={{
+          containerStyle={theme => ({
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
             overflowY: this.props.settings?.demoScrollY ? 'scroll' : undefined,
-          }}
+          })}
         >
           <PushNotificationListener server={this.server} />
           <ServerErrorNotifier />
