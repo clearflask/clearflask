@@ -4,6 +4,9 @@ import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EmailAtIcon from '@material-ui/icons/AlternateEmail';
 import EditIcon from '@material-ui/icons/Edit';
+import FacebookIcon from '@material-ui/icons/Facebook';
+import GithubIcon from '@material-ui/icons/GitHub';
+import CustomIcon from '@material-ui/icons/MoreHoriz';
 import { Alert, AlertTitle, ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { Component, useEffect, useRef, useState } from 'react';
@@ -35,6 +38,11 @@ import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { Device } from '../../common/DeviceContainer';
 import FakeBrowser from '../../common/FakeBrowser';
+import DiscordIcon from '../../common/icon/DiscordIcon';
+import GitlabIcon from '../../common/icon/GitlabIcon';
+import GoogleIcon from '../../common/icon/GoogleIcon';
+import MicrosoftIcon from '../../common/icon/MicrosoftIcon';
+import TwitchIcon from '../../common/icon/TwitchIcon';
 import MyAccordion from '../../common/MyAccordion';
 import MyColorPicker from '../../common/MyColorPicker';
 import SubmitButton from '../../common/SubmitButton';
@@ -186,6 +194,10 @@ const styles = (theme: Theme) => createStyles({
   },
   usersOauthAddAddButton: {
     margin: theme.spacing(3, 0),
+  },
+  usersOauthAddSelectItem: {
+    display: 'flex',
+    alignItems: 'center',
   },
   usersVisibilityButtonGroup: {
     margin: theme.spacing(4, 2),
@@ -946,7 +958,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
       />
       <FormControlLabel
         label={checkboxLabel('OAuth', visibility === Admin.OnboardingVisibilityEnum.Public
-          ? 'Authenticate from an external service such as Facebook, Google or Github'
+          ? 'Authenticate from an external service such as Facebook, Google or GitHub'
           : 'Authenticate from your OAuth-compatible service')}
         className={classes.usersOnboardOption}
         control={(
@@ -1117,6 +1129,18 @@ export const ProjectSettingsUsersSso = (props: {
   return (
     <ProjectSettingsBase title='Single Sign-On'>
       <Section
+        description={(
+          <>
+            {'Enabling SSO takes a bit of work and requires you to make changes on your webserver. Read our '}
+            <MuiLink
+              underline='none'
+              color='primary'
+              target="_blank"
+              href='https://feedback.clearflask.com/post/how-to-setup-single-signon-uv5'
+            >documentation</MuiLink>
+            {' before you continue.'}
+          </>
+        )}
         preview={(
           <>
             <ProjectSettingsUsersOnboardingDemo server={props.server} editor={props.editor} />
@@ -1232,6 +1256,7 @@ export const ProjectSettingsUsersOauth = (props: {
   return (
     <ProjectSettingsBase title='OAuth'>
       <Section
+        description='Authenticate users to an OAuth2 compatible service provider such as Facebook, Google or GitHub.'
         preview={(
           <>
             <ProjectSettingsUsersOnboardingDemo server={props.server} editor={props.editor} />
@@ -1263,20 +1288,23 @@ export const ProjectSettingsUsersOauth = (props: {
               size='small'
               className={classes.usersOauthAddProp}
             >
-              <InputLabel>Add new</InputLabel>
+              <InputLabel>Add new provider</InputLabel>
               <Select
-                label='Add new'
+                label='Add new provider'
                 value={newOauthType}
                 onChange={e => setNewOauthType((e.target.value as string) || 'Custom')}
+                classes={{
+                  select: classes.usersOauthAddSelectItem,
+                }}
               >
-                <MenuItem value='Google'>Google</MenuItem>
-                <MenuItem value='Github'>Github</MenuItem>
-                <MenuItem value='Facebook'>Facebook</MenuItem>
-                <MenuItem value='Gitlab'>Gitlab</MenuItem>
-                <MenuItem value='Discord'>Discord</MenuItem>
-                <MenuItem value='Twitch'>Twitch</MenuItem>
-                <MenuItem value='Azure'>Azure</MenuItem>
-                <MenuItem value='Custom'>Other...</MenuItem>
+                <MenuItem value='Google'><GoogleIcon />&nbsp;&nbsp;&nbsp;Google</MenuItem>
+                <MenuItem value='Github'><GithubIcon />&nbsp;&nbsp;&nbsp;Github</MenuItem>
+                <MenuItem value='Facebook'><FacebookIcon />&nbsp;&nbsp;&nbsp;Facebook</MenuItem>
+                <MenuItem value='Gitlab'><GitlabIcon />&nbsp;&nbsp;&nbsp;Gitlab</MenuItem>
+                <MenuItem value='Discord'><DiscordIcon />&nbsp;&nbsp;&nbsp;Discord</MenuItem>
+                <MenuItem value='Twitch'><TwitchIcon />&nbsp;&nbsp;&nbsp;Twitch</MenuItem>
+                <MenuItem value='Azure'><MicrosoftIcon />&nbsp;&nbsp;&nbsp;Azure</MenuItem>
+                <MenuItem value='Custom'><CustomIcon />&nbsp;&nbsp;&nbsp;Other</MenuItem>
               </Select>
             </FormControl>
             <Collapse in={newOauthType === 'Custom'} >
@@ -1335,10 +1363,13 @@ export const ProjectSettingsUsersOauth = (props: {
                 disableElevation
                 disabled={!newOauthType || (newOauthType !== 'Custom' && (!clientId || !clientSecret))}
                 onClick={() => {
+                  setExpandedType('oauth');
+                  setExpandedIndex(config?.users.onboarding.notificationMethods.oauth.length)
+
                   const oauthId = randomUuid();
                   ((props.editor.getProperty(['oauthClientSecrets']) as ConfigEditor.DictProperty)
                     .put(oauthId) as ConfigEditor.StringProperty).set(clientSecret);
-                  var { authorizeUrl, tokenUrl, scope, userProfileUrl, guidJsonPath, nameJsonPath, emailJsonPath, icon } = OauthPrefilled[newOauthType];
+                  var { authorizeUrl, tokenUrl, scope, userProfileUrl, guidJsonPath, nameJsonPath, emailJsonPath, icon } = OauthPrefilled[newOauthType] || {};
                   if (newOauthType === 'Azure') {
                     if (azureTenantId) authorizeUrl = authorizeUrl?.replace('<tenant-id>', azureTenantId);
                     if (azureTenantId) tokenUrl = tokenUrl?.replace('<tenant-id>', azureTenantId);
@@ -1357,6 +1388,7 @@ export const ProjectSettingsUsersOauth = (props: {
                       emailJsonPath,
                       icon,
                     }));
+
                   setNewOauthType('');
                   setClientId('');
                   setClientSecret('');
@@ -1366,11 +1398,6 @@ export const ProjectSettingsUsersOauth = (props: {
                 Add
             </Button>
             </Collapse>
-            {/* <PropertyByPath
-            overrideName=''
-            editor={props.editor}
-            path={['users', 'onboarding', 'notificationMethods', 'oauth']}
-          /> */}
           </>
         )}
       />
