@@ -5,7 +5,8 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import path from 'path';
 import React from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { resetServerContext } from 'react-beautiful-dnd';
+import { renderToString } from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
 import { htmlDataCreate } from '../common/util/htmlData';
 import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
@@ -95,7 +96,9 @@ export default function render() {
             awaitPromises.length = 0;
             if (isFinished) return; // Request timed out
 
-            rr.renderedScreen = ReactDOMServer.renderToString(rr.muiSheets.collect(
+            resetServerContext(); // For react-beautiful-dnd library
+
+            rr.renderedScreen = renderToString(rr.muiSheets.collect(
               <ChunkExtractorManager extractor={rr.extractor}>
                 <WindowIsoSsrProvider
                   env={process.env.ENV || process.env.NODE_ENV as any}

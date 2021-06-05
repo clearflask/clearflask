@@ -623,7 +623,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/domain', name: 'Custom Domain', offset: 2 } as MenuItem,
+                  { type: 'item', slug: 'settings/project/domain', name: 'Domain', offset: 2 } as MenuItem,
                   { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
                   { type: 'heading', text: 'Advanced' } as MenuHeading,
                   {
