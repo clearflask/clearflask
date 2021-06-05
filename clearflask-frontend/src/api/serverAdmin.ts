@@ -365,6 +365,19 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
           byProjectId: action.payload.byProjectId,
         },
       };
+    case Admin.configSetAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        configs: {
+          ...state.configs,
+          byProjectId: {
+            ...state.configs.byProjectId,
+            [action.payload.config.projectId]: {
+              config: action.payload,
+            },
+          },
+        },
+      };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
       return {
         ...state,

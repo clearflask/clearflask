@@ -34,7 +34,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
     }
     return (
       <ProjectSettingsBase title='Account'>
-        <Section title='Account details'
+        <Section
           contentWidth={500}
           content={(
             <>
@@ -84,7 +84,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                   >
                     <DialogTitle>Delete account</DialogTitle>
                     <DialogContent>
-                      <DialogContentText>Are you sure you want to permanently delete your account including all projects and unsubscribe from your plan?</DialogContentText>
+                      <DialogContentText>Are you sure you want to permanently delete your account, all projects, all associated data, and unsubscribe from your plan?</DialogContentText>
                     </DialogContent>
                     <DialogActions>
                       <Button onClick={() => this.setState({ showDeleteDialog: false })}>Cancel</Button>

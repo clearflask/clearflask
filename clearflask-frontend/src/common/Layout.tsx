@@ -102,6 +102,7 @@ const styles = (theme: Theme) => createStyles({
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
     boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },
   menuButton: {
     marginRight: 20,

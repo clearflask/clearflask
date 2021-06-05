@@ -52,6 +52,7 @@ const styles = (theme: Theme) => createStyles({
   },
   buttonOuter: {
     margin: theme.spacing(0, 1),
+    minWidth: 'unset',
   },
   buttonIcon: {
     margin: theme.spacing(1, 0, 1, 2),

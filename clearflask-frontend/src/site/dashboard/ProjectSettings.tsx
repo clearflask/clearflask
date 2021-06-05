@@ -1461,7 +1461,7 @@ export const ProjectSettingsLanding = (props: {
       <TemplateWrapper<LandingInstance | undefined>
         editor={props.editor}
         mapper={templater => templater.landingGet()}
-        render={(templater, landing) => (
+        renderResolved={(templater, landing) => (
           <>
             <Typography variant='body1' component='div'>Show a dedicated welcome page for your visitors</Typography>
             <FormControlLabel
@@ -1765,7 +1765,7 @@ export const ProjectSettingsFeedback = (props: {
       <TemplateWrapper<FeedbackInstance | undefined>
         editor={props.editor}
         mapper={templater => templater.feedbackGet()}
-        render={(templater, feedback) => {
+        renderResolved={(templater, feedback) => {
           const previewSubcat = (expandedType === 'subcat' && expandedIndex !== undefined)
             ? feedback?.subcategories[expandedIndex] : undefined;
           return !feedback ? (
@@ -2313,7 +2313,7 @@ export const ProjectSettingsRoadmap = (props: {
       <TemplateWrapper<RoadmapInstance | undefined>
         editor={props.editor}
         mapper={templater => templater.roadmapGet()}
-        render={(templater, roadmap) => (
+        renderResolved={(templater, roadmap) => (
           <>
             <Typography variant='body1' component='div'>Make your roadmap public to show your upcoming and in-progress tasks</Typography>
             <FormControlLabel
@@ -2433,7 +2433,7 @@ export const ProjectSettingsChangelog = (props: {
       <TemplateWrapper<ChangelogInstance | undefined>
         editor={props.editor}
         mapper={templater => templater.changelogGet()}
-        render={(templater, changelog) => (
+        renderResolved={(templater, changelog) => (
           <>
             <Typography variant='body1' component='div'>Publish released features and let your customers subscribe to changes</Typography>
             <FormControlLabel
@@ -2590,12 +2590,11 @@ const BrowserPreviewInternal = (props: {
   );
 }
 
-
-
-class TemplateWrapper<T> extends Component<{
+export class TemplateWrapper<T> extends Component<{
   editor: ConfigEditor.Editor;
   mapper: (templater: Templater) => Promise<T>;
-  render: (templater: Templater, response: T) => any;
+  render?: (templater: Templater, response?: { val: T }, confirmation?: Confirmation) => any;
+  renderResolved?: (templater: Templater, response: T) => any;
 }, {
   confirmation?: Confirmation;
   confirm?: (response: ConfirmationResponseId) => void;
@@ -2637,7 +2636,11 @@ class TemplateWrapper<T> extends Component<{
   }
 
   render() {
-    return (
+    return !!this.props.render ? this.props.render(
+      this.templater,
+      this.state.mappedValue,
+      this.state.confirmation
+    ) : (
       <>
         <Collapse in={!!this.state.confirm}>
           <Alert
@@ -2672,7 +2675,7 @@ class TemplateWrapper<T> extends Component<{
           </Alert>
         </Collapse>
         <Collapse in={!this.state.confirm}>
-          {this.state.mappedValue && this.props.render(this.templater, this.state.mappedValue.val)}
+          {this.state.mappedValue && this.props.renderResolved?.(this.templater, this.state.mappedValue.val)}
         </Collapse>
       </>
     );

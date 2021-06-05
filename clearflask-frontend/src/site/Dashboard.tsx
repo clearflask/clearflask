@@ -1,4 +1,4 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -25,6 +25,8 @@ import * as ConfigEditor from '../common/config/configEditor';
 import ConfigView from '../common/config/settings/ConfigView';
 import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
+import { ChangelogInstance } from '../common/config/template/changelog';
+import { RoadmapInstance } from '../common/config/template/roadmap';
 import { Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
@@ -48,23 +50,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
-import {
-  ProjectSettingsBase,
-  ProjectSettingsBranding,
-  ProjectSettingsChangelog,
-  ProjectSettingsData,
-  ProjectSettingsDomain,
-  ProjectSettingsFeedback,
-  ProjectSettingsInstall,
-  ProjectSettingsInstallPortal,
-  ProjectSettingsInstallWidget,
-  ProjectSettingsLanding,
-  ProjectSettingsRoadmap,
-  ProjectSettingsUsers,
-  ProjectSettingsUsersOauth,
-  ProjectSettingsUsersOnboarding,
-  ProjectSettingsUsersSso
-} from './dashboard/ProjectSettings';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersOnboarding, ProjectSettingsUsersSso, TemplateWrapper } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
@@ -173,6 +159,7 @@ interface ConnectProps {
   account?: AdminClient.AccountAdmin;
   isSuperAdmin: boolean;
   configsStatus?: Status;
+  configVers: string;
   bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
 interface State {
@@ -204,6 +191,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   createProject: DemoProject | undefined = undefined;
   forcePathListener: ((forcePath: string) => void) | undefined;
   readonly searchAccounts: (newValue: string) => void;
+  lastConfigVars?: string;
 
   constructor(props) {
     super(props);
@@ -310,8 +298,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       }
     });
 
-    const explorerWidth = (this.props.width && isWidthUp('lg', this.props.width, true)) ? 650 : 500;
-
     const projectOptions: Label[] = projects.map(p => ({
       label: p.editor.getConfig().name,
       filterString: p.editor.getConfig().name,
@@ -338,7 +324,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     const activeProjectId: string | undefined = selectedLabel?.value;
     const activeProject = projects.find(p => p.projectId === activeProjectId);
-
 
     var header: Header | undefined;
     var main: Section | undefined;
@@ -466,12 +451,39 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         main = {
           size: { breakWidth: 1000 },
           content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <RoadmapExplorer key={activeProject.server.getProjectId()} server={activeProject.server} />
-            </Provider>
+            <TemplateWrapper<RoadmapInstance | undefined>
+              editor={activeProject.editor}
+              mapper={templater => templater.roadmapGet()}
+              renderResolved={(templater, roadmap) => !!roadmap && (
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                  <RoadmapExplorer key={activeProject.server.getProjectId()} server={activeProject.server} roadmap={roadmap} />
+                </Provider>
+              )}
+            />
           ),
         };
-
+        showProjectLink = true;
+        break;
+      case 'changelog':
+        setTitle('Changelog - Dashboard');
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        main = {
+          size: { breakWidth: 1000 },
+          content: (
+            <TemplateWrapper<ChangelogInstance | undefined>
+              editor={activeProject.editor}
+              mapper={templater => templater.changelogGet()}
+              renderResolved={(templater, changelog) => !!changelog?.pageAndIndex && (
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                  {'TODO <ChangelogWriter key={activeProject.server.getProjectId()} server={activeProject.server} changelog={changelog} />'}
+                </Provider>
+              )}
+            />
+          ),
+        };
         showProjectLink = true;
         break;
       case 'users':
@@ -898,17 +910,44 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     root: this.props.classes.tabRoot,
                   }}
                 />
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/roadmap'
-                  value='roadmap'
-                  disableRipple
-                  label='Roadmap'
-                  classes={{
-                    root: this.props.classes.tabRoot,
-                  }}
-                />
+                {!!activeProject && (
+                  <>
+                    <TemplateWrapper<RoadmapInstance | undefined>
+                      editor={activeProject.editor}
+                      mapper={templater => templater.roadmapGet()}
+                      render={(templater, result, confirmation) => (!!result?.val || !!confirmation) && (
+                        <Tab
+                          className={this.props.classes.tab}
+                          component={Link}
+                          to='/dashboard/roadmap'
+                          value='roadmap'
+                          disableRipple
+                          label='Roadmap'
+                          classes={{
+                            root: this.props.classes.tabRoot,
+                          }}
+                        />
+                      )}
+                    />
+                    <TemplateWrapper<ChangelogInstance | undefined>
+                      editor={activeProject.editor}
+                      mapper={templater => templater.changelogGet()}
+                      render={(templater, result, confirmation) => (!!result?.val?.pageAndIndex || !!confirmation) && (
+                        <Tab
+                          className={this.props.classes.tab}
+                          component={Link}
+                          to='/dashboard/changelog'
+                          value='changelog'
+                          disableRipple
+                          label='Changelog'
+                          classes={{
+                            root: this.props.classes.tabRoot,
+                          }}
+                        />
+                      )}
+                    />
+                  </>
+                )}
                 <Tab
                   className={this.props.classes.tab}
                   component={Link}
@@ -916,17 +955,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   value='users'
                   disableRipple
                   label='Users'
-                  classes={{
-                    root: this.props.classes.tabRoot,
-                  }}
-                />
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/comments'
-                  value='comments'
-                  disableRipple
-                  label='Discussion'
                   classes={{
                     root: this.props.classes.tabRoot,
                   }}
@@ -955,7 +983,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                       ))),
                       { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
                       { type: 'divider' },
-                      { type: 'button', link: '/dashboard/settings', title: 'Settings', icon: SettingsIcon },
+                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
                       { type: 'divider' },
                       { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
                       { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
@@ -1301,6 +1329,7 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     account: state.account.account.account,
     isSuperAdmin: state.account.isSuperAdmin,
     configsStatus: state.configs.configs.status,
+    configVers: Object.values(state.configs.configs.byProjectId || {}).map(c => c.config.version).join('/'),
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;

@@ -3,12 +3,15 @@ import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import { BoardContainer, BoardPanel } from '../../app/CustomPage';
+import { RoadmapInstance } from '../../common/config/template/roadmap';
 
 const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
   server: Server;
+  roadmap: RoadmapInstance;
 }
 interface ConnectProps {
   configver?: string;
@@ -21,7 +24,15 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
   state: State = {};
 
   render() {
-    return 'roadmap';
+    return (
+      <BoardContainer
+        server={this.props.server}
+        board={this.props.roadmap.page.board}
+        panels={this.props.roadmap.page.board.panels.map((panel, panelIndex) => (
+          <BoardPanel server={this.props.server} panel={panel} />
+        ))}
+      />
+    );
   }
 }
 
