@@ -1,4 +1,4 @@
-import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
@@ -179,6 +179,13 @@ const styles = (theme: Theme) => createStyles({
     '& > fieldset': {
       borderRightColor: 'transparent',
     },
+  },
+  usersOauthAddProp: {
+    minWidth: propertyWidth,
+    margin: theme.spacing(1, 0),
+  },
+  usersOauthAddAddButton: {
+    margin: theme.spacing(3, 0),
   },
   usersVisibilityButtonGroup: {
     margin: theme.spacing(4, 2),
@@ -789,34 +796,13 @@ export const ProjectSettingsUsers = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-
-  const projectRef = useRef<Promise<Project> | undefined>();
-  useEffect(() => {
-    var unsubscribe;
-    projectRef.current = getProject()
-      .then(project => {
-        unsubscribe = props.editor.subscribe(() => {
-          project.editor.getPage(['users', 'onboarding'])
-            .setRaw(props.editor.getConfig().users.onboarding);
-        });
-        return project;
-      });
-    return () => unsubscribe?.();
-  }, []);
-
   return (
     <ProjectSettingsBase title='Onboarding'>
       <Section
         description='Make your portal private or choose how your users will log in / sign up.'
         preview={(
           <>
-            {!!projectRef.current && (<Demo
-              type='column'
-              demoProject={projectRef.current}
-              initialSubPath='/embed/demo'
-              demoFixedWidth={420}
-              demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} server={project.server} />)}
-            />)}
+            <ProjectSettingsUsersOnboardingDemo server={props.server} editor={props.editor} />
           </>
         )}
         content={(
@@ -827,6 +813,32 @@ export const ProjectSettingsUsers = (props: {
         )}
       />
     </ProjectSettingsBase>
+  );
+}
+export const ProjectSettingsUsersOnboardingDemo = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const projectRef = useRef<Promise<Project> | undefined>();
+  useEffect(() => {
+    const setOnboarding = (demoEditor: ConfigEditor.Editor) => demoEditor.getPage(['users', 'onboarding']).setRaw(props.editor.getConfig().users.onboarding);
+    var unsubscribe;
+    projectRef.current = getProject(
+      templater => setOnboarding(templater.editor)
+    ).then(project => {
+      unsubscribe = props.editor.subscribe(() => setOnboarding(project.editor));
+      return project;
+    });
+    return () => unsubscribe?.();
+  }, []);
+  return !projectRef.current ? null : (
+    <Demo
+      type='column'
+      demoProject={projectRef.current}
+      initialSubPath='/embed/demo'
+      demoFixedWidth={420}
+      demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} server={project.server} />)}
+    />
   );
 }
 export const ProjectSettingsUsersOnboarding = (props: Omit<React.ComponentProps<typeof ProjectSettingsUsersOnboardingInternal>, 'accountBasePlanId'>) => {
@@ -934,7 +946,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
       />
       <FormControlLabel
         label={checkboxLabel('OAuth', visibility === Admin.OnboardingVisibilityEnum.Public
-          ? 'Authenticate from an external service such as Facebook, Google or Twitter'
+          ? 'Authenticate from an external service such as Facebook, Google or Github'
           : 'Authenticate from your OAuth-compatible service')}
         className={classes.usersOnboardOption}
         control={(
@@ -1105,6 +1117,11 @@ export const ProjectSettingsUsersSso = (props: {
   return (
     <ProjectSettingsBase title='Single Sign-On'>
       <Section
+        preview={(
+          <>
+            <ProjectSettingsUsersOnboardingDemo server={props.server} editor={props.editor} />
+          </>
+        )}
         content={(
           <PropertyByPath
             overrideName=''
@@ -1116,24 +1133,294 @@ export const ProjectSettingsUsersSso = (props: {
     </ProjectSettingsBase>
   );
 }
+const OauthPrefilled: {
+  [provider: string]: {
+    authorizeUrl?: string;
+    tokenUrl?: string;
+    scope?: string;
+    userProfileUrl?: string;
+    guidJsonPath?: string;
+    nameJsonPath?: string;
+    emailJsonPath?: string;
+    icon?: string;
+  }
+} = {
+  Google: {
+    authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://www.googleapis.com/oauth2/v4/token',
+    scope: 'profile email',
+    userProfileUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+    guidJsonPath: 'id',
+    nameJsonPath: 'name',
+    emailJsonPath: 'email',
+    icon: 'Google',
+  },
+  Github: {
+    authorizeUrl: 'https://github.com/login/oauth/authorize',
+    tokenUrl: 'https://github.com/login/oauth/access_token',
+    scope: 'user:email',
+    userProfileUrl: 'https://api.github.com/user',
+    guidJsonPath: 'id',
+    nameJsonPath: 'name, login',
+    emailJsonPath: 'email',
+    icon: 'GitHub',
+  },
+  Facebook: {
+    authorizeUrl: 'https://www.facebook.com/v3.2/dialog/oauth',
+    tokenUrl: 'https://graph.facebook.com/oauth/access_token',
+    scope: 'public_profile email',
+    userProfileUrl: 'https://graph.facebook.com/me?fields=name,email',
+    guidJsonPath: 'id',
+    nameJsonPath: 'name',
+    emailJsonPath: 'email',
+    icon: 'Facebook',
+  },
+  Gitlab: {
+    authorizeUrl: 'https://gitlab.com/oauth/authorize',
+    tokenUrl: 'https://gitlab.com/oauth/token',
+    scope: 'read_user',
+    userProfileUrl: 'https://gitlab.com/api/v4/user',
+    guidJsonPath: 'id',
+    nameJsonPath: 'name',
+    emailJsonPath: 'email',
+    icon: 'Gitlab',
+  },
+  Discord: {
+    authorizeUrl: 'https://discord.com/api/oauth2/authorize',
+    tokenUrl: 'https://discord.com/api/oauth2/token',
+    scope: 'identify email',
+    userProfileUrl: 'https://discord.com/api/users/@me',
+    guidJsonPath: 'id',
+    nameJsonPath: 'username',
+    emailJsonPath: 'email',
+    icon: 'Discord',
+  },
+  Twitch: {
+    authorizeUrl: 'https://id.twitch.tv/oauth2/authorize',
+    tokenUrl: 'https://id.twitch.tv/oauth2/token',
+    scope: 'user:read:email',
+    userProfileUrl: 'https://api.twitch.tv/helix/users',
+    guidJsonPath: 'data[0].id',
+    nameJsonPath: 'data[0].display_name',
+    emailJsonPath: 'data[0].email',
+    icon: 'Twitch',
+  },
+  Azure: {
+    authorizeUrl: 'https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/authorize',
+    tokenUrl: 'https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token',
+    scope: 'User.Read',
+    userProfileUrl: 'https://graph.microsoft.com/v1.0/me',
+    guidJsonPath: 'id',
+    nameJsonPath: 'displayName',
+    emailJsonPath: 'mail',
+    icon: 'Microsoft',
+  },
+};
 export const ProjectSettingsUsersOauth = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const classes = useStyles();
+  const [expandedType, setExpandedType] = useState<'oauth' | undefined>();
+  const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
+  const [newOauthType, setNewOauthType] = useState<string>('');
+  const [clientId, setClientId] = useState<string>('');
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [azureTenantId, setAzureTenantId] = useState<string>('');
+  const config = props.server.getStore().getState().conf.conf;
+  const projectLink = config ? getProjectLink(config) : undefined;
   return (
     <ProjectSettingsBase title='OAuth'>
       <Section
+        preview={(
+          <>
+            <ProjectSettingsUsersOnboardingDemo server={props.server} editor={props.editor} />
+          </>
+        )}
         content={(
-          <PropertyByPath
+          <>
+            <div className={classes.feedbackAccordionContainer}>
+              {props.editor.getConfig().users.onboarding.notificationMethods.oauth.map((oauth, oauthIndex) => (
+                <ProjectSettingsUsersOauthItem
+                  server={props.server}
+                  editor={props.editor}
+                  oauth={oauth}
+                  oauthIndex={oauthIndex}
+                  expanded={expandedType === 'oauth' && expandedIndex === oauthIndex}
+                  onExpandedChange={() => {
+                    if (expandedType === 'oauth' && expandedIndex === oauthIndex) {
+                      setExpandedIndex(undefined)
+                    } else {
+                      setExpandedType('oauth');
+                      setExpandedIndex(oauthIndex)
+                    }
+                  }}
+                />
+              ))}
+            </div>
+            <FormControl
+              variant='outlined'
+              size='small'
+              className={classes.usersOauthAddProp}
+            >
+              <InputLabel>Add new</InputLabel>
+              <Select
+                label='Add new'
+                value={newOauthType}
+                onChange={e => setNewOauthType((e.target.value as string) || 'Custom')}
+              >
+                <MenuItem value='Google'>Google</MenuItem>
+                <MenuItem value='Github'>Github</MenuItem>
+                <MenuItem value='Facebook'>Facebook</MenuItem>
+                <MenuItem value='Gitlab'>Gitlab</MenuItem>
+                <MenuItem value='Discord'>Discord</MenuItem>
+                <MenuItem value='Twitch'>Twitch</MenuItem>
+                <MenuItem value='Azure'>Azure</MenuItem>
+                <MenuItem value='Custom'>Other...</MenuItem>
+              </Select>
+            </FormControl>
+            <Collapse in={newOauthType === 'Custom'} >
+              <p>To setup OAuth, you need to register first. If you are having trouble filling out all the fields, please contact support.</p>
+              <p>You may be asked to provide a <b>Redirect URL</b> for security measures:</p>
+              {projectLink && (
+                <pre>{projectLink + '/oauth'}</pre>
+              )}
+            </Collapse>
+            <Collapse in={!!newOauthType && newOauthType !== 'Custom'} >
+              <p>To setup OAuth for {newOauthType}, you need to register to obtain a <b>Client ID</b> and <b>Client Secret</b>.</p>
+              <p>You will be asked to provide a <b>Redirect URL</b> for security measures:</p>
+              {projectLink && (
+                <pre>{projectLink + '/oauth'}</pre>
+              )}
+              <Collapse in={newOauthType === 'Google'}>Visit <MuiLink href="https://console.developers.google.com/apis/credentials/oauthclient" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Github'}>Visit <MuiLink href="https://github.com/settings/applications/new" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Facebook'}>Visit <MuiLink href="https://developers.facebook.com/apps" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Gitlab'}>Visit <MuiLink href="https://gitlab.com/oauth/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Discord'}>Visit <MuiLink href="https://discordapp.com/developers/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Twitch'}>Visit <MuiLink href="https://glass.twitch.tv/console/apps/create" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse in={newOauthType === 'Azure'}>Visit <MuiLink href="https://portal.azure.com/" rel="noreferrer noopener" target="_blank">here</MuiLink> -&gt; "Azure Active Directory" -&gt; "App Registrations" to get started.</Collapse>
+              <p>Once you are done, fill these out:</p>
+              <TextField
+                className={classes.usersOauthAddProp}
+                size='small'
+                variant='outlined'
+                label='Client ID'
+                value={clientId}
+                onChange={e => setClientId(e.target.value)}
+              />
+              <TextField
+                className={classes.usersOauthAddProp}
+                size='small'
+                variant='outlined'
+                label='Client secret'
+                value={clientSecret}
+                onChange={e => setClientSecret(e.target.value)}
+              />
+              <Collapse in={newOauthType === 'Azure'}>
+                <TextField
+                  className={classes.usersOauthAddProp}
+                  size='small'
+                  variant='outlined'
+                  label='Tenant ID'
+                  value={azureTenantId}
+                  onChange={e => setAzureTenantId(e.target.value)}
+                />
+              </Collapse>
+            </Collapse>
+            <Collapse in={!!newOauthType} >
+              <Button
+                className={classes.usersOauthAddAddButton}
+                variant='contained'
+                color='primary'
+                disableElevation
+                disabled={!newOauthType || (newOauthType !== 'Custom' && (!clientId || !clientSecret))}
+                onClick={() => {
+                  const oauthId = randomUuid();
+                  ((props.editor.getProperty(['oauthClientSecrets']) as ConfigEditor.DictProperty)
+                    .put(oauthId) as ConfigEditor.StringProperty).set(clientSecret);
+                  var { authorizeUrl, tokenUrl, scope, userProfileUrl, guidJsonPath, nameJsonPath, emailJsonPath, icon } = OauthPrefilled[newOauthType];
+                  if (newOauthType === 'Azure') {
+                    if (azureTenantId) authorizeUrl = authorizeUrl?.replace('<tenant-id>', azureTenantId);
+                    if (azureTenantId) tokenUrl = tokenUrl?.replace('<tenant-id>', azureTenantId);
+                  }
+                  ((props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'oauth']) as ConfigEditor.ArrayProperty)
+                    .insert() as ConfigEditor.ObjectProperty).setRaw(Admin.NotificationMethodsOauthToJSON({
+                      oauthId,
+                      buttonTitle: newOauthType === 'Custom' ? 'My provider' : newOauthType,
+                      clientId,
+                      authorizeUrl: authorizeUrl || '',
+                      tokenUrl: tokenUrl || '',
+                      scope: scope || '',
+                      userProfileUrl: userProfileUrl || '',
+                      guidJsonPath: guidJsonPath || '',
+                      nameJsonPath,
+                      emailJsonPath,
+                      icon,
+                    }));
+                  setNewOauthType('');
+                  setClientId('');
+                  setClientSecret('');
+                  setAzureTenantId('');
+                }}
+              >
+                Add
+            </Button>
+            </Collapse>
+            {/* <PropertyByPath
             overrideName=''
             editor={props.editor}
             path={['users', 'onboarding', 'notificationMethods', 'oauth']}
-          />
+          /> */}
+          </>
         )}
       />
     </ProjectSettingsBase>
   );
 }
+export const ProjectSettingsUsersOauthItem = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  oauth: Admin.NotificationMethodsOauth;
+  oauthIndex: number;
+  expanded: boolean;
+  onExpandedChange: () => void;
+}) => {
+  return (
+    <MyAccordion
+      key={props.oauth.oauthId}
+      TransitionProps={{ unmountOnExit: true }}
+      expanded={props.expanded}
+      onChange={() => props.onExpandedChange()}
+      name={(
+        <PropertyShowOrEdit
+          allowEdit={props.expanded}
+          show={props.oauth.buttonTitle}
+          edit={(
+            <PropertyByPath
+              marginTop={0}
+              overrideName='Button title'
+              overrideDescription=''
+              editor={props.editor}
+              path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'buttonTitle']}
+            />
+          )}
+        />
+      )}
+    >
+      <PropertyByPath overrideName='Button Icon' overrideDescription='' editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'icon']} />
+      <IconPickerHelperText />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'clientId']} />
+      <PropertyByPath editor={props.editor} path={['oauthClientSecrets', props.oauth.oauthId]} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'authorizeUrl']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'tokenUrl']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'scope']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'userProfileUrl']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'guidJsonPath']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'nameJsonPath']} />
+      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'emailJsonPath']} />
+    </MyAccordion>
+  );
+};
 
 export const ProjectSettingsLanding = (props: {
   server: Server;
@@ -1183,7 +1470,7 @@ export const ProjectSettingsLanding = (props: {
                 </BrowserPreview>
                 <Section
                   title='Welcome message'
-                  description='Modify the landing page links to point to your roadmap, feedback, contact email or your own link.'
+                  description='Decide on a welcome message for your users'
                   preview={(
                     <>
                       <BrowserPreview
