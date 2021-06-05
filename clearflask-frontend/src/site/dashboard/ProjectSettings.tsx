@@ -39,6 +39,7 @@ import { contentScrollApplyStyles, Orientation } from '../../common/ContentScrol
 import { Device } from '../../common/DeviceContainer';
 import FakeBrowser from '../../common/FakeBrowser';
 import DiscordIcon from '../../common/icon/DiscordIcon';
+import DynamicMuiIcon from '../../common/icon/DynamicMuiIcon';
 import GitlabIcon from '../../common/icon/GitlabIcon';
 import GoogleIcon from '../../common/icon/GoogleIcon';
 import MicrosoftIcon from '../../common/icon/MicrosoftIcon';
@@ -1412,6 +1413,7 @@ export const ProjectSettingsUsersOauthItem = (props: {
   expanded: boolean;
   onExpandedChange: () => void;
 }) => {
+  const classes = useStyles();
   return (
     <MyAccordion
       key={props.oauth.oauthId}
@@ -1421,7 +1423,13 @@ export const ProjectSettingsUsersOauthItem = (props: {
       name={(
         <PropertyShowOrEdit
           allowEdit={props.expanded}
-          show={props.oauth.buttonTitle}
+          show={(
+            <div className={classes.usersOauthAddSelectItem}>
+              {!!props.oauth.icon && (<DynamicMuiIcon name={props.oauth.icon} />)}
+              &nbsp;&nbsp;&nbsp;
+              {props.oauth.buttonTitle}
+            </div>
+          )}
           edit={(
             <PropertyByPath
               marginTop={0}
