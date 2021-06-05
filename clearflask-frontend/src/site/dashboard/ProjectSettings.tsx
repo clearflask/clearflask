@@ -227,9 +227,66 @@ export const ProjectSettingsInstall = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  const classes = useStyles();
+  return (
+    <ProjectSettingsBase title='Install'>
+      <ProjectSettingsInstallPortal server={props.server} editor={props.editor} />
+      <ProjectSettingsInstallWidget server={props.server} editor={props.editor} />
+      <ProjectSettingsInstallStatus server={props.server} editor={props.editor} />
+    </ProjectSettingsBase>
+  );
+}
+export const ProjectSettingsInstallPortal = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  return (
+    <Section
+      title='Portal'
+      preview={(
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsInstallPortalPreview server={props.server} />
+        </Provider>
+      )}
+      content={(
+        <>
+          <p><Typography>Link your product directly to the full portal. Add the followig link to your product's website.</Typography></p>
+        </>
+      )}
+    />
+  );
+}
+export const ProjectSettingsInstallWidget = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
   const [widgetPath, setWidgetPath] = useState<string | undefined>();
   const [popup, setPopup] = useState<boolean>(false);
+  return (
+    <Section
+      title='Widget'
+      preview={(
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsInstallWidgetPreview server={props.server} widgetPath={widgetPath} popup={popup} />
+        </Provider>
+      )}
+      content={(
+        <>
+          <p><Typography>The widget is a simple IFrame tag that can be put anywhere on your site.</Typography></p>
+          <p><Typography>You can even put it inside a popup:</Typography></p>
+          <ProjectSettingsInstallWidgetPopupSwitch popup={popup} setPopup={setPopup} />
+          <p><Typography>Embed the whole portal or an individual page without the navigation menu:</Typography></p>
+          <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+            <ProjectSettingsInstallWidgetPath server={props.server} widgetPath={widgetPath} setWidgetPath={setWidgetPath} />
+          </Provider>
+        </>
+      )}
+    />
+  );
+}
+export const ProjectSettingsInstallStatus = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
   const [statusPostLabel, setStatusPostLabel] = useState<Label | undefined>();
   const [statusConfig, setStatusConfig] = useState<Required<PostStatusConfig>>({
     fontSize: '14px',
@@ -242,66 +299,32 @@ export const ProjectSettingsInstall = (props: {
     textTransform: '',
   });
   return (
-    <ProjectSettingsBase title='Install'>
-      <Section
-        title='Portal'
-        preview={(
+    <Section
+      title='Status'
+      preview={(
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostLabel?.value} config={statusConfig} />
+        </Provider>
+      )}
+      content={(
+        <>
+          <p><Typography>You can also embed the Status of an idea, or a roadmap item. This is useful if you want to show an upcoming feature or build your own Roadmap.</Typography></p>
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-            <ProjectSettingsInstallPortalPreview server={props.server} />
+            <PostSelection
+              server={props.server}
+              label='Search for a post'
+              size='small'
+              variant='outlined'
+              onChange={setStatusPostLabel}
+              errorMsg='Search for a post to preview'
+              searchIfEmpty
+            />
           </Provider>
-        )}
-        content={(
-          <>
-            <p><Typography>The recommended way is to direct your users to the full portal by linking your website with the portal's website.</Typography></p>
-          </>
-        )}
-      />
-      <Section
-        title='Widget'
-        preview={(
-          <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-            <ProjectSettingsInstallWidgetPreview server={props.server} widgetPath={widgetPath} popup={popup} />
-          </Provider>
-        )}
-        content={(
-          <>
-            <p><Typography>The widget is a simple IFrame tag that can be put anywhere on your site.</Typography></p>
-            <p><Typography>You can even put it inside a popup:</Typography></p>
-            <ProjectSettingsInstallWidgetPopupSwitch popup={popup} setPopup={setPopup} />
-            <p><Typography>Embed the whole portal or an individual page without the navigation menu:</Typography></p>
-            <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-              <ProjectSettingsInstallWidgetPath server={props.server} widgetPath={widgetPath} setWidgetPath={setWidgetPath} />
-            </Provider>
-          </>
-        )}
-      />
-      <Section
-        title='Status'
-        preview={(
-          <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-            <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostLabel?.value} config={statusConfig} />
-          </Provider>
-        )}
-        content={(
-          <>
-            <p><Typography>You can also embed the Status of an idea, or a roadmap item. This is useful if you want to show an upcoming feature or build your own Roadmap.</Typography></p>
-            <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-              <PostSelection
-                server={props.server}
-                label='Search for a post'
-                size='small'
-                variant='outlined'
-                onChange={setStatusPostLabel}
-                errorMsg='Search for a post to preview'
-                searchIfEmpty
-              />
-            </Provider>
-            <p><Typography>Optionally format the status to fit your website:</Typography></p>
-            <ProjectSettingsInstallStatusConfig config={statusConfig} setConfig={setStatusConfig} />
-          </>
-        )}
-      />
-    </ProjectSettingsBase>
+          <p><Typography>Optionally format the status to fit your website:</Typography></p>
+          <ProjectSettingsInstallStatusConfig config={statusConfig} setConfig={setStatusConfig} />
+        </>
+      )}
+    />
   );
 }
 export const ProjectSettingsInstallPortalPreview = (props: {
@@ -312,7 +335,7 @@ export const ProjectSettingsInstallPortalPreview = (props: {
   if (!config) return null;
   const projectLink = getProjectLink(config);
   const html = `<a href="${projectLink}" target="_blank">`
-    + `\n  Click me to open in a new window`
+    + `\n  Give feedback`
     + `\n</a>`;
   return (
     <BrowserPreview
@@ -337,16 +360,13 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
   const slug = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.slug, shallowEqual);
   if (slug === undefined) return null;
   const projectLink = `${getProjectLink({ domain, slug })}${props.widgetPath || ''}`;
-  var html;
-  var content;
-  if (props.popup) {
-    html = `<a href="${projectLink}" target="_blank" style="position: relative;" onclick="
+  const htmlPopup = `<a href="${projectLink}" target="_blank" style="position: relative;" onclick="
   event.preventDefault();
   var el = document.getElementById('cf-widget-content');
   var isShown = el.style.display != 'none'
   el.style.display = isShown ? 'none' : 'block';
 ">
-  Click me to open in a popup
+  Give feedback
   <iframe src='${projectLink}' id="cf-widget-content" class="cf-widget-content" style="
     display: none;
     height: 600px;
@@ -361,34 +381,28 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
     transform: translateX(-50%);
   " />
 </a>`;
-    content = (
-      <div style={{ padding: theme.spacing(4) }}>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </div>
-    );
-  } else {
-    html = `<iframe src='${projectLink}'  style="
+  const htmlIframe = `<iframe src='${projectLink}'  style="
   width: 100%;
   height: 300px;
   border: 1px solid lightgrey;
 " />`;
-    content = (
-      <div style={{ padding: theme.spacing(1) }}>
-        <div style={{ padding: theme.spacing(3) }}>
-          Directly on your site:
-      </div>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </div>
-    );
-  }
   return (
     <BrowserPreview
       server={props.server}
       addressBar='website'
-      code={html}
+      code={props.popup ? htmlPopup : htmlIframe}
       suppressStoreProvider
     >
-      {content}
+      <Collapse in={props.popup}>
+        <div style={{ padding: theme.spacing(4) }}>
+          <div dangerouslySetInnerHTML={{ __html: htmlPopup }} />
+        </div>
+      </Collapse>
+      <Collapse in={!props.popup}>
+        <div style={{ padding: theme.spacing(1) }}>
+          <div dangerouslySetInnerHTML={{ __html: htmlIframe }} />
+        </div>
+      </Collapse>
     </BrowserPreview>
   );
 }
@@ -911,7 +925,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
               if (sso) {
                 (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'sso']) as ConfigEditor.ObjectProperty).set(undefined);
               } else {
-                history.push(`/dashboard/settings/project/users/sso`);
+                history.push(`/dashboard/settings/project/onboard/sso`);
                 props.onPageClicked?.();
               }
             }}
@@ -934,7 +948,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
                   oauthProp.delete(0);
                 }
               } else {
-                history.push(`/dashboard/settings/project/users/oauth`);
+                history.push(`/dashboard/settings/project/onboard/oauth`);
                 props.onPageClicked?.();
               }
             }}
@@ -984,7 +998,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
         />
         <div className={classNames(classes.usersOnboardOption, classes.usersInlineTextField)}>
           <Typography variant='body1' component='span'>Invite moderators by email</Typography>
-          <div style={{ display: 'flex', width: '100%' }}>
+          <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
             <SelectionPicker
               style={{
                 flexGrow: 1,

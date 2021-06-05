@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, isWidthUp, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -56,6 +56,8 @@ import {
   ProjectSettingsDomain,
   ProjectSettingsFeedback,
   ProjectSettingsInstall,
+  ProjectSettingsInstallPortal,
+  ProjectSettingsInstallWidget,
   ProjectSettingsLanding,
   ProjectSettingsRoadmap,
   ProjectSettingsUsers,
@@ -181,6 +183,7 @@ interface State {
   accountSearching?: string;
   previewShow?: boolean;
   publishDialogShown?: boolean;
+  publishDialogStep?: number;
   publishDialogSubmitting?: boolean;
   publishDialogInviteMods?: string[];
   // Below is state for individual pages
@@ -983,64 +986,92 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           contentMargins={!!showContentMargins}
           main={main || { content: (<ErrorPage msg='Oops, cannot find page' />) }}
         />
-        {!!activeProject && notYetPublished && (
+        {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
           <Dialog
+            maxWidth='md'
+            fullWidth={this.props.width === 'xs'}
             open={!!this.state.publishDialogShown}
             onClose={() => this.setState({ publishDialogShown: false })}
+            scroll='body'
+            PaperProps={{
+              style: { maxWidth: 730 },
+            }}
           >
-            <DialogTitle>Publish</DialogTitle>
-            <DialogContent>
-              <DialogContentText>Choose how your users will access your portal</DialogContentText>
-              <ProjectSettingsUsersOnboarding
-                server={activeProject.server}
-                editor={activeProject.editor}
-                onPageClicked={() => this.setState({ publishDialogShown: false })}
-                inviteMods={this.state.publishDialogInviteMods || []}
-                setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
-              />
-            </DialogContent>
+            <Collapse in={(this.state.publishDialogStep || 0) === 0}>
+              <DialogTitle>User onboarding</DialogTitle>
+              <DialogContent>
+                <DialogContentText>Choose how your users will access your portal</DialogContentText>
+                <ProjectSettingsUsersOnboarding
+                  server={activeProject.server}
+                  editor={activeProject.editor}
+                  onPageClicked={() => this.setState({ publishDialogShown: false })}
+                  inviteMods={this.state.publishDialogInviteMods || []}
+                  setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+                />
+              </DialogContent>
+            </Collapse>
+            <Collapse in={(this.state.publishDialogStep || 0) === 1}>
+              <DialogTitle>Installation</DialogTitle>
+              <DialogContent>
+                <DialogContentText>Choose how to link your product with your ClearFlask portal</DialogContentText>
+                <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
+                <ProjectSettingsInstallWidget server={activeProject.server} editor={activeProject.editor} />
+              </DialogContent>
+            </Collapse>
             <DialogActions>
               <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
-              <SubmitButton
-                isSubmitting={this.state.publishDialogSubmitting}
-                color='primary'
-                variant='contained'
-                disableElevation
-                onClick={async e => {
-                  if (!activeProject) return;
-                  this.setState({ publishDialogSubmitting: true });
-                  (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
-                  try {
-                    await this.publishChanges(activeProject);
-                  } catch (e) {
-                    this.setState({ publishDialogSubmitting: false });
-                    return;
-                  }
-                  const d = await activeProject.server.dispatchAdmin();
-                  const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
-                  try {
-                    for (const mod of this.state.publishDialogInviteMods || []) {
-                      d.userCreateAdmin({
-                        projectId: activeProject.server.getProjectId(),
-                        userCreateAdmin: {
-                          email: mod,
-                        },
-                      });
-                      inviteModsRemaining.delete(mod);
+              {(this.state.publishDialogStep || 0) === 0 && (
+                <SubmitButton
+                  isSubmitting={this.state.publishDialogSubmitting}
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  onClick={async e => {
+                    if (!activeProject) return;
+                    this.setState({ publishDialogSubmitting: true });
+                    (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
+                    try {
+                      await this.publishChanges(activeProject);
+                    } catch (e) {
+                      this.setState({ publishDialogSubmitting: false });
+                      return;
                     }
-                  } catch (e) {
-                    this.setState({ publishDialogSubmitting: false });
-                    return;
-                  } finally {
-                    this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
-                  }
-                  !windowIso.isSsr && windowIso.open(projectLink, '_blank');
-                  this.setState({
-                    publishDialogSubmitting: false,
-                    publishDialogShown: false,
-                    settingsPreviewChanges: undefined,
-                  });
-                }}>Publish and Visit</SubmitButton>
+                    const d = await activeProject.server.dispatchAdmin();
+                    const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
+                    try {
+                      for (const mod of this.state.publishDialogInviteMods || []) {
+                        d.userCreateAdmin({
+                          projectId: activeProject.server.getProjectId(),
+                          userCreateAdmin: {
+                            email: mod,
+                          },
+                        });
+                        inviteModsRemaining.delete(mod);
+                      }
+                    } catch (e) {
+                      this.setState({ publishDialogSubmitting: false });
+                      return;
+                    } finally {
+                      this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
+                    }
+                    this.setState({
+                      publishDialogSubmitting: false,
+                      publishDialogStep: (this.state.publishDialogStep || 0) + 1,
+                    });
+                  }}>Publish</SubmitButton>
+              )}
+              {(this.state.publishDialogStep || 0) === 1 && (
+                <Button
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  onClick={e => {
+                    !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                    this.setState({
+                      publishDialogShown: false,
+                    });
+                  }}>Visit</Button>
+              )}
             </DialogActions>
           </Dialog>
         )}
