@@ -32,7 +32,7 @@ import Property from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import UpgradeWrapper, { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../../common/config/template/changelog';
-import { FeedbackInstance, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
+import { FeedbackInstance, FeedbackSubCategoryGroupTagIdPrefix, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
@@ -1467,6 +1467,7 @@ export const ProjectSettingsLanding = (props: {
   return (
     <ProjectSettingsBase title='Landing'>
       <TemplateWrapper<LandingInstance | undefined>
+        key='landing'
         editor={props.editor}
         mapper={templater => templater.landingGet()}
         renderResolved={(templater, landing) => (
@@ -1771,6 +1772,7 @@ export const ProjectSettingsFeedback = (props: {
   return (
     <ProjectSettingsBase title='Feedback'>
       <TemplateWrapper<FeedbackInstance | undefined>
+        key='feedback'
         editor={props.editor}
         mapper={templater => templater.feedbackGet()}
         renderResolved={(templater, feedback) => {
@@ -1927,6 +1929,7 @@ export const ProjectSettingsFeedback = (props: {
                     label='Try selecting tags'
                     category={feedback.categoryAndIndex.category}
                     tagIds={tagIds}
+                    mandatoryTagIds={feedback.subcategories.flatMap(subcat => subcat.tagId ? [subcat.tagId] : [])}
                     isModOrAdminLoggedIn={false}
                     onChange={(tagIds, errorStr) => setTagIds(tagIds)}
                     SelectionPickerProps={{
@@ -1937,24 +1940,25 @@ export const ProjectSettingsFeedback = (props: {
                 content={(
                   <>
                     <div className={classes.feedbackAccordionContainer}>
-                      {feedback.categoryAndIndex.category.tagging.tagGroups.map((tagGroup, tagGroupIndex) => (
-                        <ProjectSettingsFeedbackTagGroup
-                          server={props.server}
-                          editor={props.editor}
-                          feedback={feedback}
-                          tagGroup={tagGroup}
-                          tagGroupIndex={tagGroupIndex}
-                          expanded={expandedType === 'tag' && expandedIndex === tagGroupIndex}
-                          onExpandedChange={() => {
-                            if (expandedType === 'tag' && expandedIndex === tagGroupIndex) {
-                              setExpandedIndex(undefined)
-                            } else {
-                              setExpandedType('tag');
-                              setExpandedIndex(tagGroupIndex)
-                            }
-                          }}
-                        />
-                      ))}
+                      {feedback.categoryAndIndex.category.tagging.tagGroups
+                        .map((tagGroup, tagGroupIndex) => tagGroup.tagGroupId.startsWith(FeedbackSubCategoryGroupTagIdPrefix) ? null : (
+                          <ProjectSettingsFeedbackTagGroup
+                            server={props.server}
+                            editor={props.editor}
+                            feedback={feedback}
+                            tagGroup={tagGroup}
+                            tagGroupIndex={tagGroupIndex}
+                            expanded={expandedType === 'tag' && expandedIndex === tagGroupIndex}
+                            onExpandedChange={() => {
+                              if (expandedType === 'tag' && expandedIndex === tagGroupIndex) {
+                                setExpandedIndex(undefined)
+                              } else {
+                                setExpandedType('tag');
+                                setExpandedIndex(tagGroupIndex)
+                              }
+                            }}
+                          />
+                        ))}
                     </div>
                     <ProjectSettingsAddWithName
                       label='New tag group'
@@ -2319,6 +2323,7 @@ export const ProjectSettingsRoadmap = (props: {
   return (
     <ProjectSettingsBase title='Roadmap'>
       <TemplateWrapper<RoadmapInstance | undefined>
+        key='roadmap'
         editor={props.editor}
         mapper={templater => templater.roadmapGet()}
         renderResolved={(templater, roadmap) => (
@@ -2339,10 +2344,10 @@ export const ProjectSettingsRoadmap = (props: {
             {roadmap && (
               <>
                 <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-                  {!roadmap.page.board.title && (
+                  {!roadmap.pageAndIndex.page.board.title && (
                     <Button
                       className={classes.roadmapAddTitleButton}
-                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageIndex, 'board', 'title']) as ConfigEditor.StringProperty)
+                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']) as ConfigEditor.StringProperty)
                         .set('Roadmap')}
                     >
                       Add title
@@ -2352,7 +2357,7 @@ export const ProjectSettingsRoadmap = (props: {
                     overrideTitle={(
                       <PropertyShowOrEdit
                         allowEdit={true}
-                        show={(roadmap.page.board.title)}
+                        show={(roadmap.pageAndIndex.page.board.title)}
                         edit={(
                           <PropertyByPathReduxless
                             marginTop={0}
@@ -2360,14 +2365,14 @@ export const ProjectSettingsRoadmap = (props: {
                             width={200}
                             overrideName='Title'
                             editor={props.editor}
-                            path={['layout', 'pages', roadmap.pageIndex, 'board', 'title']}
+                            path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']}
                           />
                         )}
                       />
                     )}
                     server={props.server}
-                    board={roadmap.page.board}
-                    panels={roadmap?.page.board.panels.map((panel, panelIndex) => (
+                    board={roadmap.pageAndIndex.page.board}
+                    panels={roadmap?.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
                       <BoardPanel
                         server={props.server}
                         panel={panel}
@@ -2385,7 +2390,7 @@ export const ProjectSettingsRoadmap = (props: {
                                   overrideDescription=''
                                   overrideName='Title'
                                   editor={props.editor}
-                                  path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']}
+                                  path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'title']}
                                 />
                               )}
                             />
@@ -2395,7 +2400,7 @@ export const ProjectSettingsRoadmap = (props: {
                               {!panel.title && (
                                 <Button
                                   className={classes.roadmapPanelAddTitleButton}
-                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
+                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
                                     .set(roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0])?.name || 'Title')}
                                 >
                                   Add title
@@ -2406,7 +2411,7 @@ export const ProjectSettingsRoadmap = (props: {
                                 planId={planId}
                                 width='auto'
                                 editor={props.editor}
-                                path={['layout', 'pages', roadmap.pageIndex, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
+                                path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
                                 bare
                                 TextFieldProps={{
                                   placeholder: 'Filter',
@@ -2439,6 +2444,7 @@ export const ProjectSettingsChangelog = (props: {
   return (
     <ProjectSettingsBase title='Changelog'>
       <TemplateWrapper<ChangelogInstance | undefined>
+        key='changelog'
         editor={props.editor}
         mapper={templater => templater.changelogGet()}
         renderResolved={(templater, changelog) => (
@@ -2599,6 +2605,7 @@ const BrowserPreviewInternal = (props: {
 }
 
 export class TemplateWrapper<T> extends Component<{
+  key: string; // Ensure two conflicting instances are not shared (happened to me...)
   editor: ConfigEditor.Editor;
   mapper: (templater: Templater) => Promise<T>;
   render?: (templater: Templater, response?: { val: T }, confirmation?: Confirmation) => any;
@@ -2622,7 +2629,6 @@ export class TemplateWrapper<T> extends Component<{
         confirmation,
         confirm: resolve,
       })));
-
   }
 
   componentDidMount() {
@@ -2647,7 +2653,7 @@ export class TemplateWrapper<T> extends Component<{
     return !!this.props.render ? this.props.render(
       this.templater,
       this.state.mappedValue,
-      this.state.confirmation
+      this.state.confirmation,
     ) : (
       <>
         <Collapse in={!!this.state.confirm}>

@@ -1,43 +1,47 @@
 import * as Admin from "../../../api/admin";
-import { notEmpty } from "../../util/arrayUtil";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
-import { PageAndIndex } from "./feedback";
 
+export type PageWithLanding = Admin.Page & Required<Pick<Admin.Page, 'landing'>>;
 export interface LandingInstance {
-  pageAndIndex: PageAndIndex;
+  pageAndIndex: {
+    page: PageWithLanding;
+    index: number;
+  },
 }
 
 export async function landingGet(this: Templater): Promise<LandingInstance | undefined> {
-  var potentialLandingPages: PageAndIndex[] = this.editor.getConfig().layout.pages
-    .map((page, index) => ({ page, index }))
-    .filter(p => (p.page.slug === '' || p.page.slug === '/') && !!p.page.landing);
+  var potentialPages: Array<NonNullable<LandingInstance['pageAndIndex']>> = this.editor.getConfig().layout.pages
+    .flatMap((page, index) => (!!page.landing
+      && (page.slug === '' || page.slug === '/'))
+      ? [{ page: page as PageWithLanding, index }] : []);
 
-  if (potentialLandingPages.length === 0) {
-    potentialLandingPages = this.editor.getConfig().layout.pages
-      .map((page, index) => ({ page, index }))
-      .filter(p => !!p.page.landing);
+  if (potentialPages.length === 0) {
+    potentialPages = this.editor.getConfig().layout.pages
+      .flatMap((page, index) => !!page.landing
+        ? [{ page: page as PageWithLanding, index }] : []);
   }
 
-  var landingPage: PageAndIndex | undefined;
-  if (potentialLandingPages.length === 0) {
+  var landingPage: LandingInstance['pageAndIndex'] | undefined;
+  if (potentialPages.length === 0) {
     return undefined;
-  } else if (potentialLandingPages.length === 1) {
-    landingPage = potentialLandingPages[0];
+  } else if (potentialPages.length === 1) {
+    landingPage = potentialPages[0];
   } else {
     const pageId = await this._getConfirmation({
       title: 'Which one is the Landing page?',
       description: 'We are having trouble determining which page is used as a Landing page. Please select the page to edit it.',
-      responses: potentialLandingPages.map(p => ({
+      responses: potentialPages.map(p => ({
         id: p.page.pageId,
         title: p.page.name,
       })),
     }, 'None');
     if (!pageId) return undefined;
     landingPage = this.editor.getConfig().layout.pages
-      .map((page, index) => ({ page, index }))
-      .find(p => p.page.pageId === pageId);
+      .flatMap((page, index) => (!!page.landing
+        && page.pageId === pageId)
+        ? [{ page: page as PageWithLanding, index }] : [])[0];
     if (!landingPage) return undefined;
   }
 
@@ -66,23 +70,11 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   }
 
   const landingLinksProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'pages', landing.pageAndIndex.index, 'landing', 'links']);
-  const landingLinkToPageIds = new Set(landing.pageAndIndex.page.landing?.links.map(l => l.linkToPageId).filter(notEmpty));
-
-  const roadmap = await this.roadmapGet();
-  if (roadmap?.page
-    && (!onlyPageIds || onlyPageIds.has(roadmap.page.pageId))
-    && !landingLinkToPageIds.has(roadmap.page.pageId)) {
-    (landingLinksProp.insert(0) as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: 'Roadmap',
-      description: "See what we're working on next.",
-      linkToPageId: roadmap?.page.pageId,
-    }));
-  }
 
   const feedback = await this.feedbackGet();
   feedback?.subcategories.forEach(subcat => {
     if (!subcat.pageAndIndex) return;
-    if (landingLinkToPageIds.has(subcat.pageAndIndex.page.pageId)) return;
+    if (landing?.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === subcat.pageAndIndex?.page.pageId)) return;
     if (!!onlyPageIds && !onlyPageIds.has(subcat.pageAndIndex.page.pageId)) return;
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: subcat.pageAndIndex.page.name,
@@ -92,11 +84,21 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     }));
   })
 
+  const roadmap = await this.roadmapGet();
+  if (roadmap?.pageAndIndex
+    && (!onlyPageIds || onlyPageIds.has(roadmap.pageAndIndex.page.pageId))
+    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex.page.pageId)) {
+    (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
+      title: 'Roadmap',
+      description: "See what we're working on next.",
+      linkToPageId: roadmap?.pageAndIndex.page.pageId,
+    }));
+  }
 
   const changelog = await this.changelogGet();
   if (changelog?.pageAndIndex
     && (!onlyPageIds || onlyPageIds.has(changelog.pageAndIndex.page.pageId))
-    && !landingLinkToPageIds.has(changelog.pageAndIndex.page.pageId)) {
+    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === changelog.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: 'Changelog',
       description: 'Check out our recent updates.',

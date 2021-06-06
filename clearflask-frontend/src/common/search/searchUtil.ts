@@ -14,20 +14,22 @@ export enum PostFilterType {
   Tag = 'Tag',
   Status = 'Status',
 }
-export type GroupedLabels = Array<{
+export type LabelGroup = {
   groupName: string;
   controlType: 'search' | 'radio' | 'check';
   labels: Array<Label>;
-}>;
-export const groupLabels = (labels: Label[], forceSingleCategory?: boolean): GroupedLabels => {
-  const results: GroupedLabels = [];
-  const groupLookup: { [groupName: string]: GroupedLabels[0] } = {};
+  filterType: PostFilterType;
+};
+export type LabelGroups = Array<LabelGroup>;
+export const groupLabels = (labels: Label[], forceSingleCategory?: boolean): LabelGroups => {
+  const results: LabelGroups = [];
+  const groupLookup: { [groupName: string]: LabelGroups[0] } = {};
   labels.forEach(label => {
     const groupName = label.groupBy || '';
     var group = groupLookup[groupName];
     if (!group) {
-      const type = label.value.split(':')[0];
-      var controlType: GroupedLabels[0]['controlType'] = 'check';
+      const type: PostFilterType = label.value.split(':')[0] as PostFilterType;
+      var controlType: LabelGroup['controlType'] = 'check';
       if (type === PostFilterType.Search) {
         controlType = 'search';
       } else if (type === PostFilterType.Sort
@@ -39,6 +41,7 @@ export const groupLabels = (labels: Label[], forceSingleCategory?: boolean): Gro
         groupName,
         controlType,
         labels: [label],
+        filterType: type,
       };
       groupLookup[groupName] = group;
       results.push(group);
@@ -46,7 +49,7 @@ export const groupLabels = (labels: Label[], forceSingleCategory?: boolean): Gro
       group.labels.push(label);
     }
   })
-  return results;
+  return results.filter(group => group.labels.length > 1);
 }
 
 /***
@@ -84,7 +87,7 @@ export const postSearchToLabels = (
       const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
       controls.permanent.push(label);
     });
-  } else if (config.content.categories?.length || 0 <= 1) {
+  } else if ((config.content.categories?.length || 0) <= 1) {
     searchableCategories = [...config.content.categories];
     config.content.categories.forEach(category => {
       const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);

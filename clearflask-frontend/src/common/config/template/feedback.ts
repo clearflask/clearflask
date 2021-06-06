@@ -7,22 +7,27 @@ import Templater from "../configTemplater";
 
 const FeedbackCategoryIdPrefix = 'feedback-';
 const FeedbackSubCategoryTagIdPrefix = 'subcategory-';
-export interface PageAndIndex {
-  page: Admin.Page,
-  index: number,
-}
+export const FeedbackSubCategoryGroupTagIdPrefix = 'subcategory-';
 export interface CategoryAndIndex {
   category: Admin.Category,
   index: number,
 }
+export type PageWithExplorer = Admin.Page & Required<Pick<Admin.Page, 'explorer'>>;
 export interface FeedbackSubCategoryInstance {
-  tagId?: string;
-  pageAndIndex?: PageAndIndex;
+  tagId?: string; // If missing, means backwards compatible category before subcategorie were introduced
+  pageAndIndex?: {
+    page: PageWithExplorer;
+    index: number;
+  },
 }
 export interface FeedbackInstance {
   categoryAndIndex: CategoryAndIndex;
   hasAnyPages: boolean;
   subcategories: Array<FeedbackSubCategoryInstance>;
+  tagGroupAndIndex?: {
+    tagGroup: Admin.TagGroup,
+    index: number;
+  },
 }
 
 export async function feedbackGet(this: Templater): Promise<FeedbackInstance | undefined> {
@@ -71,7 +76,7 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
 
   const categoryTags = feedbackCategory.category.tagging.tags.filter(t => t.tagId.startsWith(FeedbackSubCategoryTagIdPrefix));
 
-  const findPageAndIndex = async (category: Admin.Category, tag?: Admin.Tag): Promise<PageAndIndex | undefined> => {
+  const findPageAndIndex = async (category: Admin.Category, tag?: Admin.Tag): Promise<FeedbackSubCategoryInstance['pageAndIndex']> => {
     const isOnlyCategory = this.editor.getConfig().content.categories.length <= 1;
     const expectedFilterTagIds = tag
       // Ensure that this page is filtering out tag exactly
@@ -80,17 +85,16 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
       // ensure that this page is filtering out all other category tags
       : categoryTags.map(t => t.tagId);
     const expectedInvertTag = !!tag ? false : (expectedFilterTagIds.length > 0 ? true : undefined);
-    const potentialPages: PageAndIndex[] = this.editor.getConfig().layout.pages
-      .map((page, index) => ({ page, index }))
-      .filter(p => p.page.explorer
+    const potentialPages: Array<NonNullable<FeedbackSubCategoryInstance['pageAndIndex']>> = this.editor.getConfig().layout.pages
+      .flatMap((page, index) => (!!page.explorer
         // Filter by category if more than one category exists
         && (isOnlyCategory
-          || (p.page.explorer.search.filterCategoryIds?.length === 1
-            && p.page.explorer.search.filterCategoryIds[0] === category.categoryId))
-        && (expectedInvertTag === undefined || !!p.page.explorer.search.invertTag === expectedInvertTag)
-        && expectedFilterTagIds.length === (p.page.explorer.search.filterTagIds?.length || 0)
-        && expectedFilterTagIds.every(expectedTagId => p.page.explorer?.search.filterTagIds?.some(tId => tId === expectedTagId))
-      );
+          || (page.explorer.search.filterCategoryIds?.length === 1
+            && page.explorer.search.filterCategoryIds[0] === category.categoryId))
+        && (expectedInvertTag === undefined || !!page.explorer.search.invertTag === expectedInvertTag)
+        && expectedFilterTagIds.length === (page.explorer.search.filterTagIds?.length || 0)
+        && expectedFilterTagIds.every(expectedTagId => page.explorer?.search.filterTagIds?.some(tId => tId === expectedTagId)))
+        ? [{ page: page as PageWithExplorer, index }] : []);
     if (potentialPages.length === 1) {
       return potentialPages[0];
     } else if (potentialPages.length > 1) {
@@ -105,8 +109,9 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
       }, 'None');
       if (!!pageId) {
         return this.editor.getConfig().layout.pages
-          .map((page, index) => ({ page, index }))
-          .find(p => p.page.pageId === pageId);
+          .flatMap((page, index) => (!!page.explorer
+            && page.pageId === pageId)
+            ? [{ page: page as PageWithExplorer, index }] : [])[0];
       }
     }
     return undefined;
@@ -125,6 +130,16 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
     feedback.subcategories.push({ tagId: t.tagId, pageAndIndex });
   }));
 
+  const feedbackTagGroupIndex = feedback.categoryAndIndex.category.tagging.tagGroups
+    .findIndex(g => g.tagGroupId.startsWith(FeedbackSubCategoryGroupTagIdPrefix));
+  const feedbackTagGroup = feedbackTagGroupIndex === -1 ? undefined : feedback.categoryAndIndex.category.tagging.tagGroups[feedbackTagGroupIndex];
+  if (feedbackTagGroup) {
+    feedback.tagGroupAndIndex = {
+      tagGroup: feedbackTagGroup,
+      index: feedbackTagGroupIndex,
+    };
+  }
+
   return feedback;
 }
 
@@ -134,7 +149,7 @@ export async function feedbackOn(this: Templater, onlySingleSubcat?: FeedbackSub
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const postCategoryId = FeedbackCategoryIdPrefix + randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: postCategoryId, name: 'Post',
+      categoryId: postCategoryId, name: 'Feedback',
       userCreatable: true,
       workflow: { statuses: [] },
       support: { vote: { enableDownvotes: false }, comment: true, fund: false },
@@ -169,7 +184,7 @@ export async function feedbackOn(this: Templater, onlySingleSubcat?: FeedbackSub
     subcatsWithoutPage.forEach(subcat => {
       const tag = !subcat.tagId ? undefined : feedback?.categoryAndIndex.category.tagging.tags.find(t => t.tagId === subcat.tagId);
       const name = tag?.name || 'Feedback';
-      const page: Admin.Page = {
+      const page: PageWithExplorer = {
         pageId: randomUuid(),
         name,
         slug: stringToSlug(name),
@@ -221,6 +236,29 @@ export async function feedbackOn(this: Templater, onlySingleSubcat?: FeedbackSub
     }
   }
 
+  // Group tag for all feedback subcategories
+  const tagGroupTagIds = onlySingleSubcat
+    ? (onlySingleSubcat.tagId ? [onlySingleSubcat.tagId] : [])
+    : feedback.subcategories.map(subcat => subcat.tagId).filter(notEmpty);
+  if (!feedback.tagGroupAndIndex) {
+    this._get<ConfigEditor.PageGroup>(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
+      tagGroupId: FeedbackSubCategoryGroupTagIdPrefix + randomUuid(),
+      name: 'Subcategory',
+      userSettable: true,
+      tagIds: tagGroupTagIds,
+      minRequired: 1,
+      maxRequired: 1,
+    }));
+    feedback = (await this.feedbackGet())!;
+  } else {
+    const tagGroupTagIdsToAdd = tagGroupTagIds.filter(tId => !feedback?.tagGroupAndIndex?.tagGroup.tagIds.includes(tId));
+    if (tagGroupTagIdsToAdd.length) {
+      const tagIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups', feedback.tagGroupAndIndex.index, 'tagIds']);
+      tagGroupTagIdsToAdd.forEach(tId => tagIdsProp.insert(tId));
+      feedback = (await this.feedbackGet())!;
+    }
+  }
+
   const landing = await this.landingGet();
   if (landing) {
     const subcatsForLandingPage = feedback.subcategories
@@ -268,5 +306,5 @@ export async function feedbackOff(this: Templater, feedback: FeedbackInstance, o
   feedback.subcategories?.forEach(subcat =>
     subcat.pageAndIndex
     && (!onlySingleSubcat || onlySingleSubcat.tagId === subcat.tagId)
-    && this._pageDelete(subcat.pageAndIndex.page.pageId))
+    && this._pageDelete(subcat.pageAndIndex.page.pageId));
 }

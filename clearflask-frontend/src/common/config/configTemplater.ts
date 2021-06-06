@@ -29,6 +29,25 @@ export const configStateEqual = (left?: StateConf, right?: StateConf): boolean =
     && left?.ver === right?.ver
 };
 
+
+export interface CreateTemplateV2Options {
+  templateLanding?: boolean;
+  templateFeedback?: boolean;
+  templateRoadmap?: boolean;
+  templateChangelog?: boolean;
+
+  infoWebsite?: string;
+  infoName?: string;
+  infoSlug?: string;
+  infoLogo?: string;
+}
+export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
+  templateLanding: true,
+  templateFeedback: true,
+  templateRoadmap: true,
+  templateChangelog: true,
+};
+
 // TODO Home
 // TODO FAQ
 // TODO KNOWLEDGE BASE
@@ -140,6 +159,18 @@ export default class Templater {
     });
     this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');
     // this.styleWhite();
+  }
+
+  async createTemplateV2(opts: CreateTemplateV2Options = createTemplateV2OptionsDefault) {
+    this._get<ConfigEditor.StringProperty>(['name']).set(opts.infoName || 'My App');
+    if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
+    if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
+    if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
+
+    if (opts.templateFeedback) await this.feedbackOn();
+    if (opts.templateRoadmap) await this.roadmapOn();
+    if (opts.templateChangelog) await this.changelogOn();
+    if (opts.templateLanding) await this.landingOn();
   }
 
   createTemplate(opts: CreateTemplateOptions = createTemplateOptionsDefault) {

@@ -5,6 +5,7 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PostFilterControls from '../../common/search/PostFilterControls';
+import { LabelGroup, PostFilterType } from '../../common/search/searchUtil';
 
 const styles = (theme: Theme) => createStyles({
   search: {
@@ -36,7 +37,6 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
     return (
       <PostFilterControls
         config={this.props.config}
-        forceSingleCategory
         explorer={{
           allowSearch: {
             enableSort: true,
@@ -48,10 +48,32 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
           display: {},
           search: {},
         }}
-        search={this.props.search}
+        forceSingleCategory
+        search={{
+          ...this.props.search,
+          // This along with forceSingleCategory ensures one and only one category is selected
+          filterCategoryIds: this.props.search?.filterCategoryIds?.length
+            ? this.props.search.filterCategoryIds
+            : (this.props.config?.content.categories.length
+              ? [this.props.config?.content.categories[0]?.categoryId]
+              : undefined),
+          // Sort by new by default
+          sortBy: this.props.search?.sortBy || Admin.IdeaSearchAdminSortByEnum.New,
+        }}
+        sortGroups={(a, b) => this.getLabelGroupSortOrder(b) - this.getLabelGroupSortOrder(a)}
         onSearchChanged={this.props.onSearchChanged}
       />
     );
+  }
+
+  getLabelGroupSortOrder(group: LabelGroup): number {
+    if (group.filterType === PostFilterType.Search) return 1000;
+    if (group.filterType === PostFilterType.Category) return 900;
+    if (group.groupName === 'Subcategory') return 800;
+    if (group.filterType === PostFilterType.Sort) return 700;
+    if (group.filterType === PostFilterType.Tag) return 600;
+    if (group.filterType === PostFilterType.Status) return 500;
+    return 0;
   }
 }
 

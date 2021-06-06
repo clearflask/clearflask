@@ -667,15 +667,15 @@ public class DynamoProjectStore implements ProjectStore {
                     .flatMap(tagging -> tagging.getTagGroups() == null
                             ? Stream.of() : tagging.getTagGroups().stream())
                     .forEach(group -> {
-                        if (!group.getUserSettable()) {
-                            throw new ApiException(Response.Status.BAD_REQUEST, "Tags for " + group.getName() + " are not allowed");
-                        }
-                        if (group.getMaxRequired() == null && group.getMinRequired() == null) {
+                        if (group.getMaxRequired() == null && group.getMinRequired() == null && group.getUserSettable()) {
                             return;
                         }
                         long tagsInGroupCount = tagIds.stream()
                                 .filter(tagId -> group.getTagIds().contains(tagId))
                                 .count();
+                        if (!group.getUserSettable() && tagsInGroupCount > 0L) {
+                            throw new ApiException(Response.Status.BAD_REQUEST, "Tags for " + group.getName() + " are not allowed");
+                        }
                         if (group.getMaxRequired() != null && group.getMaxRequired() < tagsInGroupCount) {
                             throw new ApiException(Response.Status.BAD_REQUEST, "Maximum tags for " + group.getName() + " is " + group.getMaxRequired());
                         }

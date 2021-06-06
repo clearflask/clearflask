@@ -40,6 +40,7 @@ import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
+import { TabFragment } from '../common/util/tabsUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
@@ -177,8 +178,7 @@ interface State {
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
   settingsPreviewChanges?: 'live' | 'code';
-  explorerPostFilter?: Partial<AdminClient.IdeaSearchAdmin>;
-  explorerPostSearch?: string;
+  explorerPostSearch?: AdminClient.IdeaSearchAdmin;
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
@@ -380,8 +380,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ),
         };
         break;
-      case 'explorer':
-        setTitle('Explorer - Dashboard');
+      case 'explore':
+        setTitle('Explore - Dashboard');
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -393,6 +393,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             onClick: () => this.pageClicked('post'),
           },
         };
+        const explorerPostSearch = {
+          ...this.state.explorerPostSearch,
+          // This along with forceSingleCategory ensures one and only one category is selected
+          filterCategoryIds: this.state.explorerPostSearch?.filterCategoryIds?.length
+            ? this.state.explorerPostSearch.filterCategoryIds
+            : (activeProject.editor.getConfig().content.categories.length
+              ? [activeProject.editor.getConfig().content.categories[0]?.categoryId]
+              : undefined),
+          // Sort by new by default
+          sortBy: this.state.explorerPostSearch?.sortBy || AdminClient.IdeaSearchAdminSortByEnum.New,
+        };
         menu = {
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
           content: (
@@ -400,8 +411,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <DashboardPostFilterControls
                 key={activeProject.server.getProjectId()}
                 server={activeProject.server}
-                search={this.state.explorerPostFilter}
-                onSearchChanged={explorerPostFilter => this.setState({ explorerPostFilter })}
+                search={explorerPostSearch}
+                onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
               />
             </Provider>
           ),
@@ -413,10 +424,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <PostList
                 key={activeProject.server.getProjectId()}
                 server={activeProject.server}
-                search={{
-                  ...this.state.explorerPostFilter,
-                  searchText: this.state.explorerPostSearch,
-                }}
+                search={explorerPostSearch}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
                 selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
@@ -427,8 +435,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         barTop = (
           <DashboardSearchControls
             key={'post-search-bar' + activeProject.server.getProjectId()}
-            searchText={this.state.explorerPostSearch}
-            onSearchChanged={searchText => this.setState({ explorerPostSearch: searchText })}
+            searchText={explorerPostSearch.searchText || ''}
+            onSearchChanged={searchText => this.setState({
+              explorerPostSearch: {
+                ...this.state.explorerPostSearch,
+                searchText,
+              }
+            })}
           />
         );
 
@@ -452,6 +465,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           size: { breakWidth: 1000 },
           content: (
             <TemplateWrapper<RoadmapInstance | undefined>
+              key='roadmap'
               editor={activeProject.editor}
               mapper={templater => templater.roadmapGet()}
               renderResolved={(templater, roadmap) => !!roadmap && (
@@ -474,6 +488,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           size: { breakWidth: 1000 },
           content: (
             <TemplateWrapper<ChangelogInstance | undefined>
+              key='changelog'
               editor={activeProject.editor}
               mapper={templater => templater.changelogGet()}
               renderResolved={(templater, changelog) => !!changelog?.pageAndIndex && (
@@ -902,17 +917,29 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 <Tab
                   className={this.props.classes.tab}
                   component={Link}
-                  to='/dashboard/explorer'
-                  value='explorer'
+                  to='/dashboard/explore'
+                  value='explore'
                   disableRipple
-                  label='Explorer'
+                  label='Explore'
                   classes={{
                     root: this.props.classes.tabRoot,
                   }}
                 />
-                {!!activeProject && (
-                  <>
+                <Tab
+                  className={this.props.classes.tab}
+                  component={Link}
+                  to='/dashboard/create'
+                  value='create'
+                  disableRipple
+                  label='Create'
+                  classes={{
+                    root: this.props.classes.tabRoot,
+                  }}
+                />
+                <TabFragment value='roadmap'>
+                  {tabProps => !activeProject ? undefined : (
                     <TemplateWrapper<RoadmapInstance | undefined>
+                      key='roadmap'
                       editor={activeProject.editor}
                       mapper={templater => templater.roadmapGet()}
                       render={(templater, result, confirmation) => (!!result?.val || !!confirmation) && (
@@ -926,10 +953,16 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                           classes={{
                             root: this.props.classes.tabRoot,
                           }}
+                          {...tabProps}
                         />
                       )}
                     />
+                  )}
+                </TabFragment>
+                <TabFragment value='changelog'>
+                  {tabProps => !activeProject ? undefined : (
                     <TemplateWrapper<ChangelogInstance | undefined>
+                      key='changelog'
                       editor={activeProject.editor}
                       mapper={templater => templater.changelogGet()}
                       render={(templater, result, confirmation) => (!!result?.val?.pageAndIndex || !!confirmation) && (
@@ -943,11 +976,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                           classes={{
                             root: this.props.classes.tabRoot,
                           }}
+                          {...tabProps}
                         />
                       )}
                     />
-                  </>
-                )}
+                  )}
+                </TabFragment>
                 <Tab
                   className={this.props.classes.tab}
                   component={Link}
@@ -1309,7 +1343,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         explorerPreview: !!subPath[0]
           ? { type: 'post', id: subPath[0] + '' }
           : { type: 'create' },
-      }, () => this.props.history.push('/dashboard/explorer'));
+      }, () => this.props.history.push('/dashboard/explore'));
     } else if (path === 'user') {
       this.setState({
         previewShow: true,

@@ -3,18 +3,19 @@ import DataMock from './api/dataMock';
 import ServerAdmin from './api/serverAdmin';
 import ServerMock, { SSO_SECRET_KEY } from './api/serverMock';
 import * as ConfigEditor from './common/config/configEditor';
-import Templater, { createTemplateOptionsDefault } from './common/config/configTemplater';
+import Templater, { createTemplateV2OptionsDefault } from './common/config/configTemplater';
 import windowIso from './common/windowIso';
 
 export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin> {
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
-  templater.demo({
-    ...createTemplateOptionsDefault,
-    webPushAllowed: true,
-    fundingAllowed: true,
-    expressionAllowed: true,
+  await templater.createTemplateV2({
+    ...createTemplateV2OptionsDefault,
+    infoName: 'Sandbox',
+    infoLogo: '/img/clearflask-logo.png',
+    infoWebsite: 'https://clearflask.com',
+    infoSlug: 'mock',
   });
 
   templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');

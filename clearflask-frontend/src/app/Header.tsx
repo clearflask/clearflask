@@ -28,8 +28,10 @@ const styles = (theme: Theme) => createStyles({
   header: {
     display: 'flex',
     alignItems: 'flex-end',
+    justifyContent: 'flex-end',
     flexWrap: 'wrap-reverse',
     minHeight: 48,
+    minWidth: 'min-content',
   },
   indicator: {
     borderRadius: '1px',
@@ -132,7 +134,7 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'flex-end',
   },
   actionsContainer: {
-    flex: 1,
+    flex: 0,
     // When menu is too big and things wrap,
     // allow actions to overlap to make sure logo and actions are on the same line
     height: 0,

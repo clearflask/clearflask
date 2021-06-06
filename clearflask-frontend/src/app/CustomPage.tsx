@@ -75,7 +75,7 @@ const styles = (theme: Theme) => createStyles({
     margin: 'auto',
   },
   landing: {
-    margin: 'auto',
+    margin: theme.spacing(4, 'auto', 0),
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -84,49 +84,32 @@ const styles = (theme: Theme) => createStyles({
   },
   landingPaper: {
     flex: '1 1 150px',
+    minWidth: 250,
     maxWidth: 250,
     height: 300,
     display: 'flex',
     // boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
     border: '1px solid ' + theme.palette.grey[300],
-    margin: theme.spacing(6, 2, 2),
+    margin: theme.spacing(2),
     padding: theme.spacing(2),
-    [theme.breakpoints.down('xs')]: {
-      // marginLeft: theme.spacing(1),
-      // marginRight: theme.spacing(1),
-      marginLeft: 0,
-      marginRight: -1,
-    },
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },
   landingLinkTitle: {
-    [theme.breakpoints.down('xs')]: {
-      ...theme.typography.h5,
-    },
   },
   landingLinkDescription: {
     color: theme.palette.text.secondary,
     margin: theme.spacing(0.5, 1),
-    [theme.breakpoints.down('xs')]: {
-      fontSize: '0.9rem',
-    },
   },
   landingLinkIcon: {
     color: theme.palette.text.secondary,
     fontSize: '4em',
-    // marginBottom: theme.spacing(1),
-    [theme.breakpoints.down('xs')]: {
-      fontSize: '3em',
-    },
+    marginBottom: theme.spacing(1),
   },
   landingLinkGo: {
     color: theme.palette.primary.main,
     fontSize: '3em',
-    [theme.breakpoints.down('xs')]: {
-      fontSize: '2em',
-    },
     alignSelf: 'flex-end',
     margin: theme.spacing(1, 4, 0, 0),
     [theme.breakpoints.down('xs')]: {

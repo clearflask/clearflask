@@ -213,7 +213,6 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
           const editor = e.target['editor'];
 
           const hasText = editor.getLength() > 0 ? true : undefined;
-          console.log('debug', e, delta, source, editor);
           this.props.onChange && this.props.onChange(e, delta, source, editor);
           if (!!this.state.hasText !== !!hasText) {
             this.setState({ hasText });

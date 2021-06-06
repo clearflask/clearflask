@@ -2,14 +2,17 @@ import * as Admin from "../../../api/admin";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
-import { CategoryAndIndex, PageAndIndex } from "./feedback";
+import { CategoryAndIndex, PageWithExplorer } from "./feedback";
 
 const ChangelogCategoryIdPrefix = 'changelog-';
 const ChangelogPageIdPrefix = 'changelog-';
 
 export interface ChangelogInstance {
   categoryAndIndex: CategoryAndIndex;
-  pageAndIndex?: PageAndIndex;
+  pageAndIndex?: {
+    page: PageWithExplorer;
+    index: number;
+  },
 }
 
 export async function changelogGet(this: Templater): Promise<ChangelogInstance | undefined> {
@@ -54,22 +57,22 @@ export async function changelogGet(this: Templater): Promise<ChangelogInstance |
     categoryAndIndex: category,
   };
 
-  var potentialPages = this.editor.getConfig().layout.pages
-    .map((page, index) => ({ page, index }))
-    .filter(pageAndIndex => !!pageAndIndex.page.board
-      && pageAndIndex.page.pageId.startsWith(ChangelogPageIdPrefix));
+  var potentialPages: Array<NonNullable<ChangelogInstance['pageAndIndex']>> = this.editor.getConfig().layout.pages
+    .flatMap((page, index) => (!!page.explorer
+      && page.pageId.startsWith(ChangelogPageIdPrefix))
+      ? [{ page: page as PageWithExplorer, index }] : []);
 
   if (potentialPages.length === 0) {
     potentialPages = this.editor.getConfig().layout.pages
-      .map((page, index) => ({ page, index }))
-      .filter(pageAndIndex => !!pageAndIndex.page.explorer
-        && !pageAndIndex.page.explorer.allowCreate
-        && pageAndIndex.page.explorer.search.filterCategoryIds?.length === 1
-        && pageAndIndex.page.explorer.search.filterCategoryIds[0] === changelog.categoryAndIndex.category.categoryId);
+      .flatMap((page, index) => (!!page.explorer
+        && !page.explorer.allowCreate
+        && page.explorer.search.filterCategoryIds?.length === 1
+        && page.explorer.search.filterCategoryIds[0] === changelog.categoryAndIndex.category.categoryId)
+        ? [{ page: page as PageWithExplorer, index }] : []);
   }
 
   if (potentialPages.length === 1) {
-    changelog.pageAndIndex = potentialPages[0]!;
+    changelog.pageAndIndex = potentialPages[0];
   } else if (potentialPages.length > 1) {
     const pageId = await this._getConfirmation({
       title: 'Which one is a Changelog page?',

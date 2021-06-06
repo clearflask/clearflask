@@ -6,54 +6,63 @@ import { CategoryAndIndex } from "./feedback";
 
 const RoadmapPageIdPrefix = 'roadmap-';
 
+export type PageWithBoard = Admin.Page & Required<Pick<Admin.Page, 'board'>>;
 export interface RoadmapInstance {
   categoryAndIndex: CategoryAndIndex;
-  page: Admin.Page & Required<Pick<Admin.Page, 'board'>>;
-  pageIndex: number;
+  pageAndIndex: {
+    page: PageWithBoard;
+    index: number;
+  },
 }
 
 export async function roadmapGet(this: Templater): Promise<RoadmapInstance | undefined> {
   const feedback = (await this.feedbackGet())
-  if (!feedback) throw new Error('Feedback not enabled');
+  if (!feedback) return undefined;
   const postCategoryId = feedback.categoryAndIndex.category.categoryId;
 
-  var potentialPageWithBoard = this.editor.getConfig().layout.pages
-    .filter(page => !!page.board && page.pageId.startsWith(RoadmapPageIdPrefix));
+  var potentialPages: Array<NonNullable<RoadmapInstance['pageAndIndex']>> = this.editor.getConfig().layout.pages
+    .flatMap((page, index) => (!!page.board
+      && page.pageId.startsWith(RoadmapPageIdPrefix))
+      ? [{ page: page as PageWithBoard, index }] : []);
 
-  if (potentialPageWithBoard.length === 0) {
-    potentialPageWithBoard = this.editor.getConfig().layout.pages
-      .filter(page => !!page.board && page.board.panels.length > 0
-        && page.board.panels.every(p => p.search.filterCategoryIds?.some(cId => cId === postCategoryId)));
+  if (potentialPages.length === 0) {
+    potentialPages = this.editor.getConfig().layout.pages
+      .flatMap((page, index) => (!!page.board
+        && page.board.panels.length > 0
+        && page.board.panels.every(p => p.search.filterCategoryIds?.some(cId => cId === postCategoryId)))
+        ? [{ page: page as PageWithBoard, index }] : []);
   }
 
-  if (potentialPageWithBoard.length === 0) {
-    potentialPageWithBoard = this.editor.getConfig().layout.pages
-      .filter(page => !!page.board && page.board.panels.length === 0);
+  if (potentialPages.length === 0) {
+    potentialPages = this.editor.getConfig().layout.pages
+      .flatMap((page, index) => (!!page.board
+        && page.board.panels.length === 0)
+        ? [{ page: page as PageWithBoard, index }] : []);
   }
 
-  if (potentialPageWithBoard.length === 0) {
+  if (potentialPages.length === 0) {
     return undefined;
-  } else if (potentialPageWithBoard.length === 1) {
-    const roadmapPage = potentialPageWithBoard[0]!;
+  } else if (potentialPages.length === 1) {
+    const roadmapPage = potentialPages[0]!;
     return {
       categoryAndIndex: feedback.categoryAndIndex,
-      page: roadmapPage as any,
-      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPage.pageId),
+      pageAndIndex: roadmapPage,
     };
   } else {
     const roadmapPageId = await this._getConfirmation({
       title: 'Which one is a Roadmap?',
       description: 'We are having trouble determining where your Roadmap is located. Please select the page that with your Roadmap to edit it.',
-      responses: potentialPageWithBoard.map(pageWithBoard => ({
-        id: pageWithBoard.pageId,
-        title: pageWithBoard.name,
+      responses: potentialPages.map(pageWithBoard => ({
+        id: pageWithBoard.page.pageId,
+        title: pageWithBoard.page.name,
       })),
     }, 'Cancel');
     if (!roadmapPageId) return undefined;
+    const roadmapPage = potentialPages.find(p => p.page.pageId === roadmapPageId);
+    if (!roadmapPage) return undefined;
     return {
       categoryAndIndex: feedback.categoryAndIndex,
-      page: this.editor.getConfig().layout.pages.find(p => p.pageId === roadmapPageId) as any,
-      pageIndex: this.editor.getConfig().layout.pages.findIndex(p => p.pageId === roadmapPageId),
+      pageAndIndex: roadmapPage,
     };
   }
 }
@@ -120,5 +129,5 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
   return roadmap;
 }
 export async function roadmapOff(this: Templater, roadmap: RoadmapInstance): Promise<void> {
-  this._pageDelete(roadmap.page.pageId);
+  this._pageDelete(roadmap.pageAndIndex.page.pageId);
 }
