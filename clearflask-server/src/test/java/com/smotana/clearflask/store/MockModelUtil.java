@@ -67,7 +67,11 @@ public class MockModelUtil {
                 0L,
                 0d,
                 ImmutableMap.of(),
-                0d);
+                0d,
+                null,
+                null,
+                null,
+                null);
     }
 
     public static CommentModel getRandomComment() {

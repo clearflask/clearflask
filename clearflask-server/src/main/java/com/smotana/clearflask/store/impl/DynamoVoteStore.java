@@ -362,9 +362,55 @@ public class DynamoVoteStore implements VoteStore {
         return transaction;
     }
 
+    @Override
+    public long fundTransferBetweenTargets(String projectId, String userId, String fromTargetId, String toTargetId) {
+        long transferAmount = Optional.ofNullable(fundSchemaByUser.fromItem(fundSchemaByUser.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(fundSchemaByUser.primaryKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId,
+                        "targetId", fromTargetId)))
+                .withReturnValues(ReturnValue.ALL_OLD))
+                .getItem()))
+                .map(FundModel::getFundAmount)
+                .orElse(0L);
+
+        // This is a critical time here where we have withdrawn funds from one target
+        // but have not deposited to other one.
+
+        if (transferAmount != 0L) {
+            long fundAmountPrevious = fund(projectId, userId, toTargetId, transferAmount);
+        }
+
+        return transferAmount;
+    }
+
     @Extern
     @Override
     public TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary) {
+        long fundAmountPrevious = fund(projectId, userId, targetId, fundDiff);
+        TransactionModel transaction = new TransactionModel(
+                userId,
+                projectId,
+                genTransactionId(),
+                Instant.now(),
+                fundDiff,
+                transactionType,
+                targetId,
+                summary,
+                Instant.now().plus(config.transactionExpiry()).getEpochSecond());
+        try {
+            transactionSchema.table().putItem(new PutItemSpec()
+                    .withItem(transactionSchema.toItem(transaction))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ApiException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
+        }
+        return new TransactionAndFundPrevious(transaction, fundAmountPrevious);
+    }
+
+    /** Returns previous fund */
+    public long fund(String projectId, String userId, String targetId, long fundDiff) {
         Optional<String> conditionExpressionOpt = Optional.empty();
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valueMap = Maps.newHashMap();
@@ -391,25 +437,7 @@ public class DynamoVoteStore implements VoteStore {
                 .getItem()))
                 .map(FundModel::getFundAmount)
                 .orElse(0L);
-        TransactionModel transaction = new TransactionModel(
-                userId,
-                projectId,
-                genTransactionId(),
-                Instant.now(),
-                fundDiff,
-                transactionType,
-                targetId,
-                summary,
-                Instant.now().plus(config.transactionExpiry()).getEpochSecond());
-        try {
-            transactionSchema.table().putItem(new PutItemSpec()
-                    .withItem(transactionSchema.toItem(transaction))
-                    .withConditionExpression("attribute_not_exists(#partitionKey)")
-                    .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
-        } catch (ConditionalCheckFailedException ex) {
-            throw new ApiException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
-        }
-        return new TransactionAndFundPrevious(transaction, fundAmountPrevious);
+        return fundAmountPrevious;
     }
 
     @Override

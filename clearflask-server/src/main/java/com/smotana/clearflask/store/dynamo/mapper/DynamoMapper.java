@@ -101,10 +101,22 @@ public interface DynamoMapper {
     interface ExpressionBuilder {
         ExpressionBuilder set(String fieldName, Object object);
 
+        ExpressionBuilder setIncrement(String fieldName, Number increment);
+
+        ExpressionBuilder setExpression(String fieldName, String valueExpression);
+
+        ExpressionBuilder setExpression(String expression);
+
+        ExpressionBuilder add(String fieldName, Object object);
+
         ExpressionBuilder remove(String fieldName);
+
+        ExpressionBuilder delete(String fieldName, Object object);
 
 
         String fieldMapping(String fieldName);
+
+        String fieldMapping(String fieldName, String fieldValue);
 
         String valueMapping(String fieldName, Object object);
 

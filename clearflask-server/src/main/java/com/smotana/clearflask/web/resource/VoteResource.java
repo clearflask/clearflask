@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -189,6 +190,10 @@ public class VoteResource extends AbstractResource implements VoteApi {
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
         IdeaModel idea = ideaStore.getIdea(projectId, ideaId).orElseThrow(BadRequestException::new);
+
+        if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot change a merged post");
+        }
 
         Optional<VoteOption> voteOptionOpt = Optional.empty();
         if (voteUpdate.getVote() != null) {

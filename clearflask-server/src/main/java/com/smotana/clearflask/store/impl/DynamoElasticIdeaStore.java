@@ -39,6 +39,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -52,6 +53,8 @@ import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.ExpressionBuilder;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -351,6 +354,240 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
                         i -> i));
+    }
+
+    @Override
+    public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, Function<String, Double> expressionToWeightMapper) {
+        ImmutableMap<String, IdeaModel> ideas = getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
+        IdeaModel idea = ideas.get(ideaId);
+        IdeaModel parentIdea = ideas.get(parentIdeaId);
+        if (idea == null || parentIdea == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Does not exist");
+        }
+
+        if (merge && !idea.getCategoryId().equals(parentIdea.getCategoryId())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge to a post with a different category, link it instead");
+        }
+
+        // 1. Move over votes and expressions
+        long parentIdeaVoteDiff = 0L;
+        long parentIdeaVotersDiff = 0L;
+        double parentIdeaExpressionValueDiff = 0d;
+        Map<String, Long> parentIdeaExpressionDiff = Maps.newHashMap();
+        long parentIdeaFundDiff = 0L;
+        long parentIdeaFundersDiff = 0L;
+        if (merge) {
+            if (!undo) {
+                Optional<String> voteCursorOpt = Optional.empty();
+                do {
+                    VoteStore.ListResponse<VoteStore.VoteModel> voteModelListResponse = voteStore.voteListByTarget(projectId, ideaId, voteCursorOpt);
+                    voteCursorOpt = voteModelListResponse.getCursorOpt();
+                    for (VoteStore.VoteModel vote : voteModelListResponse.getItems()) {
+                        if (vote.getVote() == 0) {
+                            continue;
+                        }
+                        VoteValue prevVote = voteStore.vote(projectId, vote.getUserId(), parentIdeaId, VoteValue.fromValue(vote.getVote()));
+                        parentIdeaVoteDiff += vote.getVote() - prevVote.getValue();
+                        if (prevVote.getValue() == 0) {
+                            parentIdeaVotersDiff++;
+                        }
+                    }
+                } while (voteCursorOpt.isPresent());
+
+                Optional<String> expressionCursorOpt = Optional.empty();
+                do {
+                    VoteStore.ListResponse<VoteStore.ExpressModel> expressModelListResponse = voteStore.expressListByTarget(projectId, ideaId, expressionCursorOpt);
+                    expressionCursorOpt = expressModelListResponse.getCursorOpt();
+                    for (VoteStore.ExpressModel express : expressModelListResponse.getItems()) {
+                        if (express.getExpressions().size() == 0) {
+                            continue;
+                        }
+                        ImmutableSet<String> prevExpressions = voteStore.expressMultiAdd(projectId, express.getUserId(), parentIdeaId, express.getExpressions());
+                        for (String expression : express.getExpressions()) {
+                            if (prevExpressions.contains(expression)) {
+                                continue;
+                            }
+                            parentIdeaExpressionDiff.compute(expression, (e, oldValue) -> oldValue == null
+                                    ? 1L : (oldValue + 1L));
+                            parentIdeaExpressionValueDiff += expressionToWeightMapper.apply(expression);
+                        }
+                    }
+                } while (expressionCursorOpt.isPresent());
+
+                Optional<String> fundCursorOpt = Optional.empty();
+                do {
+                    // Future optimization: Instead of reading all then deleting all and upsert into parent idea,
+                    // Just skip the first reading and just delete all.
+                    VoteStore.ListResponse<VoteStore.FundModel> fundModelListResponse = voteStore.fundListByTarget(projectId, ideaId, fundCursorOpt);
+                    fundCursorOpt = fundModelListResponse.getCursorOpt();
+                    for (VoteStore.FundModel fund : fundModelListResponse.getItems()) {
+                        if (fund.getFundAmount() == 0L) {
+                            continue;
+                        }
+                        long fundAmountTransferred = voteStore.fundTransferBetweenTargets(projectId, fund.getUserId(), ideaId, parentIdeaId);
+                        parentIdeaFundersDiff += 1;
+                        parentIdeaFundDiff += fundAmountTransferred;
+                    }
+                } while (fundCursorOpt.isPresent());
+            } else {
+                // Since we (intentionally for simplification) lost information whether
+                // user has voted for parent idea prior to merge,
+                // we assume they did not and we will remove vote from parent.
+                Optional<String> voteCursorOpt = Optional.empty();
+                do {
+                    VoteStore.ListResponse<VoteStore.VoteModel> voteModelListResponse = voteStore.voteListByTarget(projectId, ideaId, voteCursorOpt);
+                    voteCursorOpt = voteModelListResponse.getCursorOpt();
+                    for (VoteStore.VoteModel vote : voteModelListResponse.getItems()) {
+                        if (vote.getVote() == 0) {
+                            continue;
+                        }
+                        VoteValue prevVote = voteStore.vote(projectId, vote.getUserId(), parentIdeaId, VoteValue.None);
+                        parentIdeaVoteDiff -= prevVote.getValue();
+                        if (prevVote.getValue() != 0) {
+                            parentIdeaVotersDiff--;
+                        }
+                    }
+                } while (voteCursorOpt.isPresent());
+
+                // Same as votes, we are also removing expressions from parent as described above.
+                Optional<String> expressionCursorOpt = Optional.empty();
+                do {
+                    VoteStore.ListResponse<VoteStore.ExpressModel> expressModelListResponse = voteStore.expressListByTarget(projectId, ideaId, expressionCursorOpt);
+                    expressionCursorOpt = expressModelListResponse.getCursorOpt();
+                    for (VoteStore.ExpressModel express : expressModelListResponse.getItems()) {
+                        if (express.getExpressions().size() == 0) {
+                            continue;
+                        }
+                        ImmutableSet<String> prevExpressions = voteStore.expressMultiRemove(projectId, express.getUserId(), parentIdeaId, express.getExpressions());
+                        for (String expression : express.getExpressions()) {
+                            if (!prevExpressions.contains(expression)) {
+                                continue;
+                            }
+                            parentIdeaExpressionDiff.compute(expression, (e, oldValue) -> oldValue == null
+                                    ? -1L : (oldValue - 1L));
+                            parentIdeaExpressionValueDiff -= expressionToWeightMapper.apply(expression);
+                        }
+                    }
+                } while (expressionCursorOpt.isPresent());
+                // For simplicity, since we don't know expression value mappings here, just copy it blindly here
+                parentIdeaExpressionValueDiff -= idea.getExpressionsValue();
+
+                // Funding merge-back omitted, cannot merge back for now for simplicity
+            }
+        }
+
+        // 2. Update link/merge between projects AND add vote diff and expressions diff
+        ExpressionBuilder ideaExpressionBuilder = ideaSchema.expressionBuilder()
+                .conditionExists();
+        ExpressionBuilder parentIdeaExpressionBuilder = ideaSchema.expressionBuilder()
+                .conditionExists();
+
+        if (parentIdeaVoteDiff != 0L) {
+            parentIdeaExpressionBuilder.setIncrement("voteValue", parentIdeaVoteDiff);
+        }
+        if (parentIdeaVotersDiff != 0L) {
+            parentIdeaExpressionBuilder.setIncrement("votersCount", parentIdeaVotersDiff);
+        }
+        if (parentIdeaExpressionValueDiff != 0d) {
+            parentIdeaExpressionBuilder.setIncrement("expressionsValue", parentIdeaExpressionValueDiff);
+        }
+        long expressionCounter = 0L;
+        if (parentIdeaExpressionDiff.size() > 0) {
+            String expressionsValueField = parentIdeaExpressionBuilder.fieldMapping("expressionsValue");
+            String zeroValue = parentIdeaExpressionBuilder.valueMapping("zero", 0L);
+            String oneValue = parentIdeaExpressionBuilder.valueMapping("one", 1L);
+
+            for (Map.Entry<String, Long> entry : parentIdeaExpressionDiff.entrySet()) {
+                String expression = entry.getKey();
+                Long value = entry.getValue();
+                if (value == null || value == 0L) {
+                    continue;
+                }
+                String valueSign = value > 0 ? "+" : "-";
+                String valueValue = parentIdeaExpressionBuilder.valueMapping("val" + expressionCounter, Math.abs(value));
+                String expressionField = parentIdeaExpressionBuilder.fieldMapping("expr" + expressionCounter, expression);
+                parentIdeaExpressionBuilder.setExpression(String.format(
+                        "expressions.%s = if_not_exists(expressions.%s, %s) + %s, expressionsValue = if_not_exists(%s, %s) %s %s",
+                        expressionField, expressionField, zeroValue, oneValue, expressionsValueField, zeroValue, valueSign, valueValue));
+            }
+        }
+        if (parentIdeaFundDiff != 0L) {
+            parentIdeaExpressionBuilder.setIncrement("funded", parentIdeaFundDiff);
+        }
+        if (parentIdeaFundersDiff != 0L) {
+            parentIdeaExpressionBuilder.setIncrement("fundersCount", parentIdeaFundersDiff);
+        }
+
+        if (merge) {
+            if (!undo) {
+                if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge a post that's already merged");
+                }
+                ideaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
+                ideaExpressionBuilder.set("mergedToPostId", parentIdeaId);
+
+                if (!Strings.isNullOrEmpty(parentIdea.getMergedToPostId())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge into a post that's already merged");
+                }
+                parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
+                parentIdeaExpressionBuilder.add("mergedPosts", idea.toIdeaMerged());
+            } else {
+                if (!parentIdeaId.equals(idea.getMergedToPostId())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge that's not merged");
+                }
+                ideaExpressionBuilder.conditionFieldEquals("mergedToPostId", parentIdeaId);
+                ideaExpressionBuilder.remove("mergedToPostId");
+
+                if (!Strings.isNullOrEmpty(parentIdea.getMergedToPostId())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge from a post that's already merged");
+                }
+                parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
+                parentIdeaExpressionBuilder.delete("mergedPosts", idea.toIdeaMerged());
+            }
+        } else {
+            if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot link a post that's already merged");
+            }
+            ideaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
+            if (!Strings.isNullOrEmpty(parentIdea.getMergedToPostId())) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot link to a post that's already merged");
+            }
+            parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
+            if (!undo) {
+                ideaExpressionBuilder.add("linkedToPostIds", parentIdeaId);
+                parentIdeaExpressionBuilder.add("linkedPostIds", ideaId);
+            } else {
+                ideaExpressionBuilder.delete("linkedToPostIds", parentIdeaId);
+                parentIdeaExpressionBuilder.delete("linkedPostIds", ideaId);
+            }
+        }
+
+        Expression ideaExpression = ideaExpressionBuilder.build();
+        idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withUpdateExpression(ideaExpression.updateExpression())
+                .withConditionExpression(ideaExpression.conditionExpression())
+                .withNameMap(ideaExpression.nameMap())
+                .withValueMap(ideaExpression.valMap())
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        Expression parentIdeaExpression = parentIdeaExpressionBuilder.build();
+        parentIdea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", parentIdeaId)))
+                .withUpdateExpression(parentIdeaExpression.updateExpression())
+                .withConditionExpression(parentIdeaExpression.conditionExpression())
+                .withNameMap(parentIdeaExpression.nameMap())
+                .withValueMap(parentIdeaExpression.valMap())
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+
+        return new IdeaConnectResponse(
+                idea.toIdea(sanitizer),
+                parentIdea.toIdea(sanitizer));
     }
 
     @Override
@@ -714,6 +951,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             indexUpdates.put("fundGoal", ideaUpdateAdmin.getFundGoal());
         }
 
+        updateItemSpec.withConditionExpression("attribute_not_exists(mergedToPostId)");
+
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 
         if (!indexUpdates.isEmpty()) {
@@ -1064,11 +1303,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Extern
     @Override
-    public ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId) {
-        ideaSchema.table().deleteItem(new DeleteItemSpec()
+    public ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId, boolean deleteMerged) {
+        DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "ideaId", ideaId))));
+                        "ideaId", ideaId)));
+        if (!deleteMerged) {
+            deleteItemSpec.withConditionExpression("attribute_not_exists(mergedToPostId)");
+        }
+        ideaSchema.table().deleteItem(deleteItemSpec);
 
         SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
         elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)

@@ -12,12 +12,13 @@ import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
-import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -128,7 +129,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 ImmutableMap.of(),
-                0d);
+                0d,
+                null,
+                null,
+                null,
+                null);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
@@ -188,7 +193,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 ImmutableMap.of(),
-                0d);
+                0d,
+                null,
+                null,
+                null,
+                null);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
@@ -236,6 +245,34 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public HistogramResponse ideaHistogramAdmin(String projectId, IdeaHistogramSearchAdmin ideaHistogramSearchAdmin) {
         return ideaStore.histogram(projectId, ideaHistogramSearchAdmin);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, false);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, true);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, true);
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -360,7 +397,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDelete(String projectId, String ideaId) {
-        ideaStore.deleteIdea(projectId, ideaId);
+        ideaStore.deleteIdea(projectId, ideaId, false);
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
@@ -368,7 +405,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
-        ideaStore.deleteIdea(projectId, ideaId);
+        ideaStore.deleteIdea(projectId, ideaId, true);
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 

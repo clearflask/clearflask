@@ -9,7 +9,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
+import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaMergedPosts;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
@@ -64,6 +66,8 @@ public interface IdeaStore {
 
     ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
+    IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, Function<String, Double> expressionToWeightMapper);
+
     HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
     SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
@@ -93,7 +97,7 @@ public interface IdeaStore {
      */
     IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
-    ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
+    ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId, boolean deleteMerged);
 
     ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
@@ -203,6 +207,20 @@ public interface IdeaStore {
 
         Double trendScore;
 
+        @NonNull
+        ImmutableSet<String> linkedToPostIds;
+
+        @NonNull
+        ImmutableSet<String> linkedPostIds;
+
+        String mergedToPostId;
+
+        /**
+         * WARNING: Contains unsanitized HTML in description.
+         */
+        @Getter(AccessLevel.PRIVATE)
+        List<IdeaMergedPosts> mergedPosts;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
         }
@@ -253,7 +271,11 @@ public interface IdeaStore {
                     getFundersCount(),
                     getVoteValue(),
                     getExpressionsValue(),
-                    getExpressions());
+                    getExpressions(),
+                    getLinkedToPostIds(),
+                    getLinkedPostIds(),
+                    getMergedToPostId(),
+                    getMergedPosts());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -281,7 +303,21 @@ public interface IdeaStore {
                     getExpressions() == null ? null : getExpressions().entrySet().stream()
                             .filter(e -> e.getValue() != null && e.getValue() != 0L)
                             .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)),
+                    getLinkedToPostIds(),
+                    getLinkedPostIds(),
+                    getMergedToPostId(),
+                    getMergedPosts(),
                     vote);
+        }
+
+        public IdeaMergedPosts toIdeaMerged() {
+            return new IdeaMergedPosts(
+                    getIdeaId(),
+                    getAuthorUserId(),
+                    getAuthorName(),
+                    getAuthorIsMod(),
+                    getTitle(),
+                    getDescription());
         }
     }
 }

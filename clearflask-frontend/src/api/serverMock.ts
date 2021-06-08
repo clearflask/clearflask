@@ -354,13 +354,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.commentDeleteAdmin(request);
   }
   ideaCommentSearch(request: Client.IdeaCommentSearchRequest): Promise<Client.IdeaCommentSearchResponse> {
+    const idea = this.getImmutable(
+      this.getProject(request.projectId).ideas,
+      idea => idea.ideaId === request.ideaId);
+    const ideaAndMergedIds = new Set([request.ideaId, ...(idea.mergedPosts?.map(m => m.postId) || [])]);
     const minCommentIdToExclude: string | '' = [
       ...(request.ideaCommentSearch.excludeChildrenCommentIds || []),
       ...(request.ideaCommentSearch.parentCommentId ? [request.ideaCommentSearch.parentCommentId] : []),
     ].reduce((l, r) => l > r ? l : r, '');
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     const data = this.sort(this.getProject(request.projectId).comments
-      .filter(comment => comment.ideaId === request.ideaId)
+      .filter(comment => ideaAndMergedIds.has(comment.ideaId))
       .filter(comment => !request.ideaCommentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.ideaCommentSearch.parentCommentId)))
       .filter(comment => !request.ideaCommentSearch.excludeChildrenCommentIds ||
         !request.ideaCommentSearch.excludeChildrenCommentIds.some(ec =>
@@ -857,6 +861,67 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       // Should send notifications here
     };
     return this.returnLater(idea);
+  }
+  ideaLinkAdmin(request: Admin.IdeaLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
+    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.linkedToPostId.includes(parentIdea.ideaId)) return this.throwLater(400, 'Already linked');
+    idea.linkedToPostIds = [...idea.linkedToPostIds, parentIdea.ideaId];
+    parentIdea.linkedPostIds = [...parentIdea.linkedPostIds, idea.ideaId];
+    return this.returnLater({ idea, parentIdea });
+  }
+  ideaUnLinkAdmin(request: Admin.IdeaUnLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
+    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (!idea.linkedToPostId.includes(parentIdea.ideaId)) return this.throwLater(400, 'Not linked');
+    idea.linkedToPostIds = idea.linkedToPostIds.filter(idea => idea.ideaId !== parentIdea.ideaId);
+    parentIdea.linkedPostIds = parentIdea.linkedPostIds.filter(idea => idea.ideaId !== idea.ideaId);
+    return this.returnLater({ idea, parentIdea });
+  }
+  ideaMergeAdmin(request: Admin.IdeaMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
+    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.categoryId !== parentIdea.categoryId) return this.throwLater(400, 'Cannot merge different categories');
+    if (idea.mergedToPostId) return this.throwLater(400, 'Already merged');
+    idea.mergedToPostId = parentIdea.ideaId;
+    parentIdea.mergedPosts = [...parentIdea.mergedPosts, { ...idea }];
+    parentIdea.commentCount += idea.commentCount;
+    if (idea.funded) {
+      parentIdea.funded = (parentIdea.funded || 0) + (idea.funded || 0);
+      idea.funded = 0;
+    }
+    if (idea.fundersCount) {
+      parentIdea.fundersCount = (parentIdea.fundersCount || 0) + (idea.fundersCount || 0);
+      idea.fundersCount = 0;
+    }
+    if (idea.voteValue) parentIdea.voteValue = (parentIdea.voteValue || 0) + (idea.voteValue || 0);
+    if (idea.expressionsValue) parentIdea.expressionsValue = (parentIdea.expressionsValue || 0) + (idea.expressionsValue || 0);
+    if (idea.expressions?.length) {
+      if (!parentIdea.expressions) parentIdea.expressions = {};
+      for (const expression of Object.keys(idea.expressions || {})) {
+        parentIdea.expressions[expression] = (parentIdea.expressions[expression] || 0) + (idea.expressions[expression] || 0);
+      }
+    }
+    return this.returnLater({ idea, parentIdea });
+  }
+  ideaUnMergeAdmin(request: Admin.IdeaUnMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
+    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.mergedToPostId !== parentIdea.ideaId) return this.throwLater(400, 'Not merged');
+    idea.mergedToPostId = undefined;
+    parentIdea.mergedPosts = parentIdea.mergedPosts.filter(m => m.postId !== idea.ideaId);
+    parentIdea.commentCount -= idea.commentCount;
+    if (idea.funded) parentIdea.funded = (parentIdea.funded || 0) - (idea.funded || 0);
+    if (idea.fundersCount) parentIdea.fundersCount = (parentIdea.fundersCount || 0) - (idea.fundersCount || 0);
+    if (idea.voteValue) parentIdea.voteValue = (parentIdea.voteValue || 0) - (idea.voteValue || 0);
+    if (idea.expressionsValue) parentIdea.expressionsValue = (parentIdea.expressionsValue || 0) - (idea.expressionsValue || 0);
+    if (idea.expressions?.length) {
+      if (!parentIdea.expressions) parentIdea.expressions = {};
+      for (const expression of Object.keys(idea.expressions || {})) {
+        parentIdea.expressions[expression] = (parentIdea.expressions[expression] || 0) - (idea.expressions[expression] || 0);
+      }
+    }
+    return this.returnLater({ idea, parentIdea });
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');

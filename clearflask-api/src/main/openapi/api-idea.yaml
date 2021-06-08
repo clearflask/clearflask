@@ -140,6 +140,15 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/Hits'
     Idea:
       type: object
+      required:
+        - ideaId
+        - authorUserId
+        - created
+        - title
+        - categoryId
+        - tagIds
+        - commentCount
+        - childCommentCount
       properties:
         ideaId:
           type: string
@@ -200,15 +209,45 @@ components:
           additionalProperties:
             type: integer
             format: int64
-      required:
-        - ideaId
-        - authorUserId
-        - created
-        - title
-        - categoryId
-        - tagIds
-        - commentCount
-        - childCommentCount
+        linkedToPostIds:
+          type: array
+          items:
+            type: string
+        linkedPostIds:
+          type: array
+          items:
+            type: string
+        mergedToPostId:
+          type: string
+        mergedPosts:
+          type: array
+          items:
+            type: object
+            required:
+            - postId
+            - authorUserId
+            - title
+            properties:
+              postId:
+                type: string
+              authorUserId:
+                type: string
+              authorName:
+                type: string
+              authorIsMod:
+                type: boolean
+              title:
+                type: string
+              description:
+                type: string
+    IdeaConnectResponse:
+      type: object
+      properties:
+        idea:
+          $ref: 'api-idea.yaml#/components/schemas/Idea'
+        parentIdea:
+          $ref: 'api-idea.yaml#/components/schemas/Idea'
+
     IdeaWithVote:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/Idea'
@@ -449,6 +488,118 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/idea/{ideaId}/merge/{parentIdeaId}:
+  patch:
+    operationId: ideaMergeAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: parentIdeaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/idea/{ideaId}/unmerge/{parentIdeaId}:
+  patch:
+    operationId: ideaUnMergeAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: parentIdeaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/idea/{ideaId}/link/{parentIdeaId}:
+  patch:
+    operationId: ideaLinkAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: parentIdeaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/idea/{ideaId}/unlink/{parentIdeaId}:
+  patch:
+    operationId: ideaUnLinkAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: parentIdeaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/subscription/idea:

@@ -429,6 +429,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             private final Map<String, Object> valMap = Maps.newHashMap();
             private final Map<String, String> setUpdates = Maps.newHashMap();
             private final Map<String, String> removeUpdates = Maps.newHashMap();
+            private final Map<String, String> addUpdates = Maps.newHashMap();
+            private final Map<String, String> deleteUpdates = Maps.newHashMap();
             private Optional<String> conditionExpressionOpt = Optional.empty();
 
             @Override
@@ -441,6 +443,43 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             }
 
             @Override
+            public ExpressionBuilder setIncrement(String fieldName, Number increment) {
+                checkState(!built);
+                checkState(!setUpdates.containsKey(fieldName));
+                setUpdates.put(fieldName, String.format("%s = if_not_exists(%s, %s) + %s",
+                        fieldMapping(fieldName),
+                        fieldMapping(fieldName),
+                        valueMapping("zero", 0L),
+                        valueMapping(fieldName, increment)));
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder setExpression(String fieldName, String valueExpression) {
+                checkState(!built);
+                checkState(!setUpdates.containsKey(fieldName));
+                setUpdates.put(fieldName,
+                        fieldMapping(fieldName) + " = " + valueExpression);
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder setExpression(String expression) {
+                checkState(!built);
+                setUpdates.put(expression, expression);
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder add(String fieldName, Object object) {
+                checkState(!built);
+                checkState(!addUpdates.containsKey(fieldName));
+                addUpdates.put(fieldName,
+                        fieldMapping(fieldName) + " " + valueMapping(fieldName, object));
+                return this;
+            }
+
+            @Override
             public ExpressionBuilder remove(String fieldName) {
                 checkState(!built);
                 checkState(!removeUpdates.containsKey(fieldName));
@@ -449,10 +488,27 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             }
 
             @Override
+            public ExpressionBuilder delete(String fieldName, Object object) {
+                checkState(!built);
+                checkState(!deleteUpdates.containsKey(fieldName));
+                deleteUpdates.put(fieldName,
+                        fieldMapping(fieldName) + " " + valueMapping(fieldName, object));
+                return this;
+            }
+
+            @Override
             public String fieldMapping(String fieldName) {
                 checkState(!built);
                 String mappedName = "#" + fieldName;
                 nameMap.put(mappedName, fieldName);
+                return mappedName;
+            }
+
+            @Override
+            public String fieldMapping(String fieldName, String fieldValue) {
+                checkState(!built);
+                String mappedName = "#" + fieldName;
+                nameMap.put(mappedName, fieldValue);
                 return mappedName;
             }
 
@@ -529,8 +585,14 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 if (!setUpdates.isEmpty()) {
                     updates.add("SET " + String.join(", ", setUpdates.values()));
                 }
+                if (!addUpdates.isEmpty()) {
+                    updates.add("ADD " + String.join(", ", addUpdates.values()));
+                }
                 if (!removeUpdates.isEmpty()) {
                     updates.add("REMOVE " + String.join(", ", removeUpdates.values()));
+                }
+                if (!deleteUpdates.isEmpty()) {
+                    updates.add("DELETE " + String.join(", ", deleteUpdates.values()));
                 }
                 final String update = String.join(" ", updates);
                 final Optional<String> conditionOpt = conditionExpressionOpt;

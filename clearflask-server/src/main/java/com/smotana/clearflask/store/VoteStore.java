@@ -73,6 +73,9 @@ public interface VoteStore {
 
     TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary, Optional<String> idempotentKey);
 
+    /** Returns fund amount transferred */
+    long fundTransferBetweenTargets(String projectId, String userId, String fromTargetId, String toTargetId);
+
     TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary);
 
     ImmutableMap<String, FundModel> fundSearch(String projectId, String userId, ImmutableSet<String> targetIds);
