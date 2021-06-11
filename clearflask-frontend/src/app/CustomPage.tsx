@@ -248,13 +248,13 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
 export const BoardContainer = (props: {
   server: Server,
-  board: Client.PageBoard,
+  board?: Client.PageBoard,
   panels?: any;
   overrideTitle?: React.ReactNode;
 }) => {
   const classes = useStyles();
 
-  if (props.board.title) {
+  if (props.board?.title) {
     return (
       <DividerCorner
         className={classNames(classes.boardContainer, classes.spacing)}

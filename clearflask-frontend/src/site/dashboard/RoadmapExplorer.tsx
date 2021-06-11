@@ -27,8 +27,8 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
     return (
       <BoardContainer
         server={this.props.server}
-        board={this.props.roadmap.pageAndIndex.page.board}
-        panels={this.props.roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
+        board={this.props.roadmap.pageAndIndex?.page.board}
+        panels={this.props.roadmap.pageAndIndex?.page.board.panels.map((panel, panelIndex) => (
           <BoardPanel server={this.props.server} panel={panel} />
         ))}
       />

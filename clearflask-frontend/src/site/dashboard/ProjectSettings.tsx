@@ -32,9 +32,10 @@ import Property from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import UpgradeWrapper, { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../../common/config/template/changelog';
-import { FeedbackInstance, FeedbackSubCategoryGroupTagIdPrefix, FeedbackSubCategoryInstance } from '../../common/config/template/feedback';
+import { FeedbackInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
+import { CategoryAndIndex } from '../../common/config/template/templateUtils';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { Device } from '../../common/DeviceContainer';
 import FakeBrowser from '../../common/FakeBrowser';
@@ -165,7 +166,7 @@ const styles = (theme: Theme) => createStyles({
   previewPageTitleDescription: {
     margin: theme.spacing(2)
   },
-  createFeedbackButton: {
+  createTemplateButton: {
     margin: theme.spacing(4, 2),
   },
   landingLinkContainer: {
@@ -1763,9 +1764,8 @@ export const ProjectSettingsFeedback = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
-  const [expandedType, setExpandedType] = useState<'tag' | 'subcat' | 'status' | undefined>();
+  const [expandedType, setExpandedType] = useState<'tag' | 'status' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
-  const [tagIds, setTagIds] = useState<Array<string> | undefined>();
   const intro = (
     <Typography variant='body1' component='div'>Collect useful feedback from your users</Typography>
   );
@@ -1776,13 +1776,11 @@ export const ProjectSettingsFeedback = (props: {
         editor={props.editor}
         mapper={templater => templater.feedbackGet()}
         renderResolved={(templater, feedback) => {
-          const previewSubcat = (expandedType === 'subcat' && expandedIndex !== undefined)
-            ? feedback?.subcategories[expandedIndex] : undefined;
           return !feedback ? (
             <>
               {intro}
               <Button
-                className={classes.createFeedbackButton}
+                className={classes.createTemplateButton}
                 variant='contained'
                 color='primary'
                 disableElevation
@@ -1795,16 +1793,16 @@ export const ProjectSettingsFeedback = (props: {
             <>
               {intro}
               <Section
-                title='Subcategories'
-                description='Collect feedback on separate pages for distinct purposes such as Features, Bugs, Translations, or Platform. For minor differences, use Tags instead.'
+                title='Public page'
+                description='Customize your public page for collecting feedback.'
                 preview={(
                   <>
-                    {!!previewSubcat?.pageAndIndex && (
+                    {!!feedback.pageAndIndex && (
                       <BrowserPreview
                         server={props.server}
                         scroll={Orientation.Both}
                         addressBar='project'
-                        projectPath={previewSubcat.pageAndIndex.page.slug}
+                        projectPath={feedback.pageAndIndex.page.slug}
                         FakeBrowserProps={{
                           fixedWidth: 350,
                           fixedHeight: 500,
@@ -1812,9 +1810,9 @@ export const ProjectSettingsFeedback = (props: {
                       >
                         <div className={classes.previewExplorer}>
                           <CustomPage
-                            key={`${props.server.getProjectId()}-${previewSubcat.tagId || 'uncat'}`}
+                            key={props.server.getProjectId()}
                             server={props.server}
-                            pageSlug={previewSubcat.pageAndIndex.page.slug}
+                            pageSlug={feedback.pageAndIndex.page.slug}
                           />
                         </div>
                       </BrowserPreview>
@@ -1823,35 +1821,30 @@ export const ProjectSettingsFeedback = (props: {
                 )}
                 content={(
                   <>
-                    <div className={classes.feedbackAccordionContainer}>
-                      {feedback.subcategories.map((subcat, subcatIndex) => (
-                        <ProjectSettingsFeedbackSubcategory
-                          server={props.server}
-                          editor={props.editor}
-                          templater={templater}
-                          feedback={feedback}
-                          subcat={subcat}
-                          expanded={expandedType === 'subcat' && expandedIndex === subcatIndex}
-                          onExpandedChange={() => {
-                            if (expandedType === 'subcat' && expandedIndex === subcatIndex) {
-                              setExpandedIndex(undefined)
-                            } else {
-                              setExpandedType('subcat');
-                              setExpandedIndex(subcatIndex)
-                            }
-                          }}
+                    <FormControlLabel
+                      label={!!feedback.pageAndIndex ? 'Shown' : 'Hidden'}
+                      control={(
+                        <Switch
+                          checked={!!feedback.pageAndIndex}
+                          onChange={(e, checked) => !!feedback.pageAndIndex
+                            ? templater.feedbackPageOff(feedback)
+                            : templater.feedbackOn()}
+                          color='primary'
                         />
-                      ))}
-                    </div>
-                    <ProjectSettingsAddWithName
-                      label='New subcategory'
-                      withAccordion
-                      onAdd={newSubcat => {
-                        setExpandedType('subcat');
-                        setExpandedIndex(feedback.subcategories.length)
-                        templater.feedbackSubcategoryAdd(newSubcat);
-                      }}
+                      )}
                     />
+                    {!!feedback.pageAndIndex && (
+                      <>
+                        <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'title']} />
+                        <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'description']} />
+                        {!!feedback.pageAndIndex.page.explorer?.allowCreate && (
+                          <>
+                            <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
+                            <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
+                          </>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               />
@@ -1915,69 +1908,22 @@ export const ProjectSettingsFeedback = (props: {
                   </>
                 )}
               />
-              <Section
+              <ProjectSettingsSectionTagging
                 title='Tagging'
-                description='Use tags to finely organize feedback. First create a Tag grouping (such as "Platform") and then add individual tags (such as "Mobile" and "Desktop")'
-                preview={(
-                  <TagSelect
-                    className={classes.tagPreviewContainer}
-                    wrapper={c => (
-                      <BrowserPreview server={props.server}>{c}</BrowserPreview>
-                    )}
-                    variant='outlined'
-                    size='small'
-                    label='Try selecting tags'
-                    category={feedback.categoryAndIndex.category}
-                    tagIds={tagIds}
-                    mandatoryTagIds={feedback.subcategories.flatMap(subcat => subcat.tagId ? [subcat.tagId] : [])}
-                    isModOrAdminLoggedIn={false}
-                    onChange={(tagIds, errorStr) => setTagIds(tagIds)}
-                    SelectionPickerProps={{
-                      width: undefined,
-                    }}
-                  />
-                )}
-                content={(
-                  <>
-                    <div className={classes.feedbackAccordionContainer}>
-                      {feedback.categoryAndIndex.category.tagging.tagGroups
-                        .map((tagGroup, tagGroupIndex) => tagGroup.tagGroupId.startsWith(FeedbackSubCategoryGroupTagIdPrefix) ? null : (
-                          <ProjectSettingsFeedbackTagGroup
-                            server={props.server}
-                            editor={props.editor}
-                            feedback={feedback}
-                            tagGroup={tagGroup}
-                            tagGroupIndex={tagGroupIndex}
-                            expanded={expandedType === 'tag' && expandedIndex === tagGroupIndex}
-                            onExpandedChange={() => {
-                              if (expandedType === 'tag' && expandedIndex === tagGroupIndex) {
-                                setExpandedIndex(undefined)
-                              } else {
-                                setExpandedType('tag');
-                                setExpandedIndex(tagGroupIndex)
-                              }
-                            }}
-                          />
-                        ))}
-                    </div>
-                    <ProjectSettingsAddWithName
-                      label='New tag group'
-                      withAccordion
-                      onAdd={newTagGroup => {
-                        setExpandedType('tag');
-                        setExpandedIndex(feedback.categoryAndIndex.category.tagging.tagGroups.length)
-                        props.editor.getPageGroup(['content', 'categories', feedback.categoryAndIndex.index, 'tagging', 'tagGroups'])
-                          .insert()
-                          .setRaw(Admin.TagGroupToJSON({
-                            name: newTagGroup,
-                            tagGroupId: randomUuid(),
-                            userSettable: true,
-                            tagIds: [],
-                          }));
-                      }}
-                    />
-                  </>
-                )}
+                description='Although discouraged, you can ask users to tag feedback before submitting. It is recommended that you apply tags yourself when you sort through Feedback and organize into Tasks.'
+                server={props.server}
+                editor={props.editor}
+                categoryAndIndex={feedback.categoryAndIndex}
+                userCreatable={true}
+                expandedIndex={expandedType === 'tag' ? expandedIndex : undefined}
+                onExpandedChange={(index) => {
+                  if (expandedType === 'tag' && expandedIndex === index) {
+                    setExpandedIndex(undefined)
+                  } else {
+                    setExpandedType('tag');
+                    setExpandedIndex(index)
+                  }
+                }}
               />
             </>
           );
@@ -2057,81 +2003,82 @@ export const ProjectSettingsFeedbackStatus = (props: {
     </MyAccordion>
   );
 }
-export const ProjectSettingsFeedbackSubcategory = (props: {
+export const ProjectSettingsSectionTagging = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
-  templater: Templater;
-  feedback: FeedbackInstance;
-  subcat: FeedbackSubCategoryInstance;
-  expanded: boolean;
-  onExpandedChange: () => void;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  categoryAndIndex: CategoryAndIndex;
+  userCreatable: boolean;
+  expandedIndex?: number;
+  onExpandedChange: (index: number) => void;
 }) => {
-  const tag = props.subcat.tagId ? props.feedback.categoryAndIndex.category.tagging.tags.find(t => t.tagId === props.subcat.tagId) : undefined;
-  const page = props.subcat.pageAndIndex?.page;
-  const [subcatName, setSubcatName] = useDebounceProp<string>(
-    tag?.name || page?.name || 'No name',
-    text => props.templater.feedbackSubcategoryRename(props.feedback, props.subcat, text));
+  const classes = useStyles();
+  const [tagIds, setTagIds] = useState<Array<string> | undefined>();
   return (
-    <MyAccordion
-      key={tag?.tagId || 'uncat'}
-      TransitionProps={{ unmountOnExit: true }}
-      expanded={props.expanded}
-      onChange={() => props.onExpandedChange()}
-      name={(
-        <PropertyShowOrEdit
-          allowEdit={props.expanded}
-          show={subcatName}
-          edit={(
-            <TextField
-              label='Subcategory name'
-              size='small'
-              variant='outlined'
-              value={subcatName}
-              onChange={e => setSubcatName(e.target.value)}
-              InputProps={{
-                style: {
-                  minWidth: Property.inputMinWidth,
-                  width: propertyWidth,
-                },
-              }}
-            />
+    <Section
+      title={props.title}
+      description={props.description}
+      preview={(
+        <TagSelect
+          className={classes.tagPreviewContainer}
+          wrapper={children => (
+            <BrowserPreview server={props.server}>{children}</BrowserPreview>
           )}
+          variant='outlined'
+          size='small'
+          label='Try selecting tags'
+          category={props.categoryAndIndex.category}
+          tagIds={tagIds}
+          isModOrAdminLoggedIn={!props.userCreatable}
+          onChange={(tagIds, errorStr) => setTagIds(tagIds)}
+          SelectionPickerProps={{
+            width: undefined,
+          }}
         />
       )}
-    >
-      <FormControlLabel
-        label={!!props.subcat.pageAndIndex ? 'Shown' : 'Hidden'}
-        control={(
-          <Switch
-            checked={!!props.subcat.pageAndIndex}
-            onChange={(e, checked) => !!props.subcat.pageAndIndex
-              ? props.templater.feedbackOff(props.feedback, props.subcat)
-              : props.templater.feedbackOn(props.subcat)}
-            color='primary'
-          />
-        )}
-      />
-      {!!props.subcat.pageAndIndex && (
+      content={(
         <>
-          <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'title']} />
-          <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'description']} />
-          {!!props.subcat.pageAndIndex.page.explorer?.allowCreate && (
-            <>
-              <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
-              <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
-            </>
-          )}
-          <PropertyByPath overrideName='Menu Icon' overrideDescription='' editor={props.editor} path={['layout', 'pages', props.subcat.pageAndIndex.index, 'icon']} />
-          <IconPickerHelperText />
+          <div className={classes.feedbackAccordionContainer}>
+            {props.categoryAndIndex.category.tagging.tagGroups
+              .map((tagGroup, tagGroupIndex) => (
+                <ProjectSettingsTagGroup
+                  server={props.server}
+                  editor={props.editor}
+                  categoryAndIndex={props.categoryAndIndex}
+                  userCreatable={props.userCreatable}
+                  tagGroup={tagGroup}
+                  tagGroupIndex={tagGroupIndex}
+                  expanded={props.expandedIndex === tagGroupIndex}
+                  onExpandedChange={() => props.onExpandedChange(tagGroupIndex)}
+                />
+              ))}
+          </div>
+          <ProjectSettingsAddWithName
+            label='New tag group'
+            withAccordion
+            onAdd={newTagGroup => {
+              props.onExpandedChange(props.categoryAndIndex.category.tagging.tagGroups.length);
+              props.editor.getPageGroup(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups'])
+                .insert()
+                .setRaw(Admin.TagGroupToJSON({
+                  name: newTagGroup,
+                  tagGroupId: randomUuid(),
+                  userSettable: true,
+                  tagIds: [],
+                }));
+            }}
+          />
         </>
       )}
-    </MyAccordion>
+    />
   );
 }
-export const ProjectSettingsFeedbackTagGroup = (props: {
+export const ProjectSettingsTagGroup = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
-  feedback: FeedbackInstance;
+  categoryAndIndex: CategoryAndIndex;
+  userCreatable: boolean;
   tagGroup: Admin.TagGroup;
   tagGroupIndex: number;
   expanded: boolean;
@@ -2140,7 +2087,7 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
   const classes = useStyles();
   const [minRequired, setMinRequired] = useState<number | undefined>(props.tagGroup.minRequired);
   const [maxRequired, setMaxRequired] = useState<number | undefined>(props.tagGroup.maxRequired);
-  const tagsWithIndexes = props.feedback.categoryAndIndex.category.tagging.tags
+  const tagsWithIndexes = props.categoryAndIndex.category.tagging.tags
     .map((tag, index) => ({ tag, index }));
   return (
     <MyAccordion
@@ -2158,7 +2105,7 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
               overrideName='Tag Group Name'
               overrideDescription=''
               editor={props.editor}
-              path={['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'name']}
+              path={['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'name']}
             />
           )}
         />
@@ -2169,7 +2116,7 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
           marginTop={0}
           overrideName='User settable'
           editor={props.editor}
-          path={['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'userSettable']}
+          path={['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'userSettable']}
         />
       </div>
       <Collapse in={props.tagGroup.tagIds.length > 1}>
@@ -2194,9 +2141,9 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
               const min = Math.min(value[0], value[1]);
               const max = Math.max(value[0], value[1]);
               setTimeout(() => {
-                (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'minRequired']) as ConfigEditor.IntegerProperty)
+                (props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'minRequired']) as ConfigEditor.IntegerProperty)
                   .set(min === 0 ? undefined : min);
-                (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'maxRequired']) as ConfigEditor.IntegerProperty)
+                (props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'maxRequired']) as ConfigEditor.IntegerProperty)
                   .set(max === props.tagGroup.tagIds.length ? undefined : max);
               }, 10);
             }}
@@ -2211,7 +2158,7 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
             <ProjectSettingsFeedbackTag
               server={props.server}
               editor={props.editor}
-              categoryIndex={props.feedback.categoryAndIndex.index}
+              categoryIndex={props.categoryAndIndex.index}
               tag={tagWithIndex.tag}
               tagIndex={tagWithIndex.index}
             />
@@ -2222,13 +2169,13 @@ export const ProjectSettingsFeedbackTagGroup = (props: {
         label='New tag'
         onAdd={newTag => {
           const tagId = randomUuid();
-          ((props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tags']) as ConfigEditor.ArrayProperty)
+          ((props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tags']) as ConfigEditor.ArrayProperty)
             .insert() as ConfigEditor.ObjectProperty)
             .setRaw(Admin.TagToJSON({
               tagId,
               name: newTag,
             }));
-          (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'tagIds']) as ConfigEditor.LinkMultiProperty)
+          (props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'tagIds']) as ConfigEditor.LinkMultiProperty)
             .insert(tagId);
         }}
       />
@@ -2319,6 +2266,8 @@ export const ProjectSettingsRoadmap = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
+  const [expandedType, setExpandedType] = useState<'tag' | undefined>();
+  const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   return (
     <ProjectSettingsBase title='Roadmap'>
@@ -2326,28 +2275,41 @@ export const ProjectSettingsRoadmap = (props: {
         key='roadmap'
         editor={props.editor}
         mapper={templater => templater.roadmapGet()}
-        renderResolved={(templater, roadmap) => (
+        renderResolved={(templater, roadmap) => !roadmap ? (
           <>
-            <Typography variant='body1' component='div'>Make your roadmap public to show your upcoming and in-progress tasks</Typography>
+            <Typography variant='body1' component='div'>Create a public Roadmap to show off your product plan</Typography>
+            <Button
+              className={classes.createTemplateButton}
+              variant='contained'
+              color='primary'
+              disableElevation
+              onClick={() => templater.roadmapOn()}
+            >
+              Create Roadmap
+        </Button>
+          </>
+        ) : (
+          <>
+            <Typography variant='body1' component='div'>Public roadmap page</Typography>
             <FormControlLabel
-              label={!!roadmap ? 'Enabled' : 'Disabled'}
+              label={!!roadmap ? 'Public' : 'Hidden'}
               control={(
                 <Switch
-                  checked={!!roadmap}
-                  onChange={(e, checked) => !!roadmap
-                    ? templater.roadmapOff(roadmap)
+                  checked={!!roadmap.pageAndIndex}
+                  onChange={(e, checked) => !!roadmap.pageAndIndex
+                    ? templater.roadmapPageOff(roadmap)
                     : templater.roadmapOn()}
                   color='primary'
                 />
               )}
             />
-            {roadmap && (
+            {roadmap.pageAndIndex && (
               <>
                 <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
                   {!roadmap.pageAndIndex.page.board.title && (
                     <Button
                       className={classes.roadmapAddTitleButton}
-                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']) as ConfigEditor.StringProperty)
+                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'title']) as ConfigEditor.StringProperty)
                         .set('Roadmap')}
                     >
                       Add title
@@ -2377,6 +2339,9 @@ export const ProjectSettingsRoadmap = (props: {
                         server={props.server}
                         panel={panel}
                         PanelPostProps={{
+                          searchOverride: {
+                            limit: 3,
+                          },
                           disableOnClick: true,
                           overrideTitle: !panel.title ? undefined : (
                             <PropertyShowOrEdit
@@ -2390,7 +2355,7 @@ export const ProjectSettingsRoadmap = (props: {
                                   overrideDescription=''
                                   overrideName='Title'
                                   editor={props.editor}
-                                  path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'title']}
+                                  path={['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'title']}
                                 />
                               )}
                             />
@@ -2400,7 +2365,7 @@ export const ProjectSettingsRoadmap = (props: {
                               {!panel.title && (
                                 <Button
                                   className={classes.roadmapPanelAddTitleButton}
-                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
+                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
                                     .set(roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0])?.name || 'Title')}
                                 >
                                   Add title
@@ -2411,7 +2376,7 @@ export const ProjectSettingsRoadmap = (props: {
                                 planId={planId}
                                 width='auto'
                                 editor={props.editor}
-                                path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
+                                path={['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
                                 bare
                                 TextFieldProps={{
                                   placeholder: 'Filter',
@@ -2430,6 +2395,23 @@ export const ProjectSettingsRoadmap = (props: {
                 </Provider>
               </>
             )}
+            <ProjectSettingsSectionTagging
+              title='Tagging'
+              description='Use tags to finely organize tasks.'
+              server={props.server}
+              editor={props.editor}
+              categoryAndIndex={roadmap.categoryAndIndex}
+              userCreatable={false}
+              expandedIndex={expandedType === 'tag' ? expandedIndex : undefined}
+              onExpandedChange={(index) => {
+                if (expandedType === 'tag' && expandedIndex === index) {
+                  setExpandedIndex(undefined)
+                } else {
+                  setExpandedType('tag');
+                  setExpandedIndex(index)
+                }
+              }}
+            />
           </>
         )
         }
@@ -2451,7 +2433,7 @@ export const ProjectSettingsChangelog = (props: {
           <>
             <Typography variant='body1' component='div'>Publish released features and let your customers subscribe to changes</Typography>
             <FormControlLabel
-              label={!!changelog?.pageAndIndex ? 'Enabled' : 'Disabled'}
+              label={!changelog ? 'Disabled' : (!changelog?.pageAndIndex ? 'Hidden' : 'Shown')}
               control={(
                 <Switch
                   checked={!!changelog?.pageAndIndex}

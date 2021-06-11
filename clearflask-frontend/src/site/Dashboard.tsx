@@ -1,4 +1,4 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -9,6 +9,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import React, { Component } from 'react';
+import { DragDropContext } from 'react-beautiful-dnd';
 import { connect, Provider } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -20,18 +21,22 @@ import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
+import DividerVertical from '../app/utils/DividerVertical';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 import * as ConfigEditor from '../common/config/configEditor';
+import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
 import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import { ChangelogInstance } from '../common/config/template/changelog';
+import { FeedbackInstance } from '../common/config/template/feedback';
+import { LandingInstance } from '../common/config/template/landing';
 import { RoadmapInstance } from '../common/config/template/roadmap';
-import { Orientation } from '../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { Header, LayoutSize, PreviewSection, Section } from '../common/Layout';
+import Layout, { Header, LayoutSize, LayoutState, PreviewSection, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
 import SubmitButton from '../common/SubmitButton';
@@ -40,7 +45,6 @@ import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
-import { TabFragment } from '../common/util/tabsUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
@@ -48,6 +52,7 @@ import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
 import DashboardPost from './dashboard/DashboardPost';
+import DashboardPostActions from './dashboard/DashboardPostActions';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import PostList from './dashboard/PostList';
@@ -66,7 +71,7 @@ export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
-const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 1024 };
+const PostPreviewSize: LayoutSize = { breakWidth: 640, flexGrow: 100, maxWidth: 876 };
 const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024 };
 const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024 };
 const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
@@ -104,6 +109,7 @@ const styles = (theme: Theme) => createStyles({
   },
   previewEmptyMessage: {
     height: '100%',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -152,6 +158,22 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     margin: theme.spacing(1, 2),
   },
+  feedbackAndListContainer: {
+    display: 'flex',
+    alignItems: 'stretch',
+    height: '100%',
+  },
+  listWithSearchContainer: {
+    minWidth: 0,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  listContainer: {
+    flexGrow: 1,
+    minHeight: 0,
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
 });
 interface Props {
 }
@@ -180,9 +202,17 @@ interface State {
   settingsPreviewChanges?: 'live' | 'code';
   explorerPostSearch?: AdminClient.IdeaSearchAdmin;
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
+  feedbackPostSearch?: AdminClient.IdeaSearchAdmin;
+  feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: { type: 'create' } | { type: 'user', id: string },
+  // Below is state for various template options that are updated after publish
+  // Null means, we received it, but its not present, undefined means we are still waiting
+  landing?: LandingInstance | null;
+  feedback?: FeedbackInstance | null;
+  roadmap?: RoadmapInstance | null;
+  changelog?: ChangelogInstance | null;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -192,6 +222,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   forcePathListener: ((forcePath: string) => void) | undefined;
   readonly searchAccounts: (newValue: string) => void;
   lastConfigVars?: string;
+  similarPostWasClicked?: {
+    originalPostId: string;
+    similarPostId: string;
+  };
 
   constructor(props) {
     super(props);
@@ -325,6 +359,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     const activeProjectId: string | undefined = selectedLabel?.value;
     const activeProject = projects.find(p => p.projectId === activeProjectId);
 
+    if (activeProject && this.lastConfigVars !== this.props.configVers) {
+      this.lastConfigVars = this.props.configVers;
+      const templater = Templater.get(activeProject.editor);
+      templater.feedbackGet().then(i => this.setState({ feedback: i || null }));
+      templater.roadmapGet().then(i => this.setState({ roadmap: i || null }));
+      templater.landingGet().then(i => this.setState({ landing: i || null }));
+      templater.changelogGet().then(i => this.setState({ changelog: i || null }));
+    }
+
     var header: Header | undefined;
     var main: Section | undefined;
     var barTop: React.ReactNode | undefined;
@@ -404,51 +447,146 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           // Sort by new by default
           sortBy: this.state.explorerPostSearch?.sortBy || AdminClient.IdeaSearchAdminSortByEnum.New,
         };
+        const explorerFilters = (layoutState: LayoutState) => (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <DashboardPostFilterControls
+              key={activeProject.server.getProjectId()}
+              server={activeProject.server}
+              search={explorerPostSearch}
+              onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
+              horizontal={layoutState.overflowMenu}
+            />
+          </Provider>
+        );
         menu = {
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <DashboardPostFilterControls
-                key={activeProject.server.getProjectId()}
-                server={activeProject.server}
-                search={explorerPostSearch}
-                onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
-              />
-            </Provider>
-          ),
+          content: layoutState => layoutState.overflowMenu ? null : explorerFilters(layoutState),
         };
         main = {
           size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostList
-                key={activeProject.server.getProjectId()}
-                server={activeProject.server}
-                search={explorerPostSearch}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
+          content: layoutState => (
+            <>
+              <DashboardSearchControls
+                key={'explorer-search-bar' + activeProject.server.getProjectId()}
+                searchText={explorerPostSearch.searchText || ''}
+                onSearchChanged={searchText => this.setState({
+                  explorerPostSearch: {
+                    ...this.state.explorerPostSearch,
+                    searchText,
+                  }
+                })}
+                filters={!layoutState.overflowMenu ? null : explorerFilters(layoutState)}
               />
-            </Provider>
+              <Divider />
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <PostList
+                  key={activeProject.server.getProjectId()}
+                  server={activeProject.server}
+                  search={explorerPostSearch}
+                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onUserClick={userId => this.pageClicked('user', [userId])}
+                  selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
+                />
+              </Provider>
+            </>
           ),
         };
-        barTop = (
-          <DashboardSearchControls
-            key={'post-search-bar' + activeProject.server.getProjectId()}
-            searchText={explorerPostSearch.searchText || ''}
-            onSearchChanged={searchText => this.setState({
-              explorerPostSearch: {
-                ...this.state.explorerPostSearch,
-                searchText,
-              }
-            })}
-          />
-        );
-
         if (this.state.explorerPreview?.type === 'create') {
           preview = this.renderPreviewPostCreate(activeProject);
         } else if (this.state.explorerPreview?.type === 'post') {
           preview = this.renderPreviewPost(this.state.explorerPreview.id, activeProject);
+        } else {
+          preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
+        }
+
+        showProjectLink = true;
+        break;
+      case 'feedback':
+        setTitle('Feedback - Dashboard');
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        header = {
+          title: 'Feedback',
+          action: {
+            label: 'Create',
+            onClick: () => this.pageClicked('post'),
+          },
+        };
+        const feedbackPostSearch = this.state.feedbackPostSearch || {
+          sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
+          ...(this.state.feedback?.categoryAndIndex.category.workflow.entryStatus ? {
+            filterStatusIds: [this.state.feedback.categoryAndIndex.category.workflow.entryStatus],
+          } : {}),
+        };
+        const feedbackFilters = (layoutState: LayoutState) => (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <DashboardPostFilterControls
+              key={activeProject.server.getProjectId()}
+              server={activeProject.server}
+              search={feedbackPostSearch}
+              allowSearch={{ enableSearchByCategory: false }}
+              permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
+              onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
+              horizontal={layoutState.overflowMenu}
+            />
+          </Provider>
+        );
+        menu = {
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
+          content: layoutState => layoutState.overflowMenu ? null : feedbackFilters(layoutState),
+        };
+        if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
+          this.similarPostWasClicked = undefined;
+        }
+        main = {
+          size: { breakWidth: 550, flexGrow: 20, maxWidth: 1024 },
+          content: layoutState => (
+            <div className={this.props.classes.feedbackAndListContainer}>
+              <div className={this.props.classes.listWithSearchContainer}>
+                <DashboardSearchControls
+                  key={'feedback-search-bar' + activeProject.server.getProjectId()}
+                  searchText={feedbackPostSearch.searchText || ''}
+                  onSearchChanged={searchText => this.setState({
+                    feedbackPostSearch: {
+                      ...this.state.feedbackPostSearch,
+                      searchText,
+                    }
+                  })}
+                  filters={!layoutState.overflowMenu ? null : feedbackFilters(layoutState)}
+                />
+                <Divider />
+                <div className={this.props.classes.listContainer}>
+                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                    <PostList
+                      dragndrop
+                      key={activeProject.server.getProjectId()}
+                      server={activeProject.server}
+                      search={feedbackPostSearch}
+                      onClickPost={postId => this.pageClicked('post', [postId])}
+                      onUserClick={userId => this.pageClicked('user', [userId])}
+                      selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                    />
+                  </Provider>
+                </div>
+              </div>
+              <DividerVertical />
+              <DashboardPostActions
+                activeProject={activeProject}
+                onClickPost={postId => this.pageClicked('post', [postId])}
+                onUserClick={userId => this.pageClicked('user', [userId])}
+                selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                feedback={this.state.feedback}
+              />
+            </div>
+          ),
+        };
+
+        if (this.state.feedbackPreview?.type === 'create') {
+          preview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.feedbackPreview?.type === 'post') {
+          preview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
         } else {
           preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
         }
@@ -894,249 +1032,233 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         {this.props.account && (
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
-        <Layout
-          header={header}
-          toolbarShow={!onboarding}
-          toolbarLeft={(
-            <div className={this.props.classes.toolbarLeft}>
-              <Link to='/dashboard' className={this.props.classes.logoLink}>
-                <Logo suppressMargins />
-              </Link>
-              <Tabs
-                className={this.props.classes.tabs}
-                variant='standard'
-                scrollButtons='off'
-                classes={{
-                  indicator: this.props.classes.tabsIndicator,
-                  flexContainer: this.props.classes.tabsFlexContainer,
-                }}
-                value={activePath}
-                indicatorColor="primary"
-                textColor="primary"
-              >
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/explore'
-                  value='explore'
-                  disableRipple
-                  label='Explore'
+        <DragDropContext onDragEnd={(result, provided) => { }}>
+          <Layout
+            header={header}
+            toolbarShow={!onboarding}
+            toolbarLeft={(
+              <div className={this.props.classes.toolbarLeft}>
+                <Link to='/dashboard' className={this.props.classes.logoLink}>
+                  <Logo suppressMargins />
+                </Link>
+                <Tabs
+                  className={this.props.classes.tabs}
+                  variant='standard'
+                  scrollButtons='off'
                   classes={{
-                    root: this.props.classes.tabRoot,
+                    indicator: this.props.classes.tabsIndicator,
+                    flexContainer: this.props.classes.tabsFlexContainer,
                   }}
-                />
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/create'
-                  value='create'
-                  disableRipple
-                  label='Create'
-                  classes={{
-                    root: this.props.classes.tabRoot,
-                  }}
-                />
-                <TabFragment value='roadmap'>
-                  {tabProps => !activeProject ? undefined : (
-                    <TemplateWrapper<RoadmapInstance | undefined>
-                      key='roadmap'
-                      editor={activeProject.editor}
-                      mapper={templater => templater.roadmapGet()}
-                      render={(templater, result, confirmation) => (!!result?.val || !!confirmation) && (
-                        <Tab
-                          className={this.props.classes.tab}
-                          component={Link}
-                          to='/dashboard/roadmap'
-                          value='roadmap'
-                          disableRipple
-                          label='Roadmap'
-                          classes={{
-                            root: this.props.classes.tabRoot,
-                          }}
-                          {...tabProps}
-                        />
-                      )}
+                  value={activePath}
+                  indicatorColor="primary"
+                  textColor="primary"
+                >
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/explore'
+                    value='explore'
+                    disableRipple
+                    label='Explore'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
+                  {this.state.feedback !== null && (
+                    <Tab
+                      className={this.props.classes.tab}
+                      component={Link}
+                      to='/dashboard/feedback'
+                      value='feedback'
+                      disableRipple
+                      label='Feedback'
+                      classes={{
+                        root: this.props.classes.tabRoot,
+                      }}
                     />
                   )}
-                </TabFragment>
-                <TabFragment value='changelog'>
-                  {tabProps => !activeProject ? undefined : (
-                    <TemplateWrapper<ChangelogInstance | undefined>
-                      key='changelog'
-                      editor={activeProject.editor}
-                      mapper={templater => templater.changelogGet()}
-                      render={(templater, result, confirmation) => (!!result?.val?.pageAndIndex || !!confirmation) && (
-                        <Tab
-                          className={this.props.classes.tab}
-                          component={Link}
-                          to='/dashboard/changelog'
-                          value='changelog'
-                          disableRipple
-                          label='Changelog'
-                          classes={{
-                            root: this.props.classes.tabRoot,
-                          }}
-                          {...tabProps}
-                        />
-                      )}
+                  {this.state.roadmap !== null && (
+                    <Tab
+                      className={this.props.classes.tab}
+                      component={Link}
+                      to='/dashboard/roadmap'
+                      value='roadmap'
+                      disableRipple
+                      label='Roadmap'
+                      classes={{
+                        root: this.props.classes.tabRoot,
+                      }}
                     />
                   )}
-                </TabFragment>
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/users'
-                  value='users'
-                  disableRipple
-                  label='Users'
-                  classes={{
-                    root: this.props.classes.tabRoot,
-                  }}
-                />
-              </Tabs>
-            </div>
-          )}
-          toolbarRight={
-            <>
-              <MenuItems
-                items={[
-                  ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
-                  ...((!!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
-                  {
-                    type: 'dropdown', title: this.props.account.name, items: [
-                      ...(projects.filter(p => p.projectId !== activeProjectId).map(p => (
+                  {this.state.changelog !== null && (
+                    <Tab
+                      className={this.props.classes.tab}
+                      component={Link}
+                      to='/dashboard/changelog'
+                      value='changelog'
+                      disableRipple
+                      label='Changelog'
+                      classes={{
+                        root: this.props.classes.tabRoot,
+                      }}
+                    />
+                  )}
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/users'
+                    value='users'
+                    disableRipple
+                    label='Users'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
+                </Tabs>
+              </div>
+            )}
+            toolbarRight={
+              <>
+                <MenuItems
+                  items={[
+                    ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
+                    ...((!!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
+                    {
+                      type: 'dropdown', title: this.props.account.name, items: [
+                        ...(projects.filter(p => p.projectId !== activeProjectId).map(p => (
+                          {
+                            type: 'button' as 'button', onClick: () => {
+                              const selectedProjectId = p.projectId;
+                              if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
+                                localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
+                                this.setState({ selectedProjectId });
+                              }
+                            }, title: p.editor.getConfig().name
+                          }
+                        ))),
+                        { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
+                        { type: 'divider' },
+                        { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
+                        { type: 'divider' },
+                        { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
+                        { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
+                        { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
+                        { type: 'divider' },
                         {
-                          type: 'button' as 'button', onClick: () => {
-                            const selectedProjectId = p.projectId;
-                            if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
-                              localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
-                              this.setState({ selectedProjectId });
-                            }
-                          }, title: p.editor.getConfig().name
-                        }
-                      ))),
-                      { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
-                      { type: 'divider' },
-                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
-                      { type: 'divider' },
-                      { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                      { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
-                      { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
-                      { type: 'divider' },
-                      {
-                        type: 'button', onClick: () => {
-                          ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
-                          redirectIso('/login');
-                        }, title: 'Sign out', icon: LogoutIcon
-                      },
-                    ]
-                  }
-                ]}
-              />
-            </>
-          }
-          previewShow={!!this.state.previewShow}
-          previewShowChanged={show => {
-            this.setState({ previewShow: show });
-            !show && previewOnClose?.();
-          }}
-          preview={preview}
-          previewForceShowClose={!!previewOnClose}
-          menu={menu}
-          barTop={barTop}
-          barBottom={barBottom}
-          contentMargins={!!showContentMargins}
-          main={main || { content: (<ErrorPage msg='Oops, cannot find page' />) }}
-        />
-        {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
-          <Dialog
-            maxWidth='md'
-            fullWidth={this.props.width === 'xs'}
-            open={!!this.state.publishDialogShown}
-            onClose={() => this.setState({ publishDialogShown: false })}
-            scroll='body'
-            PaperProps={{
-              style: { maxWidth: 730 },
-            }}
-          >
-            <Collapse in={(this.state.publishDialogStep || 0) === 0}>
-              <DialogTitle>User onboarding</DialogTitle>
-              <DialogContent>
-                <DialogContentText>Choose how your users will access your portal</DialogContentText>
-                <ProjectSettingsUsersOnboarding
-                  server={activeProject.server}
-                  editor={activeProject.editor}
-                  onPageClicked={() => this.setState({ publishDialogShown: false })}
-                  inviteMods={this.state.publishDialogInviteMods || []}
-                  setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+                          type: 'button', onClick: () => {
+                            ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
+                            redirectIso('/login');
+                          }, title: 'Sign out', icon: LogoutIcon
+                        },
+                      ]
+                    }
+                  ]}
                 />
-              </DialogContent>
-            </Collapse>
-            <Collapse in={(this.state.publishDialogStep || 0) === 1}>
-              <DialogTitle>Installation</DialogTitle>
-              <DialogContent>
-                <DialogContentText>Choose how to link your product with your ClearFlask portal</DialogContentText>
-                <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
-                <ProjectSettingsInstallWidget server={activeProject.server} editor={activeProject.editor} />
-              </DialogContent>
-            </Collapse>
-            <DialogActions>
-              <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
-              {(this.state.publishDialogStep || 0) === 0 && (
-                <SubmitButton
-                  isSubmitting={this.state.publishDialogSubmitting}
-                  color='primary'
-                  variant='contained'
-                  disableElevation
-                  onClick={async e => {
-                    if (!activeProject) return;
-                    this.setState({ publishDialogSubmitting: true });
-                    (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
-                    try {
-                      await this.publishChanges(activeProject);
-                    } catch (e) {
-                      this.setState({ publishDialogSubmitting: false });
-                      return;
-                    }
-                    const d = await activeProject.server.dispatchAdmin();
-                    const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
-                    try {
-                      for (const mod of this.state.publishDialogInviteMods || []) {
-                        d.userCreateAdmin({
-                          projectId: activeProject.server.getProjectId(),
-                          userCreateAdmin: {
-                            email: mod,
-                          },
-                        });
-                        inviteModsRemaining.delete(mod);
+              </>
+            }
+            previewShow={!!this.state.previewShow}
+            previewShowChanged={show => {
+              this.setState({ previewShow: show });
+              !show && previewOnClose?.();
+            }}
+            preview={preview}
+            previewForceShowClose={!!previewOnClose}
+            menu={menu}
+            barTop={barTop}
+            barBottom={barBottom}
+            contentMargins={!!showContentMargins}
+            main={main || { content: (<ErrorPage msg='Oops, cannot find page' />) }}
+          />
+          {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
+            <Dialog
+              maxWidth='md'
+              fullWidth={this.props.width === 'xs'}
+              open={!!this.state.publishDialogShown}
+              onClose={() => this.setState({ publishDialogShown: false })}
+              scroll='body'
+              PaperProps={{
+                style: { maxWidth: 730 },
+              }}
+            >
+              <Collapse in={(this.state.publishDialogStep || 0) === 0}>
+                <DialogTitle>User onboarding</DialogTitle>
+                <DialogContent>
+                  <DialogContentText>Choose how your users will access your portal</DialogContentText>
+                  <ProjectSettingsUsersOnboarding
+                    server={activeProject.server}
+                    editor={activeProject.editor}
+                    onPageClicked={() => this.setState({ publishDialogShown: false })}
+                    inviteMods={this.state.publishDialogInviteMods || []}
+                    setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+                  />
+                </DialogContent>
+              </Collapse>
+              <Collapse in={(this.state.publishDialogStep || 0) === 1}>
+                <DialogTitle>Installation</DialogTitle>
+                <DialogContent>
+                  <DialogContentText>Choose how to link your product with your ClearFlask portal</DialogContentText>
+                  <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
+                  <ProjectSettingsInstallWidget server={activeProject.server} editor={activeProject.editor} />
+                </DialogContent>
+              </Collapse>
+              <DialogActions>
+                <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
+                {(this.state.publishDialogStep || 0) === 0 && (
+                  <SubmitButton
+                    isSubmitting={this.state.publishDialogSubmitting}
+                    color='primary'
+                    variant='contained'
+                    disableElevation
+                    onClick={async e => {
+                      if (!activeProject) return;
+                      this.setState({ publishDialogSubmitting: true });
+                      (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
+                      try {
+                        await this.publishChanges(activeProject);
+                      } catch (e) {
+                        this.setState({ publishDialogSubmitting: false });
+                        return;
                       }
-                    } catch (e) {
-                      this.setState({ publishDialogSubmitting: false });
-                      return;
-                    } finally {
-                      this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
-                    }
-                    this.setState({
-                      publishDialogSubmitting: false,
-                      publishDialogStep: (this.state.publishDialogStep || 0) + 1,
-                    });
-                  }}>Publish</SubmitButton>
-              )}
-              {(this.state.publishDialogStep || 0) === 1 && (
-                <Button
-                  color='primary'
-                  variant='contained'
-                  disableElevation
-                  onClick={e => {
-                    !windowIso.isSsr && windowIso.open(projectLink, '_blank');
-                    this.setState({
-                      publishDialogShown: false,
-                    });
-                  }}>Visit</Button>
-              )}
-            </DialogActions>
-          </Dialog>
-        )}
+                      const d = await activeProject.server.dispatchAdmin();
+                      const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
+                      try {
+                        for (const mod of this.state.publishDialogInviteMods || []) {
+                          d.userCreateAdmin({
+                            projectId: activeProject.server.getProjectId(),
+                            userCreateAdmin: {
+                              email: mod,
+                            },
+                          });
+                          inviteModsRemaining.delete(mod);
+                        }
+                      } catch (e) {
+                        this.setState({ publishDialogSubmitting: false });
+                        return;
+                      } finally {
+                        this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
+                      }
+                      this.setState({
+                        publishDialogSubmitting: false,
+                        publishDialogStep: (this.state.publishDialogStep || 0) + 1,
+                      });
+                    }}>Publish</SubmitButton>
+                )}
+                {(this.state.publishDialogStep || 0) === 1 && (
+                  <Button
+                    color='primary'
+                    variant='contained'
+                    disableElevation
+                    onClick={e => {
+                      !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                      this.setState({
+                        publishDialogShown: false,
+                      });
+                    }}>Visit</Button>
+                )}
+              </DialogActions>
+            </Dialog>
+          )}
+        </DragDropContext>
       </Elements>
     );
   }
@@ -1338,12 +1460,26 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
     if (path === 'post') {
-      this.setState({
-        previewShow: true,
-        explorerPreview: !!subPath[0]
-          ? { type: 'post', id: subPath[0] + '' }
-          : { type: 'create' },
-      }, () => this.props.history.push('/dashboard/explore'));
+      const activePath = this.props.match.params['path'] || '';
+      const preview: State['explorerPreview'] & State['feedbackPreview'] = !!subPath[0]
+        ? { type: 'post', id: subPath[0] + '' }
+        : { type: 'create' };
+      if (activePath === 'feedback') {
+        this.setState({
+          previewShow: true,
+          feedbackPreview: preview,
+        });
+      } else if (activePath === 'explore') {
+        this.setState({
+          previewShow: true,
+          explorerPreview: preview,
+        });
+      } else {
+        this.setState({
+          previewShow: true,
+          explorerPreview: preview,
+        }, () => this.props.history.push('/dashboard/explore'));
+      }
     } else if (path === 'user') {
       this.setState({
         previewShow: true,

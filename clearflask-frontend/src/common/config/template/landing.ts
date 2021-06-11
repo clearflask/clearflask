@@ -72,22 +72,20 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   const landingLinksProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'pages', landing.pageAndIndex.index, 'landing', 'links']);
 
   const feedback = await this.feedbackGet();
-  feedback?.subcategories.forEach(subcat => {
-    if (!subcat.pageAndIndex) return;
-    if (landing?.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === subcat.pageAndIndex?.page.pageId)) return;
-    if (!!onlyPageIds && !onlyPageIds.has(subcat.pageAndIndex.page.pageId)) return;
+  if (feedback?.pageAndIndex
+    && (!onlyPageIds || onlyPageIds.has(feedback.pageAndIndex.page.pageId))
+    && !landing.pageAndIndex.page.landing.links.some(l => l.linkToPageId === feedback?.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: subcat.pageAndIndex.page.name,
-      icon: 'RecordVoiceOver',
+      title: 'Feedback',
       description: 'How can we improve our product?',
-      linkToPageId: subcat.pageAndIndex.page.pageId,
+      linkToPageId: feedback.pageAndIndex.page.pageId,
     }));
-  })
+  }
 
   const roadmap = await this.roadmapGet();
   if (roadmap?.pageAndIndex
     && (!onlyPageIds || onlyPageIds.has(roadmap.pageAndIndex.page.pageId))
-    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex.page.pageId)) {
+    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex!.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: 'Roadmap',
       description: "See what we're working on next.",

@@ -5,10 +5,10 @@ import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 import { changelogGet, changelogOff, changelogOn } from "./template/changelog";
-import { feedbackGet, feedbackOff, feedbackOn, feedbackSubcategoryAdd, feedbackSubcategoryRename } from "./template/feedback";
+import { feedbackGet, feedbackOn, feedbackPageOff } from "./template/feedback";
 import { landingGet, landingOff, landingOn } from "./template/landing";
-import { roadmapGet, roadmapOff, roadmapOn } from "./template/roadmap";
-import { _pageDelete } from "./template/templateUtils";
+import { feedbackAndRoadmapGet, roadmapGet, roadmapOn, roadmapPageOff } from "./template/roadmap";
+import { _findCategoryByPrefix, _findPageByPrefix, _pageDelete } from "./template/templateUtils";
 
 export type ConfirmationResponseId = string | undefined;
 export interface ConfirmationResponse {
@@ -105,20 +105,22 @@ export default class Templater {
   }
 
   _pageDelete = _pageDelete;
-
-  feedbackGet = feedbackGet;
-  feedbackOn = feedbackOn;
-  feedbackSubcategoryRename = feedbackSubcategoryRename;
-  feedbackSubcategoryAdd = feedbackSubcategoryAdd;
-  feedbackOff = feedbackOff;
-
-  roadmapGet = roadmapGet;
-  roadmapOn = roadmapOn;
-  roadmapOff = roadmapOff;
+  _findCategoryByPrefix = _findCategoryByPrefix;
+  _findPageByPrefix = _findPageByPrefix;
 
   landingGet = landingGet;
   landingOn = landingOn;
   landingOff = landingOff;
+
+  feedbackGet = feedbackGet;
+  feedbackOn = feedbackOn;
+  feedbackPageOff = feedbackPageOff;
+
+  roadmapGet = roadmapGet;
+  roadmapOn = roadmapOn;
+  roadmapPageOff = roadmapPageOff;
+
+  feedbackAndRoadmapGet = feedbackAndRoadmapGet;
 
   changelogGet = changelogGet;
   changelogOn = changelogOn;
@@ -909,7 +911,9 @@ export default class Templater {
     }
   }
 
-  readonly workflowColorNeutral = '#3B67AE';
+  readonly workflowColorNeutral = 'rgb(59, 103, 174)';
+  readonly workflowColorNeutraler = 'rgba(59, 103, 174, 0.75)';
+  readonly workflowColorNeutralest = 'rgba(59, 103, 174, 0.5)';
   readonly workflowColorProgress = '#AE9031';
   readonly workflowColorComplete = '#3A8E31';
   readonly workflowColorFail = '#B44A4B';

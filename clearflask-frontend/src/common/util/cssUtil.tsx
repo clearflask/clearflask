@@ -3,9 +3,10 @@ import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
 export const buttonHover = (theme: Theme): Record<string, string | CSSProperties> => {
   return {
-    transition: theme.transitions.create('background-color'),
+    transition: theme.transitions.create(['border-color']),
+    borderLeft: '4px solid transparent',
     '&:hover': {
-      backgroundColor: theme.palette.type === 'dark'
+      borderLeftColor: theme.palette.type === 'dark'
         ? lighten(theme.palette.background.default, 0.04)
         : darken(theme.palette.background.default, 0.04),
     },
@@ -14,6 +15,6 @@ export const buttonHover = (theme: Theme): Record<string, string | CSSProperties
 
 export const buttonSelected = (theme: Theme): Record<string, string | CSSProperties> => {
   return {
-    backgroundColor: lighten(theme.palette.primary.main, 0.92) + '!important',
+    borderLeftColor: theme.palette.primary.main + '!important',
   };
 };

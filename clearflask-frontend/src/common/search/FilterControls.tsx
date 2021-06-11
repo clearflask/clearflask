@@ -10,11 +10,11 @@ import { Label } from '../../app/comps/SelectionPicker';
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    margin: theme.spacing(4),
     minWidth: 'min-content',
   },
   group: {
-    margin: theme.spacing(3, 2),
+    margin: theme.spacing(3),
+    marginRight: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
     minWidth: 'min-content',
@@ -79,10 +79,13 @@ const styles = (theme: Theme) => createStyles({
 });
 const useStyles = makeStyles(styles);
 
-const FilterControls = (props: { children?: any }) => {
+const FilterControls = (props: {
+  className?: string;
+  children?: any;
+}) => {
   const classes = useStyles();
   return (
-    <div className={classes.container}>
+    <div className={classNames(props.className, classes.container)}>
       {props.children}
     </div>
   );
@@ -258,11 +261,12 @@ export const FilterControlBase = (props: {
 
 export const FilterControlTitle = (props: {
   name?: string;
+  className?: string;
 }) => {
   const classes = useStyles();
   return !props.name ? null : (
     <Typography
-      className={classes.title}
+      className={classNames(props.className, classes.title)}
       variant='subtitle1'
       component='div'
     >{props.name}</Typography>

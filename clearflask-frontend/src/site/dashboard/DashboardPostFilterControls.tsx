@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -8,22 +9,18 @@ import PostFilterControls from '../../common/search/PostFilterControls';
 import { LabelGroup, PostFilterType } from '../../common/search/searchUtil';
 
 const styles = (theme: Theme) => createStyles({
-  search: {
+  horizontal: {
     display: 'flex',
-    alignItems: 'center',
-    margin: theme.spacing(2),
-    color: theme.palette.text.hint,
-  },
-  searchIcon: {
-    marginRight: theme.spacing(2),
-  },
-  searchText: {
+    flexWrap: 'wrap',
   },
 });
 interface Props {
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
   onSearchChanged: (search: Partial<Admin.IdeaSearchAdmin>) => void;
+  allowSearch?: Partial<Admin.PageExplorerAllOfAllowSearch>;
+  permanentSearch?: Admin.IdeaSearch;
+  horizontal?: boolean;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -36,6 +33,7 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
   render() {
     return (
       <PostFilterControls
+        className={classNames(this.props.horizontal && this.props.classes.horizontal)}
         config={this.props.config}
         explorer={{
           allowSearch: {
@@ -44,9 +42,10 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
             enableSearchByCategory: true,
             enableSearchByStatus: true,
             enableSearchByTag: true,
+            ...this.props.allowSearch,
           },
           display: {},
-          search: {},
+          search: this.props.permanentSearch || {},
         }}
         forceSingleCategory
         search={{

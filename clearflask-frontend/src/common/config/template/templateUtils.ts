@@ -1,3 +1,4 @@
+import * as Admin from "../../../api/admin";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
 
@@ -35,4 +36,68 @@ export async function _pageDelete(this: Templater, pageId: string): Promise<void
     if (page.pageId !== pageId) continue;
     pagesProp.delete(pageIndex);
   }
+}
+
+export interface CategoryAndIndex {
+  category: Admin.Category,
+  index: number,
+}
+// Find category by prefix
+export async function _findCategoryByPrefix(this: Templater, categoryIdPrefix: string, name: string): Promise<CategoryAndIndex | undefined> {
+  var potentialCategories = this.editor.getConfig().content.categories
+    .map((category, index) => ({ category, index }))
+    .filter(c => c.category.categoryId.startsWith(categoryIdPrefix));
+
+  var category: CategoryAndIndex | undefined;
+  if (potentialCategories.length === 0) {
+    return undefined;
+  } else if (potentialCategories.length === 1) {
+    return potentialCategories[0];
+  } else {
+    const categoryId = await this._getConfirmation({
+      title: `Which one is the ${name} category?`,
+      description: `We are having trouble determining which category is used for ${name}. Please select the category to edit it.`,
+      responses: potentialCategories.map(c => ({
+        id: c.category.categoryId,
+        title: c.category.name,
+      })),
+    }, 'None');
+    if (!categoryId) return undefined;
+    category = this.editor.getConfig().content.categories
+      .map((category, index) => ({ category, index }))
+      .find(c => c.category.categoryId === categoryId);
+    if (!category) return undefined;
+    return category;
+  }
+}
+
+export interface PageAndIndex {
+  page: Admin.Page;
+  index: number;
+}
+// Find page by prefix
+export async function _findPageByPrefix(this: Templater, pageIdPrefix: string, name: string, filter?: (page: Admin.Page) => boolean): Promise<PageAndIndex | undefined> {
+  const potentialPages: Array<NonNullable<PageAndIndex>> = this.editor.getConfig().layout.pages
+    .flatMap((page, index) => (page.pageId.startsWith(pageIdPrefix)
+      && (!filter || filter(page)))
+      ? [{ page, index }] : []);
+  if (potentialPages.length === 1) {
+    return potentialPages[0];
+  } else if (potentialPages.length > 1) {
+    const pageId = await this._getConfirmation({
+      title: `Which page is for ${name}?`,
+      description: `We are having trouble determining which page is used for ${name}. Please select the page to edit it.`,
+      responses: potentialPages.map(p => ({
+        id: p.page.pageId,
+        title: p.page.name,
+      })),
+    }, 'None');
+    if (!!pageId) {
+      return this.editor.getConfig().layout.pages
+        .flatMap((page, index) => (page.pageId === pageId
+          && (!filter || filter(page)))
+          ? [{ page, index }] : [])[0];
+    }
+  }
+  return undefined;
 }

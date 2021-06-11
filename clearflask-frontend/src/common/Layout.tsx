@@ -9,6 +9,12 @@ import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
+export interface LayoutState {
+  overflowPreview: boolean;
+  overflowMenu: boolean;
+  enableBoxLayout: boolean;
+}
+
 export interface Header {
   title?: string;
   action: {
@@ -25,7 +31,7 @@ export interface LayoutSize {
 }
 export interface Section {
   size?: LayoutSize;
-  content: React.ReactNode;
+  content: React.ReactNode | ((layoutState: LayoutState) => React.ReactNode | null);
 }
 export interface PreviewSection extends Section {
   bar?: React.ReactNode;
@@ -35,7 +41,6 @@ const BOX_MARGIN = 36;
 const BOX_BORDER_WIDTH = 1;
 const HEADER_HEIGHT = 60;
 
-type MediaQueries = 'enableBoxLayout' | 'overflowPreview' | 'overflowMenu';
 const MENU_WIDTH = 180;
 const styles = (theme: Theme) => createStyles({
   header: {
@@ -81,7 +86,7 @@ const styles = (theme: Theme) => createStyles({
   },
   previewMobilePaper: {
     overflowY: 'scroll' as 'scroll',
-    width: '100%',
+    maxWidth: '100%',
     background: theme.palette.background.default,
   },
   previewBar: {
@@ -188,7 +193,7 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: (props: Props) => props.menu?.size?.maxWidth,
   },
   preview: {
-    marginLeft: 0, // boxLayout collapse margins inside flex
+    margin: 0, // boxLayout without margins
     borderLeft: '1px solid ' + theme.palette.grey[300],
     flexGrow: (props: Props) => props.preview?.size?.flexGrow || 0,
     flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
@@ -215,7 +220,7 @@ interface Props {
 interface State {
   mobileMenuOpen: boolean;
 }
-class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyles<typeof styles, true> & WithWidthProps, State> {
+class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & WithStyles<typeof styles, true> & WithWidthProps, State> {
   readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
   readonly containerRef = React.createRef<HTMLDivElement>();
 
@@ -227,9 +232,15 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
   }
 
   render() {
-    const overflowPreview = this.props.mediaQueries.overflowPreview;
-    const overflowMenu = this.props.mediaQueries.overflowMenu;
-    const enableBoxLayout = this.props.mediaQueries.enableBoxLayout;
+    const layoutState: LayoutState = {
+      overflowPreview: this.props.mediaQueries.overflowPreview,
+      overflowMenu: this.props.mediaQueries.overflowMenu,
+      enableBoxLayout: this.props.mediaQueries.enableBoxLayout,
+    };
+
+    const mainSection = this.prerenderSectionContent(layoutState, this.props.main);
+    const menuSection = this.prerenderSectionContent(layoutState, this.props.menu);
+    const previewSection = this.prerenderSectionContent(layoutState, this.props.preview);
 
     const title = !!this.props.header?.title ? (
       <div className={classNames(this.props.classes.header, this.props.classes.headerLeft)}>
@@ -248,13 +259,13 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
     ) : undefined;
     const showHeader = !!title || !!action;
 
-    const previewBar = (!!this.props.preview?.bar || !!overflowPreview) && (
+    const previewBar = (!!previewSection?.bar || !!layoutState.overflowPreview) && (
       <>
         <div className={classNames(
           this.props.classes.previewBar,
-          !!this.props.preview?.bar && this.props.classes.previewBarBorder,
+          !!previewSection?.bar && this.props.classes.previewBarBorder,
         )}>
-          {(!!overflowPreview || !!this.props.previewForceShowClose) && (
+          {(!!layoutState.overflowPreview || !!this.props.previewForceShowClose) && (
             <IconButton
               color='inherit'
               aria-label=''
@@ -265,10 +276,10 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           ) || (
               <InfoIcon className={this.props.classes.previewBarItem} />
             )}
-          {!!this.props.preview?.bar && (
+          {!!previewSection?.bar && (
             <>
               <div className={classNames(this.props.classes.previewBarContent, this.props.classes.previewBarItem)}>
-                {this.props.preview.bar}
+                {previewSection.bar}
               </div>
             </>
           )}
@@ -276,9 +287,9 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
       </>
     );
 
-    const preview = this.props.preview && (
+    const preview = previewSection && (
       <div className={classNames(
-        enableBoxLayout && this.props.classes.boxLayout,
+        layoutState.enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.preview,
         this.props.classes.vertical,
@@ -287,47 +298,47 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           {previewBar}
           <div className={classNames(
             this.props.classes.scroll,
-            this.props.classes[`scroll-${this.props.preview.size?.scroll || Orientation.Vertical}`],
+            this.props.classes[`scroll-${previewSection.size?.scroll || Orientation.Vertical}`],
           )}>
-            {this.props.preview.content}
+            {previewSection.content}
           </div>
         </div>
       </div>
     );
 
-    const menu = !!this.props.menu && (
+    const menu = !!menuSection && (
       <div className={classNames(
-        enableBoxLayout && !overflowMenu && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
-        !enableBoxLayout && !overflowMenu && showHeader && this.props.classes.headerMargin,
-        enableBoxLayout && this.props.classes.boxLayout,
+        layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
+        !layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.headerMargin,
+        layoutState.enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.menu,
-        enableBoxLayout && !overflowMenu && this.props.classes.menuMergeWithContent,
+        layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.menuMergeWithContent,
         this.props.classes.vertical,
       )}>
         <div className={this.props.classes.hideShadows}>
-          {!overflowMenu && (title)}
+          {!layoutState.overflowMenu && (title)}
           <div className={classNames(
             this.props.classes.scroll,
-            this.props.classes[`scroll-${this.props.menu.size?.scroll || Orientation.Vertical}`],
+            this.props.classes[`scroll-${menuSection.size?.scroll || Orientation.Vertical}`],
           )}>
-            {this.props.menu.content}
+            {menuSection.content}
           </div>
         </div>
       </div>
     );
 
-    const content = (
+    const main = !!mainSection && (
       <div className={classNames(
-        enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
-        !enableBoxLayout && showHeader && this.props.classes.headerMargin,
-        enableBoxLayout && this.props.classes.boxLayout,
+        layoutState.enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
+        !layoutState.enableBoxLayout && showHeader && this.props.classes.headerMargin,
+        layoutState.enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.content,
         this.props.classes.vertical,
       )}>
         <div className={this.props.classes.hideShadows}>
-          {(!!overflowMenu || !menu) && (title)}
+          {(!!layoutState.overflowMenu || !menu) && (title)}
           {action}
           {!!this.props.barTop && (
             <div>
@@ -337,11 +348,11 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           )}
           <div className={classNames(
             this.props.classes.scroll,
-            this.props.classes[`scroll-${this.props.main.size?.scroll || Orientation.Vertical}`],
+            this.props.classes[`scroll-${mainSection.size?.scroll || Orientation.Vertical}`],
             this.props.classes.grow,
             !!this.props.contentMargins && this.props.classes.contentMargins,
           )}>
-            {this.props.main.content}
+            {mainSection.content}
           </div>
           {!!this.props.barBottom && (
             <div>
@@ -358,7 +369,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
         {!!this.props.toolbarShow && (
           <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
             <Toolbar>
-              {!!overflowMenu && !!menu && (
+              {!!layoutState.overflowMenu && !!menu && (
                 <IconButton
                   color="inherit"
                   aria-label="Open drawer"
@@ -375,7 +386,7 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
             <Divider />
           </AppBar>
         )}
-        {overflowMenu && !!menu && (
+        {layoutState.overflowMenu && !!menu && (
           <nav className={this.props.classes.drawer}>
             <Drawer
               variant='temporary'
@@ -394,15 +405,18 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
             </Drawer>
           </nav>
         )}
-        {overflowPreview && !!preview && (
+        {layoutState.overflowPreview && !!preview && (
           <Drawer
-            variant='persistent'
+            variant='temporary'
             SlideProps={{ mountOnEnter: true }}
             anchor='right'
             open={!!this.props.previewShow}
-            onClose={this.handleDrawerToggle.bind(this)}
+            onClose={this.handlePreviewToggle.bind(this)}
             classes={{
               paper: this.props.classes.previewMobilePaper,
+            }}
+            style={{
+              width: previewSection?.size?.maxWidth || '100%',
             }}
             ModalProps={{
               container: () => this.containerRef.current!
@@ -417,13 +431,13 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
           <div className={classNames(
             this.props.classes.grow,
             this.props.classes.horizontal,
-            enableBoxLayout && this.props.classes.boxLayoutParent,
+            layoutState.enableBoxLayout && this.props.classes.boxLayoutParent,
           )}>
-            {!overflowMenu && !!menu && (
+            {!layoutState.overflowMenu && !!menu && (
               menu
             )}
-            {content}
-            {!overflowPreview && !!preview && (
+            {main}
+            {!layoutState.overflowPreview && !!preview && (
               preview
             )}
           </div>
@@ -439,9 +453,24 @@ class Layout extends Component<Props & WithMediaQueries<MediaQueries> & WithStyl
   handlePreviewToggle() {
     this.props.previewShowChanged(!this.props.previewShow);
   };
+
+  prerenderSectionContent<S extends Section>(layoutState: LayoutState, section?: S): (Omit<S, 'content'> & { content: React.ReactNode }) | undefined {
+    if (!section) {
+      return undefined;
+    } else if (typeof section?.content === 'function') {
+      const content = section.content(layoutState);
+      if (!content) return undefined;
+      return {
+        ...section,
+        content,
+      };
+    } else {
+      return section;
+    }
+  }
 }
 
-export default withMediaQueries<MediaQueries, Props>(props => {
+export default withMediaQueries<keyof LayoutState, Props>(props => {
   const sizeMenu = props.menu?.size?.breakWidth || 0;
   const sizePreview = props.preview?.size?.breakWidth || 0;
   const sizeContentBox = (BOX_MARGIN + BOX_BORDER_WIDTH) * 2;

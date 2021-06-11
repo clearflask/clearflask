@@ -80,8 +80,7 @@ export const postSearchToLabels = (
   // category
   var searchableCategories: Client.Category[] = [];
   if (!isFilterControllable(explorer, PostFilterType.Category)) {
-    (explorer.search.filterCategoryIds || []).forEach(categoryId => {
-      const category = config!.content.categories.find(c => c.categoryId === categoryId);
+    (explorer.search.filterCategoryIds?.map(categoryId => config!.content.categories.find(c => c.categoryId === categoryId)!) || config!.content.categories).forEach(category => {
       if (!category) return;
       searchableCategories.push(category);
       const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);

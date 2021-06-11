@@ -8,6 +8,7 @@ import { groupLabels, LabelGroup, PostLabels, postLabelsToSearch, postSearchToLa
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
+  className?: string;
   config?: Client.Config,
   explorer?: Client.PageExplorer,
   search?: Partial<Admin.IdeaSearchAdmin>;
@@ -36,7 +37,7 @@ class PostFilterControls extends React.Component<Props & WithStyles<typeof style
     }
 
     return (
-      <FilterControls>
+      <FilterControls className={this.props.className}>
         {optionsGrouped.filter(group => group.controlType !== 'search').map(group => (
           <FilterControlSelect
             type={group.controlType as any}

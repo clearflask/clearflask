@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -18,6 +19,9 @@ const styles = (theme: Theme) => createStyles({
   postSelected: {
     ...buttonSelected(theme),
   },
+  postSimilar: {
+    minWidth: 'unset',
+  },
 });
 interface Props {
   server: Server;
@@ -25,6 +29,8 @@ interface Props {
   selectedPostId?: string;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
+  layoutSimilar?: boolean;
+  dragndrop?: boolean;
 }
 interface ConnectProps {
   configver?: string;
@@ -34,39 +40,91 @@ interface ConnectProps {
 class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    return (
+    const panel = {
+      display: !this.props.layoutSimilar ? {
+        titleTruncateLines: 2,
+        descriptionTruncateLines: 2,
+        responseTruncateLines: 0,
+        showCommentCount: true,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: true,
+        showTags: true,
+        showVoting: true,
+        showFunding: false,
+        showExpression: true,
+        showEdit: false,
+      } : {
+        titleTruncateLines: 2,
+        descriptionTruncateLines: 0,
+        responseTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showFunding: false,
+        showExpression: false,
+      },
+      search: {},
+      hideIfEmpty: false,
+    };
+    var result = (
       <PanelPost
         direction={Direction.Vertical}
-        postClassName={this.props.classes.post}
+        postClassName={classNames(
+          this.props.classes.post,
+          this.props.layoutSimilar && this.props.classes.postSimilar,
+        )}
         selectedPostId={this.props.selectedPostId}
         selectedPostClassName={this.props.classes.postSelected}
         suppressPanel
-        panel={{
-          display: {
-            titleTruncateLines: 2,
-            descriptionTruncateLines: 2,
-            responseTruncateLines: 0,
-            showCommentCount: true,
-            showCreated: false,
-            showAuthor: false,
-            showStatus: true,
-            showTags: true,
-            showVoting: true,
-            showFunding: false,
-            showExpression: true,
-            showEdit: false,
-          },
-          search: {},
-          hideIfEmpty: false,
-        }}
+        panel={panel}
         widthExpand
         widthExpandMargin={this.props.theme.spacing(2)}
-        showDivider
+        showDivider={!this.props.layoutSimilar}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}
+      // wrapPost={!this.props.dragndrop ? undefined : (post, content, index) => (
+      //   <Draggable draggableId={post.ideaId} index={index}>
+      //     {(provided, snapshot) => (
+      //       <div
+      //         ref={provided.innerRef}
+      //         {...provided.draggableProps}
+      //         {...provided.dragHandleProps}
+      //       >
+      //         {content}
+      //       </div>
+      //     )}
+      //   </Draggable>
+      // )}
       />
     );
+    // if (this.props.dragndrop) {
+    //   const searchKey = getSearchKey({
+    //     ...panel.search,
+    //     ...this.props.search,
+    //   });
+    //   result = (
+    //     <Droppable droppableId={searchKey}>
+    //       {(provided, snapshot) => (
+    //         <div
+    //           ref={provided.innerRef}
+    //           style={{ backgroundColor: snapshot.isDraggingOver ? 'blue' : 'grey' }}
+    //           {...provided.droppableProps}
+    //         >
+    //           <h2>I am a droppable!</h2>
+    //           {result}
+    //           {provided.placeholder}
+    //         </div>
+    //       )}
+    //     </Droppable>
+    //   );
+    // }
+    return result;
   }
 }
 

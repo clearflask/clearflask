@@ -2,7 +2,8 @@ import * as Admin from "../../../api/admin";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
-import { CategoryAndIndex, PageWithExplorer } from "./feedback";
+import { PageWithExplorer } from "./feedback";
+import { CategoryAndIndex } from "./templateUtils";
 
 const ChangelogCategoryIdPrefix = 'changelog-';
 const ChangelogPageIdPrefix = 'changelog-';
