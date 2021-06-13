@@ -52,9 +52,10 @@ import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
 import DashboardPost from './dashboard/DashboardPost';
-import DashboardPostActions from './dashboard/DashboardPostActions';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
+import DashboardQuickActions from './dashboard/DashboardQuickActions';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
+import DragndropPostList from './dashboard/DragndropPostList';
 import PostList from './dashboard/PostList';
 import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersOnboarding, ProjectSettingsUsersSso, TemplateWrapper } from './dashboard/ProjectSettings';
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
@@ -559,7 +560,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 <Divider />
                 <div className={this.props.classes.listContainer}>
                   <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                    <PostList
+                    <DragndropPostList
                       dragndrop
                       key={activeProject.server.getProjectId()}
                       server={activeProject.server}
@@ -572,13 +573,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 </div>
               </div>
               <DividerVertical />
-              <DashboardPostActions
-                activeProject={activeProject}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                feedback={this.state.feedback}
-              />
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <DashboardQuickActions
+                  activeProject={activeProject}
+                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onUserClick={userId => this.pageClicked('user', [userId])}
+                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                  feedback={this.state.feedback}
+                />
+              </Provider>
             </div>
           ),
         };

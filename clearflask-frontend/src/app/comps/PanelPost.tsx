@@ -80,6 +80,7 @@ export interface Props {
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   selectedPostId?: string;
   selectedPostClassName?: string;
+  renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
 }
 interface ConnectProps {
@@ -138,28 +139,37 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
             ...this.props.panel.display,
           }
           content = this.props.searchResult.ideas.map((idea, ideaIndex) => {
-            var content: React.ReactNode = (
-              <Post
-                className={classNames(
-                  this.props.widthExpand && widthExpandMarginClassName,
-                  this.props.postClassName,
-                  this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
-                )}
-                key={idea.ideaId}
-                server={this.props.server}
-                idea={idea}
-                widthExpand={this.props.widthExpand}
-                expandable
-                disableOnClick={this.props.disableOnClick}
-                onClickPost={this.props.onClickPost}
-                onUserClick={this.props.onUserClick}
-                display={display}
-                variant='list'
-                {...this.props.PostProps}
-              />
-            );
+            var content: React.ReactNode;
+            if (this.props.renderPost) {
+              content = this.props.renderPost(idea, ideaIndex);
+            } else {
+              content = (
+                <Post
+                  key={idea.ideaId}
+                  className={classNames(
+                    this.props.widthExpand && widthExpandMarginClassName,
+                    this.props.postClassName,
+                    this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
+                  )}
+                  server={this.props.server}
+                  idea={idea}
+                  widthExpand={this.props.widthExpand}
+                  expandable
+                  disableOnClick={this.props.disableOnClick}
+                  onClickPost={this.props.onClickPost}
+                  onUserClick={this.props.onUserClick}
+                  display={display}
+                  variant='list'
+                  {...this.props.PostProps}
+                />
+              );
+            }
             if (this.props.wrapPost) {
-              content = this.props.wrapPost(idea, content, ideaIndex);
+              content = (
+                <React.Fragment key={idea.ideaId}>
+                  {this.props.wrapPost(idea, content, ideaIndex)}
+                </React.Fragment>
+              );
             }
             return content;
           });

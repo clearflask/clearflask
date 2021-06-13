@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 
 const HoverArea = (props: {
   hoverDown?: Breakpoint;
-  children: (hoverAreaProps, isHovering, isHoverDown) => React.ReactNode;
+  children: (hoverAreaProps, isHovering: boolean, isHoverDown: boolean) => React.ReactNode;
 }) => {
   const theme = useTheme();
   const matchesHoverDown = useMediaQuery(theme.breakpoints.down(props.hoverDown || 'sm'));

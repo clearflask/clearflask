@@ -1,6 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import { Component } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -19,8 +19,16 @@ const styles = (theme: Theme) => createStyles({
   postSelected: {
     ...buttonSelected(theme),
   },
-  postSimilar: {
-    minWidth: 'unset',
+  postSimilarMergeAction: {
+    minWidth: 0,
+    padding: 0,
+    '& h1': {
+      fontSize: '1rem',
+    },
+    '& *': {
+      margin: 0,
+      padding: 0,
+    },
   },
 });
 interface Props {
@@ -29,8 +37,9 @@ interface Props {
   selectedPostId?: string;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
-  layoutSimilar?: boolean;
+  layout?: 'similar-merge-action';
   dragndrop?: boolean;
+  PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
 }
 interface ConnectProps {
   configver?: string;
@@ -41,7 +50,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
 
   render() {
     const panel = {
-      display: !this.props.layoutSimilar ? {
+      display: this.props.layout !== 'similar-merge-action' ? {
         titleTruncateLines: 2,
         descriptionTruncateLines: 2,
         responseTruncateLines: 0,
@@ -76,7 +85,8 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         direction={Direction.Vertical}
         postClassName={classNames(
           this.props.classes.post,
-          this.props.layoutSimilar && this.props.classes.postSimilar,
+          this.props.layout === 'similar-merge-action' && this.props.classes.postSimilarMergeAction,
+          this.props.PanelPostProps?.postClassName,
         )}
         selectedPostId={this.props.selectedPostId}
         selectedPostClassName={this.props.classes.postSelected}
@@ -84,46 +94,13 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         panel={panel}
         widthExpand
         widthExpandMargin={this.props.theme.spacing(2)}
-        showDivider={!this.props.layoutSimilar}
+        showDivider={this.props.layout !== 'similar-merge-action'}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}
-      // wrapPost={!this.props.dragndrop ? undefined : (post, content, index) => (
-      //   <Draggable draggableId={post.ideaId} index={index}>
-      //     {(provided, snapshot) => (
-      //       <div
-      //         ref={provided.innerRef}
-      //         {...provided.draggableProps}
-      //         {...provided.dragHandleProps}
-      //       >
-      //         {content}
-      //       </div>
-      //     )}
-      //   </Draggable>
-      // )}
+        {...this.props.PanelPostProps}
       />
     );
-    // if (this.props.dragndrop) {
-    //   const searchKey = getSearchKey({
-    //     ...panel.search,
-    //     ...this.props.search,
-    //   });
-    //   result = (
-    //     <Droppable droppableId={searchKey}>
-    //       {(provided, snapshot) => (
-    //         <div
-    //           ref={provided.innerRef}
-    //           style={{ backgroundColor: snapshot.isDraggingOver ? 'blue' : 'grey' }}
-    //           {...provided.droppableProps}
-    //         >
-    //           <h2>I am a droppable!</h2>
-    //           {result}
-    //           {provided.placeholder}
-    //         </div>
-    //       )}
-    //     </Droppable>
-    //   );
-    // }
     return result;
   }
 }
