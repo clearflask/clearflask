@@ -6,6 +6,7 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
 
 const styles = (theme: Theme) => createStyles({
@@ -15,6 +16,7 @@ const styles = (theme: Theme) => createStyles({
       textDecoration: 'underline',
     },
     cursor: 'pointer',
+    minWidth: 0,
   },
   postSelected: {
     ...buttonSelected(theme),
@@ -30,15 +32,22 @@ const styles = (theme: Theme) => createStyles({
       padding: 0,
     },
   },
+  scroll: {
+    flexGrow: 1,
+    minHeight: 0,
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
 });
 interface Props {
+  className?: string;
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
   selectedPostId?: string;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
   layout?: 'similar-merge-action';
-  dragndrop?: boolean;
+  scroll?: boolean;
+  displayOverride?: Admin.PostDisplay;
   PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
 }
 interface ConnectProps {
@@ -49,7 +58,7 @@ interface ConnectProps {
 class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    const panel = {
+    const panel: Admin.PagePanelWithHideIfEmpty = {
       display: this.props.layout !== 'similar-merge-action' ? {
         titleTruncateLines: 2,
         descriptionTruncateLines: 2,
@@ -63,6 +72,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         showFunding: false,
         showExpression: true,
         showEdit: false,
+        ...this.props.displayOverride,
       } : {
         titleTruncateLines: 2,
         descriptionTruncateLines: 0,
@@ -76,6 +86,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         showVoting: false,
         showFunding: false,
         showExpression: false,
+        ...this.props.displayOverride,
       },
       search: {},
       hideIfEmpty: false,
@@ -101,6 +112,16 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         {...this.props.PanelPostProps}
       />
     );
+    if (this.props.scroll || this.props.className) {
+      result = (
+        <div className={classNames(
+          this.props.className,
+          this.props.scroll && this.props.classes.scroll,
+        )}>
+          {result}
+        </div>
+      );
+    }
     return result;
   }
 }

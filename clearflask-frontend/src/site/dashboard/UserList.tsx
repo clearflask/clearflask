@@ -1,4 +1,4 @@
-import { Divider, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -8,6 +8,7 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import ErrorMsg from '../../app/ErrorMsg';
 import Loading from '../../app/utils/Loading';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
@@ -37,12 +38,18 @@ const styles = (theme: Theme) => createStyles({
   userSelected: {
     ...buttonSelected(theme),
   },
+  scroll: {
+    flexGrow: 1,
+    minHeight: 0,
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
 });
 interface Props {
   server: Server;
   search?: Partial<Admin.UserSearchAdmin>;
   selectedUserId?: string;
   onUserClick: (userId: string) => void;
+  scroll?: boolean;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -81,20 +88,25 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
             </div>
           );
         } else {
-          return this.props.searchResult.users.map(user => (
-            <React.Fragment key={user.userId}>
-              <UserWithAvatarDisplay
-                backgroundColor='inherit'
-                className={classNames(
-                  this.props.classes.user,
-                  this.props.selectedUserId === user.userId && this.props.classes.userSelected,
-                )}
-                user={user}
-                onClick={() => this.props.onUserClick(user.userId)}
-              />
-              <Divider />
-            </React.Fragment>
-          ));
+          return (
+            <div className={classNames(
+              this.props.scroll && this.props.classes.scroll,
+            )}>
+              {this.props.searchResult.users.map(user => (
+                <React.Fragment key={user.userId}>
+                  <UserWithAvatarDisplay
+                    backgroundColor='inherit'
+                    className={classNames(
+                      this.props.classes.user,
+                      this.props.selectedUserId === user.userId && this.props.classes.userSelected,
+                    )}
+                    user={user}
+                    onClick={() => this.props.onUserClick(user.userId)}
+                  />
+                </React.Fragment>
+              ))}
+            </div>
+          );
         }
     }
   }

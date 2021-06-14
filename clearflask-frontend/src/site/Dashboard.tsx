@@ -36,7 +36,7 @@ import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { Header, LayoutSize, LayoutState, PreviewSection, Section } from '../common/Layout';
+import Layout, { BOX_MARGIN, Header, LayoutSize, LayoutState, MainSection, MenuSection, PreviewSection } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
 import SubmitButton from '../common/SubmitButton';
@@ -72,9 +72,9 @@ export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
-const PostPreviewSize: LayoutSize = { breakWidth: 640, flexGrow: 100, maxWidth: 876 };
-const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024 };
-const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024 };
+const PostPreviewSize: LayoutSize = { breakWidth: 640, flexGrow: 100, maxWidth: 876, scroll: Orientation.Vertical };
+const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
+const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
 const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
 
 const styles = (theme: Theme) => createStyles({
@@ -205,6 +205,8 @@ interface State {
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
   feedbackPostSearch?: AdminClient.IdeaSearchAdmin;
   feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
+  roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
+  roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: { type: 'create' } | { type: 'user', id: string },
@@ -370,13 +372,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
 
     var header: Header | undefined;
-    var main: Section | undefined;
+    var main: MainSection | undefined;
     var barTop: React.ReactNode | undefined;
     var barBottom: React.ReactNode | undefined;
     var onboarding = false;
     var preview: PreviewSection | undefined;
     var previewOnClose: (() => void) | undefined;
-    var menu: Section | undefined;
+    var menu: MenuSection | undefined;
     var showProjectLink: boolean = false;
     var showCreateProjectWarning: boolean = false;
     var showContentMargins: boolean = false;
@@ -389,7 +391,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         main = {
-          size: { maxWidth: 1024 },
+          size: { maxWidth: 1024, scroll: Orientation.Vertical },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <DashboardHome
@@ -460,7 +462,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           </Provider>
         );
         menu = {
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
           content: layoutState => layoutState.overflowMenu ? null : explorerFilters(layoutState),
         };
         main = {
@@ -468,6 +470,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           content: layoutState => (
             <>
               <DashboardSearchControls
+                placeholder='Search all content'
                 key={'explorer-search-bar' + activeProject.server.getProjectId()}
                 searchText={explorerPostSearch.searchText || ''}
                 onSearchChanged={searchText => this.setState({
@@ -487,6 +490,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   onClickPost={postId => this.pageClicked('post', [postId])}
                   onUserClick={userId => this.pageClicked('user', [userId])}
                   selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
+                  scroll
                 />
               </Provider>
             </>
@@ -520,6 +524,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ...(this.state.feedback?.categoryAndIndex.category.workflow.entryStatus ? {
             filterStatusIds: [this.state.feedback.categoryAndIndex.category.workflow.entryStatus],
           } : {}),
+          ...(this.state.feedback ? {
+            filterCategoryIds: [this.state.feedback.categoryAndIndex.category.categoryId],
+          } : {}),
         };
         const feedbackFilters = (layoutState: LayoutState) => (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
@@ -535,18 +542,19 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           </Provider>
         );
         menu = {
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
           content: layoutState => layoutState.overflowMenu ? null : feedbackFilters(layoutState),
         };
         if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
           this.similarPostWasClicked = undefined;
         }
         main = {
-          size: { breakWidth: 550, flexGrow: 20, maxWidth: 1024 },
+          size: { breakWidth: 550, flexGrow: 20, maxWidth: 640 + 200 },
           content: layoutState => (
             <div className={this.props.classes.feedbackAndListContainer}>
               <div className={this.props.classes.listWithSearchContainer}>
                 <DashboardSearchControls
+                  placeholder='Search for feedback'
                   key={'feedback-search-bar' + activeProject.server.getProjectId()}
                   searchText={feedbackPostSearch.searchText || ''}
                   onSearchChanged={searchText => this.setState({
@@ -558,19 +566,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   filters={!layoutState.overflowMenu ? null : feedbackFilters(layoutState)}
                 />
                 <Divider />
-                <div className={this.props.classes.listContainer}>
-                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                    <DragndropPostList
-                      dragndrop
-                      key={activeProject.server.getProjectId()}
-                      server={activeProject.server}
-                      search={feedbackPostSearch}
-                      onClickPost={postId => this.pageClicked('post', [postId])}
-                      onUserClick={userId => this.pageClicked('user', [userId])}
-                      selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                    />
-                  </Provider>
-                </div>
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                  <DragndropPostList
+                    scroll
+                    key={activeProject.server.getProjectId()}
+                    server={activeProject.server}
+                    search={feedbackPostSearch}
+                    onClickPost={postId => this.pageClicked('post', [postId])}
+                    onUserClick={userId => this.pageClicked('user', [userId])}
+                    selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                  />
+                </Provider>
               </div>
               <DividerVertical />
               <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
@@ -580,6 +586,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   onUserClick={userId => this.pageClicked('user', [userId])}
                   selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
                   feedback={this.state.feedback}
+                  roadmap={this.state.roadmap}
                 />
               </Provider>
             </div>
@@ -602,8 +609,64 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
+        const roadmapPostSearch = this.state.roadmapPostSearch || {
+          sortBy: AdminClient.IdeaSearchAdminSortByEnum.Trending,
+          ...(this.state.feedback ? {
+            filterCategoryIds: [this.state.feedback.categoryAndIndex.category.categoryId],
+          } : {}),
+        };
+        menu = {
+          size: { breakWidth: 267, flexGrow: 1, maxWidth: 350, scroll: Orientation.Vertical },
+          detachFromMain: true,
+          content: (
+            <>
+              <DashboardSearchControls
+                placeholder='Search for feedback'
+                key={'roadmap-feedback-search-bar' + activeProject.server.getProjectId()}
+                searchText={roadmapPostSearch.searchText || ''}
+                onSearchChanged={searchText => this.setState({
+                  roadmapPostSearch: {
+                    ...this.state.roadmapPostSearch,
+                    searchText,
+                  }
+                })}
+                filters={(
+                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                    <DashboardPostFilterControls
+                      key={activeProject.server.getProjectId()}
+                      server={activeProject.server}
+                      search={roadmapPostSearch}
+                      allowSearch={{ enableSearchByCategory: false }}
+                      permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
+                      onSearchChanged={roadmapPostSearch => this.setState({ roadmapPostSearch })}
+                      horizontal
+                    />
+                  </Provider>
+                )}
+              />
+              <Divider />
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <DragndropPostList
+                  key={activeProject.server.getProjectId()}
+                  scroll
+                  server={activeProject.server}
+                  search={roadmapPostSearch}
+                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onUserClick={userId => this.pageClicked('user', [userId])}
+                  selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+                  displayOverride={{
+                    showCategoryName: false,
+                  }}
+                />
+              </Provider>
+            </>
+          ),
+        };
+        const roadmapMainBreakWidth = (this.state.roadmap?.pageAndIndex?.page.board.panels.length || 3) * 267
+          + ((this.state.roadmap?.statusIdClosed || this.state.roadmap?.statusIdCompleted) ? 267 + BOX_MARGIN : 0);
         main = {
-          size: { breakWidth: 1000 },
+          size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
+          boxLayoutNoPaper: true,
           content: (
             <TemplateWrapper<RoadmapInstance | undefined>
               key='roadmap'
@@ -611,12 +674,28 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               mapper={templater => templater.roadmapGet()}
               renderResolved={(templater, roadmap) => !!roadmap && (
                 <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  <RoadmapExplorer key={activeProject.server.getProjectId()} server={activeProject.server} roadmap={roadmap} />
+                  <RoadmapExplorer
+                    key={activeProject.server.getProjectId()}
+                    server={activeProject.server}
+                    roadmap={roadmap}
+                    onClickPost={postId => this.pageClicked('post', [postId])}
+                    onUserClick={userId => this.pageClicked('user', [userId])}
+                    selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+                  />
                 </Provider>
               )}
             />
           ),
         };
+
+        if (this.state.roadmapPreview?.type === 'create') {
+          preview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.roadmapPreview?.type === 'post') {
+          preview = this.renderPreviewPost(this.state.roadmapPreview.id, activeProject);
+        } else {
+          preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
+        }
+
         showProjectLink = true;
         break;
       case 'changelog':
@@ -626,7 +705,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         main = {
-          size: { breakWidth: 1000 },
+          size: { breakWidth: 1000, scroll: Orientation.Vertical },
           content: (
             <TemplateWrapper<ChangelogInstance | undefined>
               key='changelog'
@@ -656,7 +735,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           },
         };
         menu = {
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content' },
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserFilterControls
@@ -672,6 +751,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserList
+                scroll
                 server={activeProject.server}
                 search={{
                   ...this.state.usersUserFilter,
@@ -685,6 +765,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         };
         barTop = (
           <DashboardSearchControls
+            placeholder='Search for user'
             key={'user-search-bar' + activeProject.server.getProjectId()}
             searchText={this.state.usersUserSearch}
             onSearchChanged={searchText => this.setState({ usersUserSearch: searchText })}
@@ -761,7 +842,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }
         });
         menu = {
-          size: { breakWidth: 200, width: 'max-content', maxWidth: 350 },
+          size: { breakWidth: 200, width: 'max-content', maxWidth: 350, scroll: Orientation.Vertical },
           content: (
             <>
               <Menu
@@ -1476,6 +1557,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         this.setState({
           previewShow: true,
           explorerPreview: preview,
+        });
+      } else if (activePath === 'roadmap') {
+        this.setState({
+          previewShow: true,
+          roadmapPreview: preview,
         });
       } else {
         this.setState({

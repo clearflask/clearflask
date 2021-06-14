@@ -18,17 +18,23 @@ export interface RoadmapInstance {
     page: PageWithBoard;
     index: number;
   },
+  statusIdClosed?: string;
+  statusIdCompleted?: string;
 }
 
 export async function roadmapGet(this: Templater): Promise<RoadmapInstance | undefined> {
-  const category = await this._findCategoryByPrefix(RoadmapCategoryIdPrefix, 'Roadmap Task');
-  if (!category) return undefined;
+  const categoryAndIndex = await this._findCategoryByPrefix(RoadmapCategoryIdPrefix, 'Roadmap Task');
+  if (!categoryAndIndex) return undefined;
 
   const pageAndIndex = await this._findPageByPrefix(RoadmapPageIdPrefix, 'Roadmap', page => !!page.board);
 
   const roadmap: RoadmapInstance = {
-    categoryAndIndex: category,
+    categoryAndIndex,
     pageAndIndex: pageAndIndex as (RoadmapInstance['pageAndIndex'] | undefined),
+    statusIdClosed: categoryAndIndex.category.workflow.statuses
+      .find(s => s.statusId.startsWith(RoadmapStatusClosedPrefix))?.statusId,
+    statusIdCompleted: categoryAndIndex.category.workflow.statuses
+      .find(s => s.statusId.startsWith(RoadmapStatusCompletedPrefix))?.statusId,
   };
 
   return roadmap;
@@ -50,8 +56,8 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       entryStatus: statusIdLater,
       statuses: [
         { name: 'Later', nextStatusIds: [statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Next', nextStatusIds: [statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Now', nextStatusIds: [statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Next', nextStatusIds: [statusIdLater, statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Now', nextStatusIds: [statusIdLater, statusIdNext, statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdCompleted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Cancelled', nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdCancelled, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
       ],

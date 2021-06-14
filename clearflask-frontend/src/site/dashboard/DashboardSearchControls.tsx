@@ -28,6 +28,7 @@ interface Props {
   searchText?: string;
   onSearchChanged: (searchText?: string) => void;
   filters?: React.ReactNode;
+  placeholder?: string;
 }
 interface State {
   searchText?: string;
@@ -54,7 +55,7 @@ class DashboardSearchControls extends Component<Props & WithStyles<typeof styles
         />
         <InputBase
           className={this.props.classes.searchText}
-          placeholder='Search by any field'
+          placeholder={this.props.placeholder || 'Search'}
           fullWidth
           value={this.state.searchText || ''}
           onChange={e => {

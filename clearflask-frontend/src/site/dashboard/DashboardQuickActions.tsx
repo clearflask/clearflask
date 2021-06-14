@@ -8,6 +8,7 @@ import * as Admin from '../../api/admin';
 import { ReduxState } from '../../api/server';
 import { Project } from '../../api/serverAdmin';
 import { FeedbackInstance } from '../../common/config/template/feedback';
+import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import HoverArea from '../../common/HoverArea';
 import { FilterControlTitle } from '../../common/search/FilterControls';
@@ -24,7 +25,6 @@ const styles = (theme: Theme) => createStyles({
     height: '100%',
     minWidth: 200,
     maxWidth: 200,
-    borderRight: '1px solid ' + theme.palette.grey[300],
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -54,6 +54,25 @@ const styles = (theme: Theme) => createStyles({
   postActionDisabled: {
     opacity: 0.68,
   },
+  postActionGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    '& > *': {
+      minHeight: 50,
+    },
+    '& > *:not(:first-child)': {
+      marginTop: 0,
+      borderTopWidth: 0,
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+    },
+    '& > *:not(:last-child)': {
+      marginBottom: 0,
+      borderBottomWidth: 0,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+  },
 });
 const useStyles = makeStyles(styles);
 
@@ -63,6 +82,7 @@ const DashboardQuickActions = (props: {
   onUserClick: (userId: string) => void;
   selectedPostId?: string;
   feedback?: FeedbackInstance | null;
+  roadmap?: RoadmapInstance | null;
 }) => {
   const classes = useStyles();
   const selectedPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !props.selectedPostId ? undefined : state.ideas.byId[props.selectedPostId]?.idea, shallowEqual);
@@ -75,35 +95,57 @@ const DashboardQuickActions = (props: {
     && props.feedback?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === selectedPost?.statusId)?.nextStatusIds
     || []);
 
+  const feedbackNextStatusActions = props.feedback?.categoryAndIndex.category.workflow.statuses
+    .filter(status => status.statusId !== props.feedback?.categoryAndIndex.category.workflow.entryStatus
+      && status.statusId !== props.feedback?.statusIdAccepted);
+  const roadmpaNextStatusActions = props.roadmap?.categoryAndIndex.category.workflow.statuses
+    .filter(status => status.statusId !== props.roadmap?.statusIdClosed
+      && status.statusId !== props.roadmap?.statusIdCompleted);
+
   return (
     <div className={classes.postActionsContainer}>
-      <FilterControlTitle name='Quick actions' className={classes.feedbackTitle} />
-      {props.feedback?.categoryAndIndex.category.workflow.statuses
-        .filter(status => status.statusId !== props.feedback?.categoryAndIndex.category.workflow.entryStatus
-          && status.statusId !== props.feedback?.statusIdAccepted)
-        .map(status => (
-          <QuickActionArea
-            droppableId={`${QuickActioDroppableIdPrefix}status-to-${status.statusId}`}
-            disabled={!nextStatusIds.has(status.statusId)}
-            color={status.color}
-            onClick={() => {/* TODO */ }}
-            title={status.name}
-          />
-        ))}
-      <QuickActionArea
-        droppableId={`${QuickActioDroppableIdPrefix}convert-to-task`}
-        disabled={!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)}
-        color={statusAccepted?.color}
-        onClick={() => {/* TODO */ }}
-        title='Convert to task'
-      />
+      {feedbackNextStatusActions?.length && (
+        <>
+          <FilterControlTitle name='Quick actions' className={classes.feedbackTitle} />
+          <div className={classes.postActionGroup}>
+            {feedbackNextStatusActions.map(status => (
+              <QuickActionArea
+                droppableId={`${QuickActioDroppableIdPrefix}status-to-${status.statusId}`}
+                disabled={!nextStatusIds.has(status.statusId)}
+                color={status.color}
+                onClick={() => {/* TODO */ }}
+                title={status.name}
+              />
+            ))}
+          </div>
+        </>
+      )}
+      {roadmpaNextStatusActions?.length && (
+        <>
+          <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} />
+          <div className={classes.postActionGroup}>
+            {roadmpaNextStatusActions.map(status => (
+              <QuickActionArea
+                droppableId={`${QuickActioDroppableIdPrefix}convert-to-task-${status.statusId}`}
+                disabled={!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)}
+                color={status.color}
+                onClick={() => {/* TODO */ }}
+                title={status.name}
+              />
+            ))}
+          </div>
+        </>
+      )}
       {!similarToPostId ? null : (
         <>
           <FilterControlTitle name='Merge with similar' className={classes.feedbackTitle} />
           <PostList
             key={props.activeProject.server.getProjectId()}
             server={props.activeProject.server}
-            search={{ similarToIdeaId: similarToPostId }}
+            search={{
+              similarToIdeaId: similarToPostId,
+              limit: 5,
+            }}
             layout='similar-merge-action'
             onClickPost={postId => {
               setRetainSelectedPostId({
@@ -164,10 +206,11 @@ const QuickActionArea = (props: {
                 color: theme.palette.text.disabled,
               } : {
                 color: props.color,
-                borderColor: props.color || 'rgba(0, 0, 0, 0.54)',
+                borderColor: props.color || fade(theme.palette.common.black, 0.54),
                 background: !snapshot.isDraggingOver ? undefined : fade(props.color || theme.palette.common.black, 0.1),
               }}
             >
+              {provided.placeholder && (<div style={{ display: 'none' }}>{provided.placeholder}</div>)}
               {props.title && (
                 <Typography>{props.title}</Typography>
               )}

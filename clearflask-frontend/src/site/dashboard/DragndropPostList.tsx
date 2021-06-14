@@ -1,5 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DragmeIcon from '@material-ui/icons/DragIndicator';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Draggable, DraggableProvided, DraggableStateSnapshot, Droppable } from 'react-beautiful-dnd';
 import { getSearchKey } from '../../api/server';
@@ -9,6 +10,7 @@ import PostList from './PostList';
 
 const styles = (theme: Theme) => createStyles({
   droppable: {
+    minWidth: 0,
   },
   draggable: {
     position: 'relative', // For DragmeIcon
@@ -24,6 +26,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  droppable?: boolean;
 }
 class DragndropPostList extends Component<Props & React.ComponentProps<typeof PostList> & WithStyles<typeof styles, true>> {
 
@@ -31,14 +34,16 @@ class DragndropPostList extends Component<Props & React.ComponentProps<typeof Po
     const { classes, ...PostListProps } = this.props;
     const droppableId = getSearchKey(PostListProps.search) || '';
     return (
-      <Droppable droppableId={droppableId} isDropDisabled>
+      <Droppable droppableId={droppableId} isDropDisabled={!this.props.droppable}>
         {(provided, snapshot) => (
           <div
-            className={this.props.classes.droppable}
+            className={classNames(
+              this.props.classes.droppable,
+            )}
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {/* {provided.placeholder} */}
+            {provided.placeholder && (<div style={{ display: 'none' }}>{provided.placeholder}</div>)}
             <PostList
               {...PostListProps}
               PanelPostProps={{
@@ -85,7 +90,7 @@ class DragndropPostList extends Component<Props & React.ComponentProps<typeof Po
       && style.transform
       && snapshot.draggingOver?.startsWith(QuickActioDroppableIdPrefix)) {
       // Properties match default combine https://github.com/atlassian/react-beautiful-dnd/blob/2360665305b854434e968e41c7b4105009b73c40/src/animation.js#L18
-      style.transform = (style.transform || '') + ' scale(0.75)';
+      style.transform = (style.transform || '') + ' scale(0)';
       style.opacity = 0;
     }
 

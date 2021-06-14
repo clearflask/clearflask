@@ -36,12 +36,20 @@ export interface Section {
 export interface PreviewSection extends Section {
   bar?: React.ReactNode;
 }
+export interface MenuSection extends Section {
+  detachFromMain?: boolean;
+}
+export interface MainSection extends Section {
+  boxLayoutNoPaper?: boolean;
+}
 
-const BOX_MARGIN = 36;
+export const BOX_MARGIN = 36;
 const BOX_BORDER_WIDTH = 1;
 const HEADER_HEIGHT = 60;
+export const BoxLayoutBoxApplyStyles: any = {
+  boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
+};
 
-const MENU_WIDTH = 180;
 const styles = (theme: Theme) => createStyles({
   header: {
     position: 'absolute',
@@ -58,23 +66,6 @@ const styles = (theme: Theme) => createStyles({
   },
   headerRight: {
     right: theme.spacing(1),
-  },
-  barBottomPaper: {
-    display: 'flex',
-    flexDirection: 'row' as 'row',
-    [theme.breakpoints.up('sm')]: {
-      left: MENU_WIDTH,
-    },
-    zIndex: 1, // Allow other things like Color picker to overlap this
-  },
-  drawer: {
-    [theme.breakpoints.up('sm')]: {
-      width: MENU_WIDTH,
-      flexShrink: 0,
-    },
-  },
-  drawerPaper: {
-    width: MENU_WIDTH,
   },
   menuPaper: {
     zIndex: theme.zIndex.drawer + 1,
@@ -144,8 +135,10 @@ const styles = (theme: Theme) => createStyles({
   },
   boxLayout: {
     margin: BOX_MARGIN,
-    border: '1px solid ' + theme.palette.grey[300],
-    boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
+    ...BoxLayoutBoxApplyStyles,
+  },
+  boxLayoutNoPaper: {
+    margin: BOX_MARGIN,
   },
   hideShadows: {
     position: 'relative',
@@ -158,6 +151,11 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'stretch',
+    minHeight: 0,
+  },
+  noscroll: {
+    display: 'flex',
+    flexDirection: 'column',
     minHeight: 0,
   },
   scroll: {
@@ -177,37 +175,30 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 0,
   },
   content: {
-    flexGrow: (props: Props) => props.main?.size?.flexGrow || 0,
-    flexBasis: (props: Props) => props.main.size?.breakWidth || 'content',
-    width: (props: Props) => props.main.size?.width,
-    maxWidth: (props: Props) => props.main.size?.maxWidth,
+  },
+  contentMergeWithMenuBoxLayout: {
+    marginLeft: 0,
   },
   menuMergeWithContent: {
-    marginRight: - (BOX_MARGIN + 1),
+    borderRight: '1px solid ' + theme.palette.grey[300],
   },
   menu: {
-    borderRight: '1px solid ' + theme.palette.grey[300],
-    flexGrow: (props: Props) => props.menu?.size?.flexGrow || 0,
-    flexBasis: (props: Props) => props.menu?.size?.breakWidth || 'content',
-    width: (props: Props) => props.menu?.size?.width,
-    maxWidth: (props: Props) => props.menu?.size?.maxWidth,
+    marginRight: 0,
+  },
+  previewNoBoxLayout: {
+    borderLeft: '1px solid ' + theme.palette.grey[300],
   },
   preview: {
     margin: 0, // boxLayout without margins
-    borderLeft: '1px solid ' + theme.palette.grey[300],
-    flexGrow: (props: Props) => props.preview?.size?.flexGrow || 0,
-    flexBasis: (props: Props) => props.preview?.size?.breakWidth || 'content',
-    width: (props: Props) => props.preview?.size?.width,
-    maxWidth: (props: Props) => props.preview?.size?.maxWidth,
   },
 });
 interface Props {
   header: Header;
-  main: Section;
+  main: MainSection;
   toolbarShow: boolean;
   toolbarLeft: React.ReactNode;
   toolbarRight?: React.ReactNode;
-  menu?: Section;
+  menu?: MenuSection;
   previewShow?: boolean;
   previewForceShowClose?: boolean;
   previewShowChanged: (show: boolean) => void;
@@ -290,15 +281,21 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
     const preview = previewSection && (
       <div className={classNames(
         layoutState.enableBoxLayout && this.props.classes.boxLayout,
+        !layoutState.enableBoxLayout && this.props.classes.previewNoBoxLayout,
         this.props.classes.section,
         this.props.classes.preview,
         this.props.classes.vertical,
-      )}>
+      )} style={{
+        flexGrow: this.props.preview?.size?.flexGrow || 0,
+        flexBasis: this.props.preview?.size?.breakWidth || 'content',
+        width: this.props.preview?.size?.width,
+        maxWidth: this.props.preview?.size?.maxWidth,
+      }}>
         <div className={this.props.classes.hideShadows}>
           {previewBar}
           <div className={classNames(
-            this.props.classes.scroll,
-            this.props.classes[`scroll-${previewSection.size?.scroll || Orientation.Vertical}`],
+            !!previewSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
+            !!previewSection.size?.scroll && this.props.classes[`scroll-${previewSection.size?.scroll || Orientation.Vertical}`],
           )}>
             {previewSection.content}
           </div>
@@ -313,14 +310,19 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
         layoutState.enableBoxLayout && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.menu,
-        layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.menuMergeWithContent,
+        !menuSection?.detachFromMain && !layoutState.overflowMenu && this.props.classes.menuMergeWithContent,
         this.props.classes.vertical,
-      )}>
+      )} style={{
+        flexGrow: this.props.menu?.size?.flexGrow || 0,
+        flexBasis: this.props.menu?.size?.breakWidth || 'content',
+        width: this.props.menu?.size?.width,
+        maxWidth: this.props.menu?.size?.maxWidth,
+      }}>
         <div className={this.props.classes.hideShadows}>
           {!layoutState.overflowMenu && (title)}
           <div className={classNames(
-            this.props.classes.scroll,
-            this.props.classes[`scroll-${menuSection.size?.scroll || Orientation.Vertical}`],
+            !!menuSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
+            !!menuSection.size?.scroll && this.props.classes[`scroll-${menuSection.size?.scroll || Orientation.Vertical}`],
           )}>
             {menuSection.content}
           </div>
@@ -332,11 +334,17 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
       <div className={classNames(
         layoutState.enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
         !layoutState.enableBoxLayout && showHeader && this.props.classes.headerMargin,
-        layoutState.enableBoxLayout && this.props.classes.boxLayout,
+        layoutState.enableBoxLayout && (mainSection.boxLayoutNoPaper ? this.props.classes.boxLayoutNoPaper : this.props.classes.boxLayout),
+        !menuSection?.detachFromMain && layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.contentMergeWithMenuBoxLayout,
         this.props.classes.section,
         this.props.classes.content,
         this.props.classes.vertical,
-      )}>
+      )} style={{
+        flexGrow: this.props.main?.size?.flexGrow || 0,
+        flexBasis: this.props.main.size?.breakWidth || 'content',
+        width: this.props.main.size?.width,
+        maxWidth: this.props.main.size?.maxWidth,
+      }}>
         <div className={this.props.classes.hideShadows}>
           {(!!layoutState.overflowMenu || !menu) && (title)}
           {action}
@@ -347,9 +355,8 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
             </div>
           )}
           <div className={classNames(
-            this.props.classes.scroll,
-            this.props.classes[`scroll-${mainSection.size?.scroll || Orientation.Vertical}`],
-            this.props.classes.grow,
+            !!mainSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
+            !!mainSection.size?.scroll && this.props.classes[`scroll-${mainSection.size?.scroll || Orientation.Vertical}`],
             !!this.props.contentMargins && this.props.classes.contentMargins,
           )}>
             {mainSection.content}
@@ -387,23 +394,24 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
           </AppBar>
         )}
         {layoutState.overflowMenu && !!menu && (
-          <nav className={this.props.classes.drawer}>
-            <Drawer
-              variant='temporary'
-              open={this.state.mobileMenuOpen}
-              onClose={this.handleDrawerToggle.bind(this)}
-              classes={{
-                paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
-              }}
-              ModalProps={{
-                container: () => this.containerRef.current!,
-                keepMounted: true,
-              }}
-            >
-              {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
-              {menu}
-            </Drawer>
-          </nav>
+          <Drawer
+            variant='temporary'
+            open={this.state.mobileMenuOpen}
+            onClose={this.handleDrawerToggle.bind(this)}
+            classes={{
+              paper: classNames(this.props.classes.menuPaper),
+            }}
+            style={{
+              width: menuSection?.size?.maxWidth || menuSection?.size?.width || menuSection?.size?.breakWidth || '100%',
+            }}
+            ModalProps={{
+              container: () => this.containerRef.current!,
+              keepMounted: true,
+            }}
+          >
+            {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
+            {menu}
+          </Drawer>
         )}
         {layoutState.overflowPreview && !!preview && (
           <Drawer
@@ -416,7 +424,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
               paper: this.props.classes.previewMobilePaper,
             }}
             style={{
-              width: previewSection?.size?.maxWidth || '100%',
+              width: previewSection?.size?.maxWidth || previewSection?.size?.width || previewSection?.size?.breakWidth || '100%',
             }}
             ModalProps={{
               container: () => this.containerRef.current!
@@ -473,8 +481,9 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
 export default withMediaQueries<keyof LayoutState, Props>(props => {
   const sizeMenu = props.menu?.size?.breakWidth || 0;
   const sizePreview = props.preview?.size?.breakWidth || 0;
-  const sizeContentBox = (BOX_MARGIN + BOX_BORDER_WIDTH) * 2;
-  const sizePreviewBox = (BOX_MARGIN + BOX_BORDER_WIDTH);
+  const sizeMenuBox = props.menu?.detachFromMain ? BOX_MARGIN : 0;
+  const sizeContentBox = BOX_MARGIN * 2;
+  const sizePreviewBox = BOX_MARGIN;
 
   // content
   const sizeContent = props.main.size?.breakWidth || 0;
@@ -483,11 +492,11 @@ export default withMediaQueries<keyof LayoutState, Props>(props => {
   // content menu
   const sizeContentAndMenu = sizeContent + sizeMenu;
   // content menu box
-  const sizeContentAndMenuWithBox = sizeContent + sizeMenu + sizeContentBox;
+  const sizeContentAndMenuWithBox = sizeContent + sizeContentBox + sizeMenu + sizeMenuBox;
   // content menu preview
   const sizeContentAndMenuAndPreview = sizeContent + sizeMenu + sizePreview;
   // content menu preview box
-  const sizeContentAndMenuWithBoxAndPreviewWithBox = sizeContent + sizeMenu + sizeContentBox + sizePreview + sizePreviewBox;
+  const sizeContentAndMenuWithBoxAndPreviewWithBox = sizeContent + sizeContentBox + sizeMenu + sizeMenuBox + sizePreview + sizePreviewBox;
 
   return {
     enableBoxLayout:
