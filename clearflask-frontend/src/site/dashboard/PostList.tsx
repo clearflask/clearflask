@@ -34,7 +34,7 @@ const styles = (theme: Theme) => createStyles({
   },
   scroll: {
     flexGrow: 1,
-    minHeight: 0,
+    minHeight: '100%',
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
 });

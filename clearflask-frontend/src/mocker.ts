@@ -17,8 +17,9 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
     infoWebsite: 'https://clearflask.com',
     infoSlug: 'mock',
   });
-
   templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
+
+  await DataMock.mockAccountCreate();
   const dispatcher = await ServerAdmin.get().dispatchAdmin({ ssr: true });
   const project = await dispatcher.projectCreateAdmin({
     configAdmin: editor.getConfig(),
@@ -28,7 +29,13 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
     versionLast: project.config.version,
     configAdmin: editor.getConfig(),
   });
-  await DataMock.get(project.projectId).mockAll();
+
+  const dataMock = DataMock.get(project.projectId);
+  const userMe = await dataMock.mockLoggedIn(1000, true);
+  await dataMock.mockItems(userMe);
+  await dataMock.mockNotification(userMe);
+  // ServerMock.get().accountLogoutAdmin();
+
   if (windowIso.location.hash && windowIso.location.hash.substring(1) === 'latency') {
     ServerMock.get().setLatency(true);
   }

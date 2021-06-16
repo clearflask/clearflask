@@ -396,26 +396,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
-    @Limit(requiredPermits = 1)
-    @Override
-    public UserMeWithBalance userLoginAdmin(String projectId, String userId) {
-        Optional<UserModel> userOpt = userStore.getUser(projectId, userId);
-        if (!userOpt.isPresent()) {
-            throw new ApiException(Response.Status.NOT_FOUND, "User does not exist");
-        }
-        UserModel user = userOpt.get();
-        log.debug("Successful user login by admin for userId {}", userId);
-
-        UserSession session = userStore.createSession(
-                user,
-                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
-
-        Project project = projectStore.getProject(projectId, true).get();
-        return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());
-    }
-
     @PermitAll
     @Limit(requiredPermits = 1)
     @Override

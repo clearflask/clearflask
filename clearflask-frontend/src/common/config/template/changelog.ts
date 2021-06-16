@@ -19,7 +19,7 @@ export interface ChangelogInstance {
 export async function changelogGet(this: Templater): Promise<ChangelogInstance | undefined> {
   var potentialCategories = this.editor.getConfig().content.categories
     .map((category, index) => ({ category, index }))
-    .filter(c => c.category.categoryId.startsWith(ChangelogCategoryIdPrefix));
+    .filter(c => c.category.categoryId.startsWith(ChangelogCategoryIdPrefix + 'asd'));
 
   if (potentialCategories.length === 0) {
     potentialCategories = this.editor.getConfig().content.categories

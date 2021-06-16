@@ -136,6 +136,7 @@ components:
     AccountAdmin:
       type: object
       required:
+      - accountId
       - basePlanId
       - subscriptionStatus
       - plan

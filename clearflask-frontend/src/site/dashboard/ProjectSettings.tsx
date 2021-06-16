@@ -1,4 +1,4 @@
-import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
@@ -2378,6 +2378,10 @@ export const ProjectSettingsRoadmap = (props: {
                                 editor={props.editor}
                                 path={['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
                                 bare
+                                SelectionPickerProps={{
+                                  isMulti: false,
+                                  disableClearable: true,
+                                }}
                                 TextFieldProps={{
                                   placeholder: 'Filter',
                                   classes: { root: classes.filterStatus },
@@ -2591,6 +2595,7 @@ export class TemplateWrapper<T> extends Component<{
   editor: ConfigEditor.Editor;
   mapper: (templater: Templater) => Promise<T>;
   render?: (templater: Templater, response?: { val: T }, confirmation?: Confirmation) => any;
+  type?: 'collapse' | 'dialog';
   renderResolved?: (templater: Templater, response: T) => any;
 }, {
   confirmation?: Confirmation;
@@ -2632,11 +2637,56 @@ export class TemplateWrapper<T> extends Component<{
   }
 
   render() {
-    return !!this.props.render ? this.props.render(
-      this.templater,
-      this.state.mappedValue,
-      this.state.confirmation,
-    ) : (
+    if (!!this.props.render) {
+      return this.props.render(
+        this.templater,
+        this.state.mappedValue,
+        this.state.confirmation,
+      );
+    }
+    if (this.props.type === 'dialog') {
+      return this.renderDialogConfirmation();
+    }
+    return this.renderCollapsibleConfirmation();
+  }
+
+  renderDialogConfirmation() {
+    return (
+      <>
+        {this.state.mappedValue && this.props.renderResolved?.(this.templater, this.state.mappedValue.val)}
+        <Dialog
+          open={!!this.state.confirm}
+          onClose={() => this.setState({ confirm: undefined })}
+        >
+          <DialogTitle>{this.state.confirmation?.title}</DialogTitle>
+          <DialogContent>
+            <DialogContentText>{this.state.confirmation?.description}</DialogContentText>
+            <DialogContentText>This usually happens when you change defaults in the Advanced settings.</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            {this.state.confirmation?.responses.map(response => (
+              <Button
+                color='inherit'
+                style={{
+                  textTransform: 'none',
+                  color: response.type === 'cancel' ? 'darkred' : undefined,
+                }}
+                onClick={() => {
+                  this.state.confirm?.(response.id);
+                  this.setState({ confirm: undefined });
+                }}
+              >
+                {response.title}
+              </Button>
+            ))}
+          </DialogActions>
+        </Dialog>
+      </>
+    );
+  }
+
+  renderCollapsibleConfirmation() {
+    return (
       <>
         <Collapse in={!!this.state.confirm}>
           <Alert

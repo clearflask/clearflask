@@ -390,7 +390,7 @@ export const PostEditDescription = (props: {
   return (
     <>
       <RichEditor
-        onUploadImage={(file) => imageUploadRef.current?.onUploadImage(file)}
+        uploadImage={(file) => imageUploadRef.current?.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
@@ -485,7 +485,7 @@ export const PostEditResponse = (props: {
   return (
     <>
       <RichEditor
-        onUploadImage={(file) => imageUploadRef.current?.onUploadImage(file)}
+        uploadImage={(file) => imageUploadRef.current?.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}

@@ -48,7 +48,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             <Grid container alignItems='baseline'>
               <Grid item xs={12}>
                 <RichEditor
-                  onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
+                  uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
                   variant='outlined'
                   size='small'
                   disabled={this.state.isSubmitting}

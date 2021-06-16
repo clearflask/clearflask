@@ -157,7 +157,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface PropsRichEditor {
   variant: 'standard' | 'outlined' | 'filled';
-  onUploadImage: (file: Blob) => Promise<string>,
+  uploadImage: (file: Blob) => Promise<string>,
   onChange?(event: { target: { value: string } }, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor): void;
   iAgreeInputIsSanitized: true;
   inputRef?: React.Ref<ReactQuill>;
@@ -195,7 +195,7 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
           inputProps: {
             // Anything here will be passed along to RichEditorQuill below
             ...this.props.InputProps?.inputProps || {},
-            onUploadImage: this.props.onUploadImage,
+            uploadImage: this.props.uploadImage,
             classes: this.props.classes,
             theme: theme,
             hidePlaceholder: !shrink && !!this.props.label,
@@ -248,7 +248,7 @@ class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap
 }
 
 interface PropsQuill {
-  onUploadImage: (file: Blob) => Promise<string>,
+  uploadImage: (file: Blob) => Promise<string>,
   onChange?: (event: {
     target: {
       value: string;
@@ -647,7 +647,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
     const range = editor.getSelection(true);
     for (const file of files) {
       try {
-        const url = await this.props.onUploadImage(file);
+        const url = await this.props.uploadImage(file);
         editor.insertEmbed(range.index, 'image', url, 'user');
       } catch (e) {
         this.props.enqueueSnackbar(
@@ -671,7 +671,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
 
     var imageLink;
     try {
-      imageLink = await this.props.onUploadImage(blob);
+      imageLink = await this.props.uploadImage(blob);
     } catch (e) {
       imageLink = false;
       this.props.enqueueSnackbar(

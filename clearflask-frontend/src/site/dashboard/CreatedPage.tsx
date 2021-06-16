@@ -149,10 +149,6 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                               isMod: true,
                             },
                           })
-                            .then(user => d.userLoginAdmin({
-                              projectId: this.props.server.getProjectId(),
-                              userId: user.userId,
-                            }))
                             .then(() => this.setState({
                               isSubmitting: false,
                               activeStep: 1,
@@ -181,7 +177,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           }}
                         />
                         <RichEditor
-                          onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
+                          uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
                           variant='outlined'
                           size='small'
                           disabled={this.state.isSubmitting}

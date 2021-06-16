@@ -58,7 +58,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
     return (
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
         <RichEditor
-          onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
+          uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
           variant='outlined'
           size='small'
           id='createComment'

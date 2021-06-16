@@ -1,8 +1,8 @@
 import { CardActionArea, Typography } from '@material-ui/core';
 import { createStyles, fade, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import React, { useState } from 'react';
-import { Droppable } from 'react-beautiful-dnd';
+import React, { useEffect, useState } from 'react';
+import { Droppable, SensorAPI } from 'react-beautiful-dnd';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState } from '../../api/server';
@@ -12,10 +12,16 @@ import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import HoverArea from '../../common/HoverArea';
 import { FilterControlTitle } from '../../common/search/FilterControls';
+import { dndDrag } from '../../common/util/dndUtil';
+import RenderControl from '../../common/util/RenderControl';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
+import Subscription from '../../common/util/subscriptionUtil';
 import PostList from './PostList';
 
-export const QuickActioDroppableIdPrefix = 'quick-action-';
+export const QuickActionDroppableIdPrefix = 'quick-action-';
+export const ChangeToStatusIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}status-to-`;
+export const ConvertToTaskWithStatusIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}convert-to-task-`;
+export const MergeToPostIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}merge-to-`;
 
 const styles = (theme: Theme) => createStyles({
   feedbackTitle: {
@@ -80,25 +86,56 @@ const DashboardQuickActions = (props: {
   activeProject: Project;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
+  searchKey?: string; // When search changes, update to check whether selectedPostId is still draggable
   selectedPostId?: string;
   feedback?: FeedbackInstance | null;
   roadmap?: RoadmapInstance | null;
+  dragDropSensorApi?: SensorAPI;
+  draggingPostIdSubscription: Subscription<string | undefined>;
+  fallbackClickHandler?: (draggableId: string, dstDroppableId: string) => void;
 }) => {
+  const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
+  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
+
   const classes = useStyles();
-  const selectedPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !props.selectedPostId ? undefined : state.ideas.byId[props.selectedPostId]?.idea, shallowEqual);
   const [retainSelectedPostId, setRetainSelectedPostId] = useState<{ selected: string, retain: string }>();
+  const quickActionsPostId = draggingPostId || props.selectedPostId;
+  const quickActionsPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !quickActionsPostId ? undefined : state.ideas.byId[quickActionsPostId]?.idea, shallowEqual);
+
+  const onClick = async (droppableId) => {
+    if ((!!draggingPostId || !quickActionsPostId)) {
+      return;
+    }
+    // First try to drag the item with a nice visual
+    // The drop handler will do the action for us
+    const success = !!props.dragDropSensorApi && await dndDrag(
+      props.dragDropSensorApi,
+      quickActionsPostId,
+      droppableId);
+    // If that fails, just do the action with no visual
+    if (!success) {
+      props.fallbackClickHandler?.(
+        quickActionsPostId,
+        droppableId);
+    }
+  }
+
+  const statusAccepted = !props.feedback?.statusIdAccepted ? undefined : props.feedback.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === props.feedback?.statusIdAccepted);
+  const nextStatusIds = new Set<string>(quickActionsPost?.statusId
+    && props.feedback?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === quickActionsPost?.statusId)?.nextStatusIds
+    || []);
+  const canMerge = !!quickActionsPostId
+    && !quickActionsPost?.mergedToPostId
+    && quickActionsPost?.categoryId === props.feedback?.categoryAndIndex.category.categoryId;
+
+  // Don't change Similar actions during a drag, do not tie this to draggingPostId
   const similarToPostId = retainSelectedPostId?.selected === props.selectedPostId
     ? retainSelectedPostId?.retain : props.selectedPostId;
-  const statusAccepted = !props.feedback?.statusIdAccepted ? undefined : props.feedback.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === props.feedback?.statusIdAccepted);
-
-  const nextStatusIds = new Set<string>(selectedPost?.statusId
-    && props.feedback?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === selectedPost?.statusId)?.nextStatusIds
-    || []);
 
   const feedbackNextStatusActions = props.feedback?.categoryAndIndex.category.workflow.statuses
     .filter(status => status.statusId !== props.feedback?.categoryAndIndex.category.workflow.entryStatus
       && status.statusId !== props.feedback?.statusIdAccepted);
-  const roadmpaNextStatusActions = props.roadmap?.categoryAndIndex.category.workflow.statuses
+  const roadmapNextStatusActions = props.roadmap?.categoryAndIndex.category.workflow.statuses
     .filter(status => status.statusId !== props.roadmap?.statusIdClosed
       && status.statusId !== props.roadmap?.statusIdCompleted);
 
@@ -108,35 +145,42 @@ const DashboardQuickActions = (props: {
         <>
           <FilterControlTitle name='Quick actions' className={classes.feedbackTitle} />
           <div className={classes.postActionGroup}>
-            {feedbackNextStatusActions.map(status => (
-              <QuickActionArea
-                droppableId={`${QuickActioDroppableIdPrefix}status-to-${status.statusId}`}
-                disabled={!nextStatusIds.has(status.statusId)}
-                color={status.color}
-                onClick={() => {/* TODO */ }}
-                title={status.name}
-              />
-            ))}
+            {feedbackNextStatusActions.map(status => {
+              const droppableId = ChangeToStatusIdDroppableIdPrefix + status.statusId;
+              return (
+                <QuickActionArea
+                  key={status.statusId}
+                  isDragging={!!draggingPostId}
+                  droppableId={droppableId}
+                  disabled={!nextStatusIds.has(status.statusId)}
+                  color={status.color}
+                  onClick={onClick}
+                  title={status.name}
+                />
+              );
+            })}
           </div>
         </>
       )}
-      {roadmpaNextStatusActions?.length && (
+      {roadmapNextStatusActions?.length && (
         <>
           <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} />
           <div className={classes.postActionGroup}>
-            {roadmpaNextStatusActions.map(status => (
+            {roadmapNextStatusActions.map(status => (
               <QuickActionArea
-                droppableId={`${QuickActioDroppableIdPrefix}convert-to-task-${status.statusId}`}
+                key={status.statusId}
+                isDragging={!!draggingPostId}
+                droppableId={ConvertToTaskWithStatusIdDroppableIdPrefix + status.statusId}
                 disabled={!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)}
                 color={status.color}
-                onClick={() => {/* TODO */ }}
+                onClick={onClick}
                 title={status.name}
               />
             ))}
           </div>
         </>
       )}
-      {!similarToPostId ? null : (
+      {(!similarToPostId || !props.feedback) ? null : (
         <>
           <FilterControlTitle name='Merge with similar' className={classes.feedbackTitle} />
           <PostList
@@ -144,6 +188,7 @@ const DashboardQuickActions = (props: {
             server={props.activeProject.server}
             search={{
               similarToIdeaId: similarToPostId,
+              filterCategoryIds: [props.feedback.categoryAndIndex.category.categoryId],
               limit: 5,
             }}
             layout='similar-merge-action'
@@ -159,8 +204,11 @@ const DashboardQuickActions = (props: {
             PanelPostProps={{
               renderPost: (idea, ideaIndex) => (
                 <QuickActionArea
-                  droppableId={`${QuickActioDroppableIdPrefix}merge-to-${idea.ideaId}`}
-                  onClick={() => {/* TODO */ }}
+                  key={idea.ideaId}
+                  isDragging={!!draggingPostId}
+                  droppableId={MergeToPostIdDroppableIdPrefix + idea.ideaId}
+                  disabled={!canMerge}
+                  onClick={onClick}
                   title={truncateWithElipsis(30, idea.title)}
                 />
               ),
@@ -175,50 +223,61 @@ export default DashboardQuickActions;
 
 const QuickActionArea = (props: {
   droppableId: string;
+  isDragging: boolean;
   feedback?: FeedbackInstance | null;
-  onClick: () => void;
+  onClick: (droppableId: string) => Promise<void>;
   disabled?: boolean;
   color?: string;
   title?: string;
-  children?: any;
 }) => {
   const theme = useTheme();
   const classes = useStyles();
+  const [autoDragging, setAutoDragging] = useState<boolean>(false);
   return (
-    <HoverArea>
-      {(hoverAreaProps, isHovering, isHoverDown) => (
-        <Droppable
-          droppableId={props.droppableId}
-          ignoreContainerClipping
-          isDropDisabled={!!props.disabled || !isHovering}
-        >
-          {(provided, snapshot) => (
-            <CardActionArea
-              {...hoverAreaProps}
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              disabled={props.disabled}
-              className={classNames(
-                classes.postAction,
-                props.disabled && classes.postActionDisabled,
-              )}
-              style={props.disabled ? {
-                color: theme.palette.text.disabled,
-              } : {
-                color: props.color,
-                borderColor: props.color || fade(theme.palette.common.black, 0.54),
-                background: !snapshot.isDraggingOver ? undefined : fade(props.color || theme.palette.common.black, 0.1),
-              }}
-            >
-              {provided.placeholder && (<div style={{ display: 'none' }}>{provided.placeholder}</div>)}
-              {props.title && (
-                <Typography>{props.title}</Typography>
-              )}
-              {props.children}
-            </CardActionArea>
-          )}
-        </Droppable>
-      )}
-    </HoverArea>
+    <RenderControl freezeInitialRender={props.isDragging}>
+      <HoverArea>
+        {(hoverAreaProps, isHovering, isHoverDown) => (
+          <Droppable
+            droppableId={props.droppableId}
+            ignoreContainerClipping
+            isDropDisabled={!!props.disabled || (!isHovering && !autoDragging)}
+          >
+            {(provided, snapshot) => (
+              <CardActionArea
+                {...hoverAreaProps}
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                disabled={props.disabled}
+                className={classNames(
+                  classes.postAction,
+                  props.disabled && classes.postActionDisabled,
+                )}
+                style={props.disabled ? {
+                  color: theme.palette.text.disabled,
+                } : {
+                  color: props.color,
+                  borderColor: props.color || fade(theme.palette.common.black, 0.54),
+                  background: !snapshot.isDraggingOver ? undefined : fade(props.color || theme.palette.common.black, 0.1),
+                }}
+                onClick={async e => {
+                  if (props.disabled) return;
+                  setAutoDragging(true);
+                  try {
+                    await props.onClick(props.droppableId);
+                  } finally {
+                    setAutoDragging(false);
+                  }
+                }}
+              >
+                {provided.placeholder && (<div style={{ display: 'none' }}>{provided.placeholder}</div>)}
+                {props.title && (
+                  <Typography>{props.title}</Typography>
+                )}
+              </CardActionArea>
+            )}
+          </Droppable>
+        )}
+      </HoverArea>
+    </RenderControl>
   );
 }

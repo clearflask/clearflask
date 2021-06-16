@@ -29,7 +29,7 @@ export default class RichEditorImageUpload extends Component<Props, State> {
     );
   }
 
-  async onUploadImage(file: Blob): Promise<string> {
+  async uploadImage(file: Blob): Promise<string> {
     if (this.props.asAuthorId) {
       const contentUploadAsAdminResponse = await (await this.props.server.dispatchAdmin()).contentUploadAsAdmin({
         projectId: this.props.server.getProjectId(),

@@ -8,20 +8,20 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
+import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
+import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
 import { connect, Provider } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as AdminClient from '../api/admin';
-import { Status } from '../api/server';
+import { getSearchKey, Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
-import DividerVertical from '../app/utils/DividerVertical';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
@@ -45,11 +45,13 @@ import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
+import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
+import { dashboardOnDragEnd, droppableDataSerialize } from './dashboard/dashboardDndActionHandler';
 import DashboardHome from './dashboard/DashboardHome';
 import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
@@ -61,7 +63,6 @@ import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog,
 import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
-import UserSelection from './dashboard/UserSelection';
 import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
 import Logo from './Logo';
@@ -159,7 +160,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     margin: theme.spacing(1, 2),
   },
-  feedbackAndListContainer: {
+  postPreviewAndQuickActions: {
     display: 'flex',
     alignItems: 'stretch',
     height: '100%',
@@ -173,6 +174,10 @@ const styles = (theme: Theme) => createStyles({
   listContainer: {
     flexGrow: 1,
     minHeight: 0,
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
+  postPreviewScroll: {
+    flexGrow: 1,
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
 });
@@ -192,11 +197,12 @@ interface State {
   selectedProjectId?: string;
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
-  previewShow?: boolean;
+  previewShowOnPage?: string;
   publishDialogShown?: boolean;
   publishDialogStep?: number;
   publishDialogSubmitting?: boolean;
   publishDialogInviteMods?: string[];
+  dragDropSensorApi?: SensorAPI;
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
   // to persist between page clicks
@@ -217,7 +223,7 @@ interface State {
   roadmap?: RoadmapInstance | null;
   changelog?: ChangelogInstance | null;
 }
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
+class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<DemoProject> | undefined = undefined;
@@ -229,6 +235,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     originalPostId: string;
     similarPostId: string;
   };
+  draggingPostIdSubscription = new Subscription<string | undefined>(undefined);
 
   constructor(props) {
     super(props);
@@ -324,9 +331,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
     const projects = Object.keys(this.props.bindByProjectId)
-      .map(projectId => ServerAdmin.get()
-        .getOrCreateProject(this.props.bindByProjectId![projectId].config,
-          this.props.bindByProjectId![projectId].user));
+      .map(projectId => ServerAdmin.get().getOrCreateProject(projectId));
     projects.forEach(project => {
       if (!this.unsubscribes[project.projectId]) {
         this.unsubscribes[project.projectId] = project.subscribeToUnsavedChanges(() => {
@@ -365,10 +370,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     if (activeProject && this.lastConfigVars !== this.props.configVers) {
       this.lastConfigVars = this.props.configVers;
       const templater = Templater.get(activeProject.editor);
-      templater.feedbackGet().then(i => this.setState({ feedback: i || null }));
-      templater.roadmapGet().then(i => this.setState({ roadmap: i || null }));
-      templater.landingGet().then(i => this.setState({ landing: i || null }));
-      templater.changelogGet().then(i => this.setState({ changelog: i || null }));
+      templater.feedbackGet().then(i => this.setState({ feedback: i || null })).catch(e => this.setState({ feedback: undefined }));
+      templater.roadmapGet().then(i => this.setState({ roadmap: i || null })).catch(e => this.setState({ roadmap: undefined }));
+      templater.landingGet().then(i => this.setState({ landing: i || null })).catch(e => this.setState({ landing: undefined }));
+      templater.changelogGet().then(i => this.setState({ changelog: i || null })).catch(e => this.setState({ changelog: undefined }));
     }
 
     var header: Header | undefined;
@@ -524,10 +529,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           ...(this.state.feedback?.categoryAndIndex.category.workflow.entryStatus ? {
             filterStatusIds: [this.state.feedback.categoryAndIndex.category.workflow.entryStatus],
           } : {}),
-          ...(this.state.feedback ? {
-            filterCategoryIds: [this.state.feedback.categoryAndIndex.category.categoryId],
-          } : {}),
         };
+        if (this.state.feedback) feedbackPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
         const feedbackFilters = (layoutState: LayoutState) => (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
             <DashboardPostFilterControls
@@ -548,45 +551,37 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
           this.similarPostWasClicked = undefined;
         }
+        const feedbackPostListDroppableId = droppableDataSerialize({
+          type: 'feedback-search',
+          searchKey: getSearchKey(feedbackPostSearch),
+        });
         main = {
-          size: { breakWidth: 550, flexGrow: 20, maxWidth: 640 + 200 },
+          size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
           content: layoutState => (
-            <div className={this.props.classes.feedbackAndListContainer}>
-              <div className={this.props.classes.listWithSearchContainer}>
-                <DashboardSearchControls
-                  placeholder='Search for feedback'
-                  key={'feedback-search-bar' + activeProject.server.getProjectId()}
-                  searchText={feedbackPostSearch.searchText || ''}
-                  onSearchChanged={searchText => this.setState({
-                    feedbackPostSearch: {
-                      ...this.state.feedbackPostSearch,
-                      searchText,
-                    }
-                  })}
-                  filters={!layoutState.overflowMenu ? null : feedbackFilters(layoutState)}
-                />
-                <Divider />
-                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  <DragndropPostList
-                    scroll
-                    key={activeProject.server.getProjectId()}
-                    server={activeProject.server}
-                    search={feedbackPostSearch}
-                    onClickPost={postId => this.pageClicked('post', [postId])}
-                    onUserClick={userId => this.pageClicked('user', [userId])}
-                    selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                  />
-                </Provider>
-              </div>
-              <DividerVertical />
+            <div className={this.props.classes.listWithSearchContainer}>
+              <DashboardSearchControls
+                placeholder='Search for feedback'
+                key={'feedback-search-bar' + activeProject.server.getProjectId()}
+                searchText={feedbackPostSearch.searchText || ''}
+                onSearchChanged={searchText => this.setState({
+                  feedbackPostSearch: {
+                    ...this.state.feedbackPostSearch,
+                    searchText,
+                  }
+                })}
+                filters={!layoutState.overflowMenu ? null : feedbackFilters(layoutState)}
+              />
+              <Divider />
               <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <DashboardQuickActions
-                  activeProject={activeProject}
+                <DragndropPostList
+                  scroll
+                  key={activeProject.server.getProjectId()}
+                  droppableId={feedbackPostListDroppableId}
+                  server={activeProject.server}
+                  search={feedbackPostSearch}
                   onClickPost={postId => this.pageClicked('post', [postId])}
                   onUserClick={userId => this.pageClicked('user', [userId])}
                   selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                  feedback={this.state.feedback}
-                  roadmap={this.state.roadmap}
                 />
               </Provider>
             </div>
@@ -600,6 +595,48 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         } else {
           preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
         }
+
+        if (preview.size?.breakWidth) {
+          preview.size = {
+            ...preview.size,
+            breakWidth: preview.size.breakWidth + 200,
+            scroll: undefined,
+          };
+        }
+        const feedbackPreviewContent = preview.content;
+        preview.content = layoutState => (
+          <div className={this.props.classes.postPreviewAndQuickActions}>
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <DashboardQuickActions
+                activeProject={activeProject}
+                onClickPost={postId => this.pageClicked('post', [postId])}
+                onUserClick={userId => this.pageClicked('user', [userId])}
+                searchKey={getSearchKey(feedbackPostSearch)}
+                selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                draggingPostIdSubscription={this.draggingPostIdSubscription}
+                feedback={this.state.feedback}
+                roadmap={this.state.roadmap}
+                dragDropSensorApi={!layoutState.overflowPreview ? this.state.dragDropSensorApi : undefined}
+                fallbackClickHandler={(draggableId, dstDroppableId) => {
+                  if (!activeProject
+                    || this.state.feedbackPreview?.type !== 'post') return;
+                  dashboardOnDragEnd(
+                    activeProject,
+                    feedbackPostListDroppableId,
+                    draggableId,
+                    dstDroppableId,
+                    0,
+                    postId => this.pageClicked('post', [postId]),
+                    this.state.feedback || undefined,
+                    this.state.roadmap || undefined);
+                }}
+              />
+            </Provider>
+            <div className={this.props.classes.postPreviewScroll}>
+              {typeof feedbackPreviewContent === 'function' ? feedbackPreviewContent(layoutState) : feedbackPreviewContent}
+            </div>
+          </div>
+        );
 
         showProjectLink = true;
         break;
@@ -649,6 +686,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 <DragndropPostList
                   key={activeProject.server.getProjectId()}
                   scroll
+                  droppableId={droppableDataSerialize({
+                    type: 'feedback-search',
+                    searchKey: getSearchKey(roadmapPostSearch),
+                  })}
                   server={activeProject.server}
                   search={roadmapPostSearch}
                   onClickPost={postId => this.pageClicked('post', [postId])}
@@ -667,9 +708,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         main = {
           size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
           boxLayoutNoPaper: true,
-          content: (
+          content: layoutStyle => (
             <TemplateWrapper<RoadmapInstance | undefined>
               key='roadmap'
+              type='dialog'
               editor={activeProject.editor}
               mapper={templater => templater.roadmapGet()}
               renderResolved={(templater, roadmap) => !!roadmap && (
@@ -681,6 +723,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     onClickPost={postId => this.pageClicked('post', [postId])}
                     onUserClick={userId => this.pageClicked('user', [userId])}
                     selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+                    isBoxLayout={layoutStyle.enableBoxLayout}
                   />
                 </Provider>
               )}
@@ -709,6 +752,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           content: (
             <TemplateWrapper<ChangelogInstance | undefined>
               key='changelog'
+              type='dialog'
               editor={activeProject.editor}
               mapper={templater => templater.changelogGet()}
               renderResolved={(templater, changelog) => !!changelog?.pageAndIndex && (
@@ -1053,7 +1097,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   color='default'
                   style={{ marginLeft: 8 }}
                   onClick={() => this.setState({
-                    previewShow: true,
+                    previewShowOnPage: 'settings',
                     settingsPreviewChanges: 'live',
                   })}
                 >
@@ -1116,7 +1160,36 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         {this.props.account && (
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
-        <DragDropContext onDragEnd={(result, provided) => { }}>
+        <DragDropContext
+          sensors={[api => {
+            if (this.state.dragDropSensorApi !== api) {
+              this.setState({ dragDropSensorApi: api });
+            }
+          }]}
+          onBeforeCapture={(before) => {
+            if (!activeProject) return;
+
+            const srcPost = activeProject.server.getStore().getState().ideas.byId[before.draggableId]?.idea;
+            if (!srcPost) return;
+
+            this.draggingPostIdSubscription.notify(srcPost.ideaId);
+          }}
+          onDragEnd={(result, provided) => {
+            this.draggingPostIdSubscription.notify(undefined);
+
+            if (!result.destination || !activeProject) return;
+
+            dashboardOnDragEnd(
+              activeProject,
+              result.source.droppableId,
+              result.draggableId,
+              result.destination.droppableId,
+              result.destination.index,
+              postId => this.pageClicked('post', [postId]),
+              this.state.feedback || undefined,
+              this.state.roadmap || undefined);
+          }}
+        >
           <Layout
             header={header}
             toolbarShow={!onboarding}
@@ -1240,10 +1313,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 />
               </>
             }
-            previewShow={!!this.state.previewShow}
-            previewShowChanged={show => {
-              this.setState({ previewShow: show });
-              !show && previewOnClose?.();
+            previewShow={!!this.state.previewShowOnPage && this.state.previewShowOnPage === activePath}
+            previewShowNot={() => {
+              this.setState({ previewShowOnPage: undefined });
+              previewOnClose?.();
             }}
             preview={preview}
             previewForceShowClose={!!previewOnClose}
@@ -1358,53 +1431,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     return versionedConfigAdmin;
   }
 
-  renderProjectUserSelect(activeProject: AdminProject) {
-    return (
-      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <UserSelection
-          className={this.props.classes.projectUserSelectorInline}
-          server={activeProject.server}
-          allowCreate
-          allowClear
-          alwaysOverrideWithLoggedInUser
-          placeholder='Anonymous'
-          minWidth={76} // Fits placeholder
-          maxWidth={150}
-          suppressInitialOnChange
-          SelectionPickerProps={{
-            autocompleteClasses: {
-              inputRoot: this.props.classes.projectUserSelectorInlineInputRoot,
-            }
-          }}
-          onChange={userLabel => {
-            if (userLabel) {
-              activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
-                projectId: activeProject.projectId,
-                userId: userLabel.value,
-              }));
-            } else {
-              activeProject.server.dispatch().then(d => d.userLogout({
-                projectId: activeProject.projectId,
-              }));
-            }
-          }}
-        />
-      </Provider>
-    );
-  }
-
   renderPreviewPost(postId: string, project?: AdminProject): PreviewSection {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
     return {
       size: PostPreviewSize,
-      // bar: (
-      //   <div className={this.props.classes.previewBarText}>
-      //     Viewing post as&nbsp;
-      //     {this.renderProjectUserSelect(project)}
-      //   </div>
-      // ),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
           <DashboardPost
@@ -1425,12 +1457,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     return {
       size: UserPreviewSize,
-      bar: (
-        <div className={this.props.classes.previewBarText}>
-          Viewing user profile as&nbsp;
-          {this.renderProjectUserSelect(project)}
-        </div>
-      ),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
           <UserPage key={userId} server={project.server} userId={userId} />
@@ -1545,33 +1571,33 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
     if (path === 'post') {
       const activePath = this.props.match.params['path'] || '';
-      const preview: State['explorerPreview'] & State['feedbackPreview'] = !!subPath[0]
+      const preview: State['explorerPreview'] & State['feedbackPreview'] & State['roadmapPreview'] = !!subPath[0]
         ? { type: 'post', id: subPath[0] + '' }
         : { type: 'create' };
       if (activePath === 'feedback') {
         this.setState({
-          previewShow: true,
+          previewShowOnPage: 'feedback',
           feedbackPreview: preview,
         });
       } else if (activePath === 'explore') {
         this.setState({
-          previewShow: true,
+          previewShowOnPage: 'explore',
           explorerPreview: preview,
         });
       } else if (activePath === 'roadmap') {
         this.setState({
-          previewShow: true,
+          previewShowOnPage: 'roadmap',
           roadmapPreview: preview,
         });
       } else {
         this.setState({
-          previewShow: true,
+          previewShowOnPage: 'explore',
           explorerPreview: preview,
         }, () => this.props.history.push('/dashboard/explore'));
       }
     } else if (path === 'user') {
       this.setState({
-        previewShow: true,
+        previewShowOnPage: 'users',
         usersPreview: !!subPath[0]
           ? { type: 'user', id: subPath[0] + '' }
           : { type: 'create' },
@@ -1592,4 +1618,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(Dashboard)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withSnackbar(Dashboard))));

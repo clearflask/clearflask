@@ -467,15 +467,6 @@ class DataMock {
     });
   }
 
-  mockAll(): Promise<any> {
-    return this.mockAccountCreate()
-      .then(() => this.mockLoggedIn(1000, true))
-      .then(userMe =>
-        this.mockItems(userMe)
-          .then(() => this.mockNotification(userMe)))
-    // .then(() => ServerMock.get().accountLogoutAdmin())
-  }
-
   mockNotification(userMe: Admin.User): Promise<any> {
     ServerMock.get().addNotification(
       this.projectId,
@@ -485,7 +476,7 @@ class DataMock {
     return Promise.resolve();
   }
 
-  mockAccountCreate(): Promise<Admin.AccountAdmin> {
+  static mockAccountCreate(): Promise<Admin.AccountAdmin> {
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
         name: 'John Doe',

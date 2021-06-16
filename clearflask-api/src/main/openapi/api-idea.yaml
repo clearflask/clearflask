@@ -242,6 +242,9 @@ components:
                 type: string
     IdeaConnectResponse:
       type: object
+      required:
+      - idea
+      - parentIdea
       properties:
         idea:
           $ref: 'api-idea.yaml#/components/schemas/Idea'

@@ -154,6 +154,7 @@ const styles = (theme: Theme) => createStyles({
     minHeight: 0,
   },
   noscroll: {
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
@@ -201,7 +202,7 @@ interface Props {
   menu?: MenuSection;
   previewShow?: boolean;
   previewForceShowClose?: boolean;
-  previewShowChanged: (show: boolean) => void;
+  previewShowNot: () => void;
   preview?: PreviewSection;
   barTop?: React.ReactNode;
   barBottom?: React.ReactNode;
@@ -260,7 +261,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
             <IconButton
               color='inherit'
               aria-label=''
-              onClick={this.handlePreviewToggle.bind(this)}
+              onClick={this.handlePreviewClose.bind(this)}
             >
               <CloseIcon />
             </IconButton>
@@ -419,7 +420,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
             SlideProps={{ mountOnEnter: true }}
             anchor='right'
             open={!!this.props.previewShow}
-            onClose={this.handlePreviewToggle.bind(this)}
+            onClose={this.handlePreviewClose.bind(this)}
             classes={{
               paper: this.props.classes.previewMobilePaper,
             }}
@@ -458,8 +459,8 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
     this.setState({ mobileMenuOpen: !this.state.mobileMenuOpen });
   };
 
-  handlePreviewToggle() {
-    this.props.previewShowChanged(!this.props.previewShow);
+  handlePreviewClose() {
+    this.props.previewShowNot();
   };
 
   prerenderSectionContent<S extends Section>(layoutState: LayoutState, section?: S): (Omit<S, 'content'> & { content: React.ReactNode }) | undefined {

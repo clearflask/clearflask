@@ -405,7 +405,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         )}
         <Grid item xs={12} className={this.props.classes.createGridItem}>
           <RichEditor
-            onUploadImage={(file) => this.richEditorImageUploadRef.current?.onUploadImage(file)}
+            uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
             variant='outlined'
             size='small'
             id='createDescription'

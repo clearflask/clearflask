@@ -15,6 +15,7 @@ export const DemoUpdateDelay = 300;
 export interface Project {
   projectId: string;
   configVersion: string;
+  user: Client.UserMeWithBalance;
   editor: ConfigEditor.Editor;
   server: Server;
   hasUnsavedChanges(): boolean;
@@ -89,10 +90,13 @@ export default class ServerAdmin {
     return this.projects[projectId];
   }
 
-  getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {
-    const projectId = versionedConfig.config.projectId;
+  getOrCreateProject(projectId: string): Project {
     var project = this.projects[projectId];
     if (!project) {
+      const bind = this.getStore().getState().configs.configs.byProjectId?.[projectId];
+      if (!bind) throw new Error('Cannot find project by ID: ' + projectId);
+      const versionedConfig: Client.VersionedConfig = bind.config;
+      const loggedInUser: Client.UserMeWithBalance = bind.user;
       const server = new Server(
         projectId,
         { suppressSetTitle: true });
@@ -119,6 +123,7 @@ export default class ServerAdmin {
       project = {
         projectId: projectId,
         configVersion: versionedConfig.version,
+        user: loggedInUser,
         editor: editor,
         server: server,
         hasUnsavedChanges: () => hasUnsavedChanges,
@@ -366,6 +371,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
         },
       };
     case Admin.configSetAdminActionStatus.Fulfilled:
+      if (!state.configs.byProjectId?.[action.payload.config.projectId]) return state;
       return {
         ...state,
         configs: {
@@ -373,6 +379,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
           byProjectId: {
             ...state.configs.byProjectId,
             [action.payload.config.projectId]: {
+              ...state.configs.byProjectId[action.payload.config.projectId],
               config: action.payload,
             },
           },
@@ -387,6 +394,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
             ...state.configs.byProjectId,
             [action.payload.projectId]: {
               config: action.payload.config,
+              user: action.payload.user,
             },
           },
         },

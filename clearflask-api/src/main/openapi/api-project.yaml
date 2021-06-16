@@ -1076,6 +1076,7 @@ components:
                     type: object
                     required:
                     - config
+                    - user
                     properties:
                       config:
                         $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
@@ -1101,11 +1102,14 @@ components:
               required:
                 - projectId
                 - config
+                - user
               properties:
                 projectId:
                   type: string
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/admin:
   delete:
     operationId: projectDeleteAdmin

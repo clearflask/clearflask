@@ -694,12 +694,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).loggedInUser = user;
     return this.returnLater(user);
   }
-  userLoginAdmin(request: Admin.UserLoginAdminRequest): Promise<Client.UserMeWithBalance> {
-    const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
-    if (!user) return this.throwLater(404, 'User not found');
-    this.getProject(request.projectId).loggedInUser = user;
-    return this.returnLater(user);
-  }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater();
@@ -863,28 +857,28 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(idea);
   }
   ideaLinkAdmin(request: Admin.IdeaLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
-    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
-    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
-    if (idea.linkedToPostId.includes(parentIdea.ideaId)) return this.throwLater(400, 'Already linked');
-    idea.linkedToPostIds = [...idea.linkedToPostIds, parentIdea.ideaId];
-    parentIdea.linkedPostIds = [...parentIdea.linkedPostIds, idea.ideaId];
+    const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Already linked');
+    idea.linkedToPostIds = [...(idea.linkedToPostIds || []), parentIdea.ideaId];
+    parentIdea.linkedPostIds = [...(parentIdea.linkedPostIds || []), idea.ideaId];
     return this.returnLater({ idea, parentIdea });
   }
   ideaUnLinkAdmin(request: Admin.IdeaUnLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
-    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
-    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
-    if (!idea.linkedToPostId.includes(parentIdea.ideaId)) return this.throwLater(400, 'Not linked');
-    idea.linkedToPostIds = idea.linkedToPostIds.filter(idea => idea.ideaId !== parentIdea.ideaId);
-    parentIdea.linkedPostIds = parentIdea.linkedPostIds.filter(idea => idea.ideaId !== idea.ideaId);
+    const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (!idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Not linked');
+    idea.linkedToPostIds = idea.linkedToPostIds?.filter(ideaId => ideaId !== parentIdea.ideaId);
+    parentIdea.linkedPostIds = parentIdea.linkedPostIds?.filter(ideaId => ideaId !== idea.ideaId);
     return this.returnLater({ idea, parentIdea });
   }
   ideaMergeAdmin(request: Admin.IdeaMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
-    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
-    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
     if (idea.categoryId !== parentIdea.categoryId) return this.throwLater(400, 'Cannot merge different categories');
     if (idea.mergedToPostId) return this.throwLater(400, 'Already merged');
     idea.mergedToPostId = parentIdea.ideaId;
-    parentIdea.mergedPosts = [...parentIdea.mergedPosts, { ...idea }];
+    parentIdea.mergedPosts = [...(parentIdea.mergedPosts || []), { postId: idea.ideaId, ...idea }];
     parentIdea.commentCount += idea.commentCount;
     if (idea.funded) {
       parentIdea.funded = (parentIdea.funded || 0) + (idea.funded || 0);
@@ -905,11 +899,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({ idea, parentIdea });
   }
   ideaUnMergeAdmin(request: Admin.IdeaUnMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
-    const idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
-    const parentIdea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
+    const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
     if (idea.mergedToPostId !== parentIdea.ideaId) return this.throwLater(400, 'Not merged');
     idea.mergedToPostId = undefined;
-    parentIdea.mergedPosts = parentIdea.mergedPosts.filter(m => m.postId !== idea.ideaId);
+    parentIdea.mergedPosts = parentIdea.mergedPosts?.filter(m => m.postId !== idea.ideaId);
     parentIdea.commentCount -= idea.commentCount;
     if (idea.funded) parentIdea.funded = (parentIdea.funded || 0) - (idea.funded || 0);
     if (idea.fundersCount) parentIdea.fundersCount = (parentIdea.fundersCount || 0) - (idea.fundersCount || 0);
@@ -927,15 +921,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.getProject(request.projectId).config);
   }
-  configGetAllAndUserBindAllAdmin(): Promise<Admin.ConfigAndBindAllResult> {
+  async configGetAllAndUserBindAllAdmin(): Promise<Admin.ConfigAndBindAllResult> {
     if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
     const byProjectId = {};
-    Object.keys(this.db)
-      .filter(projectId => !projectId.startsWith('demo-'))
-      .forEach(projectId => byProjectId[projectId] = {
+    for (const projectId of Object.keys(this.db)) {
+      if (projectId.startsWith('demo-')) continue;
+      byProjectId[projectId] = {
         config: this.db[projectId].config,
-        user: this.db[projectId].loggedInUser,
-      })
+        user: await this.getOrCreateAdminUser(projectId),
+      };
+    }
     return this.returnLater({
       byProjectId,
     });
@@ -945,13 +940,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).config = { config: request.configAdmin, version: randomUuid() };
     return this.returnLater(this.getProject(request.projectId).config);
   }
-  projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
+  async projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
+    if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
     const projectId = request.configAdmin.projectId || `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
     request.configAdmin.projectId = projectId;
     this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({
       projectId,
       config: this.getProject(projectId).config,
+      user: await this.getOrCreateAdminUser(projectId),
     });
   }
   projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {
@@ -1392,6 +1389,24 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       arr[index] = t;
     }
     return t;
+  }
+
+  async getOrCreateAdminUser(projectId: string): Promise<Admin.UserAdmin> {
+    if (!this.loggedIn || !this.account) return this.throwLater(403, 'Not logged in');
+    const accountEmail = this.account.email;
+    var adminUser = this.getProject(projectId).users.find(u => u.email === accountEmail);
+    if (!adminUser) {
+      adminUser = await this.userCreateAdmin({
+        projectId,
+        userCreateAdmin: {
+          email: accountEmail,
+          name: this.account.name,
+          ssoGuid: accountEmail,
+          isMod: true,
+        },
+      });
+    }
+    return adminUser;
   }
 
   async returnLater<T>(returnValue: T | undefined = undefined, additionalLatency?: number, skipStringify?: boolean): Promise<T> {

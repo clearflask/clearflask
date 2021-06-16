@@ -1,11 +1,11 @@
-import { Badge, IconButton, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
+import { Badge, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import ExpandIcon from '@material-ui/icons/ExpandLess';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import ExpandIcon from '../../icon/ExpandIcon';
 import * as ConfigEditor from '../configEditor';
 
 export interface MenuHeading {
@@ -59,13 +59,6 @@ const styles = (theme: Theme) => createStyles({
     left: theme.spacing(0.5),
     top: '50%',
     transform: 'translate(-100%, -50%)',
-  },
-  expandIcon: {
-    transform: 'rotate(90deg)',
-    transition: theme.transitions.create('transform'),
-  },
-  expandIconExpanded: {
-    transform: 'rotate(180deg)',
   },
   menuItem: {
     padding: theme.spacing(0.5, 3),
@@ -243,19 +236,20 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
             <>
               <span className={this.props.classes.text} style={{ color }}>
                 {!expandedDontShow && (
-                  <IconButton
-                    className={this.props.classes.expandButton}
-                    onClick={e => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      this.setState({ expanded: !this.state.expanded });
+                  <ExpandIcon
+                    IconButtonProps={{
+                      className: this.props.classes.expandButton,
+                      onClick: e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.setState({ expanded: !this.state.expanded });
+                      },
                     }}
-                  >
-                    <ExpandIcon
-                      fontSize='inherit'
-                      className={classNames(this.props.classes.expandIcon, !!expanded && this.props.classes.expandIconExpanded)}
-                    />
-                  </IconButton>
+                    IconProps={{
+                      fontSize: 'inherit',
+                    }}
+                    expanded={expanded}
+                  />
                 )}
                 {this.props.overrideName !== undefined ? this.props.overrideName : this.props.page.getDynamicName()}
               </span>

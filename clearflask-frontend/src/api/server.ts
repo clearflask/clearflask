@@ -30,7 +30,7 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
-type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
+type AllActions = Admin.Actions | Client.Actions | updateSettingsAction | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction;
 
 export class Server {
   static storesState: StoresState | undefined;
@@ -398,6 +398,21 @@ function reducerConf(state: StateConf = stateConfDefault, action: AllActions): S
   }
 }
 
+interface ideaSearchResultRemoveIdeaAction {
+  type: 'ideaSearchResultRemoveIdea';
+  payload: {
+    searchKey: string;
+    ideaId: string;
+  };
+}
+interface ideaSearchResultAddIdeaAction {
+  type: 'ideaSearchResultAddIdea';
+  payload: {
+    searchKey: string;
+    ideaId: string;
+    index: number;
+  };
+}
 export interface StateIdeas {
   byId: {
     [ideaId: string]: {
@@ -428,7 +443,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.ideaId]: { status: Status.PENDING }
+          [action.meta.request.ideaId]: { status: Status.PENDING },
         }
       };
     case Client.ideaGetActionStatus.Rejected:
@@ -436,7 +451,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.ideaId]: { status: Status.REJECTED }
+          [action.meta.request.ideaId]: { status: Status.REJECTED },
         }
       };
     case Admin.ideaCreateAdminActionStatus.Fulfilled:
@@ -449,7 +464,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [action.payload.ideaId]: {
             idea: action.payload,
             status: Status.FULFILLED,
-          }
+          },
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
@@ -469,9 +484,31 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [action.payload.ideaId]: {
             idea: action.payload,
             status: Status.FULFILLED,
-          }
+          },
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
+      };
+    case Admin.ideaMergeAdminActionStatus.Fulfilled:
+    case Admin.ideaUnMergeAdminActionStatus.Fulfilled:
+    case Admin.ideaLinkAdminActionStatus.Fulfilled:
+    case Admin.ideaUnLinkAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.idea.ideaId]: {
+            idea: action.payload.idea,
+            status: Status.FULFILLED,
+          },
+          [action.payload.parentIdea.ideaId]: {
+            idea: action.payload.parentIdea,
+            status: Status.FULFILLED,
+          },
+        },
+        maxFundAmountSeen: Math.max(
+          action.payload.idea.funded || 0,
+          action.payload.parentIdea.funded || 0,
+          state.maxFundAmountSeen),
       };
     case Client.commentCreateActionStatus.Fulfilled:
       // For comment creation, update idea comment counts
@@ -556,6 +593,34 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         maxFundAmountSeen: Math.max(
           (action.payload.results as Client.Idea[]).reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
           state.maxFundAmountSeen),
+      };
+    case 'ideaSearchResultRemoveIdea':
+      searchKey = action.payload.searchKey;
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            ideaIds: (state.bySearch[searchKey]?.ideaIds || []).filter(id => id !== action.payload.ideaId),
+          }
+        },
+      };
+    case 'ideaSearchResultAddIdea':
+      searchKey = action.payload.searchKey;
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            ideaIds: [
+              ...(state.bySearch[searchKey]?.ideaIds?.slice(0, action.payload.index) || []),
+              action.payload.ideaId,
+              ...(state.bySearch[searchKey]?.ideaIds?.slice(action.payload.index) || []),
+            ],
+          }
+        },
       };
     case Client.ideaVoteUpdateActionStatus.Pending:
     case Client.ideaVoteUpdateActionStatus.Rejected:
@@ -1076,7 +1141,6 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
       };
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
-    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
     case Client.categorySubscribeActionStatus.Fulfilled:
       const user = action.type === Client.userCreateActionStatus.Fulfilled
@@ -1320,7 +1384,6 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
         },
       };
     case Client.userLoginActionStatus.Fulfilled:
-    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1455,7 +1518,6 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
         },
       };
     case Client.userLoginActionStatus.Fulfilled:
-    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1549,7 +1611,6 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         },
       };
     case Client.userLoginActionStatus.Fulfilled:
-    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
       const balance = action.type === Client.userCreateActionStatus.Fulfilled
         ? action.payload.user?.balance : action.payload.balance;

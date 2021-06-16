@@ -144,13 +144,12 @@ export default class Templater {
     }
 
     if (this.confirmationHandler) {
-      try {
-        const answer = await this.confirmationHandler(confirmation);
-        confirmationCache[question] = answer;
-        return answer;
-      } catch (e) { }
+      const answer = await this.confirmationHandler(confirmation);
+      confirmationCache[question] = answer;
+      return answer;
     }
-    return undefined;
+
+    throw new Error('No question handler');
   }
 
   demo(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
