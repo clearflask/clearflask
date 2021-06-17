@@ -87,12 +87,6 @@ const feedbackToTask = async (
       tagIds: [],
     },
   })).ideaId;
-  onClickPost(taskId);
-  await dispatcherAdmin.ideaLinkAdmin({
-    projectId: activeProject.projectId,
-    ideaId: srcPost.ideaId,
-    parentIdeaId: taskId,
-  });
   if (feedback.statusIdAccepted) {
     await dispatcherAdmin.ideaUpdateAdmin({
       projectId: activeProject.projectId,
@@ -100,12 +94,19 @@ const feedbackToTask = async (
       ideaUpdateAdmin: { statusId: feedback.statusIdAccepted },
     });
   }
+  await dispatcherAdmin.ideaLinkAdmin({
+    projectId: activeProject.projectId,
+    ideaId: srcPost.ideaId,
+    parentIdeaId: taskId,
+  });
+  onClickPost(taskId);
   return taskId;
 };
 
 export const dashboardOnDragEnd = async (
   activeProject: Project,
   srcDroppableId: string,
+  srcIndex: number,
   draggableId: string,
   dstDroppableId: string,
   dstIndex: number,
@@ -118,6 +119,10 @@ export const dashboardOnDragEnd = async (
 
   const dstDroppable = droppableDataDeserialize(dstDroppableId);
   if (!dstDroppable) return false;
+
+  // If placed in same spot, ignore
+  if (srcDroppableId === dstDroppableId
+    && srcIndex === dstIndex) return false;
 
   var dispatcherAdmin: Admin.Dispatcher | undefined;
   switch (dstDroppable.type) {

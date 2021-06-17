@@ -4,11 +4,13 @@ import classNames from 'classnames';
 import { MarginProperty } from 'csstype';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { createSelector } from 'reselect';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
+import { selectorContentWrap } from '../../common/util/reselectUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerVertical from '../utils/DividerVertical';
 import Loading from '../utils/Loading';
@@ -21,7 +23,7 @@ export enum Direction {
 }
 
 interface SearchResult {
-  status: Status;
+  status?: Status;
   ideas: Client.Idea[];
   cursor: string | undefined,
 }
@@ -84,17 +86,46 @@ export interface Props {
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
 }
 interface ConnectProps {
-  callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   searchResult: SearchResult;
+  missingVotes?: string[];
+  projectId?: string;
+  loggedInUser?: Client.User;
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   constructor(props) {
     super(props);
 
-    props.callOnMount?.();
+    if (!props.searchResult.status) {
+      const searchMerged = {
+        ...props.panel.search,
+        ...props.searchOverride,
+        ...props.searchOverrideAdmin,
+      };
+      if (!props.searchOverrideAdmin) {
+        props.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
+          projectId: props.projectId,
+          ideaSearch: searchMerged,
+        }));
+      } else {
+        props.server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
+          projectId: props.projectId,
+          ideaSearchAdmin: searchMerged,
+        }));
+      }
+    } else if (props.missingVotes?.length) {
+      props.server.dispatch().then(d => d.ideaVoteGetOwn({
+        projectId: props.projectId,
+        ideaIds: props.missingVotes,
+        myOwnIdeaIds: props.missingVotes
+          .map(ideaId => props.searchResult.ideas.find(i => i.ideaId === ideaId))
+          .filter(idea => idea?.idea?.authorUserId === props.loggedInUser.userId)
+          .map(idea => idea?.idea?.ideaId)
+          .filter(notEmpty),
+      }));
+    }
   }
 
   render() {
@@ -202,73 +233,105 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 }
 
+// const selectCallOnMount = createSelector(
+//   (state: ReduxState) => state.projectId,
+//   (_, ownProps: Props) => ownProps.server,
+//   (_, ownProps: Props) => !!ownProps.searchOverrideAdmin,
+//   selectSearchMerged,
+//   selectSearch,
+//   (projectId, server, isAdminSearch, searchMerged, search) => {
+//     if (!search) {
+//       if (!isAdminSearch) {
+//         return () => {
+//           server.dispatch({ ssr: true }).then(d => d.ideaSearch({
+//             projectId: projectId!,
+//             ideaSearch: searchMerged as Client.IdeaSearch,
+//           }));
+//         };
+//       } else {
+//         return () => {
+//           server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
+//             projectId: projectId!,
+//             ideaSearchAdmin: searchMerged as Admin.IdeaSearchAdmin,
+//           }));
+//         };
+//       }
+//     }
+//     return undefined;
+//   });
+
 export default keyMapper(
   (ownProps: Props) => getSearchKey({
     ...ownProps.panel.search,
     ...ownProps.searchOverride,
     ...ownProps.searchOverrideAdmin,
   }),
-  connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
-    const newProps: ConnectProps = {
-      configver: state.conf.ver, // force rerender on config change
-      config: state.conf.conf,
-      searchResult: {
-        status: Status.PENDING,
-        ideas: [],
-        cursor: undefined,
-      } as SearchResult,
-    };
-
-    const searchMerged: Client.IdeaSearch | Admin.IdeaSearchAdmin = {
+  connect<ConnectProps, {}, Props, ReduxState>(() => {
+    const selectIsAdminSearch = (_, ownProps: Props): boolean => !!ownProps.searchOverrideAdmin;
+    const selectSearchMerged = (_, ownProps: Props): Client.IdeaSearch | Admin.IdeaSearchAdmin => ({
       ...ownProps.panel.search,
       ...ownProps.searchOverride,
       ...ownProps.searchOverrideAdmin,
-    };
-    const searchKey = getSearchKey(searchMerged);
-    const bySearch = state.ideas.bySearch[searchKey];
-    if (!bySearch) {
-      if (!ownProps.searchOverrideAdmin) {
-        newProps.callOnMount = () => {
-          ownProps.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
-            projectId: state.projectId!,
-            ideaSearch: searchMerged as Client.IdeaSearch,
-          }));
-        };
-      } else {
-        newProps.callOnMount = () => {
-          ownProps.server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
-            projectId: state.projectId!,
-            ideaSearchAdmin: searchMerged as Admin.IdeaSearchAdmin,
-          }));
-        };
-      }
-    } else {
-      const missingVotesByIdeaIds: string[] = [];
-      newProps.searchResult.status = bySearch.status;
-      newProps.searchResult.cursor = bySearch.cursor;
-      newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
-        const idea = state.ideas.byId[ideaId];
-        if (!idea || idea.status !== Status.FULFILLED) return undefined;
-        if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
-        return idea.idea;
-      }).filter(notEmpty);
-      if (!ownProps.searchOverrideAdmin // Don't get votes if calling admin search
-        && state.users.loggedIn.status === Status.FULFILLED
-        && state.users.loggedIn.user
-        && missingVotesByIdeaIds.length > 0) {
-        newProps.callOnMount = () => {
-          ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
-            projectId: state.projectId!,
-            ideaIds: missingVotesByIdeaIds,
-            myOwnIdeaIds: missingVotesByIdeaIds
-              .map(ideaId => state.ideas.byId[ideaId])
-              .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
-              .map(idea => idea?.idea?.ideaId)
-              .filter(notEmpty),
-          }));
-        };
-      }
-    }
+    });
+    const selectSearchKey = createSelector(
+      [selectSearchMerged],
+      (searchMerged) => getSearchKey(searchMerged)
+    );
+    const selectIdeasBySearch = (state: ReduxState) => state.ideas.bySearch;
+    const selectIdeasById = (state: ReduxState) => state.ideas.byId;
+    const selectSearch = createSelector(
+      [selectSearchKey, selectIdeasBySearch],
+      (searchKey, ideasBySearch) => searchKey ? ideasBySearch[searchKey] : undefined
+    );
+    const selectVotesStatusByIdeaId = (state: ReduxState) => state.votes.statusByIdeaId;
 
-    return newProps;
+    const selectMissingVotes = selectorContentWrap(createSelector(
+      [selectSearch, selectVotesStatusByIdeaId, selectIsAdminSearch],
+      (search, votesStatusByIdeaId, isAdminSearch) => {
+        const missing: string[] = [];
+        if (isAdminSearch) return missing; // Don't get votes if calling admin search
+        search?.ideaIds?.forEach(ideaId => {
+          if (votesStatusByIdeaId[ideaId] === undefined) {
+            missing.push(ideaId);
+          }
+        });
+        return missing.length ? missing : undefined;
+      }
+    ));
+
+    const selectIdeas = selectorContentWrap(createSelector(
+      [selectSearch, selectIdeasById],
+      (search, byId) => {
+        const ideas = (search?.ideaIds || []).map(ideaId => {
+          const idea = byId[ideaId];
+          if (!idea || idea.status !== Status.FULFILLED) return undefined;
+          return idea.idea;
+        }).filter(notEmpty);
+        return ideas.length ? ideas : undefined;
+      }));
+
+    const selectConnectProps = createSelector(
+      selectMissingVotes,
+      selectIdeas,
+      selectSearch,
+      (state: ReduxState) => state.conf.ver,
+      (state: ReduxState) => state.conf.conf,
+      (state: ReduxState) => state.projectId,
+      (state: ReduxState) => state.users.loggedIn.user,
+      (missingVotes, ideas, search, configver, config, projectId, loggedInUser) => {
+        const connectProps: ConnectProps = {
+          config,
+          configver,
+          searchResult: {
+            status: search?.status,
+            cursor: search?.cursor,
+            ideas: ideas || [],
+          },
+          missingVotes,
+          projectId: projectId || undefined,
+          loggedInUser,
+        };
+        return connectProps;
+      });
+    return (state, ownProps) => selectConnectProps(state, ownProps);
   })(withStyles(styles, { withTheme: true })(PanelPost)));

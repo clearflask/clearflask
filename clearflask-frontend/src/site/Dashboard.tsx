@@ -623,6 +623,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   dashboardOnDragEnd(
                     activeProject,
                     feedbackPostListDroppableId,
+                    0,
                     draggableId,
                     dstDroppableId,
                     0,
@@ -1182,6 +1183,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             dashboardOnDragEnd(
               activeProject,
               result.source.droppableId,
+              result.source.index,
               result.draggableId,
               result.destination.droppableId,
               result.destination.index,

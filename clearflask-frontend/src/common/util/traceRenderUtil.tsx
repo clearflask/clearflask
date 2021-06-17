@@ -5,14 +5,8 @@ import React, { useEffect, useRef } from "react";
 // Usage within class:
 // componentDidUpdate = traceRenderComponentDidUpdate;
 export function traceRenderComponentDidUpdate(this: React.Component, prevProps, prevState) {
-  Object.entries(this.props).forEach(([key, val]) =>
-    prevProps[key] !== val && console.log(`Changed prop: '${key}'`)
-  );
-  if (this.state) {
-    Object.entries(this.state).forEach(([key, val]) =>
-      prevState[key] !== val && console.log(`Changed State: '${key}'`)
-    );
-  }
+  diff(prevProps, this.props, 'DEBUG: Props changed:');
+  diff(prevState, this.state, 'DEBUG: State changed:');
 }
 
 // Usage within function component:
@@ -20,15 +14,19 @@ export function traceRenderComponentDidUpdate(this: React.Component, prevProps, 
 export const useTraceRender = (props, uniqId?: string) => {
   const prev = useRef(props);
   useEffect(() => {
-    const changedProps = Object.entries(props).reduce((ps, [k, v]) => {
-      if (prev.current[k] !== v) {
-        ps[k] = [prev.current[k], v];
-      }
-      return ps;
-    }, {});
-    if (Object.keys(changedProps).length > 0) {
-      console.log(`${uniqId || ''}: Changed props:`, changedProps);
-    }
+    diff(prev.current, props, `DEBUG: ${uniqId ? uniqId + ': ' : ''}Props changed:`);
     prev.current = props;
   });
+}
+
+const diff = (prev: object, curr: object, msg: string) => {
+  const changedProps = Object.entries(curr || {}).reduce((ps, [k, v]) => {
+    if (prev?.[k] !== v) {
+      ps[k] = [prev?.[k], v];
+    }
+    return ps;
+  }, {});
+  if (Object.keys(changedProps).length > 0) {
+    console.log(msg, changedProps);
+  }
 }
