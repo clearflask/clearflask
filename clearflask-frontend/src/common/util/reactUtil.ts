@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 // Based on React
 
@@ -12,20 +12,18 @@ function is(x: any, y: any) {
 // https://github.com/facebook/react/blob/master/packages/shared/hasOwnProperty.js
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-function compare(objA: {}, objB: {}, conf?: customShouldComponentUpdateProps): boolean {
+function equal(objA: {}, objB: {}, conf?: customShouldComponentUpdateProps): boolean {
   if (is(objA, objB)) {
     return true;
   }
 
-  return compareObjectKeys(objA, objB, conf);
+  return equalObjectKeys(objA, objB, conf);
 }
 // https://github.com/facebook/react/blob/master/packages/shared/shallowEqual.js
-function compareObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps): boolean {
-  if (
-    typeof objA !== 'object' ||
-    typeof objB !== 'object' ||
-    (objA === null !== objB === null)
-  ) {
+function equalObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps): boolean {
+  if (!objA !== !objB) return false;
+  if (!objA && !objB) return true;
+  if (typeof objA !== 'object' || typeof objB !== 'object') {
     return false;
   }
 
@@ -46,8 +44,14 @@ function compareObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps):
 
     if (!hasOwnProperty.call(objB, key)) return false;
 
-    if (conf?.nested?.has(key) && !compareObjectKeys(valA, valB)) {
-      return false;
+    if (conf?.nested?.has(key)) {
+      if (!equalObjectKeys(valA, valB)) {
+        return false;
+      }
+    } else if (conf?.presence?.has(key)) {
+      if ((valA === undefined) !== (valB === undefined)) {
+        return false;
+      }
     } else if (!is(valA, valB)) {
       return false;
     }
@@ -57,11 +61,79 @@ function compareObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps):
 }
 
 interface customShouldComponentUpdateProps {
+  // For objects only, do not rerender on change in reference,
+  // but shallow equal all key value pairs
   nested?: Set<string>
+  // Rerender if the value changes between undefined and defined
+  presence?: Set<string>
+  // Do not rerender based on these properties
   ignored?: Set<string>
 }
-export const customShouldComponentUpdate = <P, S>(confProps?: customShouldComponentUpdateProps, confState?: customShouldComponentUpdateProps) =>
+/**
+ * Fine-grained control over when components should update.
+ * Example:
+ * 
+ * shouldComponentUpdate = customShouldComponentUpdate({
+ *   nested: new Set(['display']),
+ * });
+ */
+export const customShouldComponentUpdate = <P extends {}, S extends {}>(confProps?: customShouldComponentUpdateProps, confState?: customShouldComponentUpdateProps) =>
   function (this: React.Component<P, S>, nextProps: P, nextState: S): boolean {
-    return compare(this.props, nextProps, confProps)
-      && compare(this.state, nextState, confState);
+    return !equal(this.state, nextState, confState)
+      || !equal(this.props, nextProps, confProps);
   };
+
+
+/**
+ * Fine-grained control over when functional components should update.
+ * Example:
+ * 
+ * const Cmpt = React.memo((...) => {
+ *   ...
+ * }, customReactMemoEquals({
+ *   nested: new Set(['PostListProps', 'DroppableProvidedProps']),
+ * }));
+ */
+export const customReactMemoEquals = <P extends {}>(confProps?: customShouldComponentUpdateProps) =>
+  function (prevProps: Readonly<React.PropsWithChildren<P>>, nextProps: Readonly<React.PropsWithChildren<P>>): boolean {
+    return equal(prevProps, nextProps, confProps);
+  };
+
+
+/**
+ * Show changed props/state when a component renders.
+ * Example:
+ * 
+ * componentDidUpdate = traceRenderComponentDidUpdate;
+ */
+export function traceRenderComponentDidUpdate(this: React.Component, prevProps, prevState) {
+  diff(prevProps, this.props, 'DEBUG: Props changed:');
+  diff(prevState, this.state, 'DEBUG: State changed:');
+}
+
+/**
+ * Show changed props when a functional component renders.
+ * Example:
+ * 
+ * useTraceRender(props);
+ */
+export const useTraceRender = (props, uniqId?: string) => {
+  const prev = useRef(props);
+  useEffect(() => {
+    diff(prev.current, props, `DEBUG: ${uniqId ? uniqId + ': ' : ''}Props changed:`);
+    prev.current = props;
+  });
+}
+
+// https://stackoverflow.com/a/51082563
+const diff = (prev: object, curr: object, msg: string) => {
+  const changedProps = Object.entries(curr || {}).reduce((ps, [k, v]) => {
+    if (prev?.[k] !== v) {
+      ps[k] = [prev?.[k], v];
+    }
+    return ps;
+  }, {});
+  if (Object.keys(changedProps).length > 0) {
+    console.log(msg, changedProps);
+  }
+}

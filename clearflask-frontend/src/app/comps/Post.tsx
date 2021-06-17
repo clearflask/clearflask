@@ -30,7 +30,6 @@ import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { createMutableRef } from '../../common/util/refUtil';
-import { traceRenderComponentDidUpdate } from '../../common/util/traceRenderUtil';
 import { importFailed, importSuccess } from '../../Main';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
@@ -401,10 +400,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   shouldComponentUpdate = customShouldComponentUpdate({
-    nested: new Set('display'),
+    nested: new Set(['display']),
   });
-
-  componentDidUpdate = traceRenderComponentDidUpdate;
 
   componentDidMount() {
     this._isMounted = true;

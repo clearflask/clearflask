@@ -3,6 +3,7 @@ import DragmeIcon from '@material-ui/icons/DragIndicator';
 import classNames from 'classnames';
 import React from 'react';
 import { Draggable, DraggableProvided, DropAnimation, Droppable, DroppableId, DroppableProvidedProps } from 'react-beautiful-dnd';
+import { customReactMemoEquals } from '../../common/util/reactUtil';
 import { droppableDataDeserialize } from './dashboardDndActionHandler';
 import PostList from './PostList';
 
@@ -39,7 +40,6 @@ const DragndropPostList = React.memo((props: {
   droppableId: string;
 } & React.ComponentProps<typeof PostList>) => {
   const { droppable, droppableId, ...PostListProps } = props;
-  const classes = useStyles();
   return (
     <Droppable droppableId={droppableId} isDropDisabled={!droppable}>
       {(providedDroppable, snapshotDroppable) => (
@@ -47,43 +47,47 @@ const DragndropPostList = React.memo((props: {
           <DragndropPostListDroppableInner
             providedDroppableInnerRef={providedDroppable.innerRef}
             PostListProps={PostListProps}
-            {...providedDroppable.droppableProps}
+            DroppableProvidedProps={providedDroppable.droppableProps}
           />
           {providedDroppable.placeholder && (<div style={{ display: 'none' }}>{providedDroppable.placeholder}</div>)}
         </>
       )}
     </Droppable>
   );
-});
+}, customReactMemoEquals({ nested: new Set(['PostListProps', 'DroppableProvidedProps']) }));
+DragndropPostList.displayName = 'DragndropPostList';
 export default DragndropPostList;
 
 // Optimization to not re-render children during dragging
 const DragndropPostListDroppableInner = React.memo((props: {
   providedDroppableInnerRef;
   PostListProps: React.ComponentProps<typeof PostList>;
-} & DroppableProvidedProps) => {
-  const { providedDroppableInnerRef, PostListProps, ...DroppableProps } = props;
+  DroppableProvidedProps: DroppableProvidedProps;
+}) => {
   const classes = useStyles();
   return (
     <div
       className={classNames(
         classes.droppable,
       )}
-      ref={providedDroppableInnerRef}
-      {...DroppableProps}
+      ref={props.providedDroppableInnerRef}
+      {...props.DroppableProvidedProps}
     >
-      <DragndropPostListPostListInner {...PostListProps} />
+      <DragndropPostListPostListInner PostListProps={props.PostListProps} />
     </div>
   );
-});
+}, customReactMemoEquals({ nested: new Set(['PostListProps', 'DroppableProvidedProps']) }));
+DragndropPostListDroppableInner.displayName = 'DragndropPostListDroppableInner';
 
 // Optimization to not re-render children during dragging
-const DragndropPostListPostListInner = React.memo((props: React.ComponentProps<typeof PostList>) => {
+const DragndropPostListPostListInner = React.memo((props: {
+  PostListProps: React.ComponentProps<typeof PostList>;
+}) => {
   return (
     <PostList
-      {...props}
+      {...props.PostListProps}
       PanelPostProps={{
-        ...props.PanelPostProps,
+        ...props.PostListProps.PanelPostProps,
         showDivider: false,
         wrapPost: (post, content, index) => (
           <Draggable
@@ -103,7 +107,8 @@ const DragndropPostListPostListInner = React.memo((props: React.ComponentProps<t
       }}
     />
   );
-});
+}, customReactMemoEquals({ nested: new Set(['PostListProps']) }));
+DragndropPostListPostListInner.displayName = 'DragndropPostListPostListInner';
 
 // Optimization to not re-render children during dragging
 const DragndropPostListDraggableInner = React.memo((props: {
@@ -129,6 +134,7 @@ const DragndropPostListDraggableInner = React.memo((props: {
     </div>
   );
 });
+DragndropPostListDraggableInner.displayName = 'DragndropPostListDraggableInner';
 
 const patchStyle = (
   theme: Theme,

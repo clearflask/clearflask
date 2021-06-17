@@ -8,6 +8,7 @@ import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
+import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 
 const styles = (theme: Theme) => createStyles({
   post: {
@@ -56,6 +57,11 @@ interface ConnectProps {
   loggedInUserId?: string;
 }
 class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+
+  shouldComponentUpdate = customShouldComponentUpdate({
+    // nested: new Set(['displayOverride', 'PanelPostProps', 'search']),
+    // presence: new Set(['onClickPost', 'onUserClick']),
+  });
 
   render() {
     const panel: Admin.PagePanelWithHideIfEmpty = {

@@ -10,6 +10,7 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
+import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { selectorContentWrap } from '../../common/util/reselectUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerVertical from '../utils/DividerVertical';
@@ -20,12 +21,6 @@ import Post, { MaxContentWidth } from './Post';
 export enum Direction {
   Horizontal,
   Vertical,
-}
-
-interface SearchResult {
-  status?: Status;
-  ideas: Client.Idea[];
-  cursor: string | undefined,
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -94,7 +89,9 @@ export interface Props {
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
-  searchResult: SearchResult;
+  searchStatus?: Status;
+  searchIdeas: Client.Idea[];
+  searchCursor: string | undefined,
   missingVotes?: string[];
   projectId?: string;
   loggedInUser?: Client.User;
@@ -104,7 +101,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   constructor(props) {
     super(props);
 
-    if (!props.searchResult.status) {
+    if (!props.searchStatus) {
       const searchMerged = {
         ...props.panel.search,
         ...props.searchOverride,
@@ -126,7 +123,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         projectId: props.projectId,
         ideaIds: props.missingVotes,
         myOwnIdeaIds: props.missingVotes
-          .map(ideaId => props.searchResult.ideas.find(i => i.ideaId === ideaId))
+          .map(ideaId => props.searchIdeas.find(i => i.ideaId === ideaId))
           .filter(idea => idea?.idea?.authorUserId === props.loggedInUser.userId)
           .map(idea => idea?.idea?.ideaId)
           .filter(notEmpty),
@@ -134,12 +131,16 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     }
   }
 
+  shouldComponentUpdate = customShouldComponentUpdate({
+    nested: new Set(['panel', 'displayDefaults', 'searchOverride', 'searchOverrideAdmin', 'PostProps']),
+  });
+
   render() {
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
       ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
     const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
-    switch (this.props.searchResult.status) {
+    switch (this.props.searchStatus) {
       default:
       case Status.REJECTED:
         content = (
@@ -157,7 +158,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         );
         break;
       case Status.FULFILLED:
-        if (hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
+        if (hideIfEmpty && this.props.searchIdeas.length === 0) return null;
 
         const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
           || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
@@ -169,7 +170,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           ...(this.props.displayDefaults || {}),
           ...this.props.panel.display,
         }
-        content = this.props.searchResult.ideas.map((idea, ideaIndex) => {
+        content = this.props.searchIdeas.map((idea, ideaIndex) => {
           var content: React.ReactNode;
           if (this.props.renderPost) {
             content = this.props.renderPost(idea, ideaIndex);
@@ -223,7 +224,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
                 this.props.widthExpand && widthExpandMarginClassName,
                 this.props.classes.placeholder,
                 // Just hide instead of removing to prevent the width from collapsing
-                this.props.searchResult.ideas.length && this.props.classes.placeholderHidden,
+                this.props.searchIdeas.length && this.props.classes.placeholderHidden,
               )}
             >
               <Typography variant='overline' style={{
@@ -337,11 +338,9 @@ export default keyMapper(
         const connectProps: ConnectProps = {
           config,
           configver,
-          searchResult: {
-            status: search?.status,
-            cursor: search?.cursor,
-            ideas: ideas || [],
-          },
+          searchStatus: search?.status,
+          searchCursor: search?.cursor,
+          searchIdeas: ideas || [],
           missingVotes,
           projectId: projectId || undefined,
           loggedInUser,

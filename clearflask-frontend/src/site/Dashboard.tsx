@@ -649,10 +649,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         const roadmapPostSearch = this.state.roadmapPostSearch || {
           sortBy: AdminClient.IdeaSearchAdminSortByEnum.Trending,
-          ...(this.state.feedback ? {
-            filterCategoryIds: [this.state.feedback.categoryAndIndex.category.categoryId],
-          } : {}),
         };
+        if (this.state.feedback) roadmapPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
         menu = {
           size: { breakWidth: 267, flexGrow: 1, maxWidth: 350, scroll: Orientation.Vertical },
           detachFromMain: true,
