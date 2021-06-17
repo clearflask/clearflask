@@ -28,7 +28,9 @@ import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
+import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { createMutableRef } from '../../common/util/refUtil';
+import { traceRenderComponentDidUpdate } from '../../common/util/traceRenderUtil';
 import { importFailed, importSuccess } from '../../Main';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
@@ -345,18 +347,17 @@ interface Props {
   onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
-  callOnMount?: () => void,
   configver?: string;
   projectId: string;
   settings: StateSettings;
   category?: Client.Category;
   credits?: Client.Credits;
   maxFundAmountSeen: number;
+  voteStatus?: Status;
   vote?: Client.VoteOption;
   expression?: Array<string>;
   fundAmount?: number;
   loggedInUser?: Client.User;
-  updateVote: (voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
 }
 interface State {
   currentVariant: PostVariant;
@@ -384,8 +385,26 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       currentVariant: props.variant,
     };
 
-    props.callOnMount?.();
+    // Refresh votes from server if missing
+    if (props.idea
+      && props.voteStatus === undefined
+      // Don't refresh votes if inside a panel which will refresh votes for us
+      && props.variant === 'page'
+      && props.loggedInUser) {
+      props.server.dispatch().then(d => d.ideaVoteGetOwn({
+        projectId: props.projectId,
+        ideaIds: [props.idea.ideaId],
+        myOwnIdeaIds: props.idea.authorUserId === props.loggedInUser.userId
+          ? [props.idea.ideaId] : [],
+      }));
+    }
   }
+
+  shouldComponentUpdate = customShouldComponentUpdate({
+    nested: new Set('display'),
+  });
+
+  componentDidUpdate = traceRenderComponentDidUpdate;
 
   componentDidMount() {
     this._isMounted = true;
@@ -789,7 +808,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const upvote = () => {
       if (this.state.isSubmittingVote) return;
       this.setState({ isSubmittingVote: Client.VoteOption.Upvote });
-      this.props.updateVote({
+      this.updateVote({
         vote: (this.props.vote === Client.VoteOption.Upvote)
           ? Client.VoteOption.None : Client.VoteOption.Upvote
       })
@@ -808,7 +827,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.state.isSubmittingVote) return;
     const downvote = () => {
       this.setState({ isSubmittingVote: Client.VoteOption.Downvote });
-      this.props.updateVote({
+      this.updateVote({
         vote: (this.props.vote === Client.VoteOption.Downvote)
           ? Client.VoteOption.None : Client.VoteOption.Downvote
       })
@@ -1020,7 +1039,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       } else {
         expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Add, expression: display };
       }
-      this.props.updateVote({ expressions: expressionDiff });
+      this.updateVote({ expressions: expressionDiff });
       if (this.state.expressionExpanded
         && !!this.props.category?.support.express?.limitEmojiPerIdea) {
         this.setState({ expressionExpanded: false });
@@ -1320,7 +1339,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
             if (await animate({ sleepInMs: 1000 })) return;
 
-            await this.props.updateVote({ expressions: change.update });
+            await this.updateVote({ expressions: change.update });
 
             if (await animate({ sleepInMs: 1000, setState: { expressionExpanded: false } })) return;
 
@@ -1329,40 +1348,36 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       }
     }
   }
+
+  async updateVote(ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> {
+    const dispatcher = await this.props.server.dispatch();
+    const response = await dispatcher.ideaVoteUpdate({
+      projectId: this.props.projectId,
+      ideaId: this.props.idea!.ideaId,
+      ideaVoteUpdate,
+    });
+    return response;
+  }
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  var voteStatus: Status | undefined;
   var vote: Client.VoteOption | undefined;
   var expression: Array<string> | undefined;
   var fundAmount: number | undefined;
-  var callOnMount;
   if (ownProps.idea) {
-    const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
-    if (voteStatus === undefined) {
-      // Don't refresh votes if inside a panel which will refresh votes for us
-      if (ownProps.variant === 'page'
-        && state.users.loggedIn.status === Status.FULFILLED
-        && state.users.loggedIn.user) {
-        callOnMount = () => {
-          ownProps.server.dispatch().then(d => d.ideaVoteGetOwn({
-            projectId: state.projectId!,
-            ideaIds: [ownProps.idea!.ideaId],
-            myOwnIdeaIds: ownProps.idea!.authorUserId === state.users.loggedIn.user?.userId
-              ? [ownProps.idea!.ideaId] : [],
-          }));
-        };
-      }
-    } else {
+    voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
+    if (voteStatus !== undefined) {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
       expression = state.votes.expressionByIdeaId[ownProps.idea.ideaId];
       fundAmount = state.votes.fundAmountByIdeaId[ownProps.idea.ideaId];
     }
   }
   return {
-    callOnMount,
     configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId!,
     settings: state.settings,
+    voteStatus,
     vote,
     expression,
     fundAmount,
@@ -1372,10 +1387,5 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().then(d => d.ideaVoteUpdate({
-      projectId: state.projectId!,
-      ideaId: ownProps.idea!.ideaId,
-      ideaVoteUpdate,
-    })),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

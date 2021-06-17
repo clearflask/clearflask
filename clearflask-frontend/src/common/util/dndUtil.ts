@@ -50,5 +50,5 @@ export const dndDrag = async (api: SensorAPI, draggableId: string, droppableId: 
 
 export const dndFindElement = (type: 'droppable' | 'draggable', id: string): Element | null => {
   if (windowIso.isSsr) return null;
-  return windowIso.document.querySelector(`[data-rbd-${type}-id="${id}"]`);
+  return windowIso.document.querySelector(`[data-rbd-${type}-id="${id.replace(/["\\]/g, '\\$&')}"]`);
 }

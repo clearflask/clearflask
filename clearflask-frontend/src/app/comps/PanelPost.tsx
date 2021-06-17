@@ -38,6 +38,12 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
   },
+  placeholderHidden: {
+    maxHeight: 0,
+    padding: 0,
+    margin: 0,
+    visibility: 'hidden',
+  },
   widthExpandMarginSupplied: {
     padding: (props: Props) => props.widthExpandMargin,
   },
@@ -152,70 +158,79 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         break;
       case Status.FULFILLED:
         if (hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
-        if (this.props.searchResult.ideas.length === 0) {
-          content = (
-            <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
-              <Typography variant='overline'>Nothing found</Typography>
-            </div>
-          )
-        } else {
-          const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
-            || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
 
-          const display: Client.PostDisplay = {
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 2,
-            ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
-            ...(this.props.displayDefaults || {}),
-            ...this.props.panel.display,
-          }
-          content = this.props.searchResult.ideas.map((idea, ideaIndex) => {
-            var content: React.ReactNode;
-            if (this.props.renderPost) {
-              content = this.props.renderPost(idea, ideaIndex);
-            } else {
-              content = (
-                <Post
-                  key={idea.ideaId}
-                  className={classNames(
-                    this.props.widthExpand && widthExpandMarginClassName,
-                    this.props.postClassName,
-                    this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
-                  )}
-                  server={this.props.server}
-                  idea={idea}
-                  widthExpand={this.props.widthExpand}
-                  expandable
-                  disableOnClick={this.props.disableOnClick}
-                  onClickPost={this.props.onClickPost}
-                  onUserClick={this.props.onUserClick}
-                  display={display}
-                  variant='list'
-                  {...this.props.PostProps}
-                />
-              );
-            }
-            if (this.props.wrapPost) {
-              content = (
-                <React.Fragment key={idea.ideaId}>
-                  {this.props.wrapPost(idea, content, ideaIndex)}
-                </React.Fragment>
-              );
-            }
-            return content;
-          });
-          if (this.props.showDivider) {
-            content = content.map(post => (
-              <>
-                {post}
-                {this.props.direction === Direction.Vertical
-                  ? (<Divider />)
-                  : (<DividerVertical />)
-                }
-              </>
-            ));
-          }
+        const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
+          || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
+
+        const display: Client.PostDisplay = {
+          titleTruncateLines: 1,
+          descriptionTruncateLines: 2,
+          ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
+          ...(this.props.displayDefaults || {}),
+          ...this.props.panel.display,
         }
+        content = this.props.searchResult.ideas.map((idea, ideaIndex) => {
+          var content: React.ReactNode;
+          if (this.props.renderPost) {
+            content = this.props.renderPost(idea, ideaIndex);
+          } else {
+            content = (
+              <Post
+                key={idea.ideaId}
+                className={classNames(
+                  this.props.widthExpand && widthExpandMarginClassName,
+                  this.props.postClassName,
+                  this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
+                )}
+                server={this.props.server}
+                idea={idea}
+                widthExpand={this.props.widthExpand}
+                expandable
+                disableOnClick={this.props.disableOnClick}
+                onClickPost={this.props.onClickPost}
+                onUserClick={this.props.onUserClick}
+                display={display}
+                variant='list'
+                {...this.props.PostProps}
+              />
+            );
+          }
+          if (this.props.wrapPost) {
+            content = (
+              <React.Fragment key={idea.ideaId}>
+                {this.props.wrapPost(idea, content, ideaIndex)}
+              </React.Fragment>
+            );
+          }
+          return content;
+        });
+        if (this.props.showDivider) {
+          content = content.map(post => (
+            <>
+              {post}
+              {this.props.direction === Direction.Vertical
+                ? (<Divider />)
+                : (<DividerVertical />)
+              }
+            </>
+          ));
+        }
+        content = (
+          <>
+            {content}
+            <div
+              className={classNames(
+                this.props.widthExpand && widthExpandMarginClassName,
+                this.props.classes.placeholder,
+                // Just hide instead of removing to prevent the width from collapsing
+                this.props.searchResult.ideas.length && this.props.classes.placeholderHidden,
+              )}
+            >
+              <Typography variant='overline' style={{
+              }}>Nothing found</Typography>
+            </div>
+          </>
+        );
         break;
     }
     content = this.props.suppressPanel ? content : (

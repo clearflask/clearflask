@@ -16,12 +16,8 @@ import { dndDrag } from '../../common/util/dndUtil';
 import RenderControl from '../../common/util/RenderControl';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import Subscription from '../../common/util/subscriptionUtil';
+import { droppableDataSerialize } from './dashboardDndActionHandler';
 import PostList from './PostList';
-
-export const QuickActionDroppableIdPrefix = 'quick-action-';
-export const ChangeToStatusIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}status-to-`;
-export const ConvertToTaskWithStatusIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}convert-to-task-`;
-export const MergeToPostIdDroppableIdPrefix = `${QuickActionDroppableIdPrefix}merge-to-`;
 
 const styles = (theme: Theme) => createStyles({
   feedbackTitle: {
@@ -146,7 +142,11 @@ const DashboardQuickActions = (props: {
           <FilterControlTitle name='Quick actions' className={classes.feedbackTitle} />
           <div className={classes.postActionGroup}>
             {feedbackNextStatusActions.map(status => {
-              const droppableId = ChangeToStatusIdDroppableIdPrefix + status.statusId;
+              const droppableId = droppableDataSerialize({
+                type: 'quick-action-feedback-change-status',
+                dropbox: true,
+                statusId: status.statusId,
+              });
               return (
                 <QuickActionArea
                   key={status.statusId}
@@ -170,7 +170,11 @@ const DashboardQuickActions = (props: {
               <QuickActionArea
                 key={status.statusId}
                 isDragging={!!draggingPostId}
-                droppableId={ConvertToTaskWithStatusIdDroppableIdPrefix + status.statusId}
+                droppableId={droppableDataSerialize({
+                  type: 'quick-action-feedback-to-task',
+                  dropbox: true,
+                  statusId: status.statusId,
+                })}
                 disabled={!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)}
                 color={status.color}
                 onClick={onClick}
@@ -206,7 +210,11 @@ const DashboardQuickActions = (props: {
                 <QuickActionArea
                   key={idea.ideaId}
                   isDragging={!!draggingPostId}
-                  droppableId={MergeToPostIdDroppableIdPrefix + idea.ideaId}
+                  droppableId={droppableDataSerialize({
+                    type: 'quick-action-feedback-merge-duplicate',
+                    dropbox: true,
+                    postId: idea.ideaId,
+                  })}
                   disabled={!canMerge}
                   onClick={onClick}
                   title={truncateWithElipsis(30, idea.title)}

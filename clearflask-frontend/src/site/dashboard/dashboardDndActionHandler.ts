@@ -6,16 +6,19 @@ import { RoadmapInstance } from "../../common/config/template/roadmap";
 export const DroppableWithDataPrefix = 'data-';
 export type DroppableData = {
   type: 'quick-action-feedback-change-status';
+  dropbox: true; // Shows shrinking drop animation
   statusId: string;
 } | {
   type: 'quick-action-feedback-to-task';
+  dropbox: true;
   statusId: string;
 } | {
   type: 'quick-action-feedback-merge-duplicate';
+  dropbox: true;
   postId: string;
 } | {
   type: 'feedback-search';
-  searchKey: string;
+  searchKey: string; // Allow add/remove from redux search results on drag
 } | {
   type: 'roadmap-panel';
   statusId?: string;

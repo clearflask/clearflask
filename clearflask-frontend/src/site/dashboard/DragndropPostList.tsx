@@ -3,7 +3,7 @@ import DragmeIcon from '@material-ui/icons/DragIndicator';
 import classNames from 'classnames';
 import React from 'react';
 import { Draggable, DraggableProvided, DropAnimation, Droppable, DroppableId, DroppableProvidedProps } from 'react-beautiful-dnd';
-import { QuickActionDroppableIdPrefix } from './DashboardQuickActions';
+import { droppableDataDeserialize } from './dashboardDndActionHandler';
 import PostList from './PostList';
 
 export const PostListWithSearchKeyDroppableIdPrefix = 'post-list-';
@@ -148,7 +148,8 @@ const patchStyle = (
   // by changing opacity and scale down.
   if (dropAnimation
     && style.transform
-    && draggingOver?.startsWith(QuickActionDroppableIdPrefix)) {
+    && draggingOver
+    && droppableDataDeserialize(draggingOver)?.['dropbox']) {
     // Properties match default combine https://github.com/atlassian/react-beautiful-dnd/blob/2360665305b854434e968e41c7b4105009b73c40/src/animation.js#L18
     style.transform = (style.transform || '') + ' scale(0)';
     style.opacity = 0;
