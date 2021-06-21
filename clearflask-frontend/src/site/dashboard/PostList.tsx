@@ -59,8 +59,8 @@ interface ConnectProps {
 class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   shouldComponentUpdate = customShouldComponentUpdate({
-    // nested: new Set(['displayOverride', 'PanelPostProps', 'search']),
-    // presence: new Set(['onClickPost', 'onUserClick']),
+    nested: new Set(['displayOverride', 'PanelPostProps', 'search']),
+    presence: new Set(['onClickPost', 'onUserClick']),
   });
 
   render() {
@@ -111,7 +111,6 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         panel={panel}
         widthExpand
         widthExpandMargin={this.props.theme.spacing(2)}
-        showDivider={this.props.layout !== 'similar-merge-action'}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}

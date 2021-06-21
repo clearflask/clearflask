@@ -113,6 +113,12 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1category~1{categoryId}~1aggregate'
   /project/{projectId}/admin/idea/histogram:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1histogram'
+  /project/{projectId}/admin/idea/draft:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1draft'
+  /project/{projectId}/admin/idea/draft/search:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1draft~1search'
+  /project/{projectId}/admin/idea/draft/{draftId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1draft~1{draftId}'
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:

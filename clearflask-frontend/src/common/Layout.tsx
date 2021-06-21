@@ -308,7 +308,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
       <div className={classNames(
         layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
         !layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.headerMargin,
-        layoutState.enableBoxLayout && this.props.classes.boxLayout,
+        layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.boxLayout,
         this.props.classes.section,
         this.props.classes.menu,
         !menuSection?.detachFromMain && !layoutState.overflowMenu && this.props.classes.menuMergeWithContent,
@@ -336,13 +336,14 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
         layoutState.enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
         !layoutState.enableBoxLayout && showHeader && this.props.classes.headerMargin,
         layoutState.enableBoxLayout && (mainSection.boxLayoutNoPaper ? this.props.classes.boxLayoutNoPaper : this.props.classes.boxLayout),
-        !menuSection?.detachFromMain && layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.contentMergeWithMenuBoxLayout,
+        !menuSection?.detachFromMain && !!menu && layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.contentMergeWithMenuBoxLayout,
         this.props.classes.section,
         this.props.classes.content,
         this.props.classes.vertical,
       )} style={{
         flexGrow: this.props.main?.size?.flexGrow || 0,
         flexBasis: this.props.main.size?.breakWidth || 'content',
+        minWidth: this.props.main.size?.breakWidth,
         width: this.props.main.size?.width,
         maxWidth: this.props.main.size?.maxWidth,
       }}>
@@ -440,6 +441,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
           <div className={classNames(
             this.props.classes.grow,
             this.props.classes.horizontal,
+            this.props.classes[`scroll-${Orientation.Horizontal}`],
             layoutState.enableBoxLayout && this.props.classes.boxLayoutParent,
           )}>
             {!layoutState.overflowMenu && !!menu && (

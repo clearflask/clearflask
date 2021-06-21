@@ -1595,6 +1595,7 @@ export const ProjectSettingsLanding = (props: {
                       </div>
                       <ProjectSettingsAddWithName
                         label='New link'
+                        placeholder='Title'
                         withAccordion
                         onAdd={newLink => {
                           setExpandedType('link');
@@ -1724,7 +1725,10 @@ export const ProjectSettingsLandingLink = (props: {
             }}
             width={164}
             inputMinWidth={164}
-            SelectionPickerProps={{ disableInput: true }}
+            SelectionPickerProps={{
+              disableInput: true,
+              disableClearable: true,
+            }}
           />
         ) : (
           <TextField
@@ -1888,6 +1892,7 @@ export const ProjectSettingsFeedback = (props: {
                     </div>
                     <ProjectSettingsAddWithName
                       label='New status'
+                      placeholder='Title'
                       withAccordion
                       onAdd={name => {
                         setExpandedType('status');
@@ -2056,6 +2061,7 @@ export const ProjectSettingsSectionTagging = (props: {
           </div>
           <ProjectSettingsAddWithName
             label='New tag group'
+            placeholder='Platform'
             withAccordion
             onAdd={newTagGroup => {
               props.onExpandedChange(props.categoryAndIndex.category.tagging.tagGroups.length);
@@ -2167,6 +2173,7 @@ export const ProjectSettingsTagGroup = (props: {
       <ProjectSettingsAddWithName
         key='New tag'
         label='New tag'
+        placeholder='Windows'
         onAdd={newTag => {
           const tagId = randomUuid();
           ((props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tags']) as ConfigEditor.ArrayProperty)
@@ -2335,64 +2342,13 @@ export const ProjectSettingsRoadmap = (props: {
                     server={props.server}
                     board={roadmap.pageAndIndex.page.board}
                     panels={roadmap?.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
-                      <BoardPanel
+                      <ProjectSettingsRoadmapPanel
                         server={props.server}
+                        editor={props.editor}
+                        roadmap={roadmap}
                         panel={panel}
-                        PanelPostProps={{
-                          searchOverride: {
-                            limit: 3,
-                          },
-                          disableOnClick: true,
-                          overrideTitle: !panel.title ? undefined : (
-                            <PropertyShowOrEdit
-                              allowEdit={true}
-                              show={(panel.title)}
-                              edit={(
-                                <PropertyByPathReduxless
-                                  marginTop={0}
-                                  planId={planId}
-                                  width='auto'
-                                  overrideDescription=''
-                                  overrideName='Title'
-                                  editor={props.editor}
-                                  path={['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'title']}
-                                />
-                              )}
-                            />
-                          ),
-                          preContent: (
-                            <>
-                              {!panel.title && (
-                                <Button
-                                  className={classes.roadmapPanelAddTitleButton}
-                                  onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'title']) as ConfigEditor.StringProperty)
-                                    .set(roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0])?.name || 'Title')}
-                                >
-                                  Add title
-                                </Button>
-                              )}
-                              <PropertyByPathReduxless
-                                marginTop={0}
-                                planId={planId}
-                                width='auto'
-                                editor={props.editor}
-                                path={['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'panels', panelIndex, 'search', 'filterStatusIds']}
-                                bare
-                                SelectionPickerProps={{
-                                  isMulti: false,
-                                  disableClearable: true,
-                                }}
-                                TextFieldProps={{
-                                  placeholder: 'Filter',
-                                  classes: { root: classes.filterStatus },
-                                  InputProps: {
-                                    classes: { notchedOutline: classes.filterStatusInput },
-                                  },
-                                }}
-                              />
-                            </>
-                          ),
-                        }}
+                        panelIndex={panelIndex}
+                        planId={planId}
                       />
                     ))}
                   />
@@ -2423,6 +2379,113 @@ export const ProjectSettingsRoadmap = (props: {
     </ProjectSettingsBase>
   );
 }
+export const ProjectSettingsRoadmapPanel = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  roadmap: RoadmapInstance;
+  panel: Admin.PagePanelWithHideIfEmpty;
+  panelIndex: number;
+  planId?: string;
+}) => {
+  const classes = useStyles();
+
+  // If advanced settings have not been used,
+  // only one status per column and each column name and color matches status
+  // Keep this in a ref, since value may flip while updating both panel title and status title.
+  const onlyStatus = useRef(props.panel.search.filterStatusIds?.length !== 1 ? undefined : props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === props.panel.search.filterStatusIds?.[0]));
+  const titleMatchesStatus = useRef(!!onlyStatus.current && props.panel.title === onlyStatus.current.name && props.panel.color === onlyStatus.current.color);
+
+  if (!props.roadmap.pageAndIndex) return null;
+
+  return (
+    <BoardPanel
+      server={props.server}
+      panel={props.panel}
+      PanelPostProps={{
+        searchOverride: {
+          limit: 3,
+        },
+        disableOnClick: true,
+        overrideTitle: !props.panel.title ? undefined : (
+          <PropertyShowOrEdit
+            allowEdit={true}
+            show={(<div style={{ color: props.panel.color }}>{props.panel.title}</div>)}
+            edit={(
+              <DebouncedTextFieldWithColorPicker
+                className={classes.feedbackTag}
+                label={(onlyStatus.current && titleMatchesStatus.current) ? 'Title and status name' : 'Title'}
+                variant='outlined'
+                size='small'
+                textValue={props.panel.title}
+                onTextChange={text => {
+                  (props.editor.getProperty(['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'title']) as ConfigEditor.StringProperty).set(text);
+                  if (onlyStatus.current && titleMatchesStatus.current) {
+                    const statusIndex = props.roadmap.categoryAndIndex.category.workflow.statuses.findIndex(s => s.statusId === onlyStatus.current?.statusId);
+                    if (statusIndex !== -1) {
+                      (props.editor.getProperty(['content', 'categories', props.roadmap.categoryAndIndex.index, 'workflow', 'statuses', statusIndex, 'name']) as ConfigEditor.StringProperty).set(text);
+                    }
+                  }
+                }}
+                colorValue={props.panel.color}
+                onColorChange={color => {
+                  (props.editor.getProperty(['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'color']) as ConfigEditor.StringProperty).set(color);
+                  if (onlyStatus.current && titleMatchesStatus.current) {
+                    const statusIndex = props.roadmap.categoryAndIndex.category.workflow.statuses.findIndex(s => s.statusId === onlyStatus.current?.statusId);
+                    if (statusIndex !== -1) {
+                      (props.editor.getProperty(['content', 'categories', props.roadmap.categoryAndIndex.index, 'workflow', 'statuses', statusIndex, 'color']) as ConfigEditor.StringProperty).set(color);
+                    }
+                  }
+                }}
+                TextFieldProps={{
+                  InputProps: {
+                    style: {
+                      minWidth: Property.inputMinWidth,
+                      width: propertyWidth,
+                    },
+                  },
+                }}
+              />
+            )}
+          />
+        ),
+        preContent: (
+          <>
+            {!props.panel.title && (
+              <Button
+                className={classes.roadmapPanelAddTitleButton}
+                onClick={() => (props.editor.getProperty(['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'title']) as ConfigEditor.StringProperty)
+                  .set(props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === props.panel.search.filterStatusIds?.[0])?.name || 'Title')}
+              >
+                Add title
+              </Button>
+            )}
+            {!titleMatchesStatus.current && (
+              <PropertyByPathReduxless
+                marginTop={0}
+                planId={props.planId}
+                width='auto'
+                editor={props.editor}
+                path={['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'search', 'filterStatusIds']}
+                bare
+                SelectionPickerProps={{
+                  disableClearable: true,
+                }}
+                TextFieldProps={{
+                  placeholder: 'Filter',
+                  classes: { root: classes.filterStatus },
+                  InputProps: {
+                    classes: { notchedOutline: classes.filterStatusInput },
+                  },
+                }}
+              />
+            )}
+          </>
+        ),
+      }}
+    />
+  );
+}
+
 export const ProjectSettingsChangelog = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
@@ -2790,7 +2853,6 @@ const PropertyByPathReduxless = (props: {
   );
 }
 
-
 const PropertyShowOrEdit = (props: {
   allowEdit: boolean;
   show: React.ReactNode;
@@ -2830,6 +2892,24 @@ const PropertyShowOrEdit = (props: {
     </>
   );
 };
+
+const DebouncedTextFieldWithColorPicker = (props: React.ComponentProps<typeof TextFieldWithColorPicker>) => {
+  const [statusName, setStatusName] = useDebounceProp<string>(
+    props.textValue || '',
+    text => props.onTextChange(text));
+  const [statusColor, setStatusColor] = useDebounceProp<string>(
+    props.colorValue || '',
+    color => props.onColorChange(color));
+  return (
+    <TextFieldWithColorPicker
+      {...props}
+      textValue={statusName}
+      onTextChange={text => setStatusName(text)}
+      colorValue={statusColor}
+      onColorChange={color => setStatusColor(color)}
+    />
+  );
+}
 
 const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): [T, (val: T) => void] => {
   const [val, setVal] = useState<T>(initialValue);

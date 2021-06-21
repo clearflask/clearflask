@@ -1,5 +1,6 @@
 import { loremIpsum } from "lorem-ipsum";
 import { CreateTemplateOptions } from "../common/config/configTemplater";
+import { ChangelogCategoryIdPrefix } from "../common/config/template/changelog";
 import { saltHashPassword } from "../common/util/auth";
 import { textToHtml } from "../common/util/richEditorUtil";
 import * as Admin from "./admin";
@@ -549,11 +550,18 @@ class DataMock {
     });
   }
 
-  mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 4): Promise<any> {
+  mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 3): Promise<any> {
     return this.getConfig()
       .then(config => {
         const promises: Promise<any>[] = [];
         config.content.categories.forEach((category: Admin.Category) => {
+          if (userMe && category.categoryId.startsWith(ChangelogCategoryIdPrefix)) {
+            promises.push(Promise.resolve(userMe)
+              .then((user: Admin.User) =>
+                this.mockDraft(category, user)
+              )
+            );
+          }
           [undefined, ...category.workflow.statuses].forEach((status: Admin.IdeaStatus | undefined) => {
             var n = ideaPerTypeCount;
             while (n-- > 0) {
@@ -626,6 +634,27 @@ class DataMock {
     });
     !suppressComments && category.support.comment && this.mockComments([user], item);
     return item;
+  }
+
+  async mockDraft(category: Admin.Category, userMe: Admin.User, extra: Partial<Admin.IdeaDraftAdmin> = {}): Promise<Admin.IdeaDraftAdmin> {
+    const draft = await ServerMock.get().ideaDraftCreateAdmin({
+      projectId: this.projectId,
+      ideaCreateAdmin: {
+        authorUserId: userMe.userId,
+        title: loremIpsum({
+          units: 'words',
+          count: Math.round(Math.random() * 5 + 3),
+        }),
+        description: textToHtml(loremIpsum({
+          units: 'sentences',
+          count: Math.round(Math.random() * 6 + 1),
+        })),
+        categoryId: category.categoryId,
+        tagIds: [],
+        ...extra,
+      },
+    });
+    return draft;
   }
 
   fakeMockIdeaData(category: Admin.Category): Partial<Admin.Idea> {

@@ -8,6 +8,7 @@ import { CategoryAndIndex } from "./templateUtils";
 
 const RoadmapCategoryIdPrefix = 'roadmap-';
 const RoadmapPageIdPrefix = 'roadmap-';
+const RoadmapStatusBacklogPrefix = 'backlog-';
 const RoadmapStatusClosedPrefix = 'closed-';
 const RoadmapStatusCompletedPrefix = 'completed-';
 
@@ -18,6 +19,7 @@ export interface RoadmapInstance {
     page: PageWithBoard;
     index: number;
   },
+  statusIdBacklog?: string;
   statusIdClosed?: string;
   statusIdCompleted?: string;
 }
@@ -31,6 +33,8 @@ export async function roadmapGet(this: Templater): Promise<RoadmapInstance | und
   const roadmap: RoadmapInstance = {
     categoryAndIndex,
     pageAndIndex: pageAndIndex as (RoadmapInstance['pageAndIndex'] | undefined),
+    statusIdBacklog: categoryAndIndex.category.workflow.statuses
+      .find(s => s.statusId.startsWith(RoadmapStatusBacklogPrefix))?.statusId,
     statusIdClosed: categoryAndIndex.category.workflow.statuses
       .find(s => s.statusId.startsWith(RoadmapStatusClosedPrefix))?.statusId,
     statusIdCompleted: categoryAndIndex.category.workflow.statuses
@@ -47,14 +51,16 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
     const categoriesProp = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const categoryId = RoadmapCategoryIdPrefix + randomUuid();
 
+    const statusIdBacklog = RoadmapStatusBacklogPrefix + randomUuid();
     const statusIdLater = randomUuid();
     const statusIdNext = randomUuid();
     const statusIdNow = randomUuid();
     const statusIdCompleted = RoadmapStatusCompletedPrefix + randomUuid();
     const statusIdCancelled = RoadmapStatusClosedPrefix + randomUuid();
     const workflow = Admin.WorkflowToJSON({
-      entryStatus: statusIdLater,
+      entryStatus: statusIdBacklog,
       statuses: [
+        { name: 'Backlog', nextStatusIds: [statusIdLater, statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Later', nextStatusIds: [statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Next', nextStatusIds: [statusIdLater, statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Now', nextStatusIds: [statusIdLater, statusIdNext, statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
@@ -85,9 +91,13 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: roadmap.categoryAndIndex.category.workflow.statuses
-          .filter(s => !s.statusId.startsWith(RoadmapStatusClosedPrefix) && !s.statusId.startsWith(RoadmapStatusCompletedPrefix))
+          .filter(s => !s.statusId.startsWith(RoadmapStatusClosedPrefix)
+            && !s.statusId.startsWith(RoadmapStatusCompletedPrefix)
+            && !s.statusId.startsWith(RoadmapStatusBacklogPrefix))
           .map(status => Admin.PagePanelWithHideIfEmptyToJSON({
-            title: status.name, hideIfEmpty: false,
+            title: status.name,
+            color: status.color,
+            hideIfEmpty: false,
             display: {
               titleTruncateLines: 1,
               descriptionTruncateLines: 0,

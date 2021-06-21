@@ -13,7 +13,6 @@ const EnvironmentNotifier = () => {
 
   console.log("Environment:", env);
   enqueueSnackbar("Environment: " + env, {
-    variant: 'info',
     preventDuplicate: true,
   });
   return null;

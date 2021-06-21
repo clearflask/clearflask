@@ -8,7 +8,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
+import { VariantType, withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
 import { connect, Provider } from 'react-redux';
@@ -18,6 +18,7 @@ import * as AdminClient from '../api/admin';
 import { getSearchKey, Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
+import PanelDraft from '../app/comps/PanelDraft';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
@@ -70,6 +71,20 @@ import Logo from './Logo';
 export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
   return `${windowIso.location.protocol}//${escapeHtml(config.domain) || `${escapeHtml(config.slug)}.${windowIso.location.host}`}`
 }
+
+export interface ShowSnackbarProps {
+  message: string;
+  key?: string;
+  variant?: VariantType;
+  persist?: boolean;
+  actions?: Array<{
+    title: string;
+    onClick: (close) => void;
+  }>,
+}
+export type ShowSnackbar = (props: ShowSnackbarProps) => void;
+
+export type OpenPost = (postId?: string, redirectPage?: string) => void;
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
@@ -213,6 +228,8 @@ interface State {
   feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
   roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
   roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
+  changelogPostSearch?: AdminClient.IdeaSearchAdmin;
+  changelogPreview?: { type: 'create' } | { type: 'post', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: { type: 'create' } | { type: 'user', id: string },
@@ -627,7 +644,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     draggableId,
                     dstDroppableId,
                     0,
-                    postId => this.pageClicked('post', [postId]),
+                    this.openPost.bind(this),
+                    this.showSnackbar.bind(this),
                     this.state.feedback || undefined,
                     this.state.roadmap || undefined);
                 }}
@@ -647,78 +665,79 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        const roadmapPostSearch = this.state.roadmapPostSearch || {
-          sortBy: AdminClient.IdeaSearchAdminSortByEnum.Trending,
-        };
-        if (this.state.feedback) roadmapPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
-        menu = {
-          size: { breakWidth: 267, flexGrow: 1, maxWidth: 350, scroll: Orientation.Vertical },
-          detachFromMain: true,
-          content: (
-            <>
-              <DashboardSearchControls
-                placeholder='Search for feedback'
-                key={'roadmap-feedback-search-bar' + activeProject.server.getProjectId()}
-                searchText={roadmapPostSearch.searchText || ''}
-                onSearchChanged={searchText => this.setState({
-                  roadmapPostSearch: {
-                    ...this.state.roadmapPostSearch,
-                    searchText,
-                  }
-                })}
-                filters={(
-                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                    <DashboardPostFilterControls
-                      key={activeProject.server.getProjectId()}
-                      server={activeProject.server}
-                      search={roadmapPostSearch}
-                      allowSearch={{ enableSearchByCategory: false }}
-                      permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
-                      onSearchChanged={roadmapPostSearch => this.setState({ roadmapPostSearch })}
-                      horizontal
-                    />
-                  </Provider>
-                )}
-              />
-              <Divider />
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <DragndropPostList
-                  key={activeProject.server.getProjectId()}
-                  scroll
-                  droppableId={droppableDataSerialize({
-                    type: 'feedback-search',
-                    searchKey: getSearchKey(roadmapPostSearch),
-                  })}
-                  server={activeProject.server}
-                  search={roadmapPostSearch}
-                  onClickPost={postId => this.pageClicked('post', [postId])}
-                  onUserClick={userId => this.pageClicked('user', [userId])}
-                  selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
-                  displayOverride={{
-                    showCategoryName: false,
-                  }}
-                />
-              </Provider>
-            </>
-          ),
-        };
+        // const roadmapPostSearch = this.state.roadmapPostSearch || {
+        //   sortBy: AdminClient.IdeaSearchAdminSortByEnum.Trending,
+        // };
+        // if (this.state.feedback) roadmapPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
+        // menu = {
+        //   size: { breakWidth: 267, flexGrow: 1, maxWidth: 350, scroll: Orientation.Vertical },
+        //   detachFromMain: true,
+        //   content: (
+        //     <>
+        //       <DashboardSearchControls
+        //         placeholder='Search for feedback'
+        //         key={'roadmap-feedback-search-bar' + activeProject.server.getProjectId()}
+        //         searchText={roadmapPostSearch.searchText || ''}
+        //         onSearchChanged={searchText => this.setState({
+        //           roadmapPostSearch: {
+        //             ...this.state.roadmapPostSearch,
+        //             searchText,
+        //           }
+        //         })}
+        //         filters={(
+        //           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+        //             <DashboardPostFilterControls
+        //               key={activeProject.server.getProjectId()}
+        //               server={activeProject.server}
+        //               search={roadmapPostSearch}
+        //               allowSearch={{ enableSearchByCategory: false }}
+        //               permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
+        //               onSearchChanged={roadmapPostSearch => this.setState({ roadmapPostSearch })}
+        //               horizontal
+        //             />
+        //           </Provider>
+        //         )}
+        //       />
+        //       <Divider />
+        //       <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+        //         <DragndropPostList
+        //           key={activeProject.server.getProjectId()}
+        //           scroll
+        //           droppableId={droppableDataSerialize({
+        //             type: 'feedback-search',
+        //             searchKey: getSearchKey(roadmapPostSearch),
+        //           })}
+        //           server={activeProject.server}
+        //           search={roadmapPostSearch}
+        //           onClickPost={postId => this.pageClicked('post', [postId])}
+        //           onUserClick={userId => this.pageClicked('user', [userId])}
+        //           selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+        //           displayOverride={{
+        //             showCategoryName: false,
+        //           }}
+        //         />
+        //       </Provider>
+        //     </>
+        //   ),
+        // };
         const roadmapMainBreakWidth = (this.state.roadmap?.pageAndIndex?.page.board.panels.length || 3) * 267
           + ((this.state.roadmap?.statusIdClosed || this.state.roadmap?.statusIdCompleted) ? 267 + BOX_MARGIN : 0);
         main = {
           size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
           boxLayoutNoPaper: true,
           content: layoutStyle => (
-            <TemplateWrapper<RoadmapInstance | undefined>
+            <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
               key='roadmap'
               type='dialog'
               editor={activeProject.editor}
-              mapper={templater => templater.roadmapGet()}
-              renderResolved={(templater, roadmap) => !!roadmap && (
+              mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
+              renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
                 <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                   <RoadmapExplorer
                     key={activeProject.server.getProjectId()}
                     server={activeProject.server}
                     roadmap={roadmap}
+                    changelog={changelog}
                     onClickPost={postId => this.pageClicked('post', [postId])}
                     onUserClick={userId => this.pageClicked('user', [userId])}
                     selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
@@ -746,22 +765,91 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        main = {
-          size: { breakWidth: 1000, scroll: Orientation.Vertical },
-          content: (
-            <TemplateWrapper<ChangelogInstance | undefined>
-              key='changelog'
-              type='dialog'
-              editor={activeProject.editor}
-              mapper={templater => templater.changelogGet()}
-              renderResolved={(templater, changelog) => !!changelog?.pageAndIndex && (
-                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  {'TODO <ChangelogWriter key={activeProject.server.getProjectId()} server={activeProject.server} changelog={changelog} />'}
-                </Provider>
-              )}
+        const changelogPostSearch = this.state.changelogPostSearch || {
+          sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
+        };
+        if (this.state.changelog) changelogPostSearch.filterCategoryIds = [this.state.changelog.categoryAndIndex.category.categoryId];
+
+        const changelogFilters = (layoutState: LayoutState) => (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <DashboardPostFilterControls
+              key={activeProject.server.getProjectId()}
+              server={activeProject.server}
+              search={changelogPostSearch}
+              allowSearch={{ enableSearchByCategory: false }}
+              permanentSearch={{ filterCategoryIds: this.state.changelog ? [this.state.changelog.categoryAndIndex.category.categoryId] : undefined }}
+              onSearchChanged={changelogPostSearch => this.setState({ changelogPostSearch })}
+              horizontal={layoutState.overflowMenu}
             />
+          </Provider>
+        );
+        menu = {
+          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
+          content: layoutState => layoutState.overflowMenu ? null : changelogFilters(layoutState),
+        };
+        if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
+          this.similarPostWasClicked = undefined;
+        }
+        main = {
+          size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
+          content: layoutState => (
+            <div className={this.props.classes.listWithSearchContainer}>
+              <DashboardSearchControls
+                placeholder='Search for changelog entries'
+                key={'changelog-entries-search-bar' + activeProject.server.getProjectId()}
+                searchText={changelogPostSearch.searchText || ''}
+                onSearchChanged={searchText => this.setState({
+                  changelogPostSearch: {
+                    ...this.state.changelogPostSearch,
+                    searchText,
+                  }
+                })}
+                filters={!layoutState.overflowMenu ? null : changelogFilters(layoutState)}
+              />
+              <Divider />
+              <div className={this.props.classes.listContainer}>
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                  {this.state.changelog && (
+                    <PanelDraft
+                      server={activeProject.server}
+                      filterCategoryId={this.state.changelog.categoryAndIndex.category.categoryId}
+                      hideIfEmpty
+                      onClickDraft={draftId => this.pageClicked('post', [draftId])}
+                      selectedDraftId={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
+                    />
+                  )}
+                  <PostList
+                    key={activeProject.server.getProjectId()}
+                    server={activeProject.server}
+                    search={changelogPostSearch}
+                    onClickPost={postId => this.pageClicked('post', [postId])}
+                    onUserClick={userId => this.pageClicked('user', [userId])}
+                    selectedPostId={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
+                    displayOverride={{
+                      showCategoryName: false,
+                    }}
+                  />
+                </Provider>
+              </div>
+            </div>
           ),
         };
+
+        header = {
+          title: 'Changelog',
+          action: {
+            label: 'Create',
+            onClick: () => this.pageClicked('post'),
+          },
+        };
+        if (this.state.changelogPreview?.type === 'create') {
+          preview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.changelogPreview?.type === 'post') {
+          preview = this.renderPreviewPost(this.state.changelogPreview.id, activeProject);
+        } else {
+          preview = this.renderPreviewEmpty('No entry selected', PostPreviewSize);
+        }
+
         showProjectLink = true;
         break;
       case 'users':
@@ -1160,6 +1248,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
         <DragDropContext
+          enableDefaultSensors
           sensors={[api => {
             if (this.state.dragDropSensorApi !== api) {
               this.setState({ dragDropSensorApi: api });
@@ -1185,7 +1274,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               result.draggableId,
               result.destination.droppableId,
               result.destination.index,
-              postId => this.pageClicked('post', [postId]),
+              this.openPost.bind(this),
+              this.showSnackbar.bind(this),
               this.state.feedback || undefined,
               this.state.roadmap || undefined);
           }}
@@ -1568,27 +1658,42 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     return url;
   }
 
+  openPost(postId?: string, redirectPage?: string) {
+    this.pageClicked('post', [postId || '', redirectPage || '']);
+  }
+
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
     if (path === 'post') {
-      const activePath = this.props.match.params['path'] || '';
-      const preview: State['explorerPreview'] & State['feedbackPreview'] & State['roadmapPreview'] = !!subPath[0]
-        ? { type: 'post', id: subPath[0] + '' }
+      // For post, expected parameters for subPath are:
+      // 0: postId or null for create
+      // 1: page to redirect to
+      const postId = !!subPath[0] ? (subPath[0] + '') : undefined;
+      const redirectPath = subPath[1];
+      const redirect = !!redirectPath ? () => this.props.history.push('/dashboard/' + redirectPath) : undefined;
+      const activePath = redirectPath || this.props.match.params['path'] || '';
+      const preview: State['explorerPreview'] & State['feedbackPreview'] & State['roadmapPreview'] = !!postId
+        ? { type: 'post', id: postId }
         : { type: 'create' };
       if (activePath === 'feedback') {
         this.setState({
           previewShowOnPage: 'feedback',
           feedbackPreview: preview,
-        });
+        }, redirect);
       } else if (activePath === 'explore') {
         this.setState({
           previewShowOnPage: 'explore',
           explorerPreview: preview,
-        });
+        }, redirect);
       } else if (activePath === 'roadmap') {
         this.setState({
           previewShowOnPage: 'roadmap',
           roadmapPreview: preview,
-        });
+        }, redirect);
+      } else if (activePath === 'changelog') {
+        this.setState({
+          previewShowOnPage: 'changelog',
+          changelogPreview: preview,
+        }, redirect);
       } else {
         this.setState({
           previewShowOnPage: 'explore',
@@ -1605,6 +1710,24 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     } else {
       this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
     }
+  }
+
+  showSnackbar(props: ShowSnackbarProps) {
+    this.props.enqueueSnackbar(props.message, {
+      key: props.key,
+      variant: props.variant,
+      persist: props.persist,
+      action: !props.actions?.length ? undefined : (key) => (
+        <>
+          {props.actions?.map(action => (
+            <Button
+              color='inherit'
+              onClick={() => action.onClick(() => this.props.closeSnackbar(key))}
+            >{action.title}</Button>
+          ))}
+        </>
+      ),
+    });
   }
 }
 

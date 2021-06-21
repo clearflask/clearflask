@@ -2,6 +2,7 @@ import * as Admin from "../../api/admin";
 import { Project } from "../../api/serverAdmin";
 import { FeedbackInstance } from "../../common/config/template/feedback";
 import { RoadmapInstance } from "../../common/config/template/roadmap";
+import { OpenPost, ShowSnackbar } from "../Dashboard";
 
 export const DroppableWithDataPrefix = 'data-';
 export type DroppableData = {
@@ -74,7 +75,8 @@ const feedbackToTask = async (
   activeProject: Project,
   srcPost: Admin.Idea,
   taskStatusId: string,
-  onClickPost: (postId: string) => void,
+  openPost: OpenPost,
+  showSnackbar: ShowSnackbar,
   feedback: FeedbackInstance,
   roadmap: RoadmapInstance,
 ): Promise<string> => {
@@ -102,7 +104,17 @@ const feedbackToTask = async (
     ideaId: srcPost.ideaId,
     parentIdeaId: taskId,
   });
-  onClickPost(taskId);
+  showSnackbar({
+    message: 'Converted to task',
+    persist: true,
+    actions: [{
+      title: 'Open task',
+      onClick: close => {
+        close();
+        openPost(taskId, 'roadmap');
+      },
+    }]
+  });
   return taskId;
 };
 
@@ -113,7 +125,8 @@ export const dashboardOnDragEnd = async (
   draggableId: string,
   dstDroppableId: string,
   dstIndex: number,
-  onClickPost: (postId: string) => void,
+  openPost: OpenPost,
+  showSnackbar: ShowSnackbar,
   feedback?: FeedbackInstance,
   roadmap?: RoadmapInstance,
 ): Promise<boolean> => {
@@ -146,7 +159,8 @@ export const dashboardOnDragEnd = async (
         activeProject,
         srcPost,
         dstDroppable.statusId,
-        onClickPost,
+        openPost,
+        showSnackbar,
         feedback,
         roadmap);
       removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
@@ -182,7 +196,8 @@ export const dashboardOnDragEnd = async (
           activeProject,
           srcPost,
           dstDroppable.statusId,
-          onClickPost,
+          openPost,
+          showSnackbar,
           feedback,
           roadmap);
         removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);

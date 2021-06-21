@@ -139,7 +139,9 @@ const DashboardQuickActions = (props: {
     <div className={classes.postActionsContainer}>
       {feedbackNextStatusActions?.length && (
         <>
-          <FilterControlTitle name='Quick actions' className={classes.feedbackTitle} />
+          <FilterControlTitle name='Change status' className={classes.feedbackTitle} help={{
+            description: 'Change the feedback status and notify all subscribers',
+          }} />
           <div className={classes.postActionGroup}>
             {feedbackNextStatusActions.map(status => {
               const droppableId = droppableDataSerialize({
@@ -164,7 +166,9 @@ const DashboardQuickActions = (props: {
       )}
       {roadmapNextStatusActions?.length && (
         <>
-          <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} />
+          <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} help={{
+            description: 'Creates a task and places it on your roadmap. Feedback is marked as Accepted, linked to your task, and all subscribers notified.',
+          }} />
           <div className={classes.postActionGroup}>
             {roadmapNextStatusActions.map(status => (
               <QuickActionArea
@@ -186,7 +190,9 @@ const DashboardQuickActions = (props: {
       )}
       {(!similarToPostId || !props.feedback) ? null : (
         <>
-          <FilterControlTitle name='Merge with similar' className={classes.feedbackTitle} />
+          <FilterControlTitle name='Merge with' className={classes.feedbackTitle} help={{
+            description: 'Merges one feedback into another, migrating all votes, subscribers and comments.',
+          }} />
           <PostList
             key={props.activeProject.server.getProjectId()}
             server={props.activeProject.server}

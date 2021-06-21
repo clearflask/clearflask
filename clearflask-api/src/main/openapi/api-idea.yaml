@@ -303,6 +303,15 @@ components:
                   type: string
                 body:
                   type: string
+    IdeaDraftAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
+        - type: object
+          required:
+          - draftId
+          properties:
+            draftId:
+              type: string
     IdeaUpdate:
       type: object
       properties:
@@ -742,6 +751,103 @@ components:
           application/json:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/HistogramResponse'
+/project/{projectId}/admin/idea/draft:
+  post:
+    operationId: ideaDraftCreateAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaDraftAdmin'
+/project/{projectId}/admin/idea/draft/search:
+  post:
+    operationId: ideaDraftSearchAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: filterCategoryId
+      in: query
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaDraftSearchResponse
+              type: object
+              required:
+              - results
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaDraftAdmin'
+/project/{projectId}/admin/idea/draft/{draftId}:
+  patch:
+    operationId: ideaDraftUpdateAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: ideaDraftDeleteAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin

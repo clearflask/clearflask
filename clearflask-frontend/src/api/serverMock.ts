@@ -89,6 +89,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       config: Admin.VersionedConfigAdmin,
       comments: CommentWithAuthorWithParentPath[];
       ideas: Admin.Idea[];
+      drafts: Admin.IdeaDraftAdmin[];
       users: Admin.UserAdmin[];
       votes: VoteWithAuthorAndIdeaId[];
       commentVotes: VoteWithAuthorAndCommentId[];
@@ -820,9 +821,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
-    const ideaIdIndex = this.getProject(request.projectId).ideas.findIndex(idea => idea.ideaId === request.ideaId);
-    if (ideaIdIndex) {
-      this.getProject(request.projectId).ideas.splice(ideaIdIndex, 1);
+    const ideaIndex = this.getProject(request.projectId).ideas.findIndex(idea => idea.ideaId === request.ideaId);
+    if (ideaIndex) {
+      this.getProject(request.projectId).ideas.splice(ideaIndex, 1);
     }
     return this.returnLater();
   }
@@ -916,6 +917,37 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }
     }
     return this.returnLater({ idea, parentIdea });
+  }
+  ideaDraftCreateAdmin(request: Admin.IdeaDraftCreateAdminRequest): Promise<Admin.IdeaDraftAdmin> {
+    const draft: Admin.IdeaDraftAdmin = {
+      ...request.ideaCreateAdmin,
+      draftId: randomUuid(),
+    };
+    this.getProject(request.projectId).drafts.unshift(draft);
+    return this.returnLater(draft);
+  }
+  ideaDraftSearchAdmin(request: Admin.IdeaDraftSearchAdminRequest): Promise<Admin.IdeaDraftSearchResponse> {
+    return this.returnLater(this.filterCursor(this.getProject(request.projectId).drafts
+      .filter(draft => !request.filterCategoryId
+        || (request.filterCategoryId === draft.categoryId)),
+      this.DEFAULT_LIMIT, request.cursor), 1000);
+  }
+  ideaDraftUpdateAdmin(request: Admin.IdeaDraftUpdateAdminRequest): Promise<void> {
+    const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
+    if (!draftIndex) return this.throwLater(404, 'Draft not found');
+    const draftId = this.getProject(request.projectId).drafts.find(draft => draft.draftId === request.draftId)?.draftId;
+    if (!draftId) return this.throwLater(404, 'Draft not found');
+    this.getProject(request.projectId).drafts[draftIndex] = {
+      ...request.ideaCreateAdmin,
+      draftId,
+    };
+    return this.returnLater();
+  }
+  ideaDraftDeleteAdmin(request: Admin.IdeaDraftDeleteAdminRequest): Promise<void> {
+    const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
+    if (!draftIndex) return this.throwLater(404, 'Draft not found');
+    this.getProject(request.projectId).ideas.splice(draftIndex, 1);
+    return this.returnLater();
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
@@ -1316,6 +1348,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         comments: [],
         transactions: [],
         ideas: [],
+        drafts: [],
         users: [],
         votes: [],
         commentVotes: [],

@@ -1,3 +1,4 @@
+import { CSSProperties } from '@material-ui/styles';
 import { applyMiddleware, combineReducers, compose, createStore, Store } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
@@ -148,6 +149,7 @@ export class Server {
       projectId: projectId || stateProjectIdDefault,
       settings: settings || stateSettingsDefault,
       conf: stateConfDefault,
+      drafts: stateDraftsDefault,
       ideas: stateIdeasDefault,
       comments: stateCommentsDefault,
       users: stateUsersDefault,
@@ -294,11 +296,9 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
   }
 }
 
-export const cssBlurry = {
-  blurry: {
-    color: 'transparent',
-    textShadow: '3px 0px 6px rgba(0,0,0,0.8)',
-  }
+export const cssBlurry: Record<string, string | CSSProperties> = {
+  color: 'transparent',
+  textShadow: '3px 0px 6px rgba(0,0,0,0.8)',
 };
 interface updateSettingsAction {
   type: 'updateSettings';
@@ -705,6 +705,115 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           }
         },
         maxFundAmountSeen: Math.max(action.payload.idea.funded || 0, state.maxFundAmountSeen),
+      };
+    default:
+      return state;
+  }
+}
+
+export interface StateDrafts {
+  byId: {
+    [draftId: string]: {
+      status: Status;
+      draft?: Admin.IdeaDraftAdmin;
+    }
+  };
+  // TODO eventually we should invalidate these searches over time
+  bySearch: {
+    [filterCategoryId: string]: {
+      status: Status,
+      draftIds?: string[],
+      cursor?: string,
+    }
+  };
+}
+const stateDraftsDefault = {
+  byId: {},
+  bySearch: {},
+};
+function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActions): StateDrafts {
+  switch (action.type) {
+    case Admin.ideaDraftCreateAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.draftId]: {
+            draft: action.payload,
+            status: Status.FULFILLED,
+          },
+        },
+      };
+    case Admin.ideaDraftDeleteAdminActionStatus.Fulfilled:
+      const { [action.meta.request.draftId]: removedDraft, ...byIdWithoutDeleted } = state.byId;
+      return {
+        ...state,
+        byId: byIdWithoutDeleted,
+      };
+    case Admin.ideaDraftUpdateAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.draftId]: {
+            draft: {
+              ...action.meta.request.ideaCreateAdmin,
+              draftId: action.meta.request.draftId,
+            },
+            status: Status.FULFILLED,
+          },
+        },
+      };
+    case Admin.ideaDraftSearchAdminActionStatus.Pending:
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [action.meta.request.filterCategoryId || '']: {
+            ...state.bySearch[action.meta.request.filterCategoryId || ''],
+            status: Status.PENDING,
+          }
+        }
+      };
+    case Admin.ideaDraftSearchAdminActionStatus.Rejected:
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [action.meta.request.filterCategoryId || '']: {
+            ...state.bySearch[action.meta.request.filterCategoryId || ''],
+            status: Status.REJECTED,
+          }
+        }
+      };
+    case Admin.ideaDraftSearchAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce<any>(
+            (draftsById, draft) => {
+              draftsById[draft.draftId] = {
+                draft,
+                status: Status.FULFILLED,
+              };
+              return draftsById;
+            }, {}),
+        },
+        bySearch: {
+          ...state.bySearch,
+          [action.meta.request.filterCategoryId || '']: {
+            status: Status.FULFILLED,
+            draftIds: (action.meta.request.cursor !== undefined && state.bySearch[action.meta.request.filterCategoryId || ''] && action.meta.request.cursor === state.bySearch[action.meta.request.filterCategoryId || ''].cursor)
+              ? [ // Append results to existing draft ids
+                ...(state.bySearch[action.meta.request.filterCategoryId || ''].draftIds || []),
+                ...action.payload.results.map(idea => idea.draftId),
+              ] : ( // Replace results if cursor doesn't match
+                action.payload.results.map(draft => draft.draftId)
+              ),
+            cursor: action.payload.cursor,
+          }
+        },
       };
     default:
       return state;
@@ -1715,6 +1824,7 @@ export interface ReduxState {
   projectId: string | null;
   settings: StateSettings;
   conf: StateConf;
+  drafts: StateDrafts;
   ideas: StateIdeas;
   comments: StateComments;
   users: StateUsers;
@@ -1727,6 +1837,7 @@ export const reducers = combineReducers({
   projectId: reducerProjectId,
   settings: reducerSettings,
   conf: reducerConf,
+  drafts: reducerDrafts,
   ideas: reducerIdeas,
   comments: reducerComments,
   users: reducerUsers,

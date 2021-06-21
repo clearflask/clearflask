@@ -5,7 +5,7 @@ import Templater from "../configTemplater";
 import { PageWithExplorer } from "./feedback";
 import { CategoryAndIndex } from "./templateUtils";
 
-const ChangelogCategoryIdPrefix = 'changelog-';
+export const ChangelogCategoryIdPrefix = 'changelog-';
 const ChangelogPageIdPrefix = 'changelog-';
 
 export interface ChangelogInstance {

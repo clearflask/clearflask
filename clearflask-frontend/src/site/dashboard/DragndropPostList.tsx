@@ -15,6 +15,7 @@ const styles = (theme: Theme) => createStyles({
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
+    flexGrow: 1,
   },
   draggable: {
     position: 'relative', // For DragmeIcon
@@ -27,7 +28,7 @@ const styles = (theme: Theme) => createStyles({
     left: 0,
     top: 0,
     cursor: 'grab',
-    opacity: 0.2,
+    opacity: 0.1,
     marginLeft: theme.spacing(4),
     padding: theme.spacing(1),
   },

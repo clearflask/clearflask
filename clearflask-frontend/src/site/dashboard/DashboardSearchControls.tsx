@@ -81,6 +81,8 @@ class DashboardSearchControls extends Component<Props & WithStyles<typeof styles
               anchorEl={this.filtersAnchorRef.current}
               arrow
               clickAway
+              // Allow DatePicker modal to overlap this one
+              zIndex={this.props.theme.zIndex.modal - 1}
             >
               {this.props.filters}
             </ClosablePopper>

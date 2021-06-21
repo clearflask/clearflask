@@ -102,7 +102,9 @@ const styles = (theme: Theme) => createStyles({
   avatarDisplay: {
     margin: 'auto',
   },
-  ...cssBlurry,
+  blurry: {
+    ...cssBlurry,
+  }
 });
 
 interface Props {

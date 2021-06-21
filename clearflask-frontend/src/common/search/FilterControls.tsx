@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import moment from 'moment';
 import React from 'react';
 import { Label } from '../../app/comps/SelectionPicker';
+import HelpPopper from '../HelpPopper';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -262,6 +263,7 @@ export const FilterControlBase = (props: {
 export const FilterControlTitle = (props: {
   name?: string;
   className?: string;
+  help?: React.ComponentProps<typeof HelpPopper>;
 }) => {
   const classes = useStyles();
   return !props.name ? null : (
@@ -269,6 +271,14 @@ export const FilterControlTitle = (props: {
       className={classNames(props.className, classes.title)}
       variant='subtitle1'
       component='div'
-    >{props.name}</Typography>
+    >
+      {props.name}
+      {!!props.help && (
+        <>
+          &nbsp;
+          <HelpPopper {...props.help} />
+        </>
+      )}
+    </Typography>
   );
 }

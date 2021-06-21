@@ -9,7 +9,6 @@ const styles = (theme: Theme) => createStyles({
     padding: '0px',
     borderRadius: '100px',
     minWidth: 'unset',
-    color: theme.palette.text.secondary,
   },
   content: {
     padding: theme.spacing(2),
@@ -31,12 +30,13 @@ class HelpPopper extends Component<Props, State> {
     return (
       <>
         <Button
+          color='inherit'
           className={this.props.classes.iconButton}
           onClick={e => this.setState({ open: this.state.open ? undefined : e.currentTarget })}
           onMouseOver={e => this.setState({ open: e.currentTarget })}
           onMouseOut={e => this.setState({ open: undefined })}
         >
-          <HelpIcon fontSize='inherit' />
+          <HelpIcon fontSize='inherit' color='inherit' />
         </Button>
         <Popper
           open={!!this.state.open}
@@ -56,7 +56,7 @@ class HelpPopper extends Component<Props, State> {
           {({ TransitionProps }) => (
             <Fade {...TransitionProps}>
               <Paper variant='outlined' className={this.props.classes.content}>
-                {this.props.title && (<Typography variant='subtitle2'>{this.props.title}</Typography>)}
+                {this.props.title && (<Typography variant='h6'>{this.props.title}</Typography>)}
                 {this.props.description && (<Typography variant='body1'>{this.props.description}</Typography>)}
                 {this.props.children}
               </Paper>

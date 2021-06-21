@@ -28,7 +28,6 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(4),
     color: theme.palette.text.secondary,
     boxSizing: 'border-box',
-    minWidth: 300,
     width: (props: Props) => props.widthExpand ? MaxContentWidth : '100%',
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
@@ -248,33 +247,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return content;
   }
 }
-
-// const selectCallOnMount = createSelector(
-//   (state: ReduxState) => state.projectId,
-//   (_, ownProps: Props) => ownProps.server,
-//   (_, ownProps: Props) => !!ownProps.searchOverrideAdmin,
-//   selectSearchMerged,
-//   selectSearch,
-//   (projectId, server, isAdminSearch, searchMerged, search) => {
-//     if (!search) {
-//       if (!isAdminSearch) {
-//         return () => {
-//           server.dispatch({ ssr: true }).then(d => d.ideaSearch({
-//             projectId: projectId!,
-//             ideaSearch: searchMerged as Client.IdeaSearch,
-//           }));
-//         };
-//       } else {
-//         return () => {
-//           server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
-//             projectId: projectId!,
-//             ideaSearchAdmin: searchMerged as Admin.IdeaSearchAdmin,
-//           }));
-//         };
-//       }
-//     }
-//     return undefined;
-//   });
 
 export default keyMapper(
   (ownProps: Props) => getSearchKey({

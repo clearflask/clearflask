@@ -1,6 +1,6 @@
 import loadable from '@loadable/component';
 import { Button, Chip, Collapse, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
 import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
@@ -57,11 +57,8 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 300,
   },
   post: {
-    margin: theme.spacing(0.5),
     display: 'flex',
     flexDirection: 'column',
-    width: (props: Props) => props.widthExpand ? MaxContentWidth : undefined,
-    maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
   },
   postContent: {
     gridArea: 'c',
@@ -106,7 +103,7 @@ const styles = (theme: Theme) => createStyles({
   },
   clickable: {
     cursor: 'pointer',
-    textDecoration: 'none'
+    textDecoration: 'none',
   },
   description: {
     marginTop: theme.spacing(1),
@@ -321,8 +318,11 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  ...cssBlurry,
+  blurry: {
+    ...(cssBlurry as any), // have to cast, doesnt play nice with makeStyles. Im sure there is a right type for this, but i didnt find it, well I could find it, i just dont have time. I do have time, but its not as important. Okay its not important. Thats it.
+  }
 });
+const useStyles = makeStyles(styles);
 interface Props {
   className?: string;
   server: Server;
@@ -432,8 +432,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           <div
             className={classNames(
               this.props.classes.post,
-              (isOnlyPostOnClick && !this.props.disableOnClick) && this.props.classes.clickable
+              (isOnlyPostOnClick && !this.props.disableOnClick) && this.props.classes.clickable,
             )}
+            style={{
+              width: this.props.widthExpand ? MaxContentWidth : undefined,
+              maxWidth: this.props.widthExpand ? '100%' : MaxContentWidth,
+            }}
             onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
           >
             <div className={this.props.classes.postFunding}>
@@ -442,9 +446,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             <div className={this.props.classes.postContent}>
               {this.renderTitleAndDescription((
                 <>
-                  <div className={this.props.classes.titleContainer}>
-                    {this.renderTitle()}
-                  </div>
+                  {this.renderTitle()}
                   {this.renderDescription()}
                   {this.renderResponse()}
                 </>
@@ -741,12 +743,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.category) return null;
 
     return (
-      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || this.props.disableOnClick || this.props.variant !== 'list'}
-        onClick={e => this.props.onClickCategory && !this.props.disableOnClick && this.props.onClickCategory(this.props.category!.categoryId)}>
-        <Typography variant='caption' style={{ color: this.props.category.color }}>
-          {this.props.category.name}
-        </Typography>
-      </Button>
+      <PostClassification
+        title={this.props.category.name}
+        color={this.props.category.color}
+        onClick={!this.props.onClickCategory || this.props.disableOnClick || this.props.variant !== 'list' ? undefined
+          : (() => this.props.onClickCategory && !this.props.disableOnClick && this.props.onClickCategory(this.props.category!.categoryId))}
+      />
     );
   }
 
@@ -1140,29 +1142,27 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderTitle() {
-    if (!this.props.idea
-      || !this.props.idea.title) return null;
+    if (!this.props.idea) return null;
     return (
-      <Typography variant='h5' component='h1' className={`${this.props.classes.title} ${this.props.variant !== 'list' ? this.props.classes.titlePage : ((this.props.display?.descriptionTruncateLines || 0) <= 0 ? this.props.classes.titleListWithoutDescription : this.props.classes.titleList)} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-        {this.props.variant === 'list' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
-          ? (<TruncateEllipsis ellipsis='…' lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
-          : this.props.idea.title}
-      </Typography>
+      <PostTitle
+        variant={this.props.variant}
+        title={this.props.idea.title}
+        titleTruncateLines={this.props.display?.titleTruncateLines}
+        descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
+        demoBlurryShadow={this.props.settings.demoBlurryShadow}
+      />
     );
   }
 
   renderDescription() {
-    if (this.props.variant === 'list' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines <= 0
-      || !this.props.idea
-      || !this.props.idea.description) return null;
+    if (!this.props.idea) return null;
     return (
-      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${this.props.variant !== 'list' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-        {this.props.variant === 'list' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
-          ? (<TruncateFade variant='body1' lines={this.props.display.descriptionTruncateLines}>
-            <div><RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={this.props.variant === 'list'} /></div>
-          </TruncateFade>)
-          : <RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} toneDownHeadings={this.props.variant === 'list'} />}
-      </Typography>
+      <PostDescription
+        variant={this.props.variant}
+        description={this.props.idea.description}
+        descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
+        demoBlurryShadow={this.props.settings.demoBlurryShadow}
+      />
     );
   }
 
@@ -1355,6 +1355,84 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     });
     return response;
   }
+}
+
+export const PostTitle = (props: {
+  variant: PostVariant,
+} & Pick<Client.Idea, 'title'>
+  & Partial<Pick<Client.PostDisplay, 'titleTruncateLines' | 'descriptionTruncateLines'>>
+  & Pick<StateSettings, 'demoBlurryShadow'>
+) => {
+  const classes = useStyles();
+  if (!props.title) return null;
+  return (
+    <div className={classes.titleContainer}>
+      <Typography variant='h5' component='h1' className={classNames(
+        classes.title,
+        props.variant !== 'list'
+          ? classes.titlePage
+          : ((props.descriptionTruncateLines || 0) <= 0
+            ? classes.titleListWithoutDescription
+            : classes.titleList),
+        props.demoBlurryShadow ? classes.blurry : '',
+      )}>
+        {props.variant === 'list' && props.titleTruncateLines !== undefined && props.titleTruncateLines > 0
+          ? (<TruncateEllipsis ellipsis='…' lines={props.titleTruncateLines}><div>{props.title}</div></TruncateEllipsis>)
+          : props.title}
+      </Typography>
+    </div>
+  );
+}
+
+export const PostDescription = (props: {
+  variant: PostVariant,
+} & Pick<Client.Idea, 'description'>
+  & Partial<Pick<Client.PostDisplay, 'descriptionTruncateLines'>>
+  & Pick<StateSettings, 'demoBlurryShadow'>
+) => {
+  const classes = useStyles();
+  if (!props.description) return null;
+  if (props.variant === 'list' && props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines <= 0) return null;
+  const descriptionRichViewer = (
+    <RichViewer
+      key={props.description}
+      iAgreeInputIsSanitized
+      html={props.description}
+      toneDownHeadings={props.variant === 'list'}
+    />
+  );
+  return (
+    <Typography variant='body1' component={'span'} className={classNames(
+      classes.description,
+      props.variant !== 'list' ? classes.descriptionPage : classes.descriptionList,
+      props.demoBlurryShadow ? classes.blurry : '',
+    )}>
+      {props.variant === 'list' && props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines > 0
+        ? (<TruncateFade variant='body1' lines={props.descriptionTruncateLines}>
+          <div>{descriptionRichViewer}</div>
+        </TruncateFade>)
+        : descriptionRichViewer}
+    </Typography>
+  );
+}
+
+export const PostClassification = (props: {
+  title: string;
+  color?: string;
+  onClick?: () => void;
+} & Pick<Client.Idea, 'description'>
+  & Partial<Pick<Client.PostDisplay, 'descriptionTruncateLines'>>
+  & Pick<StateSettings, 'demoBlurryShadow'>
+) => {
+  const classes = useStyles();
+  return (
+    <Button key='category' variant="text" className={classes.button} disabled={!props.onClick}
+      onClick={e => props.onClick?.()}>
+      <Typography variant='caption' style={{ color: props.color }}>
+        {props.title}
+      </Typography>
+    </Button>
+  );
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
