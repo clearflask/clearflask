@@ -9,6 +9,7 @@ import { getSearchKey, ReduxState, Server } from '../../api/server';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
+import HelpPopper from '../../common/HelpPopper';
 import ExpandIcon from '../../common/icon/ExpandIcon';
 import { BoxLayoutBoxApplyStyles, BOX_MARGIN } from '../../common/Layout';
 import { getProjectLink } from '../Dashboard';
@@ -101,6 +102,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className?: string;
   server: Server;
   roadmap: RoadmapInstance;
   changelog?: ChangelogInstance;
@@ -108,6 +110,7 @@ interface Props {
   onUserClick: (userId: string) => void;
   selectedPostId?: string;
   isBoxLayout?: boolean;
+  publicViewOnly?: boolean;
 }
 interface ConnectProps {
   configver?: string;
@@ -121,14 +124,64 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
   state: State = {};
 
   render() {
-    const rightActionColumnCount = (this.props.roadmap.statusIdClosed ? 1 : 0) + (this.props.roadmap.statusIdCompleted ? 1 : 0);
-    const conf = this.props.server.getStore().getState().conf.conf;
-    const projectLink = !!conf && getProjectLink(conf);
-    const roadmapLink = projectLink && `${projectLink}/${this.props.roadmap.pageAndIndex?.page.slug}`;
+    var roadmapLink: string | undefined;
+    if (!this.props.publicViewOnly) {
+      const conf = this.props.server.getStore().getState().conf.conf;
+      const projectLink = !!conf && getProjectLink(conf);
+      roadmapLink = !projectLink ? undefined : `${projectLink}/${this.props.roadmap.pageAndIndex?.page.slug}`;
+    }
+
+    var statusIdBacklog = this.props.roadmap.statusIdBacklog;
+    var statusIdClosed = this.props.roadmap.statusIdClosed;
+    var statusIdCompleted = this.props.roadmap.statusIdCompleted;
+    const boardPanels = this.props.roadmap.pageAndIndex?.page.board.panels.map((panel, panelIndex) => {
+      // If roadmap is configured correctly (Not through advanced settings),
+      // then each panel should be filtering a single status so a transition
+      // between panels can simply change the status of the Task. 
+      const onlyStatus = panel.search.filterStatusIds?.length !== 1 ? undefined : this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
+
+      // If a status is already present in the public roadmap, don't show it again
+      if (onlyStatus) {
+        if (onlyStatus.statusId === statusIdBacklog) statusIdBacklog = undefined;
+        if (onlyStatus.statusId === statusIdClosed) statusIdClosed = undefined;
+        if (onlyStatus.statusId === statusIdCompleted) statusIdCompleted = undefined;
+      }
+
+      return (
+        <div className={this.props.classes.panel}>
+          <Typography variant='h4' className={this.props.classes.title} style={{ color: onlyStatus?.color }}>
+            {panel.title || onlyStatus?.name}
+          </Typography>
+          <DragndropPostList
+            droppable={!!onlyStatus}
+            droppableId={droppableDataSerialize({
+              type: 'roadmap-panel',
+              searchKey: getSearchKey(panel.search),
+              statusId: onlyStatus?.statusId,
+            })}
+            key={panelIndex}
+            server={this.props.server}
+            search={panel.search as any}
+            onClickPost={this.props.onClickPost}
+            onUserClick={this.props.onUserClick}
+            selectedPostId={this.props.selectedPostId}
+            displayOverride={{
+              showCategoryName: false,
+              showStatus: false,
+            }}
+          />
+        </div>
+      );
+    });
+    const rightActionColumnCount = (statusIdClosed ? 1 : 0) + (statusIdCompleted ? 1 : 0);
+
     return (
-      <div className={this.props.classes.container}>
-        {this.props.roadmap.statusIdBacklog && this.renderActionColumn('left', [
-          this.renderDropboxForStatus(this.props.roadmap.statusIdBacklog),
+      <div className={classNames(
+        this.props.classes.container,
+        this.props.className,
+      )}>
+        {!this.props.publicViewOnly && statusIdBacklog && this.renderActionColumn('left', [
+          this.renderDropboxForStatus(statusIdBacklog),
         ])}
         <div className={classNames(
           this.props.classes.roadmapContainer,
@@ -138,7 +191,14 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
             this.props.classes.title,
             this.props.isBoxLayout && this.props.classes.roadmapTitleBoxLayout,
           )}>
-            {this.props.roadmap.pageAndIndex?.page.board.title || 'Roadmap'}
+            <span>
+              {this.props.roadmap.pageAndIndex?.page.board.title || 'Roadmap'}
+              &nbsp;
+              <HelpPopper description={
+                'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
+                + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
+              } />
+            </span>
             {roadmapLink && (
               <Button
                 component={MuiLink}
@@ -157,54 +217,15 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
             this.props.classes.roadmap,
             this.props.isBoxLayout && this.props.classes.boxLayout,
           )}>
-            {this.props.roadmap.pageAndIndex?.page.board.panels.map((panel, panelIndex) => {
-              // If roadmap is configured correctly (Not through advanced settings),
-              // then each panel should be filtering a single status so a transition
-              // between panels can simply change the status of the Task. 
-              const onlyStatus = panel.search.filterStatusIds?.length !== 1 ? undefined : this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
-              return (
-                <div className={this.props.classes.panel}>
-                  <Typography variant='h4' className={this.props.classes.title} style={{ color: onlyStatus?.color }}>
-                    {panel.title || onlyStatus?.name}
-                  </Typography>
-                  <DragndropPostList
-                    droppable={!!onlyStatus}
-                    droppableId={droppableDataSerialize({
-                      type: 'roadmap-panel',
-                      searchKey: getSearchKey(panel.search),
-                      statusId: onlyStatus?.statusId,
-                    })}
-                    key={panelIndex}
-                    server={this.props.server}
-                    search={panel.search as any}
-                    onClickPost={this.props.onClickPost}
-                    onUserClick={this.props.onUserClick}
-                    selectedPostId={this.props.selectedPostId}
-                    displayOverride={{
-                      showCategoryName: false,
-                      showStatus: false,
-                    }}
-                  />
-                </div>
-              );
-            })}
+            {boardPanels}
           </div>
         </div>
-        {rightActionColumnCount && this.renderActionColumn('right', [
-          this.props.roadmap.statusIdCompleted && this.renderDropboxForStatus(this.props.roadmap.statusIdCompleted, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
-          this.props.roadmap.statusIdClosed && this.renderDropboxForStatus(this.props.roadmap.statusIdClosed, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
+        {!this.props.publicViewOnly && rightActionColumnCount && this.renderActionColumn('right', [
+          statusIdCompleted && this.renderDropboxForStatus(statusIdCompleted, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
+          statusIdClosed && this.renderDropboxForStatus(statusIdClosed, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
         ])}
       </div>
     );
-    // return (
-    //   <BoardContainer
-    //     server={this.props.server}
-    //     board={this.props.roadmap.pageAndIndex?.page.board}
-    //     panels={this.props.roadmap.pageAndIndex?.page.board.panels.map((panel, panelIndex) => (
-    //       <BoardPanel server={this.props.server} panel={panel} />
-    //     ))}
-    //   />
-    // );
   }
 
   renderActionColumn(position: 'left' | 'right', children?: React.ReactNode) {

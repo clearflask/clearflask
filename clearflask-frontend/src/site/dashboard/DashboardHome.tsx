@@ -1,9 +1,10 @@
-import { Typography, withWidth, WithWidth } from '@material-ui/core';
+import { withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AllIdeasIcon from '@material-ui/icons/AllInclusive';
 import DiscussionIcon from '@material-ui/icons/ChatBubbleOutlined';
 import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
 import UsersIcon from '@material-ui/icons/PersonAdd';
+import classNames from 'classnames';
 import moment from 'moment';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -11,13 +12,22 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import { Direction } from '../../app/comps/Panel';
-import PanelPost from '../../app/comps/PanelPost';
-import PanelSearch from '../../app/comps/PanelSearch';
-import DividerCorner from '../../app/utils/DividerCorner';
+import * as ConfigEditor from '../../common/config/configEditor';
+import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
+import { ChangelogInstance } from '../../common/config/template/changelog';
+import { FeedbackInstance } from '../../common/config/template/feedback';
+import { RoadmapInstance } from '../../common/config/template/roadmap';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { initialWidth } from '../../common/util/screenUtil';
-import CategoryStats from './CategoryStats';
+import GraphBox from './GraphBox';
 import Histogram from './Histogram';
+
+const statePrefixAggregate = 'aggr-';
+const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
+const workflowPreviewDimensions = {
+  width: 700,
+  height: 200,
+};
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -90,12 +100,19 @@ const styles = (theme: Theme) => createStyles({
   },
   stat: {
   },
+  scrollVertical: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
+  },
 });
 
 interface Props {
   server: Server;
+  editor: ConfigEditor.Editor;
   onClickPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
+  feedback?: FeedbackInstance;
+  roadmap?: RoadmapInstance;
+  changelog?: ChangelogInstance;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -104,11 +121,11 @@ interface ConnectProps {
   loggedInUserId?: string;
 }
 interface State {
-  search?: Partial<Client.IdeaSearch>;
-  expanded?: boolean;
+  // State contains dynamic entries for aggregation
 }
 class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
+  readonly dispatchedCategoryAggregateForIds = new Set<string>();
 
   constructor(props) {
     super(props);
@@ -116,35 +133,26 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
     props.callOnMount?.();
   }
 
+  getAggregate(categoryId: string): Admin.IdeaAggregateResponse | undefined {
+    if (!this.dispatchedCategoryAggregateForIds.has(categoryId)) {
+      this.dispatchedCategoryAggregateForIds.add(categoryId);
+      this.props.server.dispatchAdmin()
+        .then(d => d.ideaCategoryAggregateAdmin({
+          projectId: this.props.server.getProjectId(),
+          categoryId: categoryId,
+        })).then(results => this.setState({
+          [statePrefixAggregate + categoryId]: results,
+        }));
+    }
+    return this.state[statePrefixAggregate + categoryId] as Admin.IdeaAggregateResponse | undefined;
+  }
+
   render() {
-    const display: Client.PostDisplay = this.state.expanded ? {
-      titleTruncateLines: 1,
-      descriptionTruncateLines: 2,
-      responseTruncateLines: 2,
-      showCommentCount: true,
-      showCategoryName: true,
-      showCreated: true,
-      showAuthor: true,
-      showStatus: true,
-      showTags: true,
-      showVoting: true,
-      showFunding: true,
-      showExpression: true,
-    } : {
-      titleTruncateLines: 1,
-      descriptionTruncateLines: 0,
-      responseTruncateLines: 0,
-      showCommentCount: false,
-      showCategoryName: false,
-      showCreated: false,
-      showAuthor: false,
-      showStatus: false,
-      showTags: false,
-      showVoting: false,
-      showFunding: false,
-      showExpression: false,
-      showEdit: false,
-    };
+    const feedbackAggregate = !this.props.feedback ? undefined
+      : this.getAggregate(this.props.feedback.categoryAndIndex.category.categoryId);
+    const roadmapAggregate = !this.props.roadmap ? undefined
+      : this.getAggregate(this.props.roadmap.categoryAndIndex.category.categoryId);
+
     const chartWidth = 100;
     const chartHeight = 50;
     const chartXAxis = {
@@ -154,162 +162,132 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
     return (
       <div className={this.props.classes.page}>
         <div className={this.props.classes.stats}>
-          <Histogram
-            icon={OpenIdeasIcon}
-            title='Open ideas'
-            server={this.props.server}
-            className={this.props.classes.stat}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            xAxis={chartXAxis}
-            search={d => d.ideaHistogramAdmin({
-              projectId: this.props.server.getProjectId(),
-              ideaHistogramSearchAdmin: {
-                interval: Admin.HistogramInterval.DAY,
-                filterCreatedStart: moment().subtract(7, 'd').toDate(),
-              }
-            })}
-          />
-          <Histogram
-            icon={AllIdeasIcon}
-            title='All Posts'
-            server={this.props.server}
-            className={this.props.classes.stat}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            xAxis={chartXAxis}
-            search={d => d.ideaHistogramAdmin({
-              projectId: this.props.server.getProjectId(),
-              ideaHistogramSearchAdmin: {
-                interval: Admin.HistogramInterval.DAY,
-                filterCreatedStart: moment().subtract(7, 'd').toDate(),
-              }
-            })}
-          />
-          <Histogram
-            icon={DiscussionIcon}
-            title='Comments'
-            server={this.props.server}
-            className={this.props.classes.stat}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            xAxis={chartXAxis}
-            search={d => d.commentHistogramAdmin({
-              projectId: this.props.server.getProjectId(),
-              histogramSearchAdmin: {
-                interval: Admin.HistogramInterval.DAY,
-                filterCreatedStart: moment().subtract(7, 'd').toDate(),
-              }
-            })}
-          />
-          <Histogram
-            icon={UsersIcon}
-            title='Identified Users'
-            server={this.props.server}
-            className={this.props.classes.stat}
-            chartWidth={chartWidth}
-            chartHeight={chartHeight}
-            xAxis={chartXAxis}
-            search={d => d.userHistogramAdmin({
-              projectId: this.props.server.getProjectId(),
-              histogramSearchAdmin: {
-                interval: Admin.HistogramInterval.DAY,
-                filterCreatedStart: moment().subtract(7, 'd').toDate(),
-              }
-            })}
-          />
-        </div>
-        <div className={this.props.classes.stats}>
-          <CategoryStats
-            className={this.props.classes.categoryStats}
-            server={this.props.server}
-          />
-        </div>
-        <DividerCorner
-          className={this.props.classes.boardContainer}
-          header={(
-            <Typography className={this.props.classes.title}>Content</Typography>
-          )}
-          width='70%'
-          widthRight={116}
-          headerRight={(
-            <PanelSearch
-              className={this.props.classes.search}
+          <div className={this.props.classes.stats}>
+            {!!this.props.feedback && !!feedbackAggregate && (
+              <Histogram
+                icon={OpenIdeasIcon}
+                title='Open feedback'
+                server={this.props.server}
+                className={this.props.classes.stat}
+                chartWidth={chartWidth}
+                chartHeight={chartHeight}
+                xAxis={chartXAxis}
+                search={d => d.ideaHistogramAdmin({
+                  projectId: this.props.server.getProjectId(),
+                  ideaHistogramSearchAdmin: {
+                    interval: Admin.HistogramInterval.DAY,
+                    filterCreatedStart: moment().subtract(7, 'd').toDate(),
+                  }
+                }).then(histogramResults => ({
+                  ...histogramResults,
+                  // Quick hack to show histogram of all feedback, but show a count
+                  // of only the open/new/unaddressed feedback
+                  hits: {
+                    value: feedbackAggregate.statuses[
+                      this.props.feedback?.categoryAndIndex.category.workflow.entryStatus
+                      || this.props.feedback?.categoryAndIndex.category.workflow.statuses[0]?.statusId
+                      || ''
+                    ] || 0,
+                  },
+                }))}
+              />
+            )}
+            {!!this.props.roadmap?.statusIdCompleted && (
+              <Histogram
+                icon={AllIdeasIcon}
+                title='Completed Tasks'
+                server={this.props.server}
+                className={this.props.classes.stat}
+                chartWidth={chartWidth}
+                chartHeight={chartHeight}
+                xAxis={chartXAxis}
+                search={d => d.ideaHistogramAdmin({
+                  projectId: this.props.server.getProjectId(),
+                  ideaHistogramSearchAdmin: {
+                    filterCategoryIds: [this.props.roadmap!.categoryAndIndex.category.categoryId],
+                    filterStatusIds: [this.props.roadmap!.statusIdCompleted!],
+                    interval: Admin.HistogramInterval.DAY,
+                    filterCreatedStart: moment().subtract(7, 'd').toDate(),
+                  }
+                })}
+              />
+            )}
+          </div>
+          <div className={this.props.classes.stats}>
+            <Histogram
+              icon={UsersIcon}
+              title='Identified Users'
               server={this.props.server}
-              search={this.state.search}
-              placeholder='Filter'
-              onSearchChanged={search => this.setState({ search: search })}
-              explorer={{
-                search: {},
-                display: {},
-                allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-              }}
+              className={this.props.classes.stat}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              xAxis={chartXAxis}
+              search={d => d.userHistogramAdmin({
+                projectId: this.props.server.getProjectId(),
+                histogramSearchAdmin: {
+                  interval: Admin.HistogramInterval.DAY,
+                  filterCreatedStart: moment().subtract(7, 'd').toDate(),
+                }
+              })}
+            />
+            <Histogram
+              icon={DiscussionIcon}
+              title='Comments'
+              server={this.props.server}
+              className={this.props.classes.stat}
+              chartWidth={chartWidth}
+              chartHeight={chartHeight}
+              xAxis={chartXAxis}
+              search={d => d.commentHistogramAdmin({
+                projectId: this.props.server.getProjectId(),
+                histogramSearchAdmin: {
+                  interval: Admin.HistogramInterval.DAY,
+                  filterCreatedStart: moment().subtract(7, 'd').toDate(),
+                }
+              })}
+            />
+          </div>
+        </div>
+        <div className={classNames(
+          this.props.classes.stats,
+          this.props.classes.scrollVertical,
+        )}>
+          {!!this.props.feedback && !!feedbackAggregate && (
+            <GraphBox
+              title={workflowPreviewRenderAggregateLabel(feedbackAggregate)('total', 'Feedback')}
+              chartAsBackground={workflowPreviewDimensions}
+              chart={(
+                <WorkflowPreview
+                  static
+                  width={workflowPreviewDimensions.width}
+                  height={workflowPreviewDimensions.height}
+                  editor={this.props.editor}
+                  categoryIndex={this.props.feedback.categoryAndIndex.index}
+                  hideCorner
+                  renderLabel={workflowPreviewRenderAggregateLabel(feedbackAggregate)}
+                />
+              )}
             />
           )}
-        >
-          <div className={this.props.classes.board}>
-            {this.renderPanel('Trending', {
-              search: {
-                ...this.state.search,
-                sortBy: Client.IdeaSearchSortByEnum.Trending,
-              },
-              display: {
-                ...display,
-                // showFunding: true,
-                // showVoting: true,
-              },
-            })}
-            {this.renderPanel('New', {
-              search: {
-                ...this.state.search,
-                sortBy: Client.IdeaSearchSortByEnum.New,
-              },
-              display: {
-                ...display,
-                // showCreated: true,
-                // showAuthor: true,
-              },
-            })}
-            {this.renderPanel('Top', {
-              search: {
-                ...this.state.search,
-                sortBy: Client.IdeaSearchSortByEnum.Top,
-              },
-              display: {
-                ...display,
-                // showFunding: true,
-                // showVoting: true,
-              },
-            })}
-          </div>
-        </DividerCorner>
+          {!!this.props.roadmap && !!roadmapAggregate && (
+            <GraphBox
+              title={workflowPreviewRenderAggregateLabel(roadmapAggregate)('total', 'Tasks')}
+              chartAsBackground={workflowPreviewDimensions}
+              chart={(
+                <WorkflowPreview
+                  static
+                  width={workflowPreviewDimensions.width}
+                  height={workflowPreviewDimensions.height}
+                  editor={this.props.editor}
+                  categoryIndex={this.props.roadmap.categoryAndIndex.index}
+                  hideCorner
+                  renderLabel={workflowPreviewRenderAggregateLabel(roadmapAggregate)}
+                />
+              )}
+            />
+          )}
+        </div>
       </div>
-    );
-  }
-
-  renderPanel(
-    title: string,
-    panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer,
-    searchOverride?: Partial<Client.IdeaSearch>,
-    displayDefaults?: Client.PostDisplay,
-  ) {
-    return (
-      <DividerCorner
-        className={this.props.classes.boardPanel}
-        title={title}
-        isExplorer
-      >
-        <PanelPost
-          maxHeight={this.props.theme.vh(80)}
-          direction={Direction.Vertical}
-          panel={panel}
-          searchOverride={searchOverride}
-          server={this.props.server}
-          displayDefaults={displayDefaults}
-          onClickPost={this.props.onClickPost}
-          onUserClick={this.props.onUserClick}
-        />
-      </DividerCorner>
     );
   }
 }

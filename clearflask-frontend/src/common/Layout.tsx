@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
+import HelpPopper from './HelpPopper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
 export interface LayoutState {
@@ -17,6 +18,7 @@ export interface LayoutState {
 
 export interface Header {
   title?: string;
+  help?: string;
   action: {
     label: string;
     onClick: () => void;
@@ -60,6 +62,7 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(0, 3),
     justifyContent: 'center',
     alignItems: 'center',
+    width: 'max-content',
   },
   headerLeft: {
     left: theme.spacing(1),
@@ -97,7 +100,7 @@ const styles = (theme: Theme) => createStyles({
   },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
-    boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
+    ...BoxLayoutBoxApplyStyles,
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },
   menuButton: {
@@ -139,6 +142,14 @@ const styles = (theme: Theme) => createStyles({
   },
   boxLayoutNoPaper: {
     margin: BOX_MARGIN,
+  },
+  boxLayoutNoPaperScroll: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  boxLayoutNoPaperScroller: {
+    paddingTop: BOX_MARGIN,
+    paddingBottom: BOX_MARGIN,
   },
   hideShadows: {
     position: 'relative',
@@ -236,13 +247,21 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
 
     const title = !!this.props.header?.title ? (
       <div className={classNames(this.props.classes.header, this.props.classes.headerLeft)}>
-        <Typography variant='h4' component='h1'>{this.props.header.title}</Typography>
+        <Typography variant='h4' component='h1' style={{ display: 'flex' }}>
+          {this.props.header.title}
+          {this.props.header.help && (
+            <>
+              &nbsp;
+              <HelpPopper description={this.props.header.help} />
+            </>
+          )}
+        </Typography>
       </div>
     ) : undefined;
     const action = !!this.props.header?.action ? (
       <div className={classNames(this.props.classes.header, this.props.classes.headerRight)}>
         <Button
-          variant='contained'
+          variant='outlined'
           disableElevation
           color='primary'
           onClick={this.props.header.action.onClick}
@@ -336,6 +355,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
         layoutState.enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
         !layoutState.enableBoxLayout && showHeader && this.props.classes.headerMargin,
         layoutState.enableBoxLayout && (mainSection.boxLayoutNoPaper ? this.props.classes.boxLayoutNoPaper : this.props.classes.boxLayout),
+        !!mainSection.size?.scroll && layoutState.enableBoxLayout && mainSection.boxLayoutNoPaper && this.props.classes.boxLayoutNoPaperScroll,
         !menuSection?.detachFromMain && !!menu && layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.contentMergeWithMenuBoxLayout,
         this.props.classes.section,
         this.props.classes.content,
@@ -359,6 +379,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
           <div className={classNames(
             !!mainSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
             !!mainSection.size?.scroll && this.props.classes[`scroll-${mainSection.size?.scroll || Orientation.Vertical}`],
+            !!mainSection.size?.scroll && layoutState.enableBoxLayout && mainSection.boxLayoutNoPaper && this.props.classes.boxLayoutNoPaperScroller,
             !!this.props.contentMargins && this.props.classes.contentMargins,
           )}>
             {mainSection.content}

@@ -1,4 +1,4 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -194,6 +194,12 @@ const styles = (theme: Theme) => createStyles({
   postPreviewScroll: {
     flexGrow: 1,
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
+  homeRoadmap: {
+    margin: 'auto',
+    paddingLeft: BOX_MARGIN,
+    paddingRight: BOX_MARGIN,
+    maxWidth: 1504,
   },
 });
 interface Props {
@@ -413,14 +419,43 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
         main = {
-          size: { maxWidth: 1024, scroll: Orientation.Vertical },
+          size: { flexGrow: 1, scroll: Orientation.Vertical },
+          boxLayoutNoPaper: true,
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <DashboardHome
                 server={activeProject.server}
+                editor={activeProject.editor}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
+                feedback={this.state.feedback || undefined}
+                roadmap={this.state.roadmap || undefined}
+                changelog={this.state.changelog || undefined}
               />
+              <Hidden smDown>
+                <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
+                  key='roadmap-public'
+                  type='dialog'
+                  editor={activeProject.editor}
+                  mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
+                  renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
+                    <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                      <RoadmapExplorer
+                        className={this.props.classes.homeRoadmap}
+                        publicViewOnly
+                        key={activeProject.server.getProjectId()}
+                        server={activeProject.server}
+                        roadmap={roadmap}
+                        changelog={changelog}
+                        onClickPost={postId => this.pageClicked('post', [postId])}
+                        onUserClick={userId => this.pageClicked('user', [userId])}
+                        selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+                        isBoxLayout={true}
+                      />
+                    </Provider>
+                  )}
+                />
+              </Hidden>
             </Provider>
           ),
         };
@@ -536,6 +571,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         header = {
           title: 'Feedback',
+          help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.',
           action: {
             label: 'Create',
             onClick: () => this.pageClicked('post'),

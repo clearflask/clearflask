@@ -31,6 +31,7 @@ interface Props extends WithStyles<typeof styles, true> {
   static?: boolean;
   scroll?: boolean;
   border?: boolean;
+  renderLabel?: (statusId: string, name: string) => string;
 }
 
 interface State {
@@ -77,7 +78,7 @@ class WorkflowPreview extends Component<Props, State> {
     const entryStatusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty).value;
     const statusCount = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses']) as ConfigEditor.PageGroup).getChildPages().length;
     for (var i = 0; i < statusCount; i++) {
-      const name = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'name']) as ConfigEditor.StringProperty).value;
+      const name = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'name']) as ConfigEditor.StringProperty).value!;
       const statusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value!;
       const color = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
       const nextStatusIds = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
@@ -86,7 +87,7 @@ class WorkflowPreview extends Component<Props, State> {
       nodes.push({
         data: {
           id: statusId,
-          label: name,
+          label: this.props.renderLabel ? this.props.renderLabel(statusId, name) : name,
           color: color,
           type: 'round-rectangle',
           width: 'label',
