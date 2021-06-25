@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
-import { PostTitleMaxLength } from '../../app/comps/IdeaExplorer';
+import { PostTitleMaxLength } from '../../app/comps/PostCreateForm';
 import Loading from '../../app/utils/Loading';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';

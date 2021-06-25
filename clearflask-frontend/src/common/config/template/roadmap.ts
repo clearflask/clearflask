@@ -60,7 +60,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
     const workflow = Admin.WorkflowToJSON({
       entryStatus: statusIdBacklog,
       statuses: [
-        { name: 'Backlog', nextStatusIds: [statusIdLater, statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Ideation', nextStatusIds: [statusIdLater, statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Later', nextStatusIds: [statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Next', nextStatusIds: [statusIdLater, statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Now', nextStatusIds: [statusIdLater, statusIdNext, statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
@@ -78,6 +78,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
     }));
 
     roadmap = (await this.roadmapGet())!;
+    this.feedbackUpdateWithRoadmap(roadmap);
   }
 
   // Create page

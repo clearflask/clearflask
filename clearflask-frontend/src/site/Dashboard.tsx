@@ -231,6 +231,7 @@ interface State {
   explorerPostSearch?: AdminClient.IdeaSearchAdmin;
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
   feedbackPostSearch?: AdminClient.IdeaSearchAdmin;
+  feedbackExpandedId?: string,
   feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
   roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
   roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
@@ -584,23 +585,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           } : {}),
         };
         if (this.state.feedback) feedbackPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
-        const feedbackFilters = (layoutState: LayoutState) => (
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <DashboardPostFilterControls
-              key={activeProject.server.getProjectId()}
-              server={activeProject.server}
-              search={feedbackPostSearch}
-              allowSearch={{ enableSearchByCategory: false }}
-              permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
-              onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
-              horizontal={layoutState.overflowMenu}
-            />
-          </Provider>
-        );
-        menu = {
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.overflowMenu ? null : feedbackFilters(layoutState),
-        };
         if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
           this.similarPostWasClicked = undefined;
         }
@@ -610,7 +594,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         });
         main = {
           size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
-          content: layoutState => (
+          content: (
             <div className={this.props.classes.listWithSearchContainer}>
               <DashboardSearchControls
                 placeholder='Search for feedback'
@@ -622,7 +606,19 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     searchText,
                   }
                 })}
-                filters={!layoutState.overflowMenu ? null : feedbackFilters(layoutState)}
+                filters={(
+                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                    <DashboardPostFilterControls
+                      key={activeProject.server.getProjectId()}
+                      server={activeProject.server}
+                      search={feedbackPostSearch}
+                      allowSearch={{ enableSearchByCategory: false }}
+                      permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
+                      onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
+                      horizontal
+                    />
+                  </Provider>
+                )}
               />
               <Divider />
               <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
@@ -632,9 +628,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   droppableId={feedbackPostListDroppableId}
                   server={activeProject.server}
                   search={feedbackPostSearch}
-                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onClickPost={postId => this.setState({ feedbackExpandedId: this.state.feedbackExpandedId === postId ? undefined : postId })}
                   onUserClick={userId => this.pageClicked('user', [userId])}
-                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                  selectedPostId={this.state.feedbackExpandedId}
                 />
               </Provider>
             </div>
@@ -897,7 +893,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         header = {
           title: 'Users',
           action: {
-            label: 'Create',
+            label: 'Add',
             onClick: () => this.pageClicked('user'),
           },
         };

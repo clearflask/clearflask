@@ -5,7 +5,7 @@ import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 import { changelogGet, changelogOff, changelogOn } from "./template/changelog";
-import { feedbackGet, feedbackOn, feedbackPageOff } from "./template/feedback";
+import { feedbackGet, feedbackOn, feedbackPageOff, feedbackUpdateWithRoadmap } from "./template/feedback";
 import { landingGet, landingOff, landingOn } from "./template/landing";
 import { feedbackAndRoadmapGet, roadmapGet, roadmapOn, roadmapPageOff } from "./template/roadmap";
 import { _findCategoryByPrefix, _findPageByPrefix, _pageDelete } from "./template/templateUtils";
@@ -115,6 +115,7 @@ export default class Templater {
   feedbackGet = feedbackGet;
   feedbackOn = feedbackOn;
   feedbackPageOff = feedbackPageOff;
+  feedbackUpdateWithRoadmap = feedbackUpdateWithRoadmap;
 
   roadmapGet = roadmapGet;
   roadmapOn = roadmapOn;

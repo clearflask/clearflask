@@ -2,12 +2,12 @@ import * as Admin from "../../../api/admin";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
-import { PageWithExplorer } from "./feedback";
 import { CategoryAndIndex } from "./templateUtils";
 
 export const ChangelogCategoryIdPrefix = 'changelog-';
 const ChangelogPageIdPrefix = 'changelog-';
 
+export type PageWithExplorer = Admin.Page & Required<Pick<Admin.Page, 'explorer'>>;
 export interface ChangelogInstance {
   categoryAndIndex: CategoryAndIndex;
   pageAndIndex?: {

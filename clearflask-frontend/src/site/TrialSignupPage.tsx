@@ -152,7 +152,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             }}
           />
           <Collapse in={!!requiresWorkEmail}>
-            <Message variant='warning' message={(
+            <Message severity='warning' message={(
               <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
                 Please enter your work email. Don't have one?&nbsp;
                 <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>

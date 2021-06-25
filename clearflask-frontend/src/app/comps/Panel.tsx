@@ -1,3 +1,4 @@
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -53,12 +54,11 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
     if (this.props.title) {
       content = (
         <DividerCorner
+          suppressDivider
           className={this.props.className}
           title={this.props.title}
           width={this.props.direction === Direction.Vertical ? '90%' : undefined}
-          maxWidth={this.props.direction === Direction.Vertical ? 300 : undefined}
           height={this.props.direction === Direction.Horizontal ? '90%' : undefined}
-          maxHeight={this.props.direction === Direction.Horizontal ? 300 : undefined}
         >
           {content}
         </DividerCorner>
@@ -74,6 +74,21 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
 
     return content;
   }
+}
+
+export const PanelTitle = (props: {
+  text: React.ReactNode;
+  color?: string;
+}) => {
+  return (
+    <Typography
+      variant='h4'
+      component='div'
+      style={{ color: props.color }}
+    >
+      {props.text}
+    </Typography>
+  );
 }
 
 export default withStyles(styles, { withTheme: true })(Panel);

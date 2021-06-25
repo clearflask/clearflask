@@ -4,6 +4,9 @@ import React from 'react';
 import GradientFade from './GradientFade';
 
 const styles = (theme: Theme) => createStyles({
+  content: {
+    overflow: 'hidden',
+  },
 });
 
 interface Props {
@@ -12,25 +15,27 @@ interface Props {
   isPaper?: boolean;
 }
 
-class Truncate extends React.Component<Props & WithStyles<typeof styles, true>> {
+class TruncateFade extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     const variant = this.props.variant || 'body1';
-    if (this.props.lines === undefined) return this.props.children;
     const lineHeight = this.props.theme.typography[variant]
       && this.props.theme.typography[variant].lineHeight
       && (typeof this.props.theme.typography[variant].lineHeight === 'number'
         ? this.props.theme.typography[variant].lineHeight + 'em'
         : this.props.theme.typography[variant].lineHeight)
       || '1.1em';
+    const collapsedHeight = this.props.lines === undefined ? '100%' : `calc(${lineHeight} * ${this.props.lines})`;
+    const fadeStart = this.props.lines === undefined ? collapsedHeight : `calc(${lineHeight} * ${this.props.lines < 1 ? 0 : (this.props.lines - 1)})`;
     return (
       <GradientFade
-        start={`calc(${lineHeight} * ${this.props.lines - 1})`}
+        className={this.props.classes.content}
+        start={fadeStart}
+        end={collapsedHeight}
         isPaper={this.props.isPaper}
         direction='to bottom'
         style={{
-          maxHeight: `calc(${lineHeight} * ${this.props.lines})`,
-          overflow: 'hidden',
+          maxHeight: collapsedHeight,
         }}
       >
         {this.props.children}
@@ -39,4 +44,4 @@ class Truncate extends React.Component<Props & WithStyles<typeof styles, true>> 
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Truncate);
+export default withStyles(styles, { withTheme: true })(TruncateFade);

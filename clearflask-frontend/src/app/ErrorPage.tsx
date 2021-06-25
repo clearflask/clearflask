@@ -27,7 +27,7 @@ class ErrorPage extends Component<Props & WithTheme> {
       >
         <Message innerStyle={this.styles.message}
           message={this.props.msg}
-          variant={this.props.variant || 'error'}
+          severity={this.props.variant || 'error'}
         />
       </Box>
     );

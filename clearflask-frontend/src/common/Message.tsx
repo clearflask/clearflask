@@ -14,16 +14,16 @@ interface Props {
   message: React.ReactNode | string,
   action?: React.ReactNode,
   severity?: Color,
-  variant?: Color, // Deprecated
+  variant?: 'standard' | 'filled' | 'outlined',
 }
 class Message extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
       <Alert
         className={classNames(this.props.className, this.props.classes.alert)}
-        variant='outlined'
+        variant={this.props.variant || 'standard'}
         style={this.props.innerStyle}
-        severity={this.props.severity || this.props.variant}
+        severity={this.props.severity}
         action={this.props.action}
       >
         {this.props.message}

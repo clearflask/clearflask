@@ -22,7 +22,7 @@ interface Props extends WithStyles<typeof styles, true> {
 class Loader extends Component<Props> {
   render() {
     if (this.props.status === Status.REJECTED || this.props.error) {
-      return (<Message message={this.props.error || 'Failed to load'} variant='error' />);
+      return (<Message message={this.props.error || 'Failed to load'} severity='error' />);
     }
     if (this.props.status !== Status.FULFILLED && !this.props.loaded) {
       return (<Loading />);

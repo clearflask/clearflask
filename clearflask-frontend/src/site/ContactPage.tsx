@@ -159,7 +159,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
         <Route exact key='success' path={`${prefixMatch}/success`} render={props => (
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Box display='flex' justifyContent='center'>
-              <Message variant='success' message='Your message has been sent!' />
+              <Message severity='success' message='Your message has been sent!' />
             </Box>
           </div>
         )} />

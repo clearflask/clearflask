@@ -270,7 +270,7 @@ export const ProjectSettingsInstallPortal = (props: {
       )}
       content={(
         <>
-          <p><Typography>Link your product directly to the full portal. Add the followig link to your product's website.</Typography></p>
+          <p><Typography>Link your product directly to the full portal. Add the following link to your product's website.</Typography></p>
         </>
       )}
     />

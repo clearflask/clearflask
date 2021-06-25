@@ -15,6 +15,7 @@ import { BoxLayoutBoxApplyStyles, BOX_MARGIN } from '../../common/Layout';
 import { getProjectLink } from '../Dashboard';
 import { droppableDataSerialize } from './dashboardDndActionHandler';
 import DragndropPostList from './DragndropPostList';
+import PostList from './PostList';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -147,29 +148,47 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
         if (onlyStatus.statusId === statusIdCompleted) statusIdCompleted = undefined;
       }
 
-      return (
-        <div className={this.props.classes.panel}>
-          <Typography variant='h4' className={this.props.classes.title} style={{ color: onlyStatus?.color }}>
-            {panel.title || onlyStatus?.name}
-          </Typography>
+
+      const PostListProps: React.ComponentProps<typeof PostList> = {
+        server: this.props.server,
+        search: panel.search as any,
+        onClickPost: this.props.onClickPost,
+        onUserClick: this.props.onUserClick,
+        selectedPostId: this.props.selectedPostId,
+        displayOverride: {
+          showCategoryName: false,
+          showStatus: false,
+        },
+      };
+      var list;
+      if (this.props.publicViewOnly) {
+        list = (
+          <PostList
+            key={panelIndex}
+            {...PostListProps}
+          />
+        );
+      } else {
+        list = (
           <DragndropPostList
+            key={panelIndex}
             droppable={!!onlyStatus}
             droppableId={droppableDataSerialize({
               type: 'roadmap-panel',
               searchKey: getSearchKey(panel.search),
               statusId: onlyStatus?.statusId,
             })}
-            key={panelIndex}
-            server={this.props.server}
-            search={panel.search as any}
-            onClickPost={this.props.onClickPost}
-            onUserClick={this.props.onUserClick}
-            selectedPostId={this.props.selectedPostId}
-            displayOverride={{
-              showCategoryName: false,
-              showStatus: false,
-            }}
+            {...PostListProps}
           />
+        );
+      }
+
+      return (
+        <div className={this.props.classes.panel}>
+          <Typography variant='h4' className={this.props.classes.title} style={{ color: onlyStatus?.color }}>
+            {panel.title || onlyStatus?.name}
+          </Typography>
+          {list}
         </div>
       );
     });
@@ -193,11 +212,15 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
           )}>
             <span>
               {this.props.roadmap.pageAndIndex?.page.board.title || 'Roadmap'}
-              &nbsp;
-              <HelpPopper description={
-                'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
-                + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
-              } />
+              {!this.props.publicViewOnly && (
+                <>
+                  &nbsp;
+                  <HelpPopper description={
+                    'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
+                    + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
+                  } />
+                </>
+              )}
             </span>
             {roadmapLink && (
               <Button
@@ -285,27 +308,40 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
       filterCategoryIds: [this.props.roadmap.categoryAndIndex.category.categoryId],
       filterStatusIds: [statusId],
     };
-    var content = (
-      <DragndropPostList
-        className={this.props.classes.dropboxList}
-        droppable
-        droppableId={droppableDataSerialize({
-          type: 'roadmap-panel',
-          searchKey: getSearchKey(search),
-          statusId,
-        })}
-        key={statusId}
-        server={this.props.server}
-        search={search}
-        onClickPost={this.props.onClickPost}
-        onUserClick={this.props.onUserClick}
-        selectedPostId={this.props.selectedPostId}
-        displayOverride={{
-          showCategoryName: false,
-          showStatus: false,
-        }}
-      />
-    );
+    const PostListProps: React.ComponentProps<typeof PostList> = {
+      className: this.props.classes.dropboxList,
+      server: this.props.server,
+      search: search,
+      onClickPost: this.props.onClickPost,
+      onUserClick: this.props.onUserClick,
+      selectedPostId: this.props.selectedPostId,
+      displayOverride: {
+        showCategoryName: false,
+        showStatus: false,
+      },
+    };
+    var content;
+    if (this.props.publicViewOnly) {
+      content = (
+        <PostList
+          key={statusId}
+          {...PostListProps}
+        />
+      );
+    } else {
+      content = (
+        <DragndropPostList
+          key={statusId}
+          droppable
+          droppableId={droppableDataSerialize({
+            type: 'roadmap-panel',
+            searchKey: getSearchKey(search),
+            statusId,
+          })}
+          {...PostListProps}
+        />
+      );
+    }
     return this.renderDropbox(statusId, content, status.name, status.color, expandableStateKey);
   }
 

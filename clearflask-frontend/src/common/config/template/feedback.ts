@@ -3,16 +3,18 @@ import stringToSlug from "../../util/slugger";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
+import { RoadmapInstance } from "./roadmap";
 import { CategoryAndIndex } from "./templateUtils";
 
 const FeedbackCategoryIdPrefix = 'feedback-';
 const FeedbackPageIdPrefix = 'feedback-';
 const FeedbackStatusAcceptedPrefix = 'accepted-';
-export type PageWithExplorer = Admin.Page & Required<Pick<Admin.Page, 'explorer'>>;
+
+export type PageWithFeedback = Admin.Page & Required<Pick<Admin.Page, 'feedback'>>;
 export interface FeedbackInstance {
   categoryAndIndex: CategoryAndIndex;
   pageAndIndex?: {
-    page: PageWithExplorer;
+    page: PageWithFeedback;
     index: number;
   },
   statusIdAccepted?: string;
@@ -22,7 +24,7 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
   const categoryAndIndex = await this._findCategoryByPrefix(FeedbackCategoryIdPrefix, 'Feedback');
   if (!categoryAndIndex) return undefined;
 
-  const pageAndIndex = await this._findPageByPrefix(FeedbackPageIdPrefix, 'Feedback', page => !!page.explorer);
+  const pageAndIndex = await this._findPageByPrefix(FeedbackPageIdPrefix, 'Feedback', page => !!page.feedback);
 
   const feedback: FeedbackInstance = {
     categoryAndIndex,
@@ -66,20 +68,21 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
 
   // Create page
   if (!feedback.pageAndIndex) {
-    const page: PageWithExplorer = {
+    const roadmap = await this.roadmapGet();
+    const roadmapCategoryId = roadmap?.categoryAndIndex.category.categoryId;
+    const page: PageWithFeedback = {
       pageId: FeedbackPageIdPrefix + randomUuid(),
       name: 'Feedback',
       slug: stringToSlug('feedback'),
       icon: 'RecordVoiceOver',
       panels: [],
       board: undefined,
-      explorer: {
-        allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-        allowCreate: { actionTitle: 'Suggest', actionTitleLong: `Suggest Feedback` },
-        display: {},
-        search: {
-          sortBy: Admin.IdeaSearchSortByEnum.Trending,
-          filterCategoryIds: [feedback.categoryAndIndex.category.categoryId],
+      feedback: {
+        allowSimilar: {
+          filterCategoryIds: [
+            feedback.categoryAndIndex.category.categoryId,
+            ...(roadmapCategoryId ? [roadmapCategoryId] : []),
+          ],
         },
       },
     };
@@ -107,6 +110,14 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   }
 
   return feedback;
+}
+
+export async function feedbackUpdateWithRoadmap(this: Templater, roadmap: RoadmapInstance): Promise<void> {
+  const feedback = await this.feedbackGet();
+  if (feedback?.pageAndIndex?.page.feedback.allowSimilar) {
+    const filterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'allowSimilar', 'filterCategoryIds']);
+    filterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
+  }
 }
 
 export async function feedbackPageOff(this: Templater, feedback: FeedbackInstance): Promise<void> {

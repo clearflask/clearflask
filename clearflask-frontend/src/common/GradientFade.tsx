@@ -5,6 +5,7 @@ const styles = (theme: Theme) => createStyles({
   content: {
     display: 'inline-block',
     width: '100%',
+    transition: theme.transitions.create(['mask-image']),
   },
 });
 

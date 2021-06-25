@@ -27,7 +27,7 @@ export default class ErrorMsg extends Component<Props> {
       >
         <Message innerStyle={this.styles.message}
           message={this.props.msg}
-          variant={this.props.variant || 'error'}
+          severity={this.props.variant || 'error'}
         />
       </Box>
     );

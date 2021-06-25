@@ -1,9 +1,8 @@
-import { Badge, Collapse, Divider, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
+import { Badge, Collapse, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import ReturnIcon from '@material-ui/icons/KeyboardBackspaceOutlined';
-import NotificationsIcon from '@material-ui/icons/Notifications';
 import SettingsIcon from '@material-ui/icons/Settings';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -19,8 +18,7 @@ import windowIso from '../common/windowIso';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';
-import NotificationBadge from './NotificationBadge';
-import NotificationPopup from './NotificationPopup';
+import NotificationButton from './NotificationButton';
 
 const largeLogoFactor = 1.7;
 
@@ -36,9 +34,17 @@ const styles = (theme: Theme) => createStyles({
   indicator: {
     borderRadius: '1px',
     // height: 1,
-    // Uncomment to flip to the top
-    // bottom: 'unset',
-    // top: 0,
+    // Flips to the top
+    // bottom: 'unset', top: 0,
+    // Shorten indicator size
+    // display: 'flex',
+    // justifyContent: 'center',
+    // backgroundColor: 'transparent',
+    // '& > span': {
+    //   maxWidth: 40,
+    //   width: '100%',  
+    //   backgroundColor: theme.palette.primary.main,
+    // },
   },
   logoAndMenu: {
     flex: 100000,
@@ -170,7 +176,6 @@ interface ConnectProps {
 }
 interface State {
   logInOpen?: boolean;
-  notificationAnchorEl?: HTMLElement;
 }
 class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -276,6 +281,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               onChange={(event, value) => this.props.pageChanged(value)}
               indicatorColor="primary"
               textColor="primary"
+              // Used for shortening indicator size
+              TabIndicatorProps={{ children: <span /> }}
             >
               {tabs}
             </Tabs>
@@ -307,20 +314,10 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       if (this.props.config && this.props.loggedInUser) {
         rightSide = (
           <Collapse classes={{ wrapperInner: this.props.classes.actions }} in={!isLanding}>
-            <IconButton
+            <NotificationButton
               className={this.props.classes.actionButton}
-              aria-label='Notifications'
-              onClick={e => this.setState({ notificationAnchorEl: !!this.state.notificationAnchorEl ? undefined : e.currentTarget })}
-            >
-              <NotificationBadge server={this.props.server}>
-                <NotificationsIcon fontSize='inherit' />
-                <NotificationPopup
-                  server={this.props.server}
-                  anchorEl={this.state.notificationAnchorEl}
-                  onClose={() => this.setState({ notificationAnchorEl: undefined })}
-                />
-              </NotificationBadge>
-            </IconButton>
+              server={this.props.server}
+            />
             {this.props.config.users.credits && (
               <IconButton
                 className={this.props.classes.actionButton}
@@ -383,10 +380,10 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             </div>
             {rightSide}
           </div>
-          <Divider className={classNames(
+          {/* <Divider className={classNames(
             this.props.classes.menuDivider,
             isLanding && this.props.classes.menuDividerLanding,
-          )} />
+          )} /> */}
         </div>
       );
     }

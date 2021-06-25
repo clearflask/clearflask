@@ -8,8 +8,7 @@
 //   SetQuery,
 //   QueryParamConfig,
 // } from 'use-query-params';
-import loadable from '@loadable/component';
-import { Button, Collapse, FormControlLabel, Grid, isWidthUp, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
@@ -17,36 +16,22 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
-import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
-import SubmitButton from '../../common/SubmitButton';
-import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { textToHtml } from "../../common/util/richEditorUtil";
 import { initialWidth } from '../../common/util/screenUtil';
 import windowIso from '../../common/windowIso';
-import { importFailed, importSuccess } from '../../Main';
-import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
-import Loading from '../utils/Loading';
-import CategorySelect from './CategorySelect';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
 import { Direction } from './Panel';
 import PanelPost from './PanelPost';
 import PanelSearch from './PanelSearch';
-import { Label } from './SelectionPicker';
-import StatusSelect from './StatusSelect';
-import TagSelect from './TagSelect';
-
-/** If changed, also change in Sanitizer.java */
-export const PostTitleMaxLength = 100
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+import PostCreateForm from './PostCreateForm';
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -56,17 +41,6 @@ const styles = (theme: Theme) => createStyles({
     width: 'fit-content',
   },
   content: {
-  },
-  createFormFields: {
-    // (Un)comment these to align with corner
-    padding: theme.spacing(1, 2, 2, 0),
-  },
-  createFormField: {
-    margin: theme.spacing(1),
-    width: '100%',
-  },
-  createGridItem: {
-    padding: theme.spacing(0, 1),
   },
   caption: {
     margin: theme.spacing(1),
@@ -103,11 +77,6 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'pointer',
     ...(tabHoverApplyStyles(theme, 1)),
   },
-  descriptionLarge: {
-    '& .ql-container': {
-      minHeight: 60,
-    }
-  },
 });
 
 interface Props {
@@ -120,29 +89,15 @@ interface Props {
 }
 interface ConnectProps {
   callOnMount?: () => void,
-  configver?: string;
-  config?: Client.Config;
-  loggedInUserId?: string;
   settings: StateSettings;
 }
 interface State {
   createOpen?: boolean;
-  newItemTitle?: string;
-  newItemDescription?: string;
-  newItemDescriptionTextOnly?: string;
-  newItemAuthorLabel?: Label;
-  newItemChosenCategoryId?: string;
-  newItemChosenTagIds?: string[];
-  newItemChosenStatusId?: string;
-  newItemNotifySubscribers?: boolean;
-  newItemNotifyTitle?: string;
-  newItemNotifyBody?: string;
-  newItemTagSelectHasError?: boolean;
-  newItemSearchText?: string;
-  newItemIsSubmitting?: boolean;
   search?: Partial<Client.IdeaSearch>;
-  logInOpen?: boolean;
-  adminControlsExpanded?: boolean;
+  onLoggedIn?: () => void;
+  searchSimilar?: string;
+  animateTitle?: string;
+  animateDescription?: string;
 }
 // class QueryState {
 //   search: QueryParamConfig<Partial<Client.IdeaSearch>> = {
@@ -158,9 +113,8 @@ interface State {
 
 
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
-  readonly panelSearchRef: React.RefObject<any> = React.createRef();
-  readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
-  readonly updateSearchText: (title?: string, descRaw?: string) => void;
+  state: State = {};
+  readonly titleInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
@@ -168,17 +122,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   constructor(props) {
     super(props);
 
-    this.state = {
-      adminControlsExpanded: props.isDashboard,
-    };
-
     props.callOnMount?.();
-    this.updateSearchText = debounce(
-      (title?: string, descTextOnly?: string) => !!title && !!descTextOnly && this.setState({
-        newItemSearchText:
-          `${title || ''} ${descTextOnly || ''}`.slice(0, 30),
-      }),
-      SimilarTypeDebounceTime);
   }
 
   componentDidMount() {
@@ -202,12 +146,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       || (!this.props.settings.demoDisableExplorerExpanded
         && !this.props.isDashboard
         && this.props.width && isWidthUp('md', this.props.width));
-    const similarShown = createShown && (!!this.state.newItemTitle || !!this.state.newItemDescription);
+    const similarShown = createShown && !!this.state.searchSimilar;
 
     const search = this.props.explorer.allowSearch && (
       <PanelSearch
         className={this.props.classes.panelSearch}
-        innerRef={this.panelSearchRef}
         server={this.props.server}
         search={this.state.search}
         onSearchChanged={search => this.setState({ search: search })}
@@ -222,7 +165,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     );
     var content;
     if (similarShown) {
-      const searchOverride = this.state.newItemSearchText ? { searchText: this.state.newItemSearchText } : undefined;
+      const searchOverride = this.state.searchSimilar ? { searchText: this.state.searchSimilar } : undefined;
       content = (
         <div className={this.props.classes.content}>
           <PanelPost
@@ -288,24 +231,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           !!this.props.isDashboard && this.props.classes.createButtonDashboard,
         )}
         onClick={createShown ? undefined : e => {
-          this.setState({
-            createOpen: !this.state.createOpen,
-            ...(this.state.newItemChosenCategoryId === undefined
-              ? {
-                newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
-                  ? this.state.search.filterCategoryIds[0]
-                  : ((this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
-                    ? this.props.explorer.search.filterCategoryIds[0]
-                    : undefined)
-              }
-              : {}),
-            ...(this.state.newItemChosenTagIds === undefined ? {
-              newItemChosenTagIds: [...new Set([
-                ...(this.state.search && this.state.search.filterTagIds || []),
-                ...(this.props.explorer.search.filterTagIds || [])])]
-            } : {}),
-          });
-          this.createInputRef.current?.focus();
+          this.setState({ createOpen: !this.state.createOpen });
+          this.titleInputRef.current?.focus();
         }}
       >
         <Typography noWrap>
@@ -319,7 +246,40 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         />
       </div>
     );
-    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate(isLarge);
+    const createCollapsible = !!this.props.explorer.allowCreate && (
+      <>
+        <PostCreateForm
+          server={this.props.server}
+          type={isLarge ? 'large' : 'regular'}
+          mandatoryTagIds={this.props.explorer.search.filterTagIds}
+          adminControlsDefaultVisibility={this.props.isDashboard ? 'expanded' : 'hidden'}
+          titleInputRef={this.titleInputRef}
+          searchSimilar={(text, categoryId) => this.setState({ searchSimilar: text })}
+          logIn={() => new Promise(resolve => this.setState({ onLoggedIn: resolve }))}
+          onCreated={postId => {
+            if (this.props.onClickPost) {
+              this.props.onClickPost(postId);
+            } else {
+              this.props.history.push(preserveEmbed(`/post/${postId}`, this.props.location));
+            }
+          }}
+          defaultTitle={this.state.animateTitle}
+          defaultDescription={this.state.animateDescription}
+        />
+        <LogIn
+          actionTitle='Get notified of replies'
+          server={this.props.server}
+          open={!!this.state.onLoggedIn}
+          onClose={() => this.setState({ onLoggedIn: undefined })}
+          onLoggedInAndClose={() => {
+            if (this.state.onLoggedIn) {
+              this.state.onLoggedIn();
+              this.setState({ onLoggedIn: undefined });
+            }
+          }}
+        />
+      </>
+    );
 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
@@ -348,321 +308,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     );
   }
 
-  static getDerivedStateFromProps(props: React.ComponentProps<typeof IdeaExplorer>, state: State): Partial<State> | null {
-    if (state.newItemChosenCategoryId === undefined) {
-      const categoryOptions = IdeaExplorer.getCategoryOptions(props);
-      if (categoryOptions.length > 0) {
-        return {
-          newItemChosenCategoryId: categoryOptions[0].categoryId,
-        };
-      }
-    }
-    return null;
-  }
-
-  renderCreate(isLarge: boolean) {
-    const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
-    if (!this.props.config
-      || this.props.config.content.categories.length === 0) return null;
-
-    const categoryOptions = IdeaExplorer.getCategoryOptions(this.props);
-    const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
-    const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
-    const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
-    return (
-      <Grid
-        container
-        justify={isLarge ? 'flex-end' : undefined}
-        alignItems='flex-start'
-        className={this.props.classes.createFormFields}
-      >
-        <Grid item xs={isLarge ? 9 : 12} className={this.props.classes.createGridItem}>
-          <TextField
-            variant='outlined'
-            size='small'
-            id='createTitle'
-            disabled={this.state.newItemIsSubmitting}
-            className={this.props.classes.createFormField}
-            label='Title'
-            value={this.state.newItemTitle || ''}
-            onChange={e => {
-              if (this.state.newItemTitle === e.target.value) {
-                return;
-              }
-              this.updateSearchText(e.target.value, this.state.newItemDescriptionTextOnly);
-              this.setState({ newItemTitle: e.target.value })
-            }}
-            InputProps={{
-              inputRef: this.createInputRef,
-            }}
-            inputProps={{
-              maxLength: PostTitleMaxLength,
-            }}
-          />
-        </Grid>
-        {isLarge && (
-          <Grid item xs={3} className={this.props.classes.createGridItem} />
-        )}
-        <Grid item xs={12} className={this.props.classes.createGridItem}>
-          <RichEditor
-            uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
-            variant='outlined'
-            size='small'
-            id='createDescription'
-            multiline
-            showControlsImmediately={isLarge}
-            disabled={this.state.newItemIsSubmitting}
-            className={classNames(this.props.classes.createFormField, isLarge && this.props.classes.descriptionLarge)}
-            label='Details'
-            iAgreeInputIsSanitized
-            value={this.state.newItemDescription || ''}
-            onChange={(e, delta, source, editor) => {
-              const value = e.target.value;
-              if (this.state.newItemDescription === value
-                || (!this.state.newItemDescription && !value)) {
-                return;
-              }
-              const descriptionTextOnly = editor.getText();
-              this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
-              this.setState({
-                newItemDescription: value,
-                newItemDescriptionTextOnly: descriptionTextOnly,
-              })
-            }}
-          />
-          <RichEditorImageUpload
-            ref={this.richEditorImageUploadRef}
-            server={this.props.server}
-            asAuthorId={this.state.newItemAuthorLabel?.value}
-          />
-        </Grid>
-        {categoryOptions.length > 1 && (
-          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
-            <CategorySelect
-              variant='outlined'
-              size='small'
-              label='Category'
-              className={this.props.classes.createFormField}
-              categoryOptions={categoryOptions}
-              value={selectedCategory?.categoryId || ''}
-              onChange={categoryId => this.setState({ newItemChosenCategoryId: categoryId })}
-              errorText={!selectedCategory ? 'Choose a category' : undefined}
-              disabled={this.state.newItemIsSubmitting}
-            />
-          </Grid>
-        )}
-        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
-          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
-            <div className={this.props.classes.createFormField}>
-              <StatusSelect
-                show='all'
-                workflow={selectedCategory?.workflow}
-                variant='outlined'
-                size='small'
-                disabled={this.state.newItemIsSubmitting}
-                initialStatusId={selectedCategory.workflow.entryStatus}
-                statusId={this.state.newItemChosenStatusId}
-                onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
-              />
-            </div>
-          </Grid>
-        )}
-        {!!selectedCategory && (
-          <TagSelect
-            wrapper={(children) => (
-              <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem}>
-                <div className={this.props.classes.createFormField}>
-                  {children}
-                </div>
-              </Grid>
-            )}
-            variant='outlined'
-            size='small'
-            label='Tags'
-            category={selectedCategory}
-            tagIds={this.state.newItemChosenTagIds}
-            isModOrAdminLoggedIn={isModOrAdminLoggedIn}
-            onChange={(tagIds, errorStr) => this.setState({
-              newItemChosenTagIds: tagIds,
-              newItemTagSelectHasError: !!errorStr,
-            })}
-            disabled={this.state.newItemIsSubmitting}
-            mandatoryTagIds={mandatoryTagIds}
-            SelectionPickerProps={{
-              limitTags: 1,
-            }}
-          />
-        )}
-        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && (
-          <Grid item xs={isLarge ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
-            <UserSelection
-              variant='outlined'
-              size='small'
-              server={this.props.server}
-              label='As user'
-              errorMsg='Select author'
-              width='100%'
-              className={this.props.classes.createFormField}
-              disabled={this.state.newItemIsSubmitting}
-              suppressInitialOnChange
-              onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
-              allowCreate
-            />
-          </Grid>
-        )}
-        {!!this.state.adminControlsExpanded && isModOrAdminLoggedIn && !!selectedCategory?.subscription && (
-          <>
-            <Grid item xs={12} className={this.props.classes.createGridItem}>
-              <FormControlLabel
-                disabled={this.state.newItemIsSubmitting}
-                control={(
-                  <Switch
-                    checked={!!this.state.newItemNotifySubscribers}
-                    onChange={(e, checked) => this.setState({
-                      newItemNotifySubscribers: !this.state.newItemNotifySubscribers,
-                      ...(!this.state.newItemNotifyTitle ? { newItemNotifyTitle: `New ${selectedCategory.name}` } : undefined),
-                      ...(!this.state.newItemNotifyBody ? { newItemNotifyBody: `Check out my new ${selectedCategory.name}: ${this.state.newItemTitle || 'My title here'}` } : undefined),
-                    })}
-                    color='primary'
-                  />
-                )}
-                label='Notify all subscribers'
-              />
-            </Grid>
-            <Collapse in={!!this.state.newItemNotifySubscribers}>
-              <Grid item xs={12} className={this.props.classes.createGridItem}>
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  id='createTitle'
-                  disabled={this.state.newItemIsSubmitting}
-                  className={this.props.classes.createFormField}
-                  label='Notification Title'
-                  value={this.state.newItemNotifyTitle || ''}
-                  onChange={e => this.setState({ newItemNotifyTitle: e.target.value })}
-                  InputProps={{
-                    inputRef: this.createInputRef,
-                  }}
-                  inputProps={{
-                    maxLength: PostTitleMaxLength,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} className={this.props.classes.createGridItem}>
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  id='createTitle'
-                  disabled={this.state.newItemIsSubmitting}
-                  className={this.props.classes.createFormField}
-                  label='Notification Body'
-                  value={this.state.newItemNotifyBody || ''}
-                  onChange={e => this.setState({ newItemNotifyBody: e.target.value })}
-                  InputProps={{
-                    inputRef: this.createInputRef,
-                  }}
-                  inputProps={{
-                    maxLength: PostTitleMaxLength,
-                  }}
-                />
-              </Grid>
-            </Collapse>
-          </>
-        )}
-        {isLarge && (
-          <Grid item xs={6} className={this.props.classes.createGridItem} />
-        )}
-        <Grid item xs={isLarge ? 6 : 12} container justify='flex-end' className={this.props.classes.createGridItem}>
-          <Grid item>
-            {!!isModOrAdminLoggedIn && !this.state.adminControlsExpanded && (
-              <Button
-                onClick={e => this.setState({ adminControlsExpanded: true })}
-              >
-                More
-              </Button>
-            )}
-            <SubmitButton
-              color='primary'
-              isSubmitting={this.state.newItemIsSubmitting}
-              disabled={!enableSubmit || this.state.newItemIsSubmitting}
-              onClick={e => enableSubmit && this.createClickSubmit(mandatoryTagIds)}
-            >
-              Submit
-            </SubmitButton>
-            <LogIn
-              actionTitle='Get notified of replies'
-              server={this.props.server}
-              open={this.state.logInOpen}
-              onClose={() => this.setState({ logInOpen: false })}
-              onLoggedInAndClose={() => {
-                this.setState({ logInOpen: false });
-                this.createSubmit(mandatoryTagIds)
-              }}
-            />
-          </Grid>
-        </Grid>
-      </Grid>
-    );
-  }
-
-  createClickSubmit(mandatoryTagIds: string[]) {
-    if (!!this.state.newItemAuthorLabel || !!this.props.loggedInUserId) {
-      this.createSubmit(mandatoryTagIds);
-    } else {
-      // open log in page, submit on success
-      this.setState({ logInOpen: true })
-    }
-  }
-
-  createSubmit(mandatoryTagIds: string[]) {
-    this.setState({ newItemIsSubmitting: true });
-    var createPromise: Promise<Client.Idea | Admin.Idea>;
-    if (this.props.server.isModOrAdminLoggedIn()) {
-      createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
-        projectId: this.props.server.getProjectId(),
-        ideaCreateAdmin: {
-          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
-          title: this.state.newItemTitle!,
-          description: this.state.newItemDescription,
-          categoryId: this.state.newItemChosenCategoryId!,
-          statusId: this.state.newItemChosenStatusId,
-          notifySubscribers: !this.state.newItemNotifySubscribers ? undefined : {
-            title: this.state.newItemNotifyTitle!,
-            body: this.state.newItemNotifyBody!,
-          },
-          tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
-        },
-      }))
-    } else {
-      createPromise = this.props.server.dispatch().then(d => d.ideaCreate({
-        projectId: this.props.server.getProjectId(),
-        ideaCreate: {
-          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
-          title: this.state.newItemTitle!,
-          description: this.state.newItemDescription,
-          categoryId: this.state.newItemChosenCategoryId!,
-          tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
-        },
-      }));
-    }
-    createPromise.then(idea => {
-      this.setState({
-        newItemTitle: undefined,
-        newItemDescription: undefined,
-        newItemDescriptionTextOnly: undefined,
-        newItemSearchText: undefined,
-        newItemIsSubmitting: false,
-      });
-      if (this.props.onClickPost) {
-        this.props.onClickPost(idea.ideaId);
-      } else {
-        this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location));
-      }
-    }).catch(e => this.setState({
-      newItemIsSubmitting: false,
-    }));
-  }
-
   async demoCreateAnimate(title: string, description?: string, searchTerm?: string) {
     const animate = animateWrapper(
       () => this._isMounted,
@@ -686,7 +331,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         const character = title[i];
         if (await animate({
           sleepInMs: 10 + Math.random() * 30,
-          setState: { newItemTitle: (this.state.newItemTitle || '') + character },
+          setState: { animateTitle: (this.state.animateTitle || '') + character },
         })) return;
       }
 
@@ -695,7 +340,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var j = 0; j < description.length; j++) {
           if (await animate({
             sleepInMs: 10 + Math.random() * 30,
-            setState: { newItemDescription: textToHtml(description.substr(0, j + 1)) },
+            setState: { animateDescription: textToHtml(description.substr(0, j + 1)) },
           })) return;
         }
       }
@@ -706,17 +351,17 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var k = 0; k < description.length; k++) {
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: textToHtml(description.substr(0, description.length - k - 1)) },
+            setState: { animateDescription: textToHtml(description.substr(0, description.length - k - 1)) },
           })) return;
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
+      while (this.state.animateTitle !== undefined && this.state.animateTitle.length !== 0) {
         if (await animate({
           sleepInMs: 5,
-          setState: { newItemTitle: this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1) },
+          setState: { animateTitle: this.state.animateTitle.substr(0, this.state.animateTitle.length - 1) },
         })) return;
       }
 
@@ -724,14 +369,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
       if (await animate({ sleepInMs: 1500 })) return;
     }
-  }
-
-  static getCategoryOptions(props: React.ComponentProps<typeof IdeaExplorer>): Client.Category[] {
-    var categoryOptions = ((props.explorer.search.filterCategoryIds && props.explorer.search.filterCategoryIds.length > 0)
-      ? props.config?.content.categories.filter(c => props.explorer.search.filterCategoryIds!.includes(c.categoryId))
-      : props.config?.content.categories) || [];
-    if (!props.server.isModOrAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
-    return categoryOptions;
   }
 }
 
@@ -751,9 +388,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   }
   return {
     callOnMount: callOnMount,
-    configver: state.conf.ver, // force rerender on config change
-    config: state.conf.conf,
-    loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
     settings: state.settings,
   }
 }, null, null, { forwardRef: true })(

@@ -10,7 +10,7 @@ import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
 import AvatarDisplay from '../../common/AvatarDisplay';
 import RichViewer from '../../common/RichViewer';
-import TruncateFade from '../../common/Truncate';
+import TruncateFade from '../../common/TruncateFade';
 import UserDisplay from '../../common/UserDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';

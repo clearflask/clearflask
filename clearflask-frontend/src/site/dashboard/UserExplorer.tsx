@@ -10,7 +10,7 @@ import BrowserIcon from '@material-ui/icons/Web';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Truncate from 'react-truncate-markup';
+import TruncateEllipsis from 'react-truncate-markup';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -177,9 +177,9 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                       {!this.props.nameOnly && (
                         <>
                           <TableCell>
-                            <Truncate ellipsis='…' lines={1}>
+                            <TruncateEllipsis ellipsis='…' lines={1}>
                               <Typography>{user.email}</Typography>
-                            </Truncate>
+                            </TruncateEllipsis>
                           </TableCell>
                           <TableCell><Typography>
                             {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}

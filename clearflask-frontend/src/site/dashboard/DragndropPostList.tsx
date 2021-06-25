@@ -16,6 +16,8 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     flexGrow: 1,
+    width: 600,
+    maxWidth: '100%',
   },
   draggable: {
     position: 'relative', // For DragmeIcon

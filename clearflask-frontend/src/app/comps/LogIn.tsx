@@ -84,7 +84,8 @@ export interface Props {
   open?: boolean;
   onClose?: () => void;
   onLoggedInAndClose: () => void;
-  actionTitle?: string;
+  inline?: boolean;
+  actionTitle?: string | React.ReactNode;
   overrideWebNotification?: WebNotification;
   overrideMobileNotification?: MobileNotification;
   DialogProps?: Partial<DialogProps>;
@@ -122,7 +123,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   }
 
   render() {
-    if (!this.props.open) return null;
+    if (!this.props.open && !this.props.inline) return null;
 
     const onboarding = this.props.config?.users.onboarding || this.props.onboardBefore;
 
@@ -160,446 +161,444 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       }
     }
 
-    var dialogContent;
-    if (!!this.props.loggedInUser) {
-      dialogContent = (
-        <>
-          <DialogContent>
-            <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser.name || this.props.loggedInUser.email || 'Anonymous'}</span></DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            {!!this.props.onClose && (
-              <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
-            )}
-            <Button color='primary' onClick={this.props.onLoggedInAndClose.bind(this)}>Continue</Button>
-          </DialogActions>
-        </>
-      );
-    } else {
-      const signupAllowed = notifOpts.size > 0;
-      const loginAllowed = !!onboarding?.notificationMethods.email;
-      const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
-      const onlySingleOption = notifOpts.size === 1 && oauthOpts.length <= 1;
-      const singleColumnLayout = this.props.fullScreen || onlySingleOption;
+    const signupAllowed = notifOpts.size > 0;
+    const loginAllowed = !!onboarding?.notificationMethods.email;
+    const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
+    const onlySingleOption = notifOpts.size === 1 && oauthOpts.length <= 1;
+    const singleColumnLayout = this.props.fullScreen || onlySingleOption;
 
-      const selectedNotificationType = !isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
-        ? this.state.notificationType
-        : (onlySingleOption ? notifOpts.values().next().value : undefined);
-      const selectedOauthType = selectedNotificationType === NotificationType.OAuth && (this.state.oauthType
-        ? this.state.oauthType
-        : oauthOpts[0]?.oauthId);
+    const selectedNotificationType = !isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
+      ? this.state.notificationType
+      : (onlySingleOption ? notifOpts.values().next().value : undefined);
+    const selectedOauthType = selectedNotificationType === NotificationType.OAuth && (this.state.oauthType
+      ? this.state.oauthType
+      : oauthOpts[0]?.oauthId);
 
-      const showEmailInput = selectedNotificationType === NotificationType.Email;
-      const emailValid = this.isEmailValid(this.state.email);
-      const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
-      const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
-      const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
-      const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
-      const isPasswordRequired = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
-      const isSignupSubmittable = selectedNotificationType
-        && (selectedNotificationType !== NotificationType.SSO)
-        && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
-        && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
-        && (selectedNotificationType !== NotificationType.Browser || this.state.notificationDataBrowser)
-        && (!isDisplayNameRequired || this.state.displayName)
-        && (selectedNotificationType !== NotificationType.Email || (emailValid && emailAllowedDomain))
-        && (!isPasswordRequired || this.state.pass);
-      const isLoginSubmittable = emailValid;
-      const isSubmittable = isLogin ? isLoginSubmittable : isSignupSubmittable;
+    const showEmailInput = selectedNotificationType === NotificationType.Email;
+    const emailValid = this.isEmailValid(this.state.email);
+    const emailAllowedDomain = this.isAllowedDomain(this.state.email);
+    const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
+    const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
+    const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
+    const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
+    const isPasswordRequired = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
+    const isSignupSubmittable = selectedNotificationType
+      && (selectedNotificationType !== NotificationType.SSO)
+      && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
+      && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
+      && (selectedNotificationType !== NotificationType.Browser || this.state.notificationDataBrowser)
+      && (!isDisplayNameRequired || this.state.displayName)
+      && (selectedNotificationType !== NotificationType.Email || (emailValid && emailAllowedDomain))
+      && (!isPasswordRequired || this.state.pass);
+    const isLoginSubmittable = emailValid;
+    const isSubmittable = isLogin ? isLoginSubmittable : isSignupSubmittable;
 
-      const onlySingleOptionRequiresAllow = onlySingleOption &&
-        ((selectedNotificationType === NotificationType.Android && !this.state.notificationDataAndroid)
-          || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
-          || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
+    const onlySingleOptionRequiresAllow = onlySingleOption &&
+      ((selectedNotificationType === NotificationType.Android && !this.state.notificationDataAndroid)
+        || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
+        || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
-      dialogContent = (
-        <>
-          <DialogContent>
-            <Collapse in={!isLogin}>
-              <div
-                className={this.props.classes.content}
-                style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
-              >
-                <List component='nav' className={this.props.classes.notificationList}>
-                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle || 'Create account'}</ListSubheader>
-                  <Collapse in={notifOpts.has(NotificationType.SSO)}>
+    const dialogContent = (
+      <>
+        <DialogContent>
+          {!!this.props.actionTitle && typeof this.props.actionTitle !== 'string' && this.props.actionTitle}
+          <Collapse in={!isLogin}>
+            <div
+              className={this.props.classes.content}
+              style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
+            >
+              <List component='nav' className={this.props.classes.notificationList}>
+                {(!this.props.actionTitle || typeof this.props.actionTitle === 'string') && (
+                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle !== undefined ? this.props.actionTitle : 'Create account'}</ListSubheader>
+                )}
+                <Collapse in={notifOpts.has(NotificationType.SSO)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.SSO}
+                    onClick={!onlySingleOption ? this.onClickSsoNotif.bind(this) : e => this.setState({ notificationType: NotificationType.SSO })}
+                    disabled={this.state.isSubmitting}
+                  >
+                    <ListItemIcon>
+                      {!onboarding?.notificationMethods.sso?.icon
+                        ? (<NewWindowIcon />)
+                        : (<DynamicMuiIcon name={onboarding?.notificationMethods.sso?.icon} />)}
+                    </ListItemIcon>
+                    <ListItemText primary={onboarding?.notificationMethods.sso?.buttonTitle
+                      || this.props.config?.name
+                      || 'External'} />
+                  </ListItem>
+                  <Collapse in={onlySingleOption}>
+                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
+                  </Collapse>
+                </Collapse>
+                {oauthOpts.map(oauthOpt => (
+                  <Collapse in={notifOpts.has(NotificationType.OAuth)}>
                     <ListItem
                       button={!onlySingleOption as any}
-                      selected={!onlySingleOption && selectedNotificationType === NotificationType.SSO}
-                      onClick={!onlySingleOption ? this.onClickSsoNotif.bind(this) : e => this.setState({ notificationType: NotificationType.SSO })}
+                      selected={!onlySingleOption && selectedNotificationType === NotificationType.OAuth && selectedOauthType === oauthOpt.oauthId}
+                      onClick={!onlySingleOption
+                        ? e => this.onClickOauthNotif(oauthOpt)
+                        : e => this.setState({
+                          notificationType: NotificationType.OAuth,
+                          oauthType: oauthOpt.oauthId,
+                        })}
                       disabled={this.state.isSubmitting}
                     >
                       <ListItemIcon>
-                        {!onboarding?.notificationMethods.sso?.icon
+                        {!oauthOpt.icon
                           ? (<NewWindowIcon />)
-                          : (<DynamicMuiIcon name={onboarding?.notificationMethods.sso?.icon} />)}
+                          : (<DynamicMuiIcon name={oauthOpt.icon} />)}
                       </ListItemIcon>
-                      <ListItemText primary={onboarding?.notificationMethods.sso?.buttonTitle
-                        || this.props.config?.name
-                        || 'External'} />
+                      <ListItemText primary={oauthOpt.buttonTitle} />
                     </ListItem>
                     <Collapse in={onlySingleOption}>
-                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
+                      <Button color='primary' className={this.props.classes.allowButton} onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
                     </Collapse>
                   </Collapse>
-                  {oauthOpts.map(oauthOpt => (
-                    <Collapse in={notifOpts.has(NotificationType.OAuth)}>
-                      <ListItem
-                        button={!onlySingleOption as any}
-                        selected={!onlySingleOption && selectedNotificationType === NotificationType.OAuth && selectedOauthType === oauthOpt.oauthId}
-                        onClick={!onlySingleOption
-                          ? e => this.onClickOauthNotif(oauthOpt)
-                          : e => this.setState({
-                            notificationType: NotificationType.OAuth,
-                            oauthType: oauthOpt.oauthId,
-                          })}
-                        disabled={this.state.isSubmitting}
-                      >
-                        <ListItemIcon>
-                          {!oauthOpt.icon
-                            ? (<NewWindowIcon />)
-                            : (<DynamicMuiIcon name={oauthOpt.icon} />)}
-                        </ListItemIcon>
-                        <ListItemText primary={oauthOpt.buttonTitle} />
-                      </ListItem>
-                      <Collapse in={onlySingleOption}>
-                        <Button color='primary' className={this.props.classes.allowButton} onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
-                      </Collapse>
-                    </Collapse>
-                  ))}
-                  <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
-                    <ListItem
-                      // https://github.com/mui-org/material-ui/pull/15049
-                      button={!onlySingleOption as any}
-                      selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
-                      onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
-                      disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
-                    >
-                      <ListItemIcon><MobilePushIcon /></ListItemIcon>
-                      <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
-                    </ListItem>
-                    <Collapse in={onlySingleOptionRequiresAllow}>
-                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
-                    </Collapse>
+                ))}
+                <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
+                  <ListItem
+                    // https://github.com/mui-org/material-ui/pull/15049
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
+                    onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
+                    disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
+                  >
+                    <ListItemIcon><MobilePushIcon /></ListItemIcon>
+                    <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
+                  </ListItem>
+                  <Collapse in={onlySingleOptionRequiresAllow}>
+                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
                   </Collapse>
-                  <Collapse in={notifOpts.has(NotificationType.Browser)}>
-                    <ListItem
-                      button={!onlySingleOption as any}
-                      selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
-                      onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
-                      disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
-                    >
-                      <ListItemIcon><WebPushIcon /></ListItemIcon>
-                      <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
-                    </ListItem>
-                    <Collapse in={onlySingleOptionRequiresAllow}>
-                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
-                    </Collapse>
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Browser)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
+                    onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
+                    disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
+                  >
+                    <ListItemIcon><WebPushIcon /></ListItemIcon>
+                    <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
+                  </ListItem>
+                  <Collapse in={onlySingleOptionRequiresAllow}>
+                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
                   </Collapse>
-                  <Collapse in={notifOpts.has(NotificationType.Email)}>
-                    <ListItem
-                      button={!onlySingleOption as any}
-                      selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
-                      onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Email }) : undefined}
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Email)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
+                    onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Email }) : undefined}
+                    disabled={this.state.isSubmitting}
+                  >
+                    <ListItemIcon><EmailIcon /></ListItemIcon>
+                    <ListItemText primary='Email' className={this.props.classes.noWrap} />
+                  </ListItem>
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Silent)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
+                    onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Silent }) : undefined}
+                    disabled={this.state.isSubmitting}
+                  >
+                    <ListItemIcon><GuestIcon /></ListItemIcon>
+                    <ListItemText primary='Guest' />
+                  </ListItem>
+                </Collapse>
+                <Collapse in={!signupAllowed && !loginAllowed}>
+                  <ListItem
+                    disabled={true}
+                  >
+                    <ListItemIcon><DisabledIcon /></ListItemIcon>
+                    <ListItemText primary={!signupAllowed && !loginAllowed ? 'Signups are disabled' : undefined} />
+                  </ListItem>
+                </Collapse>
+              </List>
+              <div
+                className={this.props.classes.accountFieldsContainer}
+                style={{
+                  maxWidth: showAccountFields ? '400px' : '0px',
+                  maxHeight: showAccountFields ? '400px' : '0px',
+                }}
+              >
+                {!singleColumnLayout && (<Hr vertical isInsidePaper length='25%' />)}
+                <div>
+                  <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
+                  {showDisplayNameInput && (
+                    <TextField
+                      variant='outlined'
+                      size='small'
+                      fullWidth
+                      required={isDisplayNameRequired}
+                      value={this.state.displayName || ''}
+                      onChange={e => this.setState({ displayName: e.target.value })}
+                      label='Display name'
+                      helperText={(<span className={this.props.classes.noWrap}>How others see you</span>)}
+                      margin='normal'
+                      classes={{ root: this.props.classes.noWrap }}
+                      style={{ marginTop: '0px' }}
                       disabled={this.state.isSubmitting}
-                    >
-                      <ListItemIcon><EmailIcon /></ListItemIcon>
-                      <ListItemText primary='Email' className={this.props.classes.noWrap} />
-                    </ListItem>
-                  </Collapse>
-                  <Collapse in={notifOpts.has(NotificationType.Silent)}>
-                    <ListItem
-                      button={!onlySingleOption as any}
-                      selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
-                      onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Silent }) : undefined}
-                      disabled={this.state.isSubmitting}
-                    >
-                      <ListItemIcon><GuestIcon /></ListItemIcon>
-                      <ListItemText primary='Guest' />
-                    </ListItem>
-                  </Collapse>
-                  <Collapse in={!signupAllowed && !loginAllowed}>
-                    <ListItem
-                      disabled={true}
-                    >
-                      <ListItemIcon><DisabledIcon /></ListItemIcon>
-                      <ListItemText primary={!signupAllowed && !loginAllowed ? 'Signups are disabled' : undefined} />
-                    </ListItem>
-                  </Collapse>
-                </List>
-                <div
-                  className={this.props.classes.accountFieldsContainer}
-                  style={{
-                    maxWidth: showAccountFields ? '400px' : '0px',
-                    maxHeight: showAccountFields ? '400px' : '0px',
-                  }}
-                >
-                  {!singleColumnLayout && (<Hr vertical isInsidePaper length='25%' />)}
-                  <div>
-                    <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
-                    {showDisplayNameInput && (
+                    />
+                  )}
+                  <Collapse in={showEmailInput} unmountOnExit>
+                    <div>
                       <TextField
                         variant='outlined'
                         size='small'
                         fullWidth
-                        required={isDisplayNameRequired}
-                        value={this.state.displayName || ''}
-                        onChange={e => this.setState({ displayName: e.target.value })}
-                        label='Display name'
-                        helperText={(<span className={this.props.classes.noWrap}>How others see you</span>)}
+                        required
+                        value={this.state.email || ''}
+                        onChange={e => this.setState({ email: e.target.value })}
+                        label='Email'
+                        type='email'
+                        error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
+                        helperText={(<span className={this.props.classes.noWrap}>{
+                          !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
                         margin='normal'
-                        classes={{ root: this.props.classes.noWrap }}
-                        style={{ marginTop: '0px' }}
+                        style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                         disabled={this.state.isSubmitting}
                       />
-                    )}
-                    <Collapse in={showEmailInput} unmountOnExit>
-                      <div>
+                      {showPasswordInput && (
                         <TextField
                           variant='outlined'
                           size='small'
                           fullWidth
-                          required
-                          value={this.state.email || ''}
-                          onChange={e => this.setState({ email: e.target.value })}
-                          label='Email'
-                          type='email'
-                          error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
-                          helperText={(<span className={this.props.classes.noWrap}>{
-                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
+                          required={isPasswordRequired}
+                          value={this.state.pass || ''}
+                          onChange={e => this.setState({ pass: e.target.value })}
+                          label='Password'
+                          helperText={(<span className={this.props.classes.noWrap}>
+                            {isPasswordRequired
+                              ? 'Secure your account'
+                              : 'Optionally secure your account'}
+                          </span>)}
+                          type={this.state.revealPassword ? 'text' : 'password'}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position='end'>
+                                <IconButton
+                                  aria-label='Toggle password visibility'
+                                  onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                                >
+                                  {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                                </IconButton>
+                              </InputAdornment>
+                            )
+                          }}
                           margin='normal'
-                          style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
                         />
-                        {showPasswordInput && (
-                          <TextField
-                            variant='outlined'
-                            size='small'
-                            fullWidth
-                            required={isPasswordRequired}
-                            value={this.state.pass || ''}
-                            onChange={e => this.setState({ pass: e.target.value })}
-                            label='Password'
-                            helperText={(<span className={this.props.classes.noWrap}>
-                              {isPasswordRequired
-                                ? 'Secure your account'
-                                : 'Optionally secure your account'}
-                            </span>)}
-                            type={this.state.revealPassword ? 'text' : 'password'}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position='end'>
-                                  <IconButton
-                                    aria-label='Toggle password visibility'
-                                    onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                                  >
-                                    {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                                  </IconButton>
-                                </InputAdornment>
-                              )
-                            }}
-                            margin='normal'
-                            disabled={this.state.isSubmitting}
-                          />
-                        )}
-                      </div>
-                    </Collapse>
-                  </div>
+                      )}
+                    </div>
+                  </Collapse>
                 </div>
               </div>
-              {(signupAllowed || loginAllowed) && (
-                <AcceptTerms overrideTerms={onboarding?.terms?.documents} />
-              )}
-            </Collapse>
-            <Collapse in={!!isLogin}>
-              <div className={this.props.classes.loginFieldsContainer}>
-                <ListSubheader className={this.props.classes.noWrap} component="div">Login</ListSubheader>
-                <div>
-                  <TextField
-                    variant='outlined'
-                    size='small'
-                    fullWidth
-                    required
-                    value={this.state.email || ''}
-                    onChange={e => this.setState({ email: e.target.value })}
-                    label='Email'
-                    type='email'
-                    error={!!this.state.email && !emailValid}
-                    helperText={(<span className={this.props.classes.noWrap}>Email you used to sign up</span>)}
-                    margin='normal'
-                    style={{ marginTop: '0px' }}
-                    disabled={this.state.isSubmitting}
-                  />
-                  <TextField
-                    variant='outlined'
-                    size='small'
-                    fullWidth
-                    value={this.state.pass || ''}
-                    onChange={e => this.setState({ pass: e.target.value })}
-                    label='Password'
-                    helperText={(<span className={this.props.classes.noWrap}>Leave blank if you forgot</span>)}
-                    type={this.state.revealPassword ? 'text' : 'password'}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            aria-label='Toggle password visibility'
-                            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                          >
-                            {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                    margin='normal'
-                    disabled={this.state.isSubmitting}
-                  />
-                </div>
-              </div>
-            </Collapse>
-          </DialogContent>
-          <DialogActions>
-            {!!loginAllowed && !!signupAllowed && (
-              <SubmitButton
-                onClick={() => this.setState({ isLogin: !isLogin })}
-                isSubmitting={this.state.isSubmitting}
-              >{isLogin ? 'Or Signup' : 'Or Login'}</SubmitButton>
+            </div>
+            {(signupAllowed || loginAllowed) && (
+              <AcceptTerms overrideTerms={onboarding?.terms?.documents} />
             )}
-            {(signupAllowed || loginAllowed) ? (
-              <SubmitButton
-                color='primary'
-                isSubmitting={this.state.isSubmitting}
-                disabled={!isSubmittable}
-                onClick={() => {
-                  if (!!isLogin && !this.state.pass) {
-                    this.listenForExternalBind();
-                    this.setState({ awaitExternalBind: 'recovery' });
-                    this.props.server.dispatch().then(d => d.forgotPassword({
-                      projectId: this.props.server.getProjectId(),
-                      forgotPassword: {
-                        email: this.state.email!,
-                      },
-                    }));
-                  } else if (!!isLogin && !!this.state.pass) {
-                    this.setState({ isSubmitting: true });
-                    this.props.server.dispatch().then(d => d.userLogin({
-                      projectId: this.props.server.getProjectId(),
-                      userLogin: {
-                        email: this.state.email!,
-                        password: saltHashPassword(this.state.pass!),
-                      },
-                    })).then(() => {
+          </Collapse>
+          <Collapse in={!!isLogin}>
+            <div className={this.props.classes.loginFieldsContainer}>
+              <ListSubheader className={this.props.classes.noWrap} component="div">Login</ListSubheader>
+              <div>
+                <TextField
+                  variant='outlined'
+                  size='small'
+                  fullWidth
+                  required
+                  value={this.state.email || ''}
+                  onChange={e => this.setState({ email: e.target.value })}
+                  label='Email'
+                  type='email'
+                  error={!!this.state.email && !emailValid}
+                  helperText={(<span className={this.props.classes.noWrap}>Email you used to sign up</span>)}
+                  margin='normal'
+                  style={{ marginTop: '0px' }}
+                  disabled={this.state.isSubmitting}
+                />
+                <TextField
+                  variant='outlined'
+                  size='small'
+                  fullWidth
+                  value={this.state.pass || ''}
+                  onChange={e => this.setState({ pass: e.target.value })}
+                  label='Password'
+                  helperText={(<span className={this.props.classes.noWrap}>Leave blank if you forgot</span>)}
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  margin='normal'
+                  disabled={this.state.isSubmitting}
+                />
+              </div>
+            </div>
+          </Collapse>
+          <Collapse in={!!this.props.loggedInUser}>
+            <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
+          </Collapse>
+        </DialogContent>
+        <DialogActions>
+          {!!this.props.loggedInUser && !!this.props.onClose && (
+            <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
+          )}
+          {!!loginAllowed && !!signupAllowed && (
+            <SubmitButton
+              onClick={() => this.setState({ isLogin: !isLogin })}
+              isSubmitting={this.state.isSubmitting}
+            >{isLogin ? 'Or Signup' : 'Or Login'}</SubmitButton>
+          )}
+          {(signupAllowed || loginAllowed) ? (
+            <SubmitButton
+              color='primary'
+              isSubmitting={this.state.isSubmitting}
+              disabled={!isSubmittable}
+              onClick={() => {
+                if (!!this.props.loggedInUser) {
+                  this.props.onLoggedInAndClose();
+                } else if (!!isLogin && !this.state.pass) {
+                  this.listenForExternalBind();
+                  this.setState({ awaitExternalBind: 'recovery' });
+                  this.props.server.dispatch().then(d => d.forgotPassword({
+                    projectId: this.props.server.getProjectId(),
+                    forgotPassword: {
+                      email: this.state.email!,
+                    },
+                  }));
+                } else if (!!isLogin && !!this.state.pass) {
+                  this.setState({ isSubmitting: true });
+                  this.props.server.dispatch().then(d => d.userLogin({
+                    projectId: this.props.server.getProjectId(),
+                    userLogin: {
+                      email: this.state.email!,
+                      password: saltHashPassword(this.state.pass!),
+                    },
+                  })).then(() => {
+                    this.setState({ isSubmitting: false });
+                    this.props.onLoggedInAndClose();
+                  }).catch(() => {
+                    this.setState({ isSubmitting: false });
+                  });
+                } else {
+                  this.setState({ isSubmitting: true });
+                  this.props.server.dispatch().then(d => d.userCreate({
+                    projectId: this.props.server.getProjectId(),
+                    userCreate: {
+                      name: showDisplayNameInput ? this.state.displayName : undefined,
+                      email: showEmailInput ? this.state.email : undefined,
+                      password: (showPasswordInput && this.state.pass) ? saltHashPassword(this.state.pass) : undefined,
+                      iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
+                      androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
+                      browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
+                    },
+                  })).then(userCreateResponse => {
+                    if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
+                      this.setState({
+                        isSubmitting: false,
+                        emailVerifyDialog: true,
+                      });
+                    } else {
                       this.setState({ isSubmitting: false });
                       this.props.onLoggedInAndClose();
-                    }).catch(() => {
-                      this.setState({ isSubmitting: false });
-                    });
-                  } else {
-                    this.setState({ isSubmitting: true });
+                    }
+                  }).catch(() => {
+                    this.setState({ isSubmitting: false });
+                  });
+                }
+              }}
+            >Continue</SubmitButton>
+          ) : (!!this.props.onClose ? (
+            <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
+          ) : null)}
+        </DialogActions>
+        <Dialog
+          open={!!this.state.awaitExternalBind}
+          onClose={() => this.setState({ awaitExternalBind: undefined })}
+          maxWidth='xs'
+          {...this.props.forgotEmailDialogProps}
+        >
+          <DialogTitle>Awaiting confirmation...</DialogTitle>
+          <DialogContent>
+            {this.state.awaitExternalBind === 'recovery' ? (
+              <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
+            ) : (
+              <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={!!this.state.emailVerifyDialog}
+          onClose={() => this.setState({ emailVerifyDialog: undefined })}
+          maxWidth='xs'
+        >
+          <DialogTitle>Awaiting email verification...</DialogTitle>
+          <DialogContent>
+            <DialogContentText>We sent a verification email to <span className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the email here:</DialogContentText>
+            <DigitsInput
+              digits={6}
+              value={this.state.emailVerification}
+              disabled={this.state.isSubmitting}
+              onChange={(val, isComplete) => {
+                if (isComplete) {
+                  this.setState({
+                    emailVerification: val,
+                    isSubmitting: true,
+                  }, () => setTimeout(() => {
                     this.props.server.dispatch().then(d => d.userCreate({
                       projectId: this.props.server.getProjectId(),
                       userCreate: {
-                        name: showDisplayNameInput ? this.state.displayName : undefined,
-                        email: showEmailInput ? this.state.email : undefined,
-                        password: (showPasswordInput && this.state.pass) ? saltHashPassword(this.state.pass) : undefined,
-                        iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
-                        androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
-                        browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
+                        name: this.state.displayName,
+                        email: this.state.email!,
+                        emailVerification: val.join(),
+                        password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
                       },
                     })).then(userCreateResponse => {
                       if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
+                        this.setState({ isSubmitting: false });
+                      } else {
                         this.setState({
                           isSubmitting: false,
-                          emailVerifyDialog: true,
+                          emailVerifyDialog: undefined,
                         });
-                      } else {
-                        this.setState({ isSubmitting: false });
                         this.props.onLoggedInAndClose();
                       }
                     }).catch(() => {
                       this.setState({ isSubmitting: false });
                     });
-                  }
-                }}
-              >Continue</SubmitButton>
-            ) : (!!this.props.onClose ? (
-              <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
-            ) : null)}
+                  }, 1));
+                } else {
+                  this.setState({ emailVerification: val });
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ emailVerifyDialog: undefined })}>Cancel</Button>
           </DialogActions>
-          <Dialog
-            open={!!this.state.awaitExternalBind}
-            onClose={() => this.setState({ awaitExternalBind: undefined })}
-            maxWidth='xs'
-            {...this.props.forgotEmailDialogProps}
-          >
-            <DialogTitle>Awaiting confirmation...</DialogTitle>
-            <DialogContent>
-              {this.state.awaitExternalBind === 'recovery' ? (
-                <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
-              ) : (
-                <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            open={!!this.state.emailVerifyDialog}
-            onClose={() => this.setState({ emailVerifyDialog: undefined })}
-            maxWidth='xs'
-          >
-            <DialogTitle>Awaiting email verification...</DialogTitle>
-            <DialogContent>
-              <DialogContentText>We sent a verification email to <span className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the email here:</DialogContentText>
-              <DigitsInput
-                digits={6}
-                value={this.state.emailVerification}
-                disabled={this.state.isSubmitting}
-                onChange={(val, isComplete) => {
-                  if (isComplete) {
-                    this.setState({
-                      emailVerification: val,
-                      isSubmitting: true,
-                    }, () => setTimeout(() => {
-                      this.props.server.dispatch().then(d => d.userCreate({
-                        projectId: this.props.server.getProjectId(),
-                        userCreate: {
-                          name: this.state.displayName,
-                          email: this.state.email!,
-                          emailVerification: val.join(),
-                          password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
-                        },
-                      })).then(userCreateResponse => {
-                        if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
-                          this.setState({ isSubmitting: false });
-                        } else {
-                          this.setState({
-                            isSubmitting: false,
-                            emailVerifyDialog: undefined,
-                          });
-                          this.props.onLoggedInAndClose();
-                        }
-                      }).catch(() => {
-                        this.setState({ isSubmitting: false });
-                      });
-                    }, 1));
-                  } else {
-                    this.setState({ emailVerification: val });
-                  }
-                }}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => this.setState({ emailVerifyDialog: undefined })}>Cancel</Button>
-            </DialogActions>
-          </Dialog>
-        </>
-      );
-    }
+        </Dialog>
+      </>
+    );
 
-    return (
+    return this.props.inline ? (
+      <Collapse in={!!this.props.open}>
+        {dialogContent}
+      </Collapse>
+    ) : (
       <Dialog
         open={!!this.props.open}
         onClose={this.props.onClose}

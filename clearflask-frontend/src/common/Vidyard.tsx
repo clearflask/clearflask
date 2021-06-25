@@ -6,6 +6,7 @@ import { isTracking } from './util/detectEnv';
 import windowIso from './windowIso';
 
 var vidyardLoaded = false;
+var vidyardApi: any = undefined;
 
 const styles = (theme: Theme) => createStyles({
   video: {
@@ -23,6 +24,7 @@ class Vidyard extends Component<Props & WithStyles<typeof styles, true>> {
     if (!windowIso.isSsr && !vidyardLoaded) {
       if (isTracking()) {
         windowIso['onVidyardAPI'] = (vidyardEmbed) => {
+          vidyardApi = vidyardEmbed;
           vidyardEmbed.api.addReadyListener((_, player) => {
             var scriptTag = document.createElement('script');
             scriptTag.src = "//play.vidyard.com/v0/google-analytics.js";
@@ -37,6 +39,14 @@ class Vidyard extends Component<Props & WithStyles<typeof styles, true>> {
 
       vidyardLoaded = true;
     }
+  }
+
+  componentDidMount() {
+    !windowIso.isSsr && windowIso['vidyardEmbed']?.api.renderDOMPlayers();
+  }
+
+  componentDidUpdate() {
+    !windowIso.isSsr && windowIso['vidyardEmbed']?.api.renderDOMPlayers();
   }
 
   render() {

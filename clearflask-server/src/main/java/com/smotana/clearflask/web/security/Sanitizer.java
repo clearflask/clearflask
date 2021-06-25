@@ -70,7 +70,7 @@ public class Sanitizer {
     @Inject
     private ContentStore contentStore;
 
-    /** If changed, also change in IdeaExplorer.tsx */
+    /** If changed, also change in PostCreateForm.tsx */
     private static final long POST_TITLE_MAX_LENGTH = 100;
     private static final long CONTENT_MAX_LENGTH = 10_000;
     private static final long NAME_MAX_LENGTH = 30;

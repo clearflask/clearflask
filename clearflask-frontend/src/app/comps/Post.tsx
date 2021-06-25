@@ -24,7 +24,7 @@ import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
 import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
-import TruncateFade from '../../common/Truncate';
+import TruncateFade from '../../common/TruncateFade';
 import UserDisplay from '../../common/UserDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -1170,6 +1170,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
       || !this.props.idea
       || !this.props.idea.response) return null;
+    const responseRichViewer = (
+      <RichViewer
+        key={this.props.idea.response}
+        iAgreeInputIsSanitized
+        html={this.props.idea.response}
+        toneDownHeadings={this.props.variant === 'list'}
+      />
+    );
     return (
       <div className={this.props.classes.responseContainer}>
         <Typography variant='caption' component={'span'} className={this.props.classes.responsePrefixText}>
@@ -1195,11 +1203,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${this.props.variant !== 'list' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-          {this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
-            ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}>
-              <div><RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={this.props.variant === 'list'} /></div>
+          {this.props.variant === 'list'
+            ? (<TruncateFade variant='body1' lines={this.props.display?.responseTruncateLines}>
+              <div>{responseRichViewer}</div>
             </TruncateFade>)
-            : <RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} toneDownHeadings={this.props.variant === 'list'} />}
+            : responseRichViewer}
         </Typography>
       </div>
     );
@@ -1371,12 +1379,12 @@ export const PostTitle = (props: {
         classes.title,
         props.variant !== 'list'
           ? classes.titlePage
-          : ((props.descriptionTruncateLines || 0) <= 0
+          : ((props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines <= 0)
             ? classes.titleListWithoutDescription
             : classes.titleList),
         props.demoBlurryShadow ? classes.blurry : '',
       )}>
-        {props.variant === 'list' && props.titleTruncateLines !== undefined && props.titleTruncateLines > 0
+        {props.variant === 'list'
           ? (<TruncateEllipsis ellipsis='…' lines={props.titleTruncateLines}><div>{props.title}</div></TruncateEllipsis>)
           : props.title}
       </Typography>
@@ -1407,7 +1415,7 @@ export const PostDescription = (props: {
       props.variant !== 'list' ? classes.descriptionPage : classes.descriptionList,
       props.demoBlurryShadow ? classes.blurry : '',
     )}>
-      {props.variant === 'list' && props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines > 0
+      {props.variant === 'list'
         ? (<TruncateFade variant='body1' lines={props.descriptionTruncateLines}>
           <div>{descriptionRichViewer}</div>
         </TruncateFade>)

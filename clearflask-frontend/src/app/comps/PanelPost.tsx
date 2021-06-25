@@ -15,7 +15,7 @@ import { selectorContentWrap } from '../../common/util/reselectUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerVertical from '../utils/DividerVertical';
 import Loading from '../utils/Loading';
-import Panel from './Panel';
+import Panel, { PanelTitle } from './Panel';
 import Post, { MaxContentWidth } from './Post';
 
 export enum Direction {
@@ -31,12 +31,6 @@ const styles = (theme: Theme) => createStyles({
     width: (props: Props) => props.widthExpand ? MaxContentWidth : '100%',
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
-  },
-  placeholderHidden: {
-    maxHeight: 0,
-    padding: 0,
-    margin: 0,
-    visibility: 'hidden',
   },
   widthExpandMarginSupplied: {
     padding: (props: Props) => props.widthExpandMargin,
@@ -64,7 +58,7 @@ export interface Props {
   className?: string;
   postClassName?: string;
   server: Server;
-  panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
+  panel?: Partial<Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer>;
   overrideTitle?: React.ReactNode;
   preContent?: React.ReactNode;
   widthExpand?: boolean;
@@ -84,6 +78,7 @@ export interface Props {
   selectedPostClassName?: string;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
+  onHasAnyChanged?: (hasAny: boolean) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -96,13 +91,14 @@ interface ConnectProps {
   loggedInUser?: Client.User;
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+  notifiedHasAny?: boolean;
 
   constructor(props) {
     super(props);
 
     if (!props.searchStatus) {
       const searchMerged = {
-        ...props.panel.search,
+        ...(props.panel?.search || {}),
         ...props.searchOverride,
         ...props.searchOverrideAdmin,
       };
@@ -123,7 +119,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         ideaIds: props.missingVotes,
         myOwnIdeaIds: props.missingVotes
           .map(ideaId => props.searchIdeas.find(i => i.ideaId === ideaId))
-          .filter(idea => idea?.idea?.authorUserId === props.loggedInUser.userId)
+          .filter(idea => idea?.idea?.authorUserId === props.loggedInUser?.userId)
           .map(idea => idea?.idea?.ideaId)
           .filter(notEmpty),
       }));
@@ -137,7 +133,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   render() {
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
       ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
-    const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
+    const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
     var content;
     switch (this.props.searchStatus) {
       default:
@@ -157,17 +153,23 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         );
         break;
       case Status.FULFILLED:
-        if (hideIfEmpty && this.props.searchIdeas.length === 0) return null;
+        const hasAny = !!this.props.searchIdeas.length;
+        if (!!this.props.onHasAnyChanged && (this.notifiedHasAny !== hasAny)) {
+          this.notifiedHasAny = hasAny;
+          this.props.onHasAnyChanged(hasAny);
+        }
+
+        if (hideIfEmpty && !hasAny) return null;
 
         const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
-          || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
+          || (this.props.panel?.search?.filterCategoryIds?.length === 1));
 
         const display: Client.PostDisplay = {
           titleTruncateLines: 1,
           descriptionTruncateLines: 2,
           ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
           ...(this.props.displayDefaults || {}),
-          ...this.props.panel.display,
+          ...(this.props.panel?.display || {}),
         }
         content = this.props.searchIdeas.map((idea, ideaIndex) => {
           var content: React.ReactNode;
@@ -215,49 +217,56 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
             </>
           ));
         }
-        content = (
-          <>
-            {content}
-            <div
-              className={classNames(
-                this.props.widthExpand && widthExpandMarginClassName,
-                this.props.classes.placeholder,
-                // Just hide instead of removing to prevent the width from collapsing
-                this.props.searchIdeas.length && this.props.classes.placeholderHidden,
-              )}
-            >
-              <Typography variant='overline' style={{
-              }}>Nothing found</Typography>
-            </div>
-          </>
-        );
+        if (!this.props.searchIdeas.length) {
+          content = (
+            <>
+              {content}
+              <div
+                className={classNames(
+                  this.props.widthExpand && widthExpandMarginClassName,
+                  this.props.classes.placeholder,
+                )}
+              >
+                <Typography variant='overline' style={{
+                }}>Nothing found</Typography>
+              </div>
+            </>
+          );
+        }
         break;
     }
-    content = this.props.suppressPanel ? content : (
-      <Panel
-        className={this.props.className}
-        title={this.props.overrideTitle || this.props.panel['title']}
-        direction={this.props.direction}
-        maxHeight={this.props.maxHeight}
-      >
-        {this.props.preContent}
-        {content}
-      </Panel>
-    );
+    const title = this.props.overrideTitle || (!this.props.panel?.['title'] ? undefined : (
+      <PanelTitle
+        text={this.props.panel['title']}
+        color={this.props.panel['color']}
+      />
+    ))
+    if (title)
+      content = this.props.suppressPanel ? content : (
+        <Panel
+          className={classNames(this.props.className)}
+          title={title}
+          direction={this.props.direction}
+          maxHeight={this.props.maxHeight}
+        >
+          {this.props.preContent}
+          {content}
+        </Panel>
+      );
     return content;
   }
 }
 
 export default keyMapper(
   (ownProps: Props) => getSearchKey({
-    ...ownProps.panel.search,
+    ...(ownProps.panel?.search || {}),
     ...ownProps.searchOverride,
     ...ownProps.searchOverrideAdmin,
   }),
   connect<ConnectProps, {}, Props, ReduxState>(() => {
     const selectIsAdminSearch = (_, ownProps: Props): boolean => !!ownProps.searchOverrideAdmin;
     const selectSearchMerged = (_, ownProps: Props): Client.IdeaSearch | Admin.IdeaSearchAdmin => ({
-      ...ownProps.panel.search,
+      ...(ownProps.panel?.search || {}),
       ...ownProps.searchOverride,
       ...ownProps.searchOverrideAdmin,
     });

@@ -1,8 +1,8 @@
-import { CardActionArea, Link as MuiLink, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Collapse, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { connect } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import * as Client from '../api/client';
@@ -12,9 +12,12 @@ import RichViewer from '../common/RichViewer';
 import { preserveEmbed } from '../common/util/historyUtil';
 import { getProjectLink } from '../site/Dashboard';
 import IdeaExplorer from './comps/IdeaExplorer';
-import { Direction } from './comps/Panel';
+import LogIn from './comps/LogIn';
+import { Direction, PanelTitle } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
+import PostCreateForm from './comps/PostCreateForm';
 import TemplateLiquid from './comps/TemplateLiquid';
+import ErrorMsg from './ErrorMsg';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
@@ -49,6 +52,19 @@ const styles = (theme: Theme) => createStyles({
   },
   singlePanel: {
     minWidth: '256px',
+  },
+  feedbackContainer: {
+    maxWidth: 600,
+    margin: 'auto',
+  },
+  feedbackLogInContainer: {
+    width: 'max-content',
+    margin: 'auto',
+  },
+  feedbackSimilarWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   boardContainer: {
     // marginLeft: 'auto',
@@ -149,6 +165,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     } else if (this.props.page) {
       var landingCmpt;
       var panelsCmpt;
+      var feedbackCmpt;
       var boardCmpt;
       var explorerCmpt;
 
@@ -199,6 +216,14 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         );
       }
 
+      // ### FEEDBACK
+      if (this.props.page.feedback) {
+        const feedback: any = this.props.page.feedback;
+        feedbackCmpt = (
+          <PageFeedback server={this.props.server} feedback={feedback} />
+        );
+      }
+
       // ### BOARD
       if (this.props.page.board) {
         var panels: any = this.props.page.board.panels.map((panel, panelIndex) => (
@@ -232,6 +257,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           {titleDescription}
           {landingCmpt}
           {panelsCmpt}
+          {feedbackCmpt}
           {boardCmpt}
           {explorerCmpt}
         </div>
@@ -246,6 +272,95 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
   }
 }
 
+export const PageFeedback = (props: {
+  server: Server,
+  feedback: Client.PageFeedback,
+}) => {
+  const classes = useStyles();
+  const [onLogIn, setOnLogIn] = useState<(() => void) | undefined>();
+  const [createdPostId, setCreatedPostId] = useState<string | undefined>();
+  const [similarText, setSimilarText] = useState<string | undefined>();
+  const [hasAnySimilar, setHasAnySimilar] = useState<boolean>(false);
+  return (
+    <div className={classNames(classes.feedbackContainer, classes.spacing)}>
+      <Collapse in={!createdPostId && !onLogIn}>
+        <PanelTitle text='How can we improve?' />
+        <PostCreateForm
+          server={props.server}
+          type='large'
+          // TODO mandatoryCategoryIds={props.feedback.categoryId}
+          searchSimilar={text => setSimilarText(text)}
+          adminControlsDefaultVisibility='none'
+          logIn={() => new Promise(resolve => setOnLogIn(() => resolve))}
+          onCreated={postId => setCreatedPostId(postId)}
+        />
+      </Collapse>
+      <div className={classes.feedbackLogInContainer}>
+        <LogIn
+          inline
+          actionTitle='Where can we send you updates?'
+          server={props.server}
+          open={!!onLogIn}
+          onLoggedInAndClose={() => {
+            if (onLogIn) {
+              onLogIn();
+              setOnLogIn(undefined);
+            }
+          }}
+        />
+      </div>
+      <Collapse in={!!createdPostId}>
+        <ErrorMsg msg='Thank you' variant='success' />
+      </Collapse>
+      <Collapse in={!!createdPostId && !!similarText && !!hasAnySimilar}>
+        {similarText && (
+          <PanelPost
+            direction={Direction.Vertical}
+            searchOverride={{
+              limit: 3,
+              searchText: similarText,
+              ...(props.feedback.allowSimilar?.filterCategoryIds ? {
+                filterCategoryIds: props.feedback.allowSimilar?.filterCategoryIds,
+              } : {}),
+            }}
+            widthExpand
+            server={props.server}
+            // TODO onClickPost={}
+            panel={{
+              title: 'Are any of these related?'
+            }}
+            displayDefaults={{
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 4,
+              responseTruncateLines: 0,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            }}
+            wrapPost={(post, postNode, index) => (
+              <div className={classes.feedbackSimilarWrap}>
+                <Button
+                  variant='outlined'
+                  color='primary'
+                  onClick={() => {/* TODO */ }}
+                >Link</Button>
+                {postNode}
+              </div>
+            )}
+            onHasAnyChanged={setHasAnySimilar}
+          />
+        )}
+      </Collapse>
+    </div>
+  );
+}
+
 export const BoardContainer = (props: {
   server: Server,
   board?: Client.PageBoard,
@@ -254,11 +369,14 @@ export const BoardContainer = (props: {
 }) => {
   const classes = useStyles();
 
-  if (props.board?.title) {
+  if (props.overrideTitle || props.board?.title) {
     return (
       <DividerCorner
+        suppressDivider
         className={classNames(classes.boardContainer, classes.spacing)}
-        title={props.overrideTitle || props.board.title}
+        title={props.overrideTitle || (!props.board?.title ? undefined : (
+          <PanelTitle text={props.board.title} />
+        ))}
         height='100%'
         maxHeight={120}
       >

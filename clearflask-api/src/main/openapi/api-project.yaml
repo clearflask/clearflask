@@ -594,6 +594,8 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
                 $ref: 'api-project.yaml#/components/schemas/PageExplorer'
+              feedback:
+                $ref: 'api-project.yaml#/components/schemas/PageFeedback'
     workflow:
       x-clearflask-page: { order: 5, name: 'Workflow',description: 'Workflow defines the lifetime of content by defining a set of states and transitions between those states. As an example, a user submitted idea may start as "Under Review" state. A product manager may then transition the idea to "Planned" or "Declined". Each state may impose restrictions on voting, commenting and editing.', nameFromProp: 'name' }
       title: Workflow
@@ -959,6 +961,20 @@ components:
                 actionTitleLong:
                   x-clearflask-prop: { order: 1, name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post'}
                   type: string
+    PageFeedback:
+      x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
+      type: object
+      properties:
+        allowSimilar:
+          x-clearflask-prop: { order: 1, name: 'Show similar', description: 'As user types, show similar posts to minimize creating duplicates.', defaultValue: true }
+          type: object
+          properties:
+            filterCategoryIds:
+              x-clearflask-prop: { order: 1, name: 'Search categories', description: 'Display only posts from these categories' }
+              x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+              type: array
+              items:
+                type: string
     VersionedConfig:
       type: object
       required:
