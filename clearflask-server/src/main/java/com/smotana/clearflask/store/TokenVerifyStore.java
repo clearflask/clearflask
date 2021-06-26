@@ -16,9 +16,9 @@ public interface TokenVerifyStore {
         return String.format("%0" + tokenSize + "d", ThreadLocalRandom.current().nextLong((long) Math.pow(10, tokenSize)));
     }
 
-    Token createToken(String targetId);
+    Token createToken(String... targetIdParts);
 
-    boolean useToken(String tokenStr, String targetId);
+    boolean useToken(String tokenStr, String... targetIdParts);
 
     @Value
     @Builder(toBuilder = true)

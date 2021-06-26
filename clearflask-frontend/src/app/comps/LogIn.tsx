@@ -13,6 +13,7 @@ import NewWindowIcon from '@material-ui/icons/OpenInNew';
 import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import classNames from 'classnames';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -78,6 +79,16 @@ const styles = (theme: Theme) => createStyles({
   bold: {
     fontWeight: 'bold',
   },
+  emailTextFieldInline: {
+    marginBottom: 0,
+    marginLeft: -14,
+  },
+  emailInputLabelInline: {
+    color: theme.palette.text.primary,
+  },
+  emailInputInline: {
+    borderColor: 'transparent',
+  },
 });
 export interface Props {
   server: Server;
@@ -85,7 +96,9 @@ export interface Props {
   onClose?: () => void;
   onLoggedInAndClose: () => void;
   inline?: boolean;
+  minimalistic?: boolean;
   actionTitle?: string | React.ReactNode;
+  actionSubmitTitle?: string;
   overrideWebNotification?: WebNotification;
   overrideMobileNotification?: MobileNotification;
   DialogProps?: Partial<DialogProps>;
@@ -108,13 +121,15 @@ interface State {
   email?: string;
   pass?: string;
   revealPassword?: boolean;
-  isLogin?: boolean;
   awaitExternalBind?: 'recovery' | 'sso' | 'oauth';
   isSubmitting?: boolean;
+  emailLoginDialog?: boolean;
+  emailLoginToken?: (number | undefined)[];
   emailVerifyDialog?: boolean;
   emailVerification?: (number | undefined)[];
 }
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
+  readonly emailInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   state: State = {};
   storageListener?: any;
 
@@ -150,7 +165,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           || (!notifOpts.has(NotificationType.Android) && !notifOpts.has(NotificationType.Ios) && !notifOpts.has(NotificationType.Browser)))) {
         notifOpts.add(NotificationType.Silent)
       }
-      if (onboarding.notificationMethods.email && onboarding.notificationMethods.email.mode === Client.EmailSignupModeEnum.SignupAndLogin) {
+      if (onboarding.notificationMethods.email) {
         notifOpts.add(NotificationType.Email);
       }
       if (onboarding.notificationMethods.sso) {
@@ -162,27 +177,26 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     }
 
     const signupAllowed = notifOpts.size > 0;
-    const loginAllowed = !!onboarding?.notificationMethods.email;
-    const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
     const onlySingleOption = notifOpts.size === 1 && oauthOpts.length <= 1;
     const singleColumnLayout = this.props.fullScreen || onlySingleOption;
 
-    const selectedNotificationType = !isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
+    const selectedNotificationType = (this.state.notificationType && notifOpts.has(this.state.notificationType))
       ? this.state.notificationType
       : (onlySingleOption ? notifOpts.values().next().value : undefined);
     const selectedOauthType = selectedNotificationType === NotificationType.OAuth && (this.state.oauthType
       ? this.state.oauthType
       : oauthOpts[0]?.oauthId);
 
-    const showEmailInput = selectedNotificationType === NotificationType.Email;
     const emailValid = this.isEmailValid(this.state.email);
     const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-    const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
-    const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
-    const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
-    const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
-    const isPasswordRequired = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
-    const isSignupSubmittable = selectedNotificationType
+    const showDisplayNameInput = signupAllowed && !!onboarding?.accountFields && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO && selectedNotificationType !== NotificationType.OAuth;
+    const isDisplayNameRequired = showDisplayNameInput && onboarding?.accountFields?.displayName === Client.AccountFieldsDisplayNameEnum.Required;
+    const showPasswordInput = onboarding?.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
+    const isPasswordRequired = onboarding?.notificationMethods.email && onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
+    const showAccountFields = showPasswordInput || showDisplayNameInput;
+    const showEmailInput = selectedNotificationType === NotificationType.Email;
+    const showEmailInputInline = !showAccountFields;
+    const isSubmittable = selectedNotificationType
       && (selectedNotificationType !== NotificationType.SSO)
       && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
       && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
@@ -190,25 +204,59 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       && (!isDisplayNameRequired || this.state.displayName)
       && (selectedNotificationType !== NotificationType.Email || (emailValid && emailAllowedDomain))
       && (!isPasswordRequired || this.state.pass);
-    const isLoginSubmittable = emailValid;
-    const isSubmittable = isLogin ? isLoginSubmittable : isSignupSubmittable;
 
     const onlySingleOptionRequiresAllow = onlySingleOption &&
       ((selectedNotificationType === NotificationType.Android && !this.state.notificationDataAndroid)
         || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
         || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
+    const emailInput = !notifOpts.has(NotificationType.Email) ? undefined : (
+      <TextField
+        classes={{
+          root: classNames(!!showEmailInputInline && this.props.classes.emailTextFieldInline),
+        }}
+        InputLabelProps={{
+          classes: {
+            root: classNames(!!showEmailInputInline && this.props.classes.emailInputLabelInline),
+          },
+        }}
+        InputProps={{
+          classes: {
+            notchedOutline: classNames(!!showEmailInputInline && this.props.classes.emailInputInline),
+          },
+        }}
+        inputRef={this.emailInputRef}
+        variant='outlined'
+        size='small'
+        fullWidth
+        required={!showEmailInputInline}
+        value={this.state.email || ''}
+        onChange={e => this.setState({ email: e.target.value })}
+        label='Email'
+        type='email'
+        error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
+        helperText={(!!this.props.minimalistic || !!showEmailInputInline) ? undefined : (
+          <span className={this.props.classes.noWrap}>
+            {!this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}
+          </span>
+        )}
+        margin='normal'
+        style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
+        disabled={this.state.isSubmitting}
+      />
+    );
+
     const dialogContent = (
       <>
         <DialogContent>
           {!!this.props.actionTitle && typeof this.props.actionTitle !== 'string' && this.props.actionTitle}
-          <Collapse in={!isLogin}>
+          <div>
             <div
               className={this.props.classes.content}
               style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
             >
               <List component='nav' className={this.props.classes.notificationList}>
-                {(!this.props.actionTitle || typeof this.props.actionTitle === 'string') && (
+                {((!this.props.actionTitle && !this.props.minimalistic) || typeof this.props.actionTitle === 'string') && (
                   <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle !== undefined ? this.props.actionTitle : 'Create account'}</ListSubheader>
                 )}
                 <Collapse in={notifOpts.has(NotificationType.SSO)}>
@@ -289,11 +337,14 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   <ListItem
                     button={!onlySingleOption as any}
                     selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
-                    onClick={!onlySingleOption ? e => this.setState({ notificationType: NotificationType.Email }) : undefined}
+                    onClick={!onlySingleOption ? e => {
+                      this.setState({ notificationType: NotificationType.Email });
+                      this.emailInputRef.current?.focus();
+                    } : undefined}
                     disabled={this.state.isSubmitting}
                   >
                     <ListItemIcon><EmailIcon /></ListItemIcon>
-                    <ListItemText primary='Email' className={this.props.classes.noWrap} />
+                    <ListItemText className={this.props.classes.noWrap} primary={!showEmailInputInline ? 'Email' : emailInput} />
                   </ListItem>
                 </Collapse>
                 <Collapse in={notifOpts.has(NotificationType.Silent)}>
@@ -307,12 +358,12 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListItemText primary='Guest' />
                   </ListItem>
                 </Collapse>
-                <Collapse in={!signupAllowed && !loginAllowed}>
+                <Collapse in={!signupAllowed}>
                   <ListItem
                     disabled={true}
                   >
                     <ListItemIcon><DisabledIcon /></ListItemIcon>
-                    <ListItemText primary={!signupAllowed && !loginAllowed ? 'Signups are disabled' : undefined} />
+                    <ListItemText primary='Sign-up is not available' />
                   </ListItem>
                 </Collapse>
               </List>
@@ -325,7 +376,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               >
                 {!singleColumnLayout && (<Hr vertical isInsidePaper length='25%' />)}
                 <div>
-                  <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
+                  {!this.props.minimalistic && (
+                    <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
+                  )}
                   {showDisplayNameInput && (
                     <TextField
                       variant='outlined'
@@ -334,8 +387,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       required={isDisplayNameRequired}
                       value={this.state.displayName || ''}
                       onChange={e => this.setState({ displayName: e.target.value })}
-                      label='Display name'
-                      helperText={(<span className={this.props.classes.noWrap}>How others see you</span>)}
+                      label='Name'
+                      helperText={!!this.props.minimalistic ? undefined : (<span className={this.props.classes.noWrap}>How others see you</span>)}
                       margin='normal'
                       classes={{ root: this.props.classes.noWrap }}
                       style={{ marginTop: '0px' }}
@@ -344,22 +397,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   )}
                   <Collapse in={showEmailInput} unmountOnExit>
                     <div>
-                      <TextField
-                        variant='outlined'
-                        size='small'
-                        fullWidth
-                        required
-                        value={this.state.email || ''}
-                        onChange={e => this.setState({ email: e.target.value })}
-                        label='Email'
-                        type='email'
-                        error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
-                        helperText={(<span className={this.props.classes.noWrap}>{
-                          !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
-                        margin='normal'
-                        style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
-                        disabled={this.state.isSubmitting}
-                      />
+                      {!showEmailInputInline && emailInput}
                       {showPasswordInput && (
                         <TextField
                           variant='outlined'
@@ -369,11 +407,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           value={this.state.pass || ''}
                           onChange={e => this.setState({ pass: e.target.value })}
                           label='Password'
-                          helperText={(<span className={this.props.classes.noWrap}>
-                            {isPasswordRequired
-                              ? 'Secure your account'
-                              : 'Optionally secure your account'}
-                          </span>)}
+                          helperText={!!this.props.minimalistic ? undefined : (
+                            <span className={this.props.classes.noWrap}>
+                              {isPasswordRequired
+                                ? 'Secure your account'
+                                : 'Optionally secure your account'}
+                            </span>
+                          )}
                           type={this.state.revealPassword ? 'text' : 'password'}
                           InputProps={{
                             endAdornment: (
@@ -396,56 +436,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 </div>
               </div>
             </div>
-            {(signupAllowed || loginAllowed) && (
-              <AcceptTerms overrideTerms={onboarding?.terms?.documents} />
-            )}
-          </Collapse>
-          <Collapse in={!!isLogin}>
-            <div className={this.props.classes.loginFieldsContainer}>
-              <ListSubheader className={this.props.classes.noWrap} component="div">Login</ListSubheader>
-              <div>
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  fullWidth
-                  required
-                  value={this.state.email || ''}
-                  onChange={e => this.setState({ email: e.target.value })}
-                  label='Email'
-                  type='email'
-                  error={!!this.state.email && !emailValid}
-                  helperText={(<span className={this.props.classes.noWrap}>Email you used to sign up</span>)}
-                  margin='normal'
-                  style={{ marginTop: '0px' }}
-                  disabled={this.state.isSubmitting}
-                />
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  fullWidth
-                  value={this.state.pass || ''}
-                  onChange={e => this.setState({ pass: e.target.value })}
-                  label='Password'
-                  helperText={(<span className={this.props.classes.noWrap}>Leave blank if you forgot</span>)}
-                  type={this.state.revealPassword ? 'text' : 'password'}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          aria-label='Toggle password visibility'
-                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                        >
-                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                  margin='normal'
-                  disabled={this.state.isSubmitting}
-                />
-              </div>
-            </div>
-          </Collapse>
+          </div>
+          {signupAllowed && onboarding?.terms?.documents?.length && (
+            <AcceptTerms overrideTerms={onboarding.terms.documents} />
+          )}
           <Collapse in={!!this.props.loggedInUser}>
             <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
           </Collapse>
@@ -454,13 +448,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           {!!this.props.loggedInUser && !!this.props.onClose && (
             <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
           )}
-          {!!loginAllowed && !!signupAllowed && (
-            <SubmitButton
-              onClick={() => this.setState({ isLogin: !isLogin })}
-              isSubmitting={this.state.isSubmitting}
-            >{isLogin ? 'Or Signup' : 'Or Login'}</SubmitButton>
-          )}
-          {(signupAllowed || loginAllowed) ? (
+          {(signupAllowed) ? (
             <SubmitButton
               color='primary'
               isSubmitting={this.state.isSubmitting}
@@ -468,29 +456,6 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               onClick={() => {
                 if (!!this.props.loggedInUser) {
                   this.props.onLoggedInAndClose();
-                } else if (!!isLogin && !this.state.pass) {
-                  this.listenForExternalBind();
-                  this.setState({ awaitExternalBind: 'recovery' });
-                  this.props.server.dispatch().then(d => d.forgotPassword({
-                    projectId: this.props.server.getProjectId(),
-                    forgotPassword: {
-                      email: this.state.email!,
-                    },
-                  }));
-                } else if (!!isLogin && !!this.state.pass) {
-                  this.setState({ isSubmitting: true });
-                  this.props.server.dispatch().then(d => d.userLogin({
-                    projectId: this.props.server.getProjectId(),
-                    userLogin: {
-                      email: this.state.email!,
-                      password: saltHashPassword(this.state.pass!),
-                    },
-                  })).then(() => {
-                    this.setState({ isSubmitting: false });
-                    this.props.onLoggedInAndClose();
-                  }).catch(() => {
-                    this.setState({ isSubmitting: false });
-                  });
                 } else {
                   this.setState({ isSubmitting: true });
                   this.props.server.dispatch().then(d => d.userCreate({
@@ -504,7 +469,12 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
                     },
                   })).then(userCreateResponse => {
-                    if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
+                    if (userCreateResponse.requiresEmailLogin) {
+                      this.setState({
+                        isSubmitting: false,
+                        emailLoginDialog: true,
+                      });
+                    } else if (userCreateResponse.requiresEmailVerification) {
                       this.setState({
                         isSubmitting: false,
                         emailVerifyDialog: true,
@@ -518,7 +488,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   });
                 }
               }}
-            >Continue</SubmitButton>
+            >{this.props.actionSubmitTitle || 'Continue'}</SubmitButton>
           ) : (!!this.props.onClose ? (
             <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
           ) : null)}
@@ -542,11 +512,56 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           </DialogActions>
         </Dialog>
         <Dialog
+          open={!!this.state.emailLoginDialog}
+          onClose={() => this.setState({ emailLoginDialog: undefined })}
+          maxWidth='xs'
+        >
+          <DialogTitle>Login via Email</DialogTitle>
+          <DialogContent>
+            <DialogContentText>The email <span className={this.props.classes.bold}>{this.state.email}</span> is associated with an account.</DialogContentText>
+            <DialogContentText>Open the link from the email or copy the verification token here:</DialogContentText>
+            <DigitsInput
+              digits={6}
+              value={this.state.emailLoginToken}
+              disabled={this.state.isSubmitting}
+              onChange={(val, isComplete) => {
+                if (isComplete) {
+                  this.setState({
+                    emailLoginToken: val,
+                    isSubmitting: true,
+                  }, () => setTimeout(() => {
+                    this.props.server.dispatch().then(d => d.userLogin({
+                      projectId: this.props.server.getProjectId(),
+                      userLogin: {
+                        email: this.state.email!,
+                        token: val.join(''),
+                      },
+                    })).then(user => {
+                      this.setState({
+                        isSubmitting: false,
+                        emailLoginDialog: undefined,
+                      });
+                      this.props.onLoggedInAndClose();
+                    }).catch(() => {
+                      this.setState({ isSubmitting: false });
+                    });
+                  }, 1));
+                } else {
+                  this.setState({ emailLoginToken: val });
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ emailLoginDialog: undefined })}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
           open={!!this.state.emailVerifyDialog}
           onClose={() => this.setState({ emailVerifyDialog: undefined })}
           maxWidth='xs'
         >
-          <DialogTitle>Awaiting email verification...</DialogTitle>
+          <DialogTitle>Verify your email</DialogTitle>
           <DialogContent>
             <DialogContentText>We sent a verification email to <span className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the email here:</DialogContentText>
             <DigitsInput
@@ -564,7 +579,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       userCreate: {
                         name: this.state.displayName,
                         email: this.state.email!,
-                        emailVerification: val.join(),
+                        emailVerification: val.join(''),
                         password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
                       },
                     })).then(userCreateResponse => {

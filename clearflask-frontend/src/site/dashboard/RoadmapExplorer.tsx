@@ -12,6 +12,7 @@ import { contentScrollApplyStyles, Orientation } from '../../common/ContentScrol
 import HelpPopper from '../../common/HelpPopper';
 import ExpandIcon from '../../common/icon/ExpandIcon';
 import { BoxLayoutBoxApplyStyles, BOX_MARGIN } from '../../common/Layout';
+import { notEmpty } from '../../common/util/arrayUtil';
 import { getProjectLink } from '../Dashboard';
 import { droppableDataSerialize } from './dashboardDndActionHandler';
 import DragndropPostList from './DragndropPostList';
@@ -135,11 +136,13 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
     var statusIdBacklog = this.props.roadmap.statusIdBacklog;
     var statusIdClosed = this.props.roadmap.statusIdClosed;
     var statusIdCompleted = this.props.roadmap.statusIdCompleted;
+    const coveredStatusIds = new Set<string>([statusIdBacklog, statusIdClosed, statusIdCompleted].filter(notEmpty));
     const boardPanels = this.props.roadmap.pageAndIndex?.page.board.panels.map((panel, panelIndex) => {
       // If roadmap is configured correctly (Not through advanced settings),
       // then each panel should be filtering a single status so a transition
       // between panels can simply change the status of the Task. 
-      const onlyStatus = panel.search.filterStatusIds?.length !== 1 ? undefined : this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
+      const isTaskCategory = panel.search.filterCategoryIds?.length === 1 && panel.search.filterCategoryIds[0] === this.props.roadmap.categoryAndIndex.category.categoryId;
+      const onlyStatus = !isTaskCategory || panel.search.filterStatusIds?.length !== 1 ? undefined : this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
 
       // If a status is already present in the public roadmap, don't show it again
       if (onlyStatus) {
@@ -148,6 +151,7 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
         if (onlyStatus.statusId === statusIdCompleted) statusIdCompleted = undefined;
       }
 
+      if (isTaskCategory) panel.search.filterStatusIds?.forEach(statusId => coveredStatusIds.add(statusId));
 
       const PostListProps: React.ComponentProps<typeof PostList> = {
         server: this.props.server,
@@ -161,7 +165,7 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
         },
       };
       var list;
-      if (this.props.publicViewOnly) {
+      if (this.props.publicViewOnly || !isTaskCategory) {
         list = (
           <PostList
             key={panelIndex}
@@ -194,6 +198,13 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
     });
     const rightActionColumnCount = (statusIdClosed ? 1 : 0) + (statusIdCompleted ? 1 : 0);
 
+    const extraDropboxes = this.props.roadmap.categoryAndIndex.category.workflow.statuses
+      .filter(status => !coveredStatusIds.has(status.statusId))
+      .map((status, index, arr) => this.renderActionColumn(
+        (!boardPanels?.length && arr.length === (index + 1)) ? 'main' : 'left',
+        [this.renderDropboxForStatus(status.statusId)],
+      ));
+
     return (
       <div className={classNames(
         this.props.classes.container,
@@ -202,47 +213,50 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
         {!this.props.publicViewOnly && statusIdBacklog && this.renderActionColumn('left', [
           this.renderDropboxForStatus(statusIdBacklog),
         ])}
-        <div className={classNames(
-          this.props.classes.roadmapContainer,
-          !this.props.isBoxLayout && this.props.classes.roadmapContainerNoBoxLayout,
-        )}>
-          <Typography variant='h4' className={classNames(
-            this.props.classes.title,
-            this.props.isBoxLayout && this.props.classes.roadmapTitleBoxLayout,
-          )}>
-            <span>
-              {this.props.roadmap.pageAndIndex?.page.board.title || 'Roadmap'}
-              {!this.props.publicViewOnly && (
-                <>
-                  &nbsp;
-                  <HelpPopper description={
-                    'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
-                    + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
-                  } />
-                </>
-              )}
-            </span>
-            {roadmapLink && (
-              <Button
-                component={MuiLink}
-                href={roadmapLink}
-                target='_blank'
-                underline='none'
-                rel='noopener nofollow'
-              >
-                Public view
-                &nbsp;
-                <VisibilityIcon fontSize='inherit' />
-              </Button>
-            )}
-          </Typography>
+        {extraDropboxes}
+        {boardPanels?.length && (
           <div className={classNames(
-            this.props.classes.roadmap,
-            this.props.isBoxLayout && this.props.classes.boxLayout,
+            this.props.classes.roadmapContainer,
+            !this.props.isBoxLayout && this.props.classes.roadmapContainerNoBoxLayout,
           )}>
-            {boardPanels}
+            <Typography variant='h4' className={classNames(
+              this.props.classes.title,
+              this.props.isBoxLayout && this.props.classes.roadmapTitleBoxLayout,
+            )}>
+              <span>
+                {this.props.roadmap.pageAndIndex?.page.board.title || 'Roadmap'}
+                {!this.props.publicViewOnly && (
+                  <>
+                    &nbsp;
+                  <HelpPopper description={
+                      'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
+                      + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
+                    } />
+                  </>
+                )}
+              </span>
+              {roadmapLink && (
+                <Button
+                  component={MuiLink}
+                  href={roadmapLink}
+                  target='_blank'
+                  underline='none'
+                  rel='noopener nofollow'
+                >
+                  Public view
+                  &nbsp;
+                  <VisibilityIcon fontSize='inherit' />
+                </Button>
+              )}
+            </Typography>
+            <div className={classNames(
+              this.props.classes.roadmap,
+              this.props.isBoxLayout && this.props.classes.boxLayout,
+            )}>
+              {boardPanels}
+            </div>
           </div>
-        </div>
+        )}
         {!this.props.publicViewOnly && rightActionColumnCount && this.renderActionColumn('right', [
           statusIdCompleted && this.renderDropboxForStatus(statusIdCompleted, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
           statusIdClosed && this.renderDropboxForStatus(statusIdClosed, rightActionColumnCount > 1 ? 'expandedDropboxRight' : undefined),
@@ -251,12 +265,13 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
     );
   }
 
-  renderActionColumn(position: 'left' | 'right', children?: React.ReactNode) {
+  renderActionColumn(position: 'left' | 'right' | 'main', children?: React.ReactNode) {
     return (
       <div className={classNames(
         this.props.classes.actionColumn,
         this.props.isBoxLayout ? this.props.classes.actionColumnBoxLayout : this.props.classes.actionColumnBoxLayoutNot,
-        this.props.isBoxLayout && (position === 'left' ? this.props.classes.actionColumnBoxLayoutLeft : this.props.classes.actionColumnBoxLayoutRight),
+        this.props.isBoxLayout && position === 'left' && this.props.classes.actionColumnBoxLayoutLeft,
+        this.props.isBoxLayout && position === 'right' && this.props.classes.actionColumnBoxLayoutRight,
       )}>
         {children}
       </div>

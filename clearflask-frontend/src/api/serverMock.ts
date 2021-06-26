@@ -9,6 +9,7 @@ import { mock } from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
 
+/** Not really a secret, don't bother stealing this */
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = 'admin@clearflask.com';
@@ -509,6 +510,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           default: case Admin.IdeaSearchAdminSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
           case Admin.IdeaSearchAdminSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
           case Admin.IdeaSearchAdminSortByEnum.New: return r.created.getTime() - l.created.getTime();
+          case Admin.IdeaSearchAdminSortByEnum.Random: return Math.random() - 0.5;
         }
       }])
       , request.ideaSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
@@ -616,6 +618,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   userCreate(request: Client.UserCreateRequest): Promise<Client.UserCreateResponse> {
+    if (request.userCreate.email && this.getProject(request.projectId).users.some(u => u.email === request.userCreate.email)) {
+      return this.returnLater({ requiresEmailLogin: true });
+    }
     if ((this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.verification === Client.EmailSignupVerificationEnum.Required
       || this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.allowedDomains !== undefined)
       && request.userCreate.email
@@ -631,7 +636,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }).then(user => {
       this.getProject(request.projectId).loggedInUser = user;
       return {
-        requiresEmailVerification: false,
         user,
       };
     });
@@ -690,8 +694,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userLogin(request: Client.UserLoginRequest): Promise<Client.UserMeWithBalance> {
     const user = this.getProject(request.projectId).users.find(user => user.email === request.userLogin.email);
     if (!user) return this.throwLater(404, 'Incorrect email or password');
-    if (!request.userLogin.password) this.throwLater(403, '');
-    if (user['password'] !== request.userLogin.password) this.throwLater(403, 'Incorrect email or password');
+    if (!!request.userLogin.password) {
+      if (user['password'] !== request.userLogin.password) return this.throwLater(403, 'Incorrect email or password');
+    } else if (!!request.userLogin.token) {
+      if (request.userLogin.token !== '123456') return this.throwLater(403, 'Incorrect token');
+    } else {
+      this.throwLater(403, 'Password or token must be supplied');
+    }
     this.getProject(request.projectId).loggedInUser = user;
     return this.returnLater(user);
   }

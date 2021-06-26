@@ -44,8 +44,13 @@ class DigitsInput extends Component<Props> {
           inputProps={{
             size: 1,
             className: this.props.classes.fieldInput,
+            onKeyDown: (e) => {
+              if (e.keyCode === 8 && this.props.value?.[textFieldId] === undefined) {
+                this.inputRefs[textFieldId - 1]?.current?.focus();
+              }
+            },
           }}
-          value={this.props.value && this.props.value[textFieldId] || ''}
+          value={this.props.value?.[textFieldId] !== undefined ? this.props.value?.[textFieldId] : ''}
           onChange={e => {
             var newDigit;
             if (e.target.value === undefined || e.target.value === '') {
@@ -55,7 +60,7 @@ class DigitsInput extends Component<Props> {
               // or at least one that is a number
               const digit1 = parseInt(e.target.value[0]);
               const digit2 = parseInt(e.target.value[1]);
-              if(isNaN(digit1) && isNaN(digit2)) {
+              if (isNaN(digit1) && isNaN(digit2)) {
                 newDigit = undefined;
               } else if (isNaN(digit1)) {
                 newDigit = digit2;
@@ -78,6 +83,7 @@ class DigitsInput extends Component<Props> {
             while (newValue.length < this.props.digits) {
               newValue.push(undefined);
             }
+            const oldDigit = newValue[textFieldId];
             newValue[textFieldId] = newDigit;
             const isComplete = newValue.every(d => d !== undefined);
             this.props.onChange(newValue, isComplete);

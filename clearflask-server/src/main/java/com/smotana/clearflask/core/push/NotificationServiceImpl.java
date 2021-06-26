@@ -20,6 +20,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
@@ -131,6 +132,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnPostCreated onPostCreated;
     @Inject
     private EmailVerify emailVerify;
+    @Inject
+    private EmailLogin emailLogin;
     @Inject
     private Sanitizer sanitizer;
 
@@ -475,6 +478,26 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         submit(() -> {
             try {
                 emailService.send(emailVerify.email(configAdmin, email, token));
+            } catch (Exception ex) {
+                log.warn("Failed to send email verification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onEmailLogin(ConfigAdmin configAdmin, UserModel user, String token) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + Project.getHostname(configAdmin, configApp);
+            checkState(!Strings.isNullOrEmpty(user.getEmail()));
+
+            String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry(), false);
+
+            try {
+                emailService.send(emailLogin.email(configAdmin, user.getEmail(), token, link, authToken));
             } catch (Exception ex) {
                 log.warn("Failed to send email verification", ex);
             }

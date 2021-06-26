@@ -33,5 +33,7 @@ public interface NotificationService {
 
     void onEmailVerify(ConfigAdmin configAdmin, String email, String token);
 
+    void onEmailLogin(ConfigAdmin configAdmin, UserModel user, String token);
+
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
 }

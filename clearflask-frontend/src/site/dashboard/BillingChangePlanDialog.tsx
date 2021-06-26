@@ -6,7 +6,6 @@ import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import Loader from '../../app/utils/Loader';
-import AcceptTerms from '../../common/AcceptTerms';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import PricingPlan from '../PricingPlan';
@@ -67,7 +66,6 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
             </Grid>
           </Container>
         </Loader>
-        <AcceptTerms />
         <DialogActions>
           <Button onClick={this.props.onClose.bind(this)}
           >Cancel</Button>

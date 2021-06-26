@@ -3,7 +3,7 @@ import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } fro
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component, useState } from 'react';
-import { connect } from 'react-redux';
+import { connect, shallowEqual, useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
@@ -59,7 +59,6 @@ const styles = (theme: Theme) => createStyles({
   },
   feedbackLogInContainer: {
     width: 'max-content',
-    margin: 'auto',
   },
   feedbackSimilarWrap: {
     display: 'flex',
@@ -277,14 +276,15 @@ export const PageFeedback = (props: {
   feedback: Client.PageFeedback,
 }) => {
   const classes = useStyles();
+  const loggedIn = useSelector<ReduxState, boolean>(state => !!state.users.loggedIn.user?.userId, shallowEqual);
   const [onLogIn, setOnLogIn] = useState<(() => void) | undefined>();
   const [createdPostId, setCreatedPostId] = useState<string | undefined>();
   const [similarText, setSimilarText] = useState<string | undefined>();
   const [hasAnySimilar, setHasAnySimilar] = useState<boolean>(false);
   return (
     <div className={classNames(classes.feedbackContainer, classes.spacing)}>
-      <Collapse in={!createdPostId && !onLogIn}>
-        <PanelTitle text='How can we improve?' />
+      <Collapse in={!createdPostId}>
+        <Typography variant='h5' component='h1'>How can we improve?</Typography>
         <PostCreateForm
           server={props.server}
           type='large'
@@ -293,14 +293,17 @@ export const PageFeedback = (props: {
           adminControlsDefaultVisibility='none'
           logIn={() => new Promise(resolve => setOnLogIn(() => resolve))}
           onCreated={postId => setCreatedPostId(postId)}
+          unauthenticatedSubmitButtonTitle='Next'
         />
       </Collapse>
-      <div className={classes.feedbackLogInContainer}>
+      <Collapse in={!createdPostId && !loggedIn} className={classes.feedbackLogInContainer}>
+        {/* <Typography variant='h6' component='div'>Receive updates</Typography> */}
         <LogIn
           inline
-          actionTitle='Where can we send you updates?'
+          minimalistic
+          actionSubmitTitle='Submit'
           server={props.server}
-          open={!!onLogIn}
+          open={true}
           onLoggedInAndClose={() => {
             if (onLogIn) {
               onLogIn();
@@ -308,41 +311,21 @@ export const PageFeedback = (props: {
             }
           }}
         />
-      </div>
+      </Collapse>
       <Collapse in={!!createdPostId}>
         <ErrorMsg msg='Thank you' variant='success' />
       </Collapse>
-      <Collapse in={!!createdPostId && !!similarText && !!hasAnySimilar}>
-        {similarText && (
+      {!!similarText && !!props.feedback.related && (
+        <Collapse in={!!createdPostId && !!hasAnySimilar}>
           <PanelPost
             direction={Direction.Vertical}
+            panel={props.feedback.related}
             searchOverride={{
-              limit: 3,
               searchText: similarText,
-              ...(props.feedback.allowSimilar?.filterCategoryIds ? {
-                filterCategoryIds: props.feedback.allowSimilar?.filterCategoryIds,
-              } : {}),
             }}
             widthExpand
             server={props.server}
             // TODO onClickPost={}
-            panel={{
-              title: 'Are any of these related?'
-            }}
-            displayDefaults={{
-              titleTruncateLines: 1,
-              descriptionTruncateLines: 4,
-              responseTruncateLines: 0,
-              showCommentCount: false,
-              showCategoryName: false,
-              showCreated: false,
-              showAuthor: false,
-              showStatus: false,
-              showTags: false,
-              showVoting: false,
-              showFunding: false,
-              showExpression: false,
-            }}
             wrapPost={(post, postNode, index) => (
               <div className={classes.feedbackSimilarWrap}>
                 <Button
@@ -355,8 +338,8 @@ export const PageFeedback = (props: {
             )}
             onHasAnyChanged={setHasAnySimilar}
           />
-        )}
-      </Collapse>
+        </Collapse>
+      )}
     </div>
   );
 }

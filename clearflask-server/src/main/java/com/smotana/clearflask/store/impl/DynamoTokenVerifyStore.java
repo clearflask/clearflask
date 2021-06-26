@@ -45,7 +45,8 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
 
     @Extern
     @Override
-    public Token createToken(String targetId) {
+    public Token createToken(String... targetIdParts) {
+        String targetId = String.join("-", targetIdParts);
         Token token = new Token(
                 targetId,
                 genTokenId(config.tokenSize()),
@@ -59,7 +60,8 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
 
     @Extern
     @Override
-    public boolean useToken(String tokenStr, String targetId) {
+    public boolean useToken(String tokenStr, String... targetIdParts) {
+        String targetId = String.join("-", targetIdParts);
         Token deletedToken = tokenSchema.fromItem(tokenSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(tokenSchema.primaryKey(ImmutableMap.of(
                         "targetId", targetId,

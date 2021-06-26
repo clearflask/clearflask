@@ -11,6 +11,7 @@ components:
             - Trending
             - Top
             - New
+            - Random
         filterCategoryIds:
           x-clearflask-prop: { order: 1, name: 'Category', description: 'Display only posts from these categories' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}

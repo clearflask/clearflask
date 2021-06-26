@@ -67,6 +67,7 @@ interface Props {
   adminControlsDefaultVisibility?: 'expanded' | 'hidden' | 'none';
   defaultTitle?: string;
   defaultDescription?: string;
+  unauthenticatedSubmitButtonTitle?: string;
 }
 interface ConnectProps {
   configver?: string;
@@ -334,7 +335,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               disabled={!enableSubmit || this.state.newItemIsSubmitting}
               onClick={e => enableSubmit && this.createClickSubmit()}
             >
-              Submit
+              {!this.getAuthorUserId() && this.props.unauthenticatedSubmitButtonTitle || 'Submit'}
             </SubmitButton>
           </Grid>
         </Grid>
@@ -342,8 +343,12 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     );
   }
 
+  getAuthorUserId(): string | undefined {
+    return this.state.newItemAuthorLabel?.value || this.props.loggedInUserId;
+  }
+
   createClickSubmit() {
-    if (!!this.state.newItemAuthorLabel || !!this.props.loggedInUserId) {
+    if (!!this.getAuthorUserId()) {
       this.createSubmit();
     } else {
       // open log in page, submit on success
@@ -358,7 +363,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
-          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
+          authorUserId: this.getAuthorUserId()!,
           title: this.state.newItemTitle!,
           description: this.state.newItemDescription,
           categoryId: this.state.newItemChosenCategoryId!,

@@ -17,7 +17,9 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
     infoWebsite: 'https://clearflask.com',
     infoSlug: 'mock',
   });
-  templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
+  templater.usersOnboardingAnonymous(true, true);
+  templater.usersOnboardingBrowserPush(true);
+  templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'Existing customer');
 
   await DataMock.mockAccountCreate();
   const dispatcher = await ServerAdmin.get().dispatchAdmin({ ssr: true });

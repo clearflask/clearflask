@@ -78,12 +78,82 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
       panels: [],
       board: undefined,
       feedback: {
-        allowSimilar: {
-          filterCategoryIds: [
-            feedback.categoryAndIndex.category.categoryId,
-            ...(roadmapCategoryId ? [roadmapCategoryId] : []),
-          ],
+        // help: {
+        //   hideIfEmpty: true,
+        //   title: 'Are any of these related?',
+        //   search: {
+        //     limit: 3,
+        //     filterCategoryIds: [
+        //       feedback.categoryAndIndex.category.categoryId,
+        //       ...(roadmapCategoryId ? [roadmapCategoryId] : []),
+        //     ],
+        //   },
+        //   display: {
+        //     titleTruncateLines: 1,
+        //     descriptionTruncateLines: 4,
+        //     responseTruncateLines: 0,
+        //     showCommentCount: false,
+        //     showCategoryName: false,
+        //     showCreated: false,
+        //     showAuthor: false,
+        //     showStatus: false,
+        //     showTags: false,
+        //     showVoting: false,
+        //     showFunding: false,
+        //     showExpression: false,
+        //   },
+        // },
+        related: {
+          hideIfEmpty: true,
+          title: 'Are any of these related?',
+          search: {
+            limit: 3,
+            filterCategoryIds: [
+              feedback.categoryAndIndex.category.categoryId,
+              ...(roadmapCategoryId ? [roadmapCategoryId] : []),
+            ],
+          },
+          display: {
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 4,
+            responseTruncateLines: 0,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: false,
+            showFunding: false,
+            showExpression: false,
+          },
         },
+        ...((roadmapCategoryId && roadmap?.statusIdBacklog) ? {
+          debate: {
+            hideIfEmpty: true,
+            title: 'Let us know what you think about these',
+            search: {
+              sortBy: Admin.IdeaSearchSortByEnum.Random,
+              limit: 10,
+              filterCategoryIds: [roadmapCategoryId],
+              filterStatusIds: [roadmap.statusIdBacklog],
+            },
+            display: {
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 4,
+              responseTruncateLines: 0,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            },
+          },
+        } : {})
       },
     };
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
@@ -114,7 +184,7 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
 
 export async function feedbackUpdateWithRoadmap(this: Templater, roadmap: RoadmapInstance): Promise<void> {
   const feedback = await this.feedbackGet();
-  if (feedback?.pageAndIndex?.page.feedback.allowSimilar) {
+  if (feedback?.pageAndIndex?.page.feedback.related?.search TODO) {
     const filterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'allowSimilar', 'filterCategoryIds']);
     filterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
   }

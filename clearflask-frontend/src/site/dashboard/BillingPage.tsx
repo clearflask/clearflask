@@ -18,7 +18,6 @@ import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
-import AcceptTerms from '../../common/AcceptTerms';
 import CreditCard from '../../common/CreditCard';
 import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
@@ -509,7 +508,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         <Message message={this.state.stripePaymentError} severity='error' />
                       </Collapse>
                     </DialogContent>
-                    <AcceptTerms />
                     <DialogActions>
                       <Button onClick={() => this.setState({ showAddPayment: undefined })}>
                         Cancel
@@ -563,7 +561,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <DialogContent className={this.props.classes.center}>
                 <DialogContentText>{resumePlanDesc}</DialogContentText>
               </DialogContent>
-              <AcceptTerms />
               <DialogActions>
                 <Button onClick={() => this.setState({ showResumePlan: undefined })}>
                   Cancel

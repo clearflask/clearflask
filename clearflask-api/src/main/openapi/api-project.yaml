@@ -148,7 +148,6 @@ components:
       type: object
       required:
         - visibility
-        - accountFields
         - notificationMethods
       properties:
         visibility:
@@ -156,6 +155,7 @@ components:
           type: string
           enum: [Public, Private]
         accountFields:
+          x-clearflask-hide: true
           x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
           title: AccountFields
           type: object
@@ -193,7 +193,6 @@ components:
               title: EmailSignup
               required:
               - mode
-              - password
               - verification
               properties:
                 mode:
@@ -201,6 +200,7 @@ components:
                   type: string
                   enum: [LoginOnly, SignupAndLogin]
                 password:
+                  x-clearflask-hide: true
                   x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                   type: string
                   enum: [None, Optional, Required]
@@ -965,16 +965,15 @@ components:
       x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
       type: object
       properties:
-        allowSimilar:
-          x-clearflask-prop: { order: 1, name: 'Show similar', description: 'As user types, show similar posts to minimize creating duplicates.', defaultValue: true }
-          type: object
-          properties:
-            filterCategoryIds:
-              x-clearflask-prop: { order: 1, name: 'Search categories', description: 'Display only posts from these categories' }
-              x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
-              type: array
-              items:
-                type: string
+        # Shown as you type to entice user to solve their own problem by showing help articles
+        help:
+          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        # After submission, allow user to merge with an existing post if they are related
+        related:
+          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        # Show these posts to get user to comment on these
+        debate:
+          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
     VersionedConfig:
       type: object
       required:

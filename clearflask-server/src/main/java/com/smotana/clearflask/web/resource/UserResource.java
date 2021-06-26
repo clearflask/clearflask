@@ -18,6 +18,7 @@ import com.smotana.clearflask.api.model.ForgotPassword;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.Hits;
+import com.smotana.clearflask.api.model.NotificationMethods;
 import com.smotana.clearflask.api.model.SubscriptionListenerUser;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
@@ -166,46 +167,91 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
 
         Project project = projectStore.getProject(projectId, true).get();
-        Optional<EmailSignup> emailSignupOpt = Optional.ofNullable(project.getVersionedConfigAdmin()
+
+        // If email already exists, ask to login via email link
+        if (!Strings.isNullOrEmpty(userCreate.getEmail())) {
+            Optional<UserModel> existingUserOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userCreate.getEmail());
+            if (existingUserOpt.isPresent()) {
+                TokenVerifyStore.Token token = tokenVerifyStore.createToken("loginViaEmail", projectId, userCreate.getEmail());
+                notificationService.onEmailLogin(
+                        project.getVersionedConfigAdmin().getConfig(),
+                        existingUserOpt.get(),
+                        token.getToken());
+                return new UserCreateResponse(false, true, null);
+            }
+        }
+
+        NotificationMethods notificationMethods = project.getVersionedConfigAdmin()
                 .getConfig()
                 .getUsers()
                 .getOnboarding()
-                .getNotificationMethods()
-                .getEmail());
+                .getNotificationMethods();
 
-        boolean emailVerificationRequired = false;
+        // Only ways to create an account are email, browser push and guest
+        // SSO and Oauth are handled by bind.
+        boolean isGuest = true;
 
-        if (EmailSignup.VerificationEnum.REQUIRED.equals(emailSignupOpt
-                .map(EmailSignup::getVerification).orElse(null))) {
-            emailVerificationRequired = true;
+        if (!Strings.isNullOrEmpty(userCreate.getIosPushToken())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "IOS push tokens not allowed");
         }
-        Optional<List<String>> allowedDomainsOpt = emailSignupOpt.map(EmailSignup::getAllowedDomains);
-        if (allowedDomainsOpt.isPresent() && !Strings.isNullOrEmpty(userCreate.getEmail())) {
-            String domain = userCreate.getEmail().substring(userCreate.getEmail().indexOf("@") + 1);
-            if (!allowedDomainsOpt.get().contains(domain)) {
-                throw new ApiException(
-                        Response.Status.BAD_REQUEST,
-                        "Allowed domains are " + allowedDomainsOpt.get().stream().collect(Collectors.joining(", ")));
-            }
-            emailVerificationRequired = true;
+        if (!Strings.isNullOrEmpty(userCreate.getAndroidPushToken())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Android push tokens not allowed");
         }
-
         boolean emailVerified = false;
-        if (emailVerificationRequired && !Strings.isNullOrEmpty(userCreate.getEmail())) {
-            if (Strings.isNullOrEmpty(userCreate.getEmailVerification())) {
-                TokenVerifyStore.Token token = tokenVerifyStore.createToken(userCreate.getEmail());
-                notificationService.onEmailVerify(
-                        project.getVersionedConfigAdmin().getConfig(),
-                        userCreate.getEmail(),
-                        token.getToken());
-                return new UserCreateResponse(true, null);
-            } else {
-                emailVerified = tokenVerifyStore.useToken(userCreate.getEmailVerification(), userCreate.getEmail());
-                if (!emailVerified) {
+        if (!Strings.isNullOrEmpty(userCreate.getEmail())) {
+            // Create by email
+            isGuest = false;
+
+            if (notificationMethods.getEmail() == null) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Email signup not allowed.");
+            } else if (notificationMethods.getEmail().getMode() == EmailSignup.ModeEnum.LOGINONLY) {
+                throw new ApiException(Response.Status.UNAUTHORIZED, "No account associated with email. Email signups not allowed.");
+            }
+            EmailSignup emailSignup = notificationMethods.getEmail();
+
+            boolean emailVerificationRequired = false;
+
+            if (EmailSignup.VerificationEnum.REQUIRED.equals(emailSignup.getVerification())) {
+                emailVerificationRequired = true;
+            }
+            Optional<List<String>> allowedDomainsOpt = Optional.ofNullable(emailSignup.getAllowedDomains());
+            if (allowedDomainsOpt.isPresent() && !Strings.isNullOrEmpty(userCreate.getEmail())) {
+                String domain = userCreate.getEmail().substring(userCreate.getEmail().indexOf("@") + 1);
+                if (!allowedDomainsOpt.get().contains(domain)) {
                     throw new ApiException(
                             Response.Status.BAD_REQUEST,
-                            "Invalid code");
+                            "Allowed domains are " + allowedDomainsOpt.get().stream().collect(Collectors.joining(", ")));
                 }
+                emailVerificationRequired = true;
+            }
+
+            if (emailVerificationRequired) {
+                if (Strings.isNullOrEmpty(userCreate.getEmailVerification())) {
+                    TokenVerifyStore.Token token = tokenVerifyStore.createToken("userCreateEmailVerify", projectId, userCreate.getEmail());
+                    notificationService.onEmailVerify(
+                            project.getVersionedConfigAdmin().getConfig(),
+                            userCreate.getEmail(),
+                            token.getToken());
+                    return new UserCreateResponse(true, null, null);
+                } else {
+                    emailVerified = tokenVerifyStore.useToken(userCreate.getEmailVerification(), "userCreateEmailVerify", projectId, userCreate.getEmail());
+                    if (!emailVerified) {
+                        throw new ApiException(Response.Status.BAD_REQUEST, "Invalid code");
+                    }
+                }
+            }
+        }
+        if (!Strings.isNullOrEmpty(userCreate.getBrowserPushToken())) {
+            // Create by browser push
+            isGuest = false;
+            if (notificationMethods.getBrowserPush() != Boolean.TRUE) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Browser push not allowed");
+            }
+        }
+        if (isGuest) {
+            // Create by guest
+            if (notificationMethods.getAnonymous() == null) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Guests not allowed");
             }
         }
 
@@ -265,7 +311,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     Optional.of("signup-credit"));
         }
 
-        return new UserCreateResponse(null, user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
+        return new UserCreateResponse(null, null, user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -378,14 +424,27 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
 
-        String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
-        if (Strings.isNullOrEmpty(user.getPassword())) {
-            // Password-less user
-        } else if (!user.getPassword().equals(passwordSupplied)) {
-            log.info("Account login incorrect password for email {}", user.getEmail());
-            throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+        if (!Strings.isNullOrEmpty(userLogin.getPassword())) {
+            String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
+            if (Strings.isNullOrEmpty(user.getPassword())) {
+                log.info("Account password-login for user with no password for email {}", user.getEmail());
+                throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            } else if (!user.getPassword().equals(passwordSupplied)) {
+                log.info("Account login incorrect password for email {}", user.getEmail());
+                throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            }
+            log.debug("Successful user login for email {} via password", userLogin.getEmail());
+        } else if (!Strings.isNullOrEmpty(userLogin.getToken())) {
+            boolean loginViaEmailVerified = tokenVerifyStore.useToken(userLogin.getToken(), "loginViaEmail", projectId, userCreate.getEmail());
+            if (!loginViaEmailVerified) {
+                log.info("Account login incorrect token for email {}", user.getEmail());
+                throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            }
+            log.debug("Successful user login for email {} via token", userLogin.getEmail());
+        } else {
+            log.warn("Account login attempt without email or token for email {}", user.getEmail());
+            throw new ApiException(Response.Status.BAD_REQUEST, "Password or token must be supplied");
         }
-        log.debug("Successful user login for email {}", userLogin.getEmail());
 
         UserSession session = userStore.createSession(
                 user,

@@ -64,6 +64,7 @@ import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermsQueryBuilder;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -759,6 +762,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     false);
         }
 
+        QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
+
         Optional<SortOrder> sortOrderOpt;
         ImmutableList<String> sortFields;
         if (ideaSearchAdmin.getSortBy() != null) {
@@ -775,6 +780,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     sortFields = ImmutableList.of("trendScore", "funded", "voteValue", "expressionsValue");
                     sortOrderOpt = Optional.of(SortOrder.DESC);
                     break;
+                case RANDOM:
+                    sortFields = ImmutableList.of();
+                    sortOrderOpt = Optional.empty();
+                    query = new FunctionScoreQueryBuilder(query, new RandomScoreFunctionBuilder()
+                            .seed(IdUtil.randomId())
+                            .setField("created"));
+                    break;
                 default:
                     throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
@@ -786,8 +798,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             sortFields = ImmutableList.of();
             sortOrderOpt = Optional.empty();
         }
-
-        QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
 
         log.trace("Idea search query: {}", query);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(

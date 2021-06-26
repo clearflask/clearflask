@@ -1,0 +1,12 @@
+__CONTENT__
+
+__BUTTON_TEXT__ (__BUTTON_URL__)
+
+__TOKEN__
+
+
+
+Privacy Policy (https://clearflask.com/privacy)
+Terms of Service (https://clearflask.com/terms)
+
+Powered by ClearFlask (https://clearflask.com)
