@@ -1,9 +1,9 @@
-import { Button, CardActionArea, Collapse, Link as MuiLink, Typography } from '@material-ui/core';
+import { CardActionArea, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
-import React, { Component, useState } from 'react';
-import { connect, shallowEqual, useSelector } from 'react-redux';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
@@ -12,13 +12,11 @@ import RichViewer from '../common/RichViewer';
 import { preserveEmbed } from '../common/util/historyUtil';
 import { getProjectLink } from '../site/Dashboard';
 import IdeaExplorer from './comps/IdeaExplorer';
-import LogIn from './comps/LogIn';
 import { Direction, PanelTitle } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
-import PostCreateForm from './comps/PostCreateForm';
 import TemplateLiquid from './comps/TemplateLiquid';
-import ErrorMsg from './ErrorMsg';
 import ErrorPage from './ErrorPage';
+import PageFeedback from './PageFeedback';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
 
@@ -52,18 +50,6 @@ const styles = (theme: Theme) => createStyles({
   },
   singlePanel: {
     minWidth: '256px',
-  },
-  feedbackContainer: {
-    maxWidth: 600,
-    margin: 'auto',
-  },
-  feedbackLogInContainer: {
-    width: 'max-content',
-  },
-  feedbackSimilarWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   boardContainer: {
     // marginLeft: 'auto',
@@ -217,9 +203,13 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
       // ### FEEDBACK
       if (this.props.page.feedback) {
-        const feedback: any = this.props.page.feedback;
+        const pageFeedback = this.props.page.feedback;
         feedbackCmpt = (
-          <PageFeedback server={this.props.server} feedback={feedback} />
+          <PageFeedback
+            className={this.props.classes.spacing}
+            server={this.props.server}
+            pageFeedback={pageFeedback}
+          />
         );
       }
 
@@ -269,79 +259,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       </Loader>
     );
   }
-}
-
-export const PageFeedback = (props: {
-  server: Server,
-  feedback: Client.PageFeedback,
-}) => {
-  const classes = useStyles();
-  const loggedIn = useSelector<ReduxState, boolean>(state => !!state.users.loggedIn.user?.userId, shallowEqual);
-  const [onLogIn, setOnLogIn] = useState<(() => void) | undefined>();
-  const [createdPostId, setCreatedPostId] = useState<string | undefined>();
-  const [similarText, setSimilarText] = useState<string | undefined>();
-  const [hasAnySimilar, setHasAnySimilar] = useState<boolean>(false);
-  return (
-    <div className={classNames(classes.feedbackContainer, classes.spacing)}>
-      <Collapse in={!createdPostId}>
-        <Typography variant='h5' component='h1'>How can we improve?</Typography>
-        <PostCreateForm
-          server={props.server}
-          type='large'
-          // TODO mandatoryCategoryIds={props.feedback.categoryId}
-          searchSimilar={text => setSimilarText(text)}
-          adminControlsDefaultVisibility='none'
-          logIn={() => new Promise(resolve => setOnLogIn(() => resolve))}
-          onCreated={postId => setCreatedPostId(postId)}
-          unauthenticatedSubmitButtonTitle='Next'
-        />
-      </Collapse>
-      <Collapse in={!createdPostId && !loggedIn} className={classes.feedbackLogInContainer}>
-        {/* <Typography variant='h6' component='div'>Receive updates</Typography> */}
-        <LogIn
-          inline
-          minimalistic
-          actionSubmitTitle='Submit'
-          server={props.server}
-          open={true}
-          onLoggedInAndClose={() => {
-            if (onLogIn) {
-              onLogIn();
-              setOnLogIn(undefined);
-            }
-          }}
-        />
-      </Collapse>
-      <Collapse in={!!createdPostId}>
-        <ErrorMsg msg='Thank you' variant='success' />
-      </Collapse>
-      {!!similarText && !!props.feedback.related && (
-        <Collapse in={!!createdPostId && !!hasAnySimilar}>
-          <PanelPost
-            direction={Direction.Vertical}
-            panel={props.feedback.related}
-            searchOverride={{
-              searchText: similarText,
-            }}
-            widthExpand
-            server={props.server}
-            // TODO onClickPost={}
-            wrapPost={(post, postNode, index) => (
-              <div className={classes.feedbackSimilarWrap}>
-                <Button
-                  variant='outlined'
-                  color='primary'
-                  onClick={() => {/* TODO */ }}
-                >Link</Button>
-                {postNode}
-              </div>
-            )}
-            onHasAnyChanged={setHasAnySimilar}
-          />
-        </Collapse>
-      )}
-    </div>
-  );
 }
 
 export const BoardContainer = (props: {

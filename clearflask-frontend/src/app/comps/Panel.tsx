@@ -1,5 +1,5 @@
 import { Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { contentScrollApplyStyles, Orientation, Side } from '../../common/ContentScroll';
@@ -79,14 +79,17 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
 export const PanelTitle = (props: {
   text: React.ReactNode;
   color?: string;
-}) => {
+} & Partial<React.ComponentPropsWithoutRef<typeof Typography>>) => {
+  const { text, color, ...TypographyProps } = props;
+  const theme = useTheme();
   return (
     <Typography
       variant='h4'
       component='div'
-      style={{ color: props.color }}
+      style={{ color: color !== undefined ? color : theme.palette.text.secondary }}
+      {...TypographyProps}
     >
-      {props.text}
+      {text}
     </Typography>
   );
 }

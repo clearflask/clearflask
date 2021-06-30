@@ -23,6 +23,15 @@ function equal(objA: {}, objB: {}, conf?: customShouldComponentUpdateProps): boo
 function equalObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps): boolean {
   if (!objA !== !objB) return false;
   if (!objA && !objB) return true;
+
+  if (Array.isArray(objA) && Array.isArray(objB)) {
+    if (objA.length !== objB.length) return false;
+    for (let i = 0; i < objA.length; i++) {
+      if (!is(objA[i], objB[i])) return false;
+    }
+    return true;
+  }
+
   if (typeof objA !== 'object' || typeof objB !== 'object') {
     return false;
   }
@@ -61,8 +70,8 @@ function equalObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps): b
 }
 
 interface customShouldComponentUpdateProps {
-  // For objects only, do not rerender on change in reference,
-  // but shallow equal all key value pairs
+  // For objects and arrays only, do not rerender on change in reference,
+  // but shallow equal all key value pairs or items in array.
   nested?: Set<string>
   // Rerender if the value changes between undefined and defined
   presence?: Set<string>

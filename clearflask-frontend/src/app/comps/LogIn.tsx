@@ -82,6 +82,7 @@ const styles = (theme: Theme) => createStyles({
   emailTextFieldInline: {
     marginBottom: 0,
     marginLeft: -14,
+    width: 'calc(100% + 14px)',
   },
   emailInputLabelInline: {
     color: theme.palette.text.primary,
@@ -89,8 +90,12 @@ const styles = (theme: Theme) => createStyles({
   emailInputInline: {
     borderColor: 'transparent',
   },
+  contentInline: {
+    padding: '0px !important',
+  },
 });
 export interface Props {
+  className?: string;
   server: Server;
   open?: boolean;
   onClose?: () => void;
@@ -103,6 +108,8 @@ export interface Props {
   overrideMobileNotification?: MobileNotification;
   DialogProps?: Partial<DialogProps>;
   forgotEmailDialogProps?: Partial<DialogProps>;
+  externalSubmit?: (onSubmit?: () => Promise<string | undefined>) => void;
+  guestLabelOverride?: string;
 }
 interface ConnectProps {
   configver?: string;
@@ -123,15 +130,16 @@ interface State {
   revealPassword?: boolean;
   awaitExternalBind?: 'recovery' | 'sso' | 'oauth';
   isSubmitting?: boolean;
-  emailLoginDialog?: boolean;
+  emailLoginDialog?: (userId?: string) => void;
   emailLoginToken?: (number | undefined)[];
-  emailVerifyDialog?: boolean;
+  emailVerifyDialog?: (userId?: string) => void;
   emailVerification?: (number | undefined)[];
 }
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
   readonly emailInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   state: State = {};
   storageListener?: any;
+  externalSubmitEnabled: boolean = false;
 
   componentWillUnmount() {
     this.storageListener && !windowIso.isSsr && windowIso.removeEventListener('storage', this.storageListener);
@@ -210,6 +218,54 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
         || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
+    const doSubmit = async (): Promise<string | undefined> => {
+      if (!!this.props.loggedInUser) {
+        this.props.onLoggedInAndClose();
+        return this.props.loggedInUser.userId;
+      }
+      this.setState({ isSubmitting: true });
+      try {
+        const userCreateResponse = await (await this.props.server.dispatch()).userCreate({
+          projectId: this.props.server.getProjectId(),
+          userCreate: {
+            name: showDisplayNameInput ? this.state.displayName : undefined,
+            email: showEmailInput ? this.state.email : undefined,
+            password: (showPasswordInput && this.state.pass) ? saltHashPassword(this.state.pass) : undefined,
+            iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
+            androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
+            browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
+          },
+        });
+        if (userCreateResponse.requiresEmailLogin) {
+          return new Promise(resolve => {
+            this.setState({
+              isSubmitting: false,
+              emailLoginDialog: resolve,
+            });
+          })
+        } else if (userCreateResponse.requiresEmailVerification) {
+          return new Promise(resolve => {
+            this.setState({
+              isSubmitting: false,
+              emailVerifyDialog: resolve,
+            });
+          })
+        } else {
+          this.setState({ isSubmitting: false });
+          this.props.onLoggedInAndClose();
+          return userCreateResponse.user?.userId;
+        }
+      } catch (e) {
+        this.setState({ isSubmitting: false });
+        throw e;
+      }
+    };
+
+    if (this.props.externalSubmit && this.externalSubmitEnabled !== isSubmittable) {
+      this.externalSubmitEnabled = isSubmittable;
+      this.props.externalSubmit(isSubmittable ? doSubmit : undefined);
+    }
+
     const emailInput = !notifOpts.has(NotificationType.Email) ? undefined : (
       <TextField
         classes={{
@@ -248,7 +304,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
 
     const dialogContent = (
       <>
-        <DialogContent>
+        <DialogContent className={classNames(
+          this.props.className,
+          this.props.inline && this.props.classes.contentInline,
+        )}>
           {!!this.props.actionTitle && typeof this.props.actionTitle !== 'string' && this.props.actionTitle}
           <div>
             <div
@@ -355,7 +414,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={this.state.isSubmitting}
                   >
                     <ListItemIcon><GuestIcon /></ListItemIcon>
-                    <ListItemText primary='Guest' />
+                    <ListItemText primary={this.props.guestLabelOverride || 'Guest'} />
                   </ListItem>
                 </Collapse>
                 <Collapse in={!signupAllowed}>
@@ -444,55 +503,23 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
           </Collapse>
         </DialogContent>
-        <DialogActions>
-          {!!this.props.loggedInUser && !!this.props.onClose && (
-            <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
-          )}
-          {(signupAllowed) ? (
-            <SubmitButton
-              color='primary'
-              isSubmitting={this.state.isSubmitting}
-              disabled={!isSubmittable}
-              onClick={() => {
-                if (!!this.props.loggedInUser) {
-                  this.props.onLoggedInAndClose();
-                } else {
-                  this.setState({ isSubmitting: true });
-                  this.props.server.dispatch().then(d => d.userCreate({
-                    projectId: this.props.server.getProjectId(),
-                    userCreate: {
-                      name: showDisplayNameInput ? this.state.displayName : undefined,
-                      email: showEmailInput ? this.state.email : undefined,
-                      password: (showPasswordInput && this.state.pass) ? saltHashPassword(this.state.pass) : undefined,
-                      iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
-                      androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
-                      browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
-                    },
-                  })).then(userCreateResponse => {
-                    if (userCreateResponse.requiresEmailLogin) {
-                      this.setState({
-                        isSubmitting: false,
-                        emailLoginDialog: true,
-                      });
-                    } else if (userCreateResponse.requiresEmailVerification) {
-                      this.setState({
-                        isSubmitting: false,
-                        emailVerifyDialog: true,
-                      });
-                    } else {
-                      this.setState({ isSubmitting: false });
-                      this.props.onLoggedInAndClose();
-                    }
-                  }).catch(() => {
-                    this.setState({ isSubmitting: false });
-                  });
-                }
-              }}
-            >{this.props.actionSubmitTitle || 'Continue'}</SubmitButton>
-          ) : (!!this.props.onClose ? (
-            <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
-          ) : null)}
-        </DialogActions>
+        {!this.props.externalSubmit && (
+          <DialogActions>
+            {!!this.props.loggedInUser && !!this.props.onClose && (
+              <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
+            )}
+            {!!signupAllowed ? (
+              <SubmitButton
+                color='primary'
+                isSubmitting={this.state.isSubmitting}
+                disabled={!isSubmittable}
+                onClick={doSubmit}
+              >{this.props.actionSubmitTitle || 'Continue'}</SubmitButton>
+            ) : (!!this.props.onClose ? (
+              <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
+            ) : null)}
+          </DialogActions>
+        )}
         <Dialog
           open={!!this.state.awaitExternalBind}
           onClose={() => this.setState({ awaitExternalBind: undefined })}
@@ -513,7 +540,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         </Dialog>
         <Dialog
           open={!!this.state.emailLoginDialog}
-          onClose={() => this.setState({ emailLoginDialog: undefined })}
+          onClose={() => {
+            this.state.emailLoginDialog?.();
+            this.setState({ emailLoginDialog: undefined })
+          }}
           maxWidth='xs'
         >
           <DialogTitle>Login via Email</DialogTitle>
@@ -537,6 +567,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         token: val.join(''),
                       },
                     })).then(user => {
+                      this.state.emailLoginDialog?.(user.userId);
                       this.setState({
                         isSubmitting: false,
                         emailLoginDialog: undefined,
@@ -553,12 +584,18 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => this.setState({ emailLoginDialog: undefined })}>Cancel</Button>
+            <Button onClick={() => {
+              this.state.emailLoginDialog?.();
+              this.setState({ emailLoginDialog: undefined })
+            }}>Cancel</Button>
           </DialogActions>
         </Dialog>
         <Dialog
           open={!!this.state.emailVerifyDialog}
-          onClose={() => this.setState({ emailVerifyDialog: undefined })}
+          onClose={() => {
+            this.state.emailVerifyDialog?.();
+            this.setState({ emailVerifyDialog: undefined });
+          }}
           maxWidth='xs'
         >
           <DialogTitle>Verify your email</DialogTitle>
@@ -586,6 +623,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
                         this.setState({ isSubmitting: false });
                       } else {
+                        this.state.emailVerifyDialog?.(userCreateResponse.user.userId);
                         this.setState({
                           isSubmitting: false,
                           emailVerifyDialog: undefined,
@@ -603,7 +641,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => this.setState({ emailVerifyDialog: undefined })}>Cancel</Button>
+            <Button onClick={() => {
+              this.state.emailVerifyDialog?.();
+              this.setState({ emailVerifyDialog: undefined })
+            }}>Cancel</Button>
           </DialogActions>
         </Dialog>
       </>

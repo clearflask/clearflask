@@ -42,9 +42,9 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   // Create Category
   if (!feedback) {
     const categoriesProp = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
-    const postCategoryId = FeedbackCategoryIdPrefix + randomUuid();
+    const feedbackCategoryId = FeedbackCategoryIdPrefix + randomUuid();
     categoriesProp.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: postCategoryId, name: 'Feedback',
+      categoryId: feedbackCategoryId, name: 'Feedback',
       userCreatable: true,
       workflow: { statuses: [] },
       support: { vote: { enableDownvotes: false }, comment: true, fund: false },
@@ -69,7 +69,6 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   // Create page
   if (!feedback.pageAndIndex) {
     const roadmap = await this.roadmapGet();
-    const roadmapCategoryId = roadmap?.categoryAndIndex.category.categoryId;
     const page: PageWithFeedback = {
       pageId: FeedbackPageIdPrefix + randomUuid(),
       name: 'Feedback',
@@ -78,6 +77,8 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
       panels: [],
       board: undefined,
       feedback: {
+        categoryId: feedback.categoryAndIndex.category.categoryId,
+        // ENABLE this when we have a knowledge base, also a new method feedbackUpdateWithKnowledgeBase
         // help: {
         //   hideIfEmpty: true,
         //   title: 'Are any of these related?',
@@ -85,7 +86,7 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
         //     limit: 3,
         //     filterCategoryIds: [
         //       feedback.categoryAndIndex.category.categoryId,
-        //       ...(roadmapCategoryId ? [roadmapCategoryId] : []),
+        //       ...(roadmap?.categoryAndIndex.category.categoryId ? [roadmap.categoryAndIndex.category.categoryId] : []),
         //     ],
         //   },
         //   display: {
@@ -104,39 +105,15 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
         //   },
         // },
         related: {
-          hideIfEmpty: true,
-          title: 'Are any of these related?',
-          search: {
-            limit: 3,
-            filterCategoryIds: [
-              feedback.categoryAndIndex.category.categoryId,
-              ...(roadmapCategoryId ? [roadmapCategoryId] : []),
-            ],
-          },
-          display: {
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 4,
-            responseTruncateLines: 0,
-            showCommentCount: false,
-            showCategoryName: false,
-            showCreated: false,
-            showAuthor: false,
-            showStatus: false,
-            showTags: false,
-            showVoting: false,
-            showFunding: false,
-            showExpression: false,
-          },
-        },
-        ...((roadmapCategoryId && roadmap?.statusIdBacklog) ? {
-          debate: {
+          panel: {
             hideIfEmpty: true,
-            title: 'Let us know what you think about these',
+            title: 'Are any of these related?',
             search: {
-              sortBy: Admin.IdeaSearchSortByEnum.Random,
-              limit: 10,
-              filterCategoryIds: [roadmapCategoryId],
-              filterStatusIds: [roadmap.statusIdBacklog],
+              limit: 3,
+              filterCategoryIds: [
+                feedback.categoryAndIndex.category.categoryId,
+                ...(roadmap?.categoryAndIndex.category.categoryId ? [roadmap.categoryAndIndex.category.categoryId] : []),
+              ],
             },
             display: {
               titleTruncateLines: 1,
@@ -152,8 +129,9 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
               showFunding: false,
               showExpression: false,
             },
-          },
-        } : {})
+          }
+        },
+        debate: getDebate(roadmap),
       },
     };
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
@@ -182,11 +160,44 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   return feedback;
 }
 
+function getDebate(roadmap?: RoadmapInstance): Admin.PageFeedback['debate'] {
+  return (!roadmap?.categoryAndIndex.category.categoryId || !roadmap?.statusIdBacklog) ? undefined : {
+    panel: {
+      hideIfEmpty: true,
+      title: "See what else we're thinking about",
+      search: {
+        sortBy: Admin.IdeaSearchSortByEnum.Random,
+        limit: 10,
+        filterCategoryIds: [roadmap.categoryAndIndex.category.categoryId],
+        filterStatusIds: [roadmap.statusIdBacklog],
+      },
+      display: {
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 4,
+        responseTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showFunding: false,
+        showExpression: false,
+      },
+    },
+  };
+}
+
 export async function feedbackUpdateWithRoadmap(this: Templater, roadmap: RoadmapInstance): Promise<void> {
   const feedback = await this.feedbackGet();
-  if (feedback?.pageAndIndex?.page.feedback.related?.search TODO) {
-    const filterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'allowSimilar', 'filterCategoryIds']);
-    filterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
+  if (feedback?.pageAndIndex?.page.feedback.related) {
+    this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'related', 'panel', 'search', 'filterCategoryIds'])
+      .insert(roadmap.categoryAndIndex.category.categoryId);
+  }
+  if (!!feedback?.pageAndIndex && !feedback.pageAndIndex.page.feedback.debate) {
+    this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'debate'])
+      .setRaw(getDebate(roadmap));
   }
 }
 

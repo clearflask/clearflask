@@ -235,7 +235,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         break;
     }
-    const title = this.props.overrideTitle || (!this.props.panel?.['title'] ? undefined : (
+    const title = this.props.overrideTitle !== undefined ? this.props.overrideTitle : (!this.props.panel?.['title'] ? undefined : (
       <PanelTitle
         text={this.props.panel['title']}
         color={this.props.panel['color']}

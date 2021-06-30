@@ -964,16 +964,49 @@ components:
     PageFeedback:
       x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
       type: object
+      required:
+      - categoryId
       properties:
-        # Shown as you type to entice user to solve their own problem by showing help articles
+        categoryId:
+          x-clearflask-prop: { order: 5, name: 'Feedback Category', description: 'Select which category sshould be submitted by user. Must be set to user-creatable', subType: 'id' }
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+          type: string
+        labelTitle:
+          x-clearflask-prop: { order: 10, name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea'}
+          type: string
+        labelDescription:
+          x-clearflask-prop: { order: 20, name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)'}
+          type: string
+        labelSubmit:
+          x-clearflask-prop: { order: 25, name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea'}
+          type: string
         help:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
-        # After submission, allow user to merge with an existing post if they are related
+          x-clearflask-page: { order: 30, name: 'Help', description: 'Shown as you type to entice user to solve their own problem by showing help articles' }
+          title: PageFeedbackHelp
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
         related:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
-        # Show these posts to get user to comment on these
+          x-clearflask-page: { order: 40, name: 'Related', description: 'After submission, allow user to merge with an existing post if they are related' }
+          title: PageFeedbackRelated
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
         debate:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+          x-clearflask-page: { order: 50, name: 'Debate', description: 'Show these posts to get user to comment on these' }
+          title: PageFeedbackDebate
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
     VersionedConfig:
       type: object
       required:

@@ -21,6 +21,7 @@ import { ReduxState, Server } from '../../api/server';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
+import { customShouldComponentUpdate, traceRenderComponentDidUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
 import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
@@ -68,6 +69,9 @@ interface Props {
   defaultTitle?: string;
   defaultDescription?: string;
   unauthenticatedSubmitButtonTitle?: string;
+  labelDescription?: string;
+  labelTitle?: string;
+  externalSubmit?: (onSubmit?: () => Promise<string>) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -94,6 +98,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly searchSimilarDebounced?: (title?: string, categoryId?: string) => void;
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
+  externalSubmitEnabled: boolean = false;
 
   constructor(props) {
     super(props);
@@ -120,11 +125,22 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     return null;
   }
 
+  shouldComponentUpdate = customShouldComponentUpdate({
+    nested: new Set(['mandatoryTagIds', 'mandatoryCategoryIds']),
+    presence: new Set(['externalSubmit', 'searchSimilar', 'logIn', 'onCreated']),
+  });
+
+  componentDidUpdate = traceRenderComponentDidUpdate;
+
   render() {
     const showModOptions = PostCreateForm.showModOptions(this.props);
     const categoryOptions = PostCreateForm.getCategoryOptions(this.props);
     const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
-    const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
+    const enableSubmit = !!this.state.newItemTitle && !!this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
+    if (this.props.externalSubmit && this.externalSubmitEnabled !== enableSubmit) {
+      this.externalSubmitEnabled = enableSubmit;
+      this.props.externalSubmit(enableSubmit ? () => this.createClickSubmit() : undefined);
+    }
     return (
       <Grid
         container
@@ -132,13 +148,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         alignItems='flex-start'
         className={this.props.classes.createFormFields}
       >
-        <Grid item xs={this.props.type === 'large' ? 9 : 12} className={this.props.classes.createGridItem}>
+        <Grid item xs={12} className={this.props.classes.createGridItem}>
           <TextField
             variant='outlined'
-            size='small'
+            size={this.props.type === 'large' ? 'medium' : 'small'}
             disabled={this.state.newItemIsSubmitting}
             className={this.props.classes.createFormField}
-            label='Title'
+            label={this.props.labelTitle || 'Title'}
             value={this.state.newItemTitle || this.props.defaultTitle || ''}
             onChange={e => {
               if (this.state.newItemTitle === e.target.value) {
@@ -162,13 +178,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           <RichEditor
             uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
             variant='outlined'
-            size='small'
-            id='createDescription'
+            size={this.props.type === 'large' ? 'medium' : 'small'}
             multiline
-            showControlsImmediately={this.props.type === 'large'}
             disabled={this.state.newItemIsSubmitting}
             className={classNames(this.props.classes.createFormField, this.props.type === 'large' && this.props.classes.descriptionLarge)}
-            label='Details'
+            label={this.props.labelDescription || 'Details (optional)'}
             iAgreeInputIsSanitized
             value={this.state.newItemDescription || this.props.defaultDescription || ''}
             onChange={(e, delta, source, editor) => {
@@ -193,7 +207,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem}>
             <CategorySelect
               variant='outlined'
-              size='small'
+              size={this.props.type === 'large' ? 'medium' : 'small'}
               label='Category'
               className={this.props.classes.createFormField}
               categoryOptions={categoryOptions}
@@ -214,7 +228,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
                 show='all'
                 workflow={selectedCategory?.workflow}
                 variant='outlined'
-                size='small'
+                size={this.props.type === 'large' ? 'medium' : 'small'}
                 disabled={this.state.newItemIsSubmitting}
                 initialStatusId={selectedCategory.workflow.entryStatus}
                 statusId={this.state.newItemChosenStatusId}
@@ -233,7 +247,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               </Grid>
             )}
             variant='outlined'
-            size='small'
+            size={this.props.type === 'large' ? 'medium' : 'small'}
             label='Tags'
             category={selectedCategory}
             tagIds={this.state.newItemChosenTagIds}
@@ -253,7 +267,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
             <UserSelection
               variant='outlined'
-              size='small'
+              size={this.props.type === 'large' ? 'medium' : 'small'}
               server={this.props.server}
               label='As user'
               errorMsg='Select author'
@@ -289,7 +303,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               <Grid item xs={12} className={this.props.classes.createGridItem}>
                 <TextField
                   variant='outlined'
-                  size='small'
+                  size={this.props.type === 'large' ? 'medium' : 'small'}
                   disabled={this.state.newItemIsSubmitting}
                   className={this.props.classes.createFormField}
                   label='Notification Title'
@@ -303,7 +317,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               <Grid item xs={12} className={this.props.classes.createGridItem}>
                 <TextField
                   variant='outlined'
-                  size='small'
+                  size={this.props.type === 'large' ? 'medium' : 'small'}
                   disabled={this.state.newItemIsSubmitting}
                   className={this.props.classes.createFormField}
                   label='Notification Body'
@@ -329,14 +343,16 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
                 More
               </Button>
             )}
-            <SubmitButton
-              color='primary'
-              isSubmitting={this.state.newItemIsSubmitting}
-              disabled={!enableSubmit || this.state.newItemIsSubmitting}
-              onClick={e => enableSubmit && this.createClickSubmit()}
-            >
-              {!this.getAuthorUserId() && this.props.unauthenticatedSubmitButtonTitle || 'Submit'}
-            </SubmitButton>
+            {!this.props.externalSubmit && (
+              <SubmitButton
+                color='primary'
+                isSubmitting={this.state.newItemIsSubmitting}
+                disabled={!enableSubmit || this.state.newItemIsSubmitting}
+                onClick={e => enableSubmit && this.createClickSubmit()}
+              >
+                {!this.getAuthorUserId() && this.props.unauthenticatedSubmitButtonTitle || 'Submit'}
+              </SubmitButton>
+            )}
           </Grid>
         </Grid>
       </Grid>
@@ -347,57 +363,61 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     return this.state.newItemAuthorLabel?.value || this.props.loggedInUserId;
   }
 
-  createClickSubmit() {
+  createClickSubmit(): Promise<string> {
     if (!!this.getAuthorUserId()) {
-      this.createSubmit();
+      return this.createSubmit();
     } else {
       // open log in page, submit on success
-      this.props.logIn().then(() => this.createSubmit());
+      return this.props.logIn().then(() => this.createSubmit());
     }
   }
 
-  createSubmit() {
+  async createSubmit(): Promise<string> {
     this.setState({ newItemIsSubmitting: true });
-    var createPromise: Promise<Client.Idea | Admin.Idea>;
-    if (this.props.server.isModOrAdminLoggedIn()) {
-      createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
-        projectId: this.props.server.getProjectId(),
-        ideaCreateAdmin: {
-          authorUserId: this.getAuthorUserId()!,
-          title: this.state.newItemTitle!,
-          description: this.state.newItemDescription,
-          categoryId: this.state.newItemChosenCategoryId!,
-          statusId: this.state.newItemChosenStatusId,
-          notifySubscribers: !this.state.newItemNotifySubscribers ? undefined : {
-            title: this.state.newItemNotifyTitle!,
-            body: this.state.newItemNotifyBody!,
+    var idea: Client.Idea | Admin.Idea;
+    try {
+      if (this.props.server.isModOrAdminLoggedIn()) {
+        idea = await (await this.props.server.dispatchAdmin()).ideaCreateAdmin({
+          projectId: this.props.server.getProjectId(),
+          ideaCreateAdmin: {
+            authorUserId: this.getAuthorUserId()!,
+            title: this.state.newItemTitle!,
+            description: this.state.newItemDescription,
+            categoryId: this.state.newItemChosenCategoryId!,
+            statusId: this.state.newItemChosenStatusId,
+            notifySubscribers: !this.state.newItemNotifySubscribers ? undefined : {
+              title: this.state.newItemNotifyTitle!,
+              body: this.state.newItemNotifyBody!,
+            },
+            tagIds: [...(this.props.mandatoryTagIds || []), ...(this.state.newItemChosenTagIds || [])],
           },
-          tagIds: [...(this.props.mandatoryTagIds || []), ...(this.state.newItemChosenTagIds || [])],
-        },
-      }))
-    } else {
-      createPromise = this.props.server.dispatch().then(d => d.ideaCreate({
-        projectId: this.props.server.getProjectId(),
-        ideaCreate: {
-          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
-          title: this.state.newItemTitle!,
-          description: this.state.newItemDescription,
-          categoryId: this.state.newItemChosenCategoryId!,
-          tagIds: [...(this.props.mandatoryTagIds || []), ...(this.state.newItemChosenTagIds || [])],
-        },
-      }));
-    }
-    createPromise.then(idea => {
+        });
+      } else {
+        idea = await (await this.props.server.dispatch()).ideaCreate({
+          projectId: this.props.server.getProjectId(),
+          ideaCreate: {
+            authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
+            title: this.state.newItemTitle!,
+            description: this.state.newItemDescription,
+            categoryId: this.state.newItemChosenCategoryId!,
+            tagIds: [...(this.props.mandatoryTagIds || []), ...(this.state.newItemChosenTagIds || [])],
+          },
+        });
+      }
+    } catch (e) {
       this.setState({
-        newItemTitle: undefined,
-        newItemDescription: undefined,
-        newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });
-      this.props.onCreated?.(idea.ideaId);
-    }).catch(e => this.setState({
+      throw e;
+    }
+    this.setState({
+      newItemTitle: undefined,
+      newItemDescription: undefined,
+      newItemSearchText: undefined,
       newItemIsSubmitting: false,
-    }));
+    });
+    this.props.onCreated?.(idea.ideaId);
+    return idea.ideaId;
   }
 
   static showModOptions(props: React.ComponentProps<typeof PostCreateForm>): boolean {
