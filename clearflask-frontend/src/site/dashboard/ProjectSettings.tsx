@@ -712,9 +712,9 @@ export const ProjectSettingsBranding = (props: {
         )}
         content={(
           <>
-            <PropertyByPath editor={props.editor} path={['name']} />
-            <PropertyByPath editor={props.editor} path={['logoUrl']} />
-            <PropertyByPath editor={props.editor} path={['website']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['name']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['logoUrl']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['website']} />
           </>
         )}
       />
@@ -734,7 +734,8 @@ export const ProjectSettingsBranding = (props: {
                   showAuthor: true,
                   showStatus: true,
                   showTags: true,
-                  showVoting: true,
+                  showVoting: false,
+                  showVotingCount: true,
                   showFunding: true,
                   showExpression: true,
                   showEdit: true,
@@ -750,8 +751,8 @@ export const ProjectSettingsBranding = (props: {
         )}
         content={(
           <>
-            <PropertyByPath editor={props.editor} path={['style', 'palette', 'darkMode']} />
-            <PropertyByPath editor={props.editor} path={['style', 'palette', 'primary']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'darkMode']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'primary']} />
           </>
         )}
       />
@@ -780,8 +781,8 @@ export const ProjectSettingsDomain = (props: {
         )}
         content={(
           <>
-            <PropertyByPath editor={props.editor} path={['slug']} />
-            <PropertyByPath editor={props.editor} path={['domain']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['slug']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['domain']} />
           </>
         )}
       />
@@ -1150,6 +1151,7 @@ export const ProjectSettingsUsersSso = (props: {
         )}
         content={(
           <PropertyByPath
+            server={props.server}
             overrideName=''
             editor={props.editor}
             path={['users', 'onboarding', 'notificationMethods', 'sso']}
@@ -1398,7 +1400,7 @@ export const ProjectSettingsUsersOauth = (props: {
                 }}
               >
                 Add
-            </Button>
+              </Button>
             </Collapse>
           </>
         )}
@@ -1433,6 +1435,7 @@ export const ProjectSettingsUsersOauthItem = (props: {
           )}
           edit={(
             <PropertyByPath
+              server={props.server}
               marginTop={0}
               overrideName='Button title'
               overrideDescription=''
@@ -1443,17 +1446,25 @@ export const ProjectSettingsUsersOauthItem = (props: {
         />
       )}
     >
-      <PropertyByPath overrideName='Button Icon' overrideDescription='' editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'icon']} />
+      <PropertyByPath server={props.server} overrideName='Button Icon' overrideDescription='' editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'icon']} />
       <IconPickerHelperText />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'clientId']} />
-      <PropertyByPath editor={props.editor} path={['oauthClientSecrets', props.oauth.oauthId]} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'authorizeUrl']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'tokenUrl']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'scope']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'userProfileUrl']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'guidJsonPath']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'nameJsonPath']} />
-      <PropertyByPath editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'emailJsonPath']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'clientId']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['oauthClientSecrets', props.oauth.oauthId]} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'authorizeUrl']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'tokenUrl']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'scope']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'userProfileUrl']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'guidJsonPath']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'nameJsonPath']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'emailJsonPath']} />
+      <Button
+        color='inherit'
+        style={{ color: 'darkred', alignSelf: 'flex-end' }}
+        onClick={() => {
+          (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'oauth']) as ConfigEditor.ArrayProperty)
+            .delete(props.oauthIndex);
+        }}
+      >Delete</Button>
     </MyAccordion>
   );
 };
@@ -1510,30 +1521,34 @@ export const ProjectSettingsLanding = (props: {
                   description='Decide on a welcome message for your users'
                   preview={(
                     <>
-                      <BrowserPreview
-                        server={props.server}
-                        scroll={Orientation.Both}
-                        addressBar='project'
-                        projectPath={landing.pageAndIndex.page.slug}
-                        FakeBrowserProps={{
-                          fixedWidth: 350,
-                        }}
-                      >
-                        <div className={classNames(classes.previewPageTitleDescription, classes.previewExplorer)}>
-                          <PageTitleDescription page={landing.pageAndIndex.page} suppressSpacing />
-                        </div>
-                      </BrowserPreview>
+                      {(!!landing.pageAndIndex.page.title || !!landing.pageAndIndex.page.description) && (
+                        <BrowserPreview
+                          server={props.server}
+                          scroll={Orientation.Both}
+                          addressBar='project'
+                          projectPath={landing.pageAndIndex.page.slug}
+                          FakeBrowserProps={{
+                            fixedWidth: 350,
+                          }}
+                        >
+                          <div className={classNames(classes.previewPageTitleDescription, classes.previewExplorer)}>
+                            <PageTitleDescription page={landing.pageAndIndex.page} suppressSpacing />
+                          </div>
+                        </BrowserPreview>
+                      )}
                     </>
                   )}
                   content={(
                     <>
                       <PropertyByPath
+                        server={props.server}
                         overrideName='Title'
                         overrideDescription=''
                         editor={props.editor}
                         path={['layout', 'pages', landing.pageAndIndex.index, 'title']}
                       />
                       <PropertyByPath
+                        server={props.server}
                         overrideName='Description'
                         overrideDescription=''
                         editor={props.editor}
@@ -1547,7 +1562,7 @@ export const ProjectSettingsLanding = (props: {
                   description='Modify the landing page links to point to your roadmap, feedback or your support email.'
                   preview={(
                     <>
-                      {expandedType === 'link' && expandedIndex !== undefined && (
+                      {(expandedType === 'link' && expandedIndex !== undefined && (landing.pageAndIndex.page.landing?.links.length || -1) >= expandedIndex) && (
                         <BrowserPreview
                           server={props.server}
                           scroll={Orientation.Both}
@@ -1659,6 +1674,7 @@ export const ProjectSettingsLandingLink = (props: {
           show={props.link.title}
           edit={(
             <PropertyByPath
+              server={props.server}
               marginTop={0}
               overrideName='Title'
               overrideDescription=''
@@ -1670,6 +1686,7 @@ export const ProjectSettingsLandingLink = (props: {
       )}
     >
       <PropertyByPath
+        server={props.server}
         marginTop={0}
         overrideName='Description'
         overrideDescription=''
@@ -1711,6 +1728,7 @@ export const ProjectSettingsLandingLink = (props: {
         </FormControl>
         {linkType === 'page' ? (
           <PropertyByPath
+            server={props.server}
             marginTop={0}
             overrideName=''
             overrideDescription=''
@@ -1752,6 +1770,7 @@ export const ProjectSettingsLandingLink = (props: {
         )}
       </div>
       <PropertyByPath
+        server={props.server}
         marginTop={16}
         overrideName='Override Icon'
         overrideDescription=''
@@ -1759,6 +1778,14 @@ export const ProjectSettingsLandingLink = (props: {
         path={['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links', props.linkIndex, 'icon']}
       />
       <IconPickerHelperText />
+      <Button
+        color='inherit'
+        style={{ color: 'darkred', alignSelf: 'flex-end' }}
+        onClick={() => {
+          (props.editor.getProperty(['layout', 'pages', props.landing.pageAndIndex.index, 'landing', 'links']) as ConfigEditor.ArrayProperty)
+            .delete(props.linkIndex);
+        }}
+      >Delete</Button>
     </MyAccordion>
   );
 }
@@ -1791,7 +1818,7 @@ export const ProjectSettingsFeedback = (props: {
                 onClick={() => templater.feedbackOn()}
               >
                 Create feedback
-            </Button>
+              </Button>
             </>
           ) : (
             <>
@@ -1839,12 +1866,12 @@ export const ProjectSettingsFeedback = (props: {
                     />
                     {!!feedback.pageAndIndex && (
                       <>
-                        <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'title']} />
-                        <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'description']} />
+                        <PropertyByPath server={props.server} overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'title']} />
+                        <PropertyByPath server={props.server} overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'description']} />
                         {!!feedback.pageAndIndex.page.explorer?.allowCreate && (
                           <>
-                            <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
-                            <PropertyByPath overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
+                            <PropertyByPath server={props.server} overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
+                            <PropertyByPath server={props.server} overrideDescription='' editor={props.editor} path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
                           </>
                         )}
                       </>
@@ -1999,6 +2026,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
         />
       )} />
       <PropertyByPath
+        server={props.server}
         marginTop={16}
         overrideName='Next statuses'
         overrideDescription=''
@@ -2107,6 +2135,7 @@ export const ProjectSettingsTagGroup = (props: {
           show={props.tagGroup.name}
           edit={(
             <PropertyByPath
+              server={props.server}
               marginTop={0}
               overrideName='Tag Group Name'
               overrideDescription=''
@@ -2119,6 +2148,7 @@ export const ProjectSettingsTagGroup = (props: {
     >
       <div className={classes.feedbackTagGroupProperty}>
         <PropertyByPath
+          server={props.server}
           marginTop={0}
           overrideName='User settable'
           editor={props.editor}
@@ -2293,7 +2323,7 @@ export const ProjectSettingsRoadmap = (props: {
               onClick={() => templater.roadmapOn()}
             >
               Create Roadmap
-        </Button>
+            </Button>
           </>
         ) : (
           <>
@@ -2323,12 +2353,13 @@ export const ProjectSettingsRoadmap = (props: {
                     </Button>
                   )}
                   <BoardContainer
-                    overrideTitle={(
+                    title={(
                       <PropertyShowOrEdit
                         allowEdit={true}
                         show={(roadmap.pageAndIndex.page.board.title)}
                         edit={(
                           <PropertyByPathReduxless
+                            server={props.server}
                             marginTop={0}
                             planId={planId}
                             width={200}
@@ -2339,9 +2370,7 @@ export const ProjectSettingsRoadmap = (props: {
                         )}
                       />
                     )}
-                    server={props.server}
-                    board={roadmap.pageAndIndex.page.board}
-                    panels={roadmap?.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
+                    panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
                       <ProjectSettingsRoadmapPanel
                         server={props.server}
                         editor={props.editor}
@@ -2461,6 +2490,7 @@ export const ProjectSettingsRoadmapPanel = (props: {
             )}
             {!titleMatchesStatus.current && (
               <PropertyByPathReduxless
+                server={props.server}
                 marginTop={0}
                 planId={props.planId}
                 width='auto'
@@ -2808,11 +2838,16 @@ const IconPickerHelperText = () => {
 
 const PropertyByPath = (props: Omit<React.ComponentProps<typeof PropertyByPathReduxless>, 'planId'>) => {
   var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
-  return (<PropertyByPathReduxless planId={planId} {...props} />);
+  return (
+    <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+      <PropertyByPathReduxless planId={planId} {...props} />
+    </Provider>
+  );
 }
 
 const PropertyByPathReduxless = (props: {
   planId: string | undefined;
+  server: Server;
   editor: ConfigEditor.Editor;
   path: ConfigEditor.Path;
   overrideName?: string;
@@ -2837,6 +2872,7 @@ const PropertyByPathReduxless = (props: {
   return (
     <Property
       key={ConfigEditor.pathToString(props.path)}
+      server={props.server}
       prop={props.editor.get(props.path)}
       pageClicked={path => history.push(`/dashboard/settings/project/advanced/${path.join('/')}`)}
       requiresUpgrade={propertyRequiresUpgrade}

@@ -2,6 +2,7 @@ import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { Server } from '../../../api/server';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import * as ConfigEditor from '../configEditor';
 import CreditPreview from './injects/CreditPreview';
@@ -15,6 +16,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   key: string;
   page: ConfigEditor.Page;
+  server: Server;
   editor: ConfigEditor.Editor;
   pageClicked: (path: ConfigEditor.Path) => void;
 }
@@ -60,6 +62,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           .filter(child => !(child as ConfigEditor.Property).hide)
           .map(child => (
             <Property
+              server={this.props.server}
               key={child.key}
               prop={child}
               pageClicked={this.props.pageClicked}

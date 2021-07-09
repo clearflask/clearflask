@@ -4,6 +4,7 @@ import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import React, { Component } from 'react';
+import { Server } from '../../../api/server';
 import { DemoUpdateDelay } from '../../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
@@ -11,6 +12,8 @@ import { importFailed, importSuccess } from '../../../Main';
 import DynamicMuiIcon from '../../icon/DynamicMuiIcon';
 import MyColorPicker from '../../MyColorPicker';
 import Overlay from '../../Overlay';
+import RichEditor from '../../RichEditor';
+import RichEditorImageUpload from '../../RichEditorImageUpload';
 import debounce from '../../util/debounce';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
@@ -18,10 +21,10 @@ import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
 
 const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 interface Props {
   key: string;
+  server: Server;
   prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property;
   bare?: boolean;
   marginTop?: number;
@@ -46,6 +49,7 @@ interface State {
 export default class Property extends Component<Props, State> {
   static inputMinWidth = 224;
   readonly colorRef = React.createRef<HTMLDivElement>();
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   unsubscribe?: () => void;
   propSet;
 
@@ -159,57 +163,68 @@ export default class Property extends Component<Props, State> {
         const TextFieldCmpt = prop.subType === ConfigEditor.PropSubType.Rich
           ? RichEditor : TextField;
         propertySetter = (
-          <TextFieldCmpt
-            variant='outlined'
-            size='small'
-            id={prop.pathStr}
-            label={!this.props.bare && name}
-            {...({ iAgreeInputIsSanitized: true })}
-            value={this.state.value || ''}
-            onChange={e => this.propSet(e.target.value as never)}
-            error={!!prop.errorMsg}
-            placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
-            helperText={prop.errorMsg || (!this.props.bare && description)}
-            margin='none'
-            multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
-              || prop.subType === ConfigEditor.PropSubType.Rich) as any}
-            type={fieldType}
-            InputLabelProps={{
-              shrink: shrink,
-              error: !!prop.errorMsg,
-            }}
-            InputProps={{
-              style: {
-                minWidth: inputMinWidth,
-                width: this.props.width,
-              },
-              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji || prop.subType === ConfigEditor.PropSubType.Id,
-              onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
-                if (!this.state.value) this.propSet(randomUuid());
-              } : undefined,
-              endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
-                <InputAdornment position='end'>
-                  <IconButton
-                    aria-label='Re-generate key'
-                    onClick={() => this.propSet(randomUuid())}
-                  >
-                    <KeyRefreshIcon fontSize='small' />
-                  </IconButton>
-                </InputAdornment>
-              ) : (prop.subType === ConfigEditor.PropSubType.Icon ? (
-                <InputAdornment position='end'>
-                  <DynamicMuiIcon name={this.state.value || ''} />
-                </InputAdornment>
-              ) : undefined),
-            }}
-            FormHelperTextProps={{
-              style: {
-                minWidth: inputMinWidth,
-                width: this.props.width,
-              },
-            }}
-            {...this.props.TextFieldProps}
-          />
+          <>
+            <TextFieldCmpt
+              variant='outlined'
+              size='small'
+              id={prop.pathStr}
+              label={!this.props.bare && name}
+              {...({ iAgreeInputIsSanitized: true })}
+              value={this.state.value || ''}
+              onChange={e => this.propSet(e.target.value as never)}
+              error={!!prop.errorMsg}
+              placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
+              helperText={prop.errorMsg || (!this.props.bare && description)}
+              margin='none'
+              multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
+                || prop.subType === ConfigEditor.PropSubType.Rich) as any}
+              type={fieldType}
+              InputLabelProps={{
+                shrink: shrink,
+                error: !!prop.errorMsg,
+              }}
+              InputProps={{
+                style: {
+                  minWidth: inputMinWidth,
+                  width: this.props.width,
+                },
+                readOnly: prop.subType === ConfigEditor.PropSubType.Emoji || prop.subType === ConfigEditor.PropSubType.Id,
+                onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
+                  if (!this.state.value) this.propSet(randomUuid());
+                } : undefined,
+                endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
+                  <InputAdornment position='end'>
+                    <IconButton
+                      aria-label='Re-generate key'
+                      onClick={() => this.propSet(randomUuid())}
+                    >
+                      <KeyRefreshIcon fontSize='small' />
+                    </IconButton>
+                  </InputAdornment>
+                ) : (prop.subType === ConfigEditor.PropSubType.Icon ? (
+                  <InputAdornment position='end'>
+                    <DynamicMuiIcon name={this.state.value || ''} />
+                  </InputAdornment>
+                ) : undefined),
+              }}
+              FormHelperTextProps={{
+                style: {
+                  minWidth: inputMinWidth,
+                  width: this.props.width,
+                },
+              }}
+              uploadImage={(prop.subType === ConfigEditor.PropSubType.Rich
+                ? (file) => this.richEditorImageUploadRef.current!.uploadImage(file)
+                : undefined) as any}
+              {...this.props.TextFieldProps}
+            />
+            {prop.subType === ConfigEditor.PropSubType.Rich && (
+              <RichEditorImageUpload
+                ref={this.richEditorImageUploadRef}
+                server={this.props.server}
+              />
+            )}
+          </>
         );
         if (prop.subType === ConfigEditor.PropSubType.Emoji) {
           propertySetter = (
@@ -414,6 +429,7 @@ export default class Property extends Component<Props, State> {
           propertySetter = (
             <TableProp
               key={prop.key}
+              server={this.props.server}
               data={prop}
               errorMsg={prop.errorMsg}
               label={name}

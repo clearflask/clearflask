@@ -8,24 +8,21 @@
 //   SetQuery,
 //   QueryParamConfig,
 // } from 'use-query-params';
-import loadable from '@loadable/component';
 import { Button, Collapse, FormControlLabel, Grid, Switch, TextField, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
-import { customShouldComponentUpdate, traceRenderComponentDidUpdate } from '../../common/util/reactUtil';
+import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
-import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
-import Loading from '../utils/Loading';
 import CategorySelect from './CategorySelect';
 import { Label } from './SelectionPicker';
 import StatusSelect from './StatusSelect';
@@ -33,8 +30,6 @@ import TagSelect from './TagSelect';
 
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   createFormFields: {
@@ -47,11 +42,6 @@ const styles = (theme: Theme) => createStyles({
   },
   createGridItem: {
     padding: theme.spacing(0, 1),
-  },
-  descriptionLarge: {
-    '& .ql-container': {
-      minHeight: 60,
-    }
   },
 });
 
@@ -130,8 +120,6 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     presence: new Set(['externalSubmit', 'searchSimilar', 'logIn', 'onCreated']),
   });
 
-  componentDidUpdate = traceRenderComponentDidUpdate;
-
   render() {
     const showModOptions = PostCreateForm.showModOptions(this.props);
     const categoryOptions = PostCreateForm.getCategoryOptions(this.props);
@@ -176,12 +164,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         )}
         <Grid item xs={12} className={this.props.classes.createGridItem}>
           <RichEditor
-            uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
+            uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
             variant='outlined'
             size={this.props.type === 'large' ? 'medium' : 'small'}
             multiline
             disabled={this.state.newItemIsSubmitting}
-            className={classNames(this.props.classes.createFormField, this.props.type === 'large' && this.props.classes.descriptionLarge)}
+            className={this.props.classes.createFormField}
+            minInputHeight={this.props.type === 'large' ? 60 : undefined}
             label={this.props.labelDescription || 'Details (optional)'}
             iAgreeInputIsSanitized
             value={this.state.newItemDescription || this.props.defaultDescription || ''}

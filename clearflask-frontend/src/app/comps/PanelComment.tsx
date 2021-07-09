@@ -9,7 +9,7 @@ import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import Comment from './Comment';
 import LogIn from './LogIn';
-import Panel from './Panel';
+import Panel, { PanelTitle } from './Panel';
 
 export enum Direction {
   Horizontal,
@@ -114,7 +114,9 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
       <>
         <Panel
           className={this.props.className}
-          title={this.props.title}
+          title={(
+            <PanelTitle text={this.props.title} />
+          )}
           direction={this.props.direction}
           maxHeight={this.props.maxHeight}
         >

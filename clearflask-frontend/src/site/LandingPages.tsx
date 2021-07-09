@@ -315,6 +315,7 @@ export function Landing() {
             showStatus: false,
             showTags: false,
             showVoting: false,
+            showVotingCount: false,
             showFunding: false,
             showExpression: false,
           },
@@ -798,6 +799,7 @@ export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
           showStatus: false,
           showTags: false,
           showVoting: false,
+          showVotingCount: false,
           showFunding: false,
           showExpression: false,
         },
@@ -1878,7 +1880,7 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
         <Typography variant='h6' component='div'>
           Payment processor
           &nbsp;
-            <PostStatusIframe
+          <PostStatusIframe
             postId='payment-providers-integration-bgu'
             height={14}
             config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
@@ -1886,7 +1888,7 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
         </Typography>
         <Typography variant='body1' component='div' color='textSecondary'>
           Stripe, Apple Store, Play Store
-          </Typography>
+        </Typography>
       </div>
     </div>
   );
@@ -1897,7 +1899,7 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
         <Typography variant='h6' component='div'>
           Donation Framework
           &nbsp;
-            <PostStatusIframe
+          <PostStatusIframe
             postId='donation-frameworks-integration-hvn'
             height={14}
             config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
@@ -1905,7 +1907,7 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
         </Typography>
         <Typography variant='body1' component='div' color='textSecondary'>
           Patreon, OpenCollective
-          </Typography>
+        </Typography>
       </div>
     </div>
   );
@@ -1915,10 +1917,10 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
       <div>
         <Typography variant='h6' component='div'>
           Custom source
-          </Typography>
+        </Typography>
         <Typography variant='body1' component='div' color='textSecondary'>
           Integrate via API, Zapier
-          </Typography>
+        </Typography>
       </div>
     </div>
   );
@@ -1957,7 +1959,8 @@ export function LandingInternalFeedback() {
             showAuthor: false,
             showStatus: false,
             showTags: false,
-            showVoting: true,
+            showVoting: false,
+            showVotingCount: true,
             showFunding: false,
             showExpression: false,
           },
@@ -2156,7 +2159,8 @@ export function LandingContentCreator() {
               showAuthor: false,
               showStatus: false,
               showTags: false,
-              showVoting: true,
+              showVoting: false,
+              showVotingCount: true,
               showFunding: false,
               showExpression: false,
             },

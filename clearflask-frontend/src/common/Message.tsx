@@ -9,6 +9,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  children?: any;
   className?: string;
   innerStyle?: React.CSSProperties;
   message: React.ReactNode | string,
@@ -21,7 +22,7 @@ class Message extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <Alert
         className={classNames(this.props.className, this.props.classes.alert)}
-        variant={this.props.variant || 'standard'}
+        variant={this.props.variant || 'outlined'}
         style={this.props.innerStyle}
         severity={this.props.severity}
         action={this.props.action}

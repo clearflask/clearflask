@@ -23,15 +23,17 @@ import Loader from './utils/Loader';
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
-  },
-  spacing: {
-    marginTop: theme.spacing(4),
+    '& > *:not(:first-child)': {
+      marginTop: theme.spacing(4),
+    },
   },
   titleAndDescription: {
-    maxWidth: 400,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   spacingTitleAndDescription: {
-    margin: theme.spacing(4, 16, 0),
+    margin: theme.spacing(5, 16, 0),
     [theme.breakpoints.down('xs')]: {
       marginLeft: theme.spacing(4),
       marginRight: theme.spacing(4),
@@ -41,7 +43,11 @@ const styles = (theme: Theme) => createStyles({
       marginRight: theme.spacing(8),
     },
   },
+  title: {
+    alignSelf: 'center',
+  },
   description: {
+    maxWidth: 400,
     marginTop: theme.spacing(1),
   },
   singlePanels: {
@@ -55,6 +61,9 @@ const styles = (theme: Theme) => createStyles({
     // marginLeft: 'auto',
     // marginRight: 'auto',
     width: 'fit-content',
+  },
+  boardContainerWithTitle: {
+    marginTop: theme.spacing(4),
   },
   board: {
     display: 'flex',
@@ -89,8 +98,8 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: 250,
     height: 300,
     display: 'flex',
-    // boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
-    border: '1px solid ' + theme.palette.grey[300],
+    boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
+    // border: '1px solid ' + theme.palette.grey[300],
     margin: theme.spacing(2),
     padding: theme.spacing(2),
     flexDirection: 'column',
@@ -157,23 +166,19 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       // ### LANDING
       if (!!this.props.page.landing) {
         landingCmpt = (
-          <div className={this.props.classes.landing}>
-            {this.props.page.landing.links?.map((link, index) => (
-              <LandingLink
-                server={this.props.server}
-                config={this.props.config}
-                link={link}
-                openInNew={this.props.landingLinkOpenInNew}
-              />
-            ))}
-          </div>
+          <LandingLinkContainer
+            server={this.props.server}
+            landing={this.props.page.landing}
+            config={this.props.config}
+            openInNew={this.props.landingLinkOpenInNew}
+          />
         );
       }
 
       // ### PANELS
       if (this.props.page.panels.length > 0) {
         panelsCmpt = (
-          <div className={classNames(this.props.classes.singlePanels, this.props.classes.spacing)}>
+          <div className={classNames(this.props.classes.singlePanels)}>
             {(this.props.page.panels || []).map(panel => {
               return (
                 <div className={this.props.classes.singlePanel}>
@@ -190,7 +195,8 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                       showAuthor: false,
                       showStatus: false,
                       showTags: false,
-                      showVoting: true,
+                      showVoting: false,
+                      showVotingCount: true,
                       showFunding: true,
                       showExpression: true,
                     }} />
@@ -206,7 +212,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         const pageFeedback = this.props.page.feedback;
         feedbackCmpt = (
           <PageFeedback
-            className={this.props.classes.spacing}
             server={this.props.server}
             pageFeedback={pageFeedback}
           />
@@ -219,7 +224,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           <BoardPanel server={this.props.server} panel={panel} />
         ));
         boardCmpt = (
-          <BoardContainer server={this.props.server} board={this.props.page.board} panels={panels} />
+          <BoardContainer title={this.props.page.board.title} panels={panels} />
         );
       }
 
@@ -227,13 +232,11 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.explorer) {
         const explorer = this.props.page.explorer;
         explorerCmpt = (
-          <div className={this.props.classes.spacing}>
-            <IdeaExplorer
-              className={this.props.classes.explorer}
-              server={this.props.server}
-              explorer={explorer}
-            />
-          </div>
+          <IdeaExplorer
+            className={this.props.classes.explorer}
+            server={this.props.server}
+            explorer={explorer}
+          />
         );
       }
 
@@ -262,21 +265,20 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 }
 
 export const BoardContainer = (props: {
-  server: Server,
-  board?: Client.PageBoard,
+  title?: string | React.ReactNode,
   panels?: any;
-  overrideTitle?: React.ReactNode;
 }) => {
   const classes = useStyles();
+  const title = typeof props.title !== 'string' ? props.title : (
+    <PanelTitle text={props.title} />
+  );
 
-  if (props.overrideTitle || props.board?.title) {
+  if (title) {
     return (
       <DividerCorner
         suppressDivider
-        className={classNames(classes.boardContainer, classes.spacing)}
-        title={props.overrideTitle || (!props.board?.title ? undefined : (
-          <PanelTitle text={props.board.title} />
-        ))}
+        className={classNames(classes.boardContainer, classes.boardContainerWithTitle)}
+        title={title}
         height='100%'
         maxHeight={120}
       >
@@ -287,7 +289,7 @@ export const BoardContainer = (props: {
     );
   } else {
     return (
-      <div className={classNames(classes.boardContainer, classes.board, classes.spacing)}>
+      <div className={classNames(classes.boardContainer, classes.board)}>
         {props.panels}
       </div>
     );
@@ -303,7 +305,7 @@ export const PageTitleDescription = (props: {
   var title;
   if (props.page.title) {
     title = (
-      <Typography component="h1" variant="h5" color="textPrimary">{props.page.title}</Typography>
+      <Typography component="h1" variant="h4" color='textSecondary' className={classes.title}>{props.page.title}</Typography>
     );
   }
 
@@ -329,6 +331,27 @@ export const PageTitleDescription = (props: {
   );
 
   return titleAndDescription;
+}
+
+export const LandingLinkContainer = (props: {
+  server: Server,
+  landing: Client.LayoutLanding;
+  config?: Client.Config;
+  openInNew?: boolean;
+}) => {
+  const classes = useStyles();
+  return (
+    <div className={classes.landing}>
+      {props.landing.links?.map((link, index, arr) => (
+        <LandingLink
+          server={props.server}
+          config={props.config}
+          link={link}
+          openInNew={props.openInNew}
+        />
+      ))}
+    </div>
+  );
 }
 
 export const LandingLink = (props: {
@@ -385,7 +408,7 @@ export const LandingLink = (props: {
         />
       )}
       {!!props.link.title && (
-        <Typography variant='h4' component='h2' className={classes.landingLinkTitle}>{props.link.title}</Typography>
+        <Typography variant='h5' component='h2' className={classes.landingLinkTitle}>{props.link.title}</Typography>
       )}
       {!!props.link.description && (
         <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{props.link.description}</Typography>
@@ -424,6 +447,7 @@ export const BoardPanel = (props: {
         showStatus: false,
         showTags: false,
         showVoting: false,
+        showVotingCount: false,
         showFunding: false,
         showExpression: false,
       }}

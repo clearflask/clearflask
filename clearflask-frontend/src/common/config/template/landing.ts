@@ -1,4 +1,6 @@
 import * as Admin from "../../../api/admin";
+import ServerAdmin from "../../../api/serverAdmin";
+import { detectEnv, Environment } from "../../util/detectEnv";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
@@ -58,7 +60,6 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert(0).setRaw(Admin.PageToJSON({
       pageId: randomUuid(),
       name: 'Welcome',
-      title: 'How can we help?',
       slug: '',
       panels: [],
       landing: {
@@ -101,6 +102,23 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
       title: 'Changelog',
       description: 'Check out our recent updates.',
       linkToPageId: changelog.pageAndIndex.page.pageId,
+    }));
+  }
+
+  var supportEmail = ServerAdmin.get().getStore().getState().account.account.account?.email;
+  if (!supportEmail && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+    // Since development environment mocking happens before user is logged in,
+    // mock the email address here too
+    supportEmail = 'admin@clearflask.com';
+  }
+  if (supportEmail
+    && !onlyPageIds
+    && !landing.pageAndIndex.page.landing?.links.some(l => l.url?.startsWith('mailto:'))) {
+    (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
+      icon: 'AlternateEmail',
+      title: 'Contact',
+      description: 'Let us know if you need direct help.',
+      url: `mailto:${supportEmail}`,
     }));
   }
 

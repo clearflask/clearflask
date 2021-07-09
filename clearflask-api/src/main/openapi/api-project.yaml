@@ -444,6 +444,19 @@ components:
             enableDownvotes:
               x-clearflask-prop: { order: 1, name: 'Downvote', description: 'Also allow down-voting. Consider carefully whether this type of feedback is valuable to your content.' }
               type: boolean
+            iWantThis:
+              x-clearflask-prop: { order: 20, name: 'I want this', description: 'Instead of simple voting, show the user an "I want this" style button that encourages leaving a response.' }
+              type: object
+              properties:
+                positiveLabel:
+                  x-clearflask-prop: { order: 20, name: 'Positive button label', description: 'Text to show on the "I want this" button', placeholder: 'I want this' }
+                  type: string
+                negativeLabel:
+                  x-clearflask-prop: { order: 30, name: 'Negative button label', description: 'Text to show on the "I hate this" button', placeholder: 'I hate this' }
+                  type: string
+                encourageLabel:
+                  x-clearflask-prop: { order: 40, name: 'Encourage label', description: 'Text to show once the user wants it, to encourage leaving a comment', placeholder: 'Tell us why' }
+                  type: string
         express:
           x-clearflask-prop: { order: 4, name: 'Expression', description: 'When you need a wider range of emotions to express feedback, weighted emojis are here to help.' }
           title: Expressing
@@ -752,6 +765,12 @@ components:
               userCreatable:
                 x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Whether content under this category can be created by users', defaultValue: true }
                 type: boolean
+              userMergeableCategoryIds:
+                x-clearflask-prop: { order: 4, name: 'User mergeable', description: 'Which categories can user merge content from this category. Mainly used for merging own feedback into related feedback.' }
+                x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+                type: array
+                items:
+                  type: string
               subscription:
                 $ref: 'api-project.yaml#/components/schemas/subscription'
               workflow:
@@ -883,11 +902,14 @@ components:
         showVoting:
           x-clearflask-prop: { order: 11, name: 'Voting', description: 'Force show/hide voting arrows' }
           type: boolean
+        showVotingCount:
+          x-clearflask-prop: { order: 12, name: 'Voting count', description: 'Force show/hide voting count' }
+          type: boolean
         showFunding:
-          x-clearflask-prop: { order: 12, name: 'Funding', description: 'Force show/hide the funding bar' }
+          x-clearflask-prop: { order: 13, name: 'Funding', description: 'Force show/hide the funding bar' }
           type: boolean
         showExpression:
-          x-clearflask-prop: { order: 13, name: 'Expressions', description: 'Force show/hide the expressions' }
+          x-clearflask-prop: { order: 14, name: 'Expressions', description: 'Force show/hide the expressions' }
           type: boolean
         showEdit:
           x-clearflask-hide: true
@@ -999,7 +1021,16 @@ components:
             panel:
               $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
         debate:
-          x-clearflask-page: { order: 50, name: 'Debate', description: 'Show these posts to get user to comment on these' }
+          x-clearflask-page: { order: 50, name: 'Debate', description: 'Show these posts at the bottom to get user to comment on these. Typically used for Tasks in Ideation status.' }
+          title: PageFeedbackDebate
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        debate2:
+          x-clearflask-page: { order: 60, name: 'Debate (additional)', description: 'Show these posts even further at the bottom to get user to comment on these. Typically used for lower priority tasks or feedback.' }
           title: PageFeedbackDebate
           type: object
           required:

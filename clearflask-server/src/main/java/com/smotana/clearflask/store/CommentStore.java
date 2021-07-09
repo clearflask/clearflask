@@ -57,7 +57,7 @@ public interface CommentStore {
 
     SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
-    ImmutableSet<CommentModel> listComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds);
+    ImmutableSet<CommentModel> getCommentsForPost(String projectId, String ideaId, ImmutableSet<String> mergedPostIds, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds);
 
     void exportAllForProject(String projectId, Consumer<CommentModel> consumer);
 
@@ -182,10 +182,15 @@ public interface CommentStore {
         }
 
         public CommentWithVote toCommentWithVote(@Nullable VoteOption vote, Sanitizer sanitizer) {
+            return toCommentWithVote(vote, sanitizer, Optional.empty());
+        }
+
+        public CommentWithVote toCommentWithVote(@Nullable VoteOption vote, Sanitizer sanitizer, Optional<String> overrideParentCommentIdOpt) {
             return new CommentWithVote(
                     getIdeaId(),
                     getCommentId(),
-                    getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
+                    overrideParentCommentIdOpt.orElse(getParentCommentIds().isEmpty()
+                            ? null : getParentCommentIds().get(getParentCommentIds().size() - 1)),
                     getChildCommentCount(),
                     getAuthorUserId(),
                     getAuthorName(),

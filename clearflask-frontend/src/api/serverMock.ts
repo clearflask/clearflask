@@ -2,9 +2,10 @@ import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
 import { notEmpty } from '../common/util/arrayUtil';
-import { isProd } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
+import windowIso from '../common/windowIso';
 import { mock } from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
@@ -102,7 +103,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   nextCommentId = 10000;
 
   static get(): ServerMock {
-    if (ServerMock.instance === undefined) ServerMock.instance = new ServerMock();
+    if (ServerMock.instance === undefined) {
+      ServerMock.instance = new ServerMock();
+      if (!windowIso.isSsr && detectEnv() !== Environment.PRODUCTION) {
+        windowIso['mockdb'] = ServerMock.instance.db;
+      }
+    }
     return ServerMock.instance;
   }
 
@@ -355,32 +361,62 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentDelete(request: Client.CommentDeleteRequest): Promise<Client.CommentWithVote> {
     return this.commentDeleteAdmin(request);
   }
+  ideaGetAll(request: Client.IdeaGetAllRequest): Promise<Client.IdeaGetAllResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    return this.returnLater({
+      results: request.ideaGetAll.postIds.map(ideaId => {
+        const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === ideaId);
+        if (!idea) return undefined;
+        const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
+        return { ...idea, vote: vote || {} };
+      }).filter(notEmpty),
+    });
+  }
+  mockMergedPostAsComment(mergedIdea: Admin.Idea): CommentWithAuthorWithParentPath {
+    return {
+      parentIdPath: [],
+      ideaId: mergedIdea.ideaId,
+      commentId: mergedIdea.ideaId,
+      childCommentCount: mergedIdea.childCommentCount,
+      authorUserId: mergedIdea.authorUserId,
+      authorName: mergedIdea.authorName,
+      authorIsMod: mergedIdea.authorIsMod,
+      created: mergedIdea.created,
+      mergedPostId: mergedIdea.ideaId,
+      mergedPostTitle: mergedIdea.title,
+      content: mergedIdea.description,
+      voteValue: mergedIdea.voteValue || 0,
+    };
+  }
   ideaCommentSearch(request: Client.IdeaCommentSearchRequest): Promise<Client.IdeaCommentSearchResponse> {
-    const idea = this.getImmutable(
+    const idea: Admin.Idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
       idea => idea.ideaId === request.ideaId);
-    const ideaAndMergedIds = new Set([request.ideaId, ...(idea.mergedPosts?.map(m => m.postId) || [])]);
     const minCommentIdToExclude: string | '' = [
       ...(request.ideaCommentSearch.excludeChildrenCommentIds || []),
       ...(request.ideaCommentSearch.parentCommentId ? [request.ideaCommentSearch.parentCommentId] : []),
     ].reduce((l, r) => l > r ? l : r, '');
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    const data = this.sort(this.getProject(request.projectId).comments
-      .filter(comment => ideaAndMergedIds.has(comment.ideaId))
+    const mergedPostAsCommentAdded = new Set<string>();
+    const mergedPostComments = (idea.mergedPostIds || [])
+      .map(postId => this.getProject(request.projectId).ideas.find(i => i.ideaId === postId))
+      .filter(notEmpty)
+      .map(post => this.mockMergedPostAsComment(post));
+    const data = this.sort([...mergedPostComments, ...this.getProject(request.projectId).comments
+      .filter(comment => request.ideaId === comment.ideaId)
       .filter(comment => !request.ideaCommentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.ideaCommentSearch.parentCommentId)))
       .filter(comment => !request.ideaCommentSearch.excludeChildrenCommentIds ||
         !request.ideaCommentSearch.excludeChildrenCommentIds.some(ec =>
           ec === comment.commentId
           || comment.parentIdPath.some(pc => ec === pc)))
       .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude)
-      .map(comment => {
-        return {
-          ...comment,
-          author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
-          vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.voterUserId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
-        }
-      })
-      , [(l, r) => l.created.getTime() - r.created.getTime()]);
+    ].map(comment => {
+      return {
+        ...comment,
+        author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
+        vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.voterUserId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
+      }
+    }), [(l, r) => l.created.getTime() - r.created.getTime()]);
     return this.returnLater({
       results: data.slice(0, Math.min(data.length, 10)),
     });
@@ -392,7 +428,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       , this.DEFAULT_LIMIT, request.cursor));
   }
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.CommentWithVote> {
-    const comment = this.getImmutable(
+    const comment: CommentWithAuthorWithParentPath = this.getImmutable(
       this.getProject(request.projectId).comments,
       comment => comment.commentId === request.commentId);
     comment.content = request.commentUpdate.content;
@@ -709,26 +745,22 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater();
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
-    const user = this.getImmutable(
+    const user: Admin.UserAdmin = this.getImmutable(
       this.getProject(request.projectId).users,
       user => user.userId === request.userId);
     if (request.userUpdate.name !== undefined) user.name = request.userUpdate.name;
     if (request.userUpdate.email !== undefined) user.email = request.userUpdate.email === '' ? undefined : request.userUpdate.email;
     if (request.userUpdate.emailNotify !== undefined) user.emailNotify = request.userUpdate.emailNotify;
     if (request.userUpdate.password !== undefined) {
-      user.password = request.userUpdate.password;
       user.hasPassword = true;
     }
     if (request.userUpdate.iosPushToken !== undefined) {
-      user.iosPushToken = request.userUpdate.iosPushToken === '' ? undefined : request.userUpdate.iosPushToken;
       user.iosPush = request.userUpdate.iosPushToken !== '';
     };
     if (request.userUpdate.androidPushToken !== undefined) {
-      user.androidPushToken = request.userUpdate.androidPushToken === '' ? undefined : request.userUpdate.androidPushToken;
       user.androidPush = request.userUpdate.androidPushToken !== '';
     };
     if (request.userUpdate.browserPushToken !== undefined) {
-      user.browserPushToken = request.userUpdate.browserPushToken === '' ? undefined : request.userUpdate.browserPushToken;
       user.browserPush = request.userUpdate.browserPushToken !== '';
     };
     return this.returnLater(user);
@@ -786,7 +818,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
   }
   commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<Admin.Comment> {
-    const comment = this.getImmutable(
+    const comment: CommentWithAuthorWithParentPath = this.getImmutable(
       this.getProject(request.projectId).comments,
       comment => comment.commentId === request.commentId);
     comment.content = undefined;
@@ -843,7 +875,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.ideaGetAdmin(request);
   }
   ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.Idea> {
-    const idea = this.getImmutable(
+    const idea: Admin.Idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
       idea => idea.ideaId === request.ideaId);
     if (request.ideaUpdateAdmin.title !== undefined) idea.title = request.ideaUpdateAdmin.title;
@@ -882,13 +914,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     parentIdea.linkedPostIds = parentIdea.linkedPostIds?.filter(ideaId => ideaId !== idea.ideaId);
     return this.returnLater({ idea, parentIdea });
   }
+  ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {
+    return this.ideaMergeAdmin(request);
+  }
   ideaMergeAdmin(request: Admin.IdeaMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
-    if (idea.categoryId !== parentIdea.categoryId) return this.throwLater(400, 'Cannot merge different categories');
     if (idea.mergedToPostId) return this.throwLater(400, 'Already merged');
     idea.mergedToPostId = parentIdea.ideaId;
-    parentIdea.mergedPosts = [...(parentIdea.mergedPosts || []), { postId: idea.ideaId, ...idea }];
+    parentIdea.mergedPostIds = [...(parentIdea.mergedPostIds || []), idea.ideaId];
     parentIdea.commentCount += idea.commentCount;
     if (idea.funded) {
       parentIdea.funded = (parentIdea.funded || 0) + (idea.funded || 0);
@@ -913,7 +947,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
     if (idea.mergedToPostId !== parentIdea.ideaId) return this.throwLater(400, 'Not merged');
     idea.mergedToPostId = undefined;
-    parentIdea.mergedPosts = parentIdea.mergedPosts?.filter(m => m.postId !== idea.ideaId);
+    parentIdea.mergedPostIds = parentIdea.mergedPostIds?.filter(postId => postId !== idea.ideaId);
     parentIdea.commentCount -= idea.commentCount;
     if (idea.funded) parentIdea.funded = (parentIdea.funded || 0) - (idea.funded || 0);
     if (idea.fundersCount) parentIdea.fundersCount = (parentIdea.fundersCount || 0) - (idea.fundersCount || 0);
@@ -1070,28 +1104,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       })), this.DEFAULT_LIMIT, request.cursor));
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
-    const user = this.getImmutable(
+    const user: Admin.UserAdmin = this.getImmutable(
       this.getProject(request.projectId).users,
       user => user.userId === request.userId);
     if (request.userUpdateAdmin.name !== undefined) user.name = request.userUpdateAdmin.name;
     if (request.userUpdateAdmin.email !== undefined) user.email = request.userUpdateAdmin.email === '' ? undefined : request.userUpdateAdmin.email;
     if (request.userUpdateAdmin.emailNotify !== undefined) user.emailNotify = request.userUpdateAdmin.emailNotify;
-    if (request.userUpdateAdmin.password !== undefined) {
-      user.password = request.userUpdateAdmin.password;
-      user.hasPassword = true;
-    }
-    if (request.userUpdateAdmin.iosPush === false) {
-      user.iosPushToken = undefined;
-      user.iosPush = false;
-    };
-    if (request.userUpdateAdmin.androidPush === false) {
-      user.androidPushToken = undefined;
-      user.androidPush = false;
-    };
-    if (request.userUpdateAdmin.browserPush === false) {
-      user.browserPushToken = undefined;
-      user.browserPush = false;
-    };
+    if (request.userUpdateAdmin.password !== undefined) user.hasPassword = true;
+    if (request.userUpdateAdmin.iosPush === false) user.iosPush = false;
+    if (request.userUpdateAdmin.androidPush === false) user.androidPush = false;
+    if (request.userUpdateAdmin.browserPush === false) user.browserPush = false;
     var balance = this.getProject(request.projectId).balances[request.userId];
     var balanceUpdateTransaction: Admin.Transaction | undefined;
     if (request.userUpdateAdmin.transactionCreate !== undefined) {
@@ -1118,7 +1140,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaVoteUpdate(request: Client.IdeaVoteUpdateRequest): Promise<Client.IdeaVoteUpdateResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
-    const idea = this.getImmutable(
+    const idea: Admin.Idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
       idea => idea.ideaId === request.ideaId);
     const vote: VoteWithAuthorAndIdeaId = this.getImmutable(
@@ -1180,7 +1202,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.ideaVoteUpdate.expressions) {
       var expressionsSet = new Set<string>(vote.expression || []);
       idea.expressionsValue = idea.expressionsValue || 0;
-      idea.expressions = idea.expressions || [];
+      idea.expressions = idea.expressions || {};
 
       var expressionsToAdd: string[] = [];
       var expressionsToRemove: string[] = [];
@@ -1207,13 +1229,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       expressionsToAdd.forEach(expression => {
         const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! += weight;
-        idea.expressions[expression] = (idea.expressions[expression] || 0) + 1
+        idea.expressions![expression] = (idea.expressions![expression] || 0) + 1
       })
       expressionsToRemove.forEach(expression => {
         const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! -= weight;
-        idea.expressions[expression] = (idea.expressions[expression] || 0) - 1
-        if (idea.expressions[expression] <= 0) delete idea.expressions[expression];
+        idea.expressions![expression] = (idea.expressions![expression] || 0) - 1
+        if (idea.expressions![expression] <= 0) delete idea.expressions![expression];
       })
       vote.expression = Array.from(expressionsSet);
     }
@@ -1227,10 +1249,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentVoteUpdate(request: Client.CommentVoteUpdateRequest): Promise<Client.CommentVoteUpdateResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
-    const comment = this.getImmutable(
+    const comment: CommentWithAuthorWithParentPath = this.getImmutable(
       this.getProject(request.projectId).comments,
       comment => comment.commentId === request.commentId);
-    const vote = this.getImmutable(
+    const vote: VoteWithAuthorAndCommentId = this.getImmutable(
       this.getProject(request.projectId).commentVotes,
       v => v.voterUserId === loggedInUser.userId && v.commentId === request.commentId,
       () => ({ voterUserId: loggedInUser.userId, commentId: comment.commentId }));

@@ -10,6 +10,10 @@ const styles = (theme: Theme) => createStyles({
       display: 'none',
     },
   },
+  children: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
 });
 const useStyles = makeStyles(styles);
 export default function MyAccordion(props: {
@@ -29,10 +33,12 @@ export default function MyAccordion(props: {
       {...AccordionProps}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography>{name}</Typography>
+        <Typography>
+          {name}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Typography>
+        <Typography className={classes.children}>
           {children}
         </Typography>
       </AccordionDetails>

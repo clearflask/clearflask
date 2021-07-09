@@ -5,6 +5,7 @@ import Message from '../common/Message';
 interface Props {
   msg?: React.ReactNode | string;
   variant?: 'success' | 'warning' | 'error' | 'info';
+  action?: React.ReactNode,
 }
 
 export default class ErrorMsg extends Component<Props> {
@@ -28,6 +29,7 @@ export default class ErrorMsg extends Component<Props> {
         <Message innerStyle={this.styles.message}
           message={this.props.msg}
           severity={this.props.variant || 'error'}
+          action={this.props.action}
         />
       </Box>
     );

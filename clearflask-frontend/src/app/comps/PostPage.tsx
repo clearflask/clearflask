@@ -1,4 +1,4 @@
-import { Collapse, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Collapse, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import NotifyIcon from '@material-ui/icons/NotificationsActiveRounded';
 import classNames from 'classnames';
@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import SubmitButton from '../../common/SubmitButton';
+import { WithMediaQueries, withMediaQueries } from '../../common/util/MediaQuery';
 import { initialWidth } from '../../common/util/screenUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
@@ -17,27 +18,34 @@ import { Direction } from './Panel';
 import PanelPost from './PanelPost';
 import Post from './Post';
 
+// It doesn't look nice, need to revisit this later
+const SimilarEnabled = false;
+
+export interface MediaQueries {
+  spaceForOnePanel: boolean;
+  spaceForTwoPanels: boolean;
+}
+
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
-    flexWrap: 'wrap',
+    // flexWrap: 'wrap',
+    marginTop: theme.spacing(3),
   },
   panel: {
     display: 'flex',
     flexDirection: 'column',
-    flexBasis: 0,
+    flex: '1 1 0px',
+    width: 150,
   },
   post: {
-    flexGrow: 1,
-    display: 'flex',
   },
   similar: {
-    minWidth: 300,
-    margin: theme.spacing(2),
+    flex: '1 1 0px',
   },
   subscribe: {
-    width: 300,
-    margin: theme.spacing(2),
+    minWidth: 150,
+    width: '100%',
   },
   subscribeInner: {
     margin: theme.spacing(2),
@@ -49,6 +57,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
   subscribeButton: {
+    marginTop: theme.spacing(1),
     alignSelf: 'flex-end',
   },
 });
@@ -71,7 +80,7 @@ interface State {
   isSubmitting?: boolean;
   logInOpen?: boolean;
 }
-class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>, State> {
+class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMediaQueries<keyof MediaQueries> & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   constructor(props) {
@@ -96,8 +105,6 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
       }
       return (<ErrorPage msg='Oops, not found' />);
     }
-
-    const isWidthEnough = this.props.width && isWidthUp('md', this.props.width, true);
 
     var subscribeToMe;
     if (this.props.category?.subscription?.hellobar && this.props.category) {
@@ -150,6 +157,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
       );
       subscribeToMe = !!this.props.category.subscription.hellobar.title ? (
         <DividerCorner
+          suppressDivider
           className={this.props.classes.subscribe}
           innerClassName={this.props.classes.subscribeInner}
           title={(
@@ -175,39 +183,45 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
         </Collapse>
       );
     }
+    const subscribeToMeShowInPanel = !!subscribeToMe && this.props.mediaQueries.spaceForOnePanel;
 
-    const similar = (isWidthEnough && !this.props.suppressSimilar && this.props.post) && (
-      <div className={this.props.classes.similar}>
-        <PanelPost
-          direction={Direction.Vertical}
-          PostProps={this.props.PostProps}
-          panel={{
-            hideIfEmpty: true,
-            title: 'Similar',
-            search: {
-              similarToIdeaId: this.props.postId,
-              filterCategoryIds: [this.props.post.categoryId],
-              limit: 5,
-            },
-            display: {
-              titleTruncateLines: 1,
-              descriptionTruncateLines: 2,
-              responseTruncateLines: 0,
-              showCommentCount: false,
-              showCategoryName: false,
-              showCreated: false,
-              showAuthor: false,
-              showStatus: false,
-              showTags: false,
-              showVoting: false,
-              showFunding: false,
-              showExpression: false,
-            },
-          }}
-          server={this.props.server}
-        />
-      </div>
-    );
+    const similar = (SimilarEnabled && !this.props.suppressSimilar && this.props.post && (
+      subscribeToMeShowInPanel ? this.props.mediaQueries.spaceForTwoPanels : this.props.mediaQueries.spaceForOnePanel
+    )) && (
+        <div className={this.props.classes.similar}>
+          <PanelPost
+            direction={Direction.Vertical}
+            PostProps={this.props.PostProps}
+            widthExpand
+            widthExpandMargin={0}
+            panel={{
+              hideIfEmpty: true,
+              title: 'Similar',
+              search: {
+                similarToIdeaId: this.props.postId,
+                filterCategoryIds: [this.props.post.categoryId],
+                limit: 5,
+              },
+              display: {
+                titleTruncateLines: 1,
+                descriptionTruncateLines: 2,
+                responseTruncateLines: 0,
+                showCommentCount: false,
+                showCategoryName: false,
+                showCreated: false,
+                showAuthor: false,
+                showStatus: false,
+                showTags: false,
+                showVoting: false,
+                showVotingCount: false,
+                showFunding: false,
+                showExpression: false,
+              },
+            }}
+            server={this.props.server}
+          />
+        </div>
+      );
 
     const post = (
       <Post
@@ -216,20 +230,20 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
         server={this.props.server}
         idea={this.props.post}
         variant='page'
-        contentBeforeComments={!isWidthEnough && subscribeToMe}
+        contentBeforeComments={!subscribeToMeShowInPanel && subscribeToMe}
         {...this.props.PostProps}
       />
     );
 
     return (
       <div className={this.props.classes.container}>
+        <div className={this.props.classes.panel}>
+          {similar}
+        </div>
         {post}
-        {isWidthEnough && (
-          <div className={this.props.classes.panel}>
-            {subscribeToMe}
-            {similar}
-          </div>
-        )}
+        <div className={this.props.classes.panel}>
+          {subscribeToMeShowInPanel && subscribeToMe}
+        </div>
       </div>
     );
   }
@@ -263,4 +277,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(PostPage)));
+})(withMediaQueries<keyof MediaQueries, Props>(props => {
+  return {
+    spaceForOnePanel: `(min-width: ${600 + 250}px)`,
+    spaceForTwoPanels: `(min-width: ${600 + 250 + 150}px)`,
+  };
+})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(PostPage))));

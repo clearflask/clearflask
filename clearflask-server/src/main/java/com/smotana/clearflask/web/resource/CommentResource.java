@@ -4,8 +4,10 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
@@ -37,6 +39,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -53,14 +56,19 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
 public class CommentResource extends AbstractResource implements CommentAdminApi, CommentApi {
 
+    @Inject
+    private DynamoElasticCommentStore.Config configCommentStore;
     @Inject
     private CommentStore commentStore;
     @Inject
@@ -130,10 +138,29 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public IdeaCommentSearchResponse ideaCommentSearch(String projectId, String ideaId, IdeaCommentSearch ideaCommentSearch) {
-        ImmutableSet<CommentModel> comments = commentStore.listComments(projectId, ideaId,
+        boolean isParent = ideaCommentSearch.getParentCommentId() != null;
+        boolean isInitial = isParent && (ideaCommentSearch.getExcludeChildrenCommentIds() == null || ideaCommentSearch.getExcludeChildrenCommentIds().isEmpty());
+        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId).get();
+        ImmutableSet<String> mergedPostIdsWithComments = idea.getMergedPosts().stream()
+                .filter(mergedPost -> mergedPost.getHasComments() == Boolean.TRUE)
+                .map(IdeaStore.MergedPost::getPostId)
+                .collect(ImmutableSet.toImmutableSet());
+        ImmutableSet<CommentModel> comments = commentStore.getCommentsForPost(
+                projectId,
+                ideaId,
+                mergedPostIdsWithComments,
                 Optional.ofNullable(Strings.emptyToNull(ideaCommentSearch.getParentCommentId())),
                 ideaCommentSearch.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(ideaCommentSearch.getExcludeChildrenCommentIds()));
-        return new IdeaCommentSearchResponse(toCommentWithVotes(projectId, comments));
+        ImmutableSet<String> mergedPostIds = idea.getMergedPosts().stream()
+                .map(IdeaStore.MergedPost::getPostId)
+                .collect(ImmutableSet.toImmutableSet());
+        return new IdeaCommentSearchResponse(toCommentWithVotesAndAddMergedPostsAsComments(
+                projectId,
+                comments,
+                Optional.of(ideaId),
+                mergedPostIds,
+                isInitial ? configCommentStore.searchInitialFetchMax() : configCommentStore.searchSubsequentFetchMax(),
+                ideaCommentSearch.getExcludeChildrenCommentIds()));
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})
@@ -224,25 +251,77 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     }
 
     private ImmutableList<CommentWithVote> toCommentWithVotes(String projectId, ImmutableCollection<CommentModel> comments) {
+        return toCommentWithVotesAndAddMergedPostsAsComments(projectId, comments, Optional.empty(), ImmutableSet.of(), 0, ImmutableList.of());
+    }
+
+    private ImmutableList<CommentWithVote> toCommentWithVotesAndAddMergedPostsAsComments(String projectId, ImmutableCollection<CommentModel> comments, Optional<String> parentIdeaIdOpt, ImmutableSet<String> mergedPostIds, int fillUntilResultSize, List<String> excludeMergedPostIds) {
         Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        if (!userOpt.isPresent()) {
-            return comments.stream()
-                    .map(comment -> comment.toCommentWithVote(null, sanitizer))
+        Map<String, VoteOption> voteResults = ImmutableMap.of();
+        if (userOpt.isPresent()) {
+            Optional<BloomFilter<CharSequence>> bloomFilterOpt = userOpt.map(UserModel::getCommentVoteBloom)
+                    .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+            voteResults = Maps.transformValues(
+                    voteStore.voteSearch(projectId, userOpt.get().getUserId(), comments.stream()
+                            .filter(comment -> userOpt.get().getUserId().equals(comment.getAuthorUserId())
+                                    || bloomFilterOpt.isPresent() && bloomFilterOpt.get().mightContain(comment.getCommentId()))
+                            .map(CommentModel::getCommentId)
+                            .collect(ImmutableSet.toImmutableSet())
+                    ), v -> v == null ? null : VoteValue.fromValue(v.getVote()).toVoteOption());
+        }
+
+        Set<String> additionalMergedPostIds = Sets.newHashSet();
+        Map<String, VoteOption> finalVoteResults = voteResults;
+        ImmutableList<CommentWithVote> commentsWithVote = comments.stream().map(comment -> comment.toCommentWithVote(
+                finalVoteResults.get(comment.getCommentId()),
+                sanitizer,
+                // When a post is merged into another one,
+                // top level comments for the other merged posts should be
+                // repointed to a mocked up comment representing the merged post
+                parentIdeaIdOpt
+                        .filter(parentIdeaId -> !parentIdeaId.equals(comment.getIdeaId()))
+                        .map(parentIdeaId -> {
+                            additionalMergedPostIds.add(comment.getIdeaId());
+                            return comment.getIdeaId();
+                        })))
+                .collect(ImmutableList.toImmutableList());
+
+        for (String mergedPostId : mergedPostIds) {
+            if (fillUntilResultSize <= (commentsWithVote.size() + additionalMergedPostIds.size())) {
+                break;
+            }
+            additionalMergedPostIds.add(mergedPostId);
+        }
+
+        excludeMergedPostIds.forEach(additionalMergedPostIds::remove);
+
+        if (additionalMergedPostIds.isEmpty()) {
+            return commentsWithVote;
+        } else {
+            return Stream.concat(
+                    commentsWithVote.stream(),
+                    ideaStore.getIdeas(projectId, ImmutableSet.copyOf(additionalMergedPostIds)).values().stream()
+                            .map(this::mergedPostAsComment))
                     .collect(ImmutableList.toImmutableList());
         }
-        Optional<BloomFilter<CharSequence>> bloomFilterOpt = userOpt.map(UserModel::getCommentVoteBloom)
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
-        Map<String, VoteOption> voteResults = Maps.transformValues(
-                voteStore.voteSearch(projectId, userOpt.get().getUserId(), comments.stream()
-                        .filter(comment -> userOpt.get().getUserId().equals(comment.getAuthorUserId())
-                                || bloomFilterOpt.isPresent() && bloomFilterOpt.get().mightContain(comment.getCommentId()))
-                        .map(CommentModel::getCommentId)
-                        .collect(ImmutableSet.toImmutableSet())
-                ), v -> v == null ? null : VoteValue.fromValue(v.getVote()).toVoteOption());
-        return comments.stream()
-                .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId()), sanitizer))
-                .collect(ImmutableList.toImmutableList());
+    }
+
+    private CommentWithVote mergedPostAsComment(IdeaStore.IdeaModel idea) {
+        return new CommentWithVote(
+                idea.getIdeaId(),
+                idea.getIdeaId(),
+                null,
+                idea.getChildCommentCount(),
+                idea.getAuthorUserId(),
+                idea.getAuthorName(),
+                idea.getAuthorIsMod(),
+                idea.getCreated(),
+                null,
+                idea.getIdeaId(),
+                idea.getTitle(),
+                idea.getDescriptionSanitized(sanitizer),
+                idea.getVoteValue() == null ? 0L : idea.getVoteValue(),
+                null);
     }
 }

@@ -699,7 +699,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           projectId: this.props.server.getProjectId(),
           userCreate: {
             email: 'john.doe@example.com',
-            name: 'John Doe',
+            name: 'Matus Faro',
             ...{
               isExternal: true, // Only used during development, disregarded otherwise
             },

@@ -23,7 +23,7 @@ const styles = (theme: Theme) => createStyles({
   },
   groupHorizontal: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'stretch',
     margin: theme.spacing(1.5, 2),
   },
@@ -35,7 +35,7 @@ const styles = (theme: Theme) => createStyles({
   },
   title: {
     color: theme.palette.text.hint,
-    marginBottom: theme.spacing(0.5),
+    // marginBottom: theme.spacing(0.5),
   },
   datesVertical: {
     display: 'flex',

@@ -1,6 +1,7 @@
-import { Avatar, Badge } from '@material-ui/core';
+import { Avatar as MuiAvatar, Badge } from '@material-ui/core';
 import { createStyles, darken, lighten, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import StarIcon from '@material-ui/icons/StarRounded';
+import BoringAvatar from 'boring-avatars';
 import classNames from 'classnames';
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -49,27 +50,14 @@ export const Initial = (user?: Partial<Client.User> | Client.UserMe): string | u
 };
 
 const styles = (theme: Theme) => createStyles({
-  modAvatarContainer: {
-    width: 18,
-    height: 18,
-  },
   modAvatar: {
     fontSize: '0.8em'
   },
   badge: {
     padding: 0,
   },
-  avatar: {
-    width: (props: Props) => props.size !== undefined ? props.size : 25,
-    height: (props: Props) => props.size !== undefined ? props.size : 25,
+  muiAvatar: {
     textTransform: 'uppercase',
-    backgroundColor: (props: Props) => {
-      const color = DeterministicColorFromUser(props.user);
-      return !color ? undefined
-        : (theme.palette.type === 'dark'
-          ? darken(color, 0.5)
-          : lighten(color, 0.5));
-    },
   },
   backgroundColor: {
     backgroundColor: (props: Props) => props.backgroundColor === 'inherit'
@@ -80,8 +68,8 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
-  avatarClassName?: string;
-  size?: string | number;
+  type?: 'initials' | 'bauhaus' | 'beam',
+  size?: number;
   user?: {
     userId: string;
     name?: string;
@@ -95,15 +83,69 @@ interface Props {
 class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     const userName = DisplayUserName(this.props.user);
-    var avatar = (
-      <Avatar
-        variant='rounded'
-        className={classNames(this.props.avatarClassName, this.props.classes.avatar)}
-        alt={userName}
-        src={this.props.user?.pic}
-      >{Initial(this.props.user)}</Avatar>
-    );
+    const size = this.props.size || 25;
+    var avatar;
+    switch (this.props.user?.pic ? 'image' : this.props.type) {
+      default:
+      case 'beam':
+        avatar = (
+          <BoringAvatar
+            name={userName}
+            variant='beam'
+            size={size}
+            colors={[
+              darken(this.props.theme.palette.primary.main, 0.6),
+              darken(this.props.theme.palette.primary.main, 0.3),
+              this.props.theme.palette.primary.main,
+              lighten(this.props.theme.palette.primary.main, 0.3),
+              lighten(this.props.theme.palette.primary.main, 0.6),
+            ]}
+          />
+        );
+        break;
+      case 'bauhaus':
+        avatar = (
+          <BoringAvatar
+            name={userName}
+            variant='bauhaus'
+            size={size}
+            colors={[
+              this.props.theme.palette.primary.dark,
+              this.props.theme.palette.primary.light,
+              lighten(this.props.theme.palette.primary.main, 0.6),
+              lighten(this.props.theme.palette.primary.main, 0.8),
+            ]}
+          />
+        );
+        break;
+      case 'image':
+      case 'initials':
+        var backgroundColor;
+        if (!this.props.user?.pic) {
+          backgroundColor = DeterministicColorFromUser(this.props.user);
+          backgroundColor = !backgroundColor ? undefined
+            : (this.props.theme.palette.type === 'dark'
+              ? darken(backgroundColor, 0.5)
+              : lighten(backgroundColor, 0.5));
+        }
+        avatar = (
+          <MuiAvatar
+            variant='circle'
+            className={classNames(this.props.classes.muiAvatar)}
+            style={{
+              width: size,
+              height: size,
+              backgroundColor: backgroundColor,
+            }}
+            alt={userName}
+            src={this.props.user?.pic}
+          >{Initial(this.props.user)}</MuiAvatar>
+        );
+        break;
+    }
     if (this.props.user?.isMod) {
+      const modSize = size * 0.7;
+      const starSize = size * 0.8;
       avatar = (
         <Badge
           classes={{
@@ -116,11 +158,13 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
             horizontal: 'right',
           }}
           badgeContent={(
-            <Avatar alt='Moderator' className={classNames(this.props.classes.backgroundColor, this.props.classes.modAvatarContainer)}>
+            <MuiAvatar alt='Moderator' className={classNames(this.props.classes.backgroundColor)} style={{
+              width: modSize,
+              height: modSize,
+              fontSize: starSize,
+            }}>
               <StarIcon className={this.props.classes.modAvatar} fontSize='inherit' color='primary' />
-            </Avatar>
-            // <div className={this.props.classes.modAvatarContainer}>
-            // </div>
+            </MuiAvatar>
           )}
         >
           {avatar}

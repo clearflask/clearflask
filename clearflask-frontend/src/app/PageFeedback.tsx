@@ -21,6 +21,7 @@ const styles = (theme: Theme) => createStyles({
   },
   feedbackSubmitButton: {
     alignSelf: 'flex-start',
+    fontWeight: 'bold',
   },
   logIn: {
     marginBottom: theme.spacing(4),
@@ -39,17 +40,18 @@ const styles = (theme: Theme) => createStyles({
   },
   feedbackForm: {
     maxWidth: 500,
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    margin: theme.spacing(4, 0),
+    margin: theme.spacing(4, 'auto'),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
   },
   thankyou: {
-    margin: theme.spacing(8, 0),
+    margin: theme.spacing(4, 0),
   },
   related: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   debate: {
     margin: theme.spacing(8, 0),
@@ -60,18 +62,27 @@ const styles = (theme: Theme) => createStyles({
   debateMoreIcon: {
     fontSize: '3em',
   },
+  debate2Offset: {
+    marginTop: theme.spacing(4),
+  },
   debateDivider: {
     margin: theme.spacing(4, 0),
     minWidth: 'min(10%, 50px)',
   },
+  debatePostsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    margin: 'auto',
+  },
   debatePosts: {
     display: 'flex',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     paddingTop: theme.spacing(4),
     margin: theme.spacing(-2), // Collapse margins from debatePost 
   },
   debatePost: {
-    flex: '1 1 0px',
     margin: theme.spacing(2), // Collapsed in debatePosts
   },
 });
@@ -87,14 +98,18 @@ const PageFeedback = (props: {
   const [onLogIn, setOnLogIn] = useState<(() => void) | undefined>();
   const [createdPostId, setCreatedPostId] = useState<string | undefined>();
   const [similarText, setSimilarText] = useState<string | undefined>();
-  const [hasAnySimilar, setHasAnySimilar] = useState<boolean>(false);
+  const [similarCount, setSimilarCount] = useState<number>(0);
   const [hasAnyDebate, setHasAnyDebate] = useState<boolean>(false);
+  const [hasAnyDebate2, setHasAnyDebate2] = useState<boolean>(false);
   const [debateOpen, setDebateOpen] = useState<boolean>(false);
   const [formSubmit, setFormSubmit] = useState<(() => Promise<string>) | undefined>();
   const [loginSubmit, setLoginSubmit] = useState<(() => Promise<string | undefined>) | undefined>();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [relatedIsSubmittingPostId, setRelatedIsSubmittingPostId] = useState<string | undefined>();
+  const [relatedClosed, setRelatedClosed] = useState<boolean>(false);
 
   const canSubmit = (!!loggedIn || !!loginSubmit) && !!formSubmit;
+  const isDebateOpen = !!debateOpen || (!!createdPostId && (!similarCount || !!relatedClosed));
 
   return (
     <div className={classNames(classes.container, props.className)}>
@@ -152,7 +167,7 @@ const PageFeedback = (props: {
                 }
                 const postId = await formSubmit();
                 setCreatedPostId(postId);
-              } catch (e) {
+              } finally {
                 setIsSubmitting(false);
               }
             }}
@@ -161,54 +176,110 @@ const PageFeedback = (props: {
           </SubmitButton>
         </div>
       </Collapse>
-      <Collapse in={!!createdPostId} className={classes.thankyou}>
-        <ErrorMsg msg='Thank you' variant='success' />
+      <Collapse in={!!createdPostId}>
+        <div className={classes.thankyou}>
+          <ErrorMsg msg='Thank you' variant='success' action={(
+            <Button
+              onClick={() => {
+                setCreatedPostId(undefined);
+                setRelatedClosed(false);
+              }}
+            >Again</Button>
+          )} />
+        </div>
       </Collapse>
       {!!similarText && !!props.pageFeedback.related && (
-        <Collapse in={!!createdPostId && !!hasAnySimilar} className={classes.related}>
-          <PanelPost
-            direction={Direction.Vertical}
-            panel={props.pageFeedback.related.panel}
-            searchOverride={{
-              searchText: similarText,
-            }}
-            widthExpand
-            server={props.server}
-            // TODO onClickPost={}
-            wrapPost={(post, postNode, index) => (
-              <div className={classes.similarWrap}>
-                <Button
-                  variant='outlined'
-                  color='primary'
-                  onClick={() => {/* TODO */ }}
-                >Link</Button>
-                {postNode}
-              </div>
-            )}
-            onHasAnyChanged={setHasAnySimilar}
-          />
+        <Collapse in={!!createdPostId && !!similarCount && !relatedClosed}>
+          <div className={classes.related}>
+            <PanelTitle text={props.pageFeedback.related.panel.title || (
+              similarCount > 1 ? 'Are any of these related?' : 'Is this related?')} />
+            <PanelPost
+              direction={Direction.Vertical}
+              panel={props.pageFeedback.related.panel}
+              overrideTitle=''
+              searchOverride={{
+                searchText: similarText,
+              }}
+              widthExpand
+              server={props.server}
+              onClickPostExpand
+              wrapPost={(post, postNode, index) => (
+                <div className={classes.similarWrap}>
+                  <SubmitButton
+                    isSubmitting={relatedIsSubmittingPostId === post.ideaId}
+                    disabled={!!relatedIsSubmittingPostId}
+                    variant='outlined'
+                    color='default'
+                    onClick={async () => {
+                      if (!createdPostId) return;
+                      setRelatedIsSubmittingPostId(post.ideaId)
+                      try {
+                        await (await props.server.dispatch()).ideaMerge({
+                          projectId: props.server.getProjectId(),
+                          ideaId: createdPostId,
+                          parentIdeaId: post.ideaId,
+                        });
+                        setRelatedClosed(true);
+                      } finally {
+                        setRelatedIsSubmittingPostId(undefined)
+                      }
+                    }}
+                  >Yes</SubmitButton>
+                  {postNode}
+                </div>
+              )}
+              onHasAnyChanged={(hasAny, count) => setSimilarCount(count)}
+            />
+            <Button
+              disabled={!!relatedIsSubmittingPostId}
+              variant='outlined'
+              onClick={() => setRelatedClosed(true)}
+            >No</Button>
+          </div>
         </Collapse>
       )}
       {!!props.pageFeedback.debate && (
-        <Fade in={hasAnyDebate}>
+        <Fade in={hasAnyDebate || hasAnyDebate2}>
           <div className={classes.debate}>
             <Divider className={classes.debateDivider} />
-            <PanelTitle text={props.pageFeedback.debate.panel.title || "See what else we're thinking about"} />
-            <Collapse in={!debateOpen}>
+            <PanelTitle text={props.pageFeedback.debate.panel.title || 'See what others are saying'} />
+            <Collapse in={!isDebateOpen}>
               <IconButton onClick={() => setDebateOpen(true)}>
                 <ExpandDownIcon fontSize='inherit' className={classes.debateMoreIcon} />
               </IconButton>
             </Collapse>
-            <Collapse in={debateOpen}>
-              <div className={classes.debatePosts} >
-                <PanelPost
-                  postClassName={classes.debatePost}
-                  direction={Direction.Vertical}
-                  panel={props.pageFeedback.debate.panel}
-                  overrideTitle=''
-                  server={props.server}
-                  onHasAnyChanged={setHasAnyDebate}
-                />
+            <Collapse in={isDebateOpen}>
+              <div className={classes.debatePostsContainer} >
+                <div className={classes.debatePosts} >
+                  <PanelPost
+                    postClassName={classes.debatePost}
+                    direction={Direction.Vertical}
+                    panel={props.pageFeedback.debate.panel}
+                    overrideTitle=''
+                    server={props.server}
+                    onHasAnyChanged={setHasAnyDebate}
+                  />
+                </div>
+                {!!props.pageFeedback.debate2 && (
+                  <>
+                    {hasAnyDebate2 && (
+                      <>
+                        <div className={classes.debate2Offset} />
+                        <PanelTitle text={props.pageFeedback.debate2.panel.title} />
+                      </>
+                    )}
+                    <div className={classes.debatePosts} >
+                      <PanelPost
+                        postClassName={classes.debatePost}
+                        direction={Direction.Vertical}
+                        panel={props.pageFeedback.debate2.panel}
+                        overrideTitle=''
+                        server={props.server}
+                        onHasAnyChanged={setHasAnyDebate2}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </Collapse>
           </div>

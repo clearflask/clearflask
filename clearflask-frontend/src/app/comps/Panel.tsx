@@ -22,6 +22,7 @@ const styles = (theme: Theme) => createStyles({
   [Direction.Vertical]: {
     flexDirection: 'column',
     alignItems: 'stretch',
+    minWidth: 300,
     ...contentScrollApplyStyles({ theme, side: Side.Center, orientation: Orientation.Vertical }),
   },
   cornerlessHorizontal: {
@@ -57,8 +58,6 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
           suppressDivider
           className={this.props.className}
           title={this.props.title}
-          width={this.props.direction === Direction.Vertical ? '90%' : undefined}
-          height={this.props.direction === Direction.Horizontal ? '90%' : undefined}
         >
           {content}
         </DividerCorner>
@@ -77,11 +76,12 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
 }
 
 export const PanelTitle = (props: {
-  text: React.ReactNode;
+  text?: React.ReactNode;
   color?: string;
 } & Partial<React.ComponentPropsWithoutRef<typeof Typography>>) => {
   const { text, color, ...TypographyProps } = props;
   const theme = useTheme();
+  if (!props.text) return null;
   return (
     <Typography
       variant='h4'

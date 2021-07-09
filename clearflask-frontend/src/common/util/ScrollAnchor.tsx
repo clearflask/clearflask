@@ -5,6 +5,7 @@ import windowIso from '../windowIso';
 export const SCROLL_TO_STATE_KEY = 'scrollTo';
 
 export interface Props {
+  scrollNow?: boolean;
   scrollOnNavigate?: boolean;
   scrollOnMount?: boolean;
   scrollOnStateName?: string;
@@ -50,24 +51,24 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   constructor(props) {
     super(props);
 
-    if (this.props.scrollOnNavigate || !!this.props.scrollOnStateName || this.props.scrollOnAnchorTag) {
-      this.unlisten = this.props.history.listen((location, action) => {
+    if (props.scrollOnNavigate || !!props.scrollOnStateName || props.scrollOnAnchorTag) {
+      this.unlisten = props.history.listen((location, action) => {
         if (action !== 'POP'
-          && !!this.props.scrollOnStateName
-          && this.props.scrollOnStateName === (location.state as any)?.[SCROLL_TO_STATE_KEY]) {
+          && !!props.scrollOnStateName
+          && props.scrollOnStateName === (location.state as any)?.[SCROLL_TO_STATE_KEY]) {
           this.scrollNow();
           return;
         }
 
         if (action !== 'POP'
-          && this.props.scrollOnAnchorTag
-          && location?.hash.substr(1) === this.props.scrollOnAnchorTag) {
+          && props.scrollOnAnchorTag
+          && location?.hash.substr(1) === props.scrollOnAnchorTag) {
           this.scrollNow();
           return;
         }
 
         if (action === 'PUSH'
-          && this.props.scrollOnNavigate
+          && props.scrollOnNavigate
           && !(location.state as any)?.[SCROLL_TO_STATE_KEY]
           && !location?.hash) {
           this.scrollNow();
@@ -76,21 +77,32 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
       });
     }
 
-    if (this.props.scrollOnMount) {
+    if (props.scrollNow) {
       this.scrollNow();
     }
 
-    if (!!this.props.scrollOnStateName
-      && this.props.scrollOnStateName === (this.props.location.state as any)?.[SCROLL_TO_STATE_KEY]) {
+    if (props.scrollOnMount) {
+      this.scrollNow();
+    }
+
+    if (!!props.scrollOnStateName
+      && props.scrollOnStateName === (props.location.state as any)?.[SCROLL_TO_STATE_KEY]) {
       this.scrollNow();
       return;
     }
 
-    if (this.props.scrollOnAnchorTag
-      && this.props.location?.hash.substr(1) === this.props.scrollOnAnchorTag) {
+    if (props.scrollOnAnchorTag
+      && props.location?.hash.substr(1) === props.scrollOnAnchorTag) {
       this.scrollNow();
       return;
     }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.scrollNow !== true
+      && this.props.scrollNow === true) {
+      this.scrollNow();
+    };
   }
 
   componentWillUnmount() {

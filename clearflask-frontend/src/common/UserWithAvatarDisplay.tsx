@@ -10,12 +10,16 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
+    margin: theme.spacing(0.5, 1),
   },
   containerClickable: {
     cursor: 'pointer',
   },
   name: {
     marginLeft: theme.spacing(1.5),
+  },
+  unknownAuthor: {
+    fontStyle: 'italic',
   },
 });
 const useStyles = makeStyles(styles);
@@ -30,6 +34,8 @@ const UserWithAvatarDisplay = (props: {
   } | Client.User;
   disabled?: boolean;
   backgroundColor?: 'default' | 'paper' | 'inherit';
+  avatarSize?: number;
+  fontSize?: string | number;
 }) => {
   const classes = useStyles();
   return (
@@ -44,10 +50,17 @@ const UserWithAvatarDisplay = (props: {
       <AvatarDisplay
         user={props.user}
         backgroundColor={props.backgroundColor}
+        type={!props.user ? 'initials' : undefined}
+        size={props.avatarSize}
       />
       <UserDisplay
-        labelClassName={classes.name}
-        suppressTypography
+        labelClassName={classNames(
+          classes.name,
+          !props.user && classes.unknownAuthor,
+        )}
+        style={{
+          fontSize: props.fontSize,
+        }}
         suppressStar
         variant='text'
         user={props.user}

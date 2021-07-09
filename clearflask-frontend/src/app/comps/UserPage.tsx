@@ -18,12 +18,8 @@ import UserEdit from './UserEdit';
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
-    display: 'flex',
-    flexDirection: 'column',
   },
   pageContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
   },
   title: {
     margin: theme.spacing(0, 5),
@@ -38,11 +34,6 @@ const styles = (theme: Theme) => createStyles({
   },
   overview: {
     marginTop: theme.spacing(3),
-    minWidth: 300,
-    maxWidth: '100%',
-    flex: '1 1 0px',
-  },
-  userContributions: {
     minWidth: 300,
     maxWidth: '100%',
     flex: '1 1 0px',
@@ -156,12 +147,10 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
           <div className={this.props.classes.pageContainer}>
             {overview}
             {user?.userId && (
-              <div className={this.props.classes.userContributions}>
-                <UserContributions
-                  server={this.props.server}
-                  userId={user.userId}
-                />
-              </div>
+              <UserContributions
+                server={this.props.server}
+                userId={user.userId}
+              />
             )}
           </div>
         </Loader>

@@ -11,7 +11,7 @@ const styles = (theme: Theme) => createStyles({
   icon: {
   },
   buttonPost: {
-    padding: theme.spacing(0, 1),
+    padding: theme.spacing(0.5, 1),
     color: theme.palette.text.secondary,
     minWidth: 'unset',
     whiteSpace: 'nowrap',

@@ -5,11 +5,13 @@ import * as Client from '../api/client';
 import { getSearchKey, Server } from '../api/server';
 import { Direction } from '../app/comps/Panel';
 import PanelComment from '../app/comps/PanelComment';
-import PanelPost from '../app/comps/PanelPost';
+import { BoardContainer, BoardPanel } from '../app/CustomPage';
 
 const styles = (theme: Theme) => createStyles({
-  panel: {
-    marginTop: theme.spacing(4),
+  panelComment: {
+    flex: '0 1 100px',
+    paddingTop: theme.spacing(3),
+    paddingLeft: theme.spacing(2),
   },
 });
 interface Props {
@@ -20,45 +22,37 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
   render() {
     const postsPanel: Client.PagePanelWithHideIfEmpty = {
       search: { filterAuthorId: this.props.userId, sortBy: Client.IdeaSearchSortByEnum.New },
-      display: {},
-      title: 'Recent submissions',
+      display: {
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 2,
+        responseTruncateLines: 0,
+      },
+      title: 'Posts',
       hideIfEmpty: false,
     };
     const commentSearch: Client.CommentSearch = {
       filterAuthorId: this.props.userId,
     };
     return (
-      <>
-        <PanelPost
-          className={this.props.classes.panel}
-          direction={Direction.Horizontal}
-          panel={postsPanel}
-          server={this.props.server}
-          displayDefaults={{
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 2,
-            responseTruncateLines: 0,
-            showCommentCount: false,
-            showCategoryName: false,
-            showCreated: false,
-            showAuthor: false,
-            showStatus: false,
-            showTags: false,
-            showVoting: true,
-            showFunding: true,
-            showExpression: true,
-          }}
-        />
-        <PanelComment
-          className={this.props.classes.panel}
-          key={getSearchKey(commentSearch)}
-          title='Recent comments'
-          server={this.props.server}
-          search={commentSearch}
-          direction={Direction.Horizontal}
-          hideAuthor
-        />
-      </>
+      <BoardContainer
+        title='Submissions'
+        panels={[(
+          <BoardPanel
+            server={this.props.server}
+            panel={postsPanel}
+          />
+        ), (
+          <PanelComment
+            key={getSearchKey(commentSearch)}
+            className={this.props.classes.panelComment}
+            title='Comments'
+            server={this.props.server}
+            search={commentSearch}
+            direction={Direction.Horizontal}
+            hideAuthor
+          />
+        )]}
+      />
     );
   }
 }

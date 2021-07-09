@@ -13,7 +13,7 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
   },
   page: {
-    maxWidth: '1024px',
+    maxWidth: 'max-content',
     margin: '0px auto',
   },
   anchor: {

@@ -82,7 +82,7 @@ public class MockModelUtil {
                 ImmutableList.of(),
                 0,
                 0L,
-                "John Doe",
+                "Matus Faro",
                 "john@example.com",
                 false,
                 Instant.now(),

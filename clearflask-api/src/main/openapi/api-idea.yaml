@@ -135,7 +135,7 @@ components:
                 type: string
                 format: date
               cnt:
-                type: number
+                type: integer
                 format: int64
         hits:
           $ref: 'api-idea.yaml#/components/schemas/Hits'
@@ -220,27 +220,10 @@ components:
             type: string
         mergedToPostId:
           type: string
-        mergedPosts:
+        mergedPostIds:
           type: array
           items:
-            type: object
-            required:
-            - postId
-            - authorUserId
-            - title
-            properties:
-              postId:
-                type: string
-              authorUserId:
-                type: string
-              authorName:
-                type: string
-              authorIsMod:
-                type: boolean
-              title:
-                type: string
-              description:
-                type: string
+            type: string
     IdeaConnectResponse:
       type: object
       required:
@@ -371,6 +354,15 @@ components:
       - RESPONSE_CHANGED
       - STATUS_CHANGED
       - TAG_CHANGED
+    IdeaGetAll:
+      type: object
+      required:
+      - postIds
+      properties:
+        postIds:
+          type: array
+          items:
+            type: string
 
 /project/{projectId}/ideasearch:
   post:
@@ -433,6 +425,36 @@ components:
           application/json:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
+/project/{projectId}/ideagetall:
+  get:
+    operationId: ideaGetAll
+    tags: [Idea]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/IdeaGetAll'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaGetAllResponse
+              type: object
+              required:
+              - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
 /project/{projectId}/idea/{ideaId}:
   get:
     operationId: ideaGet
@@ -505,6 +527,34 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/idea/{ideaId}/merge/{parentIdeaId}:
   patch:
+    operationId: ideaMerge
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: parentIdeaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/idea/{ideaId}/merge/{parentIdeaId}:
+  patch:
     operationId: ideaMergeAdmin
     tags: [IdeaAdmin]
     parameters:
@@ -531,7 +581,7 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/idea/{ideaId}/unmerge/{parentIdeaId}:
+/project/{projectId}/admin/idea/{ideaId}/unmerge/{parentIdeaId}:
   patch:
     operationId: ideaUnMergeAdmin
     tags: [IdeaAdmin]
@@ -559,7 +609,7 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/idea/{ideaId}/link/{parentIdeaId}:
+/project/{projectId}/admin/idea/{ideaId}/link/{parentIdeaId}:
   patch:
     operationId: ideaLinkAdmin
     tags: [IdeaAdmin]
@@ -587,7 +637,7 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/idea/{ideaId}/unlink/{parentIdeaId}:
+/project/{projectId}/admin/idea/{ideaId}/unlink/{parentIdeaId}:
   patch:
     operationId: ideaUnLinkAdmin
     tags: [IdeaAdmin]

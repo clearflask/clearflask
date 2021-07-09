@@ -8,29 +8,30 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
+import AvatarDisplay from '../common/AvatarDisplay';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import UserContributions from '../common/UserContributions';
+import { PanelTitle } from './comps/Panel';
 import ErrorPage from './ErrorPage';
-import DividerCorner from './utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
   page: {
-    margin: theme.spacing(1),
-    display: 'flex',
-    flexWrap: 'wrap',
+    margin: 'auto',
+    width: 'max-content',
+    maxWidth: 1024,
   },
   item: {
     marginTop: theme.spacing(2),
+    marginLeft: theme.spacing(4),
   },
   itemControls: {
     display: 'flex',
     alignItems: 'center',
   },
   section: {
-    marginTop: theme.spacing(3),
-  },
-  sectionInner: {
-    padding: theme.spacing(2),
+    flex: '1 1 auto',
+    margin: theme.spacing(4, 1, 4),
+    maxWidth: 500,
   },
   title: {
     minWidth: '100%',
@@ -38,13 +39,11 @@ const styles = (theme: Theme) => createStyles({
   },
   settings: {
     minWidth: 400,
-    maxWidth: '100%',
-    flex: '1 1 0px',
+    display: 'flex',
+    flexDirection: 'column',
   },
   userContributions: {
-    minWidth: 300,
-    maxWidth: '100%',
-    flex: '1 1 0px',
+    marginTop: theme.spacing(4),
   },
 });
 interface Props {
@@ -83,13 +82,15 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     return (
       <div className={this.props.classes.page}>
-        <Typography component="h1" variant="h5" color="textPrimary" className={this.props.classes.title}>Your profile</Typography>
         <div className={this.props.classes.settings}>
-          <DividerCorner
-            title='Account'
-            className={this.props.classes.section}
-            innerClassName={this.props.classes.sectionInner}
-          >
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Account' />
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                <AvatarDisplay user={this.props.userMe} size={40} />
+              </Grid>
+            </Grid>
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
@@ -207,14 +208,14 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>
                 Sign out of your account
-              {!!isPushOrAnon && (
+                {!!isPushOrAnon && (
                   <Collapse in={!!this.state.signoutWarnNoEmail}>
                     <Alert
                       variant='outlined'
                       severity='warning'
                     >
                       Please add an email before signing out or delete your account instead.
-                  </Alert>
+                    </Alert>
                   </Collapse>
                 )}
               </Typography></Grid>
@@ -257,12 +258,9 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Dialog>
               </Grid>
             </Grid>
-          </DividerCorner>
-          <DividerCorner
-            title='Notifications'
-            className={this.props.classes.section}
-            innerClassName={this.props.classes.sectionInner}
-          >
+          </div>
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Notifications' />
             {browserPushControl && (
               <Grid container alignItems='center' className={this.props.classes.item}>
                 <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
@@ -270,23 +268,23 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </Grid>
             )}
             {/* {androidPushControl && (
-            <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{androidPushControl}</Grid>
-            </Grid>
-          )}
-          {iosPushControl && (
-            <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{iosPushControl}</Grid>
-            </Grid>
-          )} */}
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{androidPushControl}</Grid>
+              </Grid>
+            )}
+            {iosPushControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{iosPushControl}</Grid>
+              </Grid>
+            )} */}
             {emailControl && (
               <Grid container alignItems='center' className={this.props.classes.item}>
                 <Grid item xs={12} sm={6}>
                   <Typography>
                     Email
-                  {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
+                    {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{emailControl}</Grid>
@@ -306,7 +304,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 ))}
               </div>
             )}
-          </DividerCorner>
+          </div>
         </div>
         <div className={this.props.classes.userContributions}>
           <UserContributions server={this.props.server} userId={this.props.userMe.userId} />

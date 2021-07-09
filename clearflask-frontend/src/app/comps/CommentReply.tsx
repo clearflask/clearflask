@@ -1,23 +1,19 @@
-import loadable from '@loadable/component';
 import { Button, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Server } from '../../api/server';
+import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
-import { importFailed, importSuccess } from '../../Main';
-import Loading from '../utils/Loading';
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
     display: 'inline-flex',
     flexDirection: 'column',
     margin: theme.spacing(1, 0),
+    width: '100%',
+    maxWidth: 300,
     alignItems: 'flex-end',
-    minWidth: 300,
-    maxWidth: 'inherit',
   },
   addCommentField: {
     transition: theme.transitions.create('width'),
@@ -29,10 +25,12 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   className?: string;
+  collapseIn?: boolean;
+  focusOnIn?: boolean;
   server: Server;
   ideaId: string;
   parentCommentId?: string;
-  focusOnMount?: boolean;
+  inputLabel?: string;
   logIn: () => Promise<void>;
   onSubmitted?: () => void;
   onBlurAndEmpty?: () => void;
@@ -48,60 +46,80 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   readonly inputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
   componentDidMount() {
-    if (this.props.focusOnMount) {
-      // Focus after smooth scrolling finishes to prevent rapid scroll
-      setTimeout(() => this.inputRef.current?.focus(), 200)
+    if (this.props.focusOnIn && this.props.collapseIn === true) {
+      this.inputFocus();
     };
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.props.focusOnIn
+      && prevProps.collapseIn !== true
+      && this.props.collapseIn === true) {
+      this.inputFocus();
+    };
+  }
+
+  inputFocus() {
+    // Focus after smooth scrolling finishes to prevent rapid scroll
+    setTimeout(() => this.inputRef.current?.focus(), 200);
   }
 
   render() {
     return (
-      <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
-        <RichEditor
-          uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
-          variant='outlined'
-          size='small'
-          id='createComment'
-          className={this.props.classes.addCommentField}
-          label='Comment'
-          iAgreeInputIsSanitized
-          value={this.state.newCommentInput || ''}
-          onChange={e => this.setState({ newCommentInput: e.target.value })}
-          multiline
-          rowsMax={10}
-          InputProps={{
-            inputRef: this.inputRef,
-            // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
-            onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
-          }}
-        />
-        <RichEditorImageUpload
-          ref={this.richEditorImageUploadRef}
-          server={this.props.server}
-        />
-        <Collapse in={!!this.state.newCommentInput}>
-          <Button
-            color='primary'
-            disabled={!this.state.newCommentInput}
-            onClick={e => {
-              this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({
-                projectId: this.props.server.getProjectId(),
-                ideaId: this.props.ideaId,
-                commentCreate: {
-                  content: this.state.newCommentInput!,
-                  parentCommentId: this.props.parentCommentId,
-                },
-              }))).then(comment => {
-                this.setState({ newCommentInput: undefined })
-                this.props.onSubmitted && this.props.onSubmitted();
-              });
+      <Collapse
+        in={this.props.collapseIn !== false}
+        className={this.props.className}
+      >
+        <div className={this.props.classes.addCommentForm}>
+          <RichEditor
+            uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
+            variant='outlined'
+            size='small'
+            id='createComment'
+            className={this.props.classes.addCommentField}
+            label={this.props.inputLabel}
+            iAgreeInputIsSanitized
+            minInputHeight={60}
+            value={this.state.newCommentInput || ''}
+            onChange={e => this.setState({ newCommentInput: e.target.value })}
+            multiline
+            rowsMax={10}
+            InputProps={{
+              inputRef: this.inputRef,
+              // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
+              onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
             }}
-          >
-            Submit
-        </Button>
-        </Collapse>
-        <ScrollAnchor scrollOnMount />
-      </div>
+          />
+          <RichEditorImageUpload
+            ref={this.richEditorImageUploadRef}
+            server={this.props.server}
+          />
+          <Collapse in={!!this.state.newCommentInput}>
+            <Button
+              color='primary'
+              disabled={!this.state.newCommentInput}
+              onClick={e => {
+                this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({
+                  projectId: this.props.server.getProjectId(),
+                  ideaId: this.props.ideaId,
+                  commentCreate: {
+                    content: this.state.newCommentInput!,
+                    parentCommentId: this.props.parentCommentId,
+                  },
+                }))).then(comment => {
+                  this.setState({ newCommentInput: undefined })
+                  this.props.onSubmitted && this.props.onSubmitted();
+                });
+              }}
+            >
+              Post
+            </Button>
+          </Collapse>
+          {!!this.props.focusOnIn && (
+            <ScrollAnchor scrollNow={this.props.collapseIn} />
+          )}
+        </div>
+      </Collapse>
     );
   }
 }

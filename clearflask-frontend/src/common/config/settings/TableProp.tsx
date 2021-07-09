@@ -7,6 +7,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { Server } from '../../../api/server';
 import * as ConfigEditor from '../configEditor';
 import Property from './Property';
 
@@ -32,6 +33,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   styleOuter?: React.CSSProperties;
   key: string;
+  server: Server;
   data: ConfigEditor.PageGroup | ConfigEditor.ArrayProperty;
   bare?: boolean;
   label?: React.ReactNode;
@@ -249,6 +251,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <TableCell key={prop.key} align='center' size='small'>
         <Property
+          server={this.props.server}
           isInsideMuiTable
           bare
           key={prop.key}

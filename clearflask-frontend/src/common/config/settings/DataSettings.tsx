@@ -129,10 +129,34 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
     const DropzoneIcon = this.state.importFile ? FileIcon : UploadIcon;
     return (
       <div>
+        <Section title='Developer API'
+          description='Programmatically access and make changes or use Zapier to integrate with your workflow.'
+          content={(
+            <>
+              <UpgradeWrapper action={FeatureAction.API_KEY}>
+                <Grid container alignItems='baseline' className={this.props.classes.item}>
+                  <Grid item xs={12} sm={4}><Typography>API Token</Typography></Grid>
+                  <Grid item xs={12} sm={8}><UpdatableField
+                    isToken
+                    value={this.props.account?.apiKey}
+                    onSave={newApiKey => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                      accountUpdateAdmin: { apiKey: newApiKey }
+                    }))}
+                    helperText='Resetting a token invalidates previous token'
+                  /></Grid>
+                </Grid>
+                <Grid container alignItems='baseline' className={this.props.classes.item}>
+                  <Grid item xs={12} sm={4}><Typography>Account ID</Typography></Grid>
+                  <Grid item xs={12} sm={8}>{this.props.account?.accountId}</Grid>
+                </Grid>
+              </UpgradeWrapper>
+            </>
+          )}
+        />
         <Section title='Import data'
           description={(
             <>
-              <p>Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping of your columns.</p>
+              Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping of your columns.
               <p>Supported fields are title, description, status, tags, and vote value.</p>
               <p>Status and Tags can be imported by ID or by Name; make sure you create them in project settings before importing.</p>
             </>
@@ -268,7 +292,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                         <TableRow key='row-more'>
                           <TableCell key='cell-more' colSpan={line.length} className={this.props.classes.omitBorder}>
                             ...
-                        </TableCell>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -352,7 +376,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
             </>
           )}
         />
-        <Section title='Export'
+        <Section title='Export data'
           description="Export this project's data in a CSV format. Useful if you'd like to analyze your data yourself or move to another provider."
           preview={(
             <>
@@ -439,30 +463,6 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                     }}>Delete</SubmitButton>
                 </DialogActions>
               </Dialog>
-            </>
-          )}
-        />
-        <Section title='Developer API'
-          description='Programmatically access and make changes or use Zapier to integrate with your workflow.'
-          content={(
-            <>
-              <UpgradeWrapper action={FeatureAction.API_KEY}>
-                <Grid container alignItems='baseline' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={4}><Typography>API Token</Typography></Grid>
-                  <Grid item xs={12} sm={8}><UpdatableField
-                    isToken
-                    value={this.props.account?.apiKey}
-                    onSave={newApiKey => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                      accountUpdateAdmin: { apiKey: newApiKey }
-                    }))}
-                    helperText='Resetting a token invalidates all previous tokens'
-                  /></Grid>
-                </Grid>
-                <Grid container alignItems='baseline' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={4}><Typography>Account ID</Typography></Grid>
-                  <Grid item xs={12} sm={8}>{this.props.account?.accountId}</Grid>
-                </Grid>
-              </UpgradeWrapper>
             </>
           )}
         />

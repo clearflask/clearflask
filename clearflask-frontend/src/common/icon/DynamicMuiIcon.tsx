@@ -6,9 +6,11 @@ import DiscordIcon from './DiscordIcon';
 import GitlabIcon from './GitlabIcon';
 import GoogleIcon from './GoogleIcon';
 import GuestIcon from './GuestIcon';
+import LinkAltIcon from './LinkAltIcon';
 import LockSimpleIcon from './LockSimpleIcon';
 import LogoutIcon from './LogoutIcon';
 import MicrosoftIcon from './MicrosoftIcon';
+import PinIcon from './PinIcon';
 import TwitchIcon from './TwitchIcon';
 import VisitIcon from './VisitIcon';
 
@@ -47,6 +49,10 @@ const DynamicMuiIcon = (props: {
     IconOverride = MicrosoftIcon;
   } else if (name === 'Twitch') {
     IconOverride = TwitchIcon;
+  } else if (name === 'Pin') {
+    IconOverride = PinIcon;
+  } else if (name === 'LinkAlt') {
+    IconOverride = LinkAltIcon;
   }
 
   return !!IconOverride ? (

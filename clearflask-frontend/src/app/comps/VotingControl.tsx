@@ -1,7 +1,9 @@
-import { Typography } from '@material-ui/core';
+import { darken, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
+import PositiveIcon from '@material-ui/icons/Favorite';
+import NegativeIcon from '@material-ui/icons/ThumbDown';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
@@ -16,8 +18,11 @@ const styles = (theme: Theme) => createStyles({
   voteButtonDownWithoutValue: {
     marginTop: -8,
   },
-  voteVoted: {
+  voteUpvoted: {
     color: theme.palette.primary.main + '!important', // important overrides disabled
+  },
+  voteDownvoted: {
+    color: darken(theme.palette.error.dark, 0.3) + '!important', // important overrides disabled
   },
   voteValue: {
     lineHeight: '1em',
@@ -37,24 +42,35 @@ const styles = (theme: Theme) => createStyles({
     height: 1,
   },
   voteButtonUpvoteBesideDownvoteButton: {
-    borderRight: 'none !important',
-    paddingRight: theme.spacing(0.7),
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
+    // borderRight: 'none !important',
+    // paddingRight: theme.spacing(0.7),
+    // borderTopRightRadius: 0,
+    // borderBottomRightRadius: 0,
   },
   voteButtonDownvote: {
-    // marginLeft: -1,
-    paddingLeft: theme.spacing(0.7),
-    borderLeft: 'none !important',
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
+    // paddingLeft: theme.spacing(0.7),
+    // borderLeft: 'none !important',
+    // borderTopLeftRadius: 0,
+    // borderBottomLeftRadius: 0,
   },
   readOnlyContainer: {
     display: 'flex',
     alignItems: 'center',
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
-  }
+  },
+  voteButtonWantThis: {
+  },
+  voteButtonPositive: {
+  },
+  voteButtonPositiveUpvoted: {
+    color: theme.palette.primary.main,
+  },
+  voteButtonNegative: {
+  },
+  voteButtonNegativeDownvoted: {
+    color: darken(theme.palette.error.dark, 0.3),
+  },
 });
 
 interface Props {
@@ -66,27 +82,42 @@ interface Props {
   votingAllowed?: boolean;
   hideControls?: boolean;
   onUpvote: () => void;
+  iWantThis?: Client.VotingIWantThis;
   onDownvote?: () => void;
 }
 
 class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
-    const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
-
     const votingAllowed = !!this.props.votingAllowed && !this.props.hideControls
 
     if (!votingAllowed) {
-      const Icon = (this.props.voteValue || 0) >= 0 ? UpvoteIcon : DownvoteIcon;
-      return (
-        <Typography className={this.props.classes.readOnlyContainer} variant='caption'>
-          <Icon fontSize='inherit' />
-          &nbsp;
-          {Math.abs(this.props.voteValue || 0)}
-        </Typography>
-      );
+      return this.renderVotingCount();
     }
+
+    if (this.props.iWantThis) {
+      return this.renderIWantThis();
+    }
+
+    return this.renderVotingButtons();
+  }
+
+  renderVotingCount() {
+    const Icon = (this.props.voteValue || 0) >= 0
+      ? (this.props.iWantThis ? PositiveIcon : UpvoteIcon)
+      : (this.props.iWantThis ? NegativeIcon : DownvoteIcon);
+    return (
+      <Typography className={this.props.classes.readOnlyContainer} variant='caption'>
+        <Icon fontSize='inherit' />
+        &nbsp;
+        {Math.abs(this.props.voteValue || 0)}
+      </Typography>
+    );
+  }
+
+  renderVotingButtons() {
+    const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
+    const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
 
     const upvote = (
       <MyButton
@@ -94,7 +125,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         Icon={UpvoteIcon}
         color={upvoted ? 'primary' : undefined}
         className={classNames(
-          !!upvoted && this.props.classes.voteVoted,
+          !!upvoted && this.props.classes.voteUpvoted,
           this.props.onDownvote !== undefined && this.props.classes.voteButtonUpvoteBesideDownvoteButton,
         )}
         onClick={this.props.onUpvote}
@@ -116,13 +147,57 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         <MyButton
           buttonVariant='post'
           Icon={DownvoteIcon}
-          color={downvoted ? 'primary' : undefined}
+          color={downvoted ? 'inherit' : undefined}
           className={classNames(
             this.props.classes.voteButtonDownvote,
-            !!downvoted && this.props.classes.voteVoted,
+            !!downvoted && this.props.classes.voteDownvoted,
           )}
           onClick={this.props.onDownvote}
         />
+      </>
+    );
+  }
+
+  renderIWantThis() {
+    const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
+    const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
+
+    const upvote = (
+      <MyButton
+        buttonVariant='post'
+        color={upvoted ? 'inherit' : undefined}
+        Icon={PositiveIcon}
+        className={classNames(
+          this.props.classes.voteButtonWantThis,
+          this.props.classes.voteButtonPositive,
+          !!upvoted && this.props.classes.voteButtonPositiveUpvoted,
+        )}
+        onClick={this.props.onUpvote}
+      >
+        {this.props.iWantThis?.positiveLabel || 'Want'}
+      </MyButton>
+    );
+
+    if (this.props.onDownvote === undefined) {
+      return upvote;
+    }
+
+    return (
+      <>
+        {upvote}
+        <MyButton
+          buttonVariant='post'
+          color={downvoted ? 'inherit' : undefined}
+          Icon={NegativeIcon}
+          className={classNames(
+            this.props.classes.voteButtonWantThis,
+            this.props.classes.voteButtonNegative,
+            !!downvoted && this.props.classes.voteButtonNegativeDownvoted,
+          )}
+          onClick={this.props.onDownvote}
+        >
+          {this.props.iWantThis?.negativeLabel || 'Hate'}
+        </MyButton>
       </>
     );
   }

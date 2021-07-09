@@ -1,4 +1,3 @@
-import { Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -12,7 +11,7 @@ import LoadMoreButton from './LoadMoreButton';
 
 const styles = (theme: Theme) => createStyles({
   commentIndent: {
-    marginLeft: theme.spacing(3),
+    marginLeft: theme.spacing(4),
   },
 });
 interface Props {
@@ -30,11 +29,14 @@ interface ConnectProps {
   callOnMount?: () => void,
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
-  loadMore: () => Promise<Client.IdeaCommentSearchResponse>;
   settings: StateSettings;
+  commentIds?: Set<string>;
 }
-class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
-  state = {};
+interface State {
+  loadedWithNoResults?: boolean;
+}
+class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
   constructor(props) {
     super(props)
@@ -54,7 +56,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
   render() {
     return (
       <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.commentIndent : undefined}>
-        {this.props.comments.sort((l, r) => r.voteValue - l.voteValue).map(comment => (
+        {this.props.comments.map(comment => (
           <React.Fragment key={comment.commentId}>
             <Comment
               key={comment.commentId}
@@ -70,22 +72,17 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
                 : undefined}
             />
-            <Collapse
-              in={!!this.state[`replyOpen${comment.commentId}`]}
-              mountOnEnter
-              unmountOnExit
+            <CommentReply
               className={this.props.classes.commentIndent}
-            >
-              <CommentReply
-                server={this.props.server}
-                focusOnMount
-                ideaId={this.props.ideaId}
-                parentCommentId={comment.commentId}
-                logIn={this.props.logIn}
-                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-                onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-              />
-            </Collapse>
+              server={this.props.server}
+              collapseIn={!!this.state[`replyOpen${comment.commentId}`]}
+              focusOnIn
+              ideaId={this.props.ideaId}
+              parentCommentId={comment.commentId}
+              logIn={this.props.logIn}
+              onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+              onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+            />
             {comment.childCommentCount > 0 && (
               <CommentList
                 {...this.props}
@@ -96,11 +93,25 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
           </React.Fragment>
         ))}
         <Loader loaded={this.props.commentsStatus !== Status.PENDING} error={this.props.commentsStatus === Status.REJECTED ? "Failed to load" : undefined}>
-          {(this.props.commentsStatus !== Status.PENDING && this.props.comments.length >= this.props.expectedCommentCount)
-            ? undefined : <LoadMoreButton onClick={this.props.loadMore.bind(this)} />}
+          {((this.props.commentsStatus !== Status.PENDING && this.props.comments.length >= this.props.expectedCommentCount) || this.state.loadedWithNoResults)
+            ? undefined : <LoadMoreButton onClick={this.loadMore.bind(this)} />}
         </Loader>
       </div>
     );
+  }
+
+  async loadMore() {
+    const results = await (await this.props.server.dispatch()).ideaCommentSearch({
+      projectId: this.props.server.getProjectId(),
+      ideaId: this.props.ideaId,
+      ideaCommentSearch: {
+        parentCommentId: this.props.parentCommentId,
+        excludeChildrenCommentIds: this.props.commentIds?.size ? [...this.props.commentIds] : undefined,
+      },
+    });
+    if (!results.results.length) {
+      this.setState({ loadedWithNoResults: true });
+    }
   }
 }
 
@@ -139,19 +150,13 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
       };
     }
   }
+  comments.sort((l, r) => r.voteValue - l.voteValue);
   return {
     callOnMount: callOnMount,
+    commentIds: commentIds?.commentIds,
     commentsStatus: commentsStatus,
     comments: comments,
     settings: state.settings,
-    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().then(d => d.ideaCommentSearch({
-      projectId: state.projectId!,
-      ideaId: ownProps.ideaId,
-      ideaCommentSearch: {
-        parentCommentId: ownProps.parentCommentId,
-        excludeChildrenCommentIds: commentIds && commentIds.commentIds ? [...commentIds.commentIds] : undefined,
-      },
-    })),
   };
 })(withStyles(styles, { withTheme: true })(CommentListRaw));
 export default CommentList;

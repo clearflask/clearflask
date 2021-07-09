@@ -19,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props extends WithStyles<typeof styles, true> {
   title?: string;
   description?: string;
+  children?: React.ReactNode;
 }
 interface State {
   open?: HTMLButtonElement;
@@ -36,7 +37,9 @@ class HelpPopper extends Component<Props, State> {
           onMouseOver={e => this.setState({ open: e.currentTarget })}
           onMouseOut={e => this.setState({ open: undefined })}
         >
-          <HelpIcon fontSize='inherit' color='inherit' />
+          {this.props.children || (
+            <HelpIcon fontSize='inherit' color='inherit' />
+          )}
         </Button>
         <Popper
           open={!!this.state.open}
@@ -58,7 +61,6 @@ class HelpPopper extends Component<Props, State> {
               <Paper variant='outlined' className={this.props.classes.content}>
                 {this.props.title && (<Typography variant='h6'>{this.props.title}</Typography>)}
                 {this.props.description && (<Typography variant='body1'>{this.props.description}</Typography>)}
-                {this.props.children}
               </Paper>
             </Fade>
           )}

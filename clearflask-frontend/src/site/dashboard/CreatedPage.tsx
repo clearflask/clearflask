@@ -1,4 +1,3 @@
-import loadable from '@loadable/component';
 import { Container, Grid, Link as MuiLink, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import OpenIcon from '@material-ui/icons/OpenInNew';
@@ -9,15 +8,12 @@ import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import { PostTitleMaxLength } from '../../app/comps/PostCreateForm';
-import Loading from '../../app/utils/Loading';
+import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import windowIso from '../../common/windowIso';
-import { importFailed, importSuccess } from '../../Main';
 
 export const CreatedImagePath = '/img/dashboard/created.svg';
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -177,7 +173,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           }}
                         />
                         <RichEditor
-                          uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
+                          uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
                           variant='outlined'
                           size='small'
                           disabled={this.state.isSubmitting}

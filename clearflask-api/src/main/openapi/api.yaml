@@ -13,16 +13,12 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1ideasearch'
   /project/{projectId}/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea'
+  /project/{projectId}/ideagetall:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1ideagetall'
   /project/{projectId}/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}'
   /project/{projectId}/idea/{ideaId}/merge/{parentIdeaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1merge~1{parentIdeaId}'
-  /project/{projectId}/idea/{ideaId}/unmerge/{parentIdeaId}:
-    $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1unmerge~1{parentIdeaId}'
-  /project/{projectId}/idea/{ideaId}/link/{parentIdeaId}:
-    $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1link~1{parentIdeaId}'
-  /project/{projectId}/idea/{ideaId}/unlink/{parentIdeaId}:
-    $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1unlink~1{parentIdeaId}'
   /project/{projectId}/bind:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1bind'
   /project/{projectId}/forgot:
@@ -123,6 +119,14 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /project/{projectId}/admin/idea/{ideaId}/merge/{parentIdeaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1merge~1{parentIdeaId}'
+  /project/{projectId}/admin/idea/{ideaId}/unmerge/{parentIdeaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1unmerge~1{parentIdeaId}'
+  /project/{projectId}/admin/idea/{ideaId}/link/{parentIdeaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1link~1{parentIdeaId}'
+  /project/{projectId}/admin/idea/{ideaId}/unlink/{parentIdeaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1unlink~1{parentIdeaId}'
   /project/{projectId}/admin/subscription/user:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1subscription~1user'
   /project/{projectId}/admin/usersearch:

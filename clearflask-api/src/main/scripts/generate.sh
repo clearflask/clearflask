@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -ex
+set -o pipefail
 
 OPENAPI_SOURCE_DIR=$1
 SCRIPTS_DIR=$2
@@ -21,6 +22,7 @@ ${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api-client.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-client &
+PIDS[${#PIDS[@]}]=$!
 
 # Frontend Admin API
 ${OPENAPI_GENERATOR} generate \
@@ -28,9 +30,11 @@ ${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api-admin.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-admin &
+PIDS[${#PIDS[@]}]=$!
 
 # Frontend Config Schema
 ${NODE} ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
+PIDS[${#PIDS[@]}]=$!
 
 # Connect API
 ${OPENAPI_GENERATOR} generate \
@@ -39,12 +43,14 @@ ${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api-connect.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/connect &
+PIDS[${#PIDS[@]}]=$!
 
 # Bundle Docs for use with Redoc
 ${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api-docs.yaml \
     -g openapi-yaml \
     -o ${OPENAPI_TARGET_DIR}/docs &
+PIDS[${#PIDS[@]}]=$!
 
 # Server API
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
@@ -73,8 +79,11 @@ ${OPENAPI_GENERATOR} generate \
     --additional-properties=removeEnumValuePrefix=false \
     --additional-properties=sourceFolder=src/main/java \
     -o ${OPENAPI_TARGET_DIR}/server &
+PIDS[${#PIDS[@]}]=$!
 
-wait
+for PID in ${PIDS[*]}; do
+    wait $PID
+done
 
 ${REDOC_CLI} bundle \
     ${OPENAPI_TARGET_DIR}/docs/openapi/openapi.yaml \

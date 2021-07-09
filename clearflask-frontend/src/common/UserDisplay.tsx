@@ -43,6 +43,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  style?: React.CSSProperties;
   labelClassName?: string;
   variant?: 'button' | 'text';
   maxChars?: number;
@@ -59,7 +60,7 @@ interface Props {
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     var user = (
-      <span className={classNames(
+      <span style={this.props.style} className={classNames(
         this.props.labelClassName,
         this.props.classes.label,
         this.props.user?.isMod && this.props.classes.mod,
@@ -74,7 +75,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
     }
     if (!this.props.suppressTypography) {
       user = (
-        <Typography noWrap variant='caption'>
+        <Typography noWrap variant='body1'>
           {user}
         </Typography>
       );

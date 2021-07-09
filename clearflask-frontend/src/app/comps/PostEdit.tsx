@@ -1,4 +1,3 @@
-import loadable from '@loadable/component';
 import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import React, { Component, useRef, useState } from 'react';
@@ -7,16 +6,13 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
+import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import { importFailed, importSuccess } from '../../Main';
-import Loading from '../utils/Loading';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -325,7 +321,7 @@ export const PostEditTitleInline = (props: {
 export const PostEditDescriptionInline = (props: {
   server: Server;
   post: Client.Idea;
-  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const [description, setDescription] = useState<string | undefined>();
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
@@ -352,7 +348,7 @@ export const PostEditDescriptionInline = (props: {
         isSubmitting={isSubmitting}
         server={props.server}
         postAuthorId={props.post.authorUserId}
-        TextFieldProps={props.TextFieldProps}
+        RichEditorProps={props.RichEditorProps}
       />
     </PostSaveButton>
   );
@@ -384,13 +380,13 @@ export const PostEditDescription = (props: {
   server: Server;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
-  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   return (
     <>
       <RichEditor
-        uploadImage={(file) => imageUploadRef.current?.uploadImage(file)}
+        uploadImage={(file) => imageUploadRef.current!.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
@@ -402,7 +398,7 @@ export const PostEditDescription = (props: {
         multiline
         rows={1}
         rowsMax={15}
-        {...props.TextFieldProps}
+        {...props.RichEditorProps}
       />
       <RichEditorImageUpload
         ref={imageUploadRef}
@@ -417,7 +413,7 @@ export const PostEditStatusAndResponseInline = (props: {
   server: Server;
   post?: Client.Idea;
   TextFieldPropsStatus?: Partial<React.ComponentProps<typeof TextField>>;
-  TextFieldPropsResponse?: Partial<React.ComponentProps<typeof TextField>>;
+  RichEditorPropsResponse?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
   // If unset, response can be edited from previous
   // If set, a blank response is open when status is changed
   showResponseOnlyWithStatus?: boolean;
@@ -464,9 +460,9 @@ export const PostEditStatusAndResponseInline = (props: {
             : (props.showResponseOnlyWithStatus ? undefined : props.post.response)}
           onChange={response => setResponse((response === undefined || response === '') ? undefined : response)}
           isSubmitting={isSubmitting}
-          TextFieldProps={{
+          RichEditorProps={{
             placeholder: props.showResponseOnlyWithStatus ? 'Add a response' : undefined,
-            ...props.TextFieldPropsResponse,
+            ...props.RichEditorPropsResponse,
           }}
         />
       </Collapse>
@@ -479,13 +475,13 @@ export const PostEditResponse = (props: {
   server: Server;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
-  TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
+  RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   return (
     <>
       <RichEditor
-        uploadImage={(file) => imageUploadRef.current?.uploadImage(file)}
+        uploadImage={(file) => imageUploadRef.current!.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
@@ -497,7 +493,7 @@ export const PostEditResponse = (props: {
         multiline
         rows={1}
         rowsMax={3}
-        {...props.TextFieldProps}
+        {...props.RichEditorProps}
       />
       <RichEditorImageUpload
         ref={imageUploadRef}

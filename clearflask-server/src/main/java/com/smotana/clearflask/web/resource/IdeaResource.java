@@ -2,6 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -19,6 +20,8 @@ import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
+import com.smotana.clearflask.api.model.IdeaGetAll;
+import com.smotana.clearflask.api.model.IdeaGetAllResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -231,6 +234,23 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
+    @RolesAllowed({Role.PROJECT_ANON})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaGetAllResponse ideaGetAll(String projectId, IdeaGetAll ideaGetAll) {
+        Optional<UserModel> userOpt = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+        ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ImmutableList.copyOf(ideaGetAll.getPostIds())).values();
+        return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
+                .orElseGet(() -> ideaModels.stream()
+                        .map(ideaModel -> ideaModel.toIdeaWithVote(
+                                new IdeaVote(null, null, null),
+                                sanitizer))
+                        .collect(ImmutableList.toImmutableList())));
+    }
+
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
@@ -251,28 +271,51 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, false);
+        Project project = projectStore.getProject(projectId, true).get();
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, false, project::getCategoryExpressionWeight);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, true);
+        Project project = projectStore.getProject(projectId, true).get();
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, true, project::getCategoryExpressionWeight);
+    }
+
+    @RolesAllowed({Role.IDEA_OWNER})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaConnectResponse ideaMerge(String projectId, String ideaId, String parentIdeaId) {
+        Project project = projectStore.getProject(projectId, true).get();
+        ImmutableMap<String, IdeaModel> ideas = ideaStore.getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
+        IdeaModel idea = ideas.get(ideaId);
+        IdeaModel parentIdea = ideas.get(parentIdeaId);
+        if (idea == null || parentIdea == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Does not exist");
+        }
+        Optional<List<String>> userMergeableCategoryIdsOpt = project.getCategory(idea.getCategoryId())
+                .map(Category::getUserMergeableCategoryIds);
+        if (userMergeableCategoryIdsOpt.map(cIds -> cIds.contains(parentIdea.getCategoryId())).orElse(false)) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to merge");
+        }
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false, project::getCategoryExpressionWeight);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false);
+        Project project = projectStore.getProject(projectId, true).get();
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false, project::getCategoryExpressionWeight);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, true);
+        Project project = projectStore.getProject(projectId, true).get();
+        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, true, project::getCategoryExpressionWeight);
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -488,7 +531,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 sanitizer);
     }
 
-    private ImmutableList<IdeaWithVote> toIdeasWithVotes(UserModel user, ImmutableList<IdeaModel> ideas) {
+    private ImmutableList<IdeaWithVote> toIdeasWithVotes(UserModel user, ImmutableCollection<IdeaModel> ideas) {
         ImmutableMap<String, VoteStore.VoteModel> voteResults = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .map(bloomFilter -> ideas.stream()

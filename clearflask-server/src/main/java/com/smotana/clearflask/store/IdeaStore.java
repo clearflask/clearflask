@@ -11,7 +11,6 @@ import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaMergedPosts;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
@@ -41,6 +40,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -66,7 +66,7 @@ public interface IdeaStore {
 
     ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
-    IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, Function<String, Double> expressionToWeightMapper);
+    IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper);
 
     HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
@@ -130,6 +130,17 @@ public interface IdeaStore {
         IdeaModel idea;
         TransactionModel transaction;
         ListenableFuture<? extends WriteResponse> indexingFuture;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class MergedPost {
+
+        @NonNull
+        String postId;
+
+        Boolean hasComments;
     }
 
     @Value
@@ -215,11 +226,7 @@ public interface IdeaStore {
 
         String mergedToPostId;
 
-        /**
-         * WARNING: Contains unsanitized HTML in description.
-         */
-        @Getter(AccessLevel.PRIVATE)
-        List<IdeaMergedPosts> mergedPosts;
+        List<MergedPost> mergedPosts;
 
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
@@ -272,10 +279,10 @@ public interface IdeaStore {
                     getVoteValue(),
                     getExpressionsValue(),
                     getExpressions(),
-                    getLinkedToPostIds(),
-                    getLinkedPostIds(),
+                    getLinkedToPostIds().asList(),
+                    getLinkedPostIds().asList(),
                     getMergedToPostId(),
-                    getMergedPosts());
+                    getMergedPosts().stream().map(MergedPost::getPostId).collect(ImmutableList.toImmutableList()));
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -310,14 +317,10 @@ public interface IdeaStore {
                     vote);
         }
 
-        public IdeaMergedPosts toIdeaMerged() {
-            return new IdeaMergedPosts(
+        public MergedPost toMergedPost() {
+            return new MergedPost(
                     getIdeaId(),
-                    getAuthorUserId(),
-                    getAuthorName(),
-                    getAuthorIsMod(),
-                    getTitle(),
-                    getDescription());
+                    getCommentCount() > 0);
         }
     }
 }

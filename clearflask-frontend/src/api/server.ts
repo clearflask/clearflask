@@ -488,6 +488,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
+    case Client.ideaMergeActionStatus.Fulfilled:
     case Admin.ideaMergeAdminActionStatus.Fulfilled:
     case Admin.ideaUnMergeAdminActionStatus.Fulfilled:
     case Admin.ideaLinkAdminActionStatus.Fulfilled:
@@ -527,6 +528,62 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
             },
           }
         },
+      };
+    case Client.ideaGetAllActionStatus.Pending:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.meta.request.ideaGetAll.postIds.reduce(
+            (ideasById, ideaId) => {
+              ideasById[ideaId] = {
+                status: Status.PENDING,
+              };
+              return ideasById;
+            }, {}),
+        },
+      };
+    case Client.ideaGetAllActionStatus.Rejected:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.meta.request.ideaGetAll.postIds.reduce(
+            (ideasById, ideaId) => {
+              ideasById[ideaId] = {
+                status: Status.REJECTED,
+              };
+              return ideasById;
+            }, {}),
+        },
+      };
+    case Client.ideaGetAllActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...(action.meta.request.ideaGetAll.postIds.length === action.payload.results.length
+            ? action.payload.results.reduce(
+              (ideasById, idea) => {
+                ideasById[idea.ideaId] = {
+                  idea: idea,
+                  status: Status.FULFILLED,
+                };
+                return ideasById;
+              }, {})
+            : action.meta.request.ideaGetAll.postIds.reduce(
+              (ideasById, ideaId) => {
+                const idea = action.payload.results.find(idea => idea.ideaId === ideaId);
+                ideasById[ideaId] = {
+                  idea: idea,
+                  status: !!idea ? Status.FULFILLED : Status.REJECTED,
+                };
+                return ideasById;
+              }, {})),
+        },
+        maxFundAmountSeen: Math.max(
+          action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
+          state.maxFundAmountSeen),
       };
     case Client.ideaSearchActionStatus.Pending:
     case Admin.ideaSearchAdminActionStatus.Pending:
@@ -910,11 +967,11 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
       // Then put all the comments in the right places
       action.payload.results.forEach(comment => newState.byIdeaIdOrParentCommentId = {
         ...newState.byIdeaIdOrParentCommentId,
-        [comment.parentCommentId || comment.ideaId]: {
-          ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId],
+        [comment.parentCommentId || action.meta.request.ideaId]: {
+          ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || action.meta.request.ideaId],
           status: Status.FULFILLED,
           commentIds: new Set([
-            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]?.commentIds || []),
+            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || action.meta.request.ideaId]?.commentIds || []),
             comment.commentId,
           ]),
         }
@@ -1457,6 +1514,7 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
         } : {}),
       };
     case Client.ideaSearchActionStatus.Fulfilled:
+    case Client.ideaGetAllActionStatus.Fulfilled:
       return {
         ...state,
         statusByIdeaId: {

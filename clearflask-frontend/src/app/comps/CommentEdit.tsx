@@ -1,16 +1,12 @@
-import loadable from '@loadable/component';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import { importFailed, importSuccess } from '../../Main';
-import Loading from '../utils/Loading';
-
-const RichEditor = loadable(() => import(/* webpackChunkName: "RichEditor", webpackPrefetch: true */'../../common/RichEditor').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -48,7 +44,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             <Grid container alignItems='baseline'>
               <Grid item xs={12}>
                 <RichEditor
-                  uploadImage={(file) => this.richEditorImageUploadRef.current?.uploadImage(file)}
+                  uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
                   variant='outlined'
                   size='small'
                   disabled={this.state.isSubmitting}

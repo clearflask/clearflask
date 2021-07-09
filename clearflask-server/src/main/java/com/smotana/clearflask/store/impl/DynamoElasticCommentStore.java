@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.Page;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
@@ -113,9 +112,6 @@ public class DynamoElasticCommentStore implements CommentStore {
          */
         @DefaultValue("false")
         boolean elasticForceRefresh();
-
-        @DefaultValue("true")
-        boolean useElasticForSearch();
 
         @DefaultValue("5")
         int searchInitialDepthLimit();
@@ -425,74 +421,62 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public ImmutableSet<CommentModel> listComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds) {
+    public ImmutableSet<CommentModel> getCommentsForPost(String projectId, String ideaId, ImmutableSet<String> mergedPostIds, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds) {
         boolean isInitial = !parentCommentIdOpt.isPresent() && excludeChildrenCommentIds.isEmpty();
         int fetchMax = isInitial
                 ? config.searchInitialFetchMax()
                 : config.searchSubsequentFetchMax();
-        if (config.useElasticForSearch()) {
-            BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-                    .must(QueryBuilders.termQuery("ideaId", ideaId));
-            parentCommentIdOpt.ifPresent(parentCommentId -> queryBuilder.must(QueryBuilders
-                    .termQuery("parentCommentIds", parentCommentId)));
-            excludeChildrenCommentIds.forEach(excludeChildrenCommentId -> queryBuilder.mustNot(QueryBuilders
-                    .termQuery("commentId", excludeChildrenCommentId)));
-            int searchInitialDepthLimit = config.searchInitialDepthLimit();
-            if (isInitial && searchInitialDepthLimit >= 0) {
-                queryBuilder.must(QueryBuilders
-                        .rangeQuery("level").lt(searchInitialDepthLimit));
-            }
-            log.trace("Comment search query: {}", queryBuilder);
-            SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
-                    .source(new SearchSourceBuilder()
-                            // TODO verify fetchSource is actually working
-                            .fetchSource(new String[]{"parentCommentIds"}, null)
-                            .size(fetchMax)
-                            .sort("score", SortOrder.DESC)
-                            .sort("upvotes", SortOrder.DESC)
-                            .sort("created", SortOrder.ASC)
-                            .query(queryBuilder));
-
-            SearchResponse searchResponse;
-            try {
-                searchResponse = elastic.search(searchRequest, RequestOptions.DEFAULT);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-
-            ImmutableSet<String> commentIdsToFetch = Arrays.stream(searchResponse.getHits().getHits())
-                    .flatMap(hit -> {
-                        DocumentField parentCommentIds = hit.field("parentCommentIds");
-                        if (parentCommentIds != null && !parentCommentIds.getValues().isEmpty()) {
-                            // parentCommentIds must be a list of Strings
-                            List<String> values = (List<String>) (Object) parentCommentIds.getValues();
-                            // Include all parent comments as well
-                            return Streams.concat(Stream.of(hit.getId()), values.stream());
-                        } else {
-                            return Stream.of(hit.getId());
-                        }
-                    })
-                    .collect(ImmutableSet.toImmutableSet());
-
-            if (commentIdsToFetch.isEmpty()) {
-                return ImmutableSet.of();
-            }
-            return ImmutableSet.copyOf(getComments(projectId, ideaId, commentIdsToFetch).values());
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        if (mergedPostIds.isEmpty()) {
+            queryBuilder.must(QueryBuilders.termQuery("ideaId", ideaId));
         } else {
-            Optional<String> latestCommentIdOpt = Streams.concat(parentCommentIdOpt.stream(), excludeChildrenCommentIds.stream())
-                    .max(String::compareTo);
-            ItemCollection<QueryOutcome> items = commentSchema.table().query(new QuerySpec()
-                    .withMaxResultSize(fetchMax)
-                    .withScanIndexForward(false)
-                    .withRangeKeyCondition(new RangeKeyCondition(commentSchema.rangeKeyName())
-                            .ge(commentSchema.rangeKeyPartial(latestCommentIdOpt
-                                    .map(latestCommentId -> Map.of("commentId", (Object) latestCommentId))
-                                    .orElseGet(Map::of)).getValue())));
-            return StreamSupport.stream(items.pages().spliterator(), false)
-                    .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                    .map(item -> commentSchema.fromItem(item))
-                    .collect(ImmutableSet.toImmutableSet());
+            queryBuilder.must(QueryBuilders.termsQuery("ideaId", Stream.concat(Stream.of(ideaId), mergedPostIds.stream()).toArray()));
         }
+        parentCommentIdOpt.ifPresent(parentCommentId -> queryBuilder.must(QueryBuilders
+                .termQuery("parentCommentIds", parentCommentId)));
+        excludeChildrenCommentIds.forEach(excludeChildrenCommentId -> queryBuilder.mustNot(QueryBuilders
+                .termQuery("commentId", excludeChildrenCommentId)));
+        int searchInitialDepthLimit = config.searchInitialDepthLimit();
+        if (isInitial && searchInitialDepthLimit >= 0) {
+            queryBuilder.must(QueryBuilders
+                    .rangeQuery("level").lt(searchInitialDepthLimit));
+        }
+        log.trace("Comment search query: {}", queryBuilder);
+        SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
+                .source(new SearchSourceBuilder()
+                        // TODO verify fetchSource is actually working
+                        .fetchSource(new String[]{"parentCommentIds"}, null)
+                        .size(fetchMax)
+                        .sort("score", SortOrder.DESC)
+                        .sort("upvotes", SortOrder.DESC)
+                        .sort("created", SortOrder.ASC)
+                        .query(queryBuilder));
+
+        SearchResponse searchResponse;
+        try {
+            searchResponse = elastic.search(searchRequest, RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        ImmutableSet<String> commentIdsToFetch = Arrays.stream(searchResponse.getHits().getHits())
+                .flatMap(hit -> {
+                    DocumentField parentCommentIds = hit.field("parentCommentIds");
+                    if (parentCommentIds != null && !parentCommentIds.getValues().isEmpty()) {
+                        // parentCommentIds must be a list of Strings
+                        List<String> values = (List<String>) (Object) parentCommentIds.getValues();
+                        // Include all parent comments as well
+                        return Streams.concat(Stream.of(hit.getId()), values.stream());
+                    } else {
+                        return Stream.of(hit.getId());
+                    }
+                })
+                .collect(ImmutableSet.toImmutableSet());
+
+        if (commentIdsToFetch.isEmpty()) {
+            return ImmutableSet.of();
+        }
+        return ImmutableSet.copyOf(getComments(projectId, ideaId, commentIdsToFetch).values());
     }
 
     @Override

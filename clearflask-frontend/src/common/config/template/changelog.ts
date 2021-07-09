@@ -131,9 +131,9 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
       icon: 'ChangeHistory',
       panels: [],
       board: undefined,
+      title: 'Changes we made',
       explorer: {
         allowCreate: undefined,
-
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 2,
           descriptionTruncateLines: 10,
@@ -144,6 +144,7 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
           showStatus: false,
           showTags: false,
           showVoting: false,
+          showVotingCount: false,
           showFunding: false,
           showExpression: false,
           responseTruncateLines: 0,

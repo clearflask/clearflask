@@ -70,6 +70,7 @@ export interface Props {
   direction: Direction;
   maxHeight?: string | number;
   onClickPost?: (postId: string) => void;
+  onClickPostExpand?: boolean;
   onUserClick?: (userId: string) => void;
   disableOnClick?: boolean;
   suppressPanel?: boolean;
@@ -78,7 +79,7 @@ export interface Props {
   selectedPostClassName?: string;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
-  onHasAnyChanged?: (hasAny: boolean) => void;
+  onHasAnyChanged?: (hasAny: boolean, count: number) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -90,8 +91,12 @@ interface ConnectProps {
   projectId?: string;
   loggedInUser?: Client.User;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
-  notifiedHasAny?: boolean;
+interface State {
+  expandedPostId?: string;
+}
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
+  notifiedHasAnyCount?: number;
 
   constructor(props) {
     super(props);
@@ -154,9 +159,9 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         break;
       case Status.FULFILLED:
         const hasAny = !!this.props.searchIdeas.length;
-        if (!!this.props.onHasAnyChanged && (this.notifiedHasAny !== hasAny)) {
-          this.notifiedHasAny = hasAny;
-          this.props.onHasAnyChanged(hasAny);
+        if (!!this.props.onHasAnyChanged && (this.notifiedHasAnyCount !== this.props.searchIdeas.length)) {
+          this.notifiedHasAnyCount = this.props.searchIdeas.length;
+          this.props.onHasAnyChanged(hasAny, this.props.searchIdeas.length);
         }
 
         if (hideIfEmpty && !hasAny) return null;
@@ -171,11 +176,21 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           ...(this.props.displayDefaults || {}),
           ...(this.props.panel?.display || {}),
         }
+
+        const onClickPost = (!this.props.onClickPost && !this.props.onClickPostExpand) ? undefined : postId => {
+          this.props.onClickPost?.(postId);
+          this.props.onClickPostExpand && this.setState({ expandedPostId: postId === this.state.expandedPostId ? undefined : postId });
+        };
         content = this.props.searchIdeas.map((idea, ideaIndex) => {
           var content: React.ReactNode;
           if (this.props.renderPost) {
             content = this.props.renderPost(idea, ideaIndex);
           } else {
+            const displayForThisPost = this.state.expandedPostId !== idea.ideaId ? display : {
+              ...display,
+              titleTruncateLines: undefined,
+              descriptionTruncateLines: undefined,
+            };
             content = (
               <Post
                 key={idea.ideaId}
@@ -189,9 +204,9 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
                 widthExpand={this.props.widthExpand}
                 expandable
                 disableOnClick={this.props.disableOnClick}
-                onClickPost={this.props.onClickPost}
+                onClickPost={onClickPost}
                 onUserClick={this.props.onUserClick}
-                display={display}
+                display={displayForThisPost}
                 variant='list'
                 {...this.props.PostProps}
               />

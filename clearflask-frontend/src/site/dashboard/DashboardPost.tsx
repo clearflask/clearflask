@@ -130,7 +130,7 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
                     this.props.classes.fixBaseline
                   ),
                 }}
-                TextFieldPropsResponse={{
+                RichEditorPropsResponse={{
                   label: undefined,
                 }}
                 showResponseOnlyWithStatus

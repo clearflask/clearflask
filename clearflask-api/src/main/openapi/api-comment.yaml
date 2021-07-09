@@ -48,6 +48,12 @@ components:
           description: If set, comment was last edited at this time. If deleted, this is deleted time.
           type: string
           format: date-time
+        mergedPostId:
+          description: If set, comment represents a merged postid
+          type: string
+        mergedPostTitle:
+          description: Shows the title of the merged post, whereas content represent description of the post
+          type: string
         content:
           description: Comment content. If null, comment is deleted
           type: string
@@ -179,7 +185,6 @@ components:
                   type: array
                   items:
                     $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
-
 /project/{projectId}/idea/{ideaId}/comment:
   post:
     operationId: commentCreate

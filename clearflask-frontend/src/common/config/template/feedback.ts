@@ -41,13 +41,22 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
 
   // Create Category
   if (!feedback) {
+    const roadmap = await this.roadmapGet();
     const categoriesProp = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const feedbackCategoryId = FeedbackCategoryIdPrefix + randomUuid();
     categoriesProp.insert().setRaw(Admin.CategoryToJSON({
       categoryId: feedbackCategoryId, name: 'Feedback',
       userCreatable: true,
+      userMergeableCategoryIds: [feedbackCategoryId, ...(roadmap ? [roadmap.categoryAndIndex.category.categoryId] : [])],
       workflow: { statuses: [] },
-      support: { vote: { enableDownvotes: false }, comment: true, fund: false },
+      support: {
+        vote: {
+          enableDownvotes: false,
+          iWantThis: {},
+        },
+        comment: true,
+        fund: false,
+      },
       tagging: { tags: [], tagGroups: [] },
     }));
     const postCategoryIndex = categoriesProp.getChildPages().length - 1;
@@ -100,6 +109,7 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
         //     showStatus: false,
         //     showTags: false,
         //     showVoting: false,
+        //     showVotingCount: false,
         //     showFunding: false,
         //     showExpression: false,
         //   },
@@ -107,17 +117,16 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
         related: {
           panel: {
             hideIfEmpty: true,
-            title: 'Are any of these related?',
             search: {
               limit: 3,
               filterCategoryIds: [
                 feedback.categoryAndIndex.category.categoryId,
-                ...(roadmap?.categoryAndIndex.category.categoryId ? [roadmap.categoryAndIndex.category.categoryId] : []),
+                ...(!!roadmap ? [roadmap.categoryAndIndex.category.categoryId] : []),
               ],
             },
             display: {
               titleTruncateLines: 1,
-              descriptionTruncateLines: 4,
+              descriptionTruncateLines: 2,
               responseTruncateLines: 0,
               showCommentCount: false,
               showCategoryName: false,
@@ -126,12 +135,13 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
               showStatus: false,
               showTags: false,
               showVoting: false,
+              showVotingCount: false,
               showFunding: false,
               showExpression: false,
             },
           }
         },
-        debate: getDebate(roadmap),
+        ...getDebate(feedback, roadmap),
       },
     };
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
@@ -160,19 +170,54 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   return feedback;
 }
 
-function getDebate(roadmap?: RoadmapInstance): Admin.PageFeedback['debate'] {
-  return (!roadmap?.categoryAndIndex.category.categoryId || !roadmap?.statusIdBacklog) ? undefined : {
+function getDebate(feedback: FeedbackInstance, roadmap?: RoadmapInstance): {
+  debate: Admin.PageFeedback['debate'],
+  debate2: Admin.PageFeedback['debate2'],
+} {
+  var roadmapDebate: Admin.PageFeedback['debate'];
+  if (!!roadmap?.categoryAndIndex.category.categoryId && !!roadmap?.statusIdBacklog) {
+    roadmapDebate = {
+      panel: {
+        title: "See what else we're thinking about",
+        hideIfEmpty: true,
+        search: {
+          sortBy: Admin.IdeaSearchSortByEnum.Random,
+          limit: 10,
+          filterCategoryIds: [roadmap.categoryAndIndex.category.categoryId],
+          filterStatusIds: [roadmap.statusIdBacklog],
+        },
+        display: {
+          titleTruncateLines: 2,
+          descriptionTruncateLines: 4,
+          responseTruncateLines: 0,
+          showCommentCount: false,
+          showCategoryName: false,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: false,
+          showTags: false,
+          showVoting: true,
+          showVotingCount: false,
+          showFunding: false,
+          showExpression: false,
+        },
+      },
+    }
+  }
+  const feedbackDebate: Admin.PageFeedback['debate'] = {
     panel: {
+      title: !!roadmapDebate ? 'Feedback submitted by others' : 'See what others are saying',
       hideIfEmpty: true,
-      title: "See what else we're thinking about",
       search: {
-        sortBy: Admin.IdeaSearchSortByEnum.Random,
+        sortBy: Admin.IdeaSearchSortByEnum.Trending,
         limit: 10,
-        filterCategoryIds: [roadmap.categoryAndIndex.category.categoryId],
-        filterStatusIds: [roadmap.statusIdBacklog],
+        filterCategoryIds: [feedback.categoryAndIndex.category.categoryId],
+        filterStatusIds: feedback.categoryAndIndex.category.workflow.statuses
+          .map(status => status.statusId)
+          .filter(statusId => statusId !== feedback.statusIdAccepted),
       },
       display: {
-        titleTruncateLines: 1,
+        titleTruncateLines: 2,
         descriptionTruncateLines: 4,
         responseTruncateLines: 0,
         showCommentCount: false,
@@ -181,23 +226,44 @@ function getDebate(roadmap?: RoadmapInstance): Admin.PageFeedback['debate'] {
         showAuthor: false,
         showStatus: false,
         showTags: false,
-        showVoting: false,
+        showVoting: true,
+        showVotingCount: false,
         showFunding: false,
         showExpression: false,
       },
     },
   };
+
+  return {
+    debate: roadmapDebate || feedbackDebate,
+    debate2: !!roadmapDebate ? feedbackDebate : undefined,
+  };
 }
 
-export async function feedbackUpdateWithRoadmap(this: Templater, roadmap: RoadmapInstance): Promise<void> {
+export async function feedbackUpdateWithRoadmap(this: Templater, roadmap?: RoadmapInstance): Promise<void> {
   const feedback = await this.feedbackGet();
-  if (feedback?.pageAndIndex?.page.feedback.related) {
-    this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'related', 'panel', 'search', 'filterCategoryIds'])
-      .insert(roadmap.categoryAndIndex.category.categoryId);
+  if (!!feedback) {
+    const userMergeableCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['content', 'categories', feedback.categoryAndIndex.index, 'userMergeableCategoryIds']);
+    if (roadmap) {
+      userMergeableCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
+    } else {
+      userMergeableCategoryIdsProp.set(new Set([feedback.categoryAndIndex.category.categoryId]));
+    }
   }
-  if (!!feedback?.pageAndIndex && !feedback.pageAndIndex.page.feedback.debate) {
+  if (feedback?.pageAndIndex?.page.feedback.related) {
+    const relatedFilterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'related', 'panel', 'search', 'filterCategoryIds']);
+    if (roadmap) {
+      relatedFilterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
+    } else {
+      relatedFilterCategoryIdsProp.set(new Set([feedback.categoryAndIndex.category.categoryId]));
+    }
+  }
+  if (!!feedback?.pageAndIndex?.page.feedback.debate) {
+    const debates = getDebate(feedback, roadmap);
     this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'debate'])
-      .setRaw(getDebate(roadmap));
+      .setRaw(debates.debate);
+    this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'debate2'])
+      .setRaw(debates.debate2);
   }
 }
 

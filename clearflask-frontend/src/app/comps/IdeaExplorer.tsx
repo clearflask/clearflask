@@ -188,6 +188,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               showStatus: false,
               showTags: false,
               showVoting: false,
+              showVotingCount: false,
               showFunding: false,
               showExpression: false,
             }} />
@@ -212,7 +213,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               showCommentCount: true,
               showCreated: true,
               showAuthor: true,
-              showVoting: true,
+              showVoting: false,
+              showVotingCount: true,
               showFunding: true,
               showExpression: true,
             }}

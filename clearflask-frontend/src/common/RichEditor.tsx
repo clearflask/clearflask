@@ -111,6 +111,7 @@ const styles = (theme: Theme) => createStyles({
       width: '100%',
       margin: '0px',
       position: 'relative',
+      minHeight: (props: PropsRichEditor) => props.minInputHeight,
     },
     '& ul[data-checked=true], & ul[data-checked=false]': {
       pointerEvents: 'none'
@@ -161,18 +162,14 @@ interface PropsRichEditor {
   onChange?(event: { target: { value: string } }, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor): void;
   iAgreeInputIsSanitized: true;
   inputRef?: React.Ref<ReactQuill>;
-  /**
-   * To add single-line support visit https://github.com/quilljs/quill/issues/1432
-   * Be careful, when adding keyboard module, handlers somehow stop working.
-   */
-  multiline: true;
   showControlsImmediately?: boolean;
+  minInputHeight?: string | number;
 }
 interface StateRichEditor {
   hasText?: boolean;
   isFocused?: boolean;
 }
-class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentProps<typeof TextField>, 'onChange' | 'inputRef' | 'multiline'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateRichEditor> {
+class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentProps<typeof TextField>, 'onChange' | 'inputRef'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateRichEditor> {
   constructor(props) {
     super(props);
 
@@ -184,6 +181,15 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
 
   render() {
     const { onChange, theme, enqueueSnackbar, closeSnackbar, classes, iAgreeInputIsSanitized, ...TextFieldProps } = this.props;
+
+    /**
+     * To add single-line support visit https://github.com/quilljs/quill/issues/1432
+     * Be careful, when adding keyboard module, handlers somehow stop working.
+     */
+    if (!TextFieldProps.multiline) {
+      throw new Error('RichEditor only supports multiline');
+    }
+
     const shrink = this.state.hasText || this.state.isFocused || false;
     return (
       <TextField

@@ -110,6 +110,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
@@ -360,16 +361,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, Function<String, Double> expressionToWeightMapper) {
+    public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
         ImmutableMap<String, IdeaModel> ideas = getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
         IdeaModel idea = ideas.get(ideaId);
         IdeaModel parentIdea = ideas.get(parentIdeaId);
         if (idea == null || parentIdea == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Does not exist");
-        }
-
-        if (merge && !idea.getCategoryId().equals(parentIdea.getCategoryId())) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge to a post with a different category, link it instead");
         }
 
         // 1. Move over votes and expressions
@@ -412,7 +409,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             }
                             parentIdeaExpressionDiff.compute(expression, (e, oldValue) -> oldValue == null
                                     ? 1L : (oldValue + 1L));
-                            parentIdeaExpressionValueDiff += expressionToWeightMapper.apply(expression);
+                            parentIdeaExpressionValueDiff += categoryExpressionToWeightMapper.apply(parentIdea.getCategoryId(), expression);
                         }
                     }
                 } while (expressionCursorOpt.isPresent());
@@ -468,7 +465,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             }
                             parentIdeaExpressionDiff.compute(expression, (e, oldValue) -> oldValue == null
                                     ? -1L : (oldValue - 1L));
-                            parentIdeaExpressionValueDiff -= expressionToWeightMapper.apply(expression);
+                            parentIdeaExpressionValueDiff -= categoryExpressionToWeightMapper.apply(parentIdea.getCategoryId(), expression);
                         }
                     }
                 } while (expressionCursorOpt.isPresent());
@@ -533,7 +530,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge into a post that's already merged");
                 }
                 parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
-                parentIdeaExpressionBuilder.add("mergedPosts", idea.toIdeaMerged());
+                parentIdeaExpressionBuilder.add("mergedPosts", idea.toMergedPost());
             } else {
                 if (!parentIdeaId.equals(idea.getMergedToPostId())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge that's not merged");
@@ -545,7 +542,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge from a post that's already merged");
                 }
                 parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
-                parentIdeaExpressionBuilder.delete("mergedPosts", idea.toIdeaMerged());
+                parentIdeaExpressionBuilder.delete("mergedPosts", idea.toMergedPost());
             }
         } else {
             if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {

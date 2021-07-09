@@ -268,7 +268,7 @@ class DataMock {
   async demoPage<T>(andThen: (config: Admin.ConfigAdmin, user: Admin.UserAdmin) => Promise<T>): Promise<T> {
     await this.mockLoggedIn(80);
     const config = await this.getConfig();
-    const user = await this.mockUser('John Doe');
+    const user = await this.mockUser('Matus Faro');
     return await andThen(config, user);
   }
 
@@ -480,7 +480,7 @@ class DataMock {
   static mockAccountCreate(): Promise<Admin.AccountAdmin> {
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
-        name: 'John Doe',
+        name: 'Matus Faro',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
         basePlanId: 'standard2-monthly',
@@ -492,7 +492,7 @@ class DataMock {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       userCreate: {
-        name: 'John Doe',
+        name: 'Matus Faro',
         email: 'john.doe@example.com',
         password: 'password',
         browserPushToken: 'fake-browser-push-token',

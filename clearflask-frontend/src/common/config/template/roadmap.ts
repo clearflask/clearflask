@@ -74,7 +74,14 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       categoryId, name: 'Task',
       userCreatable: false,
       workflow,
-      support: { vote: { enableDownvotes: false }, comment: true, fund: false },
+      support: {
+        vote: {
+          enableDownvotes: false,
+          iWantThis: {},
+        },
+        comment: true,
+        fund: false,
+      },
       tagging: { tags: [], tagGroups: [] },
     }));
 
@@ -91,7 +98,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       icon: 'Roadmap',
       panels: [],
       board: Admin.PageBoardToJSON({
-        title: 'Roadmap',
+        title: "Here's our plan",
         panels: roadmap.categoryAndIndex.category.workflow.statuses
           .filter(s => !s.statusId.startsWith(RoadmapStatusClosedPrefix)
             && !s.statusId.startsWith(RoadmapStatusCompletedPrefix)
@@ -101,8 +108,8 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
             color: status.color,
             hideIfEmpty: false,
             display: {
-              titleTruncateLines: 1,
-              descriptionTruncateLines: 0,
+              titleTruncateLines: 2,
+              descriptionTruncateLines: 4,
               responseTruncateLines: 0,
               showCommentCount: false,
               showCategoryName: false,
@@ -110,7 +117,8 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
               showAuthor: false,
               showStatus: false,
               showTags: false,
-              showVoting: false,
+              showVoting: true,
+              showVotingCount: false,
               showFunding: false,
               showExpression: false,
             },
@@ -152,6 +160,8 @@ export async function roadmapPageOff(this: Templater, roadmap: RoadmapInstance):
   if (roadmap.pageAndIndex) {
     this._pageDelete(roadmap.pageAndIndex.page.pageId);
   }
+  roadmap = (await this.roadmapGet())!;
+  this.feedbackUpdateWithRoadmap(roadmap);
 }
 
 export async function feedbackAndRoadmapGet(this: Templater): Promise<{ feedback: FeedbackInstance | undefined, roadmap: RoadmapInstance | undefined }> {
