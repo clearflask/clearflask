@@ -27,7 +27,8 @@ import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
-    maxWidth: MaxContentWidth,
+    width: MaxContentWidth,
+    maxWidth: 'max-content',
     display: 'flex',
     flexDirection: 'column',
     marginTop: theme.spacing(2),
@@ -64,6 +65,10 @@ const styles = (theme: Theme) => createStyles({
   barItem: {
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
+  },
+  barLineHeader: {
+    display: 'flex',
+    alignItems: 'baseline',
   },
   barLine: {
     display: 'flex',
@@ -250,7 +255,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     if (content.length === 0) return null;
 
     return (
-      <div className={this.props.classes.barLine}>
+      <div className={this.props.classes.barLineHeader}>
         <Delimited delimiter={(<>&nbsp;&nbsp;</>)}>
           {content}
         </Delimited>
@@ -263,17 +268,29 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     const leftSide = [
       this.renderVotingControl(),
+    ].filter(notEmpty);
+
+    const rightSide = [
       this.renderReply(),
       this.renderAdminDelete(),
       this.renderEdit(),
     ].filter(notEmpty);
-    if (leftSide.length === 0) return null;
+
+    if ((leftSide.length + rightSide.length) === 0) return null;
 
     return (
       <div className={this.props.classes.barLine}>
-        <Delimited delimiter=' '>
-          {leftSide}
-        </Delimited>
+        <div className={this.props.classes.barLine}>
+          <Delimited delimiter=' '>
+            {leftSide}
+          </Delimited>
+        </div>
+        <div className={this.props.classes.grow} />
+        <div className={this.props.classes.barLine}>
+          <Delimited delimiter=' '>
+            {rightSide}
+          </Delimited>
+        </div>
       </div>
     );
   }
@@ -395,6 +412,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
           key='author'
           onClick={this.props.onAuthorClick}
           user={user}
+          baseline
         />
       </div>
     );

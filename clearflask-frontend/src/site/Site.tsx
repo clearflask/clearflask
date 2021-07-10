@@ -77,7 +77,7 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(6),
     display: 'flex',
     justifyContent: 'center',
-    borderTop: '1px solid ' + theme.palette.grey[300],
+    borderTop: '1px solid ' + theme.palette.divider,
   },
   bottomItem: {
     display: 'block',

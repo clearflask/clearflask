@@ -7,7 +7,7 @@ import { BoxLayoutBoxApplyStyles } from '../../common/Layout';
 
 const styles = (theme: Theme) => createStyles({
   containerBox: {
-    ...BoxLayoutBoxApplyStyles,
+    ...BoxLayoutBoxApplyStyles(theme),
   },
   container: {
     display: 'inline-grid',

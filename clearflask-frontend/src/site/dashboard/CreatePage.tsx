@@ -32,7 +32,7 @@ const styles = (theme: Theme) => createStyles({
   },
   box: {
     transition: theme.transitions.create(['border', 'opacity']),
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
   },
   boxSelected: {
     borderColor: theme.palette.primary.main,
@@ -186,7 +186,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
             } : undefined}>
               <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
                 Onboarding
-               </Link>
+              </Link>
             </StepLabel>
             <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
               <Box display='flex' flexDirection='column' alignItems='flex-start' className={this.props.classes.item}>
@@ -319,7 +319,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
             <StepLabel>
               <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 2 })} className={this.props.classes.link}>
                 Info
-               </Link>
+              </Link>
             </StepLabel>
             <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
               <Box display='flex' flexDirection='column' alignItems='flex-start' className={this.props.classes.item}>

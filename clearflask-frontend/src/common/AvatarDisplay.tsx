@@ -55,6 +55,9 @@ const styles = (theme: Theme) => createStyles({
   },
   badge: {
     padding: 0,
+    width: 'unset',
+    minWidth: 'unset',
+    height: 'unset',
   },
   muiAvatar: {
     textTransform: 'uppercase',
@@ -144,8 +147,8 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
         break;
     }
     if (this.props.user?.isMod) {
-      const modSize = size * 0.7;
-      const starSize = size * 0.8;
+      const modSize = size * 0.5;
+      const starSize = size * 0.6;
       avatar = (
         <Badge
           classes={{

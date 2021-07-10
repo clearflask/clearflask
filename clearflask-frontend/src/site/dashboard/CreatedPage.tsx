@@ -35,7 +35,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
   box: {
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
   },
   growAndFlex: {
     flexGrow: 1,

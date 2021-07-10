@@ -1,28 +1,34 @@
 import { AppBar, Button, Divider, Drawer, IconButton, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import CloseIcon from '@material-ui/icons/Close';
-import InfoIcon from '@material-ui/icons/InfoOutlined';
 import MenuIcon from '@material-ui/icons/Menu';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import HelpPopper from './HelpPopper';
+import keyMapper from './util/keyMapper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
 export interface LayoutState {
   overflowPreview: boolean;
   overflowMenu: boolean;
+  isShown: (name: string) => BreakAction;
   enableBoxLayout: boolean;
 }
-
-export interface Header {
+export interface HeaderLeft {
   title?: string;
   help?: string;
-  action: {
-    label: string;
-    onClick: () => void;
-  };
+}
+export interface HeaderRight {
+  label: string;
+  onClick: () => void;
+}
+export interface Header {
+  left?: React.ReactNode | HeaderLeft;
+  right?: React.ReactNode | HeaderRight;
+  height?: number;
 }
 export interface LayoutSize {
   breakWidth?: number;
@@ -31,85 +37,91 @@ export interface LayoutSize {
   maxWidth?: number | string;
   scroll?: Orientation;
 }
+export type SectionContent = React.ReactNode | ((layoutState: LayoutState) => (React.ReactNode | null));
+export type BreakAction = 'show' | 'hide' | 'menu' | 'drawer';
 export interface Section {
+  name: string;
   size?: LayoutSize;
-  content: React.ReactNode | ((layoutState: LayoutState) => React.ReactNode | null);
-}
-export interface PreviewSection extends Section {
-  bar?: React.ReactNode;
-}
-export interface MenuSection extends Section {
-  detachFromMain?: boolean;
-}
-export interface MainSection extends Section {
-  boxLayoutNoPaper?: boolean;
+  breakPriority?: number;
+  breakAction?: BreakAction; // default: show and dont touch
+  noPaper?: boolean;
+  collapseLeft?: boolean;
+  collapseTopBottom?: boolean;
+  collapseRight?: boolean;
+  header?: Header | ((layoutState: LayoutState) => Header | undefined);
+  barTop?: SectionContent;
+  content: SectionContent;
+  barBottom?: SectionContent;
 }
 
 export const BOX_MARGIN = 36;
-const BOX_BORDER_WIDTH = 1;
-const HEADER_HEIGHT = 60;
-export const BoxLayoutBoxApplyStyles: any = {
-  boxShadow: '0px 0px 50px 0 rgba(0,0,0,0.1)',
-};
+const HEADER_HEIGHT = 56;
+export const BoxLayoutBoxApplyStyles = (theme: Theme): Record<string, string | CSSProperties> => ({
+  boxShadow: `0px 0px 50px 0 ${theme.palette.divider}`,
+});
 
 const styles = (theme: Theme) => createStyles({
-  header: {
+  sectionHeader: {
     position: 'absolute',
     top: 0,
-    height: HEADER_HEIGHT,
-    transform: 'translate(0, -100%)',
     display: 'flex',
-    padding: theme.spacing(0, 3),
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 'max-content',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+    left: 0,
   },
-  headerLeft: {
-    left: theme.spacing(1),
+  sectionHeaderNobox: {
+    backgroundColor: theme.palette.background.default,
   },
-  headerRight: {
-    right: theme.spacing(1),
+  headerTitle: {
+    color: theme.palette.text.hint,
+    display: 'flex',
+    alignSelf: 'center',
+    marginLeft: theme.spacing(4),
+  },
+  headerAction: {
+    alignSelf: 'center',
+    marginRight: theme.spacing(4),
   },
   menuPaper: {
     zIndex: theme.zIndex.drawer + 1,
   },
-  previewPaper: {
-    overflowY: 'scroll' as 'scroll',
-    width: '40%',
-    background: theme.palette.background.default,
+  bar: {
   },
+  // previewPaper: {
+  //   overflowY: 'scroll' as 'scroll',
+  //   width: '40%',
+  //   background: theme.palette.background.default,
+  // },
   previewMobilePaper: {
     overflowY: 'scroll' as 'scroll',
     maxWidth: '100%',
     background: theme.palette.background.default,
   },
-  previewBar: {
-    display: 'flex',
-    padding: theme.spacing(0.5, 1),
-    color: theme.palette.text.secondary,
-    alignItems: 'center',
-  },
-  previewBarBorder: {
-    borderBottom: '1px dashed ' + theme.palette.grey[300],
-  },
-  previewBarItem: {
-    margin: theme.spacing(0, 1),
-  },
-  previewBarContent: {
-    flexGrow: 1,
-  },
+  // previewBar: {
+  //   display: 'flex',
+  //   padding: theme.spacing(0.5, 1),
+  //   color: theme.palette.text.secondary,
+  //   alignItems: 'center',
+  // },
+  // previewBarBorder: {
+  //   borderBottom: '1px dashed ' + theme.palette.divider,
+  // },
+  // previewBarItem: {
+  //   margin: theme.spacing(0, 1),
+  // },
+  // previewBarContent: {
+  //   flexGrow: 1,
+  // },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
-    ...BoxLayoutBoxApplyStyles,
+    ...BoxLayoutBoxApplyStyles(theme),
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },
   menuButton: {
     marginRight: 20,
   },
   toolbarSpacer: theme.mixins.toolbar,
-  contentMargins: {
-    padding: theme.spacing(3),
-  },
   page: {
     height: '100vh',
     maxHeight: '100vh',
@@ -120,43 +132,19 @@ const styles = (theme: Theme) => createStyles({
   grow: {
     flexGrow: 1,
   },
+  shadows: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100%',
+  },
+  hideShadows: {
+    position: 'relative',
+    backgroundColor: theme.palette.background.paper,
+  },
   horizontal: {
     display: 'flex',
     alignItems: 'stretch',
     minHeight: 0,
-  },
-  boxLayoutParent: {
-    position: 'relative',
-    zIndex: 0,
-  },
-  boxLayoutWithHeaderMargin: {
-    marginTop: BOX_MARGIN / 3 + HEADER_HEIGHT + 'px' + '!important',
-  },
-  headerMargin: {
-    marginTop: HEADER_HEIGHT + 'px' + '!important',
-    borderTop: '1px solid ' + theme.palette.grey[300],
-  },
-  boxLayout: {
-    margin: BOX_MARGIN,
-    ...BoxLayoutBoxApplyStyles,
-  },
-  boxLayoutNoPaper: {
-    margin: BOX_MARGIN,
-  },
-  boxLayoutNoPaperScroll: {
-    marginTop: 0,
-    marginBottom: 0,
-  },
-  boxLayoutNoPaperScroller: {
-    paddingTop: BOX_MARGIN,
-    paddingBottom: BOX_MARGIN,
-  },
-  hideShadows: {
-    position: 'relative',
-    backgroundColor: theme.palette.background.default,
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100%',
   },
   vertical: {
     display: 'flex',
@@ -174,56 +162,76 @@ const styles = (theme: Theme) => createStyles({
     minHeight: 0,
     flexGrow: 1,
   },
-  [`scroll-${Orientation.Both}`]: {
-    ...contentScrollApplyStyles({ theme, orientation: Orientation.Both }),
-  },
-  [`scroll-${Orientation.Horizontal}`]: {
+  sectionsBox: {
+    padding: BOX_MARGIN / 2, // Outer box margins
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
   },
-  [`scroll-${Orientation.Vertical}`]: {
-    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  sectionsNobox: {
+    backgroundColor: theme.palette.divider,
+    ...contentScrollApplyStyles({
+      theme, orientation: Orientation.Horizontal,
+      backgroundColor: theme.palette.divider
+    }),
+  },
+  sections: {
+    position: 'relative',
+    zIndex: 0,
+    // Border-hack between collapsed sections
+    columnGap: 1,
+    columnRuleColor: theme.palette.divider,
   },
   section: {
     minWidth: 0,
   },
-  content: {
+  boxPaper: {
+    ...BoxLayoutBoxApplyStyles(theme),
   },
-  contentMergeWithMenuBoxLayout: {
-    marginLeft: 0,
+  boxNoPaper: {
+    zIndex: -1,
   },
-  menuMergeWithContent: {
-    borderRight: '1px solid ' + theme.palette.grey[300],
+  boxLeft: {
+    marginLeft: BOX_MARGIN / 2,
   },
-  menu: {
-    marginRight: 0,
+  collapseLeft: {
+    marginLeft: -BOX_MARGIN / 2,
   },
-  previewNoBoxLayout: {
-    borderLeft: '1px solid ' + theme.palette.grey[300],
+  boxRight: {
+    marginRight: BOX_MARGIN / 2,
   },
-  preview: {
-    margin: 0, // boxLayout without margins
+  collapseRight: {
+    marginRight: -BOX_MARGIN / 2,
+  },
+  boxTopBottom: {
+    marginTop: BOX_MARGIN / 2,
+    marginBottom: BOX_MARGIN / 2,
+  },
+  collapseTopBottom: {
+    marginTop: -BOX_MARGIN / 2,
+    marginBottom: -BOX_MARGIN / 2,
+  },
+  'scroll-both': {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Both }),
+  },
+  'scroll-horizontal': {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
+  },
+  'scroll-vertical': {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
 });
 interface Props {
-  header: Header;
-  main: MainSection;
+  sections: Array<Section>;
   toolbarShow: boolean;
   toolbarLeft: React.ReactNode;
   toolbarRight?: React.ReactNode;
-  menu?: MenuSection;
   previewShow?: boolean;
   previewForceShowClose?: boolean;
   previewShowNot: () => void;
-  preview?: PreviewSection;
-  barTop?: React.ReactNode;
-  barBottom?: React.ReactNode;
-  children: React.ReactNode;
-  contentMargins?: boolean;
 }
 interface State {
   mobileMenuOpen: boolean;
 }
-class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & WithStyles<typeof styles, true> & WithWidthProps, State> {
+class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof styles, true> & WithWidthProps, State> {
   readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
   readonly containerRef = React.createRef<HTMLDivElement>();
 
@@ -234,172 +242,174 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
     };
   }
 
-  render() {
-    const layoutState: LayoutState = {
-      overflowPreview: this.props.mediaQueries.overflowPreview,
-      overflowMenu: this.props.mediaQueries.overflowMenu,
-      enableBoxLayout: this.props.mediaQueries.enableBoxLayout,
-    };
+  renderHeader(layoutState: LayoutState, header: Section['header']): Header | undefined {
+    if (!header) return undefined;
+    if (typeof header === 'function') {
+      return header(layoutState);
+    } else {
+      return header;
+    }
+  }
 
-    const mainSection = this.prerenderSectionContent(layoutState, this.props.main);
-    const menuSection = this.prerenderSectionContent(layoutState, this.props.menu);
-    const previewSection = this.prerenderSectionContent(layoutState, this.props.preview);
-
-    const title = !!this.props.header?.title ? (
-      <div className={classNames(this.props.classes.header, this.props.classes.headerLeft)}>
-        <Typography variant='h4' component='h1' style={{ display: 'flex' }}>
-          {this.props.header.title}
-          {this.props.header.help && (
+  renderHeaderContent(header: Header): React.ReactNode | null {
+    var left;
+    if (typeof header.left === 'object') {
+      const headerLeft = header.left as HeaderLeft;
+      left = (
+        <Typography variant='h4' component='h1' className={this.props.classes.headerTitle}>
+          {headerLeft.title}
+          {headerLeft.help && (
             <>
               &nbsp;
-              <HelpPopper description={this.props.header.help} />
+              <HelpPopper description={headerLeft.help} />
             </>
           )}
         </Typography>
-      </div>
-    ) : undefined;
-    const action = !!this.props.header?.action ? (
-      <div className={classNames(this.props.classes.header, this.props.classes.headerRight)}>
+      );
+    } else {
+      left = header.left;
+    }
+
+    var right;
+    if (typeof header.right === 'object') {
+      const headerRight = header.right as HeaderRight;
+      right = (
         <Button
+          className={this.props.classes.headerAction}
           variant='outlined'
           disableElevation
           color='primary'
-          onClick={this.props.header.action.onClick}
-        >{this.props.header.action.label}</Button>
-      </div>
-    ) : undefined;
-    const showHeader = !!title || !!action;
+          onClick={headerRight.onClick}
+        >{headerRight.label}</Button>
+      );
+    } else {
+      right = header.right;
+    }
 
-    const previewBar = (!!previewSection?.bar || !!layoutState.overflowPreview) && (
+    return (
       <>
+        {left}
+        {right}
+      </>
+    );
+  }
+
+  renderContent(layoutState: LayoutState, content: SectionContent): React.ReactNode | null {
+    if (!content) {
+      return null;
+    } else if (typeof content === 'function') {
+      return content(layoutState) || null;
+    } else {
+      return content;
+    }
+  }
+
+  renderSection(layoutState: LayoutState, section?: Section, isOverflow: boolean = false): React.ReactNode | null {
+    if (!section) return null;
+    var content = this.renderContent(layoutState, section.content);
+    if (!content) return null;
+
+    if (section.size?.scroll) {
+      content = (
         <div className={classNames(
-          this.props.classes.previewBar,
-          !!previewSection?.bar && this.props.classes.previewBarBorder,
+          !!section.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
+          !!section.size?.scroll && this.props.classes[`scroll-${section.size.scroll}`],
         )}>
-          {(!!layoutState.overflowPreview || !!this.props.previewForceShowClose) && (
-            <IconButton
-              color='inherit'
-              aria-label=''
-              onClick={this.handlePreviewClose.bind(this)}
-            >
-              <CloseIcon />
-            </IconButton>
-          ) || (
-              <InfoIcon className={this.props.classes.previewBarItem} />
-            )}
-          {!!previewSection?.bar && (
+          {content}
+        </div>
+      );
+    }
+
+    const header = this.renderHeader(layoutState, section.header);
+    const barTop = this.renderContent(layoutState, section.barTop);
+    const barBottom = this.renderContent(layoutState, section.barBottom);
+    return (
+      <div key={section.name} className={classNames(
+        this.props.classes.section,
+        this.props.classes.vertical,
+        !isOverflow && layoutState.enableBoxLayout && (!section.noPaper ? this.props.classes.boxPaper : this.props.classes.boxNoPaper),
+        !isOverflow && layoutState.enableBoxLayout && (section.collapseLeft ? this.props.classes.collapseLeft : this.props.classes.boxLeft),
+        !isOverflow && layoutState.enableBoxLayout && (section.collapseRight ? this.props.classes.collapseRight : this.props.classes.boxRight),
+        !isOverflow && layoutState.enableBoxLayout && (section.collapseTopBottom ? this.props.classes.collapseTopBottom : this.props.classes.boxTopBottom),
+      )} style={{
+        flexGrow: section.size?.flexGrow || 0,
+        flexBasis: section.size?.breakWidth || 'content',
+        minWidth: section.size?.breakWidth,
+        width: section.size?.width,
+        maxWidth: section.size?.maxWidth,
+        ...(header ? {
+          marginTop: (header.height || HEADER_HEIGHT) + 1,
+        } : {})
+      }}>
+        <div className={classNames(
+          this.props.classes.shadows,
+          !section.noPaper && this.props.classes.hideShadows,
+        )}>
+          {!!header && (
+            <div className={classNames(
+              this.props.classes.sectionHeader,
+              !layoutState.enableBoxLayout && this.props.classes.sectionHeaderNobox,
+            )} style={{
+              transform: `translateY(-${HEADER_HEIGHT + 1}px)`,
+              height: header.height || HEADER_HEIGHT,
+            }}>
+              {this.renderHeaderContent(header)}
+            </div>
+          )}
+          {!!barTop && (
             <>
-              <div className={classNames(this.props.classes.previewBarContent, this.props.classes.previewBarItem)}>
-                {previewSection.bar}
+              <div className={this.props.classes.bar}>
+                {barTop}
+              </div>
+              <Divider />
+            </>
+          )}
+          {content}
+          {!!barBottom && (
+            <>
+              <Divider />
+              <div className={this.props.classes.bar}>
+                {barBottom}
               </div>
             </>
           )}
         </div>
-      </>
-    );
-
-    const preview = previewSection && (
-      <div className={classNames(
-        layoutState.enableBoxLayout && this.props.classes.boxLayout,
-        !layoutState.enableBoxLayout && this.props.classes.previewNoBoxLayout,
-        this.props.classes.section,
-        this.props.classes.preview,
-        this.props.classes.vertical,
-      )} style={{
-        flexGrow: this.props.preview?.size?.flexGrow || 0,
-        flexBasis: this.props.preview?.size?.breakWidth || 'content',
-        width: this.props.preview?.size?.width,
-        maxWidth: this.props.preview?.size?.maxWidth,
-      }}>
-        <div className={this.props.classes.hideShadows}>
-          {previewBar}
-          <div className={classNames(
-            !!previewSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
-            !!previewSection.size?.scroll && this.props.classes[`scroll-${previewSection.size?.scroll || Orientation.Vertical}`],
-          )}>
-            {previewSection.content}
-          </div>
-        </div>
       </div>
     );
+  }
 
-    const menu = !!menuSection && (
-      <div className={classNames(
-        layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
-        !layoutState.enableBoxLayout && !layoutState.overflowMenu && showHeader && this.props.classes.headerMargin,
-        layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.boxLayout,
-        this.props.classes.section,
-        this.props.classes.menu,
-        !menuSection?.detachFromMain && !layoutState.overflowMenu && this.props.classes.menuMergeWithContent,
-        this.props.classes.vertical,
-      )} style={{
-        flexGrow: this.props.menu?.size?.flexGrow || 0,
-        flexBasis: this.props.menu?.size?.breakWidth || 'content',
-        width: this.props.menu?.size?.width,
-        maxWidth: this.props.menu?.size?.maxWidth,
-      }}>
-        <div className={this.props.classes.hideShadows}>
-          {!layoutState.overflowMenu && (title)}
-          <div className={classNames(
-            !!menuSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
-            !!menuSection.size?.scroll && this.props.classes[`scroll-${menuSection.size?.scroll || Orientation.Vertical}`],
-          )}>
-            {menuSection.content}
-          </div>
-        </div>
-      </div>
-    );
+  render() {
+    const sectionPreview = this.props.sections.find(s => s.breakAction === 'drawer');
+    const sectionMenu = this.props.sections.find(s => s.breakAction === 'menu');
+    const breakActionForName: { [name: string]: BreakAction } = {};
+    this.props.sections.forEach(section => {
+      breakActionForName[section.name] = this.props.mediaQueries[section.name] === false && section.breakAction || 'show'
+    });
+    const layoutState: LayoutState = {
+      overflowPreview: !!sectionPreview && this.props.mediaQueries[sectionPreview.name] === false,
+      overflowMenu: !!sectionMenu && this.props.mediaQueries[sectionMenu.name] === false,
+      isShown: name => breakActionForName[name] || 'show',
+      enableBoxLayout: this.props.mediaQueries.enableBoxLayout,
+    };
 
-    const main = !!mainSection && (
-      <div className={classNames(
-        layoutState.enableBoxLayout && showHeader && this.props.classes.boxLayoutWithHeaderMargin,
-        !layoutState.enableBoxLayout && showHeader && this.props.classes.headerMargin,
-        layoutState.enableBoxLayout && (mainSection.boxLayoutNoPaper ? this.props.classes.boxLayoutNoPaper : this.props.classes.boxLayout),
-        !!mainSection.size?.scroll && layoutState.enableBoxLayout && mainSection.boxLayoutNoPaper && this.props.classes.boxLayoutNoPaperScroll,
-        !menuSection?.detachFromMain && !!menu && layoutState.enableBoxLayout && !layoutState.overflowMenu && this.props.classes.contentMergeWithMenuBoxLayout,
-        this.props.classes.section,
-        this.props.classes.content,
-        this.props.classes.vertical,
-      )} style={{
-        flexGrow: this.props.main?.size?.flexGrow || 0,
-        flexBasis: this.props.main.size?.breakWidth || 'content',
-        minWidth: this.props.main.size?.breakWidth,
-        width: this.props.main.size?.width,
-        maxWidth: this.props.main.size?.maxWidth,
-      }}>
-        <div className={this.props.classes.hideShadows}>
-          {(!!layoutState.overflowMenu || !menu) && (title)}
-          {action}
-          {!!this.props.barTop && (
-            <div>
-              {this.props.barTop}
-              <Divider />
-            </div>
-          )}
-          <div className={classNames(
-            !!mainSection.size?.scroll ? this.props.classes.scroll : this.props.classes.noscroll,
-            !!mainSection.size?.scroll && this.props.classes[`scroll-${mainSection.size?.scroll || Orientation.Vertical}`],
-            !!mainSection.size?.scroll && layoutState.enableBoxLayout && mainSection.boxLayoutNoPaper && this.props.classes.boxLayoutNoPaperScroller,
-            !!this.props.contentMargins && this.props.classes.contentMargins,
-          )}>
-            {mainSection.content}
-          </div>
-          {!!this.props.barBottom && (
-            <div>
-              <Divider />
-              {this.props.barBottom}
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    const contentPreview = !layoutState.overflowPreview ? null : this.renderSection(layoutState, sectionPreview, true);
+    const contentMenu = !layoutState.overflowPreview ? null : this.renderSection(layoutState, sectionPreview, true);
+
+    const contents: React.ReactNode[] = [];
+    this.props.sections.forEach(section => {
+      const breakAction = breakActionForName[section.name];
+      if (breakAction !== 'show') return;
+      const content = this.renderSection(layoutState, section, false);
+      if (!content) return;
+      contents.push(content);
+    });
 
     return (
       <div ref={this.containerRef}>
         {!!this.props.toolbarShow && (
           <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
             <Toolbar>
-              {!!layoutState.overflowMenu && !!menu && (
+              {!!layoutState.overflowMenu && !!contentMenu && (
                 <IconButton
                   color="inherit"
                   aria-label="Open drawer"
@@ -416,7 +426,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
             <Divider />
           </AppBar>
         )}
-        {layoutState.overflowMenu && !!menu && (
+        {layoutState.overflowMenu && !!contentMenu && (
           <Drawer
             variant='temporary'
             open={this.state.mobileMenuOpen}
@@ -425,7 +435,7 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
               paper: classNames(this.props.classes.menuPaper),
             }}
             style={{
-              width: menuSection?.size?.maxWidth || menuSection?.size?.width || menuSection?.size?.breakWidth || '100%',
+              width: sectionMenu?.size?.maxWidth || sectionMenu?.size?.width || sectionMenu?.size?.breakWidth || '100%',
             }}
             ModalProps={{
               container: () => this.containerRef.current!,
@@ -433,10 +443,10 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
             }}
           >
             {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
-            {menu}
+            {contentMenu}
           </Drawer>
         )}
-        {layoutState.overflowPreview && !!preview && (
+        {layoutState.overflowPreview && !!contentPreview && (
           <Drawer
             variant='temporary'
             SlideProps={{ mountOnEnter: true }}
@@ -447,31 +457,32 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
               paper: this.props.classes.previewMobilePaper,
             }}
             style={{
-              width: previewSection?.size?.maxWidth || previewSection?.size?.width || previewSection?.size?.breakWidth || '100%',
+              width: sectionPreview?.size?.maxWidth || sectionPreview?.size?.width || sectionPreview?.size?.breakWidth || '100%',
             }}
             ModalProps={{
               container: () => this.containerRef.current!
             }}
           >
             {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
-            {preview}
+            <IconButton
+              color='inherit'
+              aria-label=''
+              onClick={this.handlePreviewClose.bind(this)}
+            >
+              <CloseIcon />
+            </IconButton>
+            {contentPreview}
           </Drawer>
         )}
         <div className={classNames(this.props.classes.page, this.props.classes.vertical)}>
           {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
           <div className={classNames(
+            this.props.classes.sections,
+            layoutState.enableBoxLayout ? this.props.classes.sectionsBox : this.props.classes.sectionsNobox,
             this.props.classes.grow,
             this.props.classes.horizontal,
-            this.props.classes[`scroll-${Orientation.Horizontal}`],
-            layoutState.enableBoxLayout && this.props.classes.boxLayoutParent,
           )}>
-            {!layoutState.overflowMenu && !!menu && (
-              menu
-            )}
-            {main}
-            {!layoutState.overflowPreview && !!preview && (
-              preview
-            )}
+            {contents}
           </div>
         </div>
       </div>
@@ -485,49 +496,53 @@ class Layout extends Component<Props & WithMediaQueries<keyof LayoutState> & Wit
   handlePreviewClose() {
     this.props.previewShowNot();
   };
-
-  prerenderSectionContent<S extends Section>(layoutState: LayoutState, section?: S): (Omit<S, 'content'> & { content: React.ReactNode }) | undefined {
-    if (!section) {
-      return undefined;
-    } else if (typeof section?.content === 'function') {
-      const content = section.content(layoutState);
-      if (!content) return undefined;
-      return {
-        ...section,
-        content,
-      };
-    } else {
-      return section;
-    }
-  }
 }
 
-export default withMediaQueries<keyof LayoutState, Props>(props => {
-  const sizeMenu = props.menu?.size?.breakWidth || 0;
-  const sizePreview = props.preview?.size?.breakWidth || 0;
-  const sizeMenuBox = props.menu?.detachFromMain ? BOX_MARGIN : 0;
-  const sizeContentBox = BOX_MARGIN * 2;
-  const sizePreviewBox = BOX_MARGIN;
+export default keyMapper(
+  // Number of sections cannot change as it causes dynamic number of hooks
+  (ownProps: Props) => `section-count-${ownProps.sections.length}`,
+  withMediaQueries<'enableBoxLayout' | any, Props>(ownProps => {
+    var staticWidth = 0;
+    var staticBoxWidth = BOX_MARGIN; // Outer margin
+    var variableWidth = 0;
+    var variableBoxWidth = 0;
+    variableWidth += ownProps.sections.length - 1; // Accounts for column-gap 1px
+    const sectionsByPrio: Section[] = [];
+    for (const section of ownProps.sections) {
+      const sectionWidth = section.size?.breakWidth || 0;
+      const sectionBoxWidth = ((section.collapseLeft ? -0.5 : 0.5) + (section.collapseRight ? -0.5 : 0.5)) * BOX_MARGIN;
+      if (!section.breakAction) {
+        staticWidth += sectionWidth;
+        staticBoxWidth += sectionBoxWidth;
+      } else {
+        variableWidth += sectionWidth;
+        variableBoxWidth += sectionBoxWidth;
+        sectionsByPrio.push(section);
+      }
+    }
+    sectionsByPrio.sort((l, r) => (l.breakPriority || -1) - (r.breakPriority || -1));
 
-  // content
-  const sizeContent = props.main.size?.breakWidth || 0;
-  // content box
-  const sizeContentWithBox = sizeContent + sizeContentBox;
-  // content menu
-  const sizeContentAndMenu = sizeContent + sizeMenu;
-  // content menu box
-  const sizeContentAndMenuWithBox = sizeContent + sizeContentBox + sizeMenu + sizeMenuBox;
-  // content menu preview
-  const sizeContentAndMenuAndPreview = sizeContent + sizeMenu + sizePreview;
-  // content menu preview box
-  const sizeContentAndMenuWithBoxAndPreviewWithBox = sizeContent + sizeContentBox + sizeMenu + sizeMenuBox + sizePreview + sizePreviewBox;
+    const mediaQueries = {};
+    mediaQueries['enableBoxLayout'] = `(min-width: ${staticWidth + staticBoxWidth + variableWidth + variableBoxWidth}px)`;
+    while (true) {
+      const section = sectionsByPrio.pop();
+      if (!section) break;
+      const sectionWidth = section.size?.breakWidth || 0;
+      const sectionBoxWidth = ((section.collapseLeft ? -0.5 : 0.5) + (section.collapseRight ? -0.5 : 0.5)) * BOX_MARGIN;
 
-  return {
-    enableBoxLayout:
-      `(min-width: ${sizeContentWithBox}px) and (max-width: ${sizeContentAndMenu}px),`
-      + `(min-width: ${sizeContentAndMenuWithBox}px) and (max-width: ${sizeContentAndMenuAndPreview}px),`
-      + `(min-width: ${sizeContentAndMenuWithBoxAndPreviewWithBox}px)`,
-    overflowPreview: `(max-width: ${sizeContentAndMenuAndPreview}px)`,
-    overflowMenu: `(max-width: ${sizeContentAndMenu}px)`,
-  };
-})(withStyles(styles, { withTheme: true })(Layout));
+      const overflowSection = staticWidth + variableWidth;
+      mediaQueries[section.name] = `(min-width: ${overflowSection}px)`;
+
+      const showBoxMaxWidth = overflowSection - 1;
+
+      variableWidth -= sectionWidth;
+      variableWidth -= 1; // Accounts for column-gap 1px
+      variableBoxWidth -= sectionBoxWidth;
+
+      const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
+
+      mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
+    }
+
+    return mediaQueries;
+  })(withStyles(styles, { withTheme: true })(Layout)));

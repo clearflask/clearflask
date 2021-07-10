@@ -67,7 +67,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'flex-end',
   },
   box: {
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     borderBottom: 'none',
   },
   billingSelect: {

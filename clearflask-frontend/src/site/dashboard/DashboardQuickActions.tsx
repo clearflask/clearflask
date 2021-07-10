@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Droppable, SensorAPI } from 'react-beautiful-dnd';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
-import { ReduxState } from '../../api/server';
+import { ReduxState, Server } from '../../api/server';
 import { Project } from '../../api/serverAdmin';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
@@ -41,7 +41,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1, 3),
     padding: theme.spacing(0.5),
     textAlign: 'center',
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     borderRadius: 6,
     transition: theme.transitions.create(['color', 'border-color', 'opacity']),
     // borderStyle: 'dashed',
@@ -88,45 +88,22 @@ const DashboardQuickActions = (props: {
   roadmap?: RoadmapInstance | null;
   dragDropSensorApi?: SensorAPI;
   draggingPostIdSubscription: Subscription<string | undefined>;
-  fallbackClickHandler?: (draggableId: string, dstDroppableId: string) => void;
+  fallbackClickHandler: (draggableId: string, dstDroppableId: string) => void;
 }) => {
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
   useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
 
   const classes = useStyles();
-  const [retainSelectedPostId, setRetainSelectedPostId] = useState<{ selected: string, retain: string }>();
   const quickActionsPostId = draggingPostId || props.selectedPostId;
   const quickActionsPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !quickActionsPostId ? undefined : state.ideas.byId[quickActionsPostId]?.idea, shallowEqual);
 
-  const onClick = async (droppableId) => {
-    if ((!!draggingPostId || !quickActionsPostId)) {
-      return;
-    }
-    // First try to drag the item with a nice visual
-    // The drop handler will do the action for us
-    const success = !!props.dragDropSensorApi && await dndDrag(
-      props.dragDropSensorApi,
-      quickActionsPostId,
-      droppableId);
-    // If that fails, just do the action with no visual
-    if (!success) {
-      props.fallbackClickHandler?.(
-        quickActionsPostId,
-        droppableId);
-    }
-  }
+  const onClick = (!!draggingPostId || !quickActionsPostId) ? undefined
+    : onClickAction(props.dragDropSensorApi, props.fallbackClickHandler, quickActionsPostId);
 
   const statusAccepted = !props.feedback?.statusIdAccepted ? undefined : props.feedback.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === props.feedback?.statusIdAccepted);
   const nextStatusIds = new Set<string>(quickActionsPost?.statusId
     && props.feedback?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === quickActionsPost?.statusId)?.nextStatusIds
     || []);
-  const canMerge = !!quickActionsPostId
-    && !quickActionsPost?.mergedToPostId
-    && quickActionsPost?.categoryId === props.feedback?.categoryAndIndex.category.categoryId;
-
-  // Don't change Similar actions during a drag, do not tie this to draggingPostId
-  const similarToPostId = retainSelectedPostId?.selected === props.selectedPostId
-    ? retainSelectedPostId?.retain : props.selectedPostId;
 
   const feedbackNextStatusActions = props.feedback?.categoryAndIndex.category.workflow.statuses
     .filter(status => status.statusId !== props.feedback?.categoryAndIndex.category.workflow.entryStatus
@@ -137,6 +114,20 @@ const DashboardQuickActions = (props: {
 
   return (
     <div className={classes.postActionsContainer}>
+      <FilterControlTitle name='Delete' className={classes.feedbackTitle} help={{
+        description: 'Deletes permanently without notifying author',
+      }} />
+      <QuickActionArea
+        key='delete'
+        isDragging={!!draggingPostId}
+        droppableId={droppableDataSerialize({
+          type: 'quick-action-delete',
+          dropbox: true,
+        })}
+        color='darkred'
+        onClick={onClick}
+        title='Delete'
+      />
       {feedbackNextStatusActions?.length && (
         <>
           <FilterControlTitle name='Change status' className={classes.feedbackTitle} help={{
@@ -154,9 +145,8 @@ const DashboardQuickActions = (props: {
                   key={status.statusId}
                   isDragging={!!draggingPostId}
                   droppableId={droppableId}
-                  disabled={!nextStatusIds.has(status.statusId)}
                   color={status.color}
-                  onClick={onClick}
+                  onClick={!nextStatusIds.has(status.statusId) ? undefined : onClick}
                   title={status.name}
                 />
               );
@@ -179,55 +169,12 @@ const DashboardQuickActions = (props: {
                   dropbox: true,
                   statusId: status.statusId,
                 })}
-                disabled={!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)}
                 color={status.color}
-                onClick={onClick}
+                onClick={(!!statusAccepted && !nextStatusIds.has(statusAccepted.statusId)) ? undefined : onClick}
                 title={status.name}
               />
             ))}
           </div>
-        </>
-      )}
-      {(!similarToPostId || !props.feedback) ? null : (
-        <>
-          <FilterControlTitle name='Merge with' className={classes.feedbackTitle} help={{
-            description: 'Merges one feedback into another, migrating all votes, subscribers and comments.',
-          }} />
-          <PostList
-            key={props.activeProject.server.getProjectId()}
-            server={props.activeProject.server}
-            search={{
-              similarToIdeaId: similarToPostId,
-              filterCategoryIds: [props.feedback.categoryAndIndex.category.categoryId],
-              limit: 5,
-            }}
-            layout='similar-merge-action'
-            onClickPost={postId => {
-              setRetainSelectedPostId({
-                selected: postId,
-                retain: similarToPostId,
-              });
-              props.onClickPost(postId);
-            }}
-            onUserClick={userId => props.onUserClick(userId)}
-            selectedPostId={props.selectedPostId}
-            PanelPostProps={{
-              renderPost: (idea, ideaIndex) => (
-                <QuickActionArea
-                  key={idea.ideaId}
-                  isDragging={!!draggingPostId}
-                  droppableId={droppableDataSerialize({
-                    type: 'quick-action-feedback-merge-duplicate',
-                    dropbox: true,
-                    postId: idea.ideaId,
-                  })}
-                  disabled={!canMerge}
-                  onClick={onClick}
-                  title={truncateWithElipsis(30, idea.title)}
-                />
-              ),
-            }}
-          />
         </>
       )}
     </div>
@@ -235,12 +182,51 @@ const DashboardQuickActions = (props: {
 }
 export default DashboardQuickActions;
 
-const QuickActionArea = (props: {
+export const MergeWithPostList = (props: {
+  server: Server;
+  selectedPostId?: string;
+  draggingPostIdSubscription: Subscription<string | undefined>;
+  dragDropSensorApi?: SensorAPI;
+  fallbackClickHandler: (draggableId: string, dstDroppableId: string) => void;
+  PostListProps?: Partial<React.ComponentProps<typeof PostList>>;
+}) => {
+  const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
+  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
+
+  const quickActionsPostId = draggingPostId || props.selectedPostId;
+  const quickActionsPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !quickActionsPostId ? undefined : state.ideas.byId[quickActionsPostId]?.idea, shallowEqual);
+  const onClick = (!quickActionsPostId || !!quickActionsPost?.mergedToPostId || !!draggingPostId) ? undefined
+    : onClickAction(props.dragDropSensorApi, props.fallbackClickHandler, quickActionsPostId);
+
+  return (
+    <PostList
+      key={props.server.getProjectId()}
+      server={props.server}
+      layout='similar-merge-action'
+      PanelPostProps={{
+        renderPost: (idea, ideaIndex) => (
+          <QuickActionArea
+            key={idea.ideaId}
+            isDragging={!!draggingPostId}
+            droppableId={droppableDataSerialize({
+              type: 'quick-action-feedback-merge-duplicate',
+              dropbox: true,
+              postId: idea.ideaId,
+            })}
+            onClick={onClick}
+            title={truncateWithElipsis(30, idea.title)}
+          />
+        ),
+      }}
+      {...props.PostListProps}
+    />
+  );
+}
+export const QuickActionArea = (props: {
   droppableId: string;
   isDragging: boolean;
   feedback?: FeedbackInstance | null;
-  onClick: (droppableId: string) => Promise<void>;
-  disabled?: boolean;
+  onClick?: (droppableId: string) => Promise<void>;
   color?: string;
   title?: string;
 }) => {
@@ -254,19 +240,19 @@ const QuickActionArea = (props: {
           <Droppable
             droppableId={props.droppableId}
             ignoreContainerClipping
-            isDropDisabled={!!props.disabled || (!isHovering && !autoDragging)}
+            isDropDisabled={!props.onClick || (!isHovering && !autoDragging)}
           >
             {(provided, snapshot) => (
               <CardActionArea
                 {...hoverAreaProps}
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                disabled={props.disabled}
+                disabled={!props.onClick}
                 className={classNames(
                   classes.postAction,
-                  props.disabled && classes.postActionDisabled,
+                  !props.onClick && classes.postActionDisabled,
                 )}
-                style={props.disabled ? {
+                style={!props.onClick ? {
                   color: theme.palette.text.disabled,
                 } : {
                   color: props.color,
@@ -274,7 +260,7 @@ const QuickActionArea = (props: {
                   background: !snapshot.isDraggingOver ? undefined : fade(props.color || theme.palette.common.black, 0.1),
                 }}
                 onClick={async e => {
-                  if (props.disabled) return;
+                  if (!props.onClick) return;
                   setAutoDragging(true);
                   try {
                     await props.onClick(props.droppableId);
@@ -294,4 +280,19 @@ const QuickActionArea = (props: {
       </HoverArea>
     </RenderControl>
   );
+}
+
+const onClickAction = (dragDropSensorApi, fallbackClickHandler, draggableId) => async (droppableId) => {
+  // First try to drag the item with a nice visual
+  // The drop handler will do the action for us
+  const success = !!dragDropSensorApi && await dndDrag(
+    dragDropSensorApi,
+    draggableId,
+    droppableId);
+  // If that fails, just do the action with no visual
+  if (!success) {
+    fallbackClickHandler?.(
+      draggableId,
+      droppableId);
+  }
 }

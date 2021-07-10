@@ -11,12 +11,21 @@ import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
+import { MutableRef } from '../../common/util/refUtil';
 import { selectorContentWrap } from '../../common/util/reselectUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerVertical from '../utils/DividerVertical';
 import Loading from '../utils/Loading';
+import LoadMoreButton from './LoadMoreButton';
 import Panel, { PanelTitle } from './Panel';
 import Post, { MaxContentWidth } from './Post';
+
+export interface PanelPostNavigator {
+  hasPrevious(): boolean;
+  previous();
+  hasNext(): boolean;
+  next();
+}
 
 export enum Direction {
   Horizontal,
@@ -80,6 +89,8 @@ export interface Props {
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
+  navigatorRef?: MutableRef<PanelPostNavigator>;
+  navigatorChanged?: () => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -94,30 +105,17 @@ interface ConnectProps {
 interface State {
   expandedPostId?: string;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> implements PanelPostNavigator {
   state: State = {};
   notifiedHasAnyCount?: number;
 
   constructor(props) {
     super(props);
 
+    if (props.navigatorRef) props.navigatorRef.current = this;
+
     if (!props.searchStatus) {
-      const searchMerged = {
-        ...(props.panel?.search || {}),
-        ...props.searchOverride,
-        ...props.searchOverrideAdmin,
-      };
-      if (!props.searchOverrideAdmin) {
-        props.server.dispatch({ ssr: true }).then(d => d.ideaSearch({
-          projectId: props.projectId,
-          ideaSearch: searchMerged,
-        }));
-      } else {
-        props.server.dispatchAdmin({ ssr: true }).then(d => d.ideaSearchAdmin({
-          projectId: props.projectId,
-          ideaSearchAdmin: searchMerged,
-        }));
-      }
+      this.loadMore();
     } else if (props.missingVotes?.length) {
       props.server.dispatch().then(d => d.ideaVoteGetOwn({
         projectId: props.projectId,
@@ -131,9 +129,42 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     }
   }
 
+  async loadMore(): Promise<undefined | Client.IdeaWithVoteSearchResponse | Admin.IdeaSearchResponse> {
+    if (!this.props.projectId) return;
+    if (!!this.props.searchStatus && !this.props.searchCursor) return;
+    if (!this.props.searchOverrideAdmin) {
+      return await (await this.props.server.dispatch({ ssr: true })).ideaSearch({
+        projectId: this.props.projectId,
+        ideaSearch: {
+          ...(this.props.panel?.search || {}),
+          ...this.props.searchOverride,
+        },
+        cursor: this.props.searchCursor,
+      });
+    } else {
+      return await (await this.props.server.dispatchAdmin({ ssr: true })).ideaSearchAdmin({
+        projectId: this.props.projectId,
+        ideaSearchAdmin: {
+          ...(this.props.panel?.search || {}),
+          ...this.props.searchOverrideAdmin,
+        } as any,
+        cursor: this.props.searchCursor,
+      });
+    }
+  }
+
   shouldComponentUpdate = customShouldComponentUpdate({
     nested: new Set(['panel', 'displayDefaults', 'searchOverride', 'searchOverrideAdmin', 'PostProps']),
   });
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!!this.props.navigatorChanged
+      && (this.props.searchCursor !== prevProps.searchCursor
+        || this.props.searchIdeas.length !== prevProps.searchIdeas.length
+        || this.props.selectedPostId !== prevProps.selectedPostId)) {
+      this.props.navigatorChanged();
+    }
+  }
 
   render() {
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
@@ -250,13 +281,21 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         break;
     }
+    if (this.props.searchCursor) {
+      content = (
+        <>
+          {content}
+          <LoadMoreButton onClick={() => this.loadMore()} />
+        </>
+      );
+    }
     const title = this.props.overrideTitle !== undefined ? this.props.overrideTitle : (!this.props.panel?.['title'] ? undefined : (
       <PanelTitle
         text={this.props.panel['title']}
         color={this.props.panel['color']}
       />
     ))
-    if (title)
+    if (title) {
       content = this.props.suppressPanel ? content : (
         <Panel
           className={classNames(this.props.className)}
@@ -268,7 +307,44 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           {content}
         </Panel>
       );
+    }
     return content;
+  }
+
+  hasPrevious(): boolean {
+    if (!this.props.selectedPostId) return false;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    return selectedIndex >= 1;
+  }
+
+  previous() {
+    if (!this.props.selectedPostId) return;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    const previousPostId = this.props.searchIdeas[selectedIndex - 1]?.ideaId;
+    if (!previousPostId) return;
+    this.props.onClickPost?.(previousPostId);
+  }
+
+  hasNext(): boolean {
+    if (!this.props.selectedPostId) return false;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    return selectedIndex !== -1
+      && (selectedIndex < (this.props.searchIdeas.length - 1) || !!this.props.searchCursor);
+  }
+
+  async next() {
+    if (!this.props.selectedPostId) return;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    if (selectedIndex === -1) return;
+    var nextPostId: string | undefined;
+    if (selectedIndex === (this.props.searchIdeas.length - 1)) {
+      const result = await this.loadMore();
+      nextPostId = result?.results[0]?.ideaId;
+    } else {
+      nextPostId = this.props.searchIdeas[selectedIndex + 1]?.ideaId;
+    }
+    if (!nextPostId) return;
+    this.props.onClickPost?.(nextPostId);
   }
 }
 
@@ -297,11 +373,13 @@ export default keyMapper(
     );
     const selectVotesStatusByIdeaId = (state: ReduxState) => state.votes.statusByIdeaId;
 
+    const selectLoggedInUser = (state: ReduxState) => state.users.loggedIn.user;
     const selectMissingVotes = selectorContentWrap(createSelector(
-      [selectSearch, selectVotesStatusByIdeaId, selectIsAdminSearch],
-      (search, votesStatusByIdeaId, isAdminSearch) => {
+      [selectSearch, selectVotesStatusByIdeaId, selectLoggedInUser, selectIsAdminSearch],
+      (search, votesStatusByIdeaId, loggedInUser, isAdminSearch) => {
         const missing: string[] = [];
-        if (isAdminSearch) return missing; // Don't get votes if calling admin search
+        // Don't get votes if calling admin search or not logged in
+        if (isAdminSearch || !loggedInUser) return missing;
         search?.ideaIds?.forEach(ideaId => {
           if (votesStatusByIdeaId[ideaId] === undefined) {
             missing.push(ideaId);
@@ -329,7 +407,7 @@ export default keyMapper(
       (state: ReduxState) => state.conf.ver,
       (state: ReduxState) => state.conf.conf,
       (state: ReduxState) => state.projectId,
-      (state: ReduxState) => state.users.loggedIn.user,
+      selectLoggedInUser,
       (missingVotes, ideas, search, configver, config, projectId, loggedInUser) => {
         const connectProps: ConnectProps = {
           config,

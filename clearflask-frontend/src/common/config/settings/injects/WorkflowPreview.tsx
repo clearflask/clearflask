@@ -11,7 +11,7 @@ import * as ConfigEditor from '../../configEditor';
 
 const styles = (theme: Theme) => createStyles({
   border: {
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     borderRadius: 4,
   },
   scroll: {

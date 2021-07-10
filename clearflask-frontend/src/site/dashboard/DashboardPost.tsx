@@ -17,14 +17,8 @@ import windowIso from '../../common/windowIso';
 import { getProjectLink } from '../Dashboard';
 
 const styles = (theme: Theme) => createStyles({
-  container: {
-    display: 'flex',
-    alignItems: 'stretch',
-    height: '100%',
-  },
-  main: {
-    display: 'flex',
-    flex: '1 1 0px',
+  post: {
+    margin: theme.spacing(4),
   },
   properties: {
     width: 268, // min size for RichEditor within
@@ -61,6 +55,21 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
   }
 
   render() {
+    return (
+      <Post
+        className={this.props.classes.post}
+        server={this.props.server}
+        idea={this.props.post}
+        variant='page'
+        onClickPost={this.props.onClickPost}
+        onUserClick={this.props.onUserClick}
+      />
+      // {this.renderProperties()} */}
+    );
+  }
+
+  /** Unused, but keeping it as it may become handy later */
+  renderProperties() {
     const nakedTextFieldProps: Partial<React.ComponentProps<typeof TextField>> = {
       InputProps: { disableUnderline: true, },
       variant: 'standard',
@@ -71,89 +80,79 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
     const postLink = (this.props.slug === undefined || !this.props.post) ? undefined
       : `${getProjectLink({ domain: this.props.domain, slug: this.props.slug })}/post/${this.props.post.ideaId}`;
     return (
-      <div className={this.props.classes.container}>
-        <Post
-          className={this.props.classes.main}
-          server={this.props.server}
-          idea={this.props.post}
-          variant='dashboard'
-          onClickPost={this.props.onClickPost}
-          onUserClick={this.props.onUserClick}
-        />
-        <div className={this.props.classes.properties}>
-          <FilterControls>
-            {this.props.post && this.renderPropertyBase('Author', (
-              <UserWithAvatarDisplay
-                user={{
-                  userId: this.props.post.authorUserId,
-                  isMod: this.props.post.authorIsMod,
-                  name: this.props.post.authorName,
-                }}
-                onClick={this.props.onUserClick}
-              />
-            ))}
-            {this.props.post && this.renderPropertyBase('Created', (
-              <TimeAgo date={this.props.post.created} />
-            ))}
+      <div className={this.props.classes.properties}>
+        <FilterControls>
+          {this.props.post && this.renderPropertyBase('Author', (
+            <UserWithAvatarDisplay
+              user={{
+                userId: this.props.post.authorUserId,
+                isMod: this.props.post.authorIsMod,
+                name: this.props.post.authorName,
+              }}
+              onClick={this.props.onUserClick}
+            />
+          ))}
+          {this.props.post && this.renderPropertyBase('Created', (
+            <TimeAgo date={this.props.post.created} />
+          ))}
 
-            {/* <div className={this.props.classes.space} /> */}
+          {/* <div className={this.props.classes.space} /> */}
 
-            {this.props.category && this.renderPropertyBase('Category', (
-              <div style={{ color: this.props.category.color }}>
-                {this.props.category.name}
-              </div>
-            ))}
-            {(!!this.props.post?.tagIds.length || CategoryTagsSelectable(this.props.category, this.props.server.isModOrAdminLoggedIn())) && (
-              <FilterControlBase name='Tags' oneLine oneLineAllowWrap>
-                <PostEditTagsInline
-                  server={this.props.server}
-                  post={this.props.post}
-                  TextFieldProps={{
-                    ...nakedTextFieldProps,
-
-                    className: classNames(
-                      this.props.classes.property,
-                      this.props.classes.fixBaseline
-                    ),
-                  }}
-                />
-              </FilterControlBase>
-            )}
-            <FilterControlBase name='Status' oneLine oneLineAllowWrap>
-              <PostEditStatusAndResponseInline
+          {this.props.category && this.renderPropertyBase('Category', (
+            <div style={{ color: this.props.category.color }}>
+              {this.props.category.name}
+            </div>
+          ))}
+          {(!!this.props.post?.tagIds.length || CategoryTagsSelectable(this.props.category, this.props.server.isModOrAdminLoggedIn())) && (
+            <FilterControlBase name='Tags' oneLine oneLineAllowWrap>
+              <PostEditTagsInline
                 server={this.props.server}
                 post={this.props.post}
-                TextFieldPropsStatus={{
+                TextFieldProps={{
                   ...nakedTextFieldProps,
+
                   className: classNames(
                     this.props.classes.property,
                     this.props.classes.fixBaseline
                   ),
                 }}
-                RichEditorPropsResponse={{
-                  label: undefined,
-                }}
-                showResponseOnlyWithStatus
               />
             </FilterControlBase>
+          )}
+          <FilterControlBase name='Status' oneLine oneLineAllowWrap>
+            <PostEditStatusAndResponseInline
+              server={this.props.server}
+              post={this.props.post}
+              TextFieldPropsStatus={{
+                ...nakedTextFieldProps,
+                className: classNames(
+                  this.props.classes.property,
+                  this.props.classes.fixBaseline
+                ),
+              }}
+              RichEditorPropsResponse={{
+                label: undefined,
+              }}
+              showResponseOnlyWithStatus
+            />
+          </FilterControlBase>
 
-            {/* <div className={this.props.classes.space} /> */}
+          {/* <div className={this.props.classes.space} /> */}
 
-            {!!postLink && this.renderPropertyTextField(
-              'Link',
-              postLink,
-              nakedTextFieldProps,
-              true,
-              true,
-            )}
-            {!!this.props.post && this.renderPropertyTextField(
-              'ID',
-              this.props.post.ideaId,
-              nakedTextFieldProps,
-              true,
-            )}
-          </FilterControls>
-        </div>
+          {!!postLink && this.renderPropertyTextField(
+            'Link',
+            postLink,
+            nakedTextFieldProps,
+            true,
+            true,
+          )}
+          {!!this.props.post && this.renderPropertyTextField(
+            'ID',
+            this.props.post.ideaId,
+            nakedTextFieldProps,
+            true,
+          )}
+        </FilterControls>
       </div>
     );
   }

@@ -120,7 +120,7 @@ const styles = (theme: Theme) => createStyles({
   },
   responseHeader: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'baseline',
   },
   responseContainerList: {
     marginTop: theme.spacing(2),
@@ -229,7 +229,7 @@ const styles = (theme: Theme) => createStyles({
     height: 16,
   },
   popover: {
-    outline: '1px solid ' + theme.palette.grey[300],
+    outline: '1px solid ' + theme.palette.divider,
   },
   moreContainer: {
     lineHeight: 'unset',
@@ -255,6 +255,11 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  headerBarLine: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
   },
   grow: {
     flexGrow: 1,
@@ -466,7 +471,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             )}
             style={{
               minWidth: MinContentWidth,
-              width: (this.props.widthExpand || this.props.variant !== 'list') ? MaxContentWidth : MinContentWidth,
+              width: this.props.widthExpand ? MaxContentWidth : (this.props.variant !== 'list' ? 'max-content' : MinContentWidth),
               maxWidth: this.props.widthExpand ? '100%' : MaxContentWidth,
             }}
             onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
@@ -523,19 +528,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ].filter(notEmpty);
 
       rightSide = [
+        this.renderCommentAdd(),
         this.renderEdit(),
-        this.renderStatus(),
-        ...(this.renderTags() || []),
-        this.renderCategory(),
       ].filter(notEmpty);
     } else {
       leftSide = [
         this.renderVoting() || this.renderVotingCount(),
         this.renderExpressionCount(),
         this.renderCommentCount(),
-        this.renderStatus(),
-        ...(this.renderTags() || []),
-        this.renderCategory(),
       ].filter(notEmpty);
     }
 
@@ -563,12 +563,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.renderIsLink(),
       this.renderAuthor(),
       this.renderCreatedDatetime(),
+      this.renderStatus(),
+      ...(this.renderTags() || []),
+      this.renderCategory(),
     ].filter(notEmpty);
 
     if (!header.length) return null;
 
     return (
-      <div className={this.props.classes.bottomBarLine}>
+      <div className={this.props.classes.headerBarLine}>
         <Delimited delimiter=' '>
           {header}
         </Delimited>
@@ -590,6 +593,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             name: this.props.idea.authorName,
             isMod: this.props.idea.authorIsMod
           }}
+          baseline
         />
       </Typography>
     );
@@ -694,7 +698,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <div key='comments' className={this.props.classes.commentSection}>
-        {this.renderCommentAdd()}
         {commentsAllowed && (
           <CommentReply
             server={this.props.server}
@@ -799,8 +802,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderCategory() {
-    if (this.props.variant === 'dashboard'
-      || this.props.variant === 'list' && this.props.display && this.props.display.showCategoryName === false
+    // Don't show unlesss explictly asked for
+    if (this.props.display?.showCategoryName !== true
       || !this.props.idea
       || !this.props.category) return null;
 
@@ -1299,6 +1302,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               name: this.props.idea.responseAuthorName,
               isMod: true
             } : undefined}
+            baseline
           />
         </div>
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${this.props.variant !== 'list' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>

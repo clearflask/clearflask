@@ -8,7 +8,6 @@ import UserDisplay from './UserDisplay';
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'flex-start',
     margin: theme.spacing(0.5, 1),
   },
@@ -36,6 +35,7 @@ const UserWithAvatarDisplay = (props: {
   backgroundColor?: 'default' | 'paper' | 'inherit';
   avatarSize?: number;
   fontSize?: string | number;
+  baseline?: boolean;
 }) => {
   const classes = useStyles();
   return (
@@ -45,6 +45,9 @@ const UserWithAvatarDisplay = (props: {
         classes.container,
         !!props.onClick && classes.containerClickable,
       )}
+      style={{
+        alignItems: props.baseline ? 'baseline' : 'center',
+      }}
       onClick={() => props.user?.userId && props.onClick?.(props.user.userId)}
     >
       <AvatarDisplay

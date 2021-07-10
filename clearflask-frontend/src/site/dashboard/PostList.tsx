@@ -44,8 +44,8 @@ interface Props {
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
   selectedPostId?: string;
-  onClickPost: (postId: string) => void;
-  onUserClick: (userId: string) => void;
+  onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
   layout?: 'similar-merge-action';
   scroll?: boolean;
   displayOverride?: Admin.PostDisplay;

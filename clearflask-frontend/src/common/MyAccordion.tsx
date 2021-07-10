@@ -5,7 +5,7 @@ import React from 'react';
 const styles = (theme: Theme) => createStyles({
   accordion: {
     marginTop: -1,
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     '&::before': {
       display: 'none',
     },

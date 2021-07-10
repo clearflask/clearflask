@@ -6,6 +6,9 @@ import { OpenPost, ShowSnackbar } from "../Dashboard";
 
 export const DroppableWithDataPrefix = 'data-';
 export type DroppableData = {
+  type: 'quick-action-delete';
+  dropbox: true; // Shows shrinking drop animation
+} | {
   type: 'quick-action-feedback-change-status';
   dropbox: true; // Shows shrinking drop animation
   statusId: string;
@@ -142,6 +145,15 @@ export const dashboardOnDragEnd = async (
 
   var dispatcherAdmin: Admin.Dispatcher | undefined;
   switch (dstDroppable.type) {
+
+    case 'quick-action-delete':
+      dispatcherAdmin = await activeProject.server.dispatchAdmin();
+      await dispatcherAdmin.ideaDeleteAdmin({
+        projectId: activeProject.projectId,
+        ideaId: srcPost.ideaId,
+      });
+      removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
+      return true;
 
     case 'quick-action-feedback-change-status':
       dispatcherAdmin = await activeProject.server.dispatchAdmin();

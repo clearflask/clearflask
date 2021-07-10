@@ -16,7 +16,7 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.down('sm')]: {
       padding: theme.spacing(1, 2),
     },
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     borderRadius: 6,
   },
 });

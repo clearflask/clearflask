@@ -13,7 +13,7 @@ import Property from './Property';
 
 const styles = (theme: Theme) => createStyles({
   table: {
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
     display: 'inline-block',
   },
   tableMargins: {

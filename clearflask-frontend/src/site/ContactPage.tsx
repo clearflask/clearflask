@@ -38,7 +38,7 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'flex-end',
   },
   box: {
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
   },
   growAndFlex: {
     flexGrow: 1,

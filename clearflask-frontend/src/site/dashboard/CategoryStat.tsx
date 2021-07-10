@@ -12,7 +12,7 @@ const styles = (theme: Theme) => createStyles({
       color: theme.palette.text.primary,
       background: theme.palette.background.paper + '!important',
       boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
-      border: '1px solid ' + theme.palette.grey[300],
+      border: '1px solid ' + theme.palette.divider,
       padding: theme.spacing(0, 1.5),
     },
   },

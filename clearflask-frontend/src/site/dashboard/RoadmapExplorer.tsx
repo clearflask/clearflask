@@ -35,10 +35,10 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 0,
   },
   roadmapContainerNoBoxLayout: {
-    borderLeft: '1px solid ' + theme.palette.grey[300],
-    borderRight: '1px solid ' + theme.palette.grey[300],
+    borderLeft: '1px solid ' + theme.palette.divider,
+    borderRight: '1px solid ' + theme.palette.divider,
     '& > *:last-child': {
-      borderTop: '1px solid ' + theme.palette.grey[300],
+      borderTop: '1px solid ' + theme.palette.divider,
     },
   },
   actionColumn: {
@@ -55,7 +55,7 @@ const styles = (theme: Theme) => createStyles({
   },
   actionColumnBoxLayout: {
     '& > $dropbox': {
-      ...BoxLayoutBoxApplyStyles,
+      ...BoxLayoutBoxApplyStyles(theme),
     },
     '& > *:not(:first-child)': {
       marginTop: BOX_MARGIN,
@@ -63,7 +63,7 @@ const styles = (theme: Theme) => createStyles({
   },
   actionColumnBoxLayoutNot: {
     '& > *:not(:first-child)': {
-      borderTop: '1px solid ' + theme.palette.grey[300],
+      borderTop: '1px solid ' + theme.palette.divider,
     },
   },
   dropbox: {
@@ -81,7 +81,7 @@ const styles = (theme: Theme) => createStyles({
     flexBasis: '0px',
   },
   boxLayout: {
-    ...BoxLayoutBoxApplyStyles,
+    ...BoxLayoutBoxApplyStyles(theme),
   },
   panel: {
     display: 'flex',
@@ -228,7 +228,7 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
                 {!this.props.publicViewOnly && (
                   <>
                     &nbsp;
-                  <HelpPopper description={
+                    <HelpPopper description={
                       'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
                       + (this.props.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
                     } />
@@ -377,7 +377,10 @@ class RoadmapExplorer extends Component<Props & ConnectProps & WithStyles<typeof
         }}>
           {name}
           {expandableStateKey && (
-            <ExpandIcon expanded={this.state[expandableStateKey] === key} onExpandChanged={exp => this.setState({ [expandableStateKey]: exp ? key : undefined })} />
+            <ExpandIcon
+              expanded={this.state[expandableStateKey] === key}
+              onExpandChanged={exp => this.setState({ [expandableStateKey]: exp ? key : undefined })}
+            />
           )}
         </Typography>
         {children}

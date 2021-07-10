@@ -43,7 +43,7 @@ const styles = (theme: Theme) => createStyles({
   },
   box: {
     transition: theme.transitions.create('border'),
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
   },
   boxSelected: {
     borderColor: theme.palette.primary.main,
@@ -165,7 +165,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
             &nbsp;&nbsp;
             <Typography component='h2' variant='h4' className={this.props.classes.customInput}>{this.props.customPrice || 'Custom'}</Typography>
-              &nbsp;&nbsp;
+            &nbsp;&nbsp;
             <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
           </div>
           <div className={this.props.classes.cardPricingTerms}>

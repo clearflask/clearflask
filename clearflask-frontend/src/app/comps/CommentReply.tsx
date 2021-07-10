@@ -1,5 +1,6 @@
 import { Button, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Server } from '../../api/server';
 import RichEditor from '../../common/RichEditor';
@@ -11,9 +12,19 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-flex',
     flexDirection: 'column',
     margin: theme.spacing(1, 0),
-    width: '100%',
-    maxWidth: 300,
     alignItems: 'flex-end',
+    /**
+     * Width is complicated here:
+     * - Should not be less than 300 unless parent is shorter: minWidth: min(100%, 300px)
+     * - Should be default 300 and expand with text content: width: max-content
+     * - Should be max 600 unless parent is shorter: maxWidth 100% AND 600px spread out in addCommentFormOuter
+     */
+    minWidth: 'min(100%, 300px)',
+    width: 'max-content',
+    maxWidth: '100%',
+  },
+  addCommentFormOuter: {
+    maxWidth: 600,
   },
   addCommentField: {
     transition: theme.transitions.create('width'),
@@ -68,7 +79,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
     return (
       <Collapse
         in={this.props.collapseIn !== false}
-        className={this.props.className}
+        className={classNames(this.props.className, this.props.classes.addCommentFormOuter)}
       >
         <div className={this.props.classes.addCommentForm}>
           <RichEditor

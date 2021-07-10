@@ -99,7 +99,7 @@ const styles = (theme: Theme) => createStyles({
     height: 300,
     display: 'flex',
     boxShadow: '-10px 30px 40px 0 rgba(0,0,0,0.1)',
-    // border: '1px solid ' + theme.palette.grey[300],
+    // border: '1px solid ' + theme.palette.divider,
     margin: theme.spacing(2),
     padding: theme.spacing(2),
     flexDirection: 'column',

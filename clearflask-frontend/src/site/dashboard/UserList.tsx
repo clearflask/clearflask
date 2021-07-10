@@ -95,7 +95,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
               {this.props.searchResult.users.map(user => (
                 <React.Fragment key={user.userId}>
                   <UserWithAvatarDisplay
-                    backgroundColor='inherit'
+                    backgroundColor='default'
                     className={classNames(
                       this.props.classes.user,
                       this.props.selectedUserId === user.userId && this.props.classes.userSelected,

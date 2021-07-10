@@ -15,7 +15,7 @@ const styles = (theme: Theme) => createStyles({
     flex: '1 1 150px',
     minWidth: '150px',
     maxWidth: '250px',
-    border: '1px solid ' + theme.palette.grey[300],
+    border: '1px solid ' + theme.palette.divider,
   },
 });
 

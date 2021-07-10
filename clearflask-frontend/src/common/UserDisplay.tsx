@@ -75,7 +75,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
     }
     if (!this.props.suppressTypography) {
       user = (
-        <Typography noWrap variant='body1'>
+        <Typography noWrap variant='body1' component='div' style={{ lineHeight: 1 }}>
           {user}
         </Typography>
       );
