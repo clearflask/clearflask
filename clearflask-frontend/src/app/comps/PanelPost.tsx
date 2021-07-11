@@ -22,9 +22,11 @@ import Post, { MaxContentWidth } from './Post';
 
 export interface PanelPostNavigator {
   hasPrevious(): boolean;
-  previous();
+  getPreviousId(): string | undefined;
+  previous(): boolean;
   hasNext(): boolean;
-  next();
+  getNextId(): Promise<string | undefined>;
+  next(): Promise<boolean>;
 }
 
 export enum Direction {
@@ -170,116 +172,110 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
       ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
+    const hasAny = !!this.props.searchIdeas.length;
     var content;
-    switch (this.props.searchStatus) {
-      default:
-      case Status.REJECTED:
-        content = (
-          <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
-            <ErrorMsg msg='Failed to load' />
-          </div>
-        );
-        break;
-      case Status.PENDING:
-        if (hideIfEmpty) return null;
-        content = (
-          <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
-            <Loading />
-          </div>
-        );
-        break;
-      case Status.FULFILLED:
-        const hasAny = !!this.props.searchIdeas.length;
-        if (!!this.props.onHasAnyChanged && (this.notifiedHasAnyCount !== this.props.searchIdeas.length)) {
-          this.notifiedHasAnyCount = this.props.searchIdeas.length;
-          this.props.onHasAnyChanged(hasAny, this.props.searchIdeas.length);
-        }
+    if (!this.props.searchStatus || this.props.searchStatus === Status.REJECTED) {
+      content = (
+        <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
+          <ErrorMsg msg='Failed to load' />
+        </div>
+      );
+    } else if (hideIfEmpty && !hasAny) {
+      return null;
+    } else if (this.props.searchStatus === Status.PENDING && !hasAny) {
+      content = (
+        <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
+          <Loading />
+        </div>
+      );
+    } else {
+      if (!!this.props.onHasAnyChanged && (this.notifiedHasAnyCount !== this.props.searchIdeas.length)) {
+        this.notifiedHasAnyCount = this.props.searchIdeas.length;
+        this.props.onHasAnyChanged(hasAny, this.props.searchIdeas.length);
+      }
 
-        if (hideIfEmpty && !hasAny) return null;
+      const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
+        || (this.props.panel?.search?.filterCategoryIds?.length === 1));
 
-        const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
-          || (this.props.panel?.search?.filterCategoryIds?.length === 1));
+      const display: Client.PostDisplay = {
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 2,
+        ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
+        ...(this.props.displayDefaults || {}),
+        ...(this.props.panel?.display || {}),
+      }
 
-        const display: Client.PostDisplay = {
-          titleTruncateLines: 1,
-          descriptionTruncateLines: 2,
-          ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
-          ...(this.props.displayDefaults || {}),
-          ...(this.props.panel?.display || {}),
-        }
-
-        const onClickPost = (!this.props.onClickPost && !this.props.onClickPostExpand) ? undefined : postId => {
-          this.props.onClickPost?.(postId);
-          this.props.onClickPostExpand && this.setState({ expandedPostId: postId === this.state.expandedPostId ? undefined : postId });
-        };
-        content = this.props.searchIdeas.map((idea, ideaIndex) => {
-          var content: React.ReactNode;
-          if (this.props.renderPost) {
-            content = this.props.renderPost(idea, ideaIndex);
-          } else {
-            const displayForThisPost = this.state.expandedPostId !== idea.ideaId ? display : {
-              ...display,
-              titleTruncateLines: undefined,
-              descriptionTruncateLines: undefined,
-            };
-            content = (
-              <Post
-                key={idea.ideaId}
-                className={classNames(
-                  this.props.widthExpand && widthExpandMarginClassName,
-                  this.props.postClassName,
-                  this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
-                )}
-                server={this.props.server}
-                idea={idea}
-                widthExpand={this.props.widthExpand}
-                expandable
-                disableOnClick={this.props.disableOnClick}
-                onClickPost={onClickPost}
-                onUserClick={this.props.onUserClick}
-                display={displayForThisPost}
-                variant='list'
-                {...this.props.PostProps}
-              />
-            );
-          }
-          if (this.props.wrapPost) {
-            content = (
-              <React.Fragment key={idea.ideaId}>
-                {this.props.wrapPost(idea, content, ideaIndex)}
-              </React.Fragment>
-            );
-          }
-          return content;
-        });
-        if (this.props.showDivider) {
-          content = content.map(post => (
-            <>
-              {post}
-              {this.props.direction === Direction.Vertical
-                ? (<Divider />)
-                : (<DividerVertical />)
-              }
-            </>
-          ));
-        }
-        if (!this.props.searchIdeas.length) {
+      const onClickPost = (!this.props.onClickPost && !this.props.onClickPostExpand) ? undefined : postId => {
+        this.props.onClickPost?.(postId);
+        this.props.onClickPostExpand && this.setState({ expandedPostId: postId === this.state.expandedPostId ? undefined : postId });
+      };
+      content = this.props.searchIdeas.map((idea, ideaIndex) => {
+        var content: React.ReactNode;
+        if (this.props.renderPost) {
+          content = this.props.renderPost(idea, ideaIndex);
+        } else {
+          const displayForThisPost = this.state.expandedPostId !== idea.ideaId ? display : {
+            ...display,
+            titleTruncateLines: undefined,
+            descriptionTruncateLines: undefined,
+          };
           content = (
-            <>
-              {content}
-              <div
-                className={classNames(
-                  this.props.widthExpand && widthExpandMarginClassName,
-                  this.props.classes.placeholder,
-                )}
-              >
-                <Typography variant='overline' style={{
-                }}>Nothing found</Typography>
-              </div>
-            </>
+            <Post
+              key={idea.ideaId}
+              className={classNames(
+                this.props.widthExpand && widthExpandMarginClassName,
+                this.props.postClassName,
+                this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
+              )}
+              server={this.props.server}
+              idea={idea}
+              widthExpand={this.props.widthExpand}
+              expandable
+              disableOnClick={this.props.disableOnClick}
+              onClickPost={onClickPost}
+              onUserClick={this.props.onUserClick}
+              display={displayForThisPost}
+              variant='list'
+              {...this.props.PostProps}
+            />
           );
         }
-        break;
+        if (this.props.wrapPost) {
+          content = (
+            <React.Fragment key={idea.ideaId}>
+              {this.props.wrapPost(idea, content, ideaIndex)}
+            </React.Fragment>
+          );
+        }
+        return content;
+      });
+      if (this.props.showDivider) {
+        content = content.map(post => (
+          <>
+            {post}
+            {this.props.direction === Direction.Vertical
+              ? (<Divider />)
+              : (<DividerVertical />)
+            }
+          </>
+        ));
+      }
+      if (!this.props.searchIdeas.length) {
+        content = (
+          <>
+            {content}
+            <div
+              className={classNames(
+                this.props.widthExpand && widthExpandMarginClassName,
+                this.props.classes.placeholder,
+              )}
+            >
+              <Typography variant='overline' style={{
+              }}>Nothing found</Typography>
+            </div>
+          </>
+        );
+      }
     }
     if (this.props.searchCursor) {
       content = (
@@ -294,9 +290,14 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         text={this.props.panel['title']}
         color={this.props.panel['color']}
       />
-    ))
-    if (title) {
-      content = this.props.suppressPanel ? content : (
+    ));
+    if (title !== undefined) {
+      content = this.props.suppressPanel ? (
+        <>
+          {title}
+          {content}
+        </>
+      ) : (
         <Panel
           className={classNames(this.props.className)}
           title={title}
@@ -317,12 +318,19 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return selectedIndex >= 1;
   }
 
-  previous() {
-    if (!this.props.selectedPostId) return;
+  getPreviousId(): string | undefined {
+    if (!this.props.selectedPostId) return undefined;
     const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
     const previousPostId = this.props.searchIdeas[selectedIndex - 1]?.ideaId;
-    if (!previousPostId) return;
-    this.props.onClickPost?.(previousPostId);
+    return previousPostId;
+  }
+
+  previous(): boolean {
+    if (!this.props.onClickPost) return false;
+    const previousPostId = this.getPreviousId();
+    if (!previousPostId) return false;
+    this.props.onClickPost(previousPostId);
+    return true;
   }
 
   hasNext(): boolean {
@@ -332,10 +340,10 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       && (selectedIndex < (this.props.searchIdeas.length - 1) || !!this.props.searchCursor);
   }
 
-  async next() {
-    if (!this.props.selectedPostId) return;
+  async getNextId(): Promise<string | undefined> {
+    if (!this.props.selectedPostId) return undefined;
     const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
-    if (selectedIndex === -1) return;
+    if (selectedIndex === -1) return undefined;
     var nextPostId: string | undefined;
     if (selectedIndex === (this.props.searchIdeas.length - 1)) {
       const result = await this.loadMore();
@@ -343,8 +351,15 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     } else {
       nextPostId = this.props.searchIdeas[selectedIndex + 1]?.ideaId;
     }
-    if (!nextPostId) return;
-    this.props.onClickPost?.(nextPostId);
+    return nextPostId;
+  }
+
+  async next(): Promise<boolean> {
+    if (!this.props.onClickPost) return false;
+    const nextPostId = await this.getNextId();
+    if (!nextPostId) return false;
+    this.props.onClickPost(nextPostId);
+    return true;
   }
 }
 

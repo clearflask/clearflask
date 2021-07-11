@@ -1,13 +1,16 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
 import CodeIcon from '@material-ui/icons/Code';
+import PrevIcon from '@material-ui/icons/NavigateBefore';
+import NextIcon from '@material-ui/icons/NavigateNext';
 import SettingsIcon from '@material-ui/icons/Settings';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
+import classNames from 'classnames';
 import { VariantType, withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
@@ -54,11 +57,11 @@ import windowIso from '../common/windowIso';
 import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
-import { dashboardOnDragEnd, droppableDataSerialize } from './dashboard/dashboardDndActionHandler';
+import { dashboardOnDragEnd, droppableDataSerialize, OnDndHandled } from './dashboard/dashboardDndActionHandler';
 import DashboardHome from './dashboard/DashboardHome';
 import DashboardPost from './dashboard/DashboardPost';
 import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
-import DashboardQuickActions, { MergeWithPostList } from './dashboard/DashboardQuickActions';
+import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './dashboard/DashboardQuickActions';
 import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import DragndropPostList from './dashboard/DragndropPostList';
 import PostList from './dashboard/PostList';
@@ -192,10 +195,16 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'space-between',
   },
   feedbackColumnRelated: {
+    flex: '1 1 0px',
     width: 200,
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+  },
+  feedbackNavigatorIcon: {
+    fontSize: '2.5em',
+  },
+  feedbackQuickActionsTopMargin: {
+    marginTop: theme.spacing(8),
   },
   listWithSearchContainer: {
     minWidth: 0,
@@ -244,10 +253,8 @@ interface State {
   explorerPostSearch?: AdminClient.IdeaSearchAdmin;
   explorerPreview?: { type: 'create' } | { type: 'post', id: string },
   feedbackPostSearch?: AdminClient.IdeaSearchAdmin;
-  feedbackRelatedFeedbackPostSearch?: AdminClient.IdeaSearchAdmin;
-  feedbackRelatedTaskPostSearch?: AdminClient.IdeaSearchAdmin;
   feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
-  feedbackPreviewRight?: { type: 'create' } | { type: 'post', id: string },
+  feedbackPreviewRight?: { type: 'create' } | { type: 'post', id: string, header: string },
   roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
   roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
   changelogPostSearch?: AdminClient.IdeaSearchAdmin;
@@ -421,6 +428,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var previewOnClose: (() => void) | undefined;
     var showProjectLink: boolean = false;
     var showCreateProjectWarning: boolean = false;
+    var onDndHandled: OnDndHandled | undefined;
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
@@ -575,8 +583,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
         }
         preview.header = {
-          left: { title: 'Explore' },
-          right: { label: 'Create', onClick: () => this.pageClicked('post') },
+          title: { title: 'Explore' },
+          action: { label: 'Create', onClick: () => this.pageClicked('post') },
         };
         sections.push(preview);
 
@@ -589,94 +597,60 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           break;
         }
 
-        const fallbackClickHandler = (draggableId, dstDroppableId) => {
-          if (!activeProject
-            || this.state.feedbackPreview?.type !== 'post') return;
-          dashboardOnDragEnd(
-            activeProject,
-            feedbackPostListDroppableId,
-            0,
-            draggableId,
-            dstDroppableId,
-            0,
-            this.openPost.bind(this),
-            this.showSnackbar.bind(this),
-            this.state.feedback || undefined,
-            this.state.roadmap || undefined);
-        };
-        const renderColumnRelated = (type: 'feedback' | 'task'): Section | undefined => {
-          const feedbackRelatedSearchStateName: keyof State = type === 'feedback' ? 'feedbackRelatedFeedbackPostSearch' : 'feedbackRelatedTaskPostSearch';
-          const categoryId = type === 'feedback' ? this.state.feedback?.categoryAndIndex.category.categoryId : this.state.roadmap?.categoryAndIndex.category.categoryId;
-          if (!categoryId) return undefined;
-          const feedbackRelatedSearch = this.state[feedbackRelatedSearchStateName] || {
-            sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
-            filterCategoryIds: [categoryId],
-            similarToIdeaId: this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined,
-          };
+        onDndHandled = async (to, post, createdId) => {
+          // Open next posts
+          const success = await this.feedbackListRef.current?.next();
 
-          const contentRelated = (
-            <div className={this.props.classes.feedbackColumnRelated}>
-              <DashboardSearchControls
-                placeholder='Search for feedback'
-                key={'feedback-search-bar' + activeProject.server.getProjectId()}
-                searchText={feedbackRelatedSearch.searchText || ''}
-                onSearchChanged={searchText => this.setState({
-                  [feedbackRelatedSearchStateName]: {
-                    ...this.state[feedbackRelatedSearchStateName],
-                    searchText,
-                  }
-                } as any)}
-                filters={(
-                  <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                    <DashboardPostFilterControls
-                      key={activeProject.server.getProjectId()}
-                      server={activeProject.server}
-                      search={feedbackRelatedSearch}
-                      allowSearch={{ enableSearchByCategory: false }}
-                      permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
-                      onSearchChanged={feedbackRelatedSearch => this.setState({ [feedbackRelatedSearchStateName]: feedbackRelatedSearch } as any)}
-                      horizontal
-                    />
-                  </Provider>
-                )}
-              />
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <MergeWithPostList
-                  key={activeProject.server.getProjectId()}
-                  server={activeProject.server}
-                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                  draggingPostIdSubscription={this.draggingPostIdSubscription}
-                  dragDropSensorApi={this.state.dragDropSensorApi}
-                  fallbackClickHandler={fallbackClickHandler}
-                  PostListProps={{
-                    search: feedbackRelatedSearch,
-                  }}
-                />
-              </Provider>
-            </div>
-          );
+          // If not next post, at least close the current one 
+          if (!success) this.setState({ feedbackPreview: undefined });
 
-          return {
-            name: `related-${type}`,
-            breakAction: 'hide', breakPriority: type === 'feedback' ? 20 : 30,
-            size: { breakWidth: 200, flexGrow: 20, maxWidth: 'max-content', scroll: Orientation.Vertical },
-            noPaper: true, collapseRight: true, collapseLeft: type === 'feedback', collapseTopBottom: true,
-            content: contentRelated,
-          };
-        };
-
-        var sectionPreview: Section;
-        if (this.state.feedbackPreview?.type === 'create') {
-          sectionPreview = this.renderPreviewPostCreate(activeProject);
-        } else if (this.state.feedbackPreview?.type === 'post') {
-          sectionPreview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
-        } else {
-          sectionPreview = this.renderPreviewEmpty('No feedback selected', PostPreviewSize);
-        }
-        sectionPreview.breakAction = 'show';
-        sectionPreview.header = {
-          left: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
-          right: { label: 'Create', onClick: () => this.pageClicked('post') },
+          // Show snackbar for certain actions
+          if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
+            this.showSnackbar({
+              key: to.type + post.ideaId,
+              message: 'Converted to task',
+              actions: [{
+                title: 'Open task',
+                onClick: close => {
+                  close();
+                  this.setState({
+                    feedbackPreviewRight: { type: 'post', id: createdId, header: 'Created task' },
+                    previewShowOnPage: 'feedback',
+                  });
+                },
+              }]
+            });
+          } else if (to.type === 'quick-action-feedback-merge-duplicate') {
+            this.showSnackbar({
+              key: to.type + post.ideaId,
+              message: 'Merged with duplicate',
+              actions: [{
+                title: 'Open feedback',
+                onClick: close => {
+                  close();
+                  this.setState({
+                    feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Merged feedback' },
+                    previewShowOnPage: 'feedback',
+                  });
+                },
+              }]
+            });
+          } else if (to.type === 'quick-action-feedback-link-with-task-and-accept') {
+            this.showSnackbar({
+              key: to.type + post.ideaId,
+              message: 'Linked with task',
+              actions: [{
+                title: 'Open task',
+                onClick: close => {
+                  close();
+                  this.setState({
+                    feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Linked task' },
+                    previewShowOnPage: 'feedback',
+                  });
+                },
+              }]
+            });
+          }
         };
 
         const feedbackPostSearch = this.state.feedbackPostSearch || {
@@ -689,6 +663,138 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
           this.similarPostWasClicked = undefined;
         }
+        const feedbackPostListDroppableId = droppableDataSerialize({
+          type: 'feedback-search',
+          searchKey: getSearchKey(feedbackPostSearch),
+        });
+        const fallbackClickHandler: FallbackClickHandler = async (draggableId, dstDroppableId) => {
+          if (!activeProject
+            || this.state.feedbackPreview?.type !== 'post') return false;
+          return await dashboardOnDragEnd(
+            activeProject,
+            feedbackPostListDroppableId,
+            0,
+            draggableId,
+            dstDroppableId,
+            0,
+            this.state.feedback || undefined,
+            this.state.roadmap || undefined,
+            onDndHandled);
+        };
+        const renderRelatedContent = (type: 'feedback' | 'task'): React.ReactNode | null => {
+          if (this.state.feedbackPreview?.type !== 'post') return null;
+          const categoryId = type === 'feedback' ? this.state.feedback?.categoryAndIndex.category.categoryId : this.state.roadmap?.categoryAndIndex.category.categoryId;
+          if (!categoryId) return null;
+          return (
+            <div className={this.props.classes.feedbackColumnRelated}>
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <QuickActionPostList
+                  key={activeProject.server.getProjectId()}
+                  server={activeProject.server}
+                  title={type === 'feedback' ? {
+                    name: 'Merge feedback',
+                    helpDescription: 'Merge with another duplicate feedback. Content, comments, votes and subscribers will all be merged in.',
+                  } : {
+                    name: 'Link to task',
+                    helpDescription: 'Link with a related task and mark feedback as accepted. Subscribers will be notified.',
+                  }}
+                  getDroppableId={post => {
+                    if (post.categoryId === this.state.feedback?.categoryAndIndex.category.categoryId) {
+                      return droppableDataSerialize({
+                        type: 'quick-action-feedback-merge-duplicate',
+                        dropbox: true,
+                        postId: post.ideaId,
+                      });
+                    } else if (post.categoryId === this.state.roadmap?.categoryAndIndex.category.categoryId) {
+                      return droppableDataSerialize({
+                        type: 'quick-action-feedback-link-with-task-and-accept',
+                        dropbox: true,
+                        postId: post.ideaId,
+                      });
+                    }
+                    return undefined;
+                  }}
+                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                  draggingPostIdSubscription={this.draggingPostIdSubscription}
+                  dragDropSensorApi={this.state.dragDropSensorApi}
+                  fallbackClickHandler={fallbackClickHandler}
+                  statusColorGivenCategoies={new Set([categoryId])}
+                  PostListProps={{
+                    hideIfEmpty: true,
+                    search: {
+                      sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
+                      filterCategoryIds: [categoryId],
+                      limit: 3,
+                      similarToIdeaId: this.state.feedbackPreview.id,
+                    },
+                  }}
+                />
+              </Provider>
+            </div>
+          );
+        };
+        const sectionRelated: Section = {
+          name: `related`,
+          breakAction: 'hide', breakPriority: 30,
+          size: { breakWidth: 200, flexGrow: 0, maxWidth: 'max-content', scroll: Orientation.Vertical },
+          noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
+          content: layoutState => (
+            <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
+              {renderRelatedContent('task')}
+              {renderRelatedContent('feedback')}
+            </div>
+          ),
+        };
+
+        var sectionPreview: Section;
+        if (this.state.feedbackPreview?.type === 'create') {
+          sectionPreview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.feedbackPreview?.type === 'post') {
+          sectionPreview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
+        } else {
+          sectionPreview = this.renderPreviewEmpty('No feedback selected', PostPreviewSize);
+        }
+        sectionPreview.collapseBottom = true;
+        sectionPreview.breakAction = 'show';
+        sectionPreview.header = {
+          title: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
+          middle: (
+            <Fade in={this.state.feedbackPreview?.type === 'post'}>
+              <div>
+                <IconButton
+                  className={this.props.classes.feedbackNavigatorIcon}
+                  disabled={!this.feedbackListRef.current?.hasPrevious()}
+                  onClick={() => this.feedbackListRef.current?.previous()}
+                >
+                  <PrevIcon fontSize='inherit' />
+                </IconButton>
+                <IconButton
+                  className={this.props.classes.feedbackNavigatorIcon}
+                  disabled={!this.feedbackListRef.current?.hasNext()}
+                  onClick={() => this.feedbackListRef.current?.next()}
+                >
+                  <NextIcon fontSize='inherit' />
+                </IconButton>
+              </div>
+            </Fade>
+          ),
+          action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        };
+
+        var sectionPreviewRight: Section | undefined;
+        if (this.state.feedbackPreviewRight?.type === 'create') {
+          sectionPreviewRight = this.renderPreviewPostCreate(activeProject);
+          sectionPreviewRight.header = { title: { title: 'New task' } };
+        } else if (this.state.feedbackPreviewRight?.type === 'post') {
+          sectionPreviewRight = this.renderPreviewPost(this.state.feedbackPreviewRight.id, activeProject);
+          sectionPreviewRight.header = { title: { title: this.state.feedbackPreviewRight.header } };
+        }
+        if (sectionPreviewRight) {
+          sectionPreviewRight.name = 'preview2';
+          sectionPreviewRight.breakAlways = true;
+          sectionPreviewRight.breakAction = 'drawer';
+        }
+
         const feedbackFilters = (layoutState: LayoutState) => (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
             <DashboardPostFilterControls
@@ -698,7 +804,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               allowSearch={{ enableSearchByCategory: false }}
               permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
               onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
-              horizontal={layoutState.overflowMenu}
+              horizontal={layoutState.isShown('filters') !== 'show'}
             />
           </Provider>
         );
@@ -709,13 +815,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           breakPriority: 50,
           collapseLeft: true, collapseTopBottom: true,
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.overflowMenu ? null : feedbackFilters(layoutState),
+          content: layoutState => layoutState.isShown('filters') !== 'show' ? null : feedbackFilters(layoutState),
         };
 
-        const feedbackPostListDroppableId = droppableDataSerialize({
-          type: 'feedback-search',
-          searchKey: getSearchKey(feedbackPostSearch),
-        });
         const sectionList: Section = {
           name: 'list',
           breakAction: 'menu', breakPriority: 40,
@@ -758,35 +860,34 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         const sectionQuickActions: Section = {
           name: 'quick-actions',
           breakAction: 'hide', breakPriority: 10,
-          size: { breakWidth: 200, flexGrow: 20, maxWidth: 'max-content' },
+          size: { breakWidth: 200, flexGrow: 20, maxWidth: 'max-content', scroll: Orientation.Vertical },
           noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
           content: layoutState => (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <DashboardQuickActions
-                activeProject={activeProject}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                searchKey={getSearchKey(feedbackPostSearch)}
-                selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                draggingPostIdSubscription={this.draggingPostIdSubscription}
-                feedback={this.state.feedback}
-                roadmap={this.state.roadmap}
-                dragDropSensorApi={!layoutState.overflowPreview ? this.state.dragDropSensorApi : undefined}
-                fallbackClickHandler={fallbackClickHandler}
-              />
-            </Provider>
+            <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <DashboardQuickActions
+                  activeProject={activeProject}
+                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onUserClick={userId => this.pageClicked('user', [userId])}
+                  searchKey={getSearchKey(feedbackPostSearch)}
+                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+                  draggingPostIdSubscription={this.draggingPostIdSubscription}
+                  feedback={this.state.feedback}
+                  roadmap={this.state.roadmap}
+                  dragDropSensorApi={this.state.dragDropSensorApi}
+                  fallbackClickHandler={fallbackClickHandler}
+                />
+              </Provider>
+            </div>
           ),
         };
-
-        const sectionRelatedFeedback = renderColumnRelated('feedback');
-        const sectionRelatedTask = renderColumnRelated('task');
 
         sections.push(sectionFilters);
         sections.push(sectionList);
         sections.push(sectionQuickActions);
         sections.push(sectionPreview);
-        !!sectionRelatedFeedback && sections.push(sectionRelatedFeedback);
-        // !!sectionRelatedTask && sections.push(sectionRelatedTask);
+        sections.push(sectionRelated);
+        !!sectionPreviewRight && sections.push(sectionPreviewRight);
 
         showProjectLink = true;
         break;
@@ -910,15 +1011,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               allowSearch={{ enableSearchByCategory: false }}
               permanentSearch={{ filterCategoryIds: this.state.changelog ? [this.state.changelog.categoryAndIndex.category.categoryId] : undefined }}
               onSearchChanged={changelogPostSearch => this.setState({ changelogPostSearch })}
-              horizontal={layoutState.overflowMenu}
+              horizontal={layoutState.isShown('filters') !== 'show'}
             />
           </Provider>
         );
         sections.push({
-          name: 'menu',
+          name: 'filters',
           breakAction: 'menu',
           size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.overflowMenu ? null : changelogFilters(layoutState),
+          content: layoutState => layoutState.isShown('filters') !== 'show' ? null : changelogFilters(layoutState),
         });
         if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
           this.similarPostWasClicked = undefined;
@@ -938,7 +1039,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     searchText,
                   }
                 })}
-                filters={!layoutState.overflowMenu ? null : changelogFilters(layoutState)}
+                filters={layoutState.isShown('filters') === 'show' ? null : changelogFilters(layoutState)}
               />
               <Divider />
               <div className={this.props.classes.listContainer}>
@@ -978,8 +1079,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           preview = this.renderPreviewEmpty('No entry selected', PostPreviewSize);
         }
         preview.header = {
-          left: { title: 'Changelog' },
-          right: { label: 'Create', onClick: () => this.pageClicked('post') },
+          title: { title: 'Changelog' },
+          action: { label: 'Create', onClick: () => this.pageClicked('post') },
         };
         sections.push(preview);
 
@@ -1043,8 +1144,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           sections.push(this.renderPreviewEmpty('No user selected', UserPreviewSize));
         }
         sections[sections.length - 1].header = {
-          left: { title: 'Users' },
-          right: { label: 'Add', onClick: () => this.pageClicked('user') },
+          title: { title: 'Users' },
+          action: { label: 'Add', onClick: () => this.pageClicked('user') },
         };
 
         showProjectLink = true;
@@ -1390,10 +1491,9 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               result.draggableId,
               result.destination.droppableId,
               result.destination.index,
-              this.openPost.bind(this),
-              this.showSnackbar.bind(this),
               this.state.feedback || undefined,
-              this.state.roadmap || undefined);
+              this.state.roadmap || undefined,
+              onDndHandled);
           }}
         >
           <Layout
@@ -1800,7 +1900,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         : { type: 'create' };
       if (activePath === 'feedback') {
         this.setState({
-          previewShowOnPage: 'feedback',
+          // previewShowOnPage: 'feedback', // Always shown 
           feedbackPreview: preview,
         }, redirect);
       } else if (activePath === 'explore') {

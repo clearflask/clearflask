@@ -48,6 +48,7 @@ interface Props {
   onUserClick?: (userId: string) => void;
   layout?: 'similar-merge-action';
   scroll?: boolean;
+  hideIfEmpty?: boolean;
   displayOverride?: Admin.PostDisplay;
   PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
 }
@@ -97,7 +98,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         ...this.props.displayOverride,
       },
       search: {},
-      hideIfEmpty: false,
+      hideIfEmpty: !!this.props.hideIfEmpty,
     };
     var result = (
       <PanelPost

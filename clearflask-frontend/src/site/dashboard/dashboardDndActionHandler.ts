@@ -2,7 +2,6 @@ import * as Admin from "../../api/admin";
 import { Project } from "../../api/serverAdmin";
 import { FeedbackInstance } from "../../common/config/template/feedback";
 import { RoadmapInstance } from "../../common/config/template/roadmap";
-import { OpenPost, ShowSnackbar } from "../Dashboard";
 
 export const DroppableWithDataPrefix = 'data-';
 export type DroppableData = {
@@ -13,11 +12,15 @@ export type DroppableData = {
   dropbox: true; // Shows shrinking drop animation
   statusId: string;
 } | {
-  type: 'quick-action-feedback-to-task';
+  type: 'quick-action-create-task-from-feedback-with-status';
   dropbox: true;
   statusId: string;
 } | {
   type: 'quick-action-feedback-merge-duplicate';
+  dropbox: true;
+  postId: string;
+} | {
+  type: 'quick-action-feedback-link-with-task-and-accept';
   dropbox: true;
   postId: string;
 } | {
@@ -78,8 +81,6 @@ const feedbackToTask = async (
   activeProject: Project,
   srcPost: Admin.Idea,
   taskStatusId: string,
-  openPost: OpenPost,
-  showSnackbar: ShowSnackbar,
   feedback: FeedbackInstance,
   roadmap: RoadmapInstance,
 ): Promise<string> => {
@@ -107,19 +108,10 @@ const feedbackToTask = async (
     ideaId: srcPost.ideaId,
     parentIdeaId: taskId,
   });
-  showSnackbar({
-    message: 'Converted to task',
-    persist: true,
-    actions: [{
-      title: 'Open task',
-      onClick: close => {
-        close();
-        openPost(taskId, 'roadmap');
-      },
-    }]
-  });
   return taskId;
 };
+
+export type OnDndHandled = (to: DroppableData, post: Admin.Idea, createdId?: string) => Promise<any>;
 
 export const dashboardOnDragEnd = async (
   activeProject: Project,
@@ -128,10 +120,9 @@ export const dashboardOnDragEnd = async (
   draggableId: string,
   dstDroppableId: string,
   dstIndex: number,
-  openPost: OpenPost,
-  showSnackbar: ShowSnackbar,
   feedback?: FeedbackInstance,
   roadmap?: RoadmapInstance,
+  onHandled?: OnDndHandled,
 ): Promise<boolean> => {
   const srcPost = activeProject.server.getStore().getState().ideas.byId[draggableId]?.idea;
   if (!srcPost) return false;
@@ -152,6 +143,7 @@ export const dashboardOnDragEnd = async (
         projectId: activeProject.projectId,
         ideaId: srcPost.ideaId,
       });
+      await onHandled?.(dstDroppable, srcPost);
       removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
       return true;
 
@@ -162,19 +154,19 @@ export const dashboardOnDragEnd = async (
         ideaId: srcPost.ideaId,
         ideaUpdateAdmin: { statusId: dstDroppable.statusId },
       });
+      await onHandled?.(dstDroppable, srcPost);
       removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
       return true;
 
-    case 'quick-action-feedback-to-task':
+    case 'quick-action-create-task-from-feedback-with-status':
       if (!roadmap || !feedback) return false;
       const taskId = await feedbackToTask(
         activeProject,
         srcPost,
         dstDroppable.statusId,
-        openPost,
-        showSnackbar,
         feedback,
         roadmap);
+      await onHandled?.(dstDroppable, srcPost, taskId);
       removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
       return true;
 
@@ -185,6 +177,25 @@ export const dashboardOnDragEnd = async (
         ideaId: srcPost.ideaId,
         parentIdeaId: dstDroppable.postId,
       });
+      await onHandled?.(dstDroppable, srcPost);
+      removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
+      return true;
+
+    case 'quick-action-feedback-link-with-task-and-accept':
+      dispatcherAdmin = await activeProject.server.dispatchAdmin();
+      await dispatcherAdmin.ideaLinkAdmin({
+        projectId: activeProject.projectId,
+        ideaId: srcPost.ideaId,
+        parentIdeaId: dstDroppable.postId,
+      });
+      if (feedback?.statusIdAccepted) {
+        await dispatcherAdmin.ideaUpdateAdmin({
+          projectId: activeProject.projectId,
+          ideaId: srcPost.ideaId,
+          ideaUpdateAdmin: { statusId: feedback.statusIdAccepted },
+        });
+      }
+      await onHandled?.(dstDroppable, srcPost);
       removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
       return true;
 
@@ -198,6 +209,7 @@ export const dashboardOnDragEnd = async (
           ideaId: srcPost.ideaId,
           ideaUpdateAdmin: { statusId: dstDroppable.statusId },
         });
+        await onHandled?.(dstDroppable, srcPost);
         removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
         addToSearch(activeProject, dstDroppable, dstIndex, srcPost.ideaId);
         return true;
@@ -208,16 +220,16 @@ export const dashboardOnDragEnd = async (
           activeProject,
           srcPost,
           dstDroppable.statusId,
-          openPost,
-          showSnackbar,
           feedback,
           roadmap);
+        await onHandled?.(dstDroppable, srcPost);
         removeFromSearch(activeProject, srcDroppableId, srcPost.ideaId);
         addToSearch(activeProject, dstDroppable, dstIndex, taskId);
         return true;
       } else {
         return false;
       }
+
     default:
       return false;
   }

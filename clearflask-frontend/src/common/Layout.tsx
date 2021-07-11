@@ -12,22 +12,23 @@ import keyMapper from './util/keyMapper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
 export interface LayoutState {
-  overflowPreview: boolean;
-  overflowMenu: boolean;
   isShown: (name: string) => BreakAction;
   enableBoxLayout: boolean;
 }
-export interface HeaderLeft {
+export interface HeaderTitle {
   title?: string;
   help?: string;
 }
-export interface HeaderRight {
+export interface HeaderAction {
   label: string;
   onClick: () => void;
 }
 export interface Header {
-  left?: React.ReactNode | HeaderLeft;
-  right?: React.ReactNode | HeaderRight;
+  left?: React.ReactNode;
+  title?: HeaderTitle;
+  middle?: React.ReactNode;
+  action?: HeaderAction;
+  right?: React.ReactNode;
   height?: number;
 }
 export interface LayoutSize {
@@ -43,10 +44,13 @@ export interface Section {
   name: string;
   size?: LayoutSize;
   breakPriority?: number;
+  breakAlways?: boolean;
   breakAction?: BreakAction; // default: show and dont touch
   noPaper?: boolean;
   collapseLeft?: boolean;
   collapseTopBottom?: boolean;
+  collapseTop?: boolean;
+  collapseBottom?: boolean;
   collapseRight?: boolean;
   header?: Header | ((layoutState: LayoutState) => Header | undefined);
   barTop?: SectionContent;
@@ -88,31 +92,14 @@ const styles = (theme: Theme) => createStyles({
   },
   bar: {
   },
-  // previewPaper: {
-  //   overflowY: 'scroll' as 'scroll',
-  //   width: '40%',
-  //   background: theme.palette.background.default,
-  // },
   previewMobilePaper: {
     overflowY: 'scroll' as 'scroll',
     maxWidth: '100%',
     background: theme.palette.background.default,
   },
-  // previewBar: {
-  //   display: 'flex',
-  //   padding: theme.spacing(0.5, 1),
-  //   color: theme.palette.text.secondary,
-  //   alignItems: 'center',
-  // },
-  // previewBarBorder: {
-  //   borderBottom: '1px dashed ' + theme.palette.divider,
-  // },
-  // previewBarItem: {
-  //   margin: theme.spacing(0, 1),
-  // },
-  // previewBarContent: {
-  //   flexGrow: 1,
-  // },
+  previewCloseButton: {
+    aligSelf: 'center',
+  },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
     ...BoxLayoutBoxApplyStyles(theme),
@@ -201,12 +188,16 @@ const styles = (theme: Theme) => createStyles({
   collapseRight: {
     marginRight: -BOX_MARGIN / 2,
   },
-  boxTopBottom: {
+  boxTop: {
     marginTop: BOX_MARGIN / 2,
+  },
+  collapseTop: {
+    marginTop: -BOX_MARGIN / 2,
+  },
+  boxBottom: {
     marginBottom: BOX_MARGIN / 2,
   },
-  collapseTopBottom: {
-    marginTop: -BOX_MARGIN / 2,
+  collapseBottom: {
     marginBottom: -BOX_MARGIN / 2,
   },
   'scroll-both': {
@@ -251,45 +242,49 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     }
   }
 
-  renderHeaderContent(header: Header): React.ReactNode | null {
-    var left;
-    if (typeof header.left === 'object') {
-      const headerLeft = header.left as HeaderLeft;
-      left = (
-        <Typography variant='h4' component='h1' className={this.props.classes.headerTitle}>
-          {headerLeft.title}
-          {headerLeft.help && (
-            <>
-              &nbsp;
-              <HelpPopper description={headerLeft.help} />
-            </>
-          )}
-        </Typography>
-      );
-    } else {
-      left = header.left;
-    }
-
-    var right;
-    if (typeof header.right === 'object') {
-      const headerRight = header.right as HeaderRight;
-      right = (
-        <Button
-          className={this.props.classes.headerAction}
-          variant='outlined'
-          disableElevation
-          color='primary'
-          onClick={headerRight.onClick}
-        >{headerRight.label}</Button>
-      );
-    } else {
-      right = header.right;
-    }
-
+  renderHeaderContent(header?: Header, breakAction: BreakAction = 'show'): React.ReactNode | null {
+    if (!header && breakAction !== 'drawer') return null;
     return (
       <>
-        {left}
-        {right}
+        {header?.left}
+        {breakAction === 'drawer' && (
+          <IconButton
+            color='inherit'
+            aria-label=''
+            onClick={this.handlePreviewClose.bind(this)}
+            className={this.props.classes.previewCloseButton}
+          >
+            <CloseIcon />
+          </IconButton>
+        )}
+        {!!header?.title && (
+          <Typography variant='h4' component='h1' className={this.props.classes.headerTitle}>
+            {header.title.title}
+            {header.title.help && (
+              <>
+                &nbsp;
+                <HelpPopper description={header.title.help} />
+              </>
+            )}
+          </Typography>
+        )}
+        <div className={this.props.classes.grow} />
+        {header?.middle && (
+          <>
+            {header.middle}
+            <div className={this.props.classes.grow} />
+          </>
+        )}
+        {!!header?.action && (
+          <Button
+            className={this.props.classes.headerAction}
+            variant='outlined'
+            disableElevation
+            color='primary'
+            onClick={header.action.onClick}
+          >{header.action.label}</Button>
+        )}
+        {header?.right}
       </>
     );
   }
@@ -304,7 +299,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     }
   }
 
-  renderSection(layoutState: LayoutState, section?: Section, isOverflow: boolean = false): React.ReactNode | null {
+  renderSection(layoutState: LayoutState, section?: Section, breakAction: BreakAction = 'show'): React.ReactNode | null {
     if (!section) return null;
     var content = this.renderContent(layoutState, section.content);
     if (!content) return null;
@@ -320,7 +315,9 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
       );
     }
 
+    const isOverflow = breakAction !== 'show';
     const header = this.renderHeader(layoutState, section.header);
+    const headerContent = this.renderHeaderContent(header, breakAction)
     const barTop = this.renderContent(layoutState, section.barTop);
     const barBottom = this.renderContent(layoutState, section.barBottom);
     return (
@@ -330,7 +327,8 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         !isOverflow && layoutState.enableBoxLayout && (!section.noPaper ? this.props.classes.boxPaper : this.props.classes.boxNoPaper),
         !isOverflow && layoutState.enableBoxLayout && (section.collapseLeft ? this.props.classes.collapseLeft : this.props.classes.boxLeft),
         !isOverflow && layoutState.enableBoxLayout && (section.collapseRight ? this.props.classes.collapseRight : this.props.classes.boxRight),
-        !isOverflow && layoutState.enableBoxLayout && (section.collapseTopBottom ? this.props.classes.collapseTopBottom : this.props.classes.boxTopBottom),
+        !isOverflow && layoutState.enableBoxLayout && ((section.collapseTopBottom || section.collapseTop) ? this.props.classes.collapseTop : this.props.classes.boxTop),
+        !isOverflow && layoutState.enableBoxLayout && ((section.collapseTopBottom || section.collapseBottom) ? this.props.classes.collapseBottom : this.props.classes.boxBottom),
       )} style={{
         flexGrow: section.size?.flexGrow || 0,
         flexBasis: section.size?.breakWidth || 'content',
@@ -345,15 +343,15 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
           this.props.classes.shadows,
           !section.noPaper && this.props.classes.hideShadows,
         )}>
-          {!!header && (
+          {!!headerContent && (
             <div className={classNames(
               this.props.classes.sectionHeader,
               !layoutState.enableBoxLayout && this.props.classes.sectionHeaderNobox,
             )} style={{
               transform: `translateY(-${HEADER_HEIGHT + 1}px)`,
-              height: header.height || HEADER_HEIGHT,
+              height: header?.height || HEADER_HEIGHT,
             }}>
-              {this.renderHeaderContent(header)}
+              {headerContent}
             </div>
           )}
           {!!barTop && (
@@ -383,23 +381,28 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     const sectionMenu = this.props.sections.find(s => s.breakAction === 'menu');
     const breakActionForName: { [name: string]: BreakAction } = {};
     this.props.sections.forEach(section => {
-      breakActionForName[section.name] = this.props.mediaQueries[section.name] === false && section.breakAction || 'show'
+      breakActionForName[section.name] = (section.breakAlways
+        ? section.breakAction
+        : (this.props.mediaQueries[section.name] === false && section.breakAction))
+        || 'show';
     });
     const layoutState: LayoutState = {
-      overflowPreview: !!sectionPreview && this.props.mediaQueries[sectionPreview.name] === false,
-      overflowMenu: !!sectionMenu && this.props.mediaQueries[sectionMenu.name] === false,
+      // overflowPreview: !!sectionPreview && this.props.mediaQueries[sectionPreview.name] === false,
+      // overflowMenu: !!sectionMenu && this.props.mediaQueries[sectionMenu.name] === false,
       isShown: name => breakActionForName[name] || 'show',
       enableBoxLayout: this.props.mediaQueries.enableBoxLayout,
     };
 
-    const contentPreview = !layoutState.overflowPreview ? null : this.renderSection(layoutState, sectionPreview, true);
-    const contentMenu = !layoutState.overflowPreview ? null : this.renderSection(layoutState, sectionPreview, true);
+    const contentPreview = !sectionPreview || layoutState.isShown(sectionPreview.name) !== 'drawer'
+      ? null : this.renderSection(layoutState, sectionPreview, 'drawer');
+    const contentMenu = !sectionMenu || layoutState.isShown(sectionMenu.name) !== 'menu'
+      ? null : this.renderSection(layoutState, sectionMenu, 'menu');
 
     const contents: React.ReactNode[] = [];
     this.props.sections.forEach(section => {
       const breakAction = breakActionForName[section.name];
       if (breakAction !== 'show') return;
-      const content = this.renderSection(layoutState, section, false);
+      const content = this.renderSection(layoutState, section, breakAction);
       if (!content) return;
       contents.push(content);
     });
@@ -409,7 +412,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         {!!this.props.toolbarShow && (
           <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
             <Toolbar>
-              {!!layoutState.overflowMenu && !!contentMenu && (
+              {!!contentMenu && (
                 <IconButton
                   color="inherit"
                   aria-label="Open drawer"
@@ -426,7 +429,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             <Divider />
           </AppBar>
         )}
-        {layoutState.overflowMenu && !!contentMenu && (
+        {!!contentMenu && (
           <Drawer
             variant='temporary'
             open={this.state.mobileMenuOpen}
@@ -446,7 +449,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             {contentMenu}
           </Drawer>
         )}
-        {layoutState.overflowPreview && !!contentPreview && (
+        {!!contentPreview && (
           <Drawer
             variant='temporary'
             SlideProps={{ mountOnEnter: true }}
@@ -464,13 +467,6 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             }}
           >
             {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
-            <IconButton
-              color='inherit'
-              aria-label=''
-              onClick={this.handlePreviewClose.bind(this)}
-            >
-              <CloseIcon />
-            </IconButton>
             {contentPreview}
           </Drawer>
         )}
@@ -509,6 +505,7 @@ export default keyMapper(
     variableWidth += ownProps.sections.length - 1; // Accounts for column-gap 1px
     const sectionsByPrio: Section[] = [];
     for (const section of ownProps.sections) {
+      if (section.breakAlways && section.breakAction !== 'show') continue;
       const sectionWidth = section.size?.breakWidth || 0;
       const sectionBoxWidth = ((section.collapseLeft ? -0.5 : 0.5) + (section.collapseRight ? -0.5 : 0.5)) * BOX_MARGIN;
       if (!section.breakAction) {
@@ -533,15 +530,15 @@ export default keyMapper(
       const overflowSection = staticWidth + variableWidth;
       mediaQueries[section.name] = `(min-width: ${overflowSection}px)`;
 
-      const showBoxMaxWidth = overflowSection - 1;
-
       variableWidth -= sectionWidth;
       variableWidth -= 1; // Accounts for column-gap 1px
       variableBoxWidth -= sectionBoxWidth;
 
-      const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
-
-      mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
+      if (!!sectionsByPrio.length) {
+        const showBoxMaxWidth = overflowSection - 1;
+        const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
+        mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
+      }
     }
 
     return mediaQueries;
