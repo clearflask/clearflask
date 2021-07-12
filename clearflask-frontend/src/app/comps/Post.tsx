@@ -537,6 +537,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         this.renderExpressionCount(),
         this.renderCommentCount(),
       ].filter(notEmpty);
+
+      rightSide = [
+        this.renderStatus(),
+        ...(this.renderTags() || []),
+        this.renderCategory(),
+      ].filter(notEmpty);
     }
 
     if ((leftSide?.length || 0) + (rightSide?.length || 0) === 0) return null;
@@ -559,14 +565,24 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderHeader() {
-    const header = [
-      this.renderIsLink(),
-      this.renderAuthor(),
-      this.renderCreatedDatetime(),
-      this.renderStatus(),
-      ...(this.renderTags() || []),
-      this.renderCategory(),
-    ].filter(notEmpty);
+    var header: React.ReactNode[] | undefined;
+
+    if (this.props.variant !== 'list') {
+      header = [
+        this.renderIsLink(),
+        this.renderAuthor(),
+        this.renderCreatedDatetime(),
+        this.renderStatus(),
+        ...(this.renderTags() || []),
+        this.renderCategory(),
+      ].filter(notEmpty);
+    } else {
+      header = [
+        this.renderIsLink(),
+        this.renderAuthor(),
+        this.renderCreatedDatetime(),
+      ].filter(notEmpty);
+    }
 
     if (!header.length) return null;
 

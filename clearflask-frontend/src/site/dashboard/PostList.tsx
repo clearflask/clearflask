@@ -113,7 +113,6 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         suppressPanel
         panel={panel}
         widthExpand
-        widthExpandMargin={this.props.theme.spacing(2)}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}

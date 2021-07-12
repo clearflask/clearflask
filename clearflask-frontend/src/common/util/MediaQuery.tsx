@@ -17,7 +17,6 @@ export type WithMediaQueries<Queries extends string> = {
   mediaQueries: { [name in Queries]: boolean };
 };
 
-/** Untested */
 export const withMediaQueries = <Queries extends string, Props>(
   queriesMapper: (props: Props) => Record<Queries, (string | ((theme: Theme) => string))>,
   options?: Options,

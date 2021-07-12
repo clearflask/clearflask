@@ -1,4 +1,4 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Link as MuiLink, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -21,10 +21,13 @@ import * as AdminClient from '../api/admin';
 import { getSearchKey, Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
+import { PanelTitle } from '../app/comps/Panel';
 import PanelDraft from '../app/comps/PanelDraft';
 import { PanelPostNavigator } from '../app/comps/PanelPost';
+import { MaxContentWidth, MinContentWidth } from '../app/comps/Post';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
+import { BoardContainer, BoardPanel } from '../app/CustomPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
@@ -41,10 +44,11 @@ import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { BOX_MARGIN, LayoutSize, LayoutState, Section, SectionContent } from '../common/Layout';
+import Layout, { LayoutSize, LayoutState, Section, SectionContent } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import UserFilterControls from '../common/search/UserFilterControls';
 import SubmitButton from '../common/SubmitButton';
+import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -66,7 +70,6 @@ import DashboardSearchControls from './dashboard/DashboardSearchControls';
 import DragndropPostList from './dashboard/DragndropPostList';
 import PostList from './dashboard/PostList';
 import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersOnboarding, ProjectSettingsUsersSso, TemplateWrapper } from './dashboard/ProjectSettings';
-import RoadmapExplorer from './dashboard/RoadmapExplorer';
 import SettingsPage from './dashboard/SettingsPage';
 import UserList from './dashboard/UserList';
 import WelcomePage from './dashboard/WelcomePage';
@@ -216,12 +219,6 @@ const styles = (theme: Theme) => createStyles({
     flexGrow: 1,
     minHeight: 0,
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
-  },
-  homeRoadmap: {
-    margin: 'auto',
-    paddingLeft: BOX_MARGIN,
-    paddingRight: BOX_MARGIN,
-    maxWidth: 1504,
   },
 });
 interface Props {
@@ -457,19 +454,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   type='dialog'
                   editor={activeProject.editor}
                   mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
-                  renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
+                  renderResolved={(templater, [roadmap, changelog]) => !!roadmap?.pageAndIndex?.page.board && (
                     <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                      <RoadmapExplorer
-                        className={this.props.classes.homeRoadmap}
-                        publicViewOnly
-                        key={activeProject.server.getProjectId()}
-                        server={activeProject.server}
-                        roadmap={roadmap}
-                        changelog={changelog}
-                        onClickPost={postId => this.pageClicked('post', [postId])}
-                        onUserClick={userId => this.pageClicked('user', [userId])}
-                        selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
-                        isBoxLayout={true}
+                      <BoardContainer
+                        title={roadmap.pageAndIndex.page.board.title}
+                        panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
+                          <BoardPanel
+                            server={activeProject.server}
+                            panel={panel}
+                            PanelPostProps={{
+                              onClickPost: postId => this.pageClicked('post', [postId]),
+                              onUserClick: userId => this.pageClicked('user', [userId]),
+                              selectedPostId: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
+                            }}
+                          />
+                        ))}
                       />
                     </Provider>
                   )}
@@ -897,97 +896,305 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        // const roadmapPostSearch = this.state.roadmapPostSearch || {
-        //   sortBy: AdminClient.IdeaSearchAdminSortByEnum.Trending,
+        if (!this.state.roadmap) {
+          mainContent = (<ErrorPage msg='Oops, roadmap not enabled' />);
+          break;
+        }
+
+        // TODO Changelog; just remember that:
+        // - Add an action container for creating new draft entry
+        // - Show Draft entries, on drop, add as linked entry
+        // - Show published entries, on drop, add as linked entry
+        // Caveats:
+        // - Drafts must support adding linkedPostIds in IdeaCreateAdmin
+        // - When you drop into the changelog list, the status changes to Completed and will show up
+        //   in the Completed dropbox. It's the logical thing, but it looks weird. Figure it out.
+        // - Also, the Completed search column must be also updated when dropped into changelog.
+        // const renderDropboxForChangelog = (changelog: ChangelogInstance, expandableStateKey?: string) => {
+        //  const search = {
+        //    filterCategoryIds: [changelog.categoryAndIndex.category.categoryId],
+        //  };
+        //  return this.renderDropbox('changelog', (
+        //    <>
+        //      <DragndropPostList
+        //        className={this.props.classes.dropboxList}
+        //        droppable
+        //        droppableId={droppableDataSerialize({
+        //          type: 'changelog-panel',
+        //          searchKey: getSearchKey(search),
+        //        })}
+        //        key={statusId}
+        //        server={this.props.server}
+        //        search={search}
+        //        onClickPost={this.props.onClickPost}
+        //        onUserClick={this.props.onUserClick}
+        //        selectedPostId={this.props.selectedPostId}
+        //        displayOverride={{
+        //          showCategoryName: false,
+        //          showStatus: false,
+        //        }}
+        //      />
+        //    </>
+        //  ), 'Changelog', undefined, expandableStateKey);
+        // }
+
+        const seenStatusIds = new Set<string>();
+        const renderStatusSection = (statusOrId: string | AdminClient.IdeaStatus | undefined): Section | undefined => {
+          if (!statusOrId || !this.state.roadmap) return undefined;
+          const status: AdminClient.IdeaStatus | undefined = typeof statusOrId !== 'string' ? statusOrId
+            : this.state.roadmap?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === statusOrId);
+          if (!status) return undefined;
+          return renderTaskSection({
+            hideIfEmpty: false,
+            title: status.name,
+            display: {},
+            search: {
+              filterCategoryIds: [this.state.roadmap.categoryAndIndex.category.categoryId],
+              filterStatusIds: [status.statusId],
+            },
+          });
+        }
+        const renderTaskSection = (panel: AdminClient.PagePanelWithHideIfEmpty | undefined): Section | undefined => {
+          if (!panel || !this.state.roadmap) return undefined;
+          const isTaskCategory = panel.search.filterCategoryIds?.length === 1 && panel.search.filterCategoryIds[0] === this.state.roadmap.categoryAndIndex.category.categoryId;
+          const onlyStatus = !isTaskCategory || panel.search.filterStatusIds?.length !== 1 ? undefined : this.state.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
+          if (onlyStatus) seenStatusIds.add(onlyStatus.statusId);
+
+          const PostListProps: React.ComponentProps<typeof PostList> = {
+            server: activeProject.server,
+            search: panel.search as any,
+            onClickPost: postId => this.pageClicked('post', [postId]),
+            onUserClick: userId => this.pageClicked('user', [userId]),
+            selectedPostId: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
+            displayOverride: {
+              showCategoryName: false,
+              showStatus: false,
+            },
+          };
+          var list;
+          if (!isTaskCategory) {
+            list = (
+              <PostList
+                {...PostListProps}
+              />
+            );
+          } else {
+            list = (
+              <DragndropPostList
+                droppable={!!onlyStatus}
+                droppableId={droppableDataSerialize({
+                  type: 'roadmap-panel',
+                  searchKey: getSearchKey(panel.search),
+                  statusId: onlyStatus?.statusId,
+                })}
+                {...PostListProps}
+              />
+            );
+          }
+          return {
+            name: getSearchKey(panel.search),
+            size: { breakWidth: MinContentWidth, flexGrow: 1, maxWidth: MaxContentWidth, scroll: Orientation.Vertical, },
+            content: (
+              <>
+                <PanelTitle text={panel.title || onlyStatus?.name} color={onlyStatus?.color} />
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                  {list}
+                </Provider>
+              </>
+            )
+          };
+        };
+        const renderRoadmapSection = (): Section | undefined => {
+          if (!this.state.roadmap?.pageAndIndex) return undefined;
+          const roadmapSections = this.state.roadmap.pageAndIndex.page.board.panels
+            .map(panel => renderTaskSection(panel))
+            .filter(notEmpty);
+          if (!roadmapSections.length) return undefined;
+
+          const conf = activeProject.server.getStore().getState().conf.conf;
+          const projectLink = !!conf && getProjectLink(conf);
+          const roadmapLink = !projectLink ? undefined : `${projectLink}/${this.state.roadmap.pageAndIndex?.page.slug}`;
+
+          return {
+            name: 'roadmap',
+            header: {
+              title: {
+                title: 'Roadmap',
+                help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
+                  + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
+              },
+              right: roadmapLink && (
+                <Button
+                  component={MuiLink}
+                  href={roadmapLink}
+                  target='_blank'
+                  underline='none'
+                  rel='noopener nofollow'
+                >
+                  Public view
+                  &nbsp;
+                  <VisibilityIcon fontSize='inherit' />
+                </Button>
+              ),
+            },
+            size: {
+              ...roadmapSections[0],
+              breakWidth: roadmapSections.reduce((width, section) => width + (section.size?.breakWidth || 0), 0),
+            },
+            content: (
+              <BoardContainer
+                panels={roadmapSections.map(section => section.content)}
+              />
+            ),
+          };
+        }
+
+
+        // const renderActionColumn = (position: 'left' | 'right' | 'main', children?: React.ReactNode)  => {
+        //   return (
+        //     <div className={classNames(
+        //       this.props.classes.actionColumn,
+        //       this.props.isBoxLayout ? this.props.classes.actionColumnBoxLayout : this.props.classes.actionColumnBoxLayoutNot,
+        //       this.props.isBoxLayout && position === 'left' && this.props.classes.actionColumnBoxLayoutLeft,
+        //       this.props.isBoxLayout && position === 'right' && this.props.classes.actionColumnBoxLayoutRight,
+        //     )}>
+        //       {children}
+        //     </div>
+        //   );
         // };
-        // if (this.state.feedback) roadmapPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
-        // menu = {
-        //   size: { breakWidth: 267, flexGrow: 1, maxWidth: 350, scroll: Orientation.Vertical },
-        //   detachFromMain: true,
-        //   content: (
-        //     <>
-        //       <DashboardSearchControls
-        //         placeholder='Search for feedback'
-        //         key={'roadmap-feedback-search-bar' + activeProject.server.getProjectId()}
-        //         searchText={roadmapPostSearch.searchText || ''}
-        //         onSearchChanged={searchText => this.setState({
-        //           roadmapPostSearch: {
-        //             ...this.state.roadmapPostSearch,
-        //             searchText,
-        //           }
-        //         })}
-        //         filters={(
-        //           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        //             <DashboardPostFilterControls
-        //               key={activeProject.server.getProjectId()}
-        //               server={activeProject.server}
-        //               search={roadmapPostSearch}
-        //               allowSearch={{ enableSearchByCategory: false }}
-        //               permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
-        //               onSearchChanged={roadmapPostSearch => this.setState({ roadmapPostSearch })}
-        //               horizontal
-        //             />
-        //           </Provider>
-        //         )}
+
+        // const renderDropboxForStatus = (statusId: string, expandableStateKey?: string) => {
+        //   const status = this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === statusId);
+        //   if (!status) return null;
+        //   const search = {
+        //     filterCategoryIds: [this.props.roadmap.categoryAndIndex.category.categoryId],
+        //     filterStatusIds: [statusId],
+        //   };
+        //   const PostListProps: React.ComponentProps<typeof PostList> = {
+        //     className: this.props.classes.dropboxList,
+        //     server: this.props.server,
+        //     search: search,
+        //     onClickPost: this.props.onClickPost,
+        //     onUserClick: this.props.onUserClick,
+        //     selectedPostId: this.props.selectedPostId,
+        //     displayOverride: {
+        //       showCategoryName: false,
+        //       showStatus: false,
+        //     },
+        //   };
+        //   var content;
+        //   if (this.props.publicViewOnly) {
+        //     content = (
+        //       <PostList
+        //         key={statusId}
+        //         {...PostListProps}
         //       />
-        //       <Divider />
-        //       <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        //         <DragndropPostList
-        //           key={activeProject.server.getProjectId()}
-        //           scroll
-        //           droppableId={droppableDataSerialize({
-        //             type: 'feedback-search',
-        //             searchKey: getSearchKey(roadmapPostSearch),
-        //           })}
-        //           server={activeProject.server}
-        //           search={roadmapPostSearch}
-        //           onClickPost={postId => this.pageClicked('post', [postId])}
-        //           onUserClick={userId => this.pageClicked('user', [userId])}
-        //           selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
-        //           displayOverride={{
-        //             showCategoryName: false,
-        //           }}
-        //         />
-        //       </Provider>
-        //     </>
+        //     );
+        //   } else {
+        //     content = (
+        //       <DragndropPostList
+        //         key={statusId}
+        //         droppable
+        //         droppableId={droppableDataSerialize({
+        //           type: 'roadmap-panel',
+        //           searchKey: getSearchKey(search),
+        //           statusId,
+        //         })}
+        //         {...PostListProps}
+        //       />
+        //     );
+        //   }
+        //   return this.renderDropbox(statusId, content, status.name, status.color, expandableStateKey);
+        // }
+
+        // const renderDropbox = (key: string, children: React.ReactNode, name: string, color?: string, expandableStateKey?: string) => {
+        //   return (
+        //     <div
+        //       key={key}
+        //       className={classNames(
+        //         this.props.classes.dropbox,
+        //         expandableStateKey && this.props.classes.dropboxExpandable,
+        //         expandableStateKey && this.state[expandableStateKey] && (this.state[expandableStateKey] === key
+        //           ? this.props.classes.dropboxExpanded
+        //           : this.props.classes.dropboxHidden)
+        //       )}
+        //     >
+        //       <Typography variant='h4' className={this.props.classes.title} style={{
+        //         color: color,
+        //       }}>
+        //         {name}
+        //         {expandableStateKey && (
+        //           <ExpandIcon
+        //             expanded={this.state[expandableStateKey] === key}
+        //             onExpandChanged={exp => this.setState({ [expandableStateKey]: exp ? key : undefined })}
+        //           />
+        //         )}
+        //       </Typography>
+        //       {children}
+        //     </div>
+        //   );
+        // }
+
+
+        var roadmapSectionPreview: Section | undefined;
+        if (this.state.roadmapPreview?.type === 'create') {
+          roadmapSectionPreview = this.renderPreviewPostCreate(activeProject);
+        } else if (this.state.roadmapPreview?.type === 'post') {
+          roadmapSectionPreview = this.renderPreviewPost(this.state.roadmapPreview.id, activeProject);
+        }
+        if (roadmapSectionPreview) {
+          roadmapSectionPreview.breakAlways = true;
+        }
+
+        const roadmapSection = renderRoadmapSection();
+        const backlogSection = renderStatusSection(this.state.roadmap.statusIdBacklog);
+        const closedSection = renderStatusSection(this.state.roadmap.statusIdClosed);
+        const completedSection = renderStatusSection(this.state.roadmap.statusIdCompleted);
+        const missingStatusSections = this.state.roadmap.categoryAndIndex.category.workflow.statuses
+          .filter(status => !seenStatusIds.has(status.statusId))
+          .map(status => renderStatusSection(status))
+          .filter(notEmpty);
+
+
+        backlogSection && sections.push(backlogSection);
+        missingStatusSections.length && missingStatusSections.forEach(section => sections.push(section));
+        roadmapSection && sections.push(roadmapSection);
+        closedSection && sections.push(closedSection);
+        completedSection && sections.push(completedSection);
+        roadmapSectionPreview && sections.push(roadmapSectionPreview);
+
+
+
+        // const roadmapMainBreakWidth = (this.state.roadmap?.pageAndIndex?.page.board.panels.length || 3) * 267
+        //   + ((this.state.roadmap?.statusIdClosed || this.state.roadmap?.statusIdCompleted) ? 267 + BOX_MARGIN : 0);
+        // const roadmapSectionRoadmap = {
+        //   name: 'roadmap',
+        //   size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
+        //   noPaper: true,
+        //   content: layoutStyle => (
+        //     <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
+        //       key='roadmap'
+        //       type='dialog'
+        //       editor={activeProject.editor}
+        //       mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
+        //       renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
+        //         <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+        //           <RoadmapExplorer
+        //             key={activeProject.server.getProjectId()}
+        //             server={activeProject.server}
+        //             roadmap={roadmap}
+        //             changelog={changelog}
+        //             onClickPost={postId => this.pageClicked('post', [postId])}
+        //             onUserClick={userId => this.pageClicked('user', [userId])}
+        //             selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
+        //             isBoxLayout={layoutStyle.enableBoxLayout}
+        //           />
+        //         </Provider>
+        //       )}
+        //     />
         //   ),
         // };
-        const roadmapMainBreakWidth = (this.state.roadmap?.pageAndIndex?.page.board.panels.length || 3) * 267
-          + ((this.state.roadmap?.statusIdClosed || this.state.roadmap?.statusIdCompleted) ? 267 + BOX_MARGIN : 0);
-        sections.push({
-          name: 'main',
-          size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
-          content: layoutStyle => (
-            <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
-              key='roadmap'
-              type='dialog'
-              editor={activeProject.editor}
-              mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
-              renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
-                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  <RoadmapExplorer
-                    key={activeProject.server.getProjectId()}
-                    server={activeProject.server}
-                    roadmap={roadmap}
-                    changelog={changelog}
-                    onClickPost={postId => this.pageClicked('post', [postId])}
-                    onUserClick={userId => this.pageClicked('user', [userId])}
-                    selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
-                    isBoxLayout={layoutStyle.enableBoxLayout}
-                  />
-                </Provider>
-              )}
-            />
-          ),
-        });
 
-        if (this.state.roadmapPreview?.type === 'create') {
-          sections.push(this.renderPreviewPostCreate(activeProject));
-        } else if (this.state.roadmapPreview?.type === 'post') {
-          sections.push(this.renderPreviewPost(this.state.roadmapPreview.id, activeProject));
-        } else {
-          sections.push(this.renderPreviewEmpty('No post selected', PostPreviewSize));
-        }
 
         showProjectLink = true;
         break;

@@ -78,7 +78,7 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
 export const PanelTitle = (props: {
   text?: React.ReactNode;
   color?: string;
-} & Partial<React.ComponentPropsWithoutRef<typeof Typography>>) => {
+} & Omit<Partial<React.ComponentPropsWithoutRef<typeof Typography>>, 'color'>) => {
   const { text, color, ...TypographyProps } = props;
   const theme = useTheme();
   if (!props.text) return null;

@@ -296,6 +296,40 @@ export const BoardContainer = (props: {
   }
 }
 
+export const BoardPanel = (props: {
+  server: Server,
+  panel: Client.PagePanelWithHideIfEmpty,
+  PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  return (
+    <PanelPost
+      key={getSearchKey(props.panel.search)}
+      className={classes.boardPanel}
+      maxHeight={theme.vh(80)}
+      direction={Direction.Vertical}
+      panel={props.panel}
+      server={props.server}
+      displayDefaults={{
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showVotingCount: false,
+        showFunding: false,
+        showExpression: false,
+      }}
+      {...props.PanelPostProps}
+    />
+  );
+}
+
 export const PageTitleDescription = (props: {
   page: Client.Page;
   suppressSpacing?: boolean;
@@ -419,40 +453,6 @@ export const LandingLink = (props: {
         fontSize='inherit'
       />
     </CardActionArea>
-  );
-}
-
-export const BoardPanel = (props: {
-  server: Server,
-  panel: Client.PagePanelWithHideIfEmpty,
-  PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
-}) => {
-  const classes = useStyles();
-  const theme = useTheme();
-  return (
-    <PanelPost
-      key={getSearchKey(props.panel.search)}
-      className={classes.boardPanel}
-      maxHeight={theme.vh(80)}
-      direction={Direction.Vertical}
-      panel={props.panel}
-      server={props.server}
-      displayDefaults={{
-        titleTruncateLines: 1,
-        descriptionTruncateLines: 0,
-        showCommentCount: false,
-        showCategoryName: false,
-        showCreated: false,
-        showAuthor: false,
-        showStatus: false,
-        showTags: false,
-        showVoting: false,
-        showVotingCount: false,
-        showFunding: false,
-        showExpression: false,
-      }}
-      {...props.PanelPostProps}
-    />
   );
 }
 

@@ -495,8 +495,13 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
 }
 
 export default keyMapper(
-  // Number of sections cannot change as it causes dynamic number of hooks
-  (ownProps: Props) => `section-count-${ownProps.sections.length}`,
+  (ownProps: Props) => {
+    const sectionNames = ownProps.sections
+      .map(s => s.name)
+      .join('-');
+    // Number of sections cannot change as it causes dynamic number of hooks
+    return `section-count-${sectionNames}`;
+  },
   withMediaQueries<'enableBoxLayout' | any, Props>(ownProps => {
     var staticWidth = 0;
     var staticBoxWidth = BOX_MARGIN; // Outer margin
@@ -508,7 +513,7 @@ export default keyMapper(
       if (section.breakAlways && section.breakAction !== 'show') continue;
       const sectionWidth = section.size?.breakWidth || 0;
       const sectionBoxWidth = ((section.collapseLeft ? -0.5 : 0.5) + (section.collapseRight ? -0.5 : 0.5)) * BOX_MARGIN;
-      if (!section.breakAction) {
+      if (!section.breakAction || section.breakAction === 'show') {
         staticWidth += sectionWidth;
         staticBoxWidth += sectionBoxWidth;
       } else {
