@@ -9,6 +9,8 @@ import PanelPost, { Direction } from '../../app/comps/PanelPost';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 
+export const DashboardListPostSpacing = 2;
+
 const styles = (theme: Theme) => createStyles({
   post: {
     '&:hover $title': {
@@ -109,7 +111,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         suppressPanel
         panel={panel}
         widthExpand
-        widthExpandMargin={this.props.theme.spacing(2)}
+        widthExpandMargin={this.props.theme.spacing(DashboardListPostSpacing)}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}

@@ -971,8 +971,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaDraftSearchAdmin(request: Admin.IdeaDraftSearchAdminRequest): Promise<Admin.IdeaDraftSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).drafts
-      .filter(draft => !request.filterCategoryId
-        || (request.filterCategoryId === draft.categoryId)),
+      .filter(draft => !request.ideaDraftSearch.filterCategoryIds
+        || request.ideaDraftSearch.filterCategoryIds.includes(draft.categoryId)),
       this.DEFAULT_LIMIT, request.cursor), 1000);
   }
   ideaDraftUpdateAdmin(request: Admin.IdeaDraftUpdateAdminRequest): Promise<void> {

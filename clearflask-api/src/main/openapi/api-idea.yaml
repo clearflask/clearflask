@@ -234,6 +234,13 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/Idea'
         parentIdea:
           $ref: 'api-idea.yaml#/components/schemas/Idea'
+    IdeaDraftSearch:
+      type: object
+      properties:
+        filterCategoryIds:
+          type: array
+          items:
+            type: string
 
     IdeaWithVote:
       allOf:
@@ -834,14 +841,16 @@ components:
       required: true
       schema:
         type: string
-    - name: filterCategoryId
-      in: query
-      schema:
-        type: string
     - name: cursor
       in: query
       schema:
         $ref: 'api-client.yaml#/components/schemas/Cursor'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/IdeaDraftSearch'
     responses:
       '200':
         content:

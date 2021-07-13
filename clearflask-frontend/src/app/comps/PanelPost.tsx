@@ -1,5 +1,5 @@
 import { Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import { MarginProperty } from 'csstype';
 import React, { Component } from 'react';
@@ -18,7 +18,7 @@ import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import LoadMoreButton from './LoadMoreButton';
 import Panel, { PanelTitle } from './Panel';
-import Post, { MaxContentWidth } from './Post';
+import Post, { MaxContentWidth, PostClassification, PostDescription, PostTitle } from './Post';
 
 export interface PanelPostNavigator {
   hasPrevious(): boolean;
@@ -64,7 +64,7 @@ const styles = (theme: Theme) => createStyles({
     },
   },
 });
-
+const useStyles = makeStyles(styles);
 export interface Props {
   className?: string;
   postClassName?: string;
@@ -92,6 +92,10 @@ export interface Props {
   selectable?: boolean;
   selected?: string;
   navigatorChanged?: () => void;
+  showDrafts?: {
+    onClickDraft?: (draftId: string) => void,
+    selectedDraftId?: string;
+  };
 }
 interface ConnectProps {
   configver?: string;
@@ -102,6 +106,10 @@ interface ConnectProps {
   missingVotes?: string[];
   projectId?: string;
   loggedInUser?: Client.User;
+  draftSearchMerged?: Admin.IdeaDraftSearch;
+  draftSearchStatus?: Status;
+  draftSearchDrafts?: Admin.IdeaDraftAdmin[];
+  draftSearchCursor?: string,
 }
 interface State {
   expandedPostId?: string;
@@ -113,18 +121,25 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   constructor(props) {
     super(props);
 
-    if (props.navigatorRef) props.navigatorRef.current = this;
+    if (this.props.navigatorRef) this.props.navigatorRef.current = this;
 
-    if (!props.searchStatus) {
+    if (!!this.props.showDrafts && !this.props.draftSearchStatus) {
+      this.props.server.dispatchAdmin().then(d => d.ideaDraftSearchAdmin({
+        projectId: this.props.server.getProjectId(),
+        ideaDraftSearch: this.props.draftSearchMerged || {},
+      }));
+    }
+
+    if (!this.props.searchStatus) {
       this.loadMore();
-    } else if (props.missingVotes?.length) {
-      props.server.dispatch().then(d => d.ideaVoteGetOwn({
-        projectId: props.projectId,
-        ideaIds: props.missingVotes,
-        myOwnIdeaIds: props.missingVotes
-          .map(ideaId => props.searchIdeas.find(i => i.ideaId === ideaId))
-          .filter(idea => idea?.idea?.authorUserId === props.loggedInUser?.userId)
-          .map(idea => idea?.idea?.ideaId)
+    } else if (this.props.missingVotes?.length) {
+      this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
+        projectId: this.props.projectId!,
+        ideaIds: this.props.missingVotes!,
+        myOwnIdeaIds: this.props.missingVotes!
+          .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
+          .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
+          .map(idea => idea?.ideaId)
           .filter(notEmpty),
       }));
     }
@@ -257,10 +272,14 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         return content;
       });
+      var drafts = this.renderDrafts(widthExpandMarginClassName);
+      if (drafts?.length) {
+        content = [...drafts, ...content];
+      }
       if (this.props.selectable) {
         content = (
           <TabsVertical
-            selected={this.props.selected}
+            selected={this.props.selected || this.props.showDrafts?.selectedDraftId}
             onClick={this.props.onClickPost ? (postId => this.props.onClickPost?.(postId)) : undefined}
           >
             {content}
@@ -319,6 +338,55 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return content;
   }
 
+  renderDrafts(widthExpandMarginClassName?: string): React.ReactNode[] | undefined {
+    if (!this.props.showDrafts) return undefined;
+
+    const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
+    var content;
+    switch (this.props.searchStatus || Status.PENDING) {
+      default:
+      case Status.REJECTED:
+        content = (
+          <ErrorMsg msg='Failed to load drafts' />
+        );
+        break;
+      case Status.PENDING:
+        if (hideIfEmpty) return undefined;
+        content = (
+          <Loading />
+        );
+        break;
+      case Status.FULFILLED:
+        if (!this.props.draftSearchDrafts?.length) return undefined;
+        content = this.props.draftSearchDrafts.map(draft => {
+          var draftContent = (
+            <DraftItem
+              className={widthExpandMarginClassName}
+              server={this.props.server}
+              draft={draft}
+              onClick={!this.props.showDrafts?.onClickDraft ? undefined : () => this.props.showDrafts?.onClickDraft?.(draft.draftId)}
+            />
+          );
+          if (this.props.selectable) {
+            draftContent = (
+              <TabFragment key={draft.draftId} value={draft.draftId}>
+                {draftContent}
+              </TabFragment>
+            );
+          } else {
+            draftContent = (
+              <React.Fragment key={draft.draftId}>
+                {draftContent}
+              </React.Fragment>
+            );
+          }
+          return draftContent;
+        });
+        break;
+    }
+    return content;
+  }
+
   hasPrevious(): boolean {
     if (!this.props.selected) return false;
     const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selected);
@@ -369,6 +437,63 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return true;
   }
 }
+
+
+const stylesDrafts = (theme: Theme) => createStyles({
+  draftContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: MaxContentWidth,
+    maxWidth: '100%',
+  },
+  draftBottomBar: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  clickable: {
+    cursor: 'pointer',
+    textDecoration: 'none',
+  },
+});
+const useStylesDrafts = makeStyles(stylesDrafts);
+export const DraftItem = (props: {
+  className?: string;
+  server: Server;
+  draft: Admin.IdeaDraftAdmin;
+  titleTruncateLines?: number;
+  descriptionTruncateLines?: number;
+  onClick?: () => void;
+}) => {
+  const classes = useStylesDrafts();
+  const titleTruncateLines = props.titleTruncateLines !== undefined ? props.titleTruncateLines : 2;
+  const descriptionTruncateLines = props.descriptionTruncateLines !== undefined ? props.descriptionTruncateLines : 3;
+  return (
+    <div
+      className={classNames(
+        props.className,
+        classes.draftContainer,
+        !!props.onClick && classes.clickable,
+      )}
+      onClick={!props.onClick ? undefined : () => props.onClick?.()}
+    >
+      <PostTitle
+        variant='list'
+        title={props.draft.title}
+        titleTruncateLines={titleTruncateLines}
+        descriptionTruncateLines={descriptionTruncateLines}
+      />
+      <PostDescription
+        variant='list'
+        description={props.draft.description}
+        descriptionTruncateLines={descriptionTruncateLines}
+      />
+      <div className={classes.draftBottomBar}>
+        <PostClassification title='Draft' />
+      </div>
+    </div>
+  );
+}
+
 
 export default keyMapper(
   (ownProps: Props) => getSearchKey({
@@ -422,21 +547,55 @@ export default keyMapper(
         return ideas.length ? ideas : undefined;
       }));
 
+    // DRAFTS
+    const selectDraftsSearchMerged = (_, ownProps: Props): Admin.IdeaDraftSearch => ({
+      filterCategoryIds: ownProps.searchOverrideAdmin?.filterCategoryIds
+        || ownProps.searchOverride?.filterCategoryIds
+        || ownProps.panel?.search?.filterCategoryIds,
+    });
+    const selectDraftsSearchKey = createSelector(
+      [selectDraftsSearchMerged],
+      (searchMerged) => getSearchKey(searchMerged)
+    );
+    const selectDraftsBySearch = (state: ReduxState) => state.drafts.bySearch;
+    const selectDraftsSearch = createSelector(
+      [selectDraftsSearchKey, selectDraftsBySearch],
+      (searchKey, draftsBySearch) => searchKey ? draftsBySearch[searchKey] : undefined
+    );
+    const selectDraftsById = (state: ReduxState) => state.drafts.byId;
+    const selectDrafts = selectorContentWrap(createSelector(
+      [selectDraftsSearch, selectDraftsById],
+      (search, byId) => {
+        const drafts = (search?.draftIds || []).map(draftId => {
+          const draft = byId[draftId];
+          if (!draft || draft.status !== Status.FULFILLED) return undefined;
+          return draft.draft;
+        }).filter(notEmpty);
+        return drafts.length ? drafts : undefined;
+      }));
+
     const selectConnectProps = createSelector(
       selectMissingVotes,
       selectIdeas,
       selectSearch,
+      selectDraftsSearchMerged,
+      selectDrafts,
+      selectDraftsSearch,
       (state: ReduxState) => state.conf.ver,
       (state: ReduxState) => state.conf.conf,
       (state: ReduxState) => state.projectId,
       selectLoggedInUser,
-      (missingVotes, ideas, search, configver, config, projectId, loggedInUser) => {
+      (missingVotes, ideas, search, draftSearchMerged, drafts, draftSearch, configver, config, projectId, loggedInUser) => {
         const connectProps: ConnectProps = {
           config,
           configver,
           searchStatus: search?.status,
           searchCursor: search?.cursor,
           searchIdeas: ideas || [],
+          draftSearchMerged: draftSearchMerged,
+          draftSearchStatus: draftSearch?.status,
+          draftSearchCursor: draftSearch?.cursor,
+          draftSearchDrafts: drafts || [],
           missingVotes,
           projectId: projectId || undefined,
           loggedInUser,

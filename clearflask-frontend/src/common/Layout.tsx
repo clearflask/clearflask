@@ -11,6 +11,7 @@ import HelpPopper from './HelpPopper';
 import { notEmpty } from './util/arrayUtil';
 import keyMapper from './util/keyMapper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
+import { customShouldComponentUpdate } from './util/reactUtil';
 
 export interface LayoutState {
   isShown: (name: string) => BreakAction;
@@ -245,6 +246,11 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
       mobileMenuOpen: false,
     };
   }
+
+  shouldComponentUpdate = customShouldComponentUpdate({
+    nested: new Set(['sections', 'mediaQueries']),
+    presence: new Set(['previewShowNot']),
+  });
 
   renderHeader(layoutState: LayoutState, header: Section['header']): Header | undefined {
     if (!header) return undefined;
@@ -587,6 +593,5 @@ export default keyMapper(
       const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
       mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
     }
-    console.log('debug', mediaQueries);
     return mediaQueries;
   })(withStyles(styles, { withTheme: true })(Layout)));

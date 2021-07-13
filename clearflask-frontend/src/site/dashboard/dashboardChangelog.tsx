@@ -2,7 +2,6 @@ import { Divider } from '@material-ui/core';
 import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
-import PanelDraft from '../../app/comps/PanelDraft';
 import { Orientation } from '../../common/ContentScroll';
 import { LayoutState, Section } from '../../common/Layout';
 import setTitle from "../../common/util/titleUtil";
@@ -41,6 +40,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
     name: 'filters',
     breakAction: 'menu',
     size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
+    collapseRight: true,
     content: layoutState => layoutState.isShown('filters') !== 'show' ? null : changelogFilters(layoutState),
   });
   if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
@@ -66,15 +66,6 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
         <Divider />
         <div className={this.props.classes.listContainer}>
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            {this.state.changelog && (
-              <PanelDraft
-                server={activeProject.server}
-                filterCategoryId={this.state.changelog.categoryAndIndex.category.categoryId}
-                hideIfEmpty
-                onClickDraft={draftId => this.pageClicked('post', [draftId])}
-                selectedDraftId={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
-              />
-            )}
             <PostList
               key={activeProject.server.getProjectId()}
               server={activeProject.server}
@@ -85,6 +76,15 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
               selected={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
               displayOverride={{
                 showCategoryName: false,
+              }}
+              PanelPostProps={{
+                showDrafts: {
+                  onClickDraft: draftId => this.setState({
+                    previewShowOnPage: 'changelog',
+                    changelogPreview: { type: 'draft', id: draftId },
+                  }),
+                  selectedDraftId: this.state.changelogPreview?.type === 'draft' ? this.state.changelogPreview.id : undefined,
+                },
               }}
             />
           </Provider>

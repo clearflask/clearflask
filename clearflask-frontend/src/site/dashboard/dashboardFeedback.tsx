@@ -24,12 +24,16 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
   }
   const activeProject = context.activeProject;
 
-  context.onDndHandled = async (to, post, createdId) => {
-    // Open next posts
-    const success = await this.feedbackListRef.current?.next();
+  const selectedPostId = this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined;
 
-    // If not next post, at least close the current one 
-    if (!success) this.setState({ feedbackPreview: undefined });
+  context.onDndHandled = async (to, post, createdId) => {
+    if (post.ideaId === selectedPostId) {
+      // Open next posts
+      const success = await this.feedbackListRef.current?.next();
+
+      // If not next post, at least close the current one 
+      if (!success) this.setState({ feedbackPreview: undefined });
+    }
 
     // Show snackbar for certain actions
     if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
@@ -141,7 +145,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
               }
               return undefined;
             }}
-            selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+            selectedPostId={selectedPostId}
             draggingPostIdSubscription={this.draggingPostIdSubscription}
             dragDropSensorApi={this.state.dragDropSensorApi}
             fallbackClickHandler={fallbackClickHandler}
@@ -275,7 +279,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClickPost={postId => this.pageClicked('post', [postId])}
           onUserClick={userId => this.pageClicked('user', [userId])}
           selectable
-          selected={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+          selected={selectedPostId}
           PanelPostProps={{
             navigatorRef: this.feedbackListRef,
             navigatorChanged: () => this.forceUpdate(),
@@ -298,7 +302,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             onClickPost={postId => this.pageClicked('post', [postId])}
             onUserClick={userId => this.pageClicked('user', [userId])}
             searchKey={getSearchKey(feedbackPostSearch)}
-            selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+            selectedPostId={selectedPostId}
             draggingPostIdSubscription={this.draggingPostIdSubscription}
             feedback={this.state.feedback}
             roadmap={this.state.roadmap}

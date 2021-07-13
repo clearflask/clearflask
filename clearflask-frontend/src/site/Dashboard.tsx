@@ -268,7 +268,7 @@ interface State {
   roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
   roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
   changelogPostSearch?: AdminClient.IdeaSearchAdmin;
-  changelogPreview?: { type: 'create' } | { type: 'post', id: string },
+  changelogPreview?: { type: 'create' } | { type: 'post' | 'draft', id: string },
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: { type: 'create' } | { type: 'user', id: string },

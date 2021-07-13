@@ -18,9 +18,10 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
   const activeProject = context.activeProject;
 
   context.sections.push({
-    name: 'menu',
+    name: 'filters',
     breakAction: 'menu',
     size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
+    collapseRight: true,
     content: (
       <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
         <UserFilterControls

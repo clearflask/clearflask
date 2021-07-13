@@ -44,7 +44,7 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
     name: 'filters',
     breakAction: 'hide',
     breakPriority: 10,
-    collapseLeft: true, collapseTopBottom: true,
+    collapseRight: true,
     size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
     content: layoutState => layoutState.isShown('filters') !== 'show' ? null : explorerFilters(layoutState),
   });
@@ -52,7 +52,6 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
   context.sections.push({
     name: 'list',
     size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024, scroll: Orientation.Vertical },
-    collapseLeft: true, collapseTopBottom: true,
     barTop: layoutState => (
       <DashboardSearchControls
         placeholder='Search all content'

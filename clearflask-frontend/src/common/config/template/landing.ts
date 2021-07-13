@@ -60,6 +60,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert(0).setRaw(Admin.PageToJSON({
       pageId: randomUuid(),
       name: 'Welcome',
+      title: 'Product feedback and future',
       slug: '',
       panels: [],
       landing: {

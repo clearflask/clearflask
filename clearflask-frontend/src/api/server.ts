@@ -789,6 +789,7 @@ const stateDraftsDefault = {
   bySearch: {},
 };
 function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActions): StateDrafts {
+  var searchKey;
   switch (action.type) {
     case Admin.ideaDraftCreateAdminActionStatus.Fulfilled:
       return {
@@ -822,28 +823,31 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
         },
       };
     case Admin.ideaDraftSearchAdminActionStatus.Pending:
+      searchKey = getSearchKey(action.meta.request.ideaDraftSearch);
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.filterCategoryId || '']: {
-            ...state.bySearch[action.meta.request.filterCategoryId || ''],
+          [searchKey]: {
+            ...state.bySearch[searchKey],
             status: Status.PENDING,
           }
         }
       };
     case Admin.ideaDraftSearchAdminActionStatus.Rejected:
+      searchKey = getSearchKey(action.meta.request.ideaDraftSearch);
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.filterCategoryId || '']: {
-            ...state.bySearch[action.meta.request.filterCategoryId || ''],
+          [searchKey]: {
+            ...state.bySearch[searchKey],
             status: Status.REJECTED,
           }
         }
       };
     case Admin.ideaDraftSearchAdminActionStatus.Fulfilled:
+      searchKey = getSearchKey(action.meta.request.ideaDraftSearch);
       return {
         ...state,
         byId: {
@@ -859,11 +863,11 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
         },
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.filterCategoryId || '']: {
+          [searchKey]: {
             status: Status.FULFILLED,
-            draftIds: (action.meta.request.cursor !== undefined && state.bySearch[action.meta.request.filterCategoryId || ''] && action.meta.request.cursor === state.bySearch[action.meta.request.filterCategoryId || ''].cursor)
+            draftIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
               ? [ // Append results to existing draft ids
-                ...(state.bySearch[action.meta.request.filterCategoryId || ''].draftIds || []),
+                ...(state.bySearch[searchKey].draftIds || []),
                 ...action.payload.results.map(idea => idea.draftId),
               ] : ( // Replace results if cursor doesn't match
                 action.payload.results.map(draft => draft.draftId)

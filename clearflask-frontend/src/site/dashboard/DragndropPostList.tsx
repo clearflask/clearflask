@@ -5,7 +5,7 @@ import React from 'react';
 import { Draggable, DraggableProvided, DropAnimation, Droppable, DroppableId, DroppableProvidedProps } from 'react-beautiful-dnd';
 import { customReactMemoEquals } from '../../common/util/reactUtil';
 import { droppableDataDeserialize } from './dashboardDndActionHandler';
-import PostList from './PostList';
+import PostList, { DashboardListPostSpacing } from './PostList';
 
 export const PostListWithSearchKeyDroppableIdPrefix = 'post-list-';
 
@@ -91,7 +91,7 @@ const DragndropPostListPostListInner = React.memo((props: {
     <PostList
       {...props.PostListProps}
       PanelPostProps={{
-        widthExpandMargin: theme.spacing(2, 2, 2, 3),
+        widthExpandMargin: theme.spacing(DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing + 1),
         ...props.PostListProps.PanelPostProps,
         wrapPost: (post, content, index) => (
           <Draggable
