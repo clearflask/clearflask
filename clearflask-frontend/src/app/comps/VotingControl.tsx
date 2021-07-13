@@ -2,8 +2,10 @@ import { darken, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
-import PositiveIcon from '@material-ui/icons/Favorite';
-import NegativeIcon from '@material-ui/icons/ThumbDown';
+import PositiveSelectedIcon from '@material-ui/icons/Favorite';
+import PositiveIcon from '@material-ui/icons/FavoriteBorder';
+import NegativeSelectedIcon from '@material-ui/icons/ThumbDown';
+import NegativeIcon from '@material-ui/icons/ThumbDownOutlined';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
@@ -80,8 +82,8 @@ interface Props {
   voteValue?: number;
   isSubmittingVote?: Client.VoteOption;
   votingAllowed?: boolean;
-  hideControls?: boolean;
-  onUpvote: () => void;
+  onlyShowCount?: boolean;
+  onUpvote?: () => void;
   iWantThis?: Client.VotingIWantThis;
   onDownvote?: () => void;
 }
@@ -89,9 +91,7 @@ interface Props {
 class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    const votingAllowed = !!this.props.votingAllowed && !this.props.hideControls
-
-    if (!votingAllowed) {
+    if (!this.props.votingAllowed || this.props.onlyShowCount || !this.props.onUpvote) {
       return this.renderVotingCount();
     }
 
@@ -166,7 +166,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
       <MyButton
         buttonVariant='post'
         color={upvoted ? 'inherit' : undefined}
-        Icon={PositiveIcon}
+        Icon={upvoted ? PositiveSelectedIcon : PositiveIcon}
         className={classNames(
           this.props.classes.voteButtonWantThis,
           this.props.classes.voteButtonPositive,
@@ -188,7 +188,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         <MyButton
           buttonVariant='post'
           color={downvoted ? 'inherit' : undefined}
-          Icon={NegativeIcon}
+          Icon={downvoted ? NegativeSelectedIcon : NegativeIcon}
           className={classNames(
             this.props.classes.voteButtonWantThis,
             this.props.classes.voteButtonNegative,

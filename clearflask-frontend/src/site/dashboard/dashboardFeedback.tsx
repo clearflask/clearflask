@@ -1,0 +1,321 @@
+import { Fade, IconButton } from '@material-ui/core';
+import PrevIcon from '@material-ui/icons/NavigateBefore';
+import NextIcon from '@material-ui/icons/NavigateNext';
+import classNames from 'classnames';
+import React from 'react';
+import { Provider } from 'react-redux';
+import * as Admin from '../../api/admin';
+import { getSearchKey } from '../../api/server';
+import { Orientation } from '../../common/ContentScroll';
+import { LayoutState, Section } from '../../common/Layout';
+import setTitle from "../../common/util/titleUtil";
+import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
+import { dashboardOnDragEnd, droppableDataSerialize } from "./dashboardDndActionHandler";
+import DashboardPostFilterControls from './DashboardPostFilterControls';
+import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './DashboardQuickActions';
+import DashboardSearchControls from './DashboardSearchControls';
+import DragndropPostList from './DragndropPostList';
+
+export async function renderFeedback(this: Dashboard, context: DashboardPageContext) {
+  setTitle('Feedback - Dashboard');
+  if (!context.activeProject) {
+    context.showCreateProjectWarning = true;
+    return;
+  }
+  const activeProject = context.activeProject;
+
+  context.onDndHandled = async (to, post, createdId) => {
+    // Open next posts
+    const success = await this.feedbackListRef.current?.next();
+
+    // If not next post, at least close the current one 
+    if (!success) this.setState({ feedbackPreview: undefined });
+
+    // Show snackbar for certain actions
+    if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
+      this.showSnackbar({
+        key: to.type + post.ideaId,
+        message: 'Converted to task',
+        actions: [{
+          title: 'Open task',
+          onClick: close => {
+            close();
+            this.setState({
+              feedbackPreviewRight: { type: 'post', id: createdId, header: 'Created task' },
+              previewShowOnPage: 'feedback',
+            });
+          },
+        }]
+      });
+    } else if (to.type === 'quick-action-feedback-merge-duplicate') {
+      this.showSnackbar({
+        key: to.type + post.ideaId,
+        message: 'Merged with duplicate',
+        actions: [{
+          title: 'Open feedback',
+          onClick: close => {
+            close();
+            this.setState({
+              feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Merged feedback' },
+              previewShowOnPage: 'feedback',
+            });
+          },
+        }]
+      });
+    } else if (to.type === 'quick-action-feedback-link-with-task-and-accept') {
+      this.showSnackbar({
+        key: to.type + post.ideaId,
+        message: 'Linked with task',
+        actions: [{
+          title: 'Open task',
+          onClick: close => {
+            close();
+            this.setState({
+              feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Linked task' },
+              previewShowOnPage: 'feedback',
+            });
+          },
+        }]
+      });
+    }
+  };
+
+  const feedbackPostSearch = this.state.feedbackPostSearch || {
+    sortBy: Admin.IdeaSearchAdminSortByEnum.New,
+    ...(this.state.feedback?.categoryAndIndex.category.workflow.entryStatus ? {
+      filterStatusIds: [this.state.feedback.categoryAndIndex.category.workflow.entryStatus],
+    } : {}),
+  };
+  if (this.state.feedback) feedbackPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
+  if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
+    this.similarPostWasClicked = undefined;
+  }
+  const feedbackPostListDroppableId = droppableDataSerialize({
+    type: 'feedback-search',
+    searchKey: getSearchKey(feedbackPostSearch),
+  });
+  const fallbackClickHandler: FallbackClickHandler = async (draggableId, dstDroppableId) => {
+    if (!activeProject
+      || this.state.feedbackPreview?.type !== 'post') return false;
+    return await dashboardOnDragEnd(
+      activeProject,
+      feedbackPostListDroppableId,
+      0,
+      draggableId,
+      dstDroppableId,
+      0,
+      this.state.feedback || undefined,
+      this.state.roadmap || undefined,
+      context.onDndHandled);
+  };
+  const renderRelatedContent = (type: 'feedback' | 'task'): React.ReactNode | null => {
+    if (this.state.feedbackPreview?.type !== 'post') return null;
+    const categoryId = type === 'feedback' ? this.state.feedback?.categoryAndIndex.category.categoryId : this.state.roadmap?.categoryAndIndex.category.categoryId;
+    if (!categoryId) return null;
+    return (
+      <div className={this.props.classes.feedbackColumnRelated}>
+        <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+          <QuickActionPostList
+            key={activeProject.server.getProjectId()}
+            server={activeProject.server}
+            title={type === 'feedback' ? {
+              name: 'Merge feedback',
+              helpDescription: 'Merge with another duplicate feedback. Content, comments, votes and subscribers will all be merged in.',
+            } : {
+              name: 'Link to task',
+              helpDescription: 'Link with a related task and mark feedback as accepted. Subscribers will be notified.',
+            }}
+            getDroppableId={post => {
+              if (post.categoryId === this.state.feedback?.categoryAndIndex.category.categoryId) {
+                return droppableDataSerialize({
+                  type: 'quick-action-feedback-merge-duplicate',
+                  dropbox: true,
+                  postId: post.ideaId,
+                });
+              } else if (post.categoryId === this.state.roadmap?.categoryAndIndex.category.categoryId) {
+                return droppableDataSerialize({
+                  type: 'quick-action-feedback-link-with-task-and-accept',
+                  dropbox: true,
+                  postId: post.ideaId,
+                });
+              }
+              return undefined;
+            }}
+            selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+            draggingPostIdSubscription={this.draggingPostIdSubscription}
+            dragDropSensorApi={this.state.dragDropSensorApi}
+            fallbackClickHandler={fallbackClickHandler}
+            statusColorGivenCategoies={new Set([categoryId])}
+            PostListProps={{
+              hideIfEmpty: true,
+              search: {
+                sortBy: Admin.IdeaSearchAdminSortByEnum.New,
+                filterCategoryIds: [categoryId],
+                limit: 3,
+                similarToIdeaId: this.state.feedbackPreview.id,
+              },
+            }}
+          />
+        </Provider>
+      </div>
+    );
+  };
+  const sectionRelated: Section = {
+    name: `related`,
+    breakAction: 'hide', breakPriority: 30,
+    size: { breakWidth: 200, flexGrow: 0, maxWidth: 'max-content', scroll: Orientation.Vertical },
+    noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
+    content: layoutState => (
+      <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
+        {renderRelatedContent('task')}
+        {renderRelatedContent('feedback')}
+      </div>
+    ),
+  };
+
+  var sectionPreview: Section;
+  if (this.state.feedbackPreview?.type === 'create') {
+    sectionPreview = this.renderPreviewPostCreate(activeProject);
+  } else if (this.state.feedbackPreview?.type === 'post') {
+    sectionPreview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
+  } else {
+    sectionPreview = this.renderPreviewEmpty('No feedback selected', PostPreviewSize);
+  }
+  sectionPreview.collapseBottom = true;
+  sectionPreview.breakAction = 'show';
+  sectionPreview.header = {
+    title: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
+    middle: (
+      <Fade in={this.state.feedbackPreview?.type === 'post'}>
+        <div>
+          <IconButton
+            className={this.props.classes.feedbackNavigatorIcon}
+            disabled={!this.feedbackListRef.current?.hasPrevious()}
+            onClick={() => this.feedbackListRef.current?.previous()}
+          >
+            <PrevIcon fontSize='inherit' />
+          </IconButton>
+          <IconButton
+            className={this.props.classes.feedbackNavigatorIcon}
+            disabled={!this.feedbackListRef.current?.hasNext()}
+            onClick={() => this.feedbackListRef.current?.next()}
+          >
+            <NextIcon fontSize='inherit' />
+          </IconButton>
+        </div>
+      </Fade>
+    ),
+    action: { label: 'Create', onClick: () => this.pageClicked('post') },
+  };
+
+  var sectionPreviewRight: Section | undefined;
+  if (this.state.feedbackPreviewRight?.type === 'create') {
+    sectionPreviewRight = this.renderPreviewPostCreate(activeProject);
+    sectionPreviewRight.header = { title: { title: 'New task' } };
+  } else if (this.state.feedbackPreviewRight?.type === 'post') {
+    sectionPreviewRight = this.renderPreviewPost(this.state.feedbackPreviewRight.id, activeProject);
+    sectionPreviewRight.header = { title: { title: this.state.feedbackPreviewRight.header } };
+  }
+  if (sectionPreviewRight) {
+    sectionPreviewRight.name = 'preview2';
+    sectionPreviewRight.breakAlways = true;
+    sectionPreviewRight.breakAction = 'drawer';
+  }
+
+  const feedbackFilters = (layoutState: LayoutState) => (
+    <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+      <DashboardPostFilterControls
+        key={activeProject.server.getProjectId()}
+        server={activeProject.server}
+        search={feedbackPostSearch}
+        allowSearch={{ enableSearchByCategory: false }}
+        permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
+        onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
+        horizontal={layoutState.isShown('filters') !== 'show'}
+      />
+    </Provider>
+  );
+
+  const sectionFilters: Section = {
+    name: 'filters',
+    breakAction: 'hide',
+    breakPriority: 50,
+    collapseLeft: true, collapseTopBottom: true,
+    size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
+    content: layoutState => layoutState.isShown('filters') !== 'show' ? null : feedbackFilters(layoutState),
+  };
+
+  const sectionList: Section = {
+    name: 'list',
+    breakAction: 'menu', breakPriority: 40,
+    size: { breakWidth: 300, flexGrow: 20, maxWidth: 1024, scroll: Orientation.Vertical },
+    collapseLeft: true, collapseTopBottom: true,
+    barTop: layoutState => (
+      <DashboardSearchControls
+        placeholder='Search for feedback'
+        key={'feedback-search-bar' + activeProject.server.getProjectId()}
+        searchText={feedbackPostSearch.searchText || ''}
+        onSearchChanged={searchText => this.setState({
+          feedbackPostSearch: {
+            ...this.state.feedbackPostSearch,
+            searchText,
+          }
+        })}
+        filters={layoutState.isShown('filters') === 'show' ? null : feedbackFilters(layoutState)}
+      />
+    ),
+    content: (
+      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+        <DragndropPostList
+          scroll
+          key={activeProject.server.getProjectId()}
+          droppableId={feedbackPostListDroppableId}
+          server={activeProject.server}
+          search={feedbackPostSearch}
+          onClickPost={postId => this.pageClicked('post', [postId])}
+          onUserClick={userId => this.pageClicked('user', [userId])}
+          selectable
+          selected={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+          PanelPostProps={{
+            navigatorRef: this.feedbackListRef,
+            navigatorChanged: () => this.forceUpdate(),
+          }}
+        />
+      </Provider>
+    ),
+  };
+
+  const sectionQuickActions: Section = {
+    name: 'quick-actions',
+    breakAction: 'hide', breakPriority: 10,
+    size: { breakWidth: 200, flexGrow: 20, maxWidth: 'max-content', scroll: Orientation.Vertical },
+    noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
+    content: layoutState => (
+      <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
+        <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+          <DashboardQuickActions
+            activeProject={activeProject}
+            onClickPost={postId => this.pageClicked('post', [postId])}
+            onUserClick={userId => this.pageClicked('user', [userId])}
+            searchKey={getSearchKey(feedbackPostSearch)}
+            selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
+            draggingPostIdSubscription={this.draggingPostIdSubscription}
+            feedback={this.state.feedback}
+            roadmap={this.state.roadmap}
+            dragDropSensorApi={this.state.dragDropSensorApi}
+            fallbackClickHandler={fallbackClickHandler}
+          />
+        </Provider>
+      </div>
+    ),
+  };
+
+  context.sections.push(sectionFilters);
+  context.sections.push(sectionList);
+  context.sections.push(sectionQuickActions);
+  context.sections.push(sectionPreview);
+  context.sections.push(sectionRelated);
+  !!sectionPreviewRight && context.sections.push(sectionPreviewRight);
+
+  context.showProjectLink = true;
+}

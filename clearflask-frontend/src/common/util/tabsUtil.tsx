@@ -1,14 +1,74 @@
+import { Tab, Tabs } from '@material-ui/core';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React from 'react';
 
 // Mui Tabs requires Tab to be a direct child
 // Instead, you can use this fragment to trick Mui
 // Tabs passes props to children and these are passed along here
 // https://github.com/mui-org/material-ui/blob/master/packages/material-ui/src/Tabs/Tabs.js#L410
-export const TabFragment = (props: { value: any, children: (tabProps: any) => React.ReactNode }) => {
+export const TabFragment = (props: {
+  value: any,
+  children: React.ReactNode | ((tabProps: {
+    indicator?: React.ReactNode,
+    selectionFollowsFocus?: boolean,
+  } & Pick<React.ComponentProps<typeof Tab>, 'fullWidth' | 'selected' | 'onChange' | 'textColor' | 'value'>) => React.ReactNode),
+},
+) => {
   const { value, children, ...tabProps } = props;
+
+  const content = typeof children === 'function' ? children(tabProps) : children;
   return (
     <>
-      {props.children(tabProps)}
+      {content}
     </>
   );
 };
+
+
+const styles = (theme: Theme) => createStyles({
+  tabsIndicator: {
+    // Flips to the left
+    right: 'unset', left: 0,
+    // Shorten indicator size
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    '& > span': {
+      maxHeight: 80,
+      height: '100%',
+      backgroundColor: theme.palette.primary.main,
+    },
+  },
+  tabsScroller: {
+    whiteSpace: 'unset',
+  },
+});
+const useStyles = makeStyles(styles);
+
+export const TabsVertical = (props: {
+  selected?: string,
+  onClick?: (selected: string) => void;
+  children?: any,
+  TabsProps?: Partial<React.ComponentProps<typeof Tabs>>,
+}) => {
+  const classes = useStyles();
+  return (
+    <Tabs
+      orientation='vertical'
+      classes={{
+        indicator: classes.tabsIndicator,
+        scroller: classes.tabsScroller,
+      }}
+      value={props.selected}
+      onChange={props.onClick ? (e, postId) => props.onClick?.(postId) : undefined}
+      // Used for shortening indicator size
+      TabIndicatorProps={{ children: <span /> }}
+      {...props.TabsProps}
+    >
+      {props.children}
+    </Tabs>
+  );
+};
+
+

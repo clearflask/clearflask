@@ -11,8 +11,8 @@ import Loading from '../../app/utils/Loading';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
-import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
 import keyMapper from '../../common/util/keyMapper';
+import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
 
 interface SearchResult {
   status: Status;
@@ -30,13 +30,8 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-block',
   },
   user: {
-    ...buttonHover(theme),
     padding: theme.spacing(2, 4),
     backgroundColor: theme.palette.background.default,
-
-  },
-  userSelected: {
-    ...buttonSelected(theme),
   },
   scroll: {
     flexGrow: 1,
@@ -47,7 +42,8 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   search?: Partial<Admin.UserSearchAdmin>;
-  selectedUserId?: string;
+  selectable?: boolean;
+  selected?: string;
   onUserClick: (userId: string) => void;
   scroll?: boolean;
 }
@@ -88,25 +84,50 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
             </div>
           );
         } else {
-          return (
+          var content: React.ReactNode = this.props.searchResult.users.map(user => {
+            var userContent = (
+              <UserWithAvatarDisplay
+                backgroundColor='default'
+                className={classNames(
+                  this.props.classes.user,
+                )}
+                user={user}
+                onClick={() => this.props.onUserClick(user.userId)}
+              />
+            );
+            if (this.props.selectable) {
+              userContent = (
+                <TabFragment key={user.userId} value={user.userId}>
+                  {userContent}
+                </TabFragment>
+              );
+            } else {
+              userContent = (
+                <React.Fragment key={user.userId}>
+                  {userContent}
+                </React.Fragment>
+              );
+            }
+            return userContent;
+          });
+          if (this.props.selectable) {
+            content = (
+              <TabsVertical
+                selected={this.props.selected}
+                onClick={postId => this.props.onUserClick(postId)}
+              >
+                {content}
+              </TabsVertical>
+            );
+          }
+          content = (
             <div className={classNames(
               this.props.scroll && this.props.classes.scroll,
             )}>
-              {this.props.searchResult.users.map(user => (
-                <React.Fragment key={user.userId}>
-                  <UserWithAvatarDisplay
-                    backgroundColor='default'
-                    className={classNames(
-                      this.props.classes.user,
-                      this.props.selectedUserId === user.userId && this.props.classes.userSelected,
-                    )}
-                    user={user}
-                    onClick={() => this.props.onUserClick(user.userId)}
-                  />
-                </React.Fragment>
-              ))}
+              {content}
             </div>
           );
+          return content;
         }
     }
   }

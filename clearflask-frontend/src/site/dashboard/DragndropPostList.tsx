@@ -23,16 +23,16 @@ const styles = (theme: Theme) => createStyles({
     position: 'relative', // For DragmeIcon
   },
   dragmeIcon: {
-    transform: 'rotate(90deg)',
+    // transform: 'rotate(90deg)',
   },
   dragmeIconContainer: {
     position: 'absolute',
+    top: theme.spacing(4),
     left: 0,
-    top: 0,
     cursor: 'grab',
     opacity: 0.1,
-    marginLeft: theme.spacing(4),
-    padding: theme.spacing(1),
+    marginRight: theme.spacing(4),
+    height: 30,
   },
 });
 const useStyles = makeStyles(styles);
@@ -86,12 +86,13 @@ DragndropPostListDroppableInner.displayName = 'DragndropPostListDroppableInner';
 const DragndropPostListPostListInner = React.memo((props: {
   PostListProps: React.ComponentProps<typeof PostList>;
 }) => {
+  const theme = useTheme();
   return (
     <PostList
       {...props.PostListProps}
       PanelPostProps={{
+        widthExpandMargin: theme.spacing(2, 2, 2, 3),
         ...props.PostListProps.PanelPostProps,
-        showDivider: false,
         wrapPost: (post, content, index) => (
           <Draggable
             draggableId={post.ideaId}

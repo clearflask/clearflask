@@ -281,8 +281,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               onChange={(event, value) => this.props.pageChanged(value)}
               indicatorColor="primary"
               textColor="primary"
-              // Used for shortening indicator size
-              TabIndicatorProps={{ children: <span /> }}
+            // Shorten indicator size
+            // TabIndicatorProps={{ children: <span /> }}
             >
               {tabs}
             </Tabs>

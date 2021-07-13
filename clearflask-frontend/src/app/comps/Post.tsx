@@ -3,8 +3,6 @@ import { Button, Chip, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
-import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
-import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import EditIcon from '@material-ui/icons/Edit';
@@ -61,7 +59,7 @@ const styles = (theme: Theme) => createStyles({
   post: {
     display: 'flex',
     flexDirection: 'column',
-    margin: theme.spacing(0.5),
+    padding: theme.spacing(0.5),
   },
   postContent: {
     display: 'flex',
@@ -159,7 +157,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
   },
-  commentCount: {
+  itemCount: {
     display: 'flex',
     alignItems: 'center',
     whiteSpace: 'nowrap',
@@ -346,6 +344,7 @@ const styles = (theme: Theme) => createStyles({
 const useStyles = makeStyles(styles);
 interface Props {
   className?: string;
+  classNamePadding?: string;
   server: Server;
   idea?: Client.Idea;
   variant: PostVariant;
@@ -467,6 +466,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           <div
             className={classNames(
               this.props.classes.post,
+              this.props.classNamePadding,
               (isOnlyPostOnClick && !this.props.disableOnClick) && this.props.classes.clickable,
             )}
             style={{
@@ -637,7 +637,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.category.support.comment) return null;
 
     return (
-      <Typography key='commentCount' className={this.props.classes.commentCount} variant='caption'>
+      <Typography key='commentCount' className={this.props.classes.itemCount} variant='caption'>
         <SpeechIcon fontSize='inherit' />
         &nbsp;
         {this.props.idea.commentCount || 0}
@@ -843,13 +843,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || (this.props.display?.showVotingCount === undefined && (this.props.idea.voteValue || 1) === 1)
     ) return null;
 
-    const Icon = (this.props.idea.voteValue || 0) >= 0 ? UpvoteIcon : DownvoteIcon;
     return (
-      <Typography className={this.props.classes.commentCount} variant='caption'>
-        <Icon fontSize='inherit' />
-        &nbsp;
-        {Math.abs(this.props.idea.voteValue || 0)}
-      </Typography>
+      <VotingControl
+        onlyShowCount
+        className={this.props.classes.itemCount}
+        vote={this.props.vote}
+        voteValue={this.props.idea?.voteValue || 0}
+        isSubmittingVote={this.state.isSubmittingVote}
+        iWantThis={this.props.category?.support.vote?.iWantThis}
+      />
     );
   }
 
@@ -1078,7 +1080,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const [topEmoji, topEmojiCount] = Object.entries(this.props.idea.expressions || {})
       .reduce((l, r) => l[1] > r[1] ? l : r, ['', 0]);
     return (
-      <Typography key='expressionTop' className={this.props.classes.commentCount} variant='caption'>
+      <Typography key='expressionTop' className={this.props.classes.itemCount} variant='caption'>
         {(!!topEmoji && !!topEmojiCount) ? (
           <span className={this.props.classes.expressionEmojiAsIcon}>
             {topEmoji}

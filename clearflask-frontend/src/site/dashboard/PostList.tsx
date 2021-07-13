@@ -7,20 +7,15 @@ import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PanelPost, { Direction } from '../../app/comps/PanelPost';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
-import { buttonHover, buttonSelected } from '../../common/util/cssUtil';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 
 const styles = (theme: Theme) => createStyles({
   post: {
-    ...buttonHover(theme),
     '&:hover $title': {
       textDecoration: 'underline',
     },
     cursor: 'pointer',
     minWidth: 0,
-  },
-  postSelected: {
-    ...buttonSelected(theme),
   },
   postSimilarMergeAction: {
     minWidth: 0,
@@ -43,7 +38,8 @@ interface Props {
   className?: string;
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
-  selectedPostId?: string;
+  selectable?: boolean;
+  selected?: string;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
   layout?: 'similar-merge-action';
@@ -108,11 +104,12 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
           this.props.layout === 'similar-merge-action' && this.props.classes.postSimilarMergeAction,
           this.props.PanelPostProps?.postClassName,
         )}
-        selectedPostId={this.props.selectedPostId}
-        selectedPostClassName={this.props.classes.postSelected}
+        selectable={this.props.selectable}
+        selected={this.props.selected}
         suppressPanel
         panel={panel}
         widthExpand
+        widthExpandMargin={this.props.theme.spacing(2)}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}

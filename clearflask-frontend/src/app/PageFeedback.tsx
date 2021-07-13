@@ -78,9 +78,11 @@ const styles = (theme: Theme) => createStyles({
   debatePosts: {
     display: 'flex',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingTop: theme.spacing(4),
     margin: theme.spacing(-2), // Collapse margins from debatePost 
+    alignItems: 'flex-start',
+    maxWidth: 1024,
   },
   debatePost: {
     margin: theme.spacing(2), // Collapsed in debatePosts
@@ -258,6 +260,7 @@ const PageFeedback = (props: {
                     overrideTitle=''
                     server={props.server}
                     onHasAnyChanged={setHasAnyDebate}
+                    suppressPanel
                   />
                 </div>
                 {!!props.pageFeedback.debate2 && (
@@ -276,6 +279,7 @@ const PageFeedback = (props: {
                         overrideTitle=''
                         server={props.server}
                         onHasAnyChanged={setHasAnyDebate2}
+                        suppressPanel
                       />
                     </div>
                   </>

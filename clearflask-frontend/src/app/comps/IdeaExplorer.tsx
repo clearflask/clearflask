@@ -201,7 +201,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             server={this.props.server}
             direction={Direction.Vertical}
             widthExpand={!this.props.isDashboard}
-            showDivider={!!this.props.isDashboard}
             onClickPost={this.props.onClickPost}
             onUserClick={this.props.onUserClick}
             panel={this.props.explorer}

@@ -76,6 +76,7 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
 }
 
 export const PanelTitle = (props: {
+  className?: string;
   text?: React.ReactNode;
   color?: string;
 } & Omit<Partial<React.ComponentPropsWithoutRef<typeof Typography>>, 'color'>) => {
@@ -84,6 +85,7 @@ export const PanelTitle = (props: {
   if (!props.text) return null;
   return (
     <Typography
+      className={props.className}
       variant='h4'
       component='div'
       style={{ color: color !== undefined ? color : theme.palette.text.secondary }}

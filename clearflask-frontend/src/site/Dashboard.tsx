@@ -1,16 +1,13 @@
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Link as MuiLink, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
 import CodeIcon from '@material-ui/icons/Code';
-import PrevIcon from '@material-ui/icons/NavigateBefore';
-import NextIcon from '@material-ui/icons/NavigateNext';
 import SettingsIcon from '@material-ui/icons/Settings';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
-import classNames from 'classnames';
 import { VariantType, withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
@@ -18,14 +15,11 @@ import { connect, Provider } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as AdminClient from '../api/admin';
-import { getSearchKey, Status } from '../api/server';
+import { Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
-import { PanelTitle } from '../app/comps/Panel';
-import PanelDraft from '../app/comps/PanelDraft';
 import { PanelPostNavigator } from '../app/comps/PanelPost';
-import { MaxContentWidth, MinContentWidth } from '../app/comps/Post';
-import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
+import { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import { BoardContainer, BoardPanel } from '../app/CustomPage';
 import ErrorPage from '../app/ErrorPage';
@@ -34,8 +28,6 @@ import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier'
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
-import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
-import Page from '../common/config/settings/Page';
 import { ChangelogInstance } from '../common/config/template/changelog';
 import { FeedbackInstance } from '../common/config/template/feedback';
 import { LandingInstance } from '../common/config/template/landing';
@@ -44,11 +36,9 @@ import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
-import Layout, { LayoutSize, LayoutState, Section, SectionContent } from '../common/Layout';
+import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
-import UserFilterControls from '../common/search/UserFilterControls';
 import SubmitButton from '../common/SubmitButton';
-import { notEmpty } from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -58,20 +48,19 @@ import { initialWidth } from '../common/util/screenUtil';
 import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
-import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
+import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
-import { dashboardOnDragEnd, droppableDataSerialize, OnDndHandled } from './dashboard/dashboardDndActionHandler';
+import { renderChangelog } from './dashboard/dashboardChangelog';
+import { dashboardOnDragEnd, OnDndHandled } from './dashboard/dashboardDndActionHandler';
+import { renderExplore } from './dashboard/dashboardExplore';
+import { renderFeedback } from './dashboard/dashboardFeedback';
 import DashboardHome from './dashboard/DashboardHome';
 import DashboardPost from './dashboard/DashboardPost';
-import DashboardPostFilterControls from './dashboard/DashboardPostFilterControls';
-import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './dashboard/DashboardQuickActions';
-import DashboardSearchControls from './dashboard/DashboardSearchControls';
-import DragndropPostList from './dashboard/DragndropPostList';
-import PostList from './dashboard/PostList';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersOnboarding, ProjectSettingsUsersSso, TemplateWrapper } from './dashboard/ProjectSettings';
-import SettingsPage from './dashboard/SettingsPage';
-import UserList from './dashboard/UserList';
+import { renderRoadmap } from './dashboard/dashboardRoadmap';
+import { renderSettings } from './dashboard/dashboardSettings';
+import { renderUsers } from './dashboard/dashboardUsers';
+import { ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
 import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
 import Logo from './Logo';
@@ -94,12 +83,23 @@ export type ShowSnackbar = (props: ShowSnackbarProps) => void;
 
 export type OpenPost = (postId?: string, redirectPage?: string) => void;
 
+export interface DashboardPageContext {
+  activeProject?: AdminProject;
+  sections: Array<Section>;
+  isOnboarding?: boolean;
+  previewOnClose?: () => void;
+  showProjectLink?: boolean;
+  showCreateProjectWarning?: boolean;
+  showWarning?: string;
+  onDndHandled?: OnDndHandled;
+};
+
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
-const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 876, scroll: Orientation.Vertical };
-const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
+export const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 876, scroll: Orientation.Vertical };
+export const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
 const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
-const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
+export const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
 
 const styles = (theme: Theme) => createStyles({
   grow: {
@@ -209,6 +209,19 @@ const styles = (theme: Theme) => createStyles({
   feedbackQuickActionsTopMargin: {
     marginTop: theme.spacing(8),
   },
+  roadmapContainer: {
+    display: 'flex',
+  },
+  roadmapSectionStack: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  roadmapSection: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
+  roadmapSectionTitle: {
+    margin: theme.spacing(2, 2, 0),
+  },
   listWithSearchContainer: {
     minWidth: 0,
     height: '100%',
@@ -266,7 +279,7 @@ interface State {
   roadmap?: RoadmapInstance | null;
   changelog?: ChangelogInstance | null;
 }
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
+export class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<DemoProject> | undefined = undefined;
@@ -373,7 +386,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         <BillingPaymentActionRedirect />
       );
     }
-    const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
     const projects = Object.keys(this.props.bindByProjectId)
       .map(projectId => ServerAdmin.get().getOrCreateProject(projectId));
     projects.forEach(project => {
@@ -420,21 +432,19 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       templater.changelogGet().then(i => this.setState({ changelog: i || null })).catch(e => this.setState({ changelog: undefined }));
     }
 
-    var sections: Array<Section> = [];
-    var onboarding = false;
-    var previewOnClose: (() => void) | undefined;
-    var showProjectLink: boolean = false;
-    var showCreateProjectWarning: boolean = false;
-    var onDndHandled: OnDndHandled | undefined;
+    const context: DashboardPageContext = {
+      activeProject,
+      sections: [],
+    };
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
-        showProjectLink = true;
+        context.showProjectLink = true;
         if (!activeProject) {
-          showCreateProjectWarning = true;
+          context.showCreateProjectWarning = true;
           break;
         }
-        sections.push({
+        context.sections.push({
           name: 'main',
           size: { flexGrow: 1, scroll: Orientation.Vertical },
           content: (
@@ -465,7 +475,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                             PanelPostProps={{
                               onClickPost: postId => this.pageClicked('post', [postId]),
                               onUserClick: userId => this.pageClicked('user', [userId]),
-                              selectedPostId: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
+                              selectable: true,
+                              selected: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
                             }}
                           />
                         ))}
@@ -480,8 +491,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'welcome':
         setTitle('Welcome - Dashboard');
-        onboarding = true;
-        sections.push({
+        context.isOnboarding = true;
+        context.sections.push({
           name: 'main',
           content: (
             <WelcomePage />
@@ -491,10 +502,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'created':
         setTitle('Success - Dashboard');
         if (!activeProject) {
-          showCreateProjectWarning = true;
+          context.showCreateProjectWarning = true;
           break;
         }
-        sections.push({
+        context.sections.push({
           name: 'main',
           content: (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
@@ -504,874 +515,35 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         });
         break;
       case 'explore':
-        setTitle('Explore - Dashboard');
-        if (!activeProject) {
-          showCreateProjectWarning = true;
-          break;
-        }
-
-        const explorerPostSearch = {
-          ...this.state.explorerPostSearch,
-          // This along with forceSingleCategory ensures one and only one category is selected
-          filterCategoryIds: this.state.explorerPostSearch?.filterCategoryIds?.length
-            ? this.state.explorerPostSearch.filterCategoryIds
-            : (activeProject.editor.getConfig().content.categories.length
-              ? [activeProject.editor.getConfig().content.categories[0]?.categoryId]
-              : undefined),
-          // Sort by new by default
-          sortBy: this.state.explorerPostSearch?.sortBy || AdminClient.IdeaSearchAdminSortByEnum.New,
-        };
-        const explorerFilters = (layoutState: LayoutState) => (
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <DashboardPostFilterControls
-              key={activeProject.server.getProjectId()}
-              server={activeProject.server}
-              search={explorerPostSearch}
-              onSearchChanged={explorerPostSearch => this.setState({ explorerPostSearch })}
-              horizontal={layoutState.isShown('filters') !== 'show'}
-            />
-          </Provider>
-        );
-
-        sections.push({
-          name: 'filters',
-          breakAction: 'hide',
-          breakPriority: 10,
-          collapseRight: true,
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.isShown('filters') !== 'show' ? null : explorerFilters(layoutState),
-        });
-
-        sections.push({
-          name: 'list',
-          size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024, scroll: Orientation.Vertical },
-          barTop: layoutState => (
-            <DashboardSearchControls
-              placeholder='Search all content'
-              key={'explorer-search-bar' + activeProject.server.getProjectId()}
-              searchText={explorerPostSearch.searchText || ''}
-              onSearchChanged={searchText => this.setState({
-                explorerPostSearch: {
-                  ...this.state.explorerPostSearch,
-                  searchText,
-                }
-              })}
-              filters={layoutState.isShown('filters') === 'show' ? null : explorerFilters(layoutState)}
-            />
-          ),
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostList
-                key={activeProject.server.getProjectId()}
-                server={activeProject.server}
-                search={explorerPostSearch}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                selectedPostId={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
-              />
-            </Provider>
-          ),
-        });
-
-        var preview: Section;
-        if (this.state.explorerPreview?.type === 'create') {
-          preview = this.renderPreviewPostCreate(activeProject);
-        } else if (this.state.explorerPreview?.type === 'post') {
-          preview = this.renderPreviewPost(this.state.explorerPreview.id, activeProject);
-        } else {
-          preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
-        }
-        preview.header = {
-          title: { title: 'Explore' },
-          action: { label: 'Create', onClick: () => this.pageClicked('post') },
-        };
-        sections.push(preview);
-
-        showProjectLink = true;
+        this.renderExplore(context);
         break;
       case 'feedback':
-        setTitle('Feedback - Dashboard');
-        if (!activeProject) {
-          showCreateProjectWarning = true;
-          break;
-        }
-
-        onDndHandled = async (to, post, createdId) => {
-          // Open next posts
-          const success = await this.feedbackListRef.current?.next();
-
-          // If not next post, at least close the current one 
-          if (!success) this.setState({ feedbackPreview: undefined });
-
-          // Show snackbar for certain actions
-          if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
-            this.showSnackbar({
-              key: to.type + post.ideaId,
-              message: 'Converted to task',
-              actions: [{
-                title: 'Open task',
-                onClick: close => {
-                  close();
-                  this.setState({
-                    feedbackPreviewRight: { type: 'post', id: createdId, header: 'Created task' },
-                    previewShowOnPage: 'feedback',
-                  });
-                },
-              }]
-            });
-          } else if (to.type === 'quick-action-feedback-merge-duplicate') {
-            this.showSnackbar({
-              key: to.type + post.ideaId,
-              message: 'Merged with duplicate',
-              actions: [{
-                title: 'Open feedback',
-                onClick: close => {
-                  close();
-                  this.setState({
-                    feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Merged feedback' },
-                    previewShowOnPage: 'feedback',
-                  });
-                },
-              }]
-            });
-          } else if (to.type === 'quick-action-feedback-link-with-task-and-accept') {
-            this.showSnackbar({
-              key: to.type + post.ideaId,
-              message: 'Linked with task',
-              actions: [{
-                title: 'Open task',
-                onClick: close => {
-                  close();
-                  this.setState({
-                    feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Linked task' },
-                    previewShowOnPage: 'feedback',
-                  });
-                },
-              }]
-            });
-          }
-        };
-
-        const feedbackPostSearch = this.state.feedbackPostSearch || {
-          sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
-          ...(this.state.feedback?.categoryAndIndex.category.workflow.entryStatus ? {
-            filterStatusIds: [this.state.feedback.categoryAndIndex.category.workflow.entryStatus],
-          } : {}),
-        };
-        if (this.state.feedback) feedbackPostSearch.filterCategoryIds = [this.state.feedback.categoryAndIndex.category.categoryId];
-        if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
-          this.similarPostWasClicked = undefined;
-        }
-        const feedbackPostListDroppableId = droppableDataSerialize({
-          type: 'feedback-search',
-          searchKey: getSearchKey(feedbackPostSearch),
-        });
-        const fallbackClickHandler: FallbackClickHandler = async (draggableId, dstDroppableId) => {
-          if (!activeProject
-            || this.state.feedbackPreview?.type !== 'post') return false;
-          return await dashboardOnDragEnd(
-            activeProject,
-            feedbackPostListDroppableId,
-            0,
-            draggableId,
-            dstDroppableId,
-            0,
-            this.state.feedback || undefined,
-            this.state.roadmap || undefined,
-            onDndHandled);
-        };
-        const renderRelatedContent = (type: 'feedback' | 'task'): React.ReactNode | null => {
-          if (this.state.feedbackPreview?.type !== 'post') return null;
-          const categoryId = type === 'feedback' ? this.state.feedback?.categoryAndIndex.category.categoryId : this.state.roadmap?.categoryAndIndex.category.categoryId;
-          if (!categoryId) return null;
-          return (
-            <div className={this.props.classes.feedbackColumnRelated}>
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <QuickActionPostList
-                  key={activeProject.server.getProjectId()}
-                  server={activeProject.server}
-                  title={type === 'feedback' ? {
-                    name: 'Merge feedback',
-                    helpDescription: 'Merge with another duplicate feedback. Content, comments, votes and subscribers will all be merged in.',
-                  } : {
-                    name: 'Link to task',
-                    helpDescription: 'Link with a related task and mark feedback as accepted. Subscribers will be notified.',
-                  }}
-                  getDroppableId={post => {
-                    if (post.categoryId === this.state.feedback?.categoryAndIndex.category.categoryId) {
-                      return droppableDataSerialize({
-                        type: 'quick-action-feedback-merge-duplicate',
-                        dropbox: true,
-                        postId: post.ideaId,
-                      });
-                    } else if (post.categoryId === this.state.roadmap?.categoryAndIndex.category.categoryId) {
-                      return droppableDataSerialize({
-                        type: 'quick-action-feedback-link-with-task-and-accept',
-                        dropbox: true,
-                        postId: post.ideaId,
-                      });
-                    }
-                    return undefined;
-                  }}
-                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                  draggingPostIdSubscription={this.draggingPostIdSubscription}
-                  dragDropSensorApi={this.state.dragDropSensorApi}
-                  fallbackClickHandler={fallbackClickHandler}
-                  statusColorGivenCategoies={new Set([categoryId])}
-                  PostListProps={{
-                    hideIfEmpty: true,
-                    search: {
-                      sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
-                      filterCategoryIds: [categoryId],
-                      limit: 3,
-                      similarToIdeaId: this.state.feedbackPreview.id,
-                    },
-                  }}
-                />
-              </Provider>
-            </div>
-          );
-        };
-        const sectionRelated: Section = {
-          name: `related`,
-          breakAction: 'hide', breakPriority: 30,
-          size: { breakWidth: 200, flexGrow: 0, maxWidth: 'max-content', scroll: Orientation.Vertical },
-          noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
-          content: layoutState => (
-            <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
-              {renderRelatedContent('task')}
-              {renderRelatedContent('feedback')}
-            </div>
-          ),
-        };
-
-        var sectionPreview: Section;
-        if (this.state.feedbackPreview?.type === 'create') {
-          sectionPreview = this.renderPreviewPostCreate(activeProject);
-        } else if (this.state.feedbackPreview?.type === 'post') {
-          sectionPreview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
-        } else {
-          sectionPreview = this.renderPreviewEmpty('No feedback selected', PostPreviewSize);
-        }
-        sectionPreview.collapseBottom = true;
-        sectionPreview.breakAction = 'show';
-        sectionPreview.header = {
-          title: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
-          middle: (
-            <Fade in={this.state.feedbackPreview?.type === 'post'}>
-              <div>
-                <IconButton
-                  className={this.props.classes.feedbackNavigatorIcon}
-                  disabled={!this.feedbackListRef.current?.hasPrevious()}
-                  onClick={() => this.feedbackListRef.current?.previous()}
-                >
-                  <PrevIcon fontSize='inherit' />
-                </IconButton>
-                <IconButton
-                  className={this.props.classes.feedbackNavigatorIcon}
-                  disabled={!this.feedbackListRef.current?.hasNext()}
-                  onClick={() => this.feedbackListRef.current?.next()}
-                >
-                  <NextIcon fontSize='inherit' />
-                </IconButton>
-              </div>
-            </Fade>
-          ),
-          action: { label: 'Create', onClick: () => this.pageClicked('post') },
-        };
-
-        var sectionPreviewRight: Section | undefined;
-        if (this.state.feedbackPreviewRight?.type === 'create') {
-          sectionPreviewRight = this.renderPreviewPostCreate(activeProject);
-          sectionPreviewRight.header = { title: { title: 'New task' } };
-        } else if (this.state.feedbackPreviewRight?.type === 'post') {
-          sectionPreviewRight = this.renderPreviewPost(this.state.feedbackPreviewRight.id, activeProject);
-          sectionPreviewRight.header = { title: { title: this.state.feedbackPreviewRight.header } };
-        }
-        if (sectionPreviewRight) {
-          sectionPreviewRight.name = 'preview2';
-          sectionPreviewRight.breakAlways = true;
-          sectionPreviewRight.breakAction = 'drawer';
-        }
-
-        const feedbackFilters = (layoutState: LayoutState) => (
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <DashboardPostFilterControls
-              key={activeProject.server.getProjectId()}
-              server={activeProject.server}
-              search={feedbackPostSearch}
-              allowSearch={{ enableSearchByCategory: false }}
-              permanentSearch={{ filterCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined }}
-              onSearchChanged={feedbackPostSearch => this.setState({ feedbackPostSearch })}
-              horizontal={layoutState.isShown('filters') !== 'show'}
-            />
-          </Provider>
-        );
-
-        const sectionFilters: Section = {
-          name: 'filters',
-          breakAction: 'hide',
-          breakPriority: 50,
-          collapseLeft: true, collapseTopBottom: true,
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.isShown('filters') !== 'show' ? null : feedbackFilters(layoutState),
-        };
-
-        const sectionList: Section = {
-          name: 'list',
-          breakAction: 'menu', breakPriority: 40,
-          size: { breakWidth: 300, flexGrow: 20, maxWidth: 1024, scroll: Orientation.Vertical },
-          collapseLeft: true, collapseTopBottom: true,
-          barTop: layoutState => (
-            <DashboardSearchControls
-              placeholder='Search for feedback'
-              key={'feedback-search-bar' + activeProject.server.getProjectId()}
-              searchText={feedbackPostSearch.searchText || ''}
-              onSearchChanged={searchText => this.setState({
-                feedbackPostSearch: {
-                  ...this.state.feedbackPostSearch,
-                  searchText,
-                }
-              })}
-              filters={layoutState.isShown('filters') === 'show' ? null : feedbackFilters(layoutState)}
-            />
-          ),
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <DragndropPostList
-                scroll
-                key={activeProject.server.getProjectId()}
-                droppableId={feedbackPostListDroppableId}
-                server={activeProject.server}
-                search={feedbackPostSearch}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                PanelPostProps={{
-                  navigatorRef: this.feedbackListRef,
-                  navigatorChanged: () => this.forceUpdate(),
-                }}
-              />
-            </Provider>
-          ),
-        };
-
-        const sectionQuickActions: Section = {
-          name: 'quick-actions',
-          breakAction: 'hide', breakPriority: 10,
-          size: { breakWidth: 200, flexGrow: 20, maxWidth: 'max-content', scroll: Orientation.Vertical },
-          noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
-          content: layoutState => (
-            <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <DashboardQuickActions
-                  activeProject={activeProject}
-                  onClickPost={postId => this.pageClicked('post', [postId])}
-                  onUserClick={userId => this.pageClicked('user', [userId])}
-                  searchKey={getSearchKey(feedbackPostSearch)}
-                  selectedPostId={this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined}
-                  draggingPostIdSubscription={this.draggingPostIdSubscription}
-                  feedback={this.state.feedback}
-                  roadmap={this.state.roadmap}
-                  dragDropSensorApi={this.state.dragDropSensorApi}
-                  fallbackClickHandler={fallbackClickHandler}
-                />
-              </Provider>
-            </div>
-          ),
-        };
-
-        sections.push(sectionFilters);
-        sections.push(sectionList);
-        sections.push(sectionQuickActions);
-        sections.push(sectionPreview);
-        sections.push(sectionRelated);
-        !!sectionPreviewRight && sections.push(sectionPreviewRight);
-
-        showProjectLink = true;
+        this.renderFeedback(context);
         break;
       case 'roadmap':
-        setTitle('Roadmap - Dashboard');
-        if (!activeProject) {
-          showCreateProjectWarning = true;
-          break;
-        }
-        if (!this.state.roadmap) {
-          mainContent = (<ErrorPage msg='Oops, roadmap not enabled' />);
-          break;
-        }
-
-        // TODO Changelog; just remember that:
-        // - Add an action container for creating new draft entry
-        // - Show Draft entries, on drop, add as linked entry
-        // - Show published entries, on drop, add as linked entry
-        // Caveats:
-        // - Drafts must support adding linkedPostIds in IdeaCreateAdmin
-        // - When you drop into the changelog list, the status changes to Completed and will show up
-        //   in the Completed dropbox. It's the logical thing, but it looks weird. Figure it out.
-        // - Also, the Completed search column must be also updated when dropped into changelog.
-        // const renderDropboxForChangelog = (changelog: ChangelogInstance, expandableStateKey?: string) => {
-        //  const search = {
-        //    filterCategoryIds: [changelog.categoryAndIndex.category.categoryId],
-        //  };
-        //  return this.renderDropbox('changelog', (
-        //    <>
-        //      <DragndropPostList
-        //        className={this.props.classes.dropboxList}
-        //        droppable
-        //        droppableId={droppableDataSerialize({
-        //          type: 'changelog-panel',
-        //          searchKey: getSearchKey(search),
-        //        })}
-        //        key={statusId}
-        //        server={this.props.server}
-        //        search={search}
-        //        onClickPost={this.props.onClickPost}
-        //        onUserClick={this.props.onUserClick}
-        //        selectedPostId={this.props.selectedPostId}
-        //        displayOverride={{
-        //          showCategoryName: false,
-        //          showStatus: false,
-        //        }}
-        //      />
-        //    </>
-        //  ), 'Changelog', undefined, expandableStateKey);
-        // }
-
-        const seenStatusIds = new Set<string>();
-        const renderStatusSection = (statusOrId: string | AdminClient.IdeaStatus | undefined): Section | undefined => {
-          if (!statusOrId || !this.state.roadmap) return undefined;
-          const status: AdminClient.IdeaStatus | undefined = typeof statusOrId !== 'string' ? statusOrId
-            : this.state.roadmap?.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === statusOrId);
-          if (!status) return undefined;
-          return renderTaskSection({
-            hideIfEmpty: false,
-            title: status.name,
-            display: {},
-            search: {
-              filterCategoryIds: [this.state.roadmap.categoryAndIndex.category.categoryId],
-              filterStatusIds: [status.statusId],
-            },
-          });
-        }
-        const renderTaskSection = (panel: AdminClient.PagePanelWithHideIfEmpty | undefined): Section | undefined => {
-          if (!panel || !this.state.roadmap) return undefined;
-          const isTaskCategory = panel.search.filterCategoryIds?.length === 1 && panel.search.filterCategoryIds[0] === this.state.roadmap.categoryAndIndex.category.categoryId;
-          const onlyStatus = !isTaskCategory || panel.search.filterStatusIds?.length !== 1 ? undefined : this.state.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === panel.search.filterStatusIds?.[0]);
-          if (onlyStatus) seenStatusIds.add(onlyStatus.statusId);
-
-          const PostListProps: React.ComponentProps<typeof PostList> = {
-            server: activeProject.server,
-            search: panel.search as any,
-            onClickPost: postId => this.pageClicked('post', [postId]),
-            onUserClick: userId => this.pageClicked('user', [userId]),
-            selectedPostId: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
-            displayOverride: {
-              showCategoryName: false,
-              showStatus: false,
-            },
-          };
-          var list;
-          if (!isTaskCategory) {
-            list = (
-              <PostList
-                {...PostListProps}
-              />
-            );
-          } else {
-            list = (
-              <DragndropPostList
-                droppable={!!onlyStatus}
-                droppableId={droppableDataSerialize({
-                  type: 'roadmap-panel',
-                  searchKey: getSearchKey(panel.search),
-                  statusId: onlyStatus?.statusId,
-                })}
-                {...PostListProps}
-              />
-            );
-          }
-          return {
-            name: getSearchKey(panel.search),
-            size: { breakWidth: MinContentWidth, flexGrow: 1, maxWidth: MaxContentWidth, scroll: Orientation.Vertical, },
-            content: (
-              <>
-                <PanelTitle text={panel.title || onlyStatus?.name} color={onlyStatus?.color} />
-                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  {list}
-                </Provider>
-              </>
-            )
-          };
-        };
-        const renderRoadmapSection = (): Section | undefined => {
-          if (!this.state.roadmap?.pageAndIndex) return undefined;
-          const roadmapSections = this.state.roadmap.pageAndIndex.page.board.panels
-            .map(panel => renderTaskSection(panel))
-            .filter(notEmpty);
-          if (!roadmapSections.length) return undefined;
-
-          const conf = activeProject.server.getStore().getState().conf.conf;
-          const projectLink = !!conf && getProjectLink(conf);
-          const roadmapLink = !projectLink ? undefined : `${projectLink}/${this.state.roadmap.pageAndIndex?.page.slug}`;
-
-          return {
-            name: 'roadmap',
-            header: {
-              title: {
-                title: 'Roadmap',
-                help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
-                  + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
-              },
-              right: roadmapLink && (
-                <Button
-                  component={MuiLink}
-                  href={roadmapLink}
-                  target='_blank'
-                  underline='none'
-                  rel='noopener nofollow'
-                >
-                  Public view
-                  &nbsp;
-                  <VisibilityIcon fontSize='inherit' />
-                </Button>
-              ),
-            },
-            size: {
-              ...roadmapSections[0],
-              breakWidth: roadmapSections.reduce((width, section) => width + (section.size?.breakWidth || 0), 0),
-            },
-            content: (
-              <BoardContainer
-                panels={roadmapSections.map(section => section.content)}
-              />
-            ),
-          };
-        }
-
-
-        // const renderActionColumn = (position: 'left' | 'right' | 'main', children?: React.ReactNode)  => {
-        //   return (
-        //     <div className={classNames(
-        //       this.props.classes.actionColumn,
-        //       this.props.isBoxLayout ? this.props.classes.actionColumnBoxLayout : this.props.classes.actionColumnBoxLayoutNot,
-        //       this.props.isBoxLayout && position === 'left' && this.props.classes.actionColumnBoxLayoutLeft,
-        //       this.props.isBoxLayout && position === 'right' && this.props.classes.actionColumnBoxLayoutRight,
-        //     )}>
-        //       {children}
-        //     </div>
-        //   );
-        // };
-
-        // const renderDropboxForStatus = (statusId: string, expandableStateKey?: string) => {
-        //   const status = this.props.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === statusId);
-        //   if (!status) return null;
-        //   const search = {
-        //     filterCategoryIds: [this.props.roadmap.categoryAndIndex.category.categoryId],
-        //     filterStatusIds: [statusId],
-        //   };
-        //   const PostListProps: React.ComponentProps<typeof PostList> = {
-        //     className: this.props.classes.dropboxList,
-        //     server: this.props.server,
-        //     search: search,
-        //     onClickPost: this.props.onClickPost,
-        //     onUserClick: this.props.onUserClick,
-        //     selectedPostId: this.props.selectedPostId,
-        //     displayOverride: {
-        //       showCategoryName: false,
-        //       showStatus: false,
-        //     },
-        //   };
-        //   var content;
-        //   if (this.props.publicViewOnly) {
-        //     content = (
-        //       <PostList
-        //         key={statusId}
-        //         {...PostListProps}
-        //       />
-        //     );
-        //   } else {
-        //     content = (
-        //       <DragndropPostList
-        //         key={statusId}
-        //         droppable
-        //         droppableId={droppableDataSerialize({
-        //           type: 'roadmap-panel',
-        //           searchKey: getSearchKey(search),
-        //           statusId,
-        //         })}
-        //         {...PostListProps}
-        //       />
-        //     );
-        //   }
-        //   return this.renderDropbox(statusId, content, status.name, status.color, expandableStateKey);
-        // }
-
-        // const renderDropbox = (key: string, children: React.ReactNode, name: string, color?: string, expandableStateKey?: string) => {
-        //   return (
-        //     <div
-        //       key={key}
-        //       className={classNames(
-        //         this.props.classes.dropbox,
-        //         expandableStateKey && this.props.classes.dropboxExpandable,
-        //         expandableStateKey && this.state[expandableStateKey] && (this.state[expandableStateKey] === key
-        //           ? this.props.classes.dropboxExpanded
-        //           : this.props.classes.dropboxHidden)
-        //       )}
-        //     >
-        //       <Typography variant='h4' className={this.props.classes.title} style={{
-        //         color: color,
-        //       }}>
-        //         {name}
-        //         {expandableStateKey && (
-        //           <ExpandIcon
-        //             expanded={this.state[expandableStateKey] === key}
-        //             onExpandChanged={exp => this.setState({ [expandableStateKey]: exp ? key : undefined })}
-        //           />
-        //         )}
-        //       </Typography>
-        //       {children}
-        //     </div>
-        //   );
-        // }
-
-
-        var roadmapSectionPreview: Section | undefined;
-        if (this.state.roadmapPreview?.type === 'create') {
-          roadmapSectionPreview = this.renderPreviewPostCreate(activeProject);
-        } else if (this.state.roadmapPreview?.type === 'post') {
-          roadmapSectionPreview = this.renderPreviewPost(this.state.roadmapPreview.id, activeProject);
-        }
-        if (roadmapSectionPreview) {
-          roadmapSectionPreview.breakAlways = true;
-        }
-
-        const roadmapSection = renderRoadmapSection();
-        const backlogSection = renderStatusSection(this.state.roadmap.statusIdBacklog);
-        const closedSection = renderStatusSection(this.state.roadmap.statusIdClosed);
-        const completedSection = renderStatusSection(this.state.roadmap.statusIdCompleted);
-        const missingStatusSections = this.state.roadmap.categoryAndIndex.category.workflow.statuses
-          .filter(status => !seenStatusIds.has(status.statusId))
-          .map(status => renderStatusSection(status))
-          .filter(notEmpty);
-
-
-        backlogSection && sections.push(backlogSection);
-        missingStatusSections.length && missingStatusSections.forEach(section => sections.push(section));
-        roadmapSection && sections.push(roadmapSection);
-        closedSection && sections.push(closedSection);
-        completedSection && sections.push(completedSection);
-        roadmapSectionPreview && sections.push(roadmapSectionPreview);
-
-
-
-        // const roadmapMainBreakWidth = (this.state.roadmap?.pageAndIndex?.page.board.panels.length || 3) * 267
-        //   + ((this.state.roadmap?.statusIdClosed || this.state.roadmap?.statusIdCompleted) ? 267 + BOX_MARGIN : 0);
-        // const roadmapSectionRoadmap = {
-        //   name: 'roadmap',
-        //   size: { breakWidth: roadmapMainBreakWidth, flexGrow: 100 },
-        //   noPaper: true,
-        //   content: layoutStyle => (
-        //     <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
-        //       key='roadmap'
-        //       type='dialog'
-        //       editor={activeProject.editor}
-        //       mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
-        //       renderResolved={(templater, [roadmap, changelog]) => !!roadmap && (
-        //         <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        //           <RoadmapExplorer
-        //             key={activeProject.server.getProjectId()}
-        //             server={activeProject.server}
-        //             roadmap={roadmap}
-        //             changelog={changelog}
-        //             onClickPost={postId => this.pageClicked('post', [postId])}
-        //             onUserClick={userId => this.pageClicked('user', [userId])}
-        //             selectedPostId={this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined}
-        //             isBoxLayout={layoutStyle.enableBoxLayout}
-        //           />
-        //         </Provider>
-        //       )}
-        //     />
-        //   ),
-        // };
-
-
-        showProjectLink = true;
+        this.renderRoadmap(context);
         break;
       case 'changelog':
-        setTitle('Changelog - Dashboard');
-        if (!activeProject) {
-          showCreateProjectWarning = true;
-          break;
-        }
-        const changelogPostSearch = this.state.changelogPostSearch || {
-          sortBy: AdminClient.IdeaSearchAdminSortByEnum.New,
-        };
-        if (this.state.changelog) changelogPostSearch.filterCategoryIds = [this.state.changelog.categoryAndIndex.category.categoryId];
-
-        const changelogFilters = (layoutState: LayoutState) => (
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <DashboardPostFilterControls
-              key={activeProject.server.getProjectId()}
-              server={activeProject.server}
-              search={changelogPostSearch}
-              allowSearch={{ enableSearchByCategory: false }}
-              permanentSearch={{ filterCategoryIds: this.state.changelog ? [this.state.changelog.categoryAndIndex.category.categoryId] : undefined }}
-              onSearchChanged={changelogPostSearch => this.setState({ changelogPostSearch })}
-              horizontal={layoutState.isShown('filters') !== 'show'}
-            />
-          </Provider>
-        );
-        sections.push({
-          name: 'filters',
-          breakAction: 'menu',
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: layoutState => layoutState.isShown('filters') !== 'show' ? null : changelogFilters(layoutState),
-        });
-        if (this.similarPostWasClicked && this.similarPostWasClicked.similarPostId !== this.state.feedbackPreview?.['id']) {
-          this.similarPostWasClicked = undefined;
-        }
-        sections.push({
-          name: 'main',
-          size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
-          content: layoutState => (
-            <div className={this.props.classes.listWithSearchContainer}>
-              <DashboardSearchControls
-                placeholder='Search for changelog entries'
-                key={'changelog-entries-search-bar' + activeProject.server.getProjectId()}
-                searchText={changelogPostSearch.searchText || ''}
-                onSearchChanged={searchText => this.setState({
-                  changelogPostSearch: {
-                    ...this.state.changelogPostSearch,
-                    searchText,
-                  }
-                })}
-                filters={layoutState.isShown('filters') === 'show' ? null : changelogFilters(layoutState)}
-              />
-              <Divider />
-              <div className={this.props.classes.listContainer}>
-                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                  {this.state.changelog && (
-                    <PanelDraft
-                      server={activeProject.server}
-                      filterCategoryId={this.state.changelog.categoryAndIndex.category.categoryId}
-                      hideIfEmpty
-                      onClickDraft={draftId => this.pageClicked('post', [draftId])}
-                      selectedDraftId={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
-                    />
-                  )}
-                  <PostList
-                    key={activeProject.server.getProjectId()}
-                    server={activeProject.server}
-                    search={changelogPostSearch}
-                    onClickPost={postId => this.pageClicked('post', [postId])}
-                    onUserClick={userId => this.pageClicked('user', [userId])}
-                    selectedPostId={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
-                    displayOverride={{
-                      showCategoryName: false,
-                    }}
-                  />
-                </Provider>
-              </div>
-            </div>
-          ),
-        });
-
-        var preview: Section;
-        if (this.state.changelogPreview?.type === 'create') {
-          preview = this.renderPreviewPostCreate(activeProject);
-        } else if (this.state.changelogPreview?.type === 'post') {
-          preview = this.renderPreviewPost(this.state.changelogPreview.id, activeProject);
-        } else {
-          preview = this.renderPreviewEmpty('No entry selected', PostPreviewSize);
-        }
-        preview.header = {
-          title: { title: 'Changelog' },
-          action: { label: 'Create', onClick: () => this.pageClicked('post') },
-        };
-        sections.push(preview);
-
-        showProjectLink = true;
+        this.renderChangelog(context);
         break;
       case 'users':
-        setTitle('Users - Dashboard');
-        if (!activeProject) {
-          showCreateProjectWarning = true;
-          break;
-        }
-
-        sections.push({
-          name: 'menu',
-          breakAction: 'menu',
-          size: { breakWidth: 200, flexGrow: 100, width: 'max-content', maxWidth: 'max-content', scroll: Orientation.Vertical },
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <UserFilterControls
-                key={activeProject.server.getProjectId()}
-                search={this.state.usersUserFilter}
-                onSearchChanged={usersUserFilter => this.setState({ usersUserFilter })}
-              />
-            </Provider>
-          ),
-        });
-
-        sections.push({
-          name: 'main',
-          size: { breakWidth: 250, flexGrow: 20, maxWidth: 250 },
-          content: (
-            <>
-              <DashboardSearchControls
-                placeholder='Search for user'
-                key={'user-search-bar' + activeProject.server.getProjectId()}
-                searchText={this.state.usersUserSearch}
-                onSearchChanged={searchText => this.setState({ usersUserSearch: searchText })}
-              />
-              <Divider />
-              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                <UserList
-                  scroll
-                  server={activeProject.server}
-                  search={{
-                    ...this.state.usersUserFilter,
-                    searchText: this.state.usersUserSearch,
-                  }}
-                  selectedUserId={this.state.usersPreview?.type === 'user' ? this.state.usersPreview.id : undefined}
-                  onUserClick={userId => this.pageClicked('user', [userId])}
-                />
-              </Provider>
-            </>
-          ),
-        });
-
-        if (this.state.usersPreview?.type === 'create') {
-          sections.push(this.renderPreviewUserCreate(activeProject));
-        } else if (this.state.usersPreview?.type === 'user') {
-          sections.push(this.renderPreviewUser(this.state.usersPreview.id, activeProject));
-        } else {
-          sections.push(this.renderPreviewEmpty('No user selected', UserPreviewSize));
-        }
-        sections[sections.length - 1].header = {
-          title: { title: 'Users' },
-          action: { label: 'Add', onClick: () => this.pageClicked('user') },
-        };
-
-        showProjectLink = true;
+        this.renderUsers(context);
         break;
       case 'billing':
-        sections.push({
+        context.sections.push({
           name: 'main',
           content: (<RedirectIso to='/dashboard/settings/account/billing' />)
         });
         break;
       case 'account':
-        sections.push({
+        context.sections.push({
           name: 'main',
           content: (<RedirectIso to='/dashboard/settings/account/profile' />)
         });
         break;
       // @ts-ignore fall-through
       case 'welcome-create':
-        onboarding = true;
+        context.isOnboarding = true;
       case 'create':
         setTitle('Create - Dashboard');
         if (!this.createProjectPromise) {
@@ -1381,7 +553,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             this.forceUpdate();
           })
         }
-        sections.push({
+        context.sections.push({
           name: 'main',
           content: !!this.createProject && (
             <CreatePage
@@ -1395,255 +567,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             />
           ),
         });
-        sections.push(this.renderPreviewCreateDemo());
+        context.sections.push(this.renderPreviewCreateDemo());
         break;
       case 'settings':
-        showProjectLink = true;
-        if (!activeProject) {
-          setTitle('Advanced - Dashboard');
-          showCreateProjectWarning = true;
-          break;
-        }
-        // Superadmin account switcher
-        const accountToLabel = (account: AdminClient.Account): Label => {
-          return {
-            label: account.name,
-            filterString: `${account.name} ${account.email}`,
-            value: account.email
-          };
-        }
-        const seenAccountEmails: Set<string> = new Set();
-        const curAccountLabel: Label = accountToLabel(this.props.account);
-        const accountOptions = [curAccountLabel];
-        seenAccountEmails.add(this.props.account.email)
-        this.state.accountSearch && this.state.accountSearch.forEach(account => {
-          if (!seenAccountEmails.has(account.email)) {
-            const label = accountToLabel(account);
-            seenAccountEmails.add(account.email);
-            accountOptions.push(label);
-          }
-        });
-        sections.push({
-          name: 'menu',
-          breakAction: 'menu',
-          size: { breakWidth: 200, width: 'max-content', maxWidth: 350, scroll: Orientation.Vertical },
-          content: (
-            <>
-              <Menu
-                items={[
-                  { type: 'heading', text: 'Account' } as MenuHeading,
-                  { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
-                  { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
-                  { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/onboard', name: 'Onboard', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/domain', name: 'Domain', offset: 2 } as MenuItem,
-                  { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
-                  { type: 'heading', text: 'Advanced' } as MenuHeading,
-                  {
-                    type: 'project',
-                    name: 'General',
-                    slug: 'settings/project/advanced',
-                    offset: 1,
-                    projectId: activeProject.server.getProjectId(),
-                    page: activeProject.editor.getPage([]),
-                  } as MenuProject,
-                ]}
-                activePath={activePath}
-                activeSubPath={activeSubPath}
-              />
-              {!!this.props.isSuperAdmin && (
-                <SelectionPicker
-                  className={this.props.classes.accountSwitcher}
-                  disableClearable
-                  value={[curAccountLabel]}
-                  forceDropdownIcon={false}
-                  options={accountOptions}
-                  helperText='Switch account'
-                  minWidth={50}
-                  maxWidth={150}
-                  inputMinWidth={0}
-                  showTags
-                  bareTags
-                  disableFilter
-                  loading={this.state.accountSearching !== undefined}
-                  noOptionsMessage='No accounts'
-                  onFocus={() => {
-                    if (this.state.accountSearch === undefined
-                      && this.state.accountSearching === undefined) {
-                      this.searchAccounts('');
-                    }
-                  }}
-                  onInputChange={(newValue, reason) => {
-                    if (reason === 'input') {
-                      this.searchAccounts(newValue);
-                    }
-                  }}
-                  onValueChange={labels => {
-                    const email = labels[0]?.value;
-                    if (email && this.props.account?.email !== email) {
-                      ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
-                        accountLoginAs: {
-                          email,
-                        },
-                      }).then(result => {
-                        return d.configGetAllAndUserBindAllAdmin();
-                      }));
-                    }
-                  }}
-                />
-              )}
-            </>
-          ),
-        });
-
-        var mainContent: SectionContent;
-        if (activeSubPath[0] === 'project' && activeSubPath[1] === 'advanced') {
-          const pagePath = activeSubPath.slice(2);
-          try {
-            var currentPage = activeProject.editor.getPage(pagePath);
-          } catch (ex) {
-            setTitle('Settings - Dashboard');
-            mainContent = (<ErrorPage msg='Oops, page failed to load' />);
-            break;
-          }
-          if (!!this.forcePathListener
-            && pagePath.length >= 3
-            && pagePath[0] === 'layout'
-            && pagePath[1] === 'pages') {
-            const pageIndex = pagePath[2];
-            const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
-            this.forcePathListener(forcePath);
-          }
-          setTitle(currentPage.getDynamicName());
-
-          mainContent = (
-            <ProjectSettingsBase>
-              <Page
-                key={currentPage.key}
-                page={currentPage}
-                server={activeProject.server}
-                editor={activeProject.editor}
-                pageClicked={path => this.pageClicked(activePath, ['project', 'advanced', ...path])}
-              />
-            </ProjectSettingsBase>
-          );
-        } else if (activeSubPath[0] === 'account') {
-          switch (activeSubPath[1]) {
-            case 'profile':
-              setTitle('Account - Dashboard');
-              mainContent = (<SettingsPage />);
-              break;
-            case 'billing':
-              setTitle('Billing - Dashboard');
-              mainContent = (<BillingPage stripePromise={Dashboard.getStripePromise()} />);
-              break;
-          }
-        } else if (activeSubPath[0] === 'project') {
-          switch (activeSubPath[1]) {
-            case 'install':
-              mainContent = (<ProjectSettingsInstall server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'branding':
-              mainContent = (<ProjectSettingsBranding server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'domain':
-              mainContent = (<ProjectSettingsDomain server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'onboard':
-              if (activeSubPath[2] === 'sso') {
-                mainContent = (<ProjectSettingsUsersSso server={activeProject.server} editor={activeProject.editor} />);
-              } else if (activeSubPath[2] === 'oauth') {
-                mainContent = (<ProjectSettingsUsersOauth server={activeProject.server} editor={activeProject.editor} />);
-              } else {
-                mainContent = (<ProjectSettingsUsers server={activeProject.server} editor={activeProject.editor} />);
-              }
-              break;
-            case 'landing':
-              mainContent = (<ProjectSettingsLanding server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'feedback':
-              mainContent = (<ProjectSettingsFeedback server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'roadmap':
-              mainContent = (<ProjectSettingsRoadmap server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'changelog':
-              mainContent = (<ProjectSettingsChangelog server={activeProject.server} editor={activeProject.editor} />);
-              break;
-            case 'data':
-              mainContent = (<ProjectSettingsData server={activeProject.server} />);
-              break;
-          }
-        }
-        var barBottom: SectionContent;
-        if (activeSubPath[0] === 'project') {
-          barBottom = (activeProject?.hasUnsavedChanges()) ? (
-            <div className={this.props.classes.unsavedChangesBar}>
-              <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
-              {!this.state.settingsPreviewChanges && (
-                <Button
-                  variant='text'
-                  color='default'
-                  style={{ marginLeft: 8 }}
-                  onClick={() => this.setState({
-                    previewShowOnPage: 'settings',
-                    settingsPreviewChanges: 'live',
-                  })}
-                >
-                  Preview
-                </Button>
-              )}
-              <Button
-                variant='contained'
-                disableElevation
-                color='primary'
-                style={{ marginLeft: 8 }}
-                onClick={() => this.publishChanges(activeProject)
-                  .then(versionedConfigAdmin => this.setState({ settingsPreviewChanges: undefined }))}
-              >
-                Publish
-              </Button>
-            </div>
-          ) : undefined;
-        }
-        sections.push({
-          name: 'main',
-          size: ProjectSettingsMainSize,
-          content: mainContent,
-          barBottom: barBottom,
-        });
-
-        if (!!this.state.settingsPreviewChanges) {
-          previewOnClose = () => this.setState({ settingsPreviewChanges: undefined });
-
-          sections.push(this.renderPreviewChangesDemo(activeProject,
-            activeSubPath[0] === 'project' && activeSubPath[1] === 'advanced',
-            this.state.settingsPreviewChanges === 'code' ? activeProject : undefined
-          ));
-        }
+        this.renderSettings(context);
         break;
       default:
         setTitle('Page not found');
-        sections.push({
-          name: 'main',
-          content: (<ErrorPage msg='Oops, cannot find page' />),
-        });
+        context.showWarning = 'Oops, cannot find page';
         break;
     }
-    if (showCreateProjectWarning) {
-      sections = [{
+    if (context.showCreateProjectWarning || context.showWarning) {
+      context.sections = [{
         name: 'main',
-        content: (<ErrorPage msg='Oops, you have to create a project first' />),
+        content: (<ErrorPage msg={context.showWarning || 'Oops, you have to create a project first'} />),
       }];
-      this.props.history.replace('/dashboard/welcome');
+      context.showCreateProjectWarning && this.props.history.replace('/dashboard/welcome');
     }
 
     var billingHasNotification: boolean = false;
@@ -1663,7 +602,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
     const notYetPublished = !!activeProject?.editor.getConfig().notYetPublished;
     const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
-    const projectLink = (!!activeProjectConf && !!showProjectLink)
+    const projectLink = (!!activeProjectConf && !!context.showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
 
     return (
@@ -1700,11 +639,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               result.destination.index,
               this.state.feedback || undefined,
               this.state.roadmap || undefined,
-              onDndHandled);
+              context.onDndHandled);
           }}
         >
           <Layout
-            toolbarShow={!onboarding}
+            toolbarShow={!context.isOnboarding}
             toolbarLeft={(
               <div className={this.props.classes.toolbarLeft}>
                 <Link to='/dashboard' className={this.props.classes.logoLink}>
@@ -1828,10 +767,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             previewShow={!!this.state.previewShowOnPage && this.state.previewShowOnPage === activePath}
             previewShowNot={() => {
               this.setState({ previewShowOnPage: undefined });
-              previewOnClose?.();
+              context.previewOnClose?.();
             }}
-            previewForceShowClose={!!previewOnClose}
-            sections={sections}
+            previewForceShowClose={!!context.previewOnClose}
+            sections={context.sections}
           />
           {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
             <Dialog
@@ -1926,6 +865,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       </Elements>
     );
   }
+
+  renderExplore = renderExplore;
+  renderFeedback = renderFeedback;
+  renderRoadmap = renderRoadmap;
+  renderChangelog = renderChangelog;
+  renderUsers = renderUsers;
+  renderSettings = renderSettings;
 
   async publishChanges(currentProject: AdminProject): Promise<AdminClient.VersionedConfigAdmin> {
     const d = await ServerAdmin.get().dispatchAdmin();

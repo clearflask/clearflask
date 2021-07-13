@@ -90,8 +90,7 @@ interface Props extends WithStyles<typeof styles, true> {
     val: string;
     icon?: string;
   }>;
-  // Only here to satisfy outer Tabs component to determine if tab is selected
-  value?: string;
+  value?: string; // Only here to satisfy outer Tabs component to determine if tab is selected
   selectedValue?: string;
   onDropdownTabSelect: (val: string) => void;
 }

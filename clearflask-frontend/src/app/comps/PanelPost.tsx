@@ -1,4 +1,4 @@
-import { Divider, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import { MarginProperty } from 'csstype';
@@ -13,8 +13,8 @@ import keyMapper from '../../common/util/keyMapper';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { MutableRef } from '../../common/util/refUtil';
 import { selectorContentWrap } from '../../common/util/reselectUtil';
+import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
 import ErrorMsg from '../ErrorMsg';
-import DividerVertical from '../utils/DividerVertical';
 import Loading from '../utils/Loading';
 import LoadMoreButton from './LoadMoreButton';
 import Panel, { PanelTitle } from './Panel';
@@ -48,19 +48,19 @@ const styles = (theme: Theme) => createStyles({
   },
   widthExpandMargin: {
     [theme.breakpoints.only('xs')]: {
-      margin: theme.spacing(2, 2),
-      '&:first-child': { marginTop: theme.spacing(4) },
-      '&:last-child': { marginBottom: theme.spacing(4) },
+      padding: theme.spacing(2, 2),
+      '&:first-child': { paddingTop: theme.spacing(4) },
+      '&:last-child': { paddingBottom: theme.spacing(4) },
     },
     [theme.breakpoints.only('sm')]: {
-      margin: theme.spacing(2, 2),
-      '&:first-child': { marginTop: theme.spacing(4) },
-      '&:last-child': { marginBottom: theme.spacing(4) },
+      padding: theme.spacing(2, 2),
+      '&:first-child': { paddingTop: theme.spacing(4) },
+      '&:last-child': { paddingBottom: theme.spacing(4) },
     },
     [theme.breakpoints.up('md')]: {
-      margin: theme.spacing(3, 4),
-      '&:first-child': { marginTop: theme.spacing(6) },
-      '&:last-child': { marginBottom: theme.spacing(6) },
+      padding: theme.spacing(3, 4),
+      '&:first-child': { paddingTop: theme.spacing(6) },
+      '&:last-child': { paddingBottom: theme.spacing(6) },
     },
   },
 });
@@ -74,7 +74,6 @@ export interface Props {
   preContent?: React.ReactNode;
   widthExpand?: boolean;
   widthExpandMargin?: MarginProperty<string | number>;
-  showDivider?: boolean;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
   searchOverrideAdmin?: Partial<Admin.IdeaSearchAdmin>;
@@ -86,12 +85,12 @@ export interface Props {
   disableOnClick?: boolean;
   suppressPanel?: boolean;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
-  selectedPostId?: string;
-  selectedPostClassName?: string;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
   navigatorRef?: MutableRef<PanelPostNavigator>;
+  selectable?: boolean;
+  selected?: string;
   navigatorChanged?: () => void;
 }
 interface ConnectProps {
@@ -163,7 +162,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     if (!!this.props.navigatorChanged
       && (this.props.searchCursor !== prevProps.searchCursor
         || this.props.searchIdeas.length !== prevProps.searchIdeas.length
-        || this.props.selectedPostId !== prevProps.selectedPostId)) {
+        || this.props.selected !== prevProps.selected)) {
       this.props.navigatorChanged();
     }
   }
@@ -221,11 +220,11 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           };
           content = (
             <Post
-              key={idea.ideaId}
               className={classNames(
-                this.props.widthExpand && widthExpandMarginClassName,
                 this.props.postClassName,
-                this.props.selectedPostId === idea.ideaId && this.props.selectedPostClassName,
+              )}
+              classNamePadding={classNames(
+                this.props.widthExpand && widthExpandMarginClassName,
               )}
               server={this.props.server}
               idea={idea}
@@ -241,24 +240,32 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           );
         }
         if (this.props.wrapPost) {
+          content = this.props.wrapPost(idea, content, ideaIndex);
+        }
+        if (this.props.selectable) {
+          content = (
+            <TabFragment key={idea.ideaId} value={idea.ideaId}>
+              {content}
+            </TabFragment>
+          );
+        } else {
           content = (
             <React.Fragment key={idea.ideaId}>
-              {this.props.wrapPost(idea, content, ideaIndex)}
+              {content}
             </React.Fragment>
           );
         }
         return content;
       });
-      if (this.props.showDivider) {
-        content = content.map(post => (
-          <>
-            {post}
-            {this.props.direction === Direction.Vertical
-              ? (<Divider />)
-              : (<DividerVertical />)
-            }
-          </>
-        ));
+      if (this.props.selectable) {
+        content = (
+          <TabsVertical
+            selected={this.props.selected}
+            onClick={this.props.onClickPost ? (postId => this.props.onClickPost?.(postId)) : undefined}
+          >
+            {content}
+          </TabsVertical>
+        );
       }
       if (!this.props.searchIdeas.length) {
         content = (
@@ -313,14 +320,14 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 
   hasPrevious(): boolean {
-    if (!this.props.selectedPostId) return false;
-    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    if (!this.props.selected) return false;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selected);
     return selectedIndex >= 1;
   }
 
   getPreviousId(): string | undefined {
-    if (!this.props.selectedPostId) return undefined;
-    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    if (!this.props.selected) return undefined;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selected);
     const previousPostId = this.props.searchIdeas[selectedIndex - 1]?.ideaId;
     return previousPostId;
   }
@@ -334,15 +341,15 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 
   hasNext(): boolean {
-    if (!this.props.selectedPostId) return false;
-    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    if (!this.props.selected) return false;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selected);
     return selectedIndex !== -1
       && (selectedIndex < (this.props.searchIdeas.length - 1) || !!this.props.searchCursor);
   }
 
   async getNextId(): Promise<string | undefined> {
-    if (!this.props.selectedPostId) return undefined;
-    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selectedPostId);
+    if (!this.props.selected) return undefined;
+    const selectedIndex = this.props.searchIdeas.findIndex(idea => idea.ideaId === this.props.selected);
     if (selectedIndex === -1) return undefined;
     var nextPostId: string | undefined;
     if (selectedIndex === (this.props.searchIdeas.length - 1)) {

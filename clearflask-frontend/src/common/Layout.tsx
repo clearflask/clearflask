@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import HelpPopper from './HelpPopper';
+import { notEmpty } from './util/arrayUtil';
 import keyMapper from './util/keyMapper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
 
@@ -39,13 +40,12 @@ export interface LayoutSize {
   scroll?: Orientation;
 }
 export type SectionContent = React.ReactNode | ((layoutState: LayoutState) => (React.ReactNode | null));
-export type BreakAction = 'show' | 'hide' | 'menu' | 'drawer';
-export interface Section {
+export type BreakAction = 'show' | 'hide' | 'menu' | 'drawer' | 'stack';
+export type Section = {
   name: string;
   size?: LayoutSize;
   breakPriority?: number;
   breakAlways?: boolean;
-  breakAction?: BreakAction; // default: show and dont touch
   noPaper?: boolean;
   collapseLeft?: boolean;
   collapseTopBottom?: boolean;
@@ -56,7 +56,15 @@ export interface Section {
   barTop?: SectionContent;
   content: SectionContent;
   barBottom?: SectionContent;
-}
+} & (
+    {
+      breakAction?: Exclude<BreakAction, 'stack'>; // default: 'show'
+    } | {
+      breakAction: 'stack';
+      stackWithSectionName: string;
+      stackLevel: Exclude<number, 0>;
+    }
+  );
 
 export const BOX_MARGIN = 36;
 const HEADER_HEIGHT = 56;
@@ -128,12 +136,12 @@ const styles = (theme: Theme) => createStyles({
     position: 'relative',
     backgroundColor: theme.palette.background.paper,
   },
-  horizontal: {
+  flexHorizontal: {
     display: 'flex',
     alignItems: 'stretch',
     minHeight: 0,
   },
-  vertical: {
+  flexVertical: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'stretch',
@@ -165,6 +173,11 @@ const styles = (theme: Theme) => createStyles({
     zIndex: 0,
     // Border-hack between collapsed sections
     columnGap: 1,
+    columnRuleColor: theme.palette.divider,
+  },
+  stackedSections: {
+    // Border-hack between collapsed sections
+    rowGap: 1,
     columnRuleColor: theme.palette.divider,
   },
   section: {
@@ -299,8 +312,35 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     }
   }
 
-  renderSection(layoutState: LayoutState, section?: Section, breakAction: BreakAction = 'show'): React.ReactNode | null {
-    if (!section) return null;
+  renderStackedSections(layoutState: LayoutState, section: Section, breakAction: BreakAction = 'show', stackedSections: Section[] = []): React.ReactNode | null {
+    if (!stackedSections.length) return this.renderSection(layoutState, section, breakAction);
+
+    const sections = [section, ...stackedSections]
+      .sort((l, r) => (l.breakAction === 'stack' ? l.stackLevel || -1 : 0) - (r.breakAction === 'stack' ? r.stackLevel || -1 : 0));
+    const contents = sections
+      .map((section, index, arr) => this.renderSection(layoutState, section, (index === (arr.length - 1)) ? breakAction : 'stack'))
+      .filter(notEmpty);
+    if (contents.length === 0) return null;
+    if (contents.length === 1) return contents[0];
+
+    const breakWidth = sections.reduce<number | undefined>((val, section) => section.size?.breakWidth ? Math.max(section.size.breakWidth, (val || 0)) : val, undefined);
+    return (
+      <div key={section.name} className={classNames(
+        this.props.classes.flexVertical,
+        this.props.classes.stackedSections,
+      )} style={{
+        flexGrow: sections.reduce((val, section) => Math.max(section.size?.flexGrow || 0, val), 0),
+        flexBasis: breakWidth || 'content',
+        minWidth: breakWidth,
+        width: sections.find(section => section.size?.width !== undefined)?.size?.width,
+        maxWidth: sections.find(section => section.size?.maxWidth !== undefined)?.size?.maxWidth,
+      }}>
+        {contents}
+      </div>
+    );
+  }
+
+  renderSection(layoutState: LayoutState, section: Section, breakAction: BreakAction = 'show'): React.ReactNode | null {
     var content = this.renderContent(layoutState, section.content);
     if (!content) return null;
 
@@ -315,7 +355,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
       );
     }
 
-    const isOverflow = breakAction !== 'show';
+    const isOverflow = breakAction !== 'show' && breakAction !== 'stack';
     const header = this.renderHeader(layoutState, section.header);
     const headerContent = this.renderHeaderContent(header, breakAction)
     const barTop = this.renderContent(layoutState, section.barTop);
@@ -323,12 +363,12 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     return (
       <div key={section.name} className={classNames(
         this.props.classes.section,
-        this.props.classes.vertical,
+        this.props.classes.flexVertical,
         !isOverflow && layoutState.enableBoxLayout && (!section.noPaper ? this.props.classes.boxPaper : this.props.classes.boxNoPaper),
         !isOverflow && layoutState.enableBoxLayout && (section.collapseLeft ? this.props.classes.collapseLeft : this.props.classes.boxLeft),
         !isOverflow && layoutState.enableBoxLayout && (section.collapseRight ? this.props.classes.collapseRight : this.props.classes.boxRight),
         !isOverflow && layoutState.enableBoxLayout && ((section.collapseTopBottom || section.collapseTop) ? this.props.classes.collapseTop : this.props.classes.boxTop),
-        !isOverflow && layoutState.enableBoxLayout && ((section.collapseTopBottom || section.collapseBottom) ? this.props.classes.collapseBottom : this.props.classes.boxBottom),
+        !isOverflow && layoutState.enableBoxLayout && breakAction !== 'stack' && ((section.collapseTopBottom || section.collapseBottom) ? this.props.classes.collapseBottom : this.props.classes.boxBottom),
       )} style={{
         flexGrow: section.size?.flexGrow || 0,
         flexBasis: section.size?.breakWidth || 'content',
@@ -377,32 +417,36 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
   }
 
   render() {
-    const sectionPreview = this.props.sections.find(s => s.breakAction === 'drawer');
-    const sectionMenu = this.props.sections.find(s => s.breakAction === 'menu');
+    const stackedSectionsForName: { [name: string]: Section[] } = {};
     const breakActionForName: { [name: string]: BreakAction } = {};
     this.props.sections.forEach(section => {
-      breakActionForName[section.name] = (section.breakAlways
+      const breakAction = (section.breakAlways
         ? section.breakAction
         : (this.props.mediaQueries[section.name] === false && section.breakAction))
         || 'show';
+      breakActionForName[section.name] = breakAction;
+      if (breakAction === 'stack' && section.breakAction === 'stack') {
+        stackedSectionsForName[section.stackWithSectionName] = stackedSectionsForName[section.stackWithSectionName] || [];
+        stackedSectionsForName[section.stackWithSectionName].push(section);
+      }
     });
     const layoutState: LayoutState = {
-      // overflowPreview: !!sectionPreview && this.props.mediaQueries[sectionPreview.name] === false,
-      // overflowMenu: !!sectionMenu && this.props.mediaQueries[sectionMenu.name] === false,
       isShown: name => breakActionForName[name] || 'show',
       enableBoxLayout: this.props.mediaQueries.enableBoxLayout,
     };
 
+    const sectionPreview = this.props.sections.find(s => s.breakAction === 'drawer');
     const contentPreview = !sectionPreview || layoutState.isShown(sectionPreview.name) !== 'drawer'
-      ? null : this.renderSection(layoutState, sectionPreview, 'drawer');
+      ? null : this.renderStackedSections(layoutState, sectionPreview, 'drawer', stackedSectionsForName[sectionPreview.name]);
+    const sectionMenu = this.props.sections.find(s => s.breakAction === 'menu');
     const contentMenu = !sectionMenu || layoutState.isShown(sectionMenu.name) !== 'menu'
-      ? null : this.renderSection(layoutState, sectionMenu, 'menu');
+      ? null : this.renderStackedSections(layoutState, sectionMenu, 'menu', stackedSectionsForName[sectionMenu.name]);
 
     const contents: React.ReactNode[] = [];
     this.props.sections.forEach(section => {
       const breakAction = breakActionForName[section.name];
       if (breakAction !== 'show') return;
-      const content = this.renderSection(layoutState, section, breakAction);
+      const content = this.renderStackedSections(layoutState, section, breakAction, stackedSectionsForName[section.name]);
       if (!content) return;
       contents.push(content);
     });
@@ -470,13 +514,13 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             {contentPreview}
           </Drawer>
         )}
-        <div className={classNames(this.props.classes.page, this.props.classes.vertical)}>
+        <div className={classNames(this.props.classes.page, this.props.classes.flexVertical)}>
           {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}
           <div className={classNames(
             this.props.classes.sections,
             layoutState.enableBoxLayout ? this.props.classes.sectionsBox : this.props.classes.sectionsNobox,
             this.props.classes.grow,
-            this.props.classes.horizontal,
+            this.props.classes.flexHorizontal,
           )}>
             {contents}
           </div>
@@ -539,12 +583,10 @@ export default keyMapper(
       variableWidth -= 1; // Accounts for column-gap 1px
       variableBoxWidth -= sectionBoxWidth;
 
-      if (!!sectionsByPrio.length) {
-        const showBoxMaxWidth = overflowSection - 1;
-        const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
-        mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
-      }
+      const showBoxMaxWidth = overflowSection - 1;
+      const showBoxMinWidth = staticWidth + staticBoxWidth + variableWidth + variableBoxWidth;
+      mediaQueries['enableBoxLayout'] = `(min-width: ${showBoxMinWidth}px) and (max-width: ${showBoxMaxWidth}px),` + mediaQueries['enableBoxLayout'];
     }
-
+    console.log('debug', mediaQueries);
     return mediaQueries;
   })(withStyles(styles, { withTheme: true })(Layout)));
