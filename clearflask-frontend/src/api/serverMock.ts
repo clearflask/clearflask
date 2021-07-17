@@ -384,6 +384,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       created: mergedIdea.created,
       mergedPostId: mergedIdea.ideaId,
       mergedPostTitle: mergedIdea.title,
+      mergedTime: mergedIdea.mergedToPostTime,
       content: mergedIdea.description,
       voteValue: mergedIdea.voteValue || 0,
     };
@@ -397,7 +398,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...(request.ideaCommentSearch.parentCommentId ? [request.ideaCommentSearch.parentCommentId] : []),
     ].reduce((l, r) => l > r ? l : r, '');
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    const mergedPostAsCommentAdded = new Set<string>();
     const mergedPostComments = (idea.mergedPostIds || [])
       .map(postId => this.getProject(request.projectId).ideas.find(i => i.ideaId === postId))
       .filter(notEmpty)
@@ -520,6 +520,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           .disableFunding !== true)
       .filter(idea => request.ideaSearchAdmin.filterCreatedStart === undefined
         || (idea.created >= request.ideaSearchAdmin.filterCreatedStart))
+      .filter(idea => request.ideaSearchAdmin.similarToIdeaId === undefined
+        || (idea.ideaId !== request.ideaSearchAdmin.similarToIdeaId))
       .filter(idea => request.ideaSearchAdmin.filterCreatedEnd === undefined
         || (idea.created <= request.ideaSearchAdmin.filterCreatedEnd))
       .filter(idea => !request.ideaSearchAdmin.filterTagIds
@@ -880,16 +882,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       idea => idea.ideaId === request.ideaId);
     if (request.ideaUpdateAdmin.title !== undefined) idea.title = request.ideaUpdateAdmin.title;
     if (request.ideaUpdateAdmin.description !== undefined) idea.description = request.ideaUpdateAdmin.description;
-    if (request.ideaUpdateAdmin.response !== undefined) {
-      idea.response = request.ideaUpdateAdmin.response;
+    if (request.ideaUpdateAdmin.response !== undefined || request.ideaUpdateAdmin.statusId !== undefined) {
       const user = request.ideaUpdateAdmin.responseAuthorUserId
         && this.getProject(request.projectId).users.find(user => user.userId === request.ideaUpdateAdmin.responseAuthorUserId)
         || this.getProject(request.projectId).loggedInUser;
       if (user) {
         idea.responseAuthorName = user.name;
         idea.responseAuthorUserId = user.userId;
+        idea.responseEdited = new Date();
       }
     }
+    if (request.ideaUpdateAdmin.response !== undefined) idea.response = request.ideaUpdateAdmin.response;
     if (request.ideaUpdateAdmin.statusId !== undefined) idea.statusId = request.ideaUpdateAdmin.statusId;
     if (request.ideaUpdateAdmin.tagIds !== undefined) idea.tagIds = request.ideaUpdateAdmin.tagIds;
     if (request.ideaUpdateAdmin.fundGoal !== undefined) idea.fundGoal = request.ideaUpdateAdmin.fundGoal;
@@ -901,6 +904,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaLinkAdmin(request: Admin.IdeaLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot link into itself');
     if (idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Already linked');
     idea.linkedToPostIds = [...(idea.linkedToPostIds || []), parentIdea.ideaId];
     parentIdea.linkedPostIds = [...(parentIdea.linkedPostIds || []), idea.ideaId];
@@ -909,6 +913,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaUnLinkAdmin(request: Admin.IdeaUnLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot unlink from itself');
     if (!idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Not linked');
     idea.linkedToPostIds = idea.linkedToPostIds?.filter(ideaId => ideaId !== parentIdea.ideaId);
     parentIdea.linkedPostIds = parentIdea.linkedPostIds?.filter(ideaId => ideaId !== idea.ideaId);
@@ -920,8 +925,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaMergeAdmin(request: Admin.IdeaMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot merge into itself');
     if (idea.mergedToPostId) return this.throwLater(400, 'Already merged');
     idea.mergedToPostId = parentIdea.ideaId;
+    idea.mergedToPostTime = new Date();
     parentIdea.mergedPostIds = [...(parentIdea.mergedPostIds || []), idea.ideaId];
     parentIdea.commentCount += idea.commentCount;
     if (idea.funded) {
@@ -945,8 +952,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaUnMergeAdmin(request: Admin.IdeaUnMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
+    if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot unmerge from itself');
     if (idea.mergedToPostId !== parentIdea.ideaId) return this.throwLater(400, 'Not merged');
     idea.mergedToPostId = undefined;
+    idea.mergedToPostTime = undefined;
     parentIdea.mergedPostIds = parentIdea.mergedPostIds?.filter(postId => postId !== idea.ideaId);
     parentIdea.commentCount -= idea.commentCount;
     if (idea.funded) parentIdea.funded = (parentIdea.funded || 0) - (idea.funded || 0);

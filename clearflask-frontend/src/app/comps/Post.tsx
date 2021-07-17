@@ -5,7 +5,7 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
-import EditIcon from '@material-ui/icons/Edit';
+import RespondIcon from '@material-ui/icons/FeedbackOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
@@ -43,12 +43,12 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import MyButton from './MyButton';
 import PostAsLink from './PostAsLink';
-import PostEdit from './PostEdit';
+import { ClickToEdit, PostEditDescriptionInline, PostEditResponse, PostEditStatus, PostEditTagsInline, PostEditTitleInline, postSave, PostSaveButton } from './PostEdit';
 import VotingControl from './VotingControl';
 
 const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
-export type PostVariant = 'list' | 'page' | 'dashboard';
+export type PostVariant = 'list' | 'page';
 export const MinContentWidth = 300;
 export const MaxContentWidth = 600;
 
@@ -89,8 +89,6 @@ const styles = (theme: Theme) => createStyles({
     fontSize: '1rem',
   },
   titleContainer: {
-    display: 'flex',
-    alignItems: 'baseline',
   },
   titleAndDescription: {
     display: 'flex',
@@ -339,7 +337,12 @@ const styles = (theme: Theme) => createStyles({
   },
   blurry: {
     ...(cssBlurry as any), // have to cast, doesnt play nice with makeStyles. Im sure there is a right type for this, but i didnt find it, well I could find it, i just dont have time. I do have time, but its not as important. Okay its not important. Thats it.
-  }
+  },
+  noContentLabel: {
+    color: theme.palette.text.hint,
+    whiteSpace: 'nowrap',
+    fontStyle: 'italic',
+  },
 });
 const useStyles = makeStyles(styles);
 interface Props {
@@ -389,7 +392,10 @@ interface State {
   isSubmittingVote?: Client.VoteOption;
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
-  editExpanded?: boolean;
+  showEditingStatusAndResponse?: false | 'status' | 'response';
+  isSubmittingStatusAndResponse?: boolean;
+  editingResponse?: string;
+  editingStatusId?: string;
   commentExpanded?: boolean;
   iWantThisCommentExpanded?: boolean;
   demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
@@ -489,7 +495,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               ))}
               {this.renderBottomBar()}
               {this.renderIWantThisCommentAdd()}
-              {this.renderResponse()}
+              {this.renderResponseAndStatus()}
               {this.renderLinks()}
             </div>
             {this.props.contentBeforeComments && (
@@ -528,8 +534,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ].filter(notEmpty);
 
       rightSide = [
+        this.renderEditResponse(),
         this.renderCommentAdd(),
-        this.renderEdit(),
       ].filter(notEmpty);
     } else {
       leftSide = [
@@ -540,7 +546,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
       rightSide = [
         this.renderStatus(),
-        ...(this.renderTags() || []),
+        this.renderTags(),
         this.renderCategory(),
       ].filter(notEmpty);
     }
@@ -573,7 +579,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         this.renderAuthor(),
         this.renderCreatedDatetime(),
         this.renderStatus(),
-        ...(this.renderTags() || []),
+        this.renderTags(),
         this.renderCategory(),
       ].filter(notEmpty);
     } else {
@@ -588,7 +594,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <div className={this.props.classes.headerBarLine}>
-        <Delimited delimiter=' '>
+        <Delimited delimiter={(<>&nbsp;&nbsp;&nbsp;</>)}>
           {header}
         </Delimited>
       </div>
@@ -596,8 +602,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderAuthor() {
-    if (this.props.variant === 'dashboard'
-      || this.props.variant === 'list' && this.props.display && this.props.display.showAuthor === false
+    if (this.props.variant === 'list' && this.props.display && this.props.display.showAuthor === false
       || !this.props.idea) return null;
 
     return (
@@ -616,8 +621,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderCreatedDatetime() {
-    if (this.props.variant === 'dashboard'
-      || this.props.variant === 'list' && this.props.display && this.props.display.showCreated === false
+    if (this.props.variant === 'list' && this.props.display && this.props.display.showCreated === false
       || !this.props.idea) return null;
 
     return (
@@ -628,8 +632,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderCommentCount() {
-    if (this.props.variant === 'dashboard'
-      || this.props.display?.showCommentCount === false
+    if (this.props.display?.showCommentCount === false
       || this.props.variant !== 'list'
       || !this.props.idea
       || (this.props.display?.showCommentCount === undefined && !this.props.idea.commentCount)
@@ -742,69 +745,95 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderEdit() {
+  renderEditResponse() {
     const isMod = this.props.server.isModOrAdminLoggedIn();
-    const isAuthor = this.props.idea && this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId;
-    if (!this.props.idea
+    if (this.props.variant === 'list'
+      || !this.props.idea
       || !this.props.category
-      || (!isMod && !isAuthor)
+      || !isMod
       || this.props.display?.showEdit === false) return null;
 
     return (
-      <React.Fragment key='edit'>
+      <React.Fragment key='edit-response'>
         <MyButton
           buttonVariant='post'
-          Icon={EditIcon}
-          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}
+          disabled={!!this.state.showEditingStatusAndResponse}
+          Icon={RespondIcon}
+          onClick={e => this.setState({ showEditingStatusAndResponse: 'response' })}
         >
-          Edit
+          Respond
         </MyButton>
-        {this.state.editExpanded !== undefined && (
-          <PostEdit
-            key={this.props.idea.ideaId}
-            server={this.props.server}
-            category={this.props.category}
-            credits={this.props.credits}
-            loggedInUser={this.props.loggedInUser}
-            idea={this.props.idea}
-            open={this.state.editExpanded}
-            onClose={() => this.setState({ editExpanded: false })}
-          />
-        )}
       </React.Fragment>
     );
   }
 
-  renderStatus() {
-    if (this.props.variant === 'dashboard'
-      || this.props.variant === 'list' && this.props.display && this.props.display.showStatus === false
+  renderStatus(isInResponse?: boolean, isEditing?: boolean) {
+    if (this.props.variant === 'list' && this.props.display && this.props.display.showStatus === false
       || !this.props.idea
       || !this.props.idea.statusId
       || !this.props.category) return null;
 
     const status = this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId);
-    if (!status) return null;
 
-    return (
-      <>
-        &nbsp;
-        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || this.props.disableOnClick || this.props.variant !== 'list'}
-          onClick={e => this.props.onClickStatus && !this.props.disableOnClick && this.props.onClickStatus(status.statusId)}>
-          <Typography variant='caption' style={{ color: status.color }}>
-            {status.name}
-          </Typography>
-        </Button>
-      </>
+    var content;
+
+    if (isEditing) {
+      content = (
+        <PostEditStatus
+          server={this.props.server}
+          autoFocusAndSelect={this.state.showEditingStatusAndResponse === 'status'}
+          categoryId={this.props.idea.categoryId}
+          initialValue={this.props.idea.statusId}
+          value={this.state.editingStatusId}
+          onChange={statusId => this.setState({ editingStatusId: statusId })}
+          isSubmitting={this.state.isSubmittingStatusAndResponse}
+          bare
+        />
+      );
+    } else {
+      if (!status) return null;
+      content = status.name;
+    }
+
+    content = (
+      <Typography variant={isInResponse ? 'h6' : 'caption'} component='div' style={{ color: status?.color }}>
+        {content}
+      </Typography>
     );
+
+    if (this.props.onClickStatus && !this.props.disableOnClick && status && !isEditing) {
+      content = (
+        <Button
+          key='status'
+          variant='text'
+          className={this.props.classes.button}
+          disabled={!this.props.onClickStatus || this.props.disableOnClick || this.props.variant !== 'list'}
+          onClick={e => status && this.props.onClickStatus && !this.props.disableOnClick && this.props.onClickStatus(status.statusId)}
+        >
+          {content}
+        </Button>
+      );
+    }
+
+    if (this.props.variant !== 'list' && this.canEdit() === 'mod') {
+      content = (
+        <ClickToEdit isEditing={!!this.state.showEditingStatusAndResponse} setIsEditing={isEditing => this.setState({ showEditingStatusAndResponse: 'status' })} >
+          {content}
+        </ClickToEdit>
+      );
+    }
+
+    return content;
   }
 
   renderTags() {
+    const canEdit = this.canEdit() === 'mod';
     if (this.props.variant === 'list' && this.props.display && this.props.display.showTags === false
       || !this.props.idea
-      || this.props.idea.tagIds.length === 0
-      || !this.props.category) return null;
+      || !this.props.category
+      || (!this.props.idea.tagIds.length && !canEdit)) return null
 
-    return this.props.idea.tagIds
+    var contentTags = this.props.idea.tagIds
       .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
       .filter(tag => !!tag)
       .map(tag => (
@@ -815,6 +844,27 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           </Typography>
         </Button>
       ));
+
+    var content: React.ReactNode;
+    if (canEdit) {
+      content = (
+        <PostEditTagsInline
+          server={this.props.server}
+          post={this.props.idea}
+          bare
+          noContentLabel={(
+            <Typography variant='caption' className={this.props.classes.noContentLabel}
+            >Add tags</Typography>
+          )}
+        >
+          {contentTags.length ? contentTags : null}
+        </PostEditTagsInline >
+      );
+    } else {
+      content = contentTags;
+    }
+
+    return content;
   }
 
   renderCategory() {
@@ -944,8 +994,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
   renderFunding() {
-    if (this.props.variant === 'dashboard'
-      || this.props.variant === 'list' && this.props.display && this.props.display.showFunding === false
+    if (this.props.variant === 'list' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
@@ -1245,6 +1294,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         titleTruncateLines={this.props.display?.titleTruncateLines}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
+        editable={this.canEdit() ? {
+          server: this.props.server,
+          post: this.props.idea,
+        } : undefined}
       />
     );
   }
@@ -1257,6 +1310,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         description={this.props.idea.description}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
+        editable={this.canEdit() ? {
+          server: this.props.server,
+          post: this.props.idea,
+        } : undefined}
       />
     );
   }
@@ -1290,48 +1347,179 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderResponse() {
-    if (this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
-      || !this.props.idea
-      || !this.props.idea.response) return null;
-    const responseRichViewer = (
-      <RichViewer
-        key={this.props.idea.response}
-        iAgreeInputIsSanitized
-        html={this.props.idea.response}
-        toneDownHeadings={this.props.variant === 'list'}
-      />
+  renderResponseAndStatus() {
+    if (!this.props.idea) return null;
+
+    var response;
+    var status;
+    var author;
+
+    if (!this.state.showEditingStatusAndResponse) {
+      response = this.renderResponse();
+      status = this.props.variant !== 'list' && this.renderStatus(true);
+
+      if (!status && !response) return null;
+
+      author = (this.props.idea.responseAuthorUserId && this.props.idea.responseAuthorName) ? {
+        userId: this.props.idea.responseAuthorUserId,
+        name: this.props.idea.responseAuthorName,
+        isMod: true
+      } : undefined;
+
+    } else {
+      response = this.renderResponse(true);
+      status = this.renderStatus(true, true);
+      author = this.props.loggedInUser;
+    }
+
+    return this.renderResponseAndStatusLayout(
+      response,
+      status,
+      author,
+      this.props.idea.responseEdited,
+      !!this.state.showEditingStatusAndResponse,
     );
-    return (
+  }
+
+  renderResponseAndStatusLayout(
+    response: React.ReactNode,
+    status: React.ReactNode,
+    author?: React.ComponentProps<typeof UserWithAvatarDisplay>['user'],
+    edited?: Date,
+    isEditing?: boolean,
+  ) {
+    var content = (
       <div className={classNames(
         this.props.classes.responseContainer,
         this.props.variant === 'list' ? this.props.classes.responseContainerList : this.props.classes.responseContainerPage,
       )}>
         <div className={this.props.classes.responseHeader}>
           {this.props.variant !== 'list' && (
-            <HelpPopper description='Admin response'>
-              <PinIcon alt='Admin response' color='inherit' fontSize='inherit' className={this.props.classes.pinIcon} />
+            <HelpPopper description='Pinned response'>
+              <PinIcon color='inherit' fontSize='inherit' className={this.props.classes.pinIcon} />
             </HelpPopper>
           )}
           <UserWithAvatarDisplay
             onClick={this.props.onUserClick}
-            user={(this.props.idea.responseAuthorUserId && this.props.idea.responseAuthorName) ? {
-              userId: this.props.idea.responseAuthorUserId,
-              name: this.props.idea.responseAuthorName,
-              isMod: true
-            } : undefined}
+            user={author}
             baseline
           />
+          {status && (
+            <>
+              <Typography variant='body1'>changed to&nbsp;</Typography>
+              {status}
+            </>
+          )}
+          {(!!edited && !isEditing) && (
+            <Typography className={this.props.classes.timeAgo} variant='caption'>
+              <TimeAgo date={edited} />
+            </Typography>
+          )}
         </div>
-        <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${this.props.variant !== 'list' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
-          {this.props.variant === 'list'
-            ? (<TruncateFade variant='body1' lines={this.props.display?.responseTruncateLines}>
-              <div>{responseRichViewer}</div>
-            </TruncateFade>)
-            : responseRichViewer}
-        </Typography>
+        {response}
       </div>
     );
+
+    if (isEditing) {
+      const changed = this.state.editingStatusId !== undefined || this.state.editingResponse !== undefined
+      content = (
+        <PostSaveButton
+          open
+          isSubmitting={this.state.isSubmittingStatusAndResponse}
+          showNotify
+          onCancel={() => this.setState({
+            showEditingStatusAndResponse: false,
+            editingResponse: undefined,
+            editingStatusId: undefined,
+          })}
+          onSave={(doNotify) => {
+            if (!this.props.idea || !changed) return;
+            this.setState({ isSubmittingStatusAndResponse: true });
+            postSave(
+              this.props.server,
+              this.props.idea.ideaId,
+              {
+                ...(this.state.editingStatusId !== undefined ? { statusId: this.state.editingStatusId } : {}),
+                ...(this.state.editingResponse !== undefined ? { response: this.state.editingResponse } : {}),
+                suppressNotifications: !doNotify,
+              },
+              () => this.setState({
+                showEditingStatusAndResponse: false,
+                editingResponse: undefined,
+                editingStatusId: undefined,
+                isSubmittingStatusAndResponse: false,
+              }),
+              () => this.setState({
+                isSubmittingStatusAndResponse: false,
+              }),
+            );
+          }}
+        >
+          {content}
+        </PostSaveButton>
+      );
+    }
+
+    return content;
+  }
+
+  renderResponse(isEditing?: boolean) {
+    if (this.props.variant === 'list' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
+      || !this.props.idea) return null;
+
+    var content;
+    if (!isEditing) {
+      if (!this.props.idea.response) return null;
+      content = (
+        <RichViewer
+          key={this.props.idea.response}
+          iAgreeInputIsSanitized
+          html={this.props.idea.response}
+          toneDownHeadings={this.props.variant === 'list'}
+        />
+      );
+    } else {
+      content = (
+        <PostEditResponse
+          server={this.props.server}
+          autoFocusAndSelect={this.state.showEditingStatusAndResponse === 'response'}
+          value={this.state.editingResponse !== undefined
+            ? this.state.editingResponse
+            : this.props.idea.response}
+          onChange={response => this.setState({ editingResponse: response })}
+          isSubmitting={this.state.isSubmittingStatusAndResponse}
+          RichEditorProps={{
+            placeholder: 'Add a response',
+          }}
+          bare
+          forceOutline
+        />
+      );
+    }
+
+    if (this.props.variant === 'list' && !isEditing) {
+      content = (
+        <TruncateFade variant='body1' lines={this.props.display?.responseTruncateLines}>
+          <div>{content}</div>
+        </TruncateFade>
+      );
+    }
+
+    content = (
+      <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${this.props.variant !== 'list' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+        {content}
+      </Typography>
+    );
+
+    if (this.props.variant !== 'list' && !isEditing && this.canEdit() === 'mod') {
+      content = (
+        <ClickToEdit isEditing={!!this.state.showEditingStatusAndResponse} setIsEditing={isEditing => this.setState({ showEditingStatusAndResponse: 'response' })} >
+          {content}
+        </ClickToEdit>
+      );
+    }
+
+    return content;
   }
 
   renderTitleAndDescription(children: React.ReactNode) {
@@ -1361,6 +1549,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         {children}
       </Link>
     );
+  }
+
+  canEdit(): false | 'mod' | 'author' {
+    if (this.props.variant === 'list') return false;
+    if (this.props.server.isModOrAdminLoggedIn()) return 'mod';
+    if (this.props.loggedInUser
+      && this.props.idea?.authorUserId === this.props.loggedInUser.userId
+    ) return 'author';
+    return false;
   }
 
   async demoFundingAnimate(fundAmount: number) {
@@ -1487,27 +1684,50 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 }
 
 export const PostTitle = (props: {
-  variant: PostVariant,
+  variant: PostVariant;
+  editable?: React.ComponentProps<typeof PostEditTitleInline>;
 } & Pick<Client.Idea, 'title'>
   & Partial<Pick<Client.PostDisplay, 'titleTruncateLines' | 'descriptionTruncateLines'>>
   & Pick<StateSettings, 'demoBlurryShadow'>
 ) => {
   const classes = useStyles();
-  if (!props.title) return null;
+  if (!props.editable && !props.title) return null;
+
+  var title = props.variant === 'list'
+    ? (<TruncateEllipsis ellipsis='…' lines={props.titleTruncateLines}><div>{props.title}</div></TruncateEllipsis>)
+    : props.title;
+
+  if (props.editable) {
+    title = (
+      <PostEditTitleInline
+        bare
+        forceOutline
+        {...props.editable}
+        TextFieldProps={{
+          autoFocus: true,
+        }}
+      >
+        {title}
+      </PostEditTitleInline>
+    );
+  } else {
+  }
   return (
     <div className={classes.titleContainer}>
-      <Typography variant='h5' component='h1' className={classNames(
-        classes.title,
-        props.variant !== 'list'
-          ? classes.titlePage
-          : ((props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines <= 0)
-            ? classes.titleListWithoutDescription
-            : classes.titleList),
-        props.demoBlurryShadow ? classes.blurry : '',
-      )}>
-        {props.variant === 'list'
-          ? (<TruncateEllipsis ellipsis='…' lines={props.titleTruncateLines}><div>{props.title}</div></TruncateEllipsis>)
-          : props.title}
+      <Typography
+        variant='h5'
+        component='h1'
+        className={classNames(
+          classes.title,
+          props.variant !== 'list'
+            ? classes.titlePage
+            : ((props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines <= 0)
+              ? classes.titleListWithoutDescription
+              : classes.titleList),
+          props.demoBlurryShadow && classes.blurry,
+        )}
+      >
+        {title}
       </Typography>
     </div>
   );
@@ -1515,14 +1735,18 @@ export const PostTitle = (props: {
 
 export const PostDescription = (props: {
   variant: PostVariant,
+  editable?: React.ComponentProps<typeof PostEditDescriptionInline>;
 } & Pick<Client.Idea, 'description'>
   & Partial<Pick<Client.PostDisplay, 'descriptionTruncateLines'>>
   & Pick<StateSettings, 'demoBlurryShadow'>
 ) => {
   const classes = useStyles();
-  if (!props.description) return null;
-  if (props.variant === 'list' && props.descriptionTruncateLines !== undefined && props.descriptionTruncateLines <= 0) return null;
-  const descriptionRichViewer = (
+  if ((props.variant === 'list'
+    && props.descriptionTruncateLines !== undefined
+    && props.descriptionTruncateLines <= 0)
+    || (!props.editable && !props.description)) return null;
+
+  var description = !props.description ? undefined : (
     <RichViewer
       key={props.description}
       iAgreeInputIsSanitized
@@ -1530,17 +1754,36 @@ export const PostDescription = (props: {
       toneDownHeadings={props.variant === 'list'}
     />
   );
+  if (description !== undefined && props.variant === 'list') {
+    description = (
+      <TruncateFade variant='body1' lines={props.descriptionTruncateLines}>
+        <div>{description}</div>
+      </TruncateFade>
+    );
+  }
+
+  if (props.editable) {
+    description = (
+      <PostEditDescriptionInline
+        bare
+        forceOutline
+        noContentLabel={(
+          <Typography variant='caption' className={classes.noContentLabel}
+          >Add description</Typography>
+        )}
+        {...props.editable}
+      >
+        {description}
+      </PostEditDescriptionInline>
+    );
+  }
   return (
     <Typography variant='body1' component={'span'} className={classNames(
       classes.description,
       props.variant !== 'list' ? classes.descriptionPage : classes.descriptionList,
       props.demoBlurryShadow ? classes.blurry : '',
     )}>
-      {props.variant === 'list'
-        ? (<TruncateFade variant='body1' lines={props.descriptionTruncateLines}>
-          <div>{descriptionRichViewer}</div>
-        </TruncateFade>)
-        : descriptionRichViewer}
+      {description}
     </Typography>
   );
 }

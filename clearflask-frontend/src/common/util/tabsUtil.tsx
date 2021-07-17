@@ -1,5 +1,6 @@
 import { Tab, Tabs } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React from 'react';
 
 // Mui Tabs requires Tab to be a direct child
@@ -42,6 +43,13 @@ const styles = (theme: Theme) => createStyles({
   },
   tabsScroller: {
     whiteSpace: 'unset',
+    overflow: 'unset',
+  },
+  expandHeight: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
+    overflow: 'unset' + '!important',
   },
 });
 const useStyles = makeStyles(styles);
@@ -55,10 +63,15 @@ export const TabsVertical = (props: {
   const classes = useStyles();
   return (
     <Tabs
+      scrollButtons='off'
+      variant='fullWidth'
       orientation='vertical'
       classes={{
+        root: classes.expandHeight,
         indicator: classes.tabsIndicator,
-        scroller: classes.tabsScroller,
+        scroller: classNames(classes.tabsScroller, classes.expandHeight),
+        flexContainer: classes.expandHeight,
+
       }}
       value={props.selected}
       onChange={props.onClick ? (e, postId) => props.onClick?.(postId) : undefined}

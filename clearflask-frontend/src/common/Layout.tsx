@@ -87,10 +87,11 @@ const styles = (theme: Theme) => createStyles({
     backgroundColor: theme.palette.background.default,
   },
   headerTitle: {
-    color: theme.palette.text.hint,
-    display: 'flex',
     alignSelf: 'center',
+    display: 'flex',
+    alignItems: 'center',
     marginLeft: theme.spacing(4),
+    color: theme.palette.text.hint,
   },
   headerAction: {
     alignSelf: 'center',

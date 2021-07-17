@@ -186,6 +186,9 @@ public interface IdeaStore {
         String responseAuthorName;
 
         @NonNull
+        Instant responseEdited;
+
+        @NonNull
         String categoryId;
 
         String statusId;
@@ -225,6 +228,8 @@ public interface IdeaStore {
         ImmutableSet<String> linkedPostIds;
 
         String mergedToPostId;
+
+        Instant mergedToPostTime;
 
         List<MergedPost> mergedPosts;
 

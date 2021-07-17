@@ -22,9 +22,6 @@ const styles = (theme: Theme) => createStyles({
   draggable: {
     position: 'relative', // For DragmeIcon
   },
-  dragmeIcon: {
-    // transform: 'rotate(90deg)',
-  },
   dragmeIconContainer: {
     position: 'absolute',
     top: theme.spacing(4),
@@ -33,6 +30,9 @@ const styles = (theme: Theme) => createStyles({
     opacity: 0.1,
     marginRight: theme.spacing(4),
     height: 30,
+  },
+  dragmeIconContainerDragging: {
+    opacity: 1,
   },
 });
 const useStyles = makeStyles(styles);
@@ -101,6 +101,7 @@ const DragndropPostListPostListInner = React.memo((props: {
             {(providedDraggable, snapshotDraggable) => (
               <DragndropPostListDraggableInner
                 providedDraggable={providedDraggable}
+                isDragging={snapshotDraggable.isDragging}
                 draggingOver={snapshotDraggable.draggingOver}
                 dropAnimation={snapshotDraggable.dropAnimation}
                 content={content}
@@ -117,6 +118,7 @@ DragndropPostListPostListInner.displayName = 'DragndropPostListPostListInner';
 // Optimization to not re-render children during dragging
 const DragndropPostListDraggableInner = React.memo((props: {
   providedDraggable: DraggableProvided;
+  isDragging: boolean;
   draggingOver?: DroppableId;
   dropAnimation?: DropAnimation;
   content: React.ReactNode;
@@ -131,8 +133,11 @@ const DragndropPostListDraggableInner = React.memo((props: {
       style={patchStyle(theme, props.providedDraggable, props.draggingOver, props.dropAnimation)}
       className={classes.draggable}
     >
-      <div className={classes.dragmeIconContainer}>
-        <DragmeIcon color='inherit' className={classes.dragmeIcon} />
+      <div className={classNames(
+        classes.dragmeIconContainer,
+        props.isDragging && classes.dragmeIconContainerDragging,
+      )}>
+        <DragmeIcon color='inherit' />
       </div>
       {props.content}
     </div>

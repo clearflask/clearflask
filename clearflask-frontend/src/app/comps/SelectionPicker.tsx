@@ -51,8 +51,11 @@ const styles = (theme: Theme) => createStyles({
   input: {
     // Grow, faster then the endAdornment
     flex: '100000 0 auto',
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingRight: 4,
     // Add 4px on left here to separate from chips, see inputRoot className
-    padding: '6px 0 6px 4px!important',
+    paddingLeft: '4px!important',
   },
   inputRoot: {
     paddingRight: '0!important',
@@ -64,6 +67,10 @@ const styles = (theme: Theme) => createStyles({
   chip: {
     // Setting margin that was unset in tag className below
     margin: 3,
+  },
+  chipBare: {
+    marginTop: 0,
+    marginBottom: 0,
   },
   tag: {
     // tag className also applies to limitTags span, use chip className above
@@ -113,6 +120,7 @@ interface Props {
   onValueCreate?: (name: string) => void;
   showCreateAtTop?: boolean;
   className?: string;
+  TextFieldComponent?: React.ElementType<React.ComponentProps<typeof TextField>>;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
   inputValue?: string;
   menuIsOpen?: boolean;
@@ -174,7 +182,10 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
       <Fade key={option.value} in={true}>
         {this.props.bareTags ? (
           <div
-            className={this.props.classes.chip}
+            className={classNames(
+              this.props.classes.chip,
+              this.props.classes.chipBare,
+            )}
             style={{
               color: option.color,
             }}
@@ -375,8 +386,9 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
             && paramsStartAdornment[0]['type'] === 'span') {
             paramsStartAdornment.shift();
           }
+          const TextFieldCmpt = this.props.TextFieldComponent || TextField;
           return (
-            <TextField
+            <TextFieldCmpt
               label={this.props.label}
               helperText={this.props.errorMsg || this.props.helperText}
               placeholder={(!!this.props.bareTags && this.props.value.length > 0)

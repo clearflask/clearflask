@@ -64,7 +64,6 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
         onClickPost={this.props.onClickPost}
         onUserClick={this.props.onUserClick}
       />
-      // {this.renderProperties()} */}
     );
   }
 
@@ -110,7 +109,6 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
                 post={this.props.post}
                 TextFieldProps={{
                   ...nakedTextFieldProps,
-
                   className: classNames(
                     this.props.classes.property,
                     this.props.classes.fixBaseline

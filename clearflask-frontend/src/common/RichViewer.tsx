@@ -9,6 +9,7 @@ const contentBackgroundColor = (theme: Theme): string => theme.palette.grey[them
  * Adapted from quill.core.css
  */
 export const QuillViewStyle = (theme: Theme): CSSProperties => ({
+  paddingBottom: 1, // Compensate for link border-bottom, which otherwise overflows
   '& blockquote:not(.ql-direction-rtl), & blockquote.ql-direction-rtl': {
     color: theme.palette.text.secondary,
   },

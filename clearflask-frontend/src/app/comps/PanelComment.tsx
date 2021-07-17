@@ -81,7 +81,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
         if (this.props.hideIfEmpty && this.props.searchResult.comments.length === 0) return null;
         if (this.props.searchResult.comments.length === 0) {
           content = (
-            <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
+            <Typography variant='overline' className={this.props.classes.nothing}>Empty</Typography>
           )
         } else {
           const logIn = () => {

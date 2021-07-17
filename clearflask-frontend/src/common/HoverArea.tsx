@@ -3,21 +3,35 @@ import { useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import React, { useState } from 'react';
 
-const HoverArea = (props: {
-  hoverDown?: Breakpoint;
-  children: (hoverAreaProps, isHovering: boolean, isHoverDown: boolean) => React.ReactNode;
-}) => {
+export const useHoverArea = (disableHoverBelow?: Breakpoint): [
+  hoverAreaProps: {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
+  },
+  isHovering: boolean,
+  isHoverDisabled: boolean,
+] => {
   const theme = useTheme();
-  const matchesHoverDown = useMediaQuery(theme.breakpoints.down(props.hoverDown || 'sm'));
-  const [isHover, setIsHover] = useState<boolean>(false);
-  const isBelow = !props.hoverDown || matchesHoverDown;
+  const matchesHoverDown = useMediaQuery(theme.breakpoints.down(disableHoverBelow || 'sm'));
+  const [isHovering, setIsHovering] = useState<boolean>(false);
+  const isHoverDisabled = !!disableHoverBelow && matchesHoverDown;
 
   const hoverAreaProps = {
-    onMouseOver: () => setIsHover(true),
-    onMouseOut: () => setIsHover(false),
+    onMouseOver: () => setIsHovering(true),
+    onMouseOut: () => setIsHovering(false),
   };
 
-  return props.children(hoverAreaProps, isHover, isBelow) as any;
+  return [hoverAreaProps, isHovering, isHoverDisabled];
+};
+
+
+const HoverArea = (props: {
+  disableHoverBelow?: Breakpoint;
+  children: (hoverAreaProps, isHovering: boolean, isHoverDisabled: boolean) => React.ReactNode;
+}) => {
+  const [hoverAreaProps, isHovering, isHoverDisabled] = useHoverArea();
+
+  return props.children(hoverAreaProps, isHovering, isHoverDisabled) as any;
 };
 
 export default HoverArea;

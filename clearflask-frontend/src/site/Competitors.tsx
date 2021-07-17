@@ -971,11 +971,11 @@ const CompetitorSelect = (props: {}) => {
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const rowMapper = isHidden => platform => (
-    <HoverArea hoverDown={dontHoverBelow}>
-      {(hoverAreaProps, isHovering, isHoverDown) => (
+    <HoverArea disableHoverBelow={dontHoverBelow}>
+      {(hoverAreaProps, isHovering, isHoverDisabled) => (
         <div key={platform.id} {...hoverAreaProps} className={classNames(classes.competitorSelectRow, isHidden && classes.hiddenPlatform)}>
-          <Brand platformId={platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} />
-          <ExternalLinkPlatform type='home' platform={platform} transparent={!(isHovering || isHoverDown)} />
+          <Brand platformId={platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDisabled)} />
+          <ExternalLinkPlatform type='home' platform={platform} transparent={!(isHovering || isHoverDisabled)} />
         </div>
       )}
     </HoverArea>
@@ -989,7 +989,7 @@ const CompetitorSelect = (props: {}) => {
       <Typography component='div' variant='h6' className={classes.competitorSelectHeading}>
         Filter
         &nbsp;<FilterIcon fontSize='inherit' />&nbsp;
-        </Typography>
+      </Typography>
       <div>
         {Object.values(Platforms).filter(platform => !hiddenPlatforms.has(platform.id)).map(rowMapper(false))}
         {Object.values(Platforms).filter(platform => hiddenPlatforms.has(platform.id)).map(rowMapper(true))}
@@ -1010,7 +1010,7 @@ const Intro = (props: {}) => {
     <>
       <Typography component='h2' variant='h4'>Why do you need feedback?</Typography>
       <p><Typography>So you’ve created a product and now you want to know which area you should focus on.
-         A great source of inspiration is your own customers, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
+        A great source of inspiration is your own customers, but the thought of going through the process of gathering, summarizing and prioritizing what your customers want is cumbersome.</Typography></p>
       <p><Typography>This is where customer feedback platforms can help. Most are a drop-in platform you can integrate with your website, app or product to start collecting almost immediately.
       </Typography></p>
       <p><Typography>
@@ -1141,15 +1141,15 @@ const PricingTable = (props: {
       <Table size='small'>
         <TableBody>
           {data.map(row => (
-            <HoverArea hoverDown={dontHoverBelow}>
-              {(hoverAreaProps, isHovering, isHoverDown) => (
+            <HoverArea disableHoverBelow={dontHoverBelow}>
+              {(hoverAreaProps, isHovering, isHoverDisabled) => (
                 <TableRow {...hoverAreaProps} key={row.platform.id} className={classNames(hiddenPlatforms.has(row.platform.id) && classes.hiddenPlatform)}>
                   <TableCell key='platformName' className={classes.pricingCell}>
-                    <Brand platformId={row.platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} />
+                    <Brand platformId={row.platform.id} showLogo showCheckbox transparentControls={!(isHovering || isHoverDisabled)} />
                   </TableCell>
                   <TableCell key='price' className={classNames(classes.pricingCell, classes.pricingPriceCell)}>
                     <Price val={row.price} suffix={row.platform.id === PlatformUserVoice ? '+' : undefined} />
-                    <ExternalLinkPlatform type='pricing' platform={row.platform} transparent={!(isHovering || isHoverDown)} />
+                    <ExternalLinkPlatform type='pricing' platform={row.platform} transparent={!(isHovering || isHoverDisabled)} />
                   </TableCell>
                 </TableRow>
               )}
@@ -1362,7 +1362,7 @@ const Onboarding = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Onboarding friction</Typography>
       <p><Typography>Users are hesitant to provide their personal information including their email address.
-         The more personal information you ask will result in less feedback.</Typography></p>
+        The more personal information you ask will result in less feedback.</Typography></p>
       <p><Typography>If you manage your customer accounts already, <span className={classes.emphasize}>Single Sign-On</span> is the ideal solution as it allows you to seamlessly login your users in the background without ever showing a login screen.</Typography></p>
 
       <Typography component='h4' variant='h6'>Guest / Anonymous feedback</Typography>
@@ -1473,7 +1473,7 @@ const Language = (props: {}) => {
       <Typography component='h2' variant='h4'>
         <TranslateIcon fontSize='inherit' />&nbsp;
         Language support
-        </Typography>
+      </Typography>
       <p><Typography>If a majority of your customers speak a certain language, consider using a platform that supports that language natively or allows you to bring your own translations.</Typography></p>
       <p><Typography>For translating user-submitted feedback to other languages, UserVoice supports on-page translation to any langauge using Google Translate</Typography></p>
 
@@ -1608,9 +1608,9 @@ const PageLoad = (props: {}) => {
 
       <p><Typography>
         Good standard metrics of a healthy website are <ExternalLink url='https://web.dev/lcp/'>Largest Contentful Paint</ExternalLink> and <ExternalLink url='https://web.dev/cls/'>Cumulative Layout Shift</ExternalLink>.
-          These web vitals can quantify the user experience as well as improve Search Engine Optimization.
-          We have analyzed each platform using their mobile-version of their feedback page using Google's <ExternalLink url='https://developers.google.com/speed/pagespeed/insights/'>PageSpeed Insights</ExternalLink> tool.
-        </Typography></p>
+        These web vitals can quantify the user experience as well as improve Search Engine Optimization.
+        We have analyzed each platform using their mobile-version of their feedback page using Google's <ExternalLink url='https://developers.google.com/speed/pagespeed/insights/'>PageSpeed Insights</ExternalLink> tool.
+      </Typography></p>
 
       <Typography component='h4' variant='h6'>Largest Contentful Paint (LCP)</Typography>
       <p><Typography>There are different strategies to determine when a page is considered to be loaded for measuring page load time. Researchers have found that across many websites, the more accurate way to determine when page is loaded is when majority of the page has been rendered. LCP is a web vital measuring exactly this.</Typography></p>
@@ -1773,19 +1773,19 @@ const Customize = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Whitelabel</Typography>
       <p><Typography>For optimal user experience, your customer should not sense they are leaving your website and using another platform for feedback.
-      The look and feel of the feedback platform must be customizable to match your design.
+        The look and feel of the feedback platform must be customizable to match your design.
         Create and organize pages with custom content with UserVoice and ClearFlask.</Typography></p>
       <BrandList small platformIds={[PlatformUserVoice, PlatformClearFlask]} />
 
       <Typography component='h4' variant='h6'>Workflow</Typography>
       <p><Typography>Create categories, tags and statuses to organize your feedback.
-      Create custom behavior for each status and define a state machine to match your development workflow.
-        </Typography></p>
+        Create custom behavior for each status and define a state machine to match your development workflow.
+      </Typography></p>
       <BrandList small platformIds={[PlatformClearFlask, PlatformUserVoice]} />
 
       <Typography component='h4' variant='h6'>Custom content type</Typography>
       <p><Typography>ClearFlask is built to handle custom content types.
-      There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.</Typography></p>
+        There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.</Typography></p>
       <p><Typography>You can create your own content types to match your needs such as <span className={classes.emphasize}>Job postings</span>, <span className={classes.emphasize}>Employee feedback</span>, <span className={classes.emphasize}>Q&amp;A</span>.
         Create new pages and customize the menu for a custom experience.</Typography></p>
       <BrandList small platformIds={[PlatformClearFlask]} />
@@ -1933,10 +1933,10 @@ const ComparisonTable = (props: {
   const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const rowMapper = isHidden => row => (
-    <HoverArea hoverDown={dontHoverBelow}>
-      {(hoverAreaProps, isHovering, isHoverDown) => (
+    <HoverArea disableHoverBelow={dontHoverBelow}>
+      {(hoverAreaProps, isHovering, isHoverDisabled) => (
         <TableRow {...hoverAreaProps} key={row.platformId} className={classNames(isHidden && classes.hiddenPlatform)}>
-          <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentControls={!(isHovering || isHoverDown)} /></TableCell>
+          <TableCell key='platformName'><Brand platformId={row.platformId} showLogo showCheckbox transparentControls={!(isHovering || isHoverDisabled)} /></TableCell>
           {props.headers.map(header => {
             if (!header.headingId) {
               return (
@@ -2014,13 +2014,13 @@ const ComparisonTable = (props: {
               }
 
               return (
-                <HoverArea hoverDown={dontHoverBelow}>
-                  {(hoverAreaProps, isHovering, isHoverDown) => {
+                <HoverArea disableHoverBelow={dontHoverBelow}>
+                  {(hoverAreaProps, isHovering, isHoverDisabled) => {
                     return (
                       <TableCell {...hoverAreaProps} key={headingId} className={classes.tableHeading}>
                         <div>
                           <FilterIconButton
-                            iconClassName={classNames(classes.transparentTransition, !(isHovering || isHoverDown) && classes.transparent)}
+                            iconClassName={classNames(classes.transparentTransition, !(isHovering || isHoverDisabled) && classes.transparent)}
                             select={false}
                             platformIds={platformIds}
                             invertSelection
@@ -2091,7 +2091,7 @@ const UserCountSlider = (props: {
         <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
         <Typography variant='caption' component='div' color='textSecondary'>
           For comparison of different definitions of active users across platforms, we estimate {percTotalUsersAreTracked * 100}% of your total users will actively provide you with feedback.
-          </Typography>
+        </Typography>
       </div>
     </div>
   );
@@ -2232,8 +2232,8 @@ const BrandList = (props: {
   return (
     <div className={classes.brandListContainer}>
       {platformIds.map(platformId => (
-        <HoverArea key={platformId} hoverDown={dontHoverBelow}>
-          {(hoverAreaProps, isHovering, isHoverDown) => {
+        <HoverArea key={platformId} disableHoverBelow={dontHoverBelow}>
+          {(hoverAreaProps, isHovering, isHoverDisabled) => {
             props.onHover && props.onHover(platformId, isHovering);
             return (
               <div {...hoverAreaProps} onClick={() => props.onClick && props.onClick(platformId)} style={{
@@ -2248,7 +2248,7 @@ const BrandList = (props: {
                   platformId={platformId}
                   showLogo
                   showCheckbox
-                  transparentControls={!(isHovering || isHoverDown)}
+                  transparentControls={!(isHovering || isHoverDisabled)}
                   {...props.BrandProps}
                 />
               </div>

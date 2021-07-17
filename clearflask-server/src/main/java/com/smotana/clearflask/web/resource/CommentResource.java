@@ -320,6 +320,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 null,
                 idea.getIdeaId(),
                 idea.getTitle(),
+                idea.getMergedToPostTime(),
                 idea.getDescriptionSanitized(sanitizer),
                 idea.getVoteValue() == null ? 0L : idea.getVoteValue(),
                 null);

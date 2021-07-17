@@ -1,16 +1,21 @@
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, fade, FormControlLabel, Grid, IconButton, Switch, TextField } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import EditIcon from '@material-ui/icons/Edit';
+import classNames from 'classnames';
 import React, { Component, useRef, useState } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import BareTextField from '../../common/BareTextField';
 import CreditView from '../../common/config/CreditView';
+import { useHoverArea } from '../../common/HoverArea';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import { PostTitleMaxLength } from './PostCreateForm';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
 
@@ -18,13 +23,43 @@ const styles = (theme: Theme) => createStyles({
   row: {
     padding: theme.spacing(2),
   },
-  saveButtonActionContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
+  grow: {
+    flexGrow: 1,
   },
-  saveButtonActionSubmit: {
-    alignSelf: 'flex-end',
+  saveButtonActions: {
+    display: 'flex',
+    width: '100%',
+    alignItems: 'baseline',
+    margin: theme.spacing(1),
+    flexWrap: 'wrap-reverse',
+  },
+  saveButtonAction: {
+    margin: theme.spacing(1),
+  },
+  clickToEditContainer: {
+    position: 'relative', // For clickToEditIcon
+    transition: theme.transitions.create(['background-color', 'box-shadow']),
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    borderRadius: 10,
+    '&:hover': {
+      backgroundColor: fade(theme.palette.primary.light, 0.05),
+      boxShadow: `0px 0px 3px 3px ${fade(theme.palette.primary.light, 0.05)}`,
+    },
+  },
+  clickToEditIcon: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    transform: 'translate(100%, -50%)',
+    transition: theme.transitions.create(['color']),
+    color: 'transparent',
+  },
+  clickToEditIconHoverDisabled: {
+    color: fade(theme.palette.text.hint, 0.05),
+  },
+  clickToEditIconHover: {
+    color: theme.palette.primary.main,
   },
 });
 const useStyles = makeStyles(styles);
@@ -285,25 +320,31 @@ export default withStyles(styles, { withTheme: true })(
   withMediaQuery(theme => theme.breakpoints.down('xs'))(PostEdit));
 
 export const PostEditTitleInline = (props: {
+  children?: any; // If set, shown before editing, click to edit
   server: Server;
   post: Client.Idea;
+  bare?: boolean;
+  forceOutline?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
-  const [title, setTitle] = useState<string | undefined>();
+  const [title, setTitle] = useState<string>();
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
+  const clickToEdit = !!props.children;
   const changed = title !== undefined;
-  return (
+  return isEditing ? (
     <PostSaveButton
       open={changed}
       isSubmitting={isSubmitting}
-      onClick={() => {
+      onCancel={() => { setTitle(undefined); setIsEditing(false); }}
+      onSave={() => {
         setSubmitting(true);
         postSave(
           props.server,
           props.post.ideaId,
           { title },
-          () => { setTitle(undefined); setSubmitting(false); },
+          () => { setTitle(undefined); setIsEditing(false); setSubmitting(false); },
           () => setSubmitting(false),
         );
       }}
@@ -312,32 +353,53 @@ export const PostEditTitleInline = (props: {
         value={(title === undefined ? props.post.title : title) || ''}
         onChange={title => setTitle(title)}
         isSubmitting={isSubmitting}
-        TextFieldProps={props.TextFieldProps}
+        TextFieldProps={{
+          ...props.TextFieldProps,
+          onBlur: e => {
+            props.TextFieldProps?.onBlur?.(e);
+            if (!changed && clickToEdit) {
+              setIsEditing(false);
+            }
+          },
+        }}
+        bare={props.bare}
+        forceOutline={props.forceOutline}
       />
     </PostSaveButton>
+  ) : (
+    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+      {props.children}
+    </ClickToEdit>
   );
 }
 
 export const PostEditDescriptionInline = (props: {
+  children?: any; // If set, shown before editing, click to edit
+  noContentLabel?: any // If is editable, but no children is present, show this label
   server: Server;
   post: Client.Idea;
+  bare?: boolean;
+  forceOutline?: boolean;
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const [description, setDescription] = useState<string | undefined>();
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
+  const clickToEdit = !!props.children;
   const changed = description !== undefined;
-  return (
+  return isEditing ? (
     <PostSaveButton
       open={changed}
       isSubmitting={isSubmitting}
-      onClick={() => {
+      onCancel={() => { setDescription(undefined); setIsEditing(false); }}
+      onSave={() => {
         setSubmitting(true);
         postSave(
           props.server,
           props.post.ideaId,
           { description },
-          () => { setDescription(undefined); setSubmitting(false); },
+          () => { setDescription(undefined); setIsEditing(false); setSubmitting(false); },
           () => setSubmitting(false),
         );
       }}
@@ -348,9 +410,26 @@ export const PostEditDescriptionInline = (props: {
         isSubmitting={isSubmitting}
         server={props.server}
         postAuthorId={props.post.authorUserId}
-        RichEditorProps={props.RichEditorProps}
+        bare={props.bare}
+        forceOutline={props.forceOutline}
+        RichEditorProps={{
+          ...props.RichEditorProps,
+          InputProps: {
+            ...props.RichEditorProps?.InputProps,
+            onBlur: e => {
+              props.RichEditorProps?.InputProps?.onBlur?.(e);
+              if (!changed && clickToEdit) {
+                setIsEditing(false);
+              }
+            },
+          },
+        }}
       />
     </PostSaveButton>
+  ) : (
+    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+      {props.children || props.noContentLabel || null}
+    </ClickToEdit>
   );
 }
 
@@ -358,17 +437,26 @@ export const PostEditTitle = (props: {
   value?: string;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
+  bare?: boolean;
+  forceOutline?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
+  const classes = useStyles();
+  const TextFieldCmpt = props.bare ? BareTextField : TextField;
   return (
-    <TextField
+    <TextFieldCmpt
       variant='outlined'
+      autoFocusAndSelect
       size='small'
       label='Title'
       fullWidth
       value={props.value === undefined ? '' : props.value}
       onChange={e => props.onChange(e.target.value)}
       disabled={props.isSubmitting}
+      inputProps={{
+        maxLength: PostTitleMaxLength,
+      }}
+      {...{ forceOutline: props.forceOutline }}
       {...props.TextFieldProps}
     />
   );
@@ -380,12 +468,16 @@ export const PostEditDescription = (props: {
   server: Server;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
+  bare?: boolean;
+  forceOutline?: boolean;
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   return (
     <>
       <RichEditor
+        component={!!props.bare ? BareTextField : undefined}
+        autoFocusAndSelect
         uploadImage={(file) => imageUploadRef.current!.uploadImage(file)}
         variant='outlined'
         size='small'
@@ -398,6 +490,7 @@ export const PostEditDescription = (props: {
         multiline
         rows={1}
         rowsMax={15}
+        {...{ forceOutline: props.forceOutline }}
         {...props.RichEditorProps}
       />
       <RichEditorImageUpload
@@ -428,7 +521,8 @@ export const PostEditStatusAndResponseInline = (props: {
       open={changed}
       isSubmitting={isSubmitting}
       showNotify
-      onClick={(doNotify) => {
+      onCancel={() => { setStatusId(undefined); setResponse(undefined); }}
+      onSave={(doNotify) => {
         setSubmitting(true);
         postSave(
           props.server,
@@ -458,7 +552,7 @@ export const PostEditStatusAndResponseInline = (props: {
           value={response !== undefined
             ? response
             : (props.showResponseOnlyWithStatus ? undefined : props.post.response)}
-          onChange={response => setResponse((response === undefined || response === '') ? undefined : response)}
+          onChange={response => setResponse(response)}
           isSubmitting={isSubmitting}
           RichEditorProps={{
             placeholder: props.showResponseOnlyWithStatus ? 'Add a response' : undefined,
@@ -475,17 +569,22 @@ export const PostEditResponse = (props: {
   server: Server;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
+  autoFocusAndSelect?: boolean;
+  bare?: boolean;
+  forceOutline?: boolean;
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   return (
     <>
       <RichEditor
+        component={!!props.bare ? BareTextField : undefined}
+        autoFocusAndSelect={props.autoFocusAndSelect !== false}
         uploadImage={(file) => imageUploadRef.current!.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
-        label='Response'
+        label={props.bare ? undefined : 'Response'}
         fullWidth
         iAgreeInputIsSanitized
         value={props.value === undefined ? '' : props.value}
@@ -493,6 +592,7 @@ export const PostEditResponse = (props: {
         multiline
         rows={1}
         rowsMax={3}
+        {...{ forceOutline: props.forceOutline }}
         {...props.RichEditorProps}
       />
       <RichEditorImageUpload
@@ -508,8 +608,10 @@ export const PostEditStatus = (props: {
   value?: string;
   server: Server;
   categoryId: string;
+  autoFocusAndSelect?: boolean;
   onChange: (value?: string) => void;
   isSubmitting?: boolean;
+  bare?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
   const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
@@ -527,8 +629,12 @@ export const PostEditStatus = (props: {
       disabled={props.isSubmitting}
       SelectionPickerProps={{
         width: undefined,
+        TextFieldComponent: props.bare ? BareTextField : undefined,
         TextFieldProps: {
           fullWidth: true,
+          ...({
+            autoFocusAndSelect: props.autoFocusAndSelect !== false,
+          } as Partial<React.ComponentProps<typeof BareTextField>>),
           ...props.TextFieldProps,
         },
       }}
@@ -537,26 +643,42 @@ export const PostEditStatus = (props: {
 }
 
 export const PostEditTagsInline = (props: {
+  children?: any; // If set, shown before editing, click to edit
+  noContentLabel?: any // If is editable, but no children is present, show this label
   server: Server;
   post?: Client.Idea;
+  bare?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
   const [unsavedTagIds, setUnsavedTagIds] = useState<string[] | undefined>();
+  const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.post?.categoryId), shallowEqual);
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
   if (!props.post) return null;
-  return (
+  const post = props.post;
+
+  const isModOrAdminLoggedIn = props.server.isModOrAdminLoggedIn();
+  const editable = CategoryTagsSelectable(category, isModOrAdminLoggedIn);
+  if (!editable) {
+    return props.children;
+  }
+
+  const clickToEdit = !!props.children;
+  return isEditing ? (
     <PostEditTags
-      value={unsavedTagIds || props.post.tagIds}
+      value={unsavedTagIds || post.tagIds}
       server={props.server}
-      categoryId={props.post.categoryId}
+      categoryId={post.categoryId}
       onChange={(tagIds, errorStr) => {
+        if (!post) return;
         if (!!errorStr) {
           setUnsavedTagIds(tagIds);
         } else {
           setSubmitting(true);
           postSave(
             props.server,
-            props.post!.ideaId,
+            post.ideaId,
             { tagIds },
             () => {
               !!unsavedTagIds && setUnsavedTagIds(undefined);
@@ -566,9 +688,16 @@ export const PostEditTagsInline = (props: {
           );
         }
       }}
+      autoFocus
+      onBlur={() => setIsEditing(false)}
       isSubmitting={isSubmitting}
+      bare={props.bare}
       TextFieldProps={props.TextFieldProps}
     />
+  ) : (
+    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+      {props.children || props.noContentLabel || null}
+    </ClickToEdit>
   );
 }
 
@@ -578,6 +707,9 @@ export const PostEditTags = (props: {
   categoryId: string;
   onChange: (value: string[], errorStr?: string) => void;
   isSubmitting?: boolean;
+  autoFocus?: boolean;
+  onBlur?: () => void;
+  bare?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
   const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
@@ -596,8 +728,13 @@ export const PostEditTags = (props: {
       SelectionPickerProps={{
         disableClearable: true,
         width: undefined,
+        TextFieldComponent: props.bare ? BareTextField : undefined,
         TextFieldProps: {
           fullWidth: true,
+          ...({
+            autoFocusAndSelect: true,
+          } as Partial<React.ComponentProps<typeof BareTextField>>),
+          onBlur: props.onBlur,
           ...props.TextFieldProps,
         },
       }}
@@ -609,7 +746,7 @@ export const CategoryTagsSelectable = (
   isModOrAdminLoggedIn?: boolean,
 ): boolean => !!category?.tagging.tagGroups?.some(g => g.userSettable || !!isModOrAdminLoggedIn)
 
-const postSave = (
+export const postSave = (
   server: Server,
   ideaId: string,
   update: Client.IdeaUpdate | Admin.IdeaUpdateAdmin,
@@ -636,7 +773,8 @@ export const PostSaveButton = (props: {
   open?: boolean;
   showNotify?: boolean;
   isSubmitting?: boolean;
-  onClick: (doNotify: boolean) => void;
+  onSave: (doNotify: boolean) => void;
+  onCancel?: () => void;
 }) => {
   const classes = useStyles();
   const [doNotify, setNotify] = useState<boolean>(!!props.showNotify);
@@ -644,7 +782,7 @@ export const PostSaveButton = (props: {
     <>
       {props.children}
       <Collapse in={!!props.open}>
-        <div className={classes.saveButtonActionContainer}>
+        <div className={classes.saveButtonActions}>
           {props.showNotify && (
             <FormControlLabel
               disabled={props.isSubmitting}
@@ -659,14 +797,59 @@ export const PostSaveButton = (props: {
               label='Notify subscribers'
             />
           )}
+          <div className={classes.grow} />
+          {!!props.onCancel && (
+            <Button
+              disabled={props.isSubmitting}
+              className={classes.saveButtonAction}
+              onClick={() => props.onCancel?.()}
+            >Cancel</Button>
+          )}
           <SubmitButton
-            wrapperClassName={classes.saveButtonActionSubmit}
+            variant='contained'
+            disableElevation
+            wrapperClassName={classes.saveButtonAction}
             isSubmitting={props.isSubmitting}
             color='primary'
-            onClick={() => props.onClick(doNotify)}
+            onClick={() => props.onSave(doNotify)}
           >Save</SubmitButton>
         </div>
       </Collapse>
     </>
   );
 }
+
+
+
+export const ClickToEdit = (props: {
+  children: any;
+  isEditing?: boolean;
+  setIsEditing: (isEditing: boolean) => void;
+}) => {
+  const classes = useStyles();
+  const [hoverAreaProps, isHovering, isHoverDisabled] = useHoverArea('sm');
+
+  var content = props.children;
+
+  if (!props.isEditing) {
+    content = (
+      <div
+        className={classNames(classes.clickToEditContainer)}
+        onClick={() => props.setIsEditing(true)}
+        {...hoverAreaProps}
+      >
+        <IconButton size='small' color='inherit' className={classNames(
+          classes.clickToEditIcon,
+          isHoverDisabled && classes.clickToEditIconHoverDisabled,
+          !!isHovering && classes.clickToEditIconHover,
+        )} >
+          <EditIcon color='inherit' />
+        </IconButton>
+        {content}
+      </div>
+    );
+  }
+
+  return content;
+}
+

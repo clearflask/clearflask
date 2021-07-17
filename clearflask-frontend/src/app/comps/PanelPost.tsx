@@ -133,10 +133,11 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     if (!this.props.searchStatus) {
       this.loadMore();
     } else if (this.props.missingVotes?.length) {
+      const missingVotes = this.props.missingVotes;
       this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
         projectId: this.props.projectId!,
-        ideaIds: this.props.missingVotes!,
-        myOwnIdeaIds: this.props.missingVotes!
+        ideaIds: missingVotes,
+        myOwnIdeaIds: missingVotes
           .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
           .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
           .map(idea => idea?.ideaId)
@@ -276,7 +277,8 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       if (drafts?.length) {
         content = [...drafts, ...content];
       }
-      if (this.props.selectable) {
+      const itemCount = content.length;
+      if (!!itemCount && this.props.selectable) {
         content = (
           <TabsVertical
             selected={this.props.selected || this.props.showDrafts?.selectedDraftId}
@@ -286,7 +288,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           </TabsVertical>
         );
       }
-      if (!this.props.searchIdeas.length) {
+      if (!itemCount) {
         content = (
           <>
             {content}
@@ -297,7 +299,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               )}
             >
               <Typography variant='overline' style={{
-              }}>Nothing found</Typography>
+              }}>Empty</Typography>
             </div>
           </>
         );

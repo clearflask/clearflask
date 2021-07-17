@@ -80,7 +80,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
         if (this.props.searchResult.users.length === 0) {
           return (
             <div className={this.props.classes.placeholder}>
-              <Typography variant='overline'>Nothing found</Typography>
+              <Typography variant='overline'>Empty</Typography>
             </div>
           );
         } else {

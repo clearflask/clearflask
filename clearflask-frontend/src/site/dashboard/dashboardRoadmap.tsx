@@ -94,7 +94,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
       onClickPost: postId => this.pageClicked('post', [postId]),
       onUserClick: userId => this.pageClicked('user', [userId]),
       selectable: true,
-      selected: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
+      selected: (this.state.previewShowOnPage === 'roadmap' && this.state.roadmapPreview?.type === 'post') ? this.state.roadmapPreview.id : undefined,
       displayOverride: {
         showCategoryName: false,
         showStatus: false,

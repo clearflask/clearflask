@@ -172,6 +172,9 @@ components:
           type: string
         responseAuthorName:
           type: string
+        responseEdited:
+          type: string
+          format: date-time
         categoryId:
           type: string
         statusId:
@@ -220,6 +223,9 @@ components:
             type: string
         mergedToPostId:
           type: string
+        mergedToPostTime:
+          type: string
+          format: date-time
         mergedPostIds:
           type: array
           items:

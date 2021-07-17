@@ -151,7 +151,6 @@ const styles = (theme: Theme) => createStyles({
     },
     '& .ql-container .ql-editor': {
       cursor: 'text',
-      paddingBottom: 1, // Compensate for link border-bottom, which otherwise overflows
       ...QuillViewStyle(theme),
     },
   },
@@ -164,6 +163,8 @@ interface PropsRichEditor {
   inputRef?: React.Ref<ReactQuill>;
   showControlsImmediately?: boolean;
   minInputHeight?: string | number;
+  autoFocusAndSelect?: boolean;
+  component?: React.ElementType<React.ComponentProps<typeof TextField>>;
 }
 interface StateRichEditor {
   hasText?: boolean;
@@ -180,7 +181,7 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
   }
 
   render() {
-    const { onChange, theme, enqueueSnackbar, closeSnackbar, classes, iAgreeInputIsSanitized, ...TextFieldProps } = this.props;
+    const { onChange, theme, enqueueSnackbar, closeSnackbar, classes, iAgreeInputIsSanitized, component, ...TextFieldProps } = this.props;
 
     /**
      * To add single-line support visit https://github.com/quilljs/quill/issues/1432
@@ -191,8 +192,9 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
     }
 
     const shrink = this.state.hasText || this.state.isFocused || false;
+    const TextFieldCmpt = component || TextField;
     return (
-      <TextField
+      <TextFieldCmpt
         className={this.props.classes.textField}
         {...TextFieldProps as any /** Weird issue with variant */}
         InputProps={{
@@ -201,6 +203,7 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
           inputProps: {
             // Anything here will be passed along to RichEditorQuill below
             ...this.props.InputProps?.inputProps || {},
+            autoFocusAndSelect: this.props.autoFocusAndSelect,
             uploadImage: this.props.uploadImage,
             classes: this.props.classes,
             theme: theme,
@@ -208,8 +211,14 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
             showControlsImmediately: this.props.showControlsImmediately,
             enqueueSnackbar: enqueueSnackbar,
             closeSnackbar: closeSnackbar,
-            onFocus: e => this.setState({ isFocused: true }),
-            onBlur: e => this.setState({ isFocused: false }),
+            onFocus: e => {
+              this.setState({ isFocused: true });
+              this.props.InputProps?.onFocus?.(e);
+            },
+            onBlur: e => {
+              this.setState({ isFocused: false });
+              this.props.InputProps?.onBlur?.(e);
+            },
           },
         }}
         onChange={(e) => {
@@ -264,19 +273,17 @@ interface PropsQuill {
     }
   }) => void;
   onFocus?: (event: {
-    selection: RangeStatic | null;
-    source: Sources;
-    editor: UnprivilegedEditor;
+    editor: Quill;
     stopPropagation: () => void; // Dummy method to satisfy TextField
   }) => void;
   onBlur?: (event: {
-    previousSelection: RangeStatic | null;
-    source: Sources;
-    editor: UnprivilegedEditor;
+    editor: Quill;
     stopPropagation: () => void; // Dummy method to satisfy TextField
   }) => void;
   hidePlaceholder?: boolean;
   showControlsImmediately?: boolean;
+  autoFocus?: boolean;
+  autoFocusAndSelect?: boolean;
 }
 interface StateQuill {
   activeFormats?: { [key: string]: any };
@@ -292,6 +299,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   readonly editorContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
   readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
   readonly dropzoneRef: React.RefObject<DropzoneRef> = React.createRef();
+  isFocused: boolean = false;
 
   constructor(props) {
     super(props);
@@ -316,11 +324,33 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       if (type === 'selection-change') {
         this.updateFormats(editor, range);
       }
+      if (!this.isFocused && !!range) {
+        this.isFocused = true;
+        if (!this.state.showFormats) {
+          this.setState({ showFormats: true });
+        }
+        this.props.onFocus?.({
+          editor,
+          stopPropagation: () => { },
+        });
+      } else if (this.isFocused && !range) {
+        this.isFocused = false;
+        this.props.onBlur?.({
+          editor,
+          stopPropagation: () => { },
+        });
+      }
     });
     editor.on('scroll-optimize' as any, () => {
       const range = editor.getSelection();
       this.updateFormats(editor, range || undefined);
     });
+    if (this.props.autoFocus) {
+      editor.focus();
+    }
+    if (this.props.autoFocusAndSelect) {
+      editor.setSelection(0, editor.getLength(), 'api');
+    }
   }
   counter = 0;
   render() {
@@ -368,23 +398,6 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                   toolbarButtonSvgStyles: {},
                 },
               }}
-              onFocus={(selection, source, editor) => {
-                if (!this.state.showFormats) {
-                  this.setState({ showFormats: true });
-                }
-                this.props.onFocus && this.props.onFocus({
-                  selection,
-                  source,
-                  editor,
-                  stopPropagation: () => { },
-                });
-              }}
-              onBlur={(previousSelection, source, editor) => this.props.onBlur && this.props.onBlur({
-                previousSelection,
-                source,
-                editor,
-                stopPropagation: () => { },
-              })}
               className={classNames(!!this.props.hidePlaceholder && 'hidePlaceholder', this.props.classes.quill)}
               theme={'' /** core theme */}
               ref={this.editorRef}

@@ -121,7 +121,7 @@ interface Props {
   onUpdated?: () => void;
 }
 interface State {
-  editExpanded?: boolean;
+  editing?: boolean;
   adminDeleteExpanded?: boolean;
   deleteExpanded?: boolean;
   isSubmittingVote?: Client.VoteOption;
@@ -191,23 +191,44 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
         <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
       );
     } else {
-      const variant = 'body1';
-      var content = (
-        <RichViewer key={this.props.comment.content || 'empty'} iAgreeInputIsSanitized html={this.props.comment.content || ''} />
-      );
-      if (this.props.truncateLines) {
+      var content;
+      if (!this.state.editing) {
         content = (
-          <TruncateFade variant={variant} lines={this.props.truncateLines}>
-            {content}
-          </TruncateFade>
+          <RichViewer key={this.props.comment.content || 'empty'} iAgreeInputIsSanitized html={this.props.comment.content || ''} />
+        );
+        if (this.props.truncateLines) {
+          content = (
+            <TruncateFade variant='body1' lines={this.props.truncateLines}>
+              {content}
+            </TruncateFade>
+          );
+        }
+        if (this.props.comment.mergedPostTitle !== undefined) {
+          content = (
+            <>
+              <Typography variant='h5'>{this.props.comment.mergedPostTitle}</Typography>
+              {content}
+            </>
+          );
+        }
+      } else {
+        content = (
+          <CommentEdit
+            key={this.props.comment.commentId}
+            server={this.props.server}
+            comment={this.props.comment}
+            loggedInUser={this.props.loggedInUser}
+            open={this.state.editing}
+            onClose={() => this.setState({ editing: false })}
+            onUpdated={() => {
+              this.props.onUpdated?.();
+              this.setState({ editing: false });
+            }}
+          />
         );
       }
-      const title = this.props.comment.mergedPostTitle !== undefined && (
-        <Typography variant='h5'>{this.props.comment.mergedPostTitle}</Typography>
-      );
       return (
-        <Typography variant={variant} className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
-          {title}
+        <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
           {content}
         </Typography>
       );
@@ -250,6 +271,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       this.renderMerged(),
       this.renderAuthor(),
       this.renderCreatedDatetime(),
+      this.renderMergedTime(),
       this.renderEdited(),
     ].filter(notEmpty);
     if (content.length === 0) return null;
@@ -357,21 +379,11 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
         <MyButton
           buttonVariant='post'
           Icon={EditIcon}
-          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}
+          disabled={this.state.editing}
+          onClick={e => this.setState({ editing: true })}
         >
           Edit
         </MyButton>
-        {this.state.editExpanded !== undefined && (
-          <CommentEdit
-            key={this.props.comment.commentId}
-            server={this.props.server}
-            comment={this.props.comment}
-            loggedInUser={this.props.loggedInUser}
-            open={this.state.editExpanded}
-            onClose={() => this.setState({ editExpanded: false })}
-            onUpdated={this.props.onUpdated}
-          />
-        )}
       </React.Fragment>
     );
   }
@@ -383,6 +395,18 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <HelpPopper key='merged' description='This is a merged post'>
         <MergeIcon color='inherit' fontSize='inherit' className={this.props.classes.mergeIcon} />
       </HelpPopper>
+    );
+  }
+
+  renderMergedTime() {
+    if (!this.props.comment || !this.props.comment.mergedTime) return null;
+
+    return (
+      <Typography key='merged-time' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
+        Merged
+        &nbsp;
+        <TimeAgo date={this.props.comment.mergedTime} />
+      </Typography>
     );
   }
 

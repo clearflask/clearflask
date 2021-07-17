@@ -1,4 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
@@ -13,12 +14,16 @@ const styles = (theme: Theme) => createStyles({
   commentIndent: {
     marginLeft: theme.spacing(4),
   },
+  commentIndentMergedPost: {
+    marginLeft: theme.spacing(8),
+  },
 });
 interface Props {
   server: Server;
   ideaId: string;
   expectedCommentCount: number;
   parentCommentId?: string;
+  parentCommentIsMergedPost?: boolean;
   newCommentsAllowed?: boolean; // TODO add comment replies
   loggedInUser?: Client.User;
   logIn: () => Promise<void>;
@@ -38,10 +43,8 @@ interface State {
 class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
-  constructor(props) {
-    super(props)
-
-    props.callOnMount?.();
+  componentDidMount() {
+    this.props.callOnMount?.();
 
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
     if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
@@ -55,7 +58,11 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 
   render() {
     return (
-      <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.commentIndent : undefined}>
+      <div key={this.props.parentCommentId || this.props.ideaId} className={classNames(
+        this.props.parentCommentId && (this.props.parentCommentIsMergedPost
+          ? this.props.classes.commentIndentMergedPost
+          : this.props.classes.commentIndent),
+      )}>
         {this.props.comments.map(comment => (
           <React.Fragment key={comment.commentId}>
             <Comment
@@ -86,6 +93,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
             {comment.childCommentCount > 0 && (
               <CommentList
                 {...this.props}
+                parentCommentIsMergedPost={!!comment.mergedPostId}
                 expectedCommentCount={comment.childCommentCount}
                 parentCommentId={comment.commentId}
               />

@@ -104,6 +104,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -362,6 +363,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
+        if (ideaId == parentIdeaId) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot connect to itself");
+        }
         ImmutableMap<String, IdeaModel> ideas = getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
         IdeaModel idea = ideas.get(ideaId);
         IdeaModel parentIdea = ideas.get(parentIdeaId);
@@ -525,6 +529,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 }
                 ideaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
                 ideaExpressionBuilder.set("mergedToPostId", parentIdeaId);
+                ideaExpressionBuilder.set("mergedToPostTime", Instant.now());
 
                 if (!Strings.isNullOrEmpty(parentIdea.getMergedToPostId())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge into a post that's already merged");
@@ -537,6 +542,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 }
                 ideaExpressionBuilder.conditionFieldEquals("mergedToPostId", parentIdeaId);
                 ideaExpressionBuilder.remove("mergedToPostId");
+                ideaExpressionBuilder.remove("mergedToPostTime");
 
                 if (!Strings.isNullOrEmpty(parentIdea.getMergedToPostId())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge from a post that's already merged");
@@ -908,32 +914,30 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             }
             indexUpdates.put("description", sanitizer.richHtmlToPlaintext(ideaUpdateAdmin.getDescription()));
         }
+        if ((ideaUpdateAdmin.getResponse() != null || ideaUpdateAdmin.getStatusId() != null)) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseEdited")
+                    .put(ideaSchema.toDynamoValue("responseEdited", Instant.now().getEpochSecond())));
+            if (responseAuthor.isPresent()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId")
+                        .put(ideaSchema.toDynamoValue("responseAuthorUserId", responseAuthor.get().getUserId())));
+                indexUpdates.put("responseAuthorUserId", responseAuthor.get().getUserId());
+                if (responseAuthor.get().getName() != null) {
+                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName")
+                            .put(ideaSchema.toDynamoValue("responseAuthorName", responseAuthor.get().getName())));
+                    indexUpdates.put("responseAuthorName", responseAuthor.get().getName());
+                } else {
+                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName").delete());
+                    indexUpdates.put("responseAuthorName", "");
+                }
+            }
+        }
         if (ideaUpdateAdmin.getResponse() != null) {
             if (ideaUpdateAdmin.getResponse().isEmpty()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response").delete());
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId").delete());
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName").delete());
                 indexUpdates.put("response", "");
-                indexUpdates.put("responseAuthorUserId", "");
-                indexUpdates.put("responseAuthorName", "");
             } else {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
                         .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
-                if (responseAuthor.isPresent()) {
-                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId")
-                            .put(ideaSchema.toDynamoValue("responseAuthorUserId", responseAuthor.get().getUserId())));
-                    indexUpdates.put("responseAuthorUserId", responseAuthor.get().getUserId());
-                    if (responseAuthor.get().getName() != null) {
-                        updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName")
-                                .put(ideaSchema.toDynamoValue("responseAuthorName", responseAuthor.get().getName())));
-                        indexUpdates.put("responseAuthorName", responseAuthor.get().getName());
-                    } else {
-                        indexUpdates.put("responseAuthorName", "");
-                    }
-                } else {
-                    indexUpdates.put("responseAuthorUserId", "");
-                    indexUpdates.put("responseAuthorName", "");
-                }
             }
             indexUpdates.put("response", sanitizer.richHtmlToPlaintext(ideaUpdateAdmin.getResponse()));
         }

@@ -1,12 +1,14 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import BareTextField from '../../common/BareTextField';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import MyButton from './MyButton';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -15,7 +17,10 @@ interface Props {
   comment: Client.CommentWithVote;
   loggedInUser?: Client.User;
   open?: boolean;
-  onClose: () => void;
+  bare?: boolean;
+  forceOutline?: boolean;
+  onBlur: () => void;
+  onCancel?: () => void;
   onUpdated?: () => void;
 }
 interface State {
@@ -32,66 +37,59 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
 
     return (
       <>
-        <Dialog
-          open={this.props.open || false}
-          onClose={this.props.onClose.bind(this)}
-          scroll='body'
-          fullScreen={this.props.mediaQuery}
+        <RichEditor
+          uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
+          autoFocusAndSelect
+          variant='outlined'
+          size='small'
+          disabled={this.state.isSubmitting}
+          label='Content'
           fullWidth
-        >
-          <DialogTitle>Edit</DialogTitle>
-          <DialogContent>
-            <Grid container alignItems='baseline'>
-              <Grid item xs={12}>
-                <RichEditor
-                  uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Content'
-                  fullWidth
-                  iAgreeInputIsSanitized
-                  value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
-                  onChange={e => this.setState({ content: e.target.value })}
-                  multiline
-                  rows={1}
-                  rowsMax={15}
-                />
-                <RichEditorImageUpload
-                  ref={this.richEditorImageUploadRef}
-                  server={this.props.server}
-                />
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => this.props.onClose()}>Close</Button>
-            <Button
-              disabled={this.state.isSubmitting}
-              style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
-              onClick={() => this.setState({ deleteDialogOpen: true })}
-            >Delete</Button>
-            <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
-              this.setState({ isSubmitting: true });
-              this.props.server.dispatch().then(d => d.commentUpdate({
-                projectId: this.props.server.getProjectId(),
-                ideaId: this.props.comment.ideaId,
-                commentId: this.props.comment.commentId,
-                commentUpdate: {
-                  content: this.state.content,
-                },
-              }))
-                .then(idea => {
-                  this.setState({
-                    isSubmitting: false,
-                  });
-                  this.props.onClose();
-                  this.props.onUpdated && this.props.onUpdated();
-                })
-                .catch(e => this.setState({ isSubmitting: false }))
-            }}>Publish</SubmitButton>
-          </DialogActions>
-        </Dialog>
+          iAgreeInputIsSanitized
+          value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
+          onChange={e => this.setState({ content: e.target.value })}
+          multiline
+          rows={1}
+          rowsMax={15}
+          component={!!this.props.bare ? BareTextField : undefined}
+          {...{ forceOutline: this.props.forceOutline }}
+          onBlur={this.props.onBlur}
+        />
+        <RichEditorImageUpload
+          ref={this.richEditorImageUploadRef}
+          server={this.props.server}
+        />
+        <DialogActions>
+          {this.props.onCancel && (
+            <MyButton
+              buttonVariant='post'
+              onClick={() => this.props.onCancel?.()}
+            >Cancel</MyButton>
+          )}
+          <MyButton
+            buttonVariant='post'
+            disabled={this.state.isSubmitting}
+            style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
+            onClick={() => this.setState({ deleteDialogOpen: true })}
+          >Delete</MyButton>
+          <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
+            this.setState({ isSubmitting: true });
+            this.props.server.dispatch().then(d => d.commentUpdate({
+              projectId: this.props.server.getProjectId(),
+              ideaId: this.props.comment.ideaId,
+              commentId: this.props.comment.commentId,
+              commentUpdate: {
+                content: this.state.content,
+              },
+            })).then(idea => {
+              this.setState({
+                isSubmitting: false,
+              });
+              this.props.onUpdated?.();
+            })
+              .catch(e => this.setState({ isSubmitting: false }))
+          }}>Publish</SubmitButton>
+        </DialogActions>
         <CommentDelete
           server={this.props.server}
           comment={this.props.comment}
@@ -100,8 +98,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           onClose={() => this.setState({ deleteDialogOpen: false })}
           onDelete={() => {
             this.setState({ deleteDialogOpen: false });
-            this.props.onClose();
-            this.props.onUpdated && this.props.onUpdated();
+            this.props.onUpdated?.();
           }}
         />
       </>

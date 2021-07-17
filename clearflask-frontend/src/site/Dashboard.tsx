@@ -211,12 +211,15 @@ const styles = (theme: Theme) => createStyles({
   },
   roadmapContainer: {
     display: 'flex',
+    height: '100%',
   },
   roadmapSectionStack: {
     display: 'flex',
     flexDirection: 'column',
   },
   roadmapSection: {
+    display: 'flex',
+    flexDirection: 'column',
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
   roadmapSectionTitle: {
@@ -232,6 +235,11 @@ const styles = (theme: Theme) => createStyles({
     flexGrow: 1,
     minHeight: 0,
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
+  },
+  homeContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 });
 interface Props {
@@ -447,45 +455,49 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         context.sections.push({
           name: 'main',
           size: { flexGrow: 1, scroll: Orientation.Vertical },
+          collapseTopBottom: true,
+          noPaper: true,
           content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <DashboardHome
-                server={activeProject.server}
-                editor={activeProject.editor}
-                onClickPost={postId => this.pageClicked('post', [postId])}
-                onUserClick={userId => this.pageClicked('user', [userId])}
-                feedback={this.state.feedback || undefined}
-                roadmap={this.state.roadmap || undefined}
-                changelog={this.state.changelog || undefined}
-              />
-              <Hidden smDown>
-                <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
-                  key='roadmap-public'
-                  type='dialog'
+            <div className={this.props.classes.homeContainer}>
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <DashboardHome
+                  server={activeProject.server}
                   editor={activeProject.editor}
-                  mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
-                  renderResolved={(templater, [roadmap, changelog]) => !!roadmap?.pageAndIndex?.page.board && (
-                    <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                      <BoardContainer
-                        title={roadmap.pageAndIndex.page.board.title}
-                        panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
-                          <BoardPanel
-                            server={activeProject.server}
-                            panel={panel}
-                            PanelPostProps={{
-                              onClickPost: postId => this.pageClicked('post', [postId]),
-                              onUserClick: userId => this.pageClicked('user', [userId]),
-                              selectable: true,
-                              selected: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
-                            }}
-                          />
-                        ))}
-                      />
-                    </Provider>
-                  )}
+                  onClickPost={postId => this.pageClicked('post', [postId])}
+                  onUserClick={userId => this.pageClicked('user', [userId])}
+                  feedback={this.state.feedback || undefined}
+                  roadmap={this.state.roadmap || undefined}
+                  changelog={this.state.changelog || undefined}
                 />
-              </Hidden>
-            </Provider>
+                <Hidden smDown>
+                  <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
+                    key='roadmap-public'
+                    type='dialog'
+                    editor={activeProject.editor}
+                    mapper={templater => Promise.all([templater.roadmapGet(), templater.changelogGet()])}
+                    renderResolved={(templater, [roadmap, changelog]) => !!roadmap?.pageAndIndex?.page.board && (
+                      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                        <BoardContainer
+                          title={roadmap.pageAndIndex.page.board.title}
+                          panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
+                            <BoardPanel
+                              server={activeProject.server}
+                              panel={panel}
+                              PanelPostProps={{
+                                onClickPost: postId => this.pageClicked('post', [postId]),
+                                onUserClick: userId => this.pageClicked('user', [userId]),
+                                selectable: true,
+                                selected: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
+                              }}
+                            />
+                          ))}
+                        />
+                      </Provider>
+                    )}
+                  />
+                </Hidden>
+              </Provider>
+            </div>
           ),
         });
         break;

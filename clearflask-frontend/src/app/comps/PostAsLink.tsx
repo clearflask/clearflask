@@ -6,18 +6,12 @@ import Post from './Post';
 
 const styles = (theme: Theme) => createStyles({
   outlineOuter: {
-    margin: theme.spacing(0, -4),
-    [theme.breakpoints.down('sm')]: {
-      margin: theme.spacing(0, 1),
-    },
+    margin: theme.spacing(0.5),
   },
   outlineInner: {
-    padding: theme.spacing(2, 4),
-    [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(1, 2),
-    },
+    padding: theme.spacing(1, 3),
     border: '1px solid ' + theme.palette.divider,
-    borderRadius: 6,
+    borderRadius: 20,
   },
 });
 const useStyles = makeStyles(styles);

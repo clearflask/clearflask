@@ -3,6 +3,7 @@ import { CreateTemplateOptions } from "../common/config/configTemplater";
 import { ChangelogCategoryIdPrefix } from "../common/config/template/changelog";
 import { saltHashPassword } from "../common/util/auth";
 import { textToHtml } from "../common/util/richEditorUtil";
+import { capitalize } from "../common/util/stringUtil";
 import * as Admin from "./admin";
 import ServerMock, { SuperAdminEmail } from "./serverMock";
 
@@ -284,8 +285,8 @@ class DataMock {
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: user.userId,
-        title: idea.title || loremIpsum({ units: 'words', count: idea.titleWords || Math.round(Math.random() * 10 + 3) }),
-        description: idea.description ? textToHtml(idea.description) : (idea.descriptionWords ? textToHtml(loremIpsum({ units: 'words', count: idea.descriptionWords })) : undefined),
+        title: idea.title || capitalize(loremIpsum({ units: 'words', count: idea.titleWords || Math.round(Math.random() * 10 + 3) })),
+        description: idea.description ? textToHtml(idea.description) : (idea.descriptionWords ? textToHtml(capitalize(loremIpsum({ units: 'words', count: idea.descriptionWords }))) : undefined),
         categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         statusId: idea.status,
@@ -581,10 +582,10 @@ class DataMock {
     return ServerMock.get().userCreateAdmin({
       projectId: this.projectId,
       userCreateAdmin: {
-        name: name || loremIpsum({
+        name: name || capitalize(loremIpsum({
           units: 'words',
           count: 2,
-        }),
+        })),
         email: `${name}-${Math.ceil(Math.random() * 10000)}@example.com`,
         ...{
           created: this.mockDate(),
@@ -607,21 +608,22 @@ class DataMock {
       ideaCreateAdmin: {
         ...this.fakeMockIdeaData(category),
         authorUserId: user.userId,
-        title: loremIpsum({
+        title: capitalize(loremIpsum({
           units: 'words',
           count: Math.round(Math.random() * 5 + 3),
-        }),
-        description: textToHtml(loremIpsum({
+        })),
+        description: textToHtml(capitalize(loremIpsum({
           units: 'sentences',
           count: Math.round(Math.random() * 6 + 1),
-        })),
+        }))),
         ...(!responseUser ? {} : {
-          response: textToHtml(loremIpsum({
+          response: textToHtml(capitalize(loremIpsum({
             units: 'words',
             count: Math.round(Math.random() * 10 + 3),
-          })),
+          }))),
           responseAuthorUserId: responseUser.userId,
           responseAuthorName: responseUser.name,
+          responseEdited: this.mockDate(),
         }),
         categoryId: category.categoryId,
         tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
@@ -641,14 +643,14 @@ class DataMock {
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: userMe.userId,
-        title: loremIpsum({
+        title: capitalize(loremIpsum({
           units: 'words',
           count: Math.round(Math.random() * 5 + 3),
-        }),
-        description: textToHtml(loremIpsum({
+        })),
+        description: textToHtml(capitalize(loremIpsum({
           units: 'sentences',
           count: Math.round(Math.random() * 6 + 1),
-        })),
+        }))),
         categoryId: category.categoryId,
         tagIds: [],
         ...extra,
@@ -784,10 +786,10 @@ class DataMock {
         projectId: this.projectId,
         ideaId: item.ideaId,
         commentCreate: {
-          content: textToHtml(this.mockMention(userMentionPool) + loremIpsum({
+          content: textToHtml(this.mockMention(userMentionPool) + capitalize(loremIpsum({
             units: 'sentences',
             count: Math.round(Math.random() * 3 + 1),
-          })),
+          }))),
           parentCommentId: parentComment ? parentComment.commentId : undefined,
           ...{
             author: user,
@@ -811,10 +813,10 @@ class DataMock {
             ideaId: item.ideaId,
             commentId: comment.commentId,
             commentUpdate: {
-              content: textToHtml(this.mockMention(userMentionPool) + loremIpsum({
+              content: textToHtml(this.mockMention(userMentionPool) + capitalize(loremIpsum({
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
-              }))
+              }))),
             }
           });
         }

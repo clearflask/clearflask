@@ -917,12 +917,12 @@ export default class Templater {
   }
 
   readonly workflowColorNeutral = 'rgb(59, 103, 174)';
-  readonly workflowColorNeutraler = 'rgba(59, 103, 174, 0.75)';
-  readonly workflowColorNeutralest = 'rgba(59, 103, 174, 0.5)';
+  readonly workflowColorNeutraler = 'rgb(52, 90, 152)';
+  readonly workflowColorNeutralest = 'rgb(39, 68, 114)';
   readonly workflowColorProgress = '#AE9031';
   readonly workflowColorComplete = '#3A8E31';
   readonly workflowColorFail = '#B44A4B';
-  readonly workflowColorNew = 'rgba(0, 0, 0, 0.4)';
+  readonly workflowColorNew = 'rgb(51, 51, 51)';
   workflowFeatures(categoryIndex: number, withFunding: boolean = true, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
     const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });

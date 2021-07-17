@@ -1,12 +1,11 @@
 import { darken, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, lighten, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
 import PositiveSelectedIcon from '@material-ui/icons/Favorite';
 import PositiveIcon from '@material-ui/icons/FavoriteBorder';
 import NegativeSelectedIcon from '@material-ui/icons/ThumbDown';
 import NegativeIcon from '@material-ui/icons/ThumbDownOutlined';
-import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import MyButton from './MyButton';
@@ -19,12 +18,6 @@ const styles = (theme: Theme) => createStyles({
   },
   voteButtonDownWithoutValue: {
     marginTop: -8,
-  },
-  voteUpvoted: {
-    color: theme.palette.primary.main + '!important', // important overrides disabled
-  },
-  voteDownvoted: {
-    color: darken(theme.palette.error.dark, 0.3) + '!important', // important overrides disabled
   },
   voteValue: {
     lineHeight: '1em',
@@ -43,35 +36,11 @@ const styles = (theme: Theme) => createStyles({
     visibility: 'hidden',
     height: 1,
   },
-  voteButtonUpvoteBesideDownvoteButton: {
-    // borderRight: 'none !important',
-    // paddingRight: theme.spacing(0.7),
-    // borderTopRightRadius: 0,
-    // borderBottomRightRadius: 0,
-  },
-  voteButtonDownvote: {
-    // paddingLeft: theme.spacing(0.7),
-    // borderLeft: 'none !important',
-    // borderTopLeftRadius: 0,
-    // borderBottomLeftRadius: 0,
-  },
   readOnlyContainer: {
     display: 'flex',
     alignItems: 'center',
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
-  },
-  voteButtonWantThis: {
-  },
-  voteButtonPositive: {
-  },
-  voteButtonPositiveUpvoted: {
-    color: theme.palette.primary.main,
-  },
-  voteButtonNegative: {
-  },
-  voteButtonNegativeDownvoted: {
-    color: darken(theme.palette.error.dark, 0.3),
   },
 });
 
@@ -123,11 +92,8 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
       <MyButton
         buttonVariant='post'
         Icon={UpvoteIcon}
-        color={upvoted ? 'primary' : undefined}
-        className={classNames(
-          !!upvoted && this.props.classes.voteUpvoted,
-          this.props.onDownvote !== undefined && this.props.classes.voteButtonUpvoteBesideDownvoteButton,
-        )}
+        color={this.props.theme.palette.primary.main}
+        colorHide={!upvoted}
         onClick={this.props.onUpvote}
       >
         {this.props.onDownvote === undefined ? this.props.voteValue || 0 : undefined}
@@ -147,11 +113,10 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         <MyButton
           buttonVariant='post'
           Icon={DownvoteIcon}
-          color={downvoted ? 'inherit' : undefined}
-          className={classNames(
-            this.props.classes.voteButtonDownvote,
-            !!downvoted && this.props.classes.voteDownvoted,
-          )}
+          color={this.props.theme.palette.type === 'dark'
+            ? lighten(this.props.theme.palette.error.dark, 0.3)
+            : darken(this.props.theme.palette.error.dark, 0.3)}
+          colorHide={!downvoted}
           onClick={this.props.onDownvote}
         />
       </>
@@ -165,13 +130,9 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
     const upvote = (
       <MyButton
         buttonVariant='post'
-        color={upvoted ? 'inherit' : undefined}
+        color={this.props.theme.palette.primary.main}
+        colorHide={!upvoted}
         Icon={upvoted ? PositiveSelectedIcon : PositiveIcon}
-        className={classNames(
-          this.props.classes.voteButtonWantThis,
-          this.props.classes.voteButtonPositive,
-          !!upvoted && this.props.classes.voteButtonPositiveUpvoted,
-        )}
         onClick={this.props.onUpvote}
       >
         {this.props.iWantThis?.positiveLabel || 'Want'}
@@ -187,13 +148,11 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         {upvote}
         <MyButton
           buttonVariant='post'
-          color={downvoted ? 'inherit' : undefined}
+          color={this.props.theme.palette.type === 'dark'
+            ? lighten(this.props.theme.palette.error.dark, 0.3)
+            : darken(this.props.theme.palette.error.dark, 0.3)}
+          colorHide={!downvoted}
           Icon={downvoted ? NegativeSelectedIcon : NegativeIcon}
-          className={classNames(
-            this.props.classes.voteButtonWantThis,
-            this.props.classes.voteButtonNegative,
-            !!downvoted && this.props.classes.voteButtonNegativeDownvoted,
-          )}
           onClick={this.props.onDownvote}
         >
           {this.props.iWantThis?.negativeLabel || 'Hate'}

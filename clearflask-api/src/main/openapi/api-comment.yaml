@@ -54,6 +54,9 @@ components:
         mergedPostTitle:
           description: Shows the title of the merged post, whereas content represent description of the post
           type: string
+        mergedTime:
+          type: string
+          format: date-time
         content:
           description: Comment content. If null, comment is deleted
           type: string

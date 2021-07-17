@@ -31,6 +31,7 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
   },
   addCommentSubmitButton: {
+    margin: theme.spacing(1),
   },
 });
 
@@ -108,6 +109,9 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
           <Collapse in={!!this.state.newCommentInput}>
             <Button
               color='primary'
+              variant='contained'
+              disableElevation
+              className={this.props.classes.addCommentSubmitButton}
               disabled={!this.state.newCommentInput}
               onClick={e => {
                 this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({

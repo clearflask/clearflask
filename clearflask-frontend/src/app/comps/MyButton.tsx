@@ -1,4 +1,4 @@
-import { Button, SvgIconTypeMap } from '@material-ui/core';
+import { Button, fade, SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
@@ -23,15 +23,23 @@ const styles = (theme: Theme) => createStyles({
   iconPost: {
     fontSize: '1.3em',
   },
+  color: {
+    color: (props: Props) => props.color ? props.color : undefined,
+    '&:hover': {
+      backgroundColor: (props: Props) => props.color ? fade(props.color, 0.04) : undefined,
+    }
+  },
 });
 interface Props {
   buttonVariant: 'post';
+  color?: string;
+  colorHide?: boolean;
   Icon?: OverridableComponent<SvgIconTypeMap>,
   iconClassName?: string;
 }
-class MyButton extends Component<Props & React.ComponentProps<typeof Button> & WithStyles<typeof styles, true>> {
+class MyButton extends Component<Props & Partial<Omit<React.ComponentProps<typeof Button>, 'color'>> & WithStyles<typeof styles, true>> {
   render() {
-    const { classes, buttonVariant, Icon, iconClassName, ...buttonProps } = this.props;
+    const { classes, buttonVariant, color, Icon, iconClassName, ...buttonProps } = this.props;
     var variantClassName: string | undefined;
     var variantIconClassName: string | undefined;
     var variantButtonProps: Partial<React.ComponentProps<typeof Button>> = {};
@@ -47,12 +55,14 @@ class MyButton extends Component<Props & React.ComponentProps<typeof Button> & W
     return (
       <Button
         disableElevation
+        color='inherit'
         {...variantButtonProps}
         {...buttonProps}
         className={classNames(
-          buttonProps.className,
           this.props.classes.button,
+          !this.props.colorHide && this.props.classes.color,
           variantClassName,
+          buttonProps.className,
         )}
       >
         {!!Icon && (
