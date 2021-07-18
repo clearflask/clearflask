@@ -225,7 +225,7 @@ public interface IdeaStore {
         ImmutableSet<String> linkedToPostIds;
 
         @NonNull
-        ImmutableSet<String> linkedPostIds;
+        ImmutableSet<String> linkedFromPostIds;
 
         String mergedToPostId;
 
@@ -285,7 +285,7 @@ public interface IdeaStore {
                     getExpressionsValue(),
                     getExpressions(),
                     getLinkedToPostIds().asList(),
-                    getLinkedPostIds().asList(),
+                    getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
                     getMergedPosts().stream().map(MergedPost::getPostId).collect(ImmutableList.toImmutableList()));
         }
@@ -316,7 +316,7 @@ public interface IdeaStore {
                             .filter(e -> e.getValue() != null && e.getValue() != 0L)
                             .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)),
                     getLinkedToPostIds(),
-                    getLinkedPostIds(),
+                    getLinkedFromPostIds(),
                     getMergedToPostId(),
                     getMergedPosts(),
                     vote);

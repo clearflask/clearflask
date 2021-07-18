@@ -42,7 +42,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   search?: Partial<Admin.UserSearchAdmin>;
-  selectable?: boolean;
+  selectable?: 'highlight';
   selected?: string;
   onUserClick: (userId: string) => void;
   scroll?: boolean;
@@ -95,7 +95,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
                 onClick={() => this.props.onUserClick(user.userId)}
               />
             );
-            if (this.props.selectable) {
+            if (this.props.selectable === 'highlight') {
               userContent = (
                 <TabFragment key={user.userId} value={user.userId}>
                   {userContent}
@@ -110,7 +110,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
             }
             return userContent;
           });
-          if (this.props.selectable) {
+          if (this.props.selectable === 'highlight') {
             content = (
               <TabsVertical
                 selected={this.props.selected}

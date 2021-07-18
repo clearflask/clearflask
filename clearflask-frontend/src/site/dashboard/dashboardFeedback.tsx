@@ -278,7 +278,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           search={feedbackPostSearch}
           onClickPost={postId => this.pageClicked('post', [postId])}
           onUserClick={userId => this.pageClicked('user', [userId])}
-          selectable
+          selectable='highlight'
           selected={selectedPostId}
           PanelPostProps={{
             navigatorRef: this.feedbackListRef,

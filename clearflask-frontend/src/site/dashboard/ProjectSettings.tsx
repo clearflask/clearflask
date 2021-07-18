@@ -2947,7 +2947,7 @@ const DebouncedTextFieldWithColorPicker = (props: React.ComponentProps<typeof Te
   );
 }
 
-const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): [T, (val: T) => void] => {
+export const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): [T, (val: T) => void] => {
   const [val, setVal] = useState<T>(initialValue);
 
   const setterDebouncedRef = useRef(setter);

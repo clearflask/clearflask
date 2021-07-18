@@ -561,10 +561,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
             if (!undo) {
                 ideaExpressionBuilder.add("linkedToPostIds", parentIdeaId);
-                parentIdeaExpressionBuilder.add("linkedPostIds", ideaId);
+                parentIdeaExpressionBuilder.add("linkedFromPostIds", ideaId);
             } else {
                 ideaExpressionBuilder.delete("linkedToPostIds", parentIdeaId);
-                parentIdeaExpressionBuilder.delete("linkedPostIds", ideaId);
+                parentIdeaExpressionBuilder.delete("linkedFromPostIds", ideaId);
             }
         }
 

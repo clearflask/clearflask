@@ -3,6 +3,7 @@ import { Button, Chip, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
+import UnmergeIcon from '@material-ui/icons/CallSplit';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
@@ -11,7 +12,7 @@ import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
@@ -23,6 +24,7 @@ import GradientFade from '../../common/GradientFade';
 import HelpPopper from '../../common/HelpPopper';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import PinIcon from '../../common/icon/PinIcon';
+import UnLinkAltIcon from '../../common/icon/UnLinkAltIcon';
 import InViewObserver from '../../common/InViewObserver';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/TruncateFade';
@@ -38,11 +40,12 @@ import Loader from '../utils/Loader';
 import Loading from '../utils/Loading';
 import CommentList from './CommentList';
 import CommentReply from './CommentReply';
+import ConnectedPost, { ConnectedPostsContainer, ConnectType, LinkDirection } from './ConnectedPost';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import MyButton from './MyButton';
-import PostAsLink from './PostAsLink';
+import PostConnectDialog from './PostConnectDialog';
 import { ClickToEdit, PostEditDescriptionInline, PostEditResponse, PostEditStatus, PostEditTagsInline, PostEditTitleInline, postSave, PostSaveButton } from './PostEdit';
 import VotingControl from './VotingControl';
 
@@ -59,6 +62,8 @@ const styles = (theme: Theme) => createStyles({
   post: {
     display: 'flex',
     flexDirection: 'column',
+  },
+  postPadding: {
     padding: theme.spacing(0.5),
   },
   postContent: {
@@ -143,6 +148,9 @@ const styles = (theme: Theme) => createStyles({
   },
   responseList: {
     color: theme.palette.text.secondary,
+  },
+  links: {
+    marginTop: theme.spacing(6),
   },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -362,12 +370,14 @@ interface Props {
   display?: Client.PostDisplay;
   widthExpand?: boolean;
   contentBeforeComments?: React.ReactNode;
-  isLink?: boolean;
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
+  isSubmittingDisconnect?: boolean;
+  onDisconnect?: () => void;
+  disconnectType?: ConnectType;
 }
 interface ConnectProps {
   configver?: string;
@@ -381,7 +391,9 @@ interface ConnectProps {
   expression?: Array<string>;
   fundAmount?: number;
   loggedInUser?: Client.User;
-  linkedPosts?: Array<Client.Idea>;
+  mergedToPost?: Client.Idea;
+  linkedToPosts?: Array<Client.Idea>;
+  linkedFromPosts?: Array<Client.Idea>;
   fetchPostIds?: Array<string>;
 }
 interface State {
@@ -393,6 +405,7 @@ interface State {
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
   showEditingStatusAndResponse?: false | 'status' | 'response';
+  showEditingConnect?: boolean;
   isSubmittingStatusAndResponse?: boolean;
   editingResponse?: string;
   editingStatusId?: string;
@@ -472,7 +485,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           <div
             className={classNames(
               this.props.classes.post,
-              this.props.classNamePadding,
+              this.props.classNamePadding || this.props.classes.postPadding,
               (isOnlyPostOnClick && !this.props.disableOnClick) && this.props.classes.clickable,
             )}
             style={{
@@ -496,6 +509,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               {this.renderBottomBar()}
               {this.renderIWantThisCommentAdd()}
               {this.renderResponseAndStatus()}
+              {this.renderMerged()}
               {this.renderLinks()}
             </div>
             {this.props.contentBeforeComments && (
@@ -534,8 +548,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ].filter(notEmpty);
 
       rightSide = [
-        this.renderEditResponse(),
+        this.renderDisconnect(),
+        this.renderRespond(),
         this.renderCommentAdd(),
+        this.renderConnect(),
       ].filter(notEmpty);
     } else {
       leftSide = [
@@ -548,6 +564,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         this.renderStatus(),
         this.renderTags(),
         this.renderCategory(),
+        this.renderDisconnect(),
       ].filter(notEmpty);
     }
 
@@ -575,7 +592,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     if (this.props.variant !== 'list') {
       header = [
-        this.renderIsLink(),
         this.renderAuthor(),
         this.renderCreatedDatetime(),
         this.renderStatus(),
@@ -584,7 +600,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ].filter(notEmpty);
     } else {
       header = [
-        this.renderIsLink(),
         this.renderAuthor(),
         this.renderCreatedDatetime(),
       ].filter(notEmpty);
@@ -745,12 +760,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderEditResponse() {
+  renderRespond() {
     const isMod = this.props.server.isModOrAdminLoggedIn();
     if (this.props.variant === 'list'
       || !this.props.idea
       || !this.props.category
       || !isMod
+      || !!this.props.idea.response
       || this.props.display?.showEdit === false) return null;
 
     return (
@@ -763,6 +779,36 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         >
           Respond
         </MyButton>
+      </React.Fragment>
+    );
+  }
+
+  renderConnect() {
+    const isMod = this.props.server.isModOrAdminLoggedIn();
+    if (this.props.variant === 'list'
+      || !this.props.idea
+      || !this.props.category
+      || !isMod
+      || this.props.display?.showEdit === false) return null;
+
+    return (
+      <React.Fragment key='edit-connect'>
+        <MyButton
+          buttonVariant='post'
+          disabled={!!this.state.showEditingConnect}
+          Icon={LinkAltIcon}
+          onClick={e => this.setState({ showEditingConnect: true })}
+        >
+          Link
+        </MyButton>
+        <Provider key={this.props.server.getProjectId()} store={this.props.server.getStore()}>
+          <PostConnectDialog
+            server={this.props.server}
+            post={this.props.idea}
+            open={!!this.state.showEditingConnect}
+            onClose={() => this.setState({ showEditingConnect: false })}
+          />
+        </Provider>
       </React.Fragment>
     );
   }
@@ -1318,31 +1364,82 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  renderIsLink() {
-    if (!this.props.isLink) return null;
+  renderDisconnect() {
+    if (!this.props.onDisconnect) return null;
 
     return (
-      <HelpPopper description='Links to this post'>
-        <LinkAltIcon color='inherit' fontSize='inherit' className={this.props.classes.pinIcon} />
-      </HelpPopper>
+      <React.Fragment key='disconnect'>
+        <MyButton
+          buttonVariant='post'
+          Icon={this.props.disconnectType === 'merge' ? UnmergeIcon : UnLinkAltIcon}
+          isSubmitting={this.props.isSubmittingDisconnect}
+          onClick={e => this.props.onDisconnect?.()}
+        >
+          {this.props.disconnectType === 'link' ? 'Unlink' : 'Unmerge'}
+        </MyButton>
+      </React.Fragment>
+    );
+  }
+
+  renderMerged() {
+    if (!this.props.idea
+      || this.props.variant === 'list'
+      || !this.props.mergedToPost) return null;
+
+    return (
+      <div className={this.props.classes.links}>
+        <ConnectedPostsContainer
+          className={this.props.classes.linkedPosts}
+          type='merge'
+          direction='to'
+          hasMultiple={false}
+        >
+          <ConnectedPost
+            server={this.props.server}
+            containerPost={this.props.idea!}
+            post={this.props.mergedToPost}
+            type='merge'
+            direction='to'
+            onClickPost={this.props.onClickPost}
+            onUserClick={this.props.onUserClick}
+          />
+        </ConnectedPostsContainer>
+      </div>
     );
   }
 
   renderLinks() {
-    if (this.props.variant === 'list'
-      || !this.props.linkedPosts?.length) return null;
+    if (!this.props.idea
+      || this.props.variant === 'list'
+      || (!this.props.linkedToPosts?.length && !this.props.linkedFromPosts?.length)) return null;
 
     return (
-      <div className={this.props.classes.linkedPosts}>
-        {this.props.linkedPosts.map(post => (
-          <PostAsLink
-            key={post.ideaId}
-            server={this.props.server}
-            post={post}
-            onClickPost={this.props.onClickPost}
-            onUserClick={this.props.onUserClick}
-          />
-        ))}
+      <div className={this.props.classes.links}>
+        {(['to', 'from'] as LinkDirection[]).map(direction => {
+          const posts = (direction === 'to' ? this.props.linkedToPosts : this.props.linkedFromPosts);
+          if (!posts?.length) return null;
+          return (
+            <ConnectedPostsContainer
+              className={this.props.classes.linkedPosts}
+              type='link'
+              direction={direction}
+              hasMultiple={posts.length > 1}
+            >
+              {posts.map(post => (
+                <ConnectedPost
+                  key={post.ideaId}
+                  server={this.props.server}
+                  containerPost={this.props.idea!}
+                  post={post}
+                  type='link'
+                  direction={direction}
+                  onClickPost={this.props.onClickPost}
+                  onUserClick={this.props.onUserClick}
+                />
+              ))}
+            </ConnectedPostsContainer>
+          );
+        })}
       </div>
     );
   }
@@ -1357,14 +1454,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.state.showEditingStatusAndResponse) {
       response = this.renderResponse();
       status = this.props.variant !== 'list' && this.renderStatus(true);
-
-      if (!status && !response) return null;
-
       author = (this.props.idea.responseAuthorUserId && this.props.idea.responseAuthorName) ? {
         userId: this.props.idea.responseAuthorUserId,
         name: this.props.idea.responseAuthorName,
         isMod: true
       } : undefined;
+
+      // Don't show if nothing to show OR if only status is present and author is unknown
+      if (!response && (!status || !author)) return null;
 
     } else {
       response = this.renderResponse(true);
@@ -1821,7 +1918,21 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     }
   }
   const fetchPostIds: string[] = [];
-  var linkedPosts = ownProps.idea?.linkedPostIds?.map(linkedPostId => {
+  var mergedToPost: Client.Idea | undefined;
+  if (ownProps.idea?.mergedToPostId) {
+    const mergedToPostContainer = state.ideas.byId[ownProps.idea.mergedToPostId];
+    if (!mergedToPostContainer) {
+      fetchPostIds.push(ownProps.idea.mergedToPostId);
+    } else {
+      mergedToPost = state.ideas.byId[ownProps.idea.mergedToPostId].idea;
+    }
+  }
+  const linkedToPosts = ownProps.idea?.linkedToPostIds?.map(linkedPostId => {
+    const linkedPost = state.ideas.byId[linkedPostId];
+    if (!linkedPost) fetchPostIds.push(linkedPostId);
+    return linkedPost?.idea;
+  }).filter(notEmpty);
+  const linkedFromPosts = ownProps.idea?.linkedFromPostIds?.map(linkedPostId => {
     const linkedPost = state.ideas.byId[linkedPostId];
     if (!linkedPost) fetchPostIds.push(linkedPostId);
     return linkedPost?.idea;
@@ -1840,7 +1951,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    linkedPosts,
+    mergedToPost,
+    linkedToPosts,
+    linkedFromPosts,
     fetchPostIds,
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

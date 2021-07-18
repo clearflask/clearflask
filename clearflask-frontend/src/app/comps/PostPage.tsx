@@ -115,7 +115,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
             <Typography>{this.props.category.subscription.hellobar.message}</Typography>
           )}
           <SubmitButton
-            wrapperClassName={this.props.classes.subscribeButton}
+            className={this.props.classes.subscribeButton}
             isSubmitting={this.state.isSubmitting}
             onClick={async () => {
               if (!this.props.loggedInUser) {

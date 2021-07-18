@@ -246,7 +246,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                           />
                         )))}
                         <SubmitButton
-                          wrapperClassName={this.props.classes.submitButton}
+                          className={this.props.classes.submitButton}
                           color='primary'
                           isSubmitting={this.state.isSubmitting}
                           disabled={form.fields.some(field => field.required

@@ -140,7 +140,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             disabled={this.state.isSubmitting}
           />
           <SubmitButton
-            wrapperClassName={this.props.classes.submitButton}
+            className={this.props.classes.submitButton}
             color='primary'
             fullWidth
             variant='contained'
@@ -155,7 +155,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
           <Link to='/signup' className={this.props.classes.signUpHere}>
             <Typography component="span" variant="caption" color="primary">
               Sign Up Here!
-          </Typography>
+            </Typography>
           </Link>
         </Paper>
       </Container>

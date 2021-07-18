@@ -15,6 +15,7 @@ import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import { useDebounceProp } from '../../site/dashboard/ProjectSettings';
 import { PostTitleMaxLength } from './PostCreateForm';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
@@ -575,6 +576,10 @@ export const PostEditResponse = (props: {
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
+  const [value, setValue] = useDebounceProp<string | undefined>(
+    props.value,
+    newValue => props.onChange(newValue === undefined ? '' : newValue));
+
   return (
     <>
       <RichEditor
@@ -587,8 +592,8 @@ export const PostEditResponse = (props: {
         label={props.bare ? undefined : 'Response'}
         fullWidth
         iAgreeInputIsSanitized
-        value={props.value === undefined ? '' : props.value}
-        onChange={e => props.onChange(e.target.value)}
+        value={value === undefined ? '' : value}
+        onChange={e => setValue(e.target.value)}
         multiline
         rows={1}
         rowsMax={3}
@@ -808,7 +813,7 @@ export const PostSaveButton = (props: {
           <SubmitButton
             variant='contained'
             disableElevation
-            wrapperClassName={classes.saveButtonAction}
+            className={classes.saveButtonAction}
             isSubmitting={props.isSubmitting}
             color='primary'
             onClick={() => props.onSave(doNotify)}

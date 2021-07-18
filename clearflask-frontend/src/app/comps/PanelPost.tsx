@@ -1,4 +1,4 @@
-import { Typography } from '@material-ui/core';
+import { Collapse, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import { MarginProperty } from 'csstype';
@@ -84,12 +84,13 @@ export interface Props {
   onUserClick?: (userId: string) => void;
   disableOnClick?: boolean;
   suppressPanel?: boolean;
+  hideLoadMore?: boolean;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
   navigatorRef?: MutableRef<PanelPostNavigator>;
-  selectable?: boolean;
+  selectable?: 'highlight' | 'check';
   selected?: string;
   navigatorChanged?: () => void;
   showDrafts?: {
@@ -259,11 +260,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           content = this.props.wrapPost(idea, content, ideaIndex);
         }
         if (this.props.selectable) {
-          content = (
-            <TabFragment key={idea.ideaId} value={idea.ideaId}>
-              {content}
-            </TabFragment>
-          );
+          content = this.selectableWrapItem(idea.ideaId, content);
         } else {
           content = (
             <React.Fragment key={idea.ideaId}>
@@ -279,14 +276,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       }
       const itemCount = content.length;
       if (!!itemCount && this.props.selectable) {
-        content = (
-          <TabsVertical
-            selected={this.props.selected || this.props.showDrafts?.selectedDraftId}
-            onClick={this.props.onClickPost ? (postId => this.props.onClickPost?.(postId)) : undefined}
-          >
-            {content}
-          </TabsVertical>
-        );
+        content = this.selectableWrapItems(content);
       }
       if (!itemCount) {
         content = (
@@ -305,7 +295,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         );
       }
     }
-    if (this.props.searchCursor) {
+    if (this.props.searchCursor && !this.props.hideLoadMore) {
       content = (
         <>
           {content}
@@ -361,7 +351,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       case Status.FULFILLED:
         if (!this.props.draftSearchDrafts?.length) return undefined;
         content = this.props.draftSearchDrafts.map(draft => {
-          var draftContent = (
+          var draftContent: React.ReactNode = (
             <DraftItem
               className={widthExpandMarginClassName}
               server={this.props.server}
@@ -370,11 +360,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
             />
           );
           if (this.props.selectable) {
-            draftContent = (
-              <TabFragment key={draft.draftId} value={draft.draftId}>
-                {draftContent}
-              </TabFragment>
-            );
+            draftContent = this.selectableWrapItem(draft.draftId, draftContent);
           } else {
             draftContent = (
               <React.Fragment key={draft.draftId}>
@@ -437,6 +423,38 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     if (!nextPostId) return false;
     this.props.onClickPost(nextPostId);
     return true;
+  }
+
+  selectableWrapItem(id: string, content: React.ReactNode): React.ReactNode {
+    if (this.props.selectable === 'highlight') {
+      return (
+        <TabFragment key={id} value={id}>
+          {content}
+        </TabFragment>
+      );
+    }
+    if (this.props.selectable === 'check') {
+      return (
+        <Collapse key={id} in={!this.props.selected || this.props.selected === id}>
+          {content}
+        </Collapse>
+      );
+    }
+    return content;
+  }
+
+  selectableWrapItems(content: React.ReactNode): React.ReactNode {
+    if (this.props.selectable === 'highlight') {
+      return (
+        <TabsVertical
+          selected={this.props.selected || this.props.showDrafts?.selectedDraftId}
+          onClick={this.props.onClickPost ? (postId => this.props.onClickPost?.(postId)) : undefined}
+        >
+          {content}
+        </TabsVertical>
+      );
+    }
+    return content;
   }
 }
 

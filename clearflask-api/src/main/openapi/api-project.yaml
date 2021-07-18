@@ -766,7 +766,7 @@ components:
                 x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Whether content under this category can be created by users', defaultValue: true }
                 type: boolean
               userMergeableCategoryIds:
-                x-clearflask-prop: { order: 4, name: 'User mergeable', description: 'Which categories can user merge content from this category. Mainly used for merging own feedback into related feedback.' }
+                x-clearflask-prop: { order: 4, name: 'User mergeable', description: 'Which categories can user merge content into from this category. Mainly used for merging own feedback into related feedback.' }
                 x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:

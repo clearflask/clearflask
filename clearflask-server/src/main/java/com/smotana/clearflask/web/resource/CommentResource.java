@@ -296,20 +296,20 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
 
         excludeMergedPostIds.forEach(additionalMergedPostIds::remove);
 
-        if (additionalMergedPostIds.isEmpty()) {
+        if (additionalMergedPostIds.isEmpty() || !parentIdeaIdOpt.isPresent()) {
             return commentsWithVote;
         } else {
             return Stream.concat(
                     commentsWithVote.stream(),
                     ideaStore.getIdeas(projectId, ImmutableSet.copyOf(additionalMergedPostIds)).values().stream()
-                            .map(this::mergedPostAsComment))
+                            .map(mergedIdea -> mergedPostAsComment(parentIdeaIdOpt.get(), mergedIdea)))
                     .collect(ImmutableList.toImmutableList());
         }
     }
 
-    private CommentWithVote mergedPostAsComment(IdeaStore.IdeaModel idea) {
+    private CommentWithVote mergedPostAsComment(String parentIdeaId, IdeaStore.IdeaModel idea) {
         return new CommentWithVote(
-                idea.getIdeaId(),
+                parentIdeaId,
                 idea.getIdeaId(),
                 null,
                 idea.getChildCommentCount(),

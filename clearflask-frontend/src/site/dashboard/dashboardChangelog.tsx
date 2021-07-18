@@ -72,7 +72,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
               search={changelogPostSearch}
               onClickPost={postId => this.pageClicked('post', [postId])}
               onUserClick={userId => this.pageClicked('user', [userId])}
-              selectable
+              selectable='highlight'
               selected={this.state.changelogPreview?.type === 'post' ? this.state.changelogPreview.id : undefined}
               displayOverride={{
                 showCategoryName: false,

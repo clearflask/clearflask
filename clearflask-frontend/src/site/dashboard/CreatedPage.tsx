@@ -132,7 +132,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         onChange={e => this.setState({ newModEmail: e.target.value })}
                       />
                       <SubmitButton
-                        wrapperClassName={this.props.classes.button}
+                        className={this.props.classes.button}
                         color='primary'
                         isSubmitting={this.state.isSubmitting}
                         onClick={e => {
@@ -191,7 +191,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           server={this.props.server}
                         />
                         <SubmitButton
-                          wrapperClassName={this.props.classes.button}
+                          className={this.props.classes.button}
                           color='primary'
                           isSubmitting={this.state.isSubmitting}
                           disabled={!isLoggedIn || !this.state.newItemTitle}

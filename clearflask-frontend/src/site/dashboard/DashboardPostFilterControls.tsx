@@ -20,6 +20,8 @@ interface Props {
   onSearchChanged: (search: Partial<Admin.IdeaSearchAdmin>) => void;
   allowSearch?: Partial<Admin.PageExplorerAllOfAllowSearch>;
   permanentSearch?: Admin.IdeaSearch;
+  allowSearchMultipleCategories?: boolean;
+  sortByDefault?: Admin.IdeaSearchAdminSortByEnum;
   horizontal?: boolean;
 }
 interface ConnectProps {
@@ -47,17 +49,19 @@ class DashboardPostFilterControls extends Component<Props & ConnectProps & WithS
           display: {},
           search: this.props.permanentSearch || {},
         }}
-        forceSingleCategory
+        forceSingleCategory={!this.props.allowSearchMultipleCategories}
         search={{
           ...this.props.search,
-          // This along with forceSingleCategory ensures one and only one category is selected
-          filterCategoryIds: this.props.search?.filterCategoryIds?.length
-            ? this.props.search.filterCategoryIds
-            : (this.props.config?.content.categories.length
-              ? [this.props.config?.content.categories[0]?.categoryId]
-              : undefined),
-          // Sort by new by default
-          sortBy: this.props.search?.sortBy || Admin.IdeaSearchAdminSortByEnum.New,
+          ...(this.props.allowSearchMultipleCategories ? {} : {
+            // This along with forceSingleCategory ensures one and only one category is selected
+            filterCategoryIds: this.props.search?.filterCategoryIds?.length
+              ? this.props.search.filterCategoryIds
+              : (this.props.config?.content.categories.length
+                ? [this.props.config?.content.categories[0]?.categoryId]
+                : undefined),
+          }),
+          // Sort by default
+          sortBy: this.props.search?.sortBy || this.props.sortByDefault || Admin.IdeaSearchAdminSortByEnum.New,
         }}
         sortGroups={(a, b) => this.getLabelGroupSortOrder(b) - this.getLabelGroupSortOrder(a)}
         onSearchChanged={this.props.onSearchChanged}

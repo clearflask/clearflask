@@ -372,10 +372,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }).filter(notEmpty),
     });
   }
-  mockMergedPostAsComment(mergedIdea: Admin.Idea): CommentWithAuthorWithParentPath {
+  mockMergedPostAsComment(parentIdeaId: string, mergedIdea: Admin.Idea): CommentWithAuthorWithParentPath {
     return {
       parentIdPath: [],
-      ideaId: mergedIdea.ideaId,
+      ideaId: parentIdeaId,
       commentId: mergedIdea.ideaId,
       childCommentCount: mergedIdea.childCommentCount,
       authorUserId: mergedIdea.authorUserId,
@@ -401,7 +401,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const mergedPostComments = (idea.mergedPostIds || [])
       .map(postId => this.getProject(request.projectId).ideas.find(i => i.ideaId === postId))
       .filter(notEmpty)
-      .map(post => this.mockMergedPostAsComment(post));
+      .map(post => this.mockMergedPostAsComment(idea.ideaId, post));
     const data = this.sort([...mergedPostComments, ...this.getProject(request.projectId).comments
       .filter(comment => request.ideaId === comment.ideaId)
       .filter(comment => !request.ideaCommentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.ideaCommentSearch.parentCommentId)))
@@ -907,7 +907,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot link into itself');
     if (idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Already linked');
     idea.linkedToPostIds = [...(idea.linkedToPostIds || []), parentIdea.ideaId];
-    parentIdea.linkedPostIds = [...(parentIdea.linkedPostIds || []), idea.ideaId];
+    parentIdea.linkedFromPostIds = [...(parentIdea.linkedFromPostIds || []), idea.ideaId];
     return this.returnLater({ idea, parentIdea });
   }
   ideaUnLinkAdmin(request: Admin.IdeaUnLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
@@ -916,7 +916,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (idea.ideaId === parentIdea.ideaId) return this.throwLater(400, 'Cannot unlink from itself');
     if (!idea.linkedToPostIds?.includes(parentIdea.ideaId)) return this.throwLater(400, 'Not linked');
     idea.linkedToPostIds = idea.linkedToPostIds?.filter(ideaId => ideaId !== parentIdea.ideaId);
-    parentIdea.linkedPostIds = parentIdea.linkedPostIds?.filter(ideaId => ideaId !== idea.ideaId);
+    parentIdea.linkedFromPostIds = parentIdea.linkedFromPostIds?.filter(ideaId => ideaId !== idea.ideaId);
     return this.returnLater({ idea, parentIdea });
   }
   ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {

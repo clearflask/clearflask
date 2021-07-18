@@ -1,5 +1,6 @@
 import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import UnmergeIcon from '@material-ui/icons/CallSplit';
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import DeletedIcon from '@material-ui/icons/Clear';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
@@ -20,9 +21,9 @@ import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
+import { OutlinePostContent } from './ConnectedPost';
 import MyButton from './MyButton';
 import { MaxContentWidth } from './Post';
-import { OutlinePostContent } from './PostAsLink';
 import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
@@ -125,6 +126,7 @@ interface State {
   adminDeleteExpanded?: boolean;
   deleteExpanded?: boolean;
   isSubmittingVote?: Client.VoteOption;
+  isSubmittingUnmerge?: boolean;
 }
 
 class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
@@ -293,6 +295,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     ].filter(notEmpty);
 
     const rightSide = [
+      this.renderUnmerge(),
       this.renderReply(),
       this.renderAdminDelete(),
       this.renderEdit(),
@@ -383,6 +386,38 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
           onClick={e => this.setState({ editing: true })}
         >
           Edit
+        </MyButton>
+      </React.Fragment>
+    );
+  }
+
+  renderUnmerge() {
+    if (!this.props.comment?.mergedPostId
+      || !this.props.server.isModOrAdminLoggedIn()) return null;
+    const comment = this.props.comment;
+    const mergedPostId = this.props.comment.mergedPostId;
+
+    return (
+      <React.Fragment key='unmerge'>
+        <MyButton
+          buttonVariant='post'
+          Icon={UnmergeIcon}
+          disabled={this.state.editing}
+          isSubmitting={this.state.isSubmittingUnmerge}
+          onClick={async e => {
+            this.setState({ isSubmittingUnmerge: true });
+            try {
+              await (await this.props.server.dispatchAdmin()).ideaUnMergeAdmin({
+                projectId: this.props.server.getProjectId(),
+                ideaId: mergedPostId,
+                parentIdeaId: comment.ideaId,
+              });
+            } finally {
+              this.setState({ isSubmittingUnmerge: false });
+            }
+          }}
+        >
+          Unmerge
         </MyButton>
       </React.Fragment>
     );

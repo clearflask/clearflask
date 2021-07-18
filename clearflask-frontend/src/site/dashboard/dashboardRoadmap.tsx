@@ -33,7 +33,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
   // - Show Draft entries, on drop, add as linked entry
   // - Show published entries, on drop, add as linked entry
   // Caveats:
-  // - Drafts must support adding linkedPostIds in IdeaCreateAdmin
+  // - Drafts must support adding linked post ids in IdeaCreateAdmin
   // - When you drop into the changelog list, the status changes to Completed and will show up
   //   in the Completed dropbox. It's the logical thing, but it looks weird. Figure it out.
   // - Also, the Completed search column must be also updated when dropped into changelog.
@@ -93,7 +93,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
       search: panel.search as Admin.IdeaSearchAdmin,
       onClickPost: postId => this.pageClicked('post', [postId]),
       onUserClick: userId => this.pageClicked('user', [userId]),
-      selectable: true,
+      selectable: 'highlight',
       selected: (this.state.previewShowOnPage === 'roadmap' && this.state.roadmapPreview?.type === 'post') ? this.state.roadmapPreview.id : undefined,
       displayOverride: {
         showCategoryName: false,

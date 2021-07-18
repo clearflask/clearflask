@@ -1,8 +1,9 @@
-import { Button, fade, SvgIconTypeMap } from '@material-ui/core';
+import { fade, SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   button: {
@@ -37,12 +38,12 @@ interface Props {
   Icon?: OverridableComponent<SvgIconTypeMap>,
   iconClassName?: string;
 }
-class MyButton extends Component<Props & Partial<Omit<React.ComponentProps<typeof Button>, 'color'>> & WithStyles<typeof styles, true>> {
+class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithoutRef<typeof SubmitButton>, 'color'>> & WithStyles<typeof styles, true>> {
   render() {
     const { classes, buttonVariant, color, Icon, iconClassName, ...buttonProps } = this.props;
     var variantClassName: string | undefined;
     var variantIconClassName: string | undefined;
-    var variantButtonProps: Partial<React.ComponentProps<typeof Button>> = {};
+    var variantButtonProps: Partial<React.ComponentPropsWithoutRef<typeof SubmitButton>> = {};
     switch (buttonVariant) {
       case 'post':
         variantClassName = this.props.classes.buttonPost;
@@ -53,7 +54,7 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentProps<typeo
         break;
     }
     return (
-      <Button
+      <SubmitButton
         disableElevation
         color='inherit'
         {...variantButtonProps}
@@ -85,7 +86,7 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentProps<typeo
         ) : (
           <>&#8203;</>
         )}
-      </Button>
+      </SubmitButton>
     );
   }
 }

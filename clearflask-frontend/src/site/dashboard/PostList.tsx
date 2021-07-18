@@ -40,8 +40,8 @@ interface Props {
   className?: string;
   server: Server;
   search?: Partial<Admin.IdeaSearchAdmin>;
-  selectable?: boolean;
-  selected?: string;
+  selectable?: React.ComponentProps<typeof PanelPost>['selectable'];
+  selected?: React.ComponentProps<typeof PanelPost>['selected'];
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
   layout?: 'similar-merge-action';

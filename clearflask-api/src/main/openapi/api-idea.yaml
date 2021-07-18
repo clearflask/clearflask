@@ -217,7 +217,7 @@ components:
           type: array
           items:
             type: string
-        linkedPostIds:
+        linkedFromPostIds:
           type: array
           items:
             type: string

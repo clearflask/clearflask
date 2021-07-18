@@ -1,6 +1,7 @@
 import { Button, Fade, Paper, Popper, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import HelpIcon from '@material-ui/icons/InfoOutlined';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
@@ -9,6 +10,7 @@ const styles = (theme: Theme) => createStyles({
     padding: '0px',
     borderRadius: '100px',
     minWidth: 'unset',
+    textTransform: 'unset',
   },
   content: {
     padding: theme.spacing(2),
@@ -17,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
+  className?: string;
   title?: string;
   description?: string;
   children?: React.ReactNode;
@@ -32,7 +35,7 @@ class HelpPopper extends Component<Props, State> {
       <>
         <Button
           color='inherit'
-          className={this.props.classes.iconButton}
+          className={classNames(this.props.className, this.props.classes.iconButton)}
           onClick={e => this.setState({ open: this.state.open ? undefined : e.currentTarget })}
           onMouseOver={e => this.setState({ open: e.currentTarget })}
           onMouseOut={e => this.setState({ open: undefined })}

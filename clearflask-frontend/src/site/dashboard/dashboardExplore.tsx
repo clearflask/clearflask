@@ -74,7 +74,7 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
           search={explorerPostSearch}
           onClickPost={postId => this.pageClicked('post', [postId])}
           onUserClick={userId => this.pageClicked('user', [userId])}
-          selectable
+          selectable='highlight'
           selected={this.state.explorerPreview?.type === 'post' ? this.state.explorerPreview.id : undefined}
         />
       </Provider>

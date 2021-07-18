@@ -486,7 +486,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                               PanelPostProps={{
                                 onClickPost: postId => this.pageClicked('post', [postId]),
                                 onUserClick: userId => this.pageClicked('user', [userId]),
-                                selectable: true,
+                                selectable: 'highlight',
                                 selected: this.state.roadmapPreview?.type === 'post' ? this.state.roadmapPreview.id : undefined,
                               }}
                             />

@@ -12,7 +12,23 @@ import LogoutIcon from './LogoutIcon';
 import MicrosoftIcon from './MicrosoftIcon';
 import PinIcon from './PinIcon';
 import TwitchIcon from './TwitchIcon';
+import UnLinkAltIcon from './UnLinkAltIcon';
 import VisitIcon from './VisitIcon';
+
+const IconOverrides = {
+  'Google': GoogleIcon,
+  'Guest': GuestIcon,
+  'LockSimple': LockSimpleIcon,
+  'Logout': LogoutIcon,
+  'Visit': VisitIcon,
+  'Gitlab': GitlabIcon,
+  'Discord': DiscordIcon,
+  'Microsoft': MicrosoftIcon,
+  'Twitch': TwitchIcon,
+  'Pin': PinIcon,
+  'LinkAlt': LinkAltIcon,
+  'UnLinkAlt': UnLinkAltIcon,
+};
 
 const DynamicMuiIcon = (props: {
   name: string;
@@ -20,8 +36,8 @@ const DynamicMuiIcon = (props: {
   var { name, ...iconProps } = props;
   if (!name.match(/^[a-zA-Z]+$/)) return null;
 
-  var IconOverride;
   // Special icons not found in Mui
+  var IconOverride = IconOverrides[name];
   if (name === 'Roadmap') {
     name = 'EqualizerRounded';
     iconProps = {
@@ -31,28 +47,6 @@ const DynamicMuiIcon = (props: {
         transform: 'rotate(180deg)',
       },
     };
-  } else if (name === 'Google') {
-    IconOverride = GoogleIcon;
-  } else if (name === 'Guest') {
-    IconOverride = GuestIcon;
-  } else if (name === 'LockSimple') {
-    IconOverride = LockSimpleIcon;
-  } else if (name === 'Logout') {
-    IconOverride = LogoutIcon;
-  } else if (name === 'Visit') {
-    IconOverride = VisitIcon;
-  } else if (name === 'Gitlab') {
-    IconOverride = GitlabIcon;
-  } else if (name === 'Discord') {
-    IconOverride = DiscordIcon;
-  } else if (name === 'Microsoft') {
-    IconOverride = MicrosoftIcon;
-  } else if (name === 'Twitch') {
-    IconOverride = TwitchIcon;
-  } else if (name === 'Pin') {
-    IconOverride = PinIcon;
-  } else if (name === 'LinkAlt') {
-    IconOverride = LinkAltIcon;
   }
 
   return !!IconOverride ? (

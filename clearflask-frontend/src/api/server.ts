@@ -1140,6 +1140,13 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           }
         },
       };
+    case Admin.ideaUnMergeAdminActionStatus.Fulfilled:
+      const { [action.meta.request.ideaId]: removedMergedPostAsComment, ...byIdWithoutMergedPostAsComment } = state.byId;
+      if (!removedMergedPostAsComment) return state;
+      return {
+        ...state,
+        byId: byIdWithoutMergedPostAsComment,
+      };
     default:
       return state;
   }

@@ -53,7 +53,7 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
               ...this.state.usersUserFilter,
               searchText: this.state.usersUserSearch,
             }}
-            selectable
+            selectable='highlight'
             selected={this.state.usersPreview?.type === 'user' ? this.state.usersPreview.id : undefined}
             onUserClick={userId => this.pageClicked('user', [userId])}
           />
