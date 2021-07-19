@@ -10,13 +10,17 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
-  await templater.createTemplateV2({
+  const templateResult = await templater.createTemplateV2({
     ...createTemplateV2OptionsDefault,
     infoName: 'Sandbox',
     infoLogo: '/img/clearflask-logo.png',
     infoWebsite: 'https://clearflask.com',
     infoSlug: 'mock',
   });
+  if (templateResult.roadmap) {
+    templater.taggingIdeaBug(templateResult.roadmap.categoryAndIndex.index);
+    templater.taggingOsPlatform(templateResult.roadmap.categoryAndIndex.index);
+  }
   templater.usersOnboardingAnonymous(true, true);
   templater.usersOnboardingBrowserPush(true);
   templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${windowIso.location.protocol}//${windowIso.location.host.substr(windowIso.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'Existing customer');

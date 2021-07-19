@@ -20,7 +20,6 @@ const styles = (theme: Theme) => createStyles({
   container: {
   },
   feedbackSubmitButton: {
-    alignSelf: 'flex-start',
     fontWeight: 'bold',
   },
   logIn: {
@@ -236,7 +235,7 @@ const PageFeedback = (props: {
               disabled={!!relatedIsSubmittingPostId}
               variant='outlined'
               onClick={() => setRelatedClosed(true)}
-            >No</Button>
+            >None</Button>
           </div>
         </Collapse>
       )}

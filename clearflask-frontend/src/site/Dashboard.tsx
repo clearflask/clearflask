@@ -18,7 +18,9 @@ import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
+import LogIn from '../app/comps/LogIn';
 import { PanelPostNavigator } from '../app/comps/PanelPost';
+import PostCreateForm from '../app/comps/PostCreateForm';
 import { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import { BoardContainer, BoardPanel } from '../app/CustomPage';
@@ -280,6 +282,7 @@ interface State {
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: { type: 'create' } | { type: 'user', id: string },
+  postCreateOnLoggedIn?: () => void;
   // Below is state for various template options that are updated after publish
   // Null means, we received it, but its not present, undefined means we are still waiting
   landing?: LandingInstance | null;
@@ -943,9 +946,26 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       breakAction: 'drawer',
       size: PostPreviewSize,
       content: (
-        <div>
-          TODO post create
-        </div>
+        <Provider key={project.projectId} store={project.server.getStore()}>
+          <PostCreateForm
+            server={project.server}
+            type='post'
+            adminControlsDefaultVisibility='expanded'
+            logIn={() => new Promise(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
+          />
+          <LogIn
+            actionTitle='Get notified of replies'
+            server={project.server}
+            open={!!this.state.postCreateOnLoggedIn}
+            onClose={() => this.setState({ postCreateOnLoggedIn: undefined })}
+            onLoggedInAndClose={() => {
+              if (this.state.postCreateOnLoggedIn) {
+                this.state.postCreateOnLoggedIn();
+                this.setState({ postCreateOnLoggedIn: undefined });
+              }
+            }}
+          />
+        </Provider>
       ),
     };
   }

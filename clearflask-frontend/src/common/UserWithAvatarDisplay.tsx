@@ -36,6 +36,7 @@ const UserWithAvatarDisplay = (props: {
   avatarSize?: number;
   fontSize?: string | number;
   baseline?: boolean;
+  maxChars?: number;
 }) => {
   const classes = useStyles();
   return (
@@ -67,6 +68,7 @@ const UserWithAvatarDisplay = (props: {
         suppressStar
         variant='text'
         user={props.user}
+        maxChars={props.maxChars}
       />
     </div>
   );

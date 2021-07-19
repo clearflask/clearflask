@@ -4,10 +4,10 @@ import { textToHtml } from "../util/richEditorUtil";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
-import { changelogGet, changelogOff, changelogOn } from "./template/changelog";
-import { feedbackGet, feedbackOn, feedbackPageOff, feedbackUpdateWithRoadmap } from "./template/feedback";
-import { landingGet, landingOff, landingOn } from "./template/landing";
-import { feedbackAndRoadmapGet, roadmapGet, roadmapOn, roadmapPageOff } from "./template/roadmap";
+import { changelogGet, ChangelogInstance, changelogOff, changelogOn } from "./template/changelog";
+import { feedbackGet, FeedbackInstance, feedbackOn, feedbackPageOff, feedbackUpdateWithRoadmap } from "./template/feedback";
+import { landingGet, LandingInstance, landingOff, landingOn } from "./template/landing";
+import { feedbackAndRoadmapGet, roadmapGet, RoadmapInstance, roadmapOn, roadmapPageOff } from "./template/roadmap";
 import { _findCategoryByPrefix, _findPageByPrefix, _pageDelete } from "./template/templateUtils";
 
 export type ConfirmationResponseId = string | undefined;
@@ -47,6 +47,12 @@ export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
   templateRoadmap: true,
   templateChangelog: true,
 };
+interface CreateTemplateV2Result {
+  feedback?: FeedbackInstance;
+  roadmap?: RoadmapInstance;
+  changelog?: ChangelogInstance;
+  landing?: LandingInstance;
+}
 
 // TODO Home
 // TODO FAQ
@@ -163,16 +169,18 @@ export default class Templater {
     // this.styleWhite();
   }
 
-  async createTemplateV2(opts: CreateTemplateV2Options = createTemplateV2OptionsDefault) {
+  async createTemplateV2(opts: CreateTemplateV2Options = createTemplateV2OptionsDefault): Promise<CreateTemplateV2Result> {
     this._get<ConfigEditor.StringProperty>(['name']).set(opts.infoName || 'My App');
     if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
 
-    if (opts.templateFeedback) await this.feedbackOn();
-    if (opts.templateRoadmap) await this.roadmapOn();
-    if (opts.templateChangelog) await this.changelogOn();
-    if (opts.templateLanding) await this.landingOn();
+    const result: CreateTemplateV2Result = {};
+    if (opts.templateFeedback) result.feedback = await this.feedbackOn();
+    if (opts.templateRoadmap) result.roadmap = await this.roadmapOn();
+    if (opts.templateChangelog) result.changelog = await this.changelogOn();
+    if (opts.templateLanding) result.landing = await this.landingOn();
+    return result;
   }
 
   createTemplate(opts: CreateTemplateOptions = createTemplateOptionsDefault) {

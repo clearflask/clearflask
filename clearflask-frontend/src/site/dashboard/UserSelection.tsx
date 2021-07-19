@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, Status } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
-import UserDisplay from '../../common/UserDisplay';
+import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
 const styles = (theme: Theme) => createStyles({
@@ -102,6 +102,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
       }
     });
 
+    const isSearching = this.state.searching !== undefined;
     return (
       <SelectionPicker
         className={this.props.className}
@@ -110,8 +111,9 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         helperText={this.props.helperText}
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
-        options={options}
-        loading={this.state.searching !== undefined}
+        formatHeader={inputValue => !inputValue && `Type to search`}
+        options={!isSearching ? options : []}
+        loading={isSearching}
         disableClearable={!this.props.allowClear}
         showTags
         bareTags
@@ -144,8 +146,8 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           })
           this.props.onChange && this.props.onChange(selectedLabel);
         }}
-        formatCreateLabel={this.props.allowCreate ? inputValue => `Add user '${inputValue}'` : undefined}
-        onValueCreate={this.props.allowCreate ? name => {
+        formatCreateLabel={(this.props.allowCreate && !isSearching) ? inputValue => `Add user '${inputValue}'` : undefined}
+        onValueCreate={(this.props.allowCreate && !isSearching) ? name => {
           this.props.server.dispatchAdmin()
             .then(d => d.userCreateAdmin({
               projectId: this.props.server.getProjectId(),
@@ -169,7 +171,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 
   static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
     const userLabel: Label = {
-      label: (<UserDisplay user={user} variant='text' suppressTypography maxChars={15} />),
+      label: (<UserWithAvatarDisplay user={user} maxChars={15} />),
       filterString: `${user.name || 'Anonymous'} ${user.email || ''}`,
       value: user.userId,
     };

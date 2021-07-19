@@ -28,6 +28,7 @@ import QuillBlockExtended from './quill-format-block';
 import QuillFormatLinkExtended, { sanitize } from './quill-format-link';
 import ToolbarExtended from './quill-image-resize-toolbar';
 import { QuillViewStyle } from './RichViewer';
+import debounce from './util/debounce';
 import { dataImageToBlob } from './util/imageUtil';
 
 Quill.register('modules/imageResize', ImageResize, true);
@@ -299,7 +300,9 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   readonly editorContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
   readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
   readonly dropzoneRef: React.RefObject<DropzoneRef> = React.createRef();
+  inputIsFocused: boolean = false;
   isFocused: boolean = false;
+  handleFocusBlurDebounced: () => void;
 
   constructor(props) {
     super(props);
@@ -308,6 +311,50 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       showFormats: !!props.showControlsImmediately,
       showFormatsExtended: !!props.showControlsImmediately,
     };
+
+    this.handleFocusBlurDebounced = debounce(() => this.handleFocusBlur(), 100);
+  }
+
+  /**
+   * Focus and Blur events are tricky in Quill.
+   * 
+   * See:
+   * - https://github.com/quilljs/quill/issues/1680
+   * - https://github.com/zenoamaro/react-quill/issues/276
+   * 
+   * The solution attempts to solve these things:
+   * - Focus detection using Quill editor selection AND input selection
+   * - Spurious blur/focus flapping during clipboard paste
+   * - Spurious blur/focus flapping when link popper open and click into quill editor but not textarea directly
+   * - Keep focused during link popper changing
+   * 
+   * Outstanding issues:
+   * - On clipboard paste, editor intermittently loses focus. This is mitigated with a debounce,
+   *   but issue still occurrs occassionally if you continuously paste.
+   */
+  handleFocusBlur() {
+    const editor = this.editorRef.current?.getEditor();
+    if (!editor) return;
+    const inputHasFocus = !!this.inputIsFocused;
+    const editorHasSelection = !!editor.getSelection();
+    const linkChangeHasFocus = !!this.state.editLinkShow;
+    const hasFocus = inputHasFocus || editorHasSelection || linkChangeHasFocus;
+    if (!this.isFocused && hasFocus) {
+      this.isFocused = true;
+      if (!this.state.showFormats) {
+        this.setState({ showFormats: true });
+      }
+      this.props.onFocus?.({
+        editor,
+        stopPropagation: () => { },
+      });
+    } else if (this.isFocused && !hasFocus) {
+      this.isFocused = false;
+      this.props.onBlur?.({
+        editor,
+        stopPropagation: () => { },
+      });
+    }
   }
 
   focus(): void {
@@ -318,27 +365,28 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
     this.editorRef.current?.blur();
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.state.editLinkShow !== prevState.editLinkShow) {
+      this.handleFocusBlurDebounced();
+    }
+  }
+
   componentDidMount() {
     const editor = this.editorRef.current!.getEditor();
+
+    editor.root.addEventListener('focus', e => {
+      this.inputIsFocused = true;
+      this.handleFocusBlurDebounced();
+    });
+    editor.root.addEventListener('blur', e => {
+      this.inputIsFocused = false;
+      this.handleFocusBlurDebounced();
+    });
+
     editor.on('editor-change', (type, range) => {
       if (type === 'selection-change') {
         this.updateFormats(editor, range);
-      }
-      if (!this.isFocused && !!range) {
-        this.isFocused = true;
-        if (!this.state.showFormats) {
-          this.setState({ showFormats: true });
-        }
-        this.props.onFocus?.({
-          editor,
-          stopPropagation: () => { },
-        });
-      } else if (this.isFocused && !range) {
-        this.isFocused = false;
-        this.props.onBlur?.({
-          editor,
-          stopPropagation: () => { },
-        });
+        this.handleFocusBlurDebounced();
       }
     });
     editor.on('scroll-optimize' as any, () => {

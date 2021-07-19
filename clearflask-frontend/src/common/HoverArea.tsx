@@ -10,6 +10,7 @@ export const useHoverArea = (disableHoverBelow?: Breakpoint): [
   },
   isHovering: boolean,
   isHoverDisabled: boolean,
+  forceSetIsHovering: (isHovering: boolean) => void,
 ] => {
   const theme = useTheme();
   const matchesHoverDown = useMediaQuery(theme.breakpoints.down(disableHoverBelow || 'sm'));
@@ -21,7 +22,7 @@ export const useHoverArea = (disableHoverBelow?: Breakpoint): [
     onMouseOut: () => setIsHovering(false),
   };
 
-  return [hoverAreaProps, isHovering, isHoverDisabled];
+  return [hoverAreaProps, isHovering, isHoverDisabled, setIsHovering];
 };
 
 

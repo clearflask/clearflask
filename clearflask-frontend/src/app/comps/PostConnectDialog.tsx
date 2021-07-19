@@ -111,7 +111,7 @@ const styles = (theme: Theme) => createStyles({
     },
   },
   actionSelectedContainer: {
-    minWidth: 190,
+    minWidth: 210,
     borderLeft: `1px solid ${theme.palette.divider}`,
   },
   actionSelected: {
@@ -313,16 +313,11 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
 
   renderAction(type: 'link' | 'merge', selected: boolean = false): React.ReactNode {
     return (
-      <HelpPopper
-        className={classNames(
-          this.props.classes.action,
-          selected && this.props.classes.actionSelected,
-          !selected && this.props.classes.actionNotSelected,
-        )}
-        description={type === 'link'
-          ? 'Shows a link between two related posts. Typically used for linking related feedback to tasks or completed tasks to a changelog entry.'
-          : 'Merges one post to another including all comments, votes and subscribers. Typically used for merging duplicate or similar posts together.'}
-      >
+      <div className={classNames(
+        this.props.classes.action,
+        selected && this.props.classes.actionSelected,
+        !selected && this.props.classes.actionNotSelected,
+      )} >
         {type === 'link'
           ? (<LinkAltIcon fontSize='inherit' color='inherit' />)
           : (<MergeIcon fontSize='inherit' color='inherit' className={this.props.classes.mergeIcon} />)}
@@ -330,7 +325,12 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
         {type === 'link'
           ? 'Link'
           : 'Merge'}
-      </HelpPopper>
+        &nbsp;
+        <HelpPopper description={type === 'link'
+          ? 'Shows a link between two related posts. Typically used for linking related feedback to tasks or completed tasks to a changelog entry.'
+          : 'Merges one post to another including all comments, votes and subscribers. Typically used for merging duplicate or similar posts together.'}
+        />
+      </div>
     );
   }
 

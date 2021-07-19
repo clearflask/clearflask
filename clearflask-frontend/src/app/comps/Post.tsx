@@ -1333,33 +1333,53 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderTitle() {
     if (!this.props.idea) return null;
+    const idea = this.props.idea;
     return (
       <PostTitle
         variant={this.props.variant}
-        title={this.props.idea.title}
+        title={idea.title}
         titleTruncateLines={this.props.display?.titleTruncateLines}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
-        editable={this.canEdit() ? {
-          server: this.props.server,
-          post: this.props.idea,
-        } : undefined}
+        editable={this.canEdit() ? () => (
+          <PostEditTitleInline
+            server={this.props.server}
+            post={idea}
+            bare
+            TextFieldProps={{
+              autoFocus: true,
+            }}
+          >
+            {idea.title}
+          </PostEditTitleInline>
+        ) : undefined}
       />
     );
   }
 
   renderDescription() {
     if (!this.props.idea) return null;
+    const idea = this.props.idea;
     return (
       <PostDescription
         variant={this.props.variant}
-        description={this.props.idea.description}
+        description={idea.description}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
-        editable={this.canEdit() ? {
-          server: this.props.server,
-          post: this.props.idea,
-        } : undefined}
+        editable={this.canEdit() ? description => (
+          <PostEditDescriptionInline
+            server={this.props.server}
+            post={idea}
+            bare
+            forceOutline
+            noContentLabel={(
+              <Typography className={this.props.classes.noContentLabel}
+              >Add description</Typography>
+            )}
+          >
+            {description}
+          </PostEditDescriptionInline>
+        ) : undefined}
       />
     );
   }
@@ -1782,7 +1802,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
 export const PostTitle = (props: {
   variant: PostVariant;
-  editable?: React.ComponentProps<typeof PostEditTitleInline>;
+  editable?: (title: React.ReactNode) => React.ReactNode;
 } & Pick<Client.Idea, 'title'>
   & Partial<Pick<Client.PostDisplay, 'titleTruncateLines' | 'descriptionTruncateLines'>>
   & Pick<StateSettings, 'demoBlurryShadow'>
@@ -1790,25 +1810,14 @@ export const PostTitle = (props: {
   const classes = useStyles();
   if (!props.editable && !props.title) return null;
 
-  var title = props.variant === 'list'
+  var title: React.ReactNode = props.variant === 'list'
     ? (<TruncateEllipsis ellipsis='…' lines={props.titleTruncateLines}><div>{props.title}</div></TruncateEllipsis>)
     : props.title;
 
   if (props.editable) {
-    title = (
-      <PostEditTitleInline
-        bare
-        forceOutline
-        {...props.editable}
-        TextFieldProps={{
-          autoFocus: true,
-        }}
-      >
-        {title}
-      </PostEditTitleInline>
-    );
-  } else {
+    title = props.editable(title);
   }
+
   return (
     <div className={classes.titleContainer}>
       <Typography
@@ -1832,7 +1841,7 @@ export const PostTitle = (props: {
 
 export const PostDescription = (props: {
   variant: PostVariant,
-  editable?: React.ComponentProps<typeof PostEditDescriptionInline>;
+  editable?: (description: React.ReactNode) => React.ReactNode;
 } & Pick<Client.Idea, 'description'>
   & Partial<Pick<Client.PostDisplay, 'descriptionTruncateLines'>>
   & Pick<StateSettings, 'demoBlurryShadow'>
@@ -1843,7 +1852,7 @@ export const PostDescription = (props: {
     && props.descriptionTruncateLines <= 0)
     || (!props.editable && !props.description)) return null;
 
-  var description = !props.description ? undefined : (
+  var description: React.ReactNode = !props.description ? undefined : (
     <RichViewer
       key={props.description}
       iAgreeInputIsSanitized
@@ -1858,21 +1867,8 @@ export const PostDescription = (props: {
       </TruncateFade>
     );
   }
-
   if (props.editable) {
-    description = (
-      <PostEditDescriptionInline
-        bare
-        forceOutline
-        noContentLabel={(
-          <Typography variant='caption' className={classes.noContentLabel}
-          >Add description</Typography>
-        )}
-        {...props.editable}
-      >
-        {description}
-      </PostEditDescriptionInline>
-    );
+    description = props.editable(description);
   }
   return (
     <Typography variant='body1' component={'span'} className={classNames(

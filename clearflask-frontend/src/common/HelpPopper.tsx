@@ -16,6 +16,9 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(2),
     maxWidth: 500,
   },
+  popper: {
+    zIndex: theme.zIndex.tooltip + 1,
+  },
 });
 
 interface Props extends WithStyles<typeof styles, true> {
@@ -45,6 +48,7 @@ class HelpPopper extends Component<Props, State> {
           )}
         </Button>
         <Popper
+          className={this.props.classes.popper}
           open={!!this.state.open}
           anchorEl={this.state.open}
           placement='bottom'

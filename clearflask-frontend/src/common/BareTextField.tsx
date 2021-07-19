@@ -5,18 +5,20 @@ import React, { useState } from 'react';
 
 const styles = (theme: Theme) => createStyles({
   bareTextFieldRoot: {
-    display: 'unset',
+    display: 'block',
   },
   bareTextFieldInputRootPadding: {
     padding: '0px' + '!important',
   },
-  bareTextFieldInputRoot: {
-    '&::before': { content: 'none' },
-    '&::after': { content: 'none' },
+  bareTextFieldInputRootFontInherit: {
     fontSize: 'inherit',
     fontFamily: 'inherit',
     fontWeight: 'inherit',
     lineHeight: 'inherit',
+  },
+  bareTextFieldInputRoot: {
+    '&::before': { content: 'none' },
+    '&::after': { content: 'none' },
     verticalAlign: 'unset',
   },
   bareTextFieldInputInput: {
@@ -28,6 +30,8 @@ const useStyles = makeStyles(styles);
 export default function BareTextField(props: {
   autoFocusAndSelect?: boolean;
   forceOutline?: boolean;
+  suppressFontInherit?: boolean;
+  singlelineWrap?: boolean;
 } & React.ComponentProps<typeof TextField>) {
   const classes = useStyles();
   const [selectedOnMount, setSelectedOnMount] = useState<boolean | undefined>();
@@ -38,22 +42,23 @@ export default function BareTextField(props: {
       variant={props.forceOutline ? 'outlined' : 'standard'}
       label={undefined}
       margin='none'
-      onKeyDown={props.multiline ? props.onKeyDown : e => {
-        if (!props.multiline && e.keyCode == 13) {
+      onKeyDown={!props.singlelineWrap ? props.onKeyDown : e => {
+        if (props.singlelineWrap && !props.multiline && e.keyCode == 13) {
           // Disable enter in non-multiline
           e.preventDefault();
         } else {
           return props.onKeyDown?.(e);
         }
       }}
-      onChange={props.multiline ? props.onChange : e => {
-        if (!props.multiline) {
+      onChange={!props.singlelineWrap ? props.onChange : e => {
+        if (props.singlelineWrap && !props.multiline) {
           // Remove newlines in non-multiline
           e.target.value = e.target.value.replace(/\n/g, '');
         }
         return props.onChange?.(e);
       }}
-      multiline // Allow wrapping of text in non-multiline by always using multiline
+      // Allow wrapping of text in non-multiline by using multiline
+      multiline={props.multiline || props.singlelineWrap}
       classes={{
         ...props.classes,
         root: classNames(classes.bareTextFieldRoot, props.classes?.root),
@@ -70,6 +75,7 @@ export default function BareTextField(props: {
           ...props.InputProps?.classes,
           root: classNames(
             classes.bareTextFieldInputRoot,
+            !props.suppressFontInherit && classes.bareTextFieldInputRootFontInherit,
             !props.forceOutline && classes.bareTextFieldInputRootPadding,
             props.InputProps?.classes?.root),
           input: classNames(classes.bareTextFieldInputInput, props.InputProps?.classes?.input),

@@ -387,7 +387,7 @@ export const PostEditDescriptionInline = (props: {
   const [isSubmitting, setSubmitting] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  const clickToEdit = !!props.children;
+  const clickToEdit = !!props.children || !!props.noContentLabel;
   const changed = description !== undefined;
   return isEditing ? (
     <PostSaveButton
@@ -428,7 +428,7 @@ export const PostEditDescriptionInline = (props: {
       />
     </PostSaveButton>
   ) : (
-    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+    <ClickToEdit isEditing={isEditing} setIsEditing={setIsEditing}>
       {props.children || props.noContentLabel || null}
     </ClickToEdit>
   );
@@ -440,24 +440,30 @@ export const PostEditTitle = (props: {
   isSubmitting?: boolean;
   bare?: boolean;
   forceOutline?: boolean;
+  autoFocusAndSelect?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
-  const classes = useStyles();
+  const [value, setValue] = useDebounceProp<string | undefined>(
+    props.value,
+    newValue => props.onChange(newValue === undefined ? '' : newValue));
   const TextFieldCmpt = props.bare ? BareTextField : TextField;
   return (
     <TextFieldCmpt
       variant='outlined'
-      autoFocusAndSelect
       size='small'
       label='Title'
       fullWidth
-      value={props.value === undefined ? '' : props.value}
-      onChange={e => props.onChange(e.target.value)}
+      value={value === undefined ? '' : value}
+      onChange={e => setValue(e.target.value)}
       disabled={props.isSubmitting}
       inputProps={{
         maxLength: PostTitleMaxLength,
       }}
       {...{ forceOutline: props.forceOutline }}
+      {...(props.bare && {
+        autoFocusAndSelect: props.autoFocusAndSelect !== false,
+        singlelineWrap: true,
+      } as Partial<React.ComponentProps<typeof BareTextField>>)}
       {...props.TextFieldProps}
     />
   );
@@ -474,24 +480,30 @@ export const PostEditDescription = (props: {
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
+  const [value, setValue] = useDebounceProp<string | undefined>(
+    props.value,
+    newValue => props.onChange(newValue === undefined ? '' : newValue));
   return (
     <>
       <RichEditor
-        component={!!props.bare ? BareTextField : undefined}
         autoFocusAndSelect
         uploadImage={(file) => imageUploadRef.current!.uploadImage(file)}
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
-        label='Description'
+        label='Details (optional)'
         fullWidth
         iAgreeInputIsSanitized
-        value={props.value === undefined ? '' : props.value}
-        onChange={e => props.onChange(e.target.value)}
+        value={value === undefined ? '' : value}
+        onChange={e => setValue(e.target.value)}
         multiline
         rows={1}
         rowsMax={15}
-        {...{ forceOutline: props.forceOutline }}
+        component={!!props.bare ? BareTextField : undefined}
+        {...(props.bare ? {
+          forceOutline: props.forceOutline,
+          suppressFontInherit: true,
+        } as Partial<React.ComponentProps<typeof BareTextField>> : {}) as any}
         {...props.RichEditorProps}
       />
       <RichEditorImageUpload
@@ -827,20 +839,31 @@ export const PostSaveButton = (props: {
 
 
 export const ClickToEdit = (props: {
-  children: any;
+  children: React.ReactNode | ((isEditing: boolean) => React.ReactNode);
   isEditing?: boolean;
-  setIsEditing: (isEditing: boolean) => void;
+  setIsEditing?: (isEditing: boolean) => void;
 }) => {
   const classes = useStyles();
-  const [hoverAreaProps, isHovering, isHoverDisabled] = useHoverArea('sm');
+  const [hoverAreaProps, isHovering, isHoverDisabled, forceSetIsHovering] = useHoverArea('sm');
+  const [isEditingInternal, setIsEditingInternal] = useState<boolean>(false);
 
-  var content = props.children;
+  const setIsEditing = props.setIsEditing || setIsEditingInternal;
+  const isEditing = !!props.setIsEditing ? props.isEditing : isEditingInternal;
 
-  if (!props.isEditing) {
+  var content = typeof props.children === 'function'
+    ? props.children(!!isEditing)
+    : props.children;
+
+  if (!isEditing) {
     content = (
       <div
         className={classNames(classes.clickToEditContainer)}
-        onClick={() => props.setIsEditing(true)}
+        onClick={() => {
+          setIsEditing(true);
+          // Reset hover since we're taking it out of the dom
+          // and it would get stuck in hover once we stop editing
+          forceSetIsHovering(false);
+        }}
         {...hoverAreaProps}
       >
         <IconButton size='small' color='inherit' className={classNames(

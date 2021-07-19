@@ -109,6 +109,9 @@ const styles = (theme: Theme) => createStyles({
   dropdownIconWithoutTags: {
     color: theme.palette.text.hint,
   },
+  clearIndicatorNeverHide: {
+    visibility: 'visible',
+  },
 });
 interface Props {
   style?: React.CSSProperties;
@@ -153,6 +156,7 @@ interface Props {
   PopperProps?: Partial<React.ComponentProps<typeof Popper>>;
   clearOnBlur?: boolean;
   disableClearOnValueChange?: boolean;
+  clearIndicatorNeverHide?: boolean;
 
   // Below props are for backwards compatibility, use TextFieldProps instead
   label?: string;
@@ -376,6 +380,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
           popper: classNames(this.props.classes.popper, this.props.autocompleteClasses?.popper),
           listbox: classNames(this.props.classes.popperListbox, this.props.autocompleteClasses?.listbox),
           tag: classNames(this.props.classes.tag, this.props.autocompleteClasses?.tag),
+          clearIndicator: classNames(!!this.props.clearIndicatorNeverHide && this.props.classes.clearIndicatorNeverHide, this.props.autocompleteClasses?.clearIndicator),
         }}
         PopperComponent={getSelectionPopper(this.props.PopperProps)}
         renderInput={(params) => {
@@ -409,6 +414,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
                     ? (this.props.disableInput ? 0 : 50)
                     : this.props.inputMinWidth,
                   ...this.props.TextFieldProps?.inputProps?.style,
+                  maxHeight: this.props.disableInput ? 20 : undefined,
                 },
               }}
               InputProps={{
