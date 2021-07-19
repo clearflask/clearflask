@@ -192,15 +192,15 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
     };
   }
 
-  var roadmapSectionPreview: Section | undefined;
-  if (this.state.roadmapPreview?.type === 'create') {
-    roadmapSectionPreview = this.renderPreviewPostCreate(activeProject);
-  } else if (this.state.roadmapPreview?.type === 'post') {
-    roadmapSectionPreview = this.renderPreviewPost(this.state.roadmapPreview.id, activeProject);
-  }
-  if (roadmapSectionPreview) {
-    roadmapSectionPreview.breakAlways = true;
-  }
+
+  const roadmapSectionPreview = this.renderPreview({
+    project: activeProject,
+    stateKey: 'roadmapPreview',
+    createCategoryIds: [this.state.roadmap.categoryAndIndex.category.categoryId],
+    extra: {
+      breakAlways: true,
+    },
+  });
 
   const roadmapSection = renderRoadmapSection();
   const backlogSection = renderStatusSection(this.state.roadmap.statusIdBacklog);

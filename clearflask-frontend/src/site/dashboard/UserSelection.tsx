@@ -2,6 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
+import * as Client from '../../api/admin';
 import { ReduxState, Server, Status } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
@@ -21,6 +22,7 @@ interface Props {
   size?: 'small' | 'medium',
   disabled?: boolean;
   server: Server;
+  initialUserId?: string;
   onChange?: (userLabel?: Label) => void;
   suppressInitialOnChange?: boolean;
   allowCreate?: boolean;
@@ -32,12 +34,13 @@ interface Props {
   width?: string | number;
   minWidth?: string | number;
   maxWidth?: string | number;
-  alwaysOverrideWithLoggedInUser?: boolean;
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
 interface ConnectProps {
   loggedInUserStatus?: Status;
   loggedInUserLabel?: Label;
+  initialUserLabel?: Label;
+  callOnMount?: () => void,
 }
 interface State {
   input?: string;
@@ -47,15 +50,17 @@ interface State {
 }
 
 class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
   readonly searchUsers: (newValue: string) => void;
+  initialOnChangeEmitted: boolean;
 
   constructor(props) {
     super(props);
-    const selectedUserLabel = props.loggedInUserLabel;
-    this.state = { selectedUserLabel };
-    if (selectedUserLabel && !props.suppressInitialOnChange) {
-      props.onChange && props.onChange(selectedUserLabel);
-    }
+
+    this.props.callOnMount?.();
+
+    this.initialOnChangeEmitted = !!this.props.suppressInitialOnChange;
+
     const searchDebounced = debounce(
       (newValue: string) => this.props.server.dispatchAdmin()
         .then(d => d.userSearchAdmin({
@@ -81,28 +86,31 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
   render() {
     const seenUserIds: Set<string> = new Set();
     const options: Label[] = [];
-    const selectedUserLabel = this.props.alwaysOverrideWithLoggedInUser
-      ? this.props.loggedInUserLabel || this.state.selectedUserLabel
-      : this.state.selectedUserLabel;
 
-    if (!!this.state.selectedUserLabel) {
-      seenUserIds.add(this.state.selectedUserLabel.value);
-      options.push(this.state.selectedUserLabel);
+    const selectedUserLabel = this.state.selectedUserLabel || this.props.initialUserLabel;
+    if (!!selectedUserLabel && !this.initialOnChangeEmitted) {
+      this.initialOnChangeEmitted = true;
+      this.props.onChange?.(selectedUserLabel);
     }
 
-    if (!this.state.input && !!this.props.alwaysOverrideWithLoggedInUser && !!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
+    if (!!selectedUserLabel) {
+      seenUserIds.add(selectedUserLabel.value);
+      options.push(selectedUserLabel);
+    }
+
+    if (!this.state.input && !!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
       seenUserIds.add(this.props.loggedInUserLabel.value);
       options.push(this.props.loggedInUserLabel);
     }
 
-    this.state.options && this.state.options.forEach(option => {
+    const isSearching = this.state.searching !== undefined;
+    !isSearching && this.state.options?.forEach(option => {
       if (!seenUserIds.has(option.value)) {
         seenUserIds.add(option.value);
         options.push(option);
       }
     });
 
-    const isSearching = this.state.searching !== undefined;
     return (
       <SelectionPicker
         className={this.props.className}
@@ -112,7 +120,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
         formatHeader={inputValue => !inputValue && `Type to search`}
-        options={!isSearching ? options : []}
+        options={options}
         loading={isSearching}
         disableClearable={!this.props.allowClear}
         showTags
@@ -169,10 +177,10 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     );
   }
 
-  static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
+  static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe | Client.User): Label {
     const userLabel: Label = {
       label: (<UserWithAvatarDisplay user={user} maxChars={15} />),
-      filterString: `${user.name || 'Anonymous'} ${user.email || ''}`,
+      filterString: `${user.name || 'Anonymous'} ${user['email'] || ''}`,
       value: user.userId,
     };
     return userLabel;
@@ -180,9 +188,28 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  var callOnMount;
+  var initialUserLabel: Label | undefined;
+  if (ownProps.initialUserId) {
+    const initialUserId = ownProps.initialUserId;
+    const initialUser = state.users.byId[ownProps.initialUserId]?.user;
+    if (!initialUser) {
+      callOnMount = () => {
+        ownProps.server.dispatch().then(d => d.userGet({
+          projectId: ownProps.server.getProjectId(),
+          userId: initialUserId,
+        }));
+      };
+    } else {
+      initialUserLabel = UserSelection.mapUserToLabel(initialUser);
+    }
+  }
+
   const connectProps: ConnectProps = {
+    callOnMount,
     loggedInUserStatus: state.users.loggedIn.status,
     loggedInUserLabel: state.users.loggedIn.user ? UserSelection.mapUserToLabel(state.users.loggedIn.user) : undefined,
+    initialUserLabel,
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(UserSelection));

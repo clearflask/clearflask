@@ -305,10 +305,14 @@ components:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
         - type: object
           required:
+          - lastSaved
           - draftId
           properties:
             draftId:
               type: string
+            lastSaved:
+              type: string
+              format: date-time
     IdeaUpdate:
       type: object
       properties:
@@ -874,6 +878,26 @@ components:
                   items:
                     $ref: 'api-idea.yaml#/components/schemas/IdeaDraftAdmin'
 /project/{projectId}/admin/idea/draft/{draftId}:
+  get:
+    operationId: ideaDraftGetAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaDraftAdmin'
   patch:
     operationId: ideaDraftUpdateAdmin
     tags: [IdeaAdmin]
@@ -919,11 +943,15 @@ components:
     operationId: ideaCreateAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deleteDraftId
+      in: query
+      schema:
+        type: string
     requestBody:
       required: true
       content:

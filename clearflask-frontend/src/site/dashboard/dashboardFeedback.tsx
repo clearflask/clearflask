@@ -45,7 +45,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: close => {
             close();
             this.setState({
-              feedbackPreviewRight: { type: 'post', id: createdId, header: 'Created task' },
+              feedbackPreviewRight: { type: 'post', id: createdId, headerTitle: 'Created task' },
               previewShowOnPage: 'feedback',
             });
           },
@@ -60,7 +60,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: close => {
             close();
             this.setState({
-              feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Merged feedback' },
+              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Merged feedback' },
               previewShowOnPage: 'feedback',
             });
           },
@@ -75,7 +75,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: close => {
             close();
             this.setState({
-              feedbackPreviewRight: { type: 'post', id: to.postId, header: 'Linked task' },
+              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Linked task' },
               previewShowOnPage: 'feedback',
             });
           },
@@ -177,54 +177,64 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
     ),
   };
 
-  var sectionPreview: Section;
-  if (this.state.feedbackPreview?.type === 'create') {
-    sectionPreview = this.renderPreviewPostCreate(activeProject);
-  } else if (this.state.feedbackPreview?.type === 'post') {
-    sectionPreview = this.renderPreviewPost(this.state.feedbackPreview.id, activeProject);
-  } else {
-    sectionPreview = this.renderPreviewEmpty('No feedback selected', PostPreviewSize);
-  }
-  sectionPreview.collapseBottom = true;
-  sectionPreview.breakAction = 'show';
-  sectionPreview.header = {
-    title: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
-    middle: (
-      <Fade in={this.state.feedbackPreview?.type === 'post'}>
-        <div>
-          <IconButton
-            className={this.props.classes.feedbackNavigatorIcon}
-            disabled={!this.feedbackListRef.current?.hasPrevious()}
-            onClick={() => this.feedbackListRef.current?.previous()}
-          >
-            <PrevIcon fontSize='inherit' />
-          </IconButton>
-          <IconButton
-            className={this.props.classes.feedbackNavigatorIcon}
-            disabled={!this.feedbackListRef.current?.hasNext()}
-            onClick={() => this.feedbackListRef.current?.next()}
-          >
-            <NextIcon fontSize='inherit' />
-          </IconButton>
-        </div>
-      </Fade>
-    ),
-    action: { label: 'Create', onClick: () => this.pageClicked('post') },
-  };
+  const sectionPreview = this.renderPreview({
+    project: activeProject,
+    stateKey: 'feedbackPreview',
+    renderEmpty: 'No feedback selected',
+    createCategoryIds: this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : undefined,
+    extra: {
+      size: PostPreviewSize,
+      collapseBottom: true,
+      breakAction: 'show',
+      header: {
+        title: { title: 'Feedback', help: 'Explore feedback left by your users. Decide how to respond to each new feedback by dragging and dropping it into one of the buckets.' },
+        middle: (
+          <Fade in={this.state.feedbackPreview?.type === 'post'}>
+            <div>
+              <IconButton
+                className={this.props.classes.feedbackNavigatorIcon}
+                disabled={!this.feedbackListRef.current?.hasPrevious()}
+                onClick={() => this.feedbackListRef.current?.previous()}
+              >
+                <PrevIcon fontSize='inherit' />
+              </IconButton>
+              <IconButton
+                className={this.props.classes.feedbackNavigatorIcon}
+                disabled={!this.feedbackListRef.current?.hasNext()}
+                onClick={() => this.feedbackListRef.current?.next()}
+              >
+                <NextIcon fontSize='inherit' />
+              </IconButton>
+            </div>
+          </Fade>
+        ),
+        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+      },
+    },
+  });
 
-  var sectionPreviewRight: Section | undefined;
-  if (this.state.feedbackPreviewRight?.type === 'create') {
-    sectionPreviewRight = this.renderPreviewPostCreate(activeProject);
-    sectionPreviewRight.header = { title: { title: 'New task' } };
-  } else if (this.state.feedbackPreviewRight?.type === 'post') {
-    sectionPreviewRight = this.renderPreviewPost(this.state.feedbackPreviewRight.id, activeProject);
-    sectionPreviewRight.header = { title: { title: this.state.feedbackPreviewRight.header } };
-  }
-  if (sectionPreviewRight) {
-    sectionPreviewRight.name = 'preview2';
-    sectionPreviewRight.breakAlways = true;
-    sectionPreviewRight.breakAction = 'drawer';
-  }
+
+  const sectionPreviewRight = this.renderPreview({
+    project: activeProject,
+    stateKey: 'feedbackPreviewRight',
+    createCategoryIds: [
+      ...(this.state.feedback ? [this.state.feedback.categoryAndIndex.category.categoryId] : []),
+      ...(this.state.roadmap ? [this.state.roadmap.categoryAndIndex.category.categoryId] : []),
+    ],
+    extra: previewState => ({
+      name: 'preview2',
+      breakAlways: true,
+      breakAction: 'drawer',
+      ...(previewState?.type === 'create-post' ? {
+        header: { title: { title: 'New task' } },
+      } : {}),
+      size: PostPreviewSize,
+      header: {
+        title: { title: 'Changelog' },
+        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+      },
+    }),
+  });
 
   const feedbackFilters = (layoutState: LayoutState) => (
     <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
@@ -317,9 +327,9 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
   context.sections.push(sectionFilters);
   context.sections.push(sectionList);
   context.sections.push(sectionQuickActions);
-  context.sections.push(sectionPreview);
+  sectionPreview && context.sections.push(sectionPreview);
   context.sections.push(sectionRelated);
-  !!sectionPreviewRight && context.sections.push(sectionPreviewRight);
+  sectionPreviewRight && context.sections.push(sectionPreviewRight);
 
   context.showProjectLink = true;
 }

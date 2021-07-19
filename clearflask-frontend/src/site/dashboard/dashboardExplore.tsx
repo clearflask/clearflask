@@ -2,7 +2,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { Orientation } from '../../common/ContentScroll';
-import { LayoutState, Section } from '../../common/Layout';
+import { LayoutState } from '../../common/Layout';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
@@ -81,19 +81,19 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
     ),
   });
 
-  var preview: Section;
-  if (this.state.explorerPreview?.type === 'create') {
-    preview = this.renderPreviewPostCreate(activeProject);
-  } else if (this.state.explorerPreview?.type === 'post') {
-    preview = this.renderPreviewPost(this.state.explorerPreview.id, activeProject);
-  } else {
-    preview = this.renderPreviewEmpty('No post selected', PostPreviewSize);
-  }
-  preview.header = {
-    title: { title: 'Explore' },
-    action: { label: 'Create', onClick: () => this.pageClicked('post') },
-  };
-  context.sections.push(preview);
+  const preview = this.renderPreview({
+    project: activeProject,
+    stateKey: 'explorerPreview',
+    renderEmpty: 'No post selected',
+    extra: {
+      size: PostPreviewSize,
+      header: {
+        title: { title: 'Explore' },
+        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+      },
+    },
+  });
+  preview && context.sections.push(preview);
 
   context.showProjectLink = true;
 }

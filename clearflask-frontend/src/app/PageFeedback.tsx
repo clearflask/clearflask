@@ -96,7 +96,7 @@ const PageFeedback = (props: {
 }) => {
   const classes = useStyles();
   const loggedIn = useSelector<ReduxState, boolean>(state => !!state.users.loggedIn.user?.userId, shallowEqual);
-  const [onLogIn, setOnLogIn] = useState<(() => void) | undefined>();
+  const [onLogIn, setOnLogIn] = useState<((userId: string) => void) | undefined>();
   const [createdPostId, setCreatedPostId] = useState<string | undefined>();
   const [similarText, setSimilarText] = useState<string | undefined>();
   const [similarCount, setSimilarCount] = useState<number>(0);
@@ -123,7 +123,7 @@ const PageFeedback = (props: {
             mandatoryCategoryIds={[props.pageFeedback.categoryId]}
             searchSimilar={text => setSimilarText(text)}
             adminControlsDefaultVisibility='none'
-            logIn={() => new Promise(resolve => setOnLogIn(() => resolve))}
+            logInAndGetUserId={() => new Promise<string>(resolve => setOnLogIn(() => resolve))}
             unauthenticatedSubmitButtonTitle='Next'
             labelTitle={props.pageFeedback.labelTitle || 'Idea'}
             labelDescription={props.pageFeedback.labelDescription || 'Describe your idea (optional)'}
@@ -141,9 +141,9 @@ const PageFeedback = (props: {
               actionSubmitTitle='Submit'
               server={props.server}
               open={true}
-              onLoggedInAndClose={() => {
+              onLoggedInAndClose={userId => {
                 if (onLogIn) {
-                  onLogIn();
+                  onLogIn(userId);
                   setOnLogIn(undefined);
                 }
               }}

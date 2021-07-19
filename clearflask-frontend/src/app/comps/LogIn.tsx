@@ -99,7 +99,7 @@ export interface Props {
   server: Server;
   open?: boolean;
   onClose?: () => void;
-  onLoggedInAndClose: () => void;
+  onLoggedInAndClose: (userId: string) => void;
   inline?: boolean;
   minimalistic?: boolean;
   actionTitle?: string | React.ReactNode;
@@ -220,7 +220,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
 
     const doSubmit = async (): Promise<string | undefined> => {
       if (!!this.props.loggedInUser) {
-        this.props.onLoggedInAndClose();
+        this.props.onLoggedInAndClose(this.props.loggedInUser.userId);
         return this.props.loggedInUser.userId;
       }
       this.setState({ isSubmitting: true });
@@ -252,7 +252,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           })
         } else {
           this.setState({ isSubmitting: false });
-          this.props.onLoggedInAndClose();
+          if (userCreateResponse.user) {
+            this.props.onLoggedInAndClose(userCreateResponse.user.userId);
+          }
           return userCreateResponse.user?.userId;
         }
       } catch (e) {
@@ -572,7 +574,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         isSubmitting: false,
                         emailLoginDialog: undefined,
                       });
-                      this.props.onLoggedInAndClose();
+                      this.props.onLoggedInAndClose(user.userId);
                     }).catch(() => {
                       this.setState({ isSubmitting: false });
                     });
@@ -628,7 +630,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           isSubmitting: false,
                           emailVerifyDialog: undefined,
                         });
-                        this.props.onLoggedInAndClose();
+                        this.props.onLoggedInAndClose(userCreateResponse.user.userId);
                       }
                     }).catch(() => {
                       this.setState({ isSubmitting: false });

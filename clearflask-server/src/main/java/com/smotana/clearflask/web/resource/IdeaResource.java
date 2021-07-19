@@ -208,6 +208,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaStore.createIdea(ideaModel);
         }
 
+        if (deleteDraftId) {
+            TODO
+        }
+
         if (ideaCreateAdmin.getNotifySubscribers() != null) {
             notificationService.onPostCreated(project, ideaModel, ideaCreateAdmin.getNotifySubscribers(), user);
         }

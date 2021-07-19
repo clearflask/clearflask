@@ -94,7 +94,7 @@ interface ConnectProps {
 interface State {
   createOpen?: boolean;
   search?: Partial<Client.IdeaSearch>;
-  onLoggedIn?: () => void;
+  onLoggedIn?: (userId: string) => void;
   searchSimilar?: string;
   animateTitle?: string;
   animateDescription?: string;
@@ -256,7 +256,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           adminControlsDefaultVisibility={this.props.isDashboard ? 'expanded' : 'hidden'}
           titleInputRef={this.titleInputRef}
           searchSimilar={(text, categoryId) => this.setState({ searchSimilar: text })}
-          logIn={() => new Promise(resolve => this.setState({ onLoggedIn: resolve }))}
+          logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ onLoggedIn: resolve }))}
           onCreated={postId => {
             if (this.props.onClickPost) {
               this.props.onClickPost(postId);
@@ -272,9 +272,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           server={this.props.server}
           open={!!this.state.onLoggedIn}
           onClose={() => this.setState({ onLoggedIn: undefined })}
-          onLoggedInAndClose={() => {
+          onLoggedInAndClose={userId => {
             if (this.state.onLoggedIn) {
-              this.state.onLoggedIn();
+              this.state.onLoggedIn(userId);
               this.setState({ onLoggedIn: undefined });
             }
           }}

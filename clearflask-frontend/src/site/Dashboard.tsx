@@ -85,6 +85,21 @@ export type ShowSnackbar = (props: ShowSnackbarProps) => void;
 
 export type OpenPost = (postId?: string, redirectPage?: string) => void;
 
+type PreviewState = {
+  type: 'create-post',
+  draftId?: string
+} | {
+  type: 'post',
+  id: string,
+  headerTitle?: string
+} | {
+  type: 'create-user',
+  draftId?: string
+} | {
+  type: 'user',
+  id: string,
+};
+
 export interface DashboardPageContext {
   activeProject?: AdminProject;
   sections: Array<Section>;
@@ -271,18 +286,18 @@ interface State {
   // to persist between page clicks
   settingsPreviewChanges?: 'live' | 'code';
   explorerPostSearch?: AdminClient.IdeaSearchAdmin;
-  explorerPreview?: { type: 'create' } | { type: 'post', id: string },
+  explorerPreview?: PreviewState,
   feedbackPostSearch?: AdminClient.IdeaSearchAdmin;
-  feedbackPreview?: { type: 'create' } | { type: 'post', id: string },
-  feedbackPreviewRight?: { type: 'create' } | { type: 'post', id: string, header: string },
+  feedbackPreview?: PreviewState,
+  feedbackPreviewRight?: PreviewState,
   roadmapPostSearch?: AdminClient.IdeaSearchAdmin;
-  roadmapPreview?: { type: 'create' } | { type: 'post', id: string },
+  roadmapPreview?: PreviewState,
   changelogPostSearch?: AdminClient.IdeaSearchAdmin;
-  changelogPreview?: { type: 'create' } | { type: 'post' | 'draft', id: string },
+  changelogPreview?: PreviewState,
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
-  usersPreview?: { type: 'create' } | { type: 'user', id: string },
-  postCreateOnLoggedIn?: () => void;
+  usersPreview?: PreviewState,
+  postCreateOnLoggedIn?: (userId: string) => void;
   // Below is state for various template options that are updated after publish
   // Null means, we received it, but its not present, undefined means we are still waiting
   landing?: LandingInstance | null;
@@ -899,14 +914,47 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     return versionedConfigAdmin;
   }
 
-  renderPreviewPost(postId: string, project?: AdminProject): Section {
-    if (!project) {
-      return this.renderPreviewEmpty('No project selected');
+  renderPreview(preview: {
+    project?: AdminProject
+    stateKey: keyof State,
+    renderEmpty?: string,
+    extra?: Partial<Section> | ((previewState: PreviewState | undefined) => Partial<Section>),
+    createCategoryIds?: string[],
+    createAllowDrafts?: boolean,
+  }): Section | null {
+    if (!preview.project) {
+      return preview.renderEmpty ? this.renderPreviewEmpty('No project selected') : null;
     }
+    const previewState = this.state[preview.stateKey] as PreviewState | undefined;
+    var section;
+    if (!previewState) {
+      section = preview.renderEmpty !== undefined ? this.renderPreviewEmpty(preview.renderEmpty) : null;
+    } else if (previewState.type === 'create-post') {
+      section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts);
+    } else if (previewState.type === 'post') {
+      section = this.renderPreviewPost(previewState.id, preview.project, previewState.headerTitle);
+    } else if (previewState.type === 'create-user') {
+      section = this.renderPreviewUserCreate(preview.project);
+    } else if (previewState.type === 'user') {
+      section = this.renderPreviewUser(previewState.id, preview.project);
+    }
+    if (section && preview.extra) {
+      section = {
+        ...section,
+        ...(typeof preview.extra === 'function' ? preview.extra(previewState) : preview.extra),
+      };
+    }
+    return section;
+  }
+
+  renderPreviewPost(postId: string, project: AdminProject, headerTitle?: string): Section {
     return {
       name: 'preview',
       breakAction: 'drawer',
       size: PostPreviewSize,
+      ...(headerTitle ? {
+        header: { title: { title: headerTitle } },
+      } : {}),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
           <DashboardPost
@@ -937,7 +985,13 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     };
   }
 
-  renderPreviewPostCreate(project?: AdminProject): Section {
+  renderPreviewPostCreate(
+    stateKey: string,
+    project?: AdminProject,
+    draftId?: string,
+    mandatoryCategoryIds?: string[],
+    allowDrafts?: boolean,
+  ): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
@@ -950,17 +1004,25 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           <PostCreateForm
             server={project.server}
             type='post'
+            mandatoryCategoryIds={mandatoryCategoryIds}
             adminControlsDefaultVisibility='expanded'
-            logIn={() => new Promise(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
+            logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
+            draftId={draftId}
+            onDraftCreated={allowDrafts ? draft => {
+              this.setState({ [stateKey]: { type: 'create-post', draftId: draft.draftId } as PreviewState } as any);
+            } : undefined}
+            onDiscarded={(allowDrafts || !!draftId) ? () => {
+              this.setState({ [stateKey]: undefined } as any);
+            } : undefined}
           />
           <LogIn
             actionTitle='Get notified of replies'
             server={project.server}
             open={!!this.state.postCreateOnLoggedIn}
             onClose={() => this.setState({ postCreateOnLoggedIn: undefined })}
-            onLoggedInAndClose={() => {
+            onLoggedInAndClose={userId => {
               if (this.state.postCreateOnLoggedIn) {
-                this.state.postCreateOnLoggedIn();
+                this.state.postCreateOnLoggedIn(userId);
                 this.setState({ postCreateOnLoggedIn: undefined });
               }
             }}
@@ -1082,7 +1144,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       const activePath = redirectPath || this.props.match.params['path'] || '';
       const preview: State['explorerPreview'] & State['feedbackPreview'] & State['roadmapPreview'] = !!postId
         ? { type: 'post', id: postId }
-        : { type: 'create' };
+        : { type: 'create-post' };
       if (activePath === 'feedback') {
         this.setState({
           // previewShowOnPage: 'feedback', // Always shown 
@@ -1114,7 +1176,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         previewShowOnPage: 'users',
         usersPreview: !!subPath[0]
           ? { type: 'user', id: subPath[0] + '' }
-          : { type: 'create' },
+          : { type: 'create-user' },
       }, () => this.props.history.push('/dashboard/users'));
     } else {
       this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);

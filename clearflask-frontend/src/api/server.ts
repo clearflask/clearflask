@@ -31,7 +31,10 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
-type AllActions = Admin.Actions | Client.Actions | updateSettingsAction | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction;
+type AllActions = Admin.Actions | Client.Actions
+  | updateSettingsAction
+  | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction
+  | draftSearchResultAddDraftAction;
 
 export class Server {
   static storesState: StoresState | undefined;
@@ -768,6 +771,13 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
   }
 }
 
+interface draftSearchResultAddDraftAction {
+  type: 'draftSearchResultAddDraft';
+  payload: {
+    searchKey: string;
+    draftId: string;
+  };
+}
 export interface StateDrafts {
   byId: {
     [draftId: string]: {
@@ -777,7 +787,7 @@ export interface StateDrafts {
   };
   // TODO eventually we should invalidate these searches over time
   bySearch: {
-    [filterCategoryId: string]: {
+    [searchKey: string]: {
       status: Status,
       draftIds?: string[],
       cursor?: string,
@@ -791,6 +801,21 @@ const stateDraftsDefault = {
 function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActions): StateDrafts {
   var searchKey;
   switch (action.type) {
+    case 'draftSearchResultAddDraft':
+      searchKey = action.payload.searchKey;
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            draftIds: [
+              action.payload.draftId,
+              ...(state.bySearch[searchKey]?.draftIds || []),
+            ],
+          }
+        },
+      };
     case Admin.ideaDraftCreateAdminActionStatus.Fulfilled:
       return {
         ...state,
@@ -803,19 +828,53 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
         },
       };
     case Admin.ideaDraftDeleteAdminActionStatus.Fulfilled:
-      const { [action.meta.request.draftId]: removedDraft, ...byIdWithoutDeleted } = state.byId;
+    case Admin.ideaCreateAdminActionStatus.Fulfilled:
+      const draftIdToDelete = action.type === Admin.ideaDraftDeleteAdminActionStatus.Fulfilled
+        ? action.meta.request.draftId
+        : action.meta.request.deleteDraftId
+      if (!draftIdToDelete) return state;
+      const { [draftIdToDelete]: removedDraft, ...byIdWithoutDeleted } = state.byId;
       return {
         ...state,
         byId: byIdWithoutDeleted,
       };
+    case Admin.ideaDraftGetAdminActionStatus.Pending:
+    case Admin.ideaDraftUpdateAdminActionStatus.Pending:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.draftId]: {
+            ...state.byId[action.meta.request.draftId],
+            status: Status.PENDING,
+          },
+        },
+      };
+    case Admin.ideaDraftGetAdminActionStatus.Rejected:
+    case Admin.ideaDraftUpdateAdminActionStatus.Rejected:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.draftId]: {
+            ...state.byId[action.meta.request.draftId],
+            status: Status.REJECTED,
+          },
+        },
+      };
+    case Admin.ideaDraftGetAdminActionStatus.Fulfilled:
     case Admin.ideaDraftUpdateAdminActionStatus.Fulfilled:
+      const draft = action.type === Admin.ideaDraftUpdateAdminActionStatus.Fulfilled
+        ? action.meta.request.ideaCreateAdmin
+        : action.payload;
       return {
         ...state,
         byId: {
           ...state.byId,
           [action.meta.request.draftId]: {
             draft: {
-              ...action.meta.request.ideaCreateAdmin,
+              lastSaved: new Date(),
+              ...draft,
               draftId: action.meta.request.draftId,
             },
             status: Status.FULFILLED,

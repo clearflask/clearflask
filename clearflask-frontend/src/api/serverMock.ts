@@ -856,6 +856,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ideaId: idea.ideaId,
       vote: Client.VoteOption.Upvote,
     });
+    if (request.deleteDraftId) {
+      const deleteDraftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.deleteDraftId);
+      if (deleteDraftIndex !== -1) {
+        this.getProject(request.projectId).drafts.splice(deleteDraftIndex, 1);
+      }
+    }
     return this.returnLater({
       ...idea,
       vote: {
@@ -865,7 +871,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
     const ideaIndex = this.getProject(request.projectId).ideas.findIndex(idea => idea.ideaId === request.ideaId);
-    if (ideaIndex) {
+    if (ideaIndex !== -1) {
       this.getProject(request.projectId).ideas.splice(ideaIndex, 1);
     }
     return this.returnLater();
@@ -973,10 +979,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDraftCreateAdmin(request: Admin.IdeaDraftCreateAdminRequest): Promise<Admin.IdeaDraftAdmin> {
     const draft: Admin.IdeaDraftAdmin = {
       ...request.ideaCreateAdmin,
+      lastSaved: new Date(),
       draftId: randomUuid(),
     };
     this.getProject(request.projectId).drafts.unshift(draft);
     return this.returnLater(draft);
+  }
+  ideaDraftGetAdmin(request: Admin.IdeaDraftGetAdminRequest): Promise<Admin.IdeaDraftAdmin> {
+    return this.returnLater(this.getProject(request.projectId).drafts
+      .find(draft => request.draftId === draft.draftId));
   }
   ideaDraftSearchAdmin(request: Admin.IdeaDraftSearchAdminRequest): Promise<Admin.IdeaDraftSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).drafts
@@ -986,18 +997,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaDraftUpdateAdmin(request: Admin.IdeaDraftUpdateAdminRequest): Promise<void> {
     const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
-    if (!draftIndex) return this.throwLater(404, 'Draft not found');
+    if (draftIndex === -1) return this.throwLater(404, 'Draft not found');
     const draftId = this.getProject(request.projectId).drafts.find(draft => draft.draftId === request.draftId)?.draftId;
     if (!draftId) return this.throwLater(404, 'Draft not found');
     this.getProject(request.projectId).drafts[draftIndex] = {
       ...request.ideaCreateAdmin,
+      lastSaved: new Date(),
       draftId,
     };
     return this.returnLater();
   }
   ideaDraftDeleteAdmin(request: Admin.IdeaDraftDeleteAdminRequest): Promise<void> {
     const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
-    if (!draftIndex) return this.throwLater(404, 'Draft not found');
+    if (draftIndex === -1) return this.throwLater(404, 'Draft not found');
     this.getProject(request.projectId).ideas.splice(draftIndex, 1);
     return this.returnLater();
   }

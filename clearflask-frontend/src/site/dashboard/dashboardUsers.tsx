@@ -2,7 +2,6 @@ import { Divider } from '@material-ui/core';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Orientation } from '../../common/ContentScroll';
-import { Section } from '../../common/Layout';
 import UserFilterControls from '../../common/search/UserFilterControls';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, UserPreviewSize } from "../Dashboard";
@@ -62,19 +61,20 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
     ),
   });
 
-  var previewUser: Section;
-  if (this.state.usersPreview?.type === 'create') {
-    previewUser = this.renderPreviewUserCreate(activeProject);
-  } else if (this.state.usersPreview?.type === 'user') {
-    previewUser = this.renderPreviewUser(this.state.usersPreview.id, activeProject);
-  } else {
-    previewUser = this.renderPreviewEmpty('No user selected', UserPreviewSize);
-  }
-  previewUser.header = {
-    title: { title: 'Users' },
-    action: { label: 'Add', onClick: () => this.pageClicked('user') },
-  };
-  context.sections.push(previewUser);
+  const previewUser = this.renderPreview({
+    project: activeProject,
+    stateKey: 'usersPreview',
+    renderEmpty: 'No user selected',
+    extra: {
+      size: UserPreviewSize,
+      header: {
+        title: { title: 'Users' },
+        action: { label: 'Add', onClick: () => this.pageClicked('user') },
+      },
+    },
+  });
+
+  previewUser && context.sections.push(previewUser);
 
   context.showProjectLink = true;
 }

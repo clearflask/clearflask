@@ -139,7 +139,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     }));
   }
   const connectProps: ConnectProps = {
-    callOnMount: callOnMount,
+    callOnMount,
     userId: userId,
     notifications: state.notifications.notificationSearch.notifications,
     getNextNotifications: getNextNotifications,

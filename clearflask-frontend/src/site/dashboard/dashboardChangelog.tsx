@@ -3,7 +3,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { Orientation } from '../../common/ContentScroll';
-import { LayoutState, Section } from '../../common/Layout';
+import { LayoutState } from '../../common/Layout';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
@@ -81,9 +81,9 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
                 showDrafts: {
                   onClickDraft: draftId => this.setState({
                     previewShowOnPage: 'changelog',
-                    changelogPreview: { type: 'draft', id: draftId },
+                    changelogPreview: { type: 'create-post', draftId },
                   }),
-                  selectedDraftId: this.state.changelogPreview?.type === 'draft' ? this.state.changelogPreview.id : undefined,
+                  selectedDraftId: this.state.changelogPreview?.type === 'create-post' ? this.state.changelogPreview.draftId : undefined,
                 },
               }}
             />
@@ -93,19 +93,21 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
     ),
   });
 
-  var preview: Section;
-  if (this.state.changelogPreview?.type === 'create') {
-    preview = this.renderPreviewPostCreate(activeProject);
-  } else if (this.state.changelogPreview?.type === 'post') {
-    preview = this.renderPreviewPost(this.state.changelogPreview.id, activeProject);
-  } else {
-    preview = this.renderPreviewEmpty('No entry selected', PostPreviewSize);
-  }
-  preview.header = {
-    title: { title: 'Changelog' },
-    action: { label: 'Create', onClick: () => this.pageClicked('post') },
-  };
-  context.sections.push(preview);
+  const preview = this.renderPreview({
+    project: activeProject,
+    stateKey: 'changelogPreview',
+    renderEmpty: 'No entry selected',
+    createCategoryIds: this.state.changelog ? [this.state.changelog.categoryAndIndex.category.categoryId] : undefined,
+    createAllowDrafts: true,
+    extra: {
+      size: PostPreviewSize,
+      header: {
+        title: { title: 'Changelog' },
+        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+      },
+    },
+  });
+  preview && context.sections.push(preview);
 
   context.showProjectLink = true;
 }
