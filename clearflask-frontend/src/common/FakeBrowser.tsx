@@ -1,7 +1,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React from 'react';
-import { LightAsync as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import highlightLanguageHtml from 'react-syntax-highlighter/dist/esm/languages/hljs/htmlbars';
 import highlightStyleDark from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-dark';
 import highlightStyleLight from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-light';

@@ -363,7 +363,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
-        if (ideaId == parentIdeaId) {
+        if (ideaId.equals(parentIdeaId)) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Cannot connect to itself");
         }
         ImmutableMap<String, IdeaModel> ideas = getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
@@ -916,7 +916,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
         if ((ideaUpdateAdmin.getResponse() != null || ideaUpdateAdmin.getStatusId() != null)) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseEdited")
-                    .put(ideaSchema.toDynamoValue("responseEdited", Instant.now().getEpochSecond())));
+                    .put(ideaSchema.toDynamoValue("responseEdited", Instant.now())));
             if (responseAuthor.isPresent()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId")
                         .put(ideaSchema.toDynamoValue("responseAuthorUserId", responseAuthor.get().getUserId())));
@@ -961,8 +961,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     .put(ideaSchema.toDynamoValue("fundGoal", ideaUpdateAdmin.getFundGoal())));
             indexUpdates.put("fundGoal", ideaUpdateAdmin.getFundGoal());
         }
-
-        updateItemSpec.withConditionExpression("attribute_not_exists(mergedToPostId)");
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 

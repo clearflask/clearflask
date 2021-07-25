@@ -300,6 +300,10 @@ components:
                   type: string
                 body:
                   type: string
+            linkedFromPostIds:
+              type: array
+              items:
+                type: string
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'

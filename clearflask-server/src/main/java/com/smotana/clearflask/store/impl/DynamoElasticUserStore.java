@@ -70,6 +70,7 @@ import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -78,7 +79,6 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
-import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
@@ -1219,6 +1219,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .getUser());
         }
         return userOpt.get();
+    }
+
+    @Override
+    public UserModel createOrGet(String projectId, AccountStore.Account account) {
+        return createOrGet(projectId, account.getAccountId(), Optional.of(account.getEmail()), Optional.of(account.getName()));
     }
 
     @Extern

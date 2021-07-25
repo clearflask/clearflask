@@ -4,7 +4,9 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import { notEmpty } from '../../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 const styles = (theme: Theme) => createStyles({
   createFormField: {
@@ -20,7 +22,10 @@ interface Props {
   size?: 'small' | 'medium',
   disabled?: boolean;
   server: Server;
-  onChange?: (userLabel?: Label) => void;
+  isMulti?: boolean;
+  initialSelectAny?: boolean;
+  initialPostIds?: string[];
+  onChange?: (postIds: string[]) => void;
   suppressInitialOnChange?: boolean;
   searchIfEmpty?: boolean;
   allowClear?: boolean;
@@ -34,65 +39,70 @@ interface Props {
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
 interface ConnectProps {
-  anyIdeaLabel?: Label;
+  callOnMount?: () => void,
+  initialPostLabels?: Label[];
+  anyPostLabel?: Label;
 }
 interface State {
   input?: string;
-  selectedLabel?: Label;
+  selectedLabels?: Label[];
   options?: Label[];
   searching?: string;
 }
 
 class PostSelection extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
-  readonly searchPosts: (newValue: string) => void;
+  state: State = {};
+  readonly searchDebounced: (newValue: string) => void;
+  anyLabelOnChangeCalled = false;
 
   constructor(props) {
     super(props);
-    const selectedLabel = props.anyIdeaLabel;
-    if (selectedLabel && !props.suppressInitialOnChange) {
-      props.onChange && props.onChange(selectedLabel);
-    }
-    const search = (newValue: string, setInitial?: boolean) => this.props.server.dispatch()
-      .then(d => d.ideaSearch({
-        projectId: this.props.server.getProjectId(),
-        ideaSearch: { searchText: newValue },
-      }))
-      .then(results => {
-        const labels = results.results.map(PostSelection.mapPostToLabel);
-        const setInitialLabel = (setInitial && !this.state.selectedLabel) ? labels[0] : undefined;
-        if (setInitialLabel) {
-          this.props.onChange && this.props.onChange(setInitialLabel);
-        }
-        this.setState({
-          options: labels,
-          ...(setInitialLabel ? { selectedLabel: setInitialLabel } : {}),
-          ...(this.state.searching === newValue ? { searching: undefined } : {}),
-        });
-      }).catch(e => {
-        if (this.state.searching === newValue) this.setState({ searching: undefined });
-      });
-    const searchDebounced = debounce(search, SearchTypeDebounceTime);
-    this.searchPosts = newValue => {
+
+    this.searchDebounced = debounce(async (newValue: string) => {
       this.setState({ searching: newValue });
-      searchDebounced(newValue);
-    }
-    if (!selectedLabel && props.searchIfEmpty) {
-      this.state = { searching: '' };
-      search('', true);
-    } else {
-      this.state = { selectedLabel };
+      try {
+        const ideaSearchResponse = await (await this.props.server.dispatch()).ideaSearch({
+          projectId: this.props.server.getProjectId(),
+          ideaSearch: { searchText: newValue },
+        });
+        if (this.state.searching === newValue) {
+          const labels = ideaSearchResponse.results.map(idea => PostSelection.mapPostToLabel(idea, this.props.isMulti));
+          this.setState({
+            options: labels,
+            searching: undefined,
+          });
+        }
+      } catch (e) {
+        if (this.state.searching === newValue) {
+          this.setState({ searching: undefined });
+        }
+      }
+    }, SearchTypeDebounceTime);
+  }
+
+  componentDidMount() {
+    this.props.callOnMount?.();
+
+    if (this.props.searchIfEmpty && this.state.searching === undefined) {
+      this.searchDebounced('');
     }
   }
 
   render() {
-    const seenIds: Set<string> = new Set();
-    const options: Label[] = [];
-    const selectedLabel = this.state.selectedLabel;
-
-    if (!!this.state.selectedLabel) {
-      seenIds.add(this.state.selectedLabel.value);
-      options.push(this.state.selectedLabel);
+    var selectedPostLabels: Label[] | undefined;
+    if (this.state.selectedLabels !== undefined) {
+      selectedPostLabels = this.state.selectedLabels;
+    } else if (this.props.initialPostLabels !== undefined) {
+      selectedPostLabels = this.props.initialPostLabels;
+    } else if (this.props.anyPostLabel) {
+      selectedPostLabels = [this.props.anyPostLabel];
+      if (!this.anyLabelOnChangeCalled) {
+        this.anyLabelOnChangeCalled = true;
+        this.props.onChange?.([this.props.anyPostLabel.value]);
+      }
     }
+    const seenIds: Set<string> = new Set((selectedPostLabels || []).map(l => l.value));
+    const options: Label[] = [...(selectedPostLabels || [])];
 
     this.state.options && this.state.options.forEach(option => {
       if (!seenIds.has(option.value)) {
@@ -107,13 +117,13 @@ class PostSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         label={this.props.label}
         placeholder={this.props.placeholder}
         helperText={this.props.helperText}
-        errorMsg={!selectedLabel && this.props.errorMsg || undefined}
-        value={selectedLabel ? [selectedLabel] : []}
+        errorMsg={!selectedPostLabels?.length && this.props.errorMsg || undefined}
         options={options}
         loading={this.state.searching !== undefined}
         disableClearable={!this.props.allowClear}
         showTags
-        bareTags
+        isMulti={this.props.isMulti}
+        bareTags={!this.props.isMulti}
         disableFilter
         inputMinWidth={0}
         width={this.props.width}
@@ -126,22 +136,22 @@ class PostSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           if (this.state.options === undefined
             && this.state.searching === undefined
             && this.state.input === undefined) {
-            this.searchPosts('');
+            this.searchDebounced('');
           }
         }}
         onInputChange={(newValue, reason) => {
           this.setState({ input: newValue });
           if (reason === 'input') {
-            this.searchPosts(newValue);
+            this.searchDebounced(newValue);
           }
         }}
+        value={selectedPostLabels || []}
         onValueChange={(labels) => {
-          var selectedLabel: Label | undefined = labels[0];
           this.setState({
-            selectedLabel: selectedLabel,
+            selectedLabels: labels,
             input: undefined,
           })
-          this.props.onChange && this.props.onChange(selectedLabel);
+          this.props.onChange?.(labels.map(label => label.value));
         }}
         {...this.props.SelectionPickerProps}
         TextFieldProps={{
@@ -153,9 +163,9 @@ class PostSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     );
   }
 
-  static mapPostToLabel(post: Client.Idea): Label {
+  static mapPostToLabel(post: Client.Idea, isMulti?: boolean): Label {
     const label: Label = {
-      label: post.title,
+      label: truncateWithElipsis(isMulti ? 30 : 50, post.title),
       value: post.ideaId,
     };
     return label;
@@ -163,9 +173,36 @@ class PostSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
-  const anyIdea = state.ideas.byId[0]?.idea;
+  var callOnMount;
+  var initialPostLabels: Label[] | undefined;
+  if (ownProps.initialPostIds) {
+    initialPostLabels = [];
+    const missingPostIds = ownProps.initialPostIds.map(postId => {
+      const post = state.ideas.byId[postId]?.idea;
+      if (post) {
+        initialPostLabels?.push(PostSelection.mapPostToLabel(post, ownProps.isMulti))
+        return undefined;
+      } else {
+        return postId;
+      }
+    }).filter(notEmpty) || [];
+    if (!missingPostIds.length) {
+      callOnMount = () => ownProps.server.dispatch().then(d => d.ideaGetAll({
+        projectId: state.projectId!,
+        ideaGetAll: {
+          postIds: missingPostIds,
+        },
+      }));
+    }
+  }
+
+  const anyPost = ownProps.initialSelectAny && Object.values(state.ideas.byId).find(post => !!post.idea)?.idea;
+  const anyPostLabel = anyPost ? PostSelection.mapPostToLabel(anyPost, ownProps.isMulti) : undefined;
+
   const connectProps: ConnectProps = {
-    anyIdeaLabel: anyIdea ? PostSelection.mapPostToLabel(anyIdea) : undefined,
+    callOnMount,
+    initialPostLabels,
+    anyPostLabel,
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(PostSelection));

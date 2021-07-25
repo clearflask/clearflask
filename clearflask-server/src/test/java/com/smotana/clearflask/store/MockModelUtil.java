@@ -55,6 +55,7 @@ public class MockModelUtil {
                 textToSimpleHtml("response"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
+                Instant.now(),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
@@ -68,7 +69,8 @@ public class MockModelUtil {
                 0d,
                 ImmutableMap.of(),
                 0d,
-                null,
+                ImmutableSet.of(),
+                ImmutableSet.of(),
                 null,
                 null,
                 null);

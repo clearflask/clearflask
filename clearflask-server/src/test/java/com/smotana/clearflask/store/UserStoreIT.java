@@ -32,7 +32,6 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -298,8 +297,8 @@ public class UserStoreIT extends AbstractIT {
                 .build());
         assertEquals(
                 ImmutableList.of(
-                        new HistogramResponsePoints(nowDate.minusDays(3), BigDecimal.valueOf(2L)),
-                        new HistogramResponsePoints(nowDate.minusDays(1), BigDecimal.valueOf(1L))),
+                        new HistogramResponsePoints(nowDate.minusDays(3), 2L),
+                        new HistogramResponsePoints(nowDate.minusDays(1), 1L)),
                 histogram.getPoints());
         assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
     }

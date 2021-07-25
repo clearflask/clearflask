@@ -134,13 +134,13 @@ class Main extends Component<Props> {
                 >
                   <ScrollAnchor scrollOnNavigate />
                   {isTracking() && (
-                    <Route path='/' render={({ location }) => {
-                      ReactGA.set({ page: location.pathname + location.search });
-                      ReactGA.pageview(location.pathname + location.search);
+                    <Route path='/' render={routeProps => {
+                      ReactGA.set({ page: routeProps.location.pathname + routeProps.location.search });
+                      ReactGA.pageview(routeProps.location.pathname + routeProps.location.search);
                       return null;
                     }} />
                   )}
-                  <Route render={({ location }) => location.pathname.startsWith('/embed-status') ? null : (
+                  <Route render={routeProps => routeProps.location.pathname.startsWith('/embed-status') ? null : (
                     <EnvironmentNotifier key='env-notifier' />
                   )} />
                   <Switch>

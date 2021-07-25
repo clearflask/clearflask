@@ -1,14 +1,4 @@
-// import {
-//   withQueryParams,
-//   StringParam,
-//   NumberParam,
-//   ArrayParam,
-//   withDefault,
-//   DecodedValueMap,
-//   SetQuery,
-//   QueryParamConfig,
-// } from 'use-query-params';
-import { Button, DialogActions, FormControlLabel, Grid, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -17,14 +7,18 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import BareTextField from '../../common/BareTextField';
+import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
+import PostSelection from '../../site/dashboard/PostSelection';
 import UserSelection from '../../site/dashboard/UserSelection';
 import CategorySelect from './CategorySelect';
-import { OutlinePostContent } from './ConnectedPost';
+import { ConnectedPostById, ConnectedPostsContainer, OutlinePostContent } from './ConnectedPost';
+import MyButton from './MyButton';
 import { MaxContentWidth, MinContentWidth, PostDescription, PostTitle } from './Post';
+import PostConnectDialog from './PostConnectDialog';
 import { ClickToEdit, PostEditDescription, PostEditTitle } from './PostEdit';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
@@ -53,6 +47,9 @@ const styles = (theme: Theme) => createStyles({
   postTitleDesc: {
     margin: theme.spacing(0.5),
   },
+  postUser: {
+    paddingTop: theme.spacing(1),
+  },
   postFooter: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -79,6 +76,17 @@ const styles = (theme: Theme) => createStyles({
   postNotifyEnvelope: {
     margin: theme.spacing(4),
     rowGap: theme.spacing(2),
+    maxWidth: 'max-content',
+  },
+  postNotifyAndLink: {
+    display: 'flex',
+    flexWrap: 'wrap-reverse',
+  },
+  postLinksFrom: {
+    margin: theme.spacing(2),
+  },
+  grow: {
+    flexGrow: 1,
   },
   buttonDiscard: {
     color: theme.palette.error.dark,
@@ -114,20 +122,26 @@ interface ConnectProps {
   callOnMount?: () => void,
 }
 interface State {
-  newItemTitle?: string;
-  newItemDescription?: string;
-  newItemAuthorId?: string;
-  newItemChosenCategoryId?: string;
-  newItemChosenTagIds?: string[];
-  newItemChosenStatusId?: string;
-  newItemNotifySubscribers?: boolean;
-  newItemNotifyTitle?: string;
-  newItemNotifyBody?: string;
+  /**
+   * It is imperative only draft fields start with 'draftField' as
+   * some logic below depends on this.
+   */
+  draftFieldTitle?: string;
+  draftFieldDescription?: string;
+  draftFieldAuthorId?: string;
+  draftFieldChosenCategoryId?: string;
+  draftFieldChosenTagIds?: string[];
+  draftFieldChosenStatusId?: string;
+  draftFieldNotifySubscribers?: boolean;
+  draftFieldNotifyTitle?: string;
+  draftFieldNotifyBody?: string;
+  draftFieldLinkedFromPostIds?: string[];
   tagSelectHasError?: boolean;
-  newItemSearchText?: string;
   isSubmitting?: boolean;
   adminControlsExpanded?: boolean;
   postDescriptionEditing?: boolean;
+  discardDraftDialogOpen?: boolean;
+  connectDialogOpen?: boolean;
 }
 
 class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
@@ -165,31 +179,33 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       ...this.props.draft,
       draftId: this.props.draftId
     };
-    if (this.state.newItemAuthorId !== undefined) draft.authorUserId = this.state.newItemAuthorId;
-    if (this.state.newItemTitle !== undefined) draft.title = this.state.newItemTitle;
-    if (this.state.newItemDescription !== undefined) draft.description = this.state.newItemDescription;
     const categoryOptions = PostCreateForm.getCategoryOptions(this.props);
-    if (this.state.newItemChosenCategoryId !== undefined) draft.categoryId = this.state.newItemChosenCategoryId;
+    if (this.state.draftFieldChosenCategoryId !== undefined) draft.categoryId = this.state.draftFieldChosenCategoryId;
     var selectedCategory = categoryOptions.find(c => c.categoryId === draft.categoryId);
     if (!selectedCategory) {
       selectedCategory = categoryOptions[0];
       draft.categoryId = selectedCategory.categoryId;
     }
     if (!selectedCategory) return null;
-    if (this.state.newItemChosenTagIds !== undefined) draft.tagIds = this.state.newItemChosenTagIds;
+    if (this.state.draftFieldAuthorId !== undefined) draft.authorUserId = this.state.draftFieldAuthorId;
+    if (this.state.draftFieldTitle !== undefined) draft.title = this.state.draftFieldTitle;
+    if (draft.title === undefined) draft.title = `New ${selectedCategory.name}`;
+    if (this.state.draftFieldDescription !== undefined) draft.description = this.state.draftFieldDescription;
+    if (this.state.draftFieldLinkedFromPostIds !== undefined) draft.linkedFromPostIds = this.state.draftFieldLinkedFromPostIds;
+    if (this.state.draftFieldChosenTagIds !== undefined) draft.tagIds = this.state.draftFieldChosenTagIds;
     if (draft.tagIds?.length) draft.tagIds = draft.tagIds.filter(tagId => selectedCategory?.tagging.tags.some(t => t.tagId === tagId));
     if (this.props.mandatoryTagIds?.length) draft.tagIds = [...(draft.tagIds || []), ...this.props.mandatoryTagIds];
-    if (this.state.newItemChosenStatusId !== undefined) draft.statusId = this.state.newItemChosenStatusId;
+    if (this.state.draftFieldChosenStatusId !== undefined) draft.statusId = this.state.draftFieldChosenStatusId;
     if (draft.statusId && !selectedCategory.workflow.statuses.some(s => s.statusId === draft.statusId)) draft.statusId = undefined;
-    if (this.state.newItemNotifySubscribers !== undefined) draft.notifySubscribers = {
+    if (this.state.draftFieldNotifySubscribers !== undefined) draft.notifySubscribers = !this.state.draftFieldNotifySubscribers ? undefined : {
       title: `New ${selectedCategory.name}`,
       body: `Check out my new post '${draft.title || selectedCategory.name}'`,
       ...draft.notifySubscribers,
-      ...(this.state.newItemNotifyTitle !== undefined ? {
-        title: this.state.newItemNotifyTitle,
+      ...(this.state.draftFieldNotifyTitle !== undefined ? {
+        title: this.state.draftFieldNotifyTitle,
       } : {}),
-      ...(this.state.newItemNotifyBody !== undefined ? {
-        body: this.state.newItemNotifyBody,
+      ...(this.state.draftFieldNotifyBody !== undefined ? {
+        body: this.state.draftFieldNotifyBody,
       } : {}),
     };
 
@@ -210,6 +226,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     const editCategory = this.renderEditCategory(draft, categoryOptions, selectedCategory, { className: this.props.classes.createFormField });
     const editStatus = this.renderEditStatus(draft, selectedCategory);
     const editUser = this.renderEditUser(draft, { className: this.props.classes.createFormField });
+    const editLinks = this.renderEditLinks(draft, { className: this.props.classes.createFormField });
     const editNotify = this.renderEditNotify(draft, selectedCategory);
     const editNotifyTitle = this.renderEditNotifyTitle(draft, selectedCategory, { className: this.props.classes.createFormField });
     const editNotifyBody = this.renderEditNotifyBody(draft, selectedCategory, { className: this.props.classes.createFormField });
@@ -254,6 +271,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             </Grid>
           )
         })}
+        {!!editLinks && (
+          <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem}>
+            {editLinks}
+          </Grid>
+        )}
         {!!editUser && (
           <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
             {editUser}
@@ -283,7 +305,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               <Button
                 onClick={e => this.setState({ adminControlsExpanded: true })}
               >
-                More
+                Admin
               </Button>
             )}
             {buttonDiscard}
@@ -307,7 +329,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         title={draft.title || ''}
         editable={title => (this.renderEditTitle(draft, {
           bare: true,
-          autoFocusAndSelect: draft.title === this.props.defaultTitle, // Only focus on completely fresh forms
+          autoFocusAndSelect: !this.props.draftId, // Only focus on completely fresh forms
         }))}
       />
     );
@@ -359,6 +381,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       },
     });
     const editUser = this.renderEditUser(draft, {
+      className: this.props.classes.postUser,
       SelectionPickerProps: {
         width: 'unset',
         forceDropdownIcon: true,
@@ -371,12 +394,14 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     const editNotify = this.renderEditNotify(draft, selectedCategory);
     const editNotifyTitle = this.renderEditNotifyTitle(draft, selectedCategory, ({
       autoFocus: false,
-      autoFocusAndSelect: draft.title === this.props.defaultTitle, // Only focus on completely fresh forms
+      autoFocusAndSelect: !this.props.draftId, // Only focus on completely fresh forms
       singlelineWrap: true,
     } as React.ComponentProps<typeof BareTextField>) as any, BareTextField);
     const editNotifyBody = this.renderEditNotifyBody(draft, selectedCategory, ({
       singlelineWrap: true,
     } as React.ComponentProps<typeof BareTextField>) as any, BareTextField);
+    const viewLinks = this.renderViewLinks(draft);
+    const buttonLink = this.renderButtonLink();
     const buttonDiscard = this.renderButtonDiscard();
     const buttonDraftSave = this.renderButtonSaveDraft(draft);
     const buttonSubmit = this.renderButtonSubmit(draft, enableSubmit);
@@ -388,13 +413,22 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           {editTitle}
           {editDescription}
         </div>
-        <div className={this.props.classes.postFooter}>
-          {editCategory}
-          {editStatus}
-          {editTags}
-        </div>
+        {(!!editCategory || !!editStatus || !!editTags) && (
+          <div className={this.props.classes.postFooter}>
+            {editCategory}
+            {editStatus}
+            {editTags}
+          </div>
+        )}
+        {viewLinks}
         <div className={this.props.classes.postNotify}>
-          {editNotify}
+          {(!!editNotify || !!buttonLink) && (
+            <div className={this.props.classes.postNotifyAndLink}>
+              {editNotify}
+              <div className={this.props.classes.grow} />
+              {buttonLink}
+            </div>
+          )}
           {(editNotifyTitle || editNotifyBody) && (
             <OutlinePostContent className={this.props.classes.postNotifyEnvelope}>
               <Typography variant='h5' component='div'>{editNotifyTitle}</Typography>
@@ -416,7 +450,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       <PostEditTitle
         value={draft.title || ''}
         onChange={value => {
-          this.setState({ newItemTitle: value })
+          this.setState({ draftFieldTitle: value })
           if ((draft.title || '') !== value) {
             this.searchSimilarDebounced?.(value, draft.categoryId);
           }
@@ -446,7 +480,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             || (!draft.description && !value)) {
             return;
           }
-          this.setState({ newItemDescription: value });
+          this.setState({ draftFieldDescription: value });
         }}
         {...PostEditDescriptionProps}
         RichEditorProps={{
@@ -476,7 +510,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         onChange={categoryId => {
           if (categoryId === draft.categoryId) return;
           this.searchSimilarDebounced?.(draft.title, categoryId);
-          this.setState({ newItemChosenCategoryId: categoryId });
+          this.setState({ draftFieldChosenCategoryId: categoryId });
         }}
         errorText={!selectedCategory ? 'Choose a category' : undefined}
         disabled={this.state.isSubmitting}
@@ -499,7 +533,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         initialStatusId={selectedCategory.workflow.entryStatus}
         statusId={draft.statusId}
-        onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
+        onChange={(statusId) => this.setState({ draftFieldChosenStatusId: statusId })}
         {...StatusSelectProps}
       />
     );
@@ -509,7 +543,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     selectedCategory?: Client.Category,
     TagSelectProps?: Partial<React.ComponentProps<typeof TagSelect>>,
   ): React.ReactNode | null {
-    if (!selectedCategory) return null;
+    if (!selectedCategory?.tagging.tagGroups.length) return null;
     return (
       <TagSelect
         variant='outlined'
@@ -519,7 +553,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         tagIds={draft.tagIds}
         isModOrAdminLoggedIn={PostCreateForm.showModOptions(this.props)}
         onChange={(tagIds, errorStr) => this.setState({
-          newItemChosenTagIds: tagIds,
+          draftFieldChosenTagIds: tagIds,
           tagSelectHasError: !!errorStr,
         })}
         disabled={this.state.isSubmitting}
@@ -548,7 +582,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         suppressInitialOnChange
         initialUserId={draft.authorUserId}
-        onChange={selectedUserLabel => this.setState({ newItemAuthorId: selectedUserLabel?.value })}
+        onChange={selectedUserLabel => this.setState({ draftFieldAuthorId: selectedUserLabel?.value })}
         allowCreate
         {...UserSelectionProps}
       />
@@ -569,7 +603,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         control={(
           <Switch
             checked={!!draft.notifySubscribers}
-            onChange={(e, checked) => this.setState({ newItemNotifySubscribers: !draft.notifySubscribers })}
+            onChange={(e, checked) => this.setState({
+              draftFieldNotifySubscribers: !draft.notifySubscribers,
+              draftFieldNotifyTitle: undefined,
+              draftFieldNotifyBody: undefined,
+            })}
             color='primary'
             {...SwitchProps}
           />
@@ -597,7 +635,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         label='Notification Title'
         value={draft.notifySubscribers.title || ''}
-        onChange={e => this.setState({ newItemNotifyTitle: e.target.value })}
+        onChange={e => this.setState({ draftFieldNotifyTitle: e.target.value })}
         autoFocus
         {...TextFieldProps}
         inputProps={{
@@ -626,7 +664,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         label='Notification Body'
         multiline
         value={draft.notifySubscribers.body || ''}
-        onChange={e => this.setState({ newItemNotifyBody: e.target.value })}
+        onChange={e => this.setState({ draftFieldNotifyBody: e.target.value })}
         {...TextFieldProps}
         inputProps={{
           maxLength: PostTitleMaxLength,
@@ -636,22 +674,128 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     );
   }
 
+  renderEditLinks(
+    draft: Partial<Admin.IdeaDraftAdmin>,
+    PostSelectionProps?: Partial<React.ComponentProps<typeof PostSelection>>,
+  ): React.ReactNode | null {
+    if (!this.state.adminControlsExpanded || !PostCreateForm.showModOptions(this.props)) return null;
+    return (
+      <PostSelection
+        server={this.props.server}
+        variant='outlined'
+        size={this.props.type === 'large' ? 'medium' : 'small'}
+        disabled={this.state.isSubmitting}
+        label='Linked posts'
+        isMulti
+        initialPostIds={draft.linkedFromPostIds}
+        onChange={postIds => this.setState({ draftFieldLinkedFromPostIds: postIds })}
+        {...PostSelectionProps}
+      />
+    );
+  }
+
+  renderViewLinks(
+    draft: Partial<Admin.IdeaDraftAdmin>,
+  ): React.ReactNode | null {
+    if (!draft.linkedFromPostIds?.length) return null;
+
+    return (
+      <ConnectedPostsContainer
+        className={this.props.classes.postLinksFrom}
+        type='link'
+        direction='from'
+        hasMultiple={draft.linkedFromPostIds.length > 1}
+      >
+        {draft.linkedFromPostIds.map(linkedFromPostId => (
+          <ConnectedPostById
+            server={this.props.server}
+            postId={linkedFromPostId}
+            containerPost={draft}
+            type='link'
+            direction='from'
+            onDisconnect={() => this.setState({
+              draftFieldLinkedFromPostIds: (this.state.draftFieldLinkedFromPostIds || [])
+                .filter(id => id !== linkedFromPostId),
+            })}
+            PostProps={{
+              expandable: false,
+            }}
+          />
+        ))}
+      </ConnectedPostsContainer>
+    );
+  }
+
+  renderButtonLink(): React.ReactNode | null {
+    if (!this.props.onDiscarded || !this.props.draftId) return null;
+
+    return (
+      <>
+        <MyButton
+          buttonVariant='post'
+          disabled={this.state.isSubmitting}
+          Icon={LinkAltIcon}
+          onClick={e => this.setState({ connectDialogOpen: true })}
+        >
+          Link
+        </MyButton>
+        <PostConnectDialog
+          onlyAllowLinkFrom
+          server={this.props.server}
+          open={!!this.state.connectDialogOpen}
+          onClose={() => this.setState({ connectDialogOpen: false })}
+          onSubmit={(selectedPostId, action, directionReversed) => this.setState({
+            connectDialogOpen: false,
+            draftFieldLinkedFromPostIds: [...(new Set([...(this.state.draftFieldLinkedFromPostIds || []), selectedPostId]))],
+          })}
+        />
+      </>
+    );
+  }
+
   renderButtonDiscard(
     SubmitButtonProps?: Partial<React.ComponentProps<typeof SubmitButton>>,
   ): React.ReactNode | null {
-    if (!this.props.onDiscarded) return null;
+    if (!this.props.onDiscarded || !this.props.draftId) return null;
 
     return (
-      <SubmitButton
-        variant='text'
-        color='inherit'
-        className={this.props.classes.buttonDiscard}
-        isSubmitting={this.state.isSubmitting}
-        onClick={e => this.discard(this.props.draftId)}
-        {...SubmitButtonProps}
-      >
-        Discard
-      </SubmitButton>
+      <>
+        <Button
+          variant='text'
+          color='inherit'
+          className={this.props.classes.buttonDiscard}
+          disabled={this.state.isSubmitting}
+          onClick={e => this.setState({ discardDraftDialogOpen: true })}
+          {...SubmitButtonProps}
+        >
+          Discard
+        </Button>
+        <Dialog
+          open={!!this.state.discardDraftDialogOpen}
+          onClose={() => this.setState({ discardDraftDialogOpen: false })}
+        >
+          <DialogTitle>Delete draft</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Are you sure you want to permanently delete this draft?</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ discardDraftDialogOpen: false })}
+            >Cancel</Button>
+            <SubmitButton
+              variant='text'
+              color='inherit'
+              className={this.props.classes.buttonDiscard}
+              isSubmitting={this.state.isSubmitting}
+              onClick={e => {
+                this.discard(this.props.draftId);
+                this.setState({ discardDraftDialogOpen: false });
+              }}
+            >
+              Discard
+            </SubmitButton>
+          </DialogActions>
+        </Dialog>
+      </>
     );
   }
 
@@ -661,9 +805,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   ): React.ReactNode | null {
     if (!this.props.onDraftCreated) return null;
 
+    const hasAnyChanges = Object.keys(this.state)
+      .some(stateKey => stateKey.startsWith('draftField') && this.state[stateKey] !== undefined);
+
     return (
       <SubmitButton
         variant='text'
+        disabled={!hasAnyChanges}
         isSubmitting={this.state.isSubmitting}
         onClick={e => this.draftSave(draft)}
         {...SubmitButtonProps}
@@ -735,6 +883,12 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           },
         });
       }
+      const stateUpdate: Pick<State, keyof State> = {};
+      Object.keys(this.state).forEach(stateKey => {
+        if (!stateKey.startsWith('draftField')) return;
+        stateUpdate[stateKey] = undefined;
+      });
+      this.setState(stateUpdate);
     } finally {
       this.setState({ isSubmitting: false });
     }
@@ -810,9 +964,8 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       throw e;
     }
     this.setState({
-      newItemTitle: undefined,
-      newItemDescription: undefined,
-      newItemSearchText: undefined,
+      draftFieldTitle: undefined,
+      draftFieldDescription: undefined,
       isSubmitting: false,
     });
     this.props.onCreated?.(idea.ideaId);

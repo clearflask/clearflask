@@ -40,7 +40,6 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -292,7 +291,7 @@ public class ElasticUtil {
                 .flatMap(Collection::stream)
                 .map((Histogram.Bucket b) -> new HistogramResponsePoints(
                         ((ZonedDateTime) b.getKey()).toLocalDate(),
-                        BigDecimal.valueOf(b.getDocCount())))
+                        b.getDocCount()))
                 .collect(ImmutableList.toImmutableList()),
                 new Hits(
                         search.getHits().getTotalHits().value,

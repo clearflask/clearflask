@@ -40,10 +40,14 @@ const styles = (theme: Theme) => createStyles({
   warning: {
     position: 'absolute',
     top: '50%',
-    left: theme.spacing(4),
-    transform: 'translateY(-50%)',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
     transition: theme.transitions.create('opacity'),
     opacity: 1,
+    zIndex: 1,
+    background: theme.palette.background.paper,
+    width: 'max-content',
+    maxWidth: '100%',
   },
   children: {
     transition: theme.transitions.create('opacity'),
@@ -126,6 +130,6 @@ export const UpgradeAlert = (props: { className?: string }) => (
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
-    accountBasePlanId: ownProps.accountBasePlanId || state.account.account.account?.basePlanId,
+    accountBasePlanId: ownProps.accountBasePlanId !== undefined ? ownProps.accountBasePlanId : state.account.account.account?.basePlanId,
   };
 })(withStyles(styles, { withTheme: true })(UpgradeWrapper));

@@ -160,7 +160,7 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
   }
   comments.sort((l, r) => r.voteValue - l.voteValue);
   return {
-    callOnMount: callOnMount,
+    callOnMount,
     commentIds: commentIds?.commentIds,
     commentsStatus: commentsStatus,
     comments: comments,

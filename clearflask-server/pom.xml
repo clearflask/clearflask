@@ -506,6 +506,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
+                    <trimStackTrace>false</trimStackTrace>
+                    <useFile>false</useFile>
                 </configuration>
             </plugin>
             <plugin>
@@ -617,7 +619,7 @@
                                 </ports>
                                 <wait>
                                     <time>300000</time>
-                                    <log>.*Kill Bill server has started.*</log>
+                                    <log>Kill Bill server has started</log>
                                 </wait>
                                 <log>
                                     <prefix>killbill-engine:</prefix>

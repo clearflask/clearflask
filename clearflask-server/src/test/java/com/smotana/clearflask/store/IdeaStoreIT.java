@@ -33,7 +33,6 @@ import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -43,6 +42,7 @@ import java.util.Optional;
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @Slf4j
 public class IdeaStoreIT extends AbstractIT {
@@ -116,9 +116,15 @@ public class IdeaStoreIT extends AbstractIT {
                 .response(textToSimpleHtml("newDescription"))
                 .fundGoal(idea2Updated.getFundGoal())
                 .build(), Optional.of(moderator)).getIndexingFuture().get();
-        assertEquals(Optional.of(idea2Updated), store.getIdea(projectId, idea2Updated.getIdeaId()));
+        Optional<IdeaModel> idea2UpdatedActual = store.getIdea(projectId, idea2Updated.getIdeaId());
+        assertNotEquals(
+                Optional.of(idea2Updated.getResponseEdited()),
+                idea2UpdatedActual.map(IdeaModel::getResponseEdited));
+        assertEquals(
+                Optional.of(idea2Updated.toBuilder().responseEdited(idea2UpdatedActual.map(IdeaModel::getResponseEdited).orElse(null)).build()),
+                idea2UpdatedActual);
 
-        store.deleteIdea(projectId, ideaUpdated.getIdeaId()).get();
+        store.deleteIdea(projectId, ideaUpdated.getIdeaId(), true).get();
         assertEquals(Optional.empty(), store.getIdea(projectId, ideaUpdated.getIdeaId()));
         store.deleteIdeas(projectId, ImmutableSet.of(idea2Updated.getIdeaId())).get();
         assertEquals(Optional.empty(), store.getIdea(projectId, idea2Updated.getIdeaId()));
@@ -222,8 +228,8 @@ public class IdeaStoreIT extends AbstractIT {
                 .build());
         assertEquals(
                 ImmutableList.of(
-                        new HistogramResponsePoints(nowDate.minusDays(3), BigDecimal.valueOf(2L)),
-                        new HistogramResponsePoints(nowDate.minusDays(1), BigDecimal.valueOf(1L))),
+                        new HistogramResponsePoints(nowDate.minusDays(3), 2L),
+                        new HistogramResponsePoints(nowDate.minusDays(1), 1L)),
                 histogram.getPoints());
         assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
     }

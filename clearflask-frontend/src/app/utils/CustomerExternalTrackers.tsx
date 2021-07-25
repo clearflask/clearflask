@@ -36,9 +36,9 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
       <>
         <HotjarWrapperCustomer />
         {this.props.googleAnalytics && (
-          <Route path='/' render={({ location }) => {
-            ReactGA.ga(`${CustomerTrackerName}.set`, 'page', location.pathname + location.search);
-            ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': location.pathname + location.search });
+          <Route path='/' render={routeProps => {
+            ReactGA.ga(`${CustomerTrackerName}.set`, 'page', routeProps.location.pathname + routeProps.location.search);
+            ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': routeProps.location.pathname + routeProps.location.search });
             return null;
           }} />
         )}

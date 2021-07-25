@@ -1,14 +1,17 @@
-import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import ArrowLeftIcon from '@material-ui/icons/ArrowLeftRounded';
 import ArrowRightIcon from '@material-ui/icons/ArrowRightRounded';
 import MergeIcon from '@material-ui/icons/MergeType';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import React, { useState } from 'react';
+import { shallowEqual, useSelector } from 'react-redux';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { Server } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import HelpPopper from '../../common/HelpPopper';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
+import { ThisOrThat } from '../../common/util/typeUtil';
 import Post from './Post';
 
 export type ConnectType = 'link' | 'merge';
@@ -68,77 +71,105 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 const useStyles = makeStyles(styles);
-interface Props {
+
+export const ConnectedPostById = (props: {
+  postId: string;
+} & Omit<React.ComponentProps<typeof ConnectedPost>, 'post'>) => {
+  const { postId, server, ...ConnectedPostProps } = props;
+  const ideaAndStatus = useSelector<ReduxState, { status: Status, idea?: Client.Idea } | undefined>(state => state.ideas.byId[postId], shallowEqual);
+  React.useEffect(() => {
+    if (ideaAndStatus?.status === undefined) {
+      server.dispatch().then(d => d.ideaGet({
+        projectId: server.getProjectId(),
+        ideaId: postId,
+      }));
+    }
+  }, [ideaAndStatus?.status]);
+
+  if (!ideaAndStatus?.idea) return null;
+
+  return (
+    <ConnectedPost
+      {...ConnectedPostProps}
+      server={server}
+      post={ideaAndStatus.idea}
+    />
+  );
+}
+const ConnectedPost = (props: {
   server: Server;
-  containerPost: Client.Idea;
   post: Client.Idea;
+  containerPost?: ThisOrThat<Client.Idea, Partial<Admin.IdeaDraftAdmin>>;
   type: ConnectType;
   direction: LinkDirection;
   hideOutline?: boolean;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
-}
-interface State {
-  isSubmitting?: boolean;
-}
-class ConnectedPost extends Component<Props & WithStyles<typeof styles, true>, State> {
-  state: State = {};
-  render() {
-    return (
-      <OutlinePostContent hideOutline={this.props.hideOutline}>
-        <Post
-          server={this.props.server}
-          idea={this.props.post}
-          onClickPost={this.props.onClickPost}
-          onUserClick={this.props.onUserClick}
-          widthExpand
-          expandable
-          isSubmittingDisconnect={this.state.isSubmitting}
-          disconnectType={this.props.type}
-          onDisconnect={async () => {
-            this.setState({ isSubmitting: true });
-            try {
-              const ideaId = this.props.direction === 'to' ? this.props.containerPost.ideaId : this.props.post.ideaId;
-              const parentIdeaId = this.props.direction === 'to' ? this.props.post.ideaId : this.props.containerPost.ideaId;
-              if (this.props.type === 'link') {
-                await (await this.props.server.dispatchAdmin()).ideaUnLinkAdmin({
-                  projectId: this.props.server.getProjectId(),
-                  ideaId,
-                  parentIdeaId,
-                });
-              } else if (this.props.type === 'merge') {
-                await (await this.props.server.dispatchAdmin()).ideaUnMergeAdmin({
-                  projectId: this.props.server.getProjectId(),
-                  ideaId,
-                  parentIdeaId,
-                });
-              }
-            } finally {
-              this.setState({ isSubmitting: false });
+  onDisconnect?: () => void;
+  PostProps?: Partial<React.ComponentProps<typeof Post>>;
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  return (
+    <OutlinePostContent hideOutline={props.hideOutline}>
+      <Post
+        server={props.server}
+        idea={props.post}
+        onClickPost={props.onClickPost}
+        onUserClick={props.onUserClick}
+        widthExpand
+        expandable
+        isSubmittingDisconnect={isSubmitting}
+        disconnectType={props.type}
+        onDisconnect={(!props.onDisconnect && !props.containerPost?.ideaId) ? undefined : async () => {
+          if (props.onDisconnect) {
+            props.onDisconnect();
+            return;
+          }
+          if (!props.containerPost?.ideaId || !props.post.ideaId) return;
+          setIsSubmitting(true);
+          try {
+            const ideaId = props.direction === 'to' ? props.containerPost.ideaId : props.post.ideaId;
+            const parentIdeaId = props.direction === 'to' ? props.post.ideaId : props.containerPost.ideaId;
+            if (props.type === 'link') {
+              await (await props.server.dispatchAdmin()).ideaUnLinkAdmin({
+                projectId: props.server.getProjectId(),
+                ideaId,
+                parentIdeaId,
+              });
+            } else if (props.type === 'merge') {
+              await (await props.server.dispatchAdmin()).ideaUnMergeAdmin({
+                projectId: props.server.getProjectId(),
+                ideaId,
+                parentIdeaId,
+              });
             }
-          }}
-          variant='list'
-          display={{
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 2,
-            responseTruncateLines: 0,
-            showCommentCount: true,
-            showCategoryName: this.props.containerPost.categoryId !== this.props.post.categoryId,
-            showCreated: true,
-            showAuthor: true,
-            showStatus: false,
-            showTags: false,
-            showVoting: false,
-            showVotingCount: true,
-            showFunding: true,
-            showExpression: true,
-          }}
-        />
-      </OutlinePostContent>
-    );
-  }
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+        variant='list'
+        display={{
+          titleTruncateLines: 1,
+          descriptionTruncateLines: 2,
+          responseTruncateLines: 0,
+          showCommentCount: true,
+          showCategoryName: props.containerPost?.categoryId !== props.post.categoryId,
+          showCreated: true,
+          showAuthor: true,
+          showStatus: false,
+          showTags: false,
+          showVoting: false,
+          showVotingCount: true,
+          showFunding: true,
+          showExpression: true,
+        }}
+        {...props.PostProps}
+      />
+    </OutlinePostContent>
+  );
 }
-export default withStyles(styles, { withTheme: true })(ConnectedPost);
+export default ConnectedPost;
 
 export const OutlinePostContent = (props: {
   className?: string,

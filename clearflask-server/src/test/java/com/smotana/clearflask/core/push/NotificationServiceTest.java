@@ -11,6 +11,7 @@ import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
@@ -107,6 +108,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnAdminInvite.module());
         install(OnEmailChanged.module());
         install(EmailVerify.module());
+        install(EmailLogin.module());
         install(Sanitizer.module());
 
         install(MockBrowserPushService.module());

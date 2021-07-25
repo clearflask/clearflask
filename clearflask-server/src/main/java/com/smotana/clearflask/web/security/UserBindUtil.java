@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.model.NotificationMethodsOauth;
 import com.smotana.clearflask.api.model.UserBindOauthToken;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
@@ -29,9 +30,11 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 public class UserBindUtil {
 
     @Inject
-    private UserResource.Config userResourceConfig;
+    private UserResource.Config configUserResource;
     @Inject
     private UserStore userStore;
+    @Inject
+    private AccountStore accountStore;
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -61,10 +64,10 @@ public class UserBindUtil {
         }
 
         // Token refresh
-        if (userOpt.isPresent() && userSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(userResourceConfig.sessionRenewIfExpiringIn()).getEpochSecond()) {
+        if (userOpt.isPresent() && userSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(configUserResource.sessionRenewIfExpiringIn()).getEpochSecond()) {
             userSessionOpt = Optional.of(userStore.refreshSession(
                     userSessionOpt.get(),
-                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond()));
+                    Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond()));
             authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
         }
 
@@ -143,10 +146,21 @@ public class UserBindUtil {
             }
         }
 
-        if (createSession) {
+        // Auto login to auto-generated user tied to account holder
+        if (!userOpt.isPresent()) {
+            Optional<AccountStore.Account> accountOpt = extendedPrincipalOpt
+                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt)
+                    .flatMap(accountSession -> accountStore.getAccountByAccountId(accountSession.getAccountId()));
+            if (accountOpt.isPresent()) {
+                userOpt = Optional.of(userStore.createOrGet(projectId, accountOpt.get()));
+                createSession = true;
+            }
+        }
+
+        if (createSession && userOpt.isPresent()) {
             UserSession session = userStore.createSession(
                     userOpt.get(),
-                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
+                    Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
             authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
         }
 

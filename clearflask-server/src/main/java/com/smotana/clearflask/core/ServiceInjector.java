@@ -29,6 +29,7 @@ import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
+import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
@@ -52,6 +53,7 @@ import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
+import com.smotana.clearflask.store.impl.DynamoDraftStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
@@ -167,6 +169,7 @@ public enum ServiceInjector {
                 install(DynamoElasticUserStore.module());
                 install(DynamoTokenVerifyStore.module());
                 install(DynamoElasticIdeaStore.module());
+                install(DynamoDraftStore.module());
                 install(DynamoNotificationStore.module());
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
@@ -195,6 +198,7 @@ public enum ServiceInjector {
                 install(OnPaymentFailed.module());
                 install(OnPostCreated.module());
                 install(EmailVerify.module());
+                install(EmailLogin.module());
 
                 // Security
                 install(AuthenticationFilter.module());

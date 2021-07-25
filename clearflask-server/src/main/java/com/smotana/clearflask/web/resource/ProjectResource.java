@@ -34,6 +34,7 @@ import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.DraftStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore;
@@ -112,6 +113,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private UserStore userStore;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private DraftStore draftStore;
     @Inject
     private CommentStore commentStore;
     @Inject
@@ -284,7 +287,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         } catch (InterruptedException | ExecutionException | TimeoutException ex) {
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
         }
-        return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
+
+        UserModel accountUser = userStore.createOrGet(projectId, account);
+        UserStore.UserSession session = userStore.createSession(
+                accountUser,
+                Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
+
+        return new NewProjectResult(
+                projectId,
+                project.getVersionedConfigAdmin(),
+                accountUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -297,6 +310,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             projectStore.deleteProject(projectId);
             ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
+            draftStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
             voteStore.deleteAllForProject(projectId);
         } catch (Throwable th) {
@@ -548,6 +562,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         null,
                         null,
                         null,
+                        null,
                         categoryId,
                         statusIdOpt.orElse(null),
                         tagIds,
@@ -558,6 +573,11 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         null,
                         voteValueOpt.orElse(null),
                         voteValueOpt.map(Math::abs).orElse(null),
+                        null,
+                        null,
+                        null,
+                        ImmutableSet.of(),
+                        ImmutableSet.of(),
                         null,
                         null,
                         null);

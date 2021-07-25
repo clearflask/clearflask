@@ -106,7 +106,7 @@ public class TieredWebLimiterTest extends AbstractTest {
         }, 60);
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testLimiterFullyCharged() throws Exception {
         configSet(TieredWebLimiter.Config.class, "prechargedPeriod", "P100D");
         stopwatch.addMicros(Duration.ofDays(100L).toSeconds() * 1_000_000L);

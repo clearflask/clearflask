@@ -20,6 +20,9 @@ import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
+import com.smotana.clearflask.api.model.IdeaDraftAdmin;
+import com.smotana.clearflask.api.model.IdeaDraftSearch;
+import com.smotana.clearflask.api.model.IdeaDraftSearchResponse;
 import com.smotana.clearflask.api.model.IdeaGetAll;
 import com.smotana.clearflask.api.model.IdeaGetAllResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
@@ -39,6 +42,7 @@ import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.DraftStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
@@ -59,6 +63,7 @@ import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -78,6 +83,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private NotificationService notificationService;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private DraftStore draftStore;
     @Inject
     private CommentStore commentStore;
     @Inject
@@ -117,6 +124,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
+                null,
                 ideaCreate.getCategoryId(),
                 project.getCategory(ideaCreate.getCategoryId())
                         .map(Category::getWorkflow)
@@ -133,7 +141,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 ImmutableMap.of(),
                 0d,
-                null,
+                ImmutableSet.of(),
+                ImmutableSet.of(),
                 null,
                 null,
                 null);
@@ -161,25 +170,27 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
-    public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
+    public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin, @Nullable String deleteDraftId) {
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
 
         Project project = projectStore.getProject(projectId, true).get();
-        UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
+        UserModel author = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
+        String ideaId = ideaStore.genIdeaId(ideaCreateAdmin.getTitle());
         IdeaModel ideaModel = new IdeaModel(
                 projectId,
-                ideaStore.genIdeaId(ideaCreateAdmin.getTitle()),
-                user.getUserId(),
-                user.getName(),
-                user.getIsMod(),
+                ideaId,
+                author.getUserId(),
+                author.getName(),
+                author.getIsMod(),
                 Instant.now(),
                 ideaCreateAdmin.getTitle(),
                 Strings.emptyToNull(ideaCreateAdmin.getDescription()),
                 Strings.emptyToNull(ideaCreateAdmin.getResponse()),
-                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : user.getUserId(),
-                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : user.getName(),
+                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getUserId(),
+                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getName(),
+                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : Instant.now(),
                 ideaCreateAdmin.getCategoryId(),
                 Optional.ofNullable(ideaCreateAdmin.getStatusId())
                         .orElseGet(() -> project.getCategory(ideaCreateAdmin.getCategoryId())
@@ -197,7 +208,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 ImmutableMap.of(),
                 0d,
-                null,
+                ImmutableSet.of(),
+                ImmutableSet.of(),
                 null,
                 null,
                 null);
@@ -208,15 +220,29 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaStore.createIdea(ideaModel);
         }
 
-        if (deleteDraftId) {
-            TODO
+        if (!Strings.isNullOrEmpty(deleteDraftId)) {
+            getExtendedPrincipal()
+                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                    .map(UserSession::getUserId)
+                    .ifPresent(userId -> draftStore.deleteDraft(projectId, userId, deleteDraftId));
+        }
+
+        if (ideaCreateAdmin.getLinkedFromPostIds() != null) {
+            ideaCreateAdmin.getLinkedFromPostIds()
+                    .forEach(linkedFromPostId -> ideaStore.connectIdeas(
+                            projectId,
+                            linkedFromPostId,
+                            ideaId,
+                            false,
+                            false,
+                            project::getCategoryExpressionWeight));
         }
 
         if (ideaCreateAdmin.getNotifySubscribers() != null) {
-            notificationService.onPostCreated(project, ideaModel, ideaCreateAdmin.getNotifySubscribers(), user);
+            notificationService.onPostCreated(project, ideaModel, ideaCreateAdmin.getNotifySubscribers(), author);
         }
-        webhookService.eventPostNew(ideaModel, user);
-        billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user);
+        webhookService.eventPostNew(ideaModel, author);
+        billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, author);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
@@ -475,6 +501,82 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());
             searchResponse.getIdeaIds().forEach(ideaId -> commentStore.deleteCommentsForIdea(projectId, ideaId));
         } while (!searchResponse.getCursorOpt().isPresent());
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaDraftAdmin ideaDraftCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        return draftStore.setDraft(
+                projectId,
+                userId,
+                Optional.empty(),
+                ideaCreateAdmin).toIdeaDraftAdmin(sanitizer);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void ideaDraftDeleteAdmin(String projectId, String draftId) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        draftStore.deleteDraft(projectId, userId, draftId);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaDraftAdmin ideaDraftGetAdmin(String projectId, String draftId) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        return draftStore.getDraft(projectId, userId, draftId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Draft not found"))
+                .toIdeaDraftAdmin(sanitizer);
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaDraftSearchResponse ideaDraftSearchAdmin(String projectId, IdeaDraftSearch ideaDraftSearch, @Nullable String cursor) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        DraftStore.SearchResponse searchResponse = draftStore.searchDrafts(projectId, userId, ideaDraftSearch, Optional.ofNullable(cursor));
+
+        return new IdeaDraftSearchResponse(
+                searchResponse.getCursorOpt().orElse(null),
+                searchResponse.getDrafts().stream()
+                        .map(draftModel -> draftModel.toIdeaDraftAdmin(sanitizer))
+                        .collect(ImmutableList.toImmutableList()));
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void ideaDraftUpdateAdmin(String projectId, String draftId, IdeaCreateAdmin ideaCreateAdmin) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .get();
+
+        draftStore.setDraft(
+                projectId,
+                userId,
+                Optional.of(draftId),
+                ideaCreateAdmin).toIdeaDraftAdmin(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})

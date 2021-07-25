@@ -14,7 +14,7 @@ import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf } from '../../api/server';
-import { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
+import ServerAdmin, { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
@@ -308,7 +308,7 @@ export const ProjectSettingsInstallStatus = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  const [statusPostLabel, setStatusPostLabel] = useState<Label | undefined>();
+  const [statusPostId, setStatusPostId] = useState<string>();
   const [statusConfig, setStatusConfig] = useState<Required<PostStatusConfig>>({
     fontSize: '14px',
     fontFamily: '',
@@ -324,7 +324,7 @@ export const ProjectSettingsInstallStatus = (props: {
       title='Status'
       preview={(
         <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-          <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostLabel?.value} config={statusConfig} />
+          <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostId} config={statusConfig} />
         </Provider>
       )}
       content={(
@@ -336,9 +336,10 @@ export const ProjectSettingsInstallStatus = (props: {
               label='Search for a post'
               size='small'
               variant='outlined'
-              onChange={setStatusPostLabel}
+              onChange={postIds => setStatusPostId(postIds[0])}
               errorMsg='Search for a post to preview'
               searchIfEmpty
+              initialSelectAny
             />
           </Provider>
           <p><Typography>Optionally format the status to fit your website:</Typography></p>
@@ -1249,6 +1250,7 @@ export const ProjectSettingsUsersOauth = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   const [expandedType, setExpandedType] = useState<'oauth' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   const [newOauthType, setNewOauthType] = useState<string>('');
@@ -1267,7 +1269,7 @@ export const ProjectSettingsUsersOauth = (props: {
           </>
         )}
         content={(
-          <>
+          <UpgradeWrapper accountBasePlanId={accountBasePlanId} propertyPath={['users', 'onboarding', 'notificationMethods', 'oauth']}>
             <div className={classes.feedbackAccordionContainer}>
               {props.editor.getConfig().users.onboarding.notificationMethods.oauth.map((oauth, oauthIndex) => (
                 <ProjectSettingsUsersOauthItem
@@ -1402,7 +1404,7 @@ export const ProjectSettingsUsersOauth = (props: {
                 Add
               </Button>
             </Collapse>
-          </>
+          </UpgradeWrapper>
         )}
       />
     </ProjectSettingsBase>
@@ -2305,7 +2307,6 @@ export const ProjectSettingsRoadmap = (props: {
   const classes = useStyles();
   const [expandedType, setExpandedType] = useState<'tag' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
-  var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   return (
     <ProjectSettingsBase title='Roadmap'>
       <TemplateWrapper<RoadmapInstance | undefined>
@@ -2358,15 +2359,16 @@ export const ProjectSettingsRoadmap = (props: {
                         allowEdit={true}
                         show={(roadmap.pageAndIndex.page.board.title)}
                         edit={(
-                          <PropertyByPathReduxless
-                            server={props.server}
-                            marginTop={0}
-                            planId={planId}
-                            width={200}
-                            overrideName='Title'
-                            editor={props.editor}
-                            path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']}
-                          />
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <PropertyByPath
+                              server={props.server}
+                              marginTop={0}
+                              width={200}
+                              overrideName='Title'
+                              editor={props.editor}
+                              path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']}
+                            />
+                          </Provider>
                         )}
                       />
                     )}
@@ -2377,7 +2379,6 @@ export const ProjectSettingsRoadmap = (props: {
                         roadmap={roadmap}
                         panel={panel}
                         panelIndex={panelIndex}
-                        planId={planId}
                       />
                     ))}
                   />
@@ -2414,7 +2415,6 @@ export const ProjectSettingsRoadmapPanel = (props: {
   roadmap: RoadmapInstance;
   panel: Admin.PagePanelWithHideIfEmpty;
   panelIndex: number;
-  planId?: string;
 }) => {
   const classes = useStyles();
 
@@ -2489,25 +2489,26 @@ export const ProjectSettingsRoadmapPanel = (props: {
               </Button>
             )}
             {!titleMatchesStatus.current && (
-              <PropertyByPathReduxless
-                server={props.server}
-                marginTop={0}
-                planId={props.planId}
-                width='auto'
-                editor={props.editor}
-                path={['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'search', 'filterStatusIds']}
-                bare
-                SelectionPickerProps={{
-                  disableClearable: true,
-                }}
-                TextFieldProps={{
-                  placeholder: 'Filter',
-                  classes: { root: classes.filterStatus },
-                  InputProps: {
-                    classes: { notchedOutline: classes.filterStatusInput },
-                  },
-                }}
-              />
+              <Provider store={ServerAdmin.get().getStore()}>
+                <PropertyByPath
+                  server={props.server}
+                  marginTop={0}
+                  width='auto'
+                  editor={props.editor}
+                  path={['layout', 'pages', props.roadmap.pageAndIndex!.index, 'board', 'panels', props.panelIndex, 'search', 'filterStatusIds']}
+                  bare
+                  SelectionPickerProps={{
+                    disableClearable: true,
+                  }}
+                  TextFieldProps={{
+                    placeholder: 'Filter',
+                    classes: { root: classes.filterStatus },
+                    InputProps: {
+                      classes: { notchedOutline: classes.filterStatusInput },
+                    },
+                  }}
+                />
+              </Provider>
             )}
           </>
         ),
@@ -2836,17 +2837,7 @@ const IconPickerHelperText = () => {
   );
 }
 
-const PropertyByPath = (props: Omit<React.ComponentProps<typeof PropertyByPathReduxless>, 'planId'>) => {
-  var planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
-  return (
-    <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-      <PropertyByPathReduxless planId={planId} {...props} />
-    </Provider>
-  );
-}
-
-const PropertyByPathReduxless = (props: {
-  planId: string | undefined;
+const PropertyByPath = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
   path: ConfigEditor.Path;
@@ -2861,9 +2852,10 @@ const PropertyByPathReduxless = (props: {
   bare?: boolean;
 }) => {
   const history = useHistory();
+  const planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
 
   var propertyRequiresUpgrade: ((propertyPath: ConfigEditor.Path) => boolean) | undefined;
-  const restrictedProperties = props.planId && RestrictedProperties[props.planId];
+  const restrictedProperties = planId && RestrictedProperties[planId];
   if (restrictedProperties) {
     propertyRequiresUpgrade = (path) => restrictedProperties.some(restrictedPath =>
       ConfigEditor.pathEquals(restrictedPath, path));

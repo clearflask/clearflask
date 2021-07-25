@@ -67,7 +67,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
@@ -220,7 +219,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 if (!allowedDomainsOpt.get().contains(domain)) {
                     throw new ApiException(
                             Response.Status.BAD_REQUEST,
-                            "Allowed domains are " + allowedDomainsOpt.get().stream().collect(Collectors.joining(", ")));
+                            "Allowed domains are " + String.join(", ", allowedDomainsOpt.get()));
                 }
                 emailVerificationRequired = true;
             }
@@ -435,7 +434,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             }
             log.debug("Successful user login for email {} via password", userLogin.getEmail());
         } else if (!Strings.isNullOrEmpty(userLogin.getToken())) {
-            boolean loginViaEmailVerified = tokenVerifyStore.useToken(userLogin.getToken(), "loginViaEmail", projectId, userCreate.getEmail());
+            boolean loginViaEmailVerified = tokenVerifyStore.useToken(userLogin.getToken(), "loginViaEmail", projectId, userLogin.getEmail());
             if (!loginViaEmailVerified) {
                 log.info("Account login incorrect token for email {}", user.getEmail());
                 throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");

@@ -104,6 +104,8 @@ public interface UserStore {
      */
     UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt);
 
+    UserModel createOrGet(String projectId, AccountStore.Account account);
+
     default String genUserSessionId() {
         return IdUtil.randomAscId();
     }
@@ -248,58 +250,61 @@ public interface UserStore {
 
         public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(
-                    this.getUserId(),
-                    this.getName(),
-                    this.getIsMod(),
-                    this.getCreated(),
-                    this.getSsoGuid() != null ? true : null,
-                    this.getEmail(),
-                    this.getEmailVerified(),
-                    this.isEmailNotify(),
-                    !Strings.isNullOrEmpty(this.getIosPushToken()),
-                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
-                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
-                    !Strings.isNullOrEmpty(this.getPassword()),
+                    getUserId(),
+                    getName(),
+                    getIsMod(),
+                    getCreated(),
+                    null,
+                    getSsoGuid() != null ? true : null,
+                    getEmail(),
+                    getEmailVerified(),
+                    isEmailNotify(),
+                    !Strings.isNullOrEmpty(getIosPushToken()),
+                    !Strings.isNullOrEmpty(getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(getPassword()),
                     getIntercomIdentity(intercomEmailToIdentity),
-                    this.getSubscribedCategoryIds().asList());
+                    getSubscribedCategoryIds().asList());
         }
 
         public UserMeWithBalance toUserMeWithBalance(Function<String, String> intercomEmailToIdentity) {
             return new UserMeWithBalance(
-                    this.getUserId(),
-                    this.getName(),
-                    this.getIsMod(),
-                    this.getCreated(),
-                    this.getSsoGuid() != null ? true : null,
-                    this.getEmail(),
-                    this.getEmailVerified(),
-                    this.isEmailNotify(),
-                    !Strings.isNullOrEmpty(this.getIosPushToken()),
-                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
-                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
-                    !Strings.isNullOrEmpty(this.getPassword()),
+                    getUserId(),
+                    getName(),
+                    getIsMod(),
+                    getCreated(),
+                    null,
+                    getSsoGuid() != null ? true : null,
+                    getEmail(),
+                    getEmailVerified(),
+                    isEmailNotify(),
+                    !Strings.isNullOrEmpty(getIosPushToken()),
+                    !Strings.isNullOrEmpty(getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(getPassword()),
                     getIntercomIdentity(intercomEmailToIdentity),
-                    this.getSubscribedCategoryIds().asList(),
-                    this.getBalance());
+                    getSubscribedCategoryIds().asList(),
+                    getBalance());
         }
 
         public UserAdmin toUserAdmin(Function<String, String> intercomEmailToIdentity) {
             return new UserAdmin(
-                    this.getUserId(),
-                    this.getName(),
-                    this.getIsMod(),
-                    this.getCreated(),
-                    this.getSsoGuid() != null ? true : null,
-                    this.getEmail(),
-                    this.getEmailVerified(),
-                    this.isEmailNotify(),
-                    !Strings.isNullOrEmpty(this.getIosPushToken()),
-                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
-                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
-                    !Strings.isNullOrEmpty(this.getPassword()),
+                    getUserId(),
+                    getName(),
+                    getIsMod(),
+                    getCreated(),
+                    null,
+                    getSsoGuid() != null ? true : null,
+                    getEmail(),
+                    getEmailVerified(),
+                    isEmailNotify(),
+                    !Strings.isNullOrEmpty(getIosPushToken()),
+                    !Strings.isNullOrEmpty(getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(getPassword()),
                     getIntercomIdentity(intercomEmailToIdentity),
-                    this.getSubscribedCategoryIds().asList(),
-                    this.getBalance());
+                    getSubscribedCategoryIds().asList(),
+                    getBalance());
         }
 
         public User toUser() {
@@ -307,11 +312,12 @@ public interface UserStore {
                     getUserId(),
                     getName(),
                     getIsMod(),
-                    getCreated());
+                    getCreated(),
+                    null);
         }
 
         public Balance toBalance() {
-            return new Balance(this.getBalance());
+            return new Balance(getBalance());
         }
 
         private String getIntercomIdentity(Function<String, String> intercomEmailToIdentity) {

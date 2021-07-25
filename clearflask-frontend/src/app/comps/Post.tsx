@@ -17,6 +17,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
+import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings, Status } from '../../api/server';
 import ClosablePopper from '../../common/ClosablePopper';
@@ -33,6 +34,7 @@ import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { createMutableRef } from '../../common/util/refUtil';
+import { ThisOrThat } from '../../common/util/typeUtil';
 import { importFailed, importSuccess } from '../../Main';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
@@ -353,18 +355,12 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 const useStyles = makeStyles(styles);
-interface Props {
+type Props = {
   className?: string;
   classNamePadding?: string;
   server: Server;
-  idea?: Client.Idea;
+  idea?: ThisOrThat<Client.Idea, Partial<Admin.IdeaDraftAdmin>>;
   variant: PostVariant;
-  /**
-   * If true, when post is clicked,
-   * variant is switched from 'list' to 'page',
-   * url is appended wZith /post/<postId>
-   * and post is expanded to full screen.
-   */
   expandable?: boolean;
   disableOnClick?: boolean;
   display?: Client.PostDisplay;
@@ -378,7 +374,7 @@ interface Props {
   isSubmittingDisconnect?: boolean;
   onDisconnect?: () => void;
   disconnectType?: ConnectType;
-}
+};
 interface ConnectProps {
   configver?: string;
   projectId: string;
@@ -493,7 +489,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               width: this.props.widthExpand ? MaxContentWidth : (this.props.variant !== 'list' ? 'max-content' : MinContentWidth),
               maxWidth: this.props.widthExpand ? '100%' : MaxContentWidth,
             }}
-            onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea && this.props.onClickPost(this.props.idea.ideaId) : undefined}
+            onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && !!this.props.idea?.ideaId && this.props.onClickPost(this.props.idea.ideaId) : undefined}
           >
             <div className={this.props.classes.postFunding}>
               {this.renderFunding()}
@@ -618,7 +614,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderAuthor() {
     if (this.props.variant === 'list' && this.props.display && this.props.display.showAuthor === false
-      || !this.props.idea) return null;
+      || !this.props.idea?.authorUserId) return null;
 
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
@@ -637,7 +633,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderCreatedDatetime() {
     if (this.props.variant === 'list' && this.props.display && this.props.display.showCreated === false
-      || !this.props.idea) return null;
+      || !this.props.idea?.created) return null;
 
     return (
       <Typography key='createdDatetime' className={this.props.classes.timeAgo} variant='caption'>
@@ -687,7 +683,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderIWantThisCommentAdd() {
     if (!this.props.category?.support.vote?.iWantThis
-      || !this.props.idea
+      || !this.props.idea?.ideaId
       || !this.shouldRenderVoting()
       || !this.areCommentsAllowed()
     ) return null;
@@ -724,7 +720,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   renderComments() {
     if (this.props.variant === 'list'
-      || !this.props.idea
+      || !this.props.idea?.ideaId
       || !this.props.category
       || !this.props.category.support.comment) return null;
 
@@ -786,7 +782,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   renderConnect() {
     const isMod = this.props.server.isModOrAdminLoggedIn();
     if (this.props.variant === 'list'
-      || !this.props.idea
+      || !this.props.idea?.ideaId
       || !this.props.category
       || !isMod
       || this.props.display?.showEdit === false) return null;
@@ -823,7 +819,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     var content;
 
-    if (isEditing) {
+    if (isEditing && !!this.props.idea.categoryId) {
       content = (
         <PostEditStatus
           server={this.props.server}
@@ -875,7 +871,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   renderTags() {
     const canEdit = this.canEdit() === 'mod';
     if (this.props.variant === 'list' && this.props.display && this.props.display.showTags === false
-      || !this.props.idea
+      || !this.props.idea?.ideaId
       || !this.props.category
       || (!this.props.idea.tagIds.length && !canEdit)) return null
 
@@ -1041,7 +1037,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
   renderFunding() {
     if (this.props.variant === 'list' && this.props.display && this.props.display.showFunding === false
-      || !this.props.idea
+      || !this.props.idea?.ideaId
       || !this.props.credits
       || !this.props.category
       || !this.props.category.support.fund) return null;
@@ -1332,25 +1328,24 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderTitle() {
-    if (!this.props.idea) return null;
-    const idea = this.props.idea;
+    if (!this.props.idea?.title) return null;
     return (
       <PostTitle
         variant={this.props.variant}
-        title={idea.title}
+        title={this.props.idea.title}
         titleTruncateLines={this.props.display?.titleTruncateLines}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
-        editable={this.canEdit() ? () => (
+        editable={this.canEdit() ? () => !!this.props.idea?.ideaId && (
           <PostEditTitleInline
             server={this.props.server}
-            post={idea}
+            post={this.props.idea}
             bare
             TextFieldProps={{
               autoFocus: true,
             }}
           >
-            {idea.title}
+            {this.props.idea.title}
           </PostEditTitleInline>
         ) : undefined}
       />
@@ -1366,7 +1361,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         description={idea.description}
         descriptionTruncateLines={this.props.display?.descriptionTruncateLines}
         demoBlurryShadow={this.props.settings.demoBlurryShadow}
-        editable={this.canEdit() ? description => (
+        editable={this.canEdit() ? description => !!idea.ideaId && (
           <PostEditDescriptionInline
             server={this.props.server}
             post={idea}
@@ -1449,7 +1444,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 <ConnectedPost
                   key={post.ideaId}
                   server={this.props.server}
-                  containerPost={this.props.idea!}
+                  containerPost={this.props.idea?.ideaId ? this.props.idea : undefined}
                   post={post}
                   type='link'
                   direction={direction}
@@ -1550,7 +1545,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             editingStatusId: undefined,
           })}
           onSave={(doNotify) => {
-            if (!this.props.idea || !changed) return;
+            if (!this.props.idea?.ideaId || !changed) return;
             this.setState({ isSubmittingStatusAndResponse: true });
             postSave(
               this.props.server,
@@ -1651,7 +1646,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             this.props.classes.titleAndDescription,
             this.props.onClickPost && !this.props.disableOnClick && this.props.classes.clickable,
           )}
-          onClick={(this.props.onClickPost && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea
+          onClick={(this.props.onClickPost && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea?.ideaId
             && this.props.onClickPost(this.props.idea.ideaId) : undefined}
         >
           {children}
@@ -1678,6 +1673,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   async demoFundingAnimate(fundAmount: number) {
+    if (!this.props.idea?.ideaId) return;
+
     const animate = animateWrapper(
       () => this._isMounted,
       this.inViewObserverRef,
@@ -1685,7 +1682,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.setState.bind(this));
 
     if (await animate({ sleepInMs: 1000 })) return;
-    const ideaId = this.props.idea!.ideaId;
+    const ideaId = this.props.idea.ideaId;
     const ideaWithVote: Client.IdeaWithVote = {
       ...this.props.idea!,
       vote: {
@@ -1793,7 +1790,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const dispatcher = await this.props.server.dispatch();
     const response = await dispatcher.ideaVoteUpdate({
       projectId: this.props.projectId,
-      ideaId: this.props.idea!.ideaId,
+      ideaId: this.props.idea!.ideaId!,
       ideaVoteUpdate,
     });
     return response;
@@ -1905,7 +1902,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   var vote: Client.VoteOption | undefined;
   var expression: Array<string> | undefined;
   var fundAmount: number | undefined;
-  if (ownProps.idea) {
+  if (ownProps.idea?.ideaId) {
     voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
     if (voteStatus !== undefined) {
       vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];

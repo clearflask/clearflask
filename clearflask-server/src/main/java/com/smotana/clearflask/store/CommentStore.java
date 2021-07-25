@@ -177,6 +177,9 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
+                    null,
+                    null,
+                    null,
                     getContentSanitized(sanitizer),
                     (long) (getUpvotes() - getDownvotes()));
         }
@@ -197,6 +200,9 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
+                    null,
+                    null,
+                    null,
                     sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId()),
                     (long) (getUpvotes() - getDownvotes()),
                     vote);

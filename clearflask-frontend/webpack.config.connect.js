@@ -10,6 +10,7 @@ module.exports = {
     path: path.resolve(__dirname, 'target', 'dist'),
     publicPath: '/',
   },
+  devtool: 'source-map', // Source maps for stacktraces
   resolve: {
     extensions: ['.es6', '.es', '.jsx', '.js', '.mjs', '.tsx', '.ts', '.mts'],
   },

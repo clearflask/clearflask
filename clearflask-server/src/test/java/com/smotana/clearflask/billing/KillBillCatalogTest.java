@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class KillBillCatalogTest {
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void test() throws Exception {
         for (String fileName : KillBillSync.CATALOG_FILENAMES) {
             String filePath = KillBillSync.CATALOG_PREFIX + fileName;

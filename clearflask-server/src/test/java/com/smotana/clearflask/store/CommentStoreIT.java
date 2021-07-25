@@ -1,7 +1,6 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -227,31 +226,11 @@ public class CommentStoreIT extends AbstractIT {
     }
 
     private IdeaModel createRandomIdea(String projectId) throws Exception {
-        IdeaModel idea = new IdeaModel(
-                projectId,
-                ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 " + IdUtil.randomId()),
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                false,
-                Instant.now(),
-                "title",
-                textToSimpleHtml("description"),
-                textToSimpleHtml("response"),
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
-                0L,
-                0L,
-                0L,
-                100L,
-                0L,
-                0L,
-                0L,
-                0d,
-                ImmutableMap.of(),
-                0d);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .ideaId(ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 " + IdUtil.randomId()))
+                .authorIsMod(false)
+                .build();
         ideaStore.createIdea(idea).get();
         return idea;
     }

@@ -51,7 +51,7 @@ const FeaturesTable: Admin.FeaturesTable | undefined = {
     { feature: 'Roadmap view', values: ['Yes', 'Yes'] },
     { feature: 'Content customization', values: ['Yes', 'Yes'] },
     { feature: 'Private projects', values: ['No', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
-    { feature: 'Single Sign-On', values: ['No', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
+    { feature: 'SSO and OAuth', values: ['No', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
     { feature: 'Site template', values: ['No', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
   ],
 };

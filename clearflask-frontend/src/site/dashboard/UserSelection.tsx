@@ -35,6 +35,7 @@ interface Props {
   minWidth?: string | number;
   maxWidth?: string | number;
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
+  LabelProps?: Partial<React.ComponentProps<typeof UserWithAvatarDisplay>>;
 }
 interface ConnectProps {
   loggedInUserStatus?: Status;
@@ -68,7 +69,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           userSearchAdmin: { searchText: newValue },
         }))
         .then(results => {
-          const userLabels = results.results.map(UserSelection.mapUserToLabel);
+          const userLabels = results.results.map(user => UserSelection.mapUserToLabel(user, this.props.LabelProps));
           this.setState({
             options: userLabels,
             ...(this.state.searching === newValue ? { searching: undefined } : {}),
@@ -162,7 +163,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
               userCreateAdmin: { name },
             }))
             .then(user => {
-              const newLabel = UserSelection.mapUserToLabel(user);
+              const newLabel = UserSelection.mapUserToLabel(user, this.props.LabelProps);
               this.setState({ selectedUserLabel: newLabel });
               this.props.onChange && this.props.onChange(newLabel);
             });
@@ -177,9 +178,12 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     );
   }
 
-  static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe | Client.User): Label {
+  static mapUserToLabel(
+    user: Admin.UserAdmin | Admin.UserMe | Client.User,
+    LabelProps?: Partial<React.ComponentProps<typeof UserWithAvatarDisplay>>,
+  ): Label {
     const userLabel: Label = {
-      label: (<UserWithAvatarDisplay user={user} maxChars={15} />),
+      label: (<UserWithAvatarDisplay user={user} maxChars={15} {...LabelProps} />),
       filterString: `${user.name || 'Anonymous'} ${user['email'] || ''}`,
       value: user.userId,
     };
@@ -201,14 +205,14 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
         }));
       };
     } else {
-      initialUserLabel = UserSelection.mapUserToLabel(initialUser);
+      initialUserLabel = UserSelection.mapUserToLabel(initialUser, ownProps.LabelProps);
     }
   }
 
   const connectProps: ConnectProps = {
     callOnMount,
     loggedInUserStatus: state.users.loggedIn.status,
-    loggedInUserLabel: state.users.loggedIn.user ? UserSelection.mapUserToLabel(state.users.loggedIn.user) : undefined,
+    loggedInUserLabel: state.users.loggedIn.user ? UserSelection.mapUserToLabel(state.users.loggedIn.user, ownProps.LabelProps) : undefined,
     initialUserLabel,
   };
   return connectProps;

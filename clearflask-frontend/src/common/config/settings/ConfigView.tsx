@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactDiffViewer from 'react-diff-viewer';
-import { LightAsync as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import highlightLanguageYaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import highlightStyleLight from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-light';
 import { Server } from '../../../api/server';

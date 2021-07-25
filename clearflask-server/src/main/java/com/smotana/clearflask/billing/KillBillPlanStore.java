@@ -48,7 +48,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
-    private static final String TERMS_SSO = "Use your existing user accounts to log into ClearFlask";
+    private static final String TERMS_SSO_AND_OAUTH = "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook";
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
     private static final String TERMS_API = "Integrate with any external service via our API and webhooks";
@@ -68,7 +68,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("standard-monthly", pp -> new Plan("standard-monthly", "Standard",
                     pp, ImmutableList.of(
-                    new PlanPerk("Single Sign-On", TERMS_SSO),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))
@@ -102,7 +102,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("Single Sign-On", ImmutableList.of("No", "Yes"), TERMS_SSO),
+                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes"), TERMS_SSO_AND_OAUTH),
                     new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes"), TERMS_API),
                     new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes"), TERMS_INTERCOM),
@@ -292,7 +292,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
-                // Restrict Single Sign-On
+                // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use OAuth on your plan");
                 }

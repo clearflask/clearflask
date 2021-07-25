@@ -83,6 +83,10 @@
                             </goals>
                         </execution>
                     </executions>
+                    <configuration>
+                        <trimStackTrace>false</trimStackTrace>
+                        <useFile>false</useFile>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.github.alexcojocaru</groupId>
@@ -133,7 +137,7 @@
                 <plugin>
                     <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.34.1</version>
+                    <version>0.36.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

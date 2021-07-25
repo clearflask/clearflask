@@ -1002,12 +1002,16 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
           <PostCreateForm
+            key={draftId || 'new'}
             server={project.server}
             type='post'
             mandatoryCategoryIds={mandatoryCategoryIds}
             adminControlsDefaultVisibility='expanded'
             logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
             draftId={draftId}
+            onCreated={postId => {
+              this.setState({ [stateKey]: { type: 'post', id: postId } as PreviewState } as any);
+            }}
             onDraftCreated={allowDrafts ? draft => {
               this.setState({ [stateKey]: { type: 'create-post', draftId: draft.draftId } as PreviewState } as any);
             } : undefined}

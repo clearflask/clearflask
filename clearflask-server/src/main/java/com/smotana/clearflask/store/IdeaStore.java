@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Idea;
@@ -38,7 +40,6 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -185,7 +186,6 @@ public interface IdeaStore {
 
         String responseAuthorName;
 
-        @NonNull
         Instant responseEdited;
 
         @NonNull
@@ -273,6 +273,7 @@ public interface IdeaStore {
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
                     getTagIds().asList(),
@@ -283,11 +284,13 @@ public interface IdeaStore {
                     getFundersCount(),
                     getVoteValue(),
                     getExpressionsValue(),
-                    getExpressions(),
+                    (getExpressions() == null || getExpressions().isEmpty()) ? null : Maps.filterEntries(getExpressions(),
+                            e -> e.getValue() != null && e.getValue() != 0L),
                     getLinkedToPostIds().asList(),
                     getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
-                    getMergedPosts().stream().map(MergedPost::getPostId).collect(ImmutableList.toImmutableList()));
+                    getMergedToPostTime(),
+                    (getMergedPosts() == null || getMergedPosts().isEmpty()) ? null : Lists.transform(getMergedPosts(), MergedPost::getPostId));
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -302,6 +305,7 @@ public interface IdeaStore {
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
                     getTagIds().asList(),
@@ -312,13 +316,13 @@ public interface IdeaStore {
                     getFundersCount(),
                     getVoteValue(),
                     getExpressionsValue(),
-                    getExpressions() == null ? null : getExpressions().entrySet().stream()
-                            .filter(e -> e.getValue() != null && e.getValue() != 0L)
-                            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)),
-                    getLinkedToPostIds(),
-                    getLinkedFromPostIds(),
+                    (getExpressions() == null || getExpressions().isEmpty()) ? null : Maps.filterEntries(getExpressions(),
+                            e -> e.getValue() != null && e.getValue() != 0L),
+                    getLinkedToPostIds().asList(),
+                    getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
-                    getMergedPosts(),
+                    getMergedToPostTime(),
+                    (getMergedPosts() == null || getMergedPosts().isEmpty()) ? null : Lists.transform(getMergedPosts(), MergedPost::getPostId),
                     vote);
         }
 

@@ -38,6 +38,7 @@ import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
+import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
@@ -60,6 +61,7 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
+import com.smotana.clearflask.store.impl.DynamoDraftStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
@@ -194,6 +196,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnAdminInvite.module(),
                 OnEmailChanged.module(),
                 EmailVerify.module(),
+                EmailLogin.module(),
                 MockBrowserPushService.module(),
                 MockEmailService.module(),
                 LocalRateLimiter.module(),
@@ -203,6 +206,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoElasticCommentStore.module(),
                 DynamoElasticAccountStore.module(),
                 DynamoNotificationStore.module(),
+                DynamoDraftStore.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoProjectStore.module(),
                 DynamoElasticUserStore.module(),
@@ -309,7 +313,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 IdUtil.randomId(5) + "unittest@clearflask.com",
                 "password",
                 planid));
-        String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("myproject").getConfig());
         AccountAndProject accountAndProject = new AccountAndProject(accountAdmin, newProjectResult);
