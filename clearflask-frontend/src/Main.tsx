@@ -23,6 +23,7 @@ import ScrollAnchor from './common/util/ScrollAnchor';
 import windowIso from './common/windowIso';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
+import { SentryIdentifyAccount } from './site/SentryIdentify';
 
 const notistackRef = React.createRef<ProviderContext>();
 export const resolveDefault = imported => imported.default;
@@ -167,6 +168,7 @@ class Main extends Component<Props> {
                     )]) : ([(
                       <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                         <Provider store={ServerAdmin.get().getStore()}>
+                          <SentryIdentifyAccount />
                           <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
                           <NoSsr>
                             <Dashboard {...props} />
@@ -178,6 +180,7 @@ class Main extends Component<Props> {
                     ), (
                       <Route key='invoice' path="/invoice/:invoiceId" render={props => (
                         <Provider store={ServerAdmin.get().getStore()}>
+                          <SentryIdentifyAccount />
                           <SetMaxAge val={0} />
                           <Invoice invoiceId={props.match.params['invoiceId']} />
                         </Provider>
@@ -185,6 +188,7 @@ class Main extends Component<Props> {
                     ), (
                       <Route key='site' render={props => (
                         <Provider store={ServerAdmin.get().getStore()}>
+                          <SentryIdentifyAccount />
                           <SetMaxAge val={24 * 60 * 60} />
                           <Site {...props} />
                           <IntercomWrapperMain />

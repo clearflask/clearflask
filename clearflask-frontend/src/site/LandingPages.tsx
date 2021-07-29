@@ -320,7 +320,8 @@ export function Landing() {
             showExpression: false,
           },
         }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
-        mock={mocker => mocker.demoFeedbackType()}
+        mock={mocker => mocker.demoFeedbackType()
+          .then(() => mocker.mockLoggedIn())}
         settings={{
           demoDisableExplorerExpanded: true,
           // demoBlurryShadow: true,

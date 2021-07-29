@@ -662,7 +662,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if ((this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.verification === Client.EmailSignupVerificationEnum.Required
       || this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.allowedDomains !== undefined)
       && request.userCreate.email
-      && !request.userCreate.emailVerification) {
+      && request.userCreate.emailVerification !== '123456') {
       return this.returnLater({ requiresEmailVerification: true });
     }
     return this.userCreateAdmin({

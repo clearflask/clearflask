@@ -12,6 +12,7 @@ import { RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
+import { SentryIdentifyUser } from '../site/SentryIdentify';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
@@ -195,6 +196,7 @@ class App extends Component<Props> {
 
     return (
       <Provider store={this.server.getStore()}>
+        <SentryIdentifyUser />
         <AppThemeProvider
           appRootId={appRootId}
           seed={projectId}

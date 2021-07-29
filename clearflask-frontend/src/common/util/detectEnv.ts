@@ -2,13 +2,13 @@ import windowIso from "../windowIso";
 
 var envCache: Environment | undefined = undefined;
 
-enum Environment {
+export enum Environment {
   DEVELOPMENT_FRONTEND = 'FRONTEND',
   DEVELOPMENT_LOCAL = 'LOCAL',
   PRODUCTION = 'PROD',
 }
 
-function detectEnv(): Environment {
+export function detectEnv(): Environment {
   if (envCache === undefined) {
     if (windowIso['ENV'] === 'development' /* npm run start:dev */) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
@@ -26,15 +26,15 @@ function detectEnv(): Environment {
   return envCache;
 }
 
-function isProd(): boolean {
+export function isProd(): boolean {
   return detectEnv() === Environment.PRODUCTION;
 }
 
-function isTracking(): boolean {
+export function isTracking(): boolean {
   return !isDoNotTrack() && isProd();
 }
 
-function isDoNotTrack(): boolean {
+export function isDoNotTrack(): boolean {
   return windowIso.isSsr
     || windowIso.navigator.doNotTrack === "yes"
     || windowIso.navigator.doNotTrack === "1"
@@ -43,6 +43,4 @@ function isDoNotTrack(): boolean {
     || windowIso.doNotTrack === "1"
     || windowIso['msDoNotTrack'] === "1";
 }
-
-export { isProd, isTracking, detectEnv, Environment };
 

@@ -1211,6 +1211,7 @@ const Price = (props: {
 //       };
 //     });
 //   return (
+//     Also this would need to be SSR friendly, as in don't SSR
 //     <ReactApexChart
 //       series={series}
 //       options={{

@@ -77,7 +77,7 @@ tomcat-run-dev:
 	tomcat:8.5-jdk11-openjdk-slim
 
 aws-mock-run:
-	docker run --rm -it --name aws-mock --privileged \
+	docker run --rm -i --name aws-mock --privileged \
 	-p 4566:4566 \
 	-p 4571:4571 \
 	-p 4582:8080 \
@@ -88,6 +88,7 @@ aws-mock-run:
 	-e LS_LOG=debug \
 	-e START_WEB=1 \
 	-e USE_SSL=0 \
+	-e FORCE_NONINTERACTIVE=true \
 	localstack/localstack-full
 
 elastic-run:
@@ -152,7 +153,7 @@ kaui-run:
 	killbill/kaui:2.0.5
 
 killbill-db-run:
-	docker run --rm --name clearflask-killbill-db \
+	docker run --rm -i --name clearflask-killbill-db \
 	-e MYSQL_ROOT_PASSWORD=killbill \
 	-p 8306:3306 \
 	-v $(shell pwd -P)/clearflask-server/target/kb-ddl/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql \

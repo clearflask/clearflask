@@ -1,13 +1,15 @@
+import loadable from '@loadable/component';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core';
 import classNames from 'classnames';
-import Cytoscape from 'cytoscape';
-import dagre from 'cytoscape-dagre';
 import React, { Component } from 'react';
-import CytoscapeComponent from 'react-cytoscapejs';
-import ErrorMsg from '../../../../app/ErrorMsg';
 import DividerCorner from '../../../../app/utils/DividerCorner';
+import Loading from '../../../../app/utils/Loading';
+import { importFailed, importSuccess } from '../../../../Main';
 import { contentScrollApplyStyles, Orientation } from '../../../ContentScroll';
-import * as ConfigEditor from '../../configEditor';
+import windowIso from '../../../windowIso';
+import { WorkflowPreviewInternalProps } from './WorkflowPreviewInternal.d';
+
+const WorkflowPreviewInternal = loadable<WorkflowPreviewInternalProps>(() => import(/* webpackChunkName: "WorkflowPreviewInternal", webpackPrefetch: true */'./WorkflowPreviewInternal').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   border: {
@@ -20,173 +22,49 @@ const styles = (theme: Theme) => createStyles({
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Both }),
   },
 });
-
-interface Props extends WithStyles<typeof styles, true> {
-  categoryIndex: number;
-  editor: ConfigEditor.Editor;
-  isVertical?: boolean;
+interface Props {
   hideCorner?: boolean;
   width?: number | string;
   height?: number | string;
-  static?: boolean;
   scroll?: boolean;
   border?: boolean;
-  renderLabel?: (statusId: string, name: string) => string;
 }
-
-interface State {
-  error?: string;
-}
-
-class WorkflowPreview extends Component<Props, State> {
-  state: State = {};
-  unsubscribe?: () => void;
-
-  constructor(props) {
-    super(props);
-    Cytoscape.use(dagre);
-  }
-
-  static getDerivedStateFromError(error) {
-    return { error: 'Failed to render visualization' };
-  }
-
-  componentDidMount() {
-    this.unsubscribe = this.props.editor.subscribe(() => {
-      if (!!this.state.error) {
-        this.setState({ error: undefined });
-      } else {
-        this.forceUpdate();
-      }
-    });
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe && this.unsubscribe();
-  }
-
+class WorkflowPreview extends Component<Props & Omit<WorkflowPreviewInternalProps, 'fontFamily' | 'style'> & WithStyles<typeof styles, true>> {
   render() {
-    if (!!this.state.error) {
-      return (
-        <ErrorMsg msg={this.state.error} />
-      );
-    }
+    const { classes, theme, scroll, border, className, ...WorkflowPreviewInternalProps } = this.props;
 
-    const seenStatusIds: Set<string> = new Set();
-    var nodes: any[] = [];
-    var edges: any[] = [];
-    const entryStatusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty).value;
-    const statusCount = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses']) as ConfigEditor.PageGroup).getChildPages().length;
-    for (var i = 0; i < statusCount; i++) {
-      const name = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'name']) as ConfigEditor.StringProperty).value!;
-      const statusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value!;
-      const color = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
-      const nextStatusIds = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
-      const isStart = statusId === entryStatusId;
-      seenStatusIds.add(statusId);
-      nodes.push({
-        data: {
-          id: statusId,
-          label: this.props.renderLabel ? this.props.renderLabel(statusId, name) : name,
-          color: color,
-          type: 'round-rectangle',
-          width: 'label',
-          height: 'label',
-        }
-      });
-      nextStatusIds && nextStatusIds.forEach(nextStatusId => edges.push({
-        data: {
-          source: statusId,
-          target: nextStatusId,
-        }
-      }));
-      if (isStart) {
-        const startId = 'start';
-        seenStatusIds.add(startId);
-        nodes.push({
-          data: {
-            id: startId,
-            label: '',
-            color: 'eee',
-            type: 'circle',
-            width: '1px',
-            height: '1px',
-          }
-        });
-        edges.push({
-          data: {
-            source: startId,
-            target: statusId,
-          }
-        });
-      }
-    }
-    if (nodes.length <= 0) {
-      return null;
+    const style = {
+      'min-width': '250px',
+      width: this.props.width || '100%',
+      height: this.props.height || '250px',
+    };
+    const myClassNames = classNames(
+      className,
+      this.props.border && this.props.classes.border,
+      this.props.scroll && this.props.classes.scroll,
+    );
+
+    const fallback = (
+      <div
+        className={myClassNames}
+        style={style}
+      >
+        <Loading />
+      </div>
+    );
+    if (windowIso.isSsr) {
+      return fallback;
     }
 
     var content = (
-      <CytoscapeComponent
-        key={nodes.length + edges.length}
-        minZoom={1}
-        maxZoom={2}
-        autounselectify={!!this.props.static}
-        userZoomingEnabled={!this.props.static}
-        userPanningEnabled={!this.props.static}
-        autoungrabify={!!this.props.static}
-        boxSelectionEnabled={!this.props.static}
-        elements={[
-          ...nodes,
-          ...edges.filter(e => seenStatusIds.has(e.data.source) && seenStatusIds.has(e.data.target))
-        ]}
-        className={classNames(
-          this.props.border && this.props.classes.border,
-          this.props.scroll && this.props.classes.scroll,
-        )}
-        style={{
-          'min-width': '250px',
-          width: this.props.width || '100%',
-          height: this.props.height || '250px',
-        }}
-        layout={{
-          name: 'dagre',
-          spacingFactor: 1,
-          rankDir: this.props.isVertical ? 'TB' : 'LR',
-          ranker: 'longest-path',
-        }}
-        stylesheet={[{
-          selector: 'node',
-          style: {
-            'label': 'data(label)',
-            'font-size': 12,
-            'font-family': this.props.theme.typography.fontFamily,
-            'background-color': 'white',
-            'border-width': '1px',
-            'border-color': 'data(color)',
-            'color': 'data(color)',
-            'shape': 'data(type)',
-            'content': 'data(label)',
-            'width': 'data(width)',
-            'height': 'data(height)',
-            'min-width': '10px',
-            'min-height': '10px',
-            'padding': '10px',
-            'text-valign': 'center',
-            'text-halign': 'center',
-          }
-        }, {
-          selector: 'edge',
-          style: {
-            'width': 2,
-            'line-color': '#e0e0e0',
-            'target-arrow-color': '#bbb',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'unbundled-bezier',
-          }
-        }]}
+      <WorkflowPreviewInternal
+        {...WorkflowPreviewInternalProps}
+        fontFamily={this.props.theme.typography.fontFamily}
+        className={myClassNames}
+        style={style}
+        fallback={fallback}
       />
     );
-
     if (!this.props.hideCorner) {
       content = (
         <DividerCorner title='Visualize states' height='100%'>
@@ -194,7 +72,6 @@ class WorkflowPreview extends Component<Props, State> {
         </DividerCorner>
       );
     }
-
     return content;
   }
 }

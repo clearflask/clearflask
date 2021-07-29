@@ -484,38 +484,43 @@ class DataMock {
         name: 'Matus Faro',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
-        basePlanId: 'growth2-monthly',
+        basePlanId: 'standard2-monthly',
       }
     });
   }
 
-  mockLoggedIn(bankBalance: number = 10000, isMod: boolean = false): Promise<Admin.UserMeWithBalance> {
-    return ServerMock.get().userCreate({
+  async mockLoggedIn(bankBalance: number = 10000, isMod: boolean = false): Promise<Admin.UserMeWithBalance> {
+    const email = 'john.doe@example.com';
+    const password = 'password';
+    var me = await ServerMock.get().userCreateAdmin({
       projectId: this.projectId,
-      userCreate: {
-        name: 'Matus Faro',
-        email: 'john.doe@example.com',
-        password: 'password',
+      userCreateAdmin: {
+        name: 'John Doe',
+        email,
+        password,
         browserPushToken: 'fake-browser-push-token',
+        emailVerification: '123456',
+        isMod,
         ...{
-          emailVerification: 'token',
-          isMod,
           userId: 'me',
         },
       }
-    }).then(userResponse => {
-      ServerMock.get().userUpdateAdmin({
-        projectId: this.projectId,
-        userId: userResponse.user!.userId,
-        userUpdateAdmin: {
-          transactionCreate: {
-            amount: bankBalance,
-            summary: 'Mock amount given, spend it wisely',
-          }
-        },
-      });
-      return userResponse.user!;
     });
+    me = await ServerMock.get().userLogin({
+      projectId: this.projectId,
+      userLogin: { email, password },
+    });
+    await ServerMock.get().userUpdateAdmin({
+      projectId: this.projectId,
+      userId: me.userId,
+      userUpdateAdmin: {
+        transactionCreate: {
+          amount: bankBalance,
+          summary: 'Mock amount given, spend it wisely',
+        }
+      },
+    });
+    return me;
   }
 
   mockItem(

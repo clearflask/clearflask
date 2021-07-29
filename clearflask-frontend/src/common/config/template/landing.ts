@@ -87,7 +87,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   const roadmap = await this.roadmapGet();
   if (roadmap?.pageAndIndex
     && (!onlyPageIds || onlyPageIds.has(roadmap.pageAndIndex.page.pageId))
-    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex!.page.pageId)) {
+    && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
       title: 'Roadmap',
       description: "See what we're working on next.",

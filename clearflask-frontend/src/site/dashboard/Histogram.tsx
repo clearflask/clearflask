@@ -1,12 +1,16 @@
+import loadable from '@loadable/component';
 import { SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import moment from 'moment';
 import React, { Component } from 'react';
-import ReactApexChart from "react-apexcharts";
 import * as Admin from '../../api/admin';
 import { Server } from '../../api/server';
+import Loading from '../../app/utils/Loading';
+import { importFailed, importSuccess } from '../../Main';
 import GraphBox from './GraphBox';
+
+const ReactApexChart = loadable(() => import(/* webpackChunkName: "ReactApexChart", webpackPrefetch: true */'react-apexcharts').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   chart: {

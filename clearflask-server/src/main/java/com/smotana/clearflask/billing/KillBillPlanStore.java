@@ -80,7 +80,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
-                    new PlanPerk("Single Sign-On", TERMS_SSO),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))

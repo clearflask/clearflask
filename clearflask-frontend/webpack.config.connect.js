@@ -22,7 +22,9 @@ module.exports = {
   optimization: {
     minimize: true,
     minimizer: [
-      new TerserPlugin(),
+      new TerserPlugin({
+        exclude: 'public/static',
+      }),
     ],
   },
   plugins: [
