@@ -163,7 +163,7 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
   // Add to landing page
   const landing = await this.landingGet();
   const isInLanding = landing?.pageAndIndex.page.landing.links.some(link => link.linkToPageId === feedback?.pageAndIndex?.page.pageId);
-  if (!isInLanding) {
+  if (!!landing && !isInLanding) {
     this.landingOn(new Set([feedback.pageAndIndex!.page.pageId]));
   }
 

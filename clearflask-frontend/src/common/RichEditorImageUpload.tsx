@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Provider } from 'react-redux';
 import { Server } from '../api/server';
 import LogIn from '../app/comps/LogIn';
 
@@ -15,17 +16,19 @@ export default class RichEditorImageUpload extends Component<Props, State> {
   onLoggedIn?: () => void;
   render() {
     return (
-      <LogIn
-        actionTitle={this.props.actionTitle || 'Upload'}
-        server={this.props.server}
-        open={this.state.logInOpen}
-        onClose={() => this.setState({ logInOpen: false })}
-        onLoggedInAndClose={async () => {
-          this.setState({ logInOpen: false });
-          this.onLoggedIn && this.onLoggedIn();
-          this.onLoggedIn = undefined;
-        }}
-      />
+      <Provider key={this.props.server.getProjectId()} store={this.props.server.getStore()}>
+        <LogIn
+          actionTitle={this.props.actionTitle || 'Upload'}
+          server={this.props.server}
+          open={this.state.logInOpen}
+          onClose={() => this.setState({ logInOpen: false })}
+          onLoggedInAndClose={async () => {
+            this.setState({ logInOpen: false });
+            this.onLoggedIn && this.onLoggedIn();
+            this.onLoggedIn = undefined;
+          }}
+        />
+      </Provider>
     );
   }
 

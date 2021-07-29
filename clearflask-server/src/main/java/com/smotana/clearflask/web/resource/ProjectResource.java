@@ -237,8 +237,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                 .flatMap(cookie -> AuthenticationFilter.authenticateUserCookie(userStore, cookie))
                                 .map(UserStore.UserSession::getUserId)
                                 .flatMap(userId -> userStore.getUser(project.getProjectId(), userId))
-                                .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
-                                .orElse(null))));
+                                .orElseGet(() -> userStore.createOrGet(project.getProjectId(), account))
+                                .toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))));
 
         return new ConfigAndBindAllResult(byProjectId);
     }

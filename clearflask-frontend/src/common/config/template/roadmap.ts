@@ -149,7 +149,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
   // Add to landing page
   const landing = await this.landingGet();
   const isInLanding = landing?.pageAndIndex.page.landing.links.some(link => link.linkToPageId === roadmap?.pageAndIndex?.page.pageId);
-  if (!isInLanding) {
+  if (!!landing && !isInLanding) {
     this.landingOn(new Set([roadmap.pageAndIndex!.page.pageId]));
   }
 
