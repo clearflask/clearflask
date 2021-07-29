@@ -25,6 +25,7 @@ import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
 
 const notistackRef = React.createRef<ProviderContext>();
+export const resolveDefault = imported => imported.default;
 export const importSuccess = i => {
   closeLoadingScreen();
   return i;
@@ -43,51 +44,53 @@ const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').
 const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
-const theme: Theme = createMuiTheme({
-  palette: {
-    // type: 'dark',
-    background: {
-      // This is a very contested line, whether to have this white or transparent...
-      // Transparent is useful in PostStatus that allows transparency through an IFrame
-      // Everywhere else, it's more useful to have a solid color in order to cover up shadows and other things.
-      default: windowIso.location.pathname.startsWith('/embed-status')
-        ? 'rgba(255,255,255,0)'
-        : '#fff',
-      paper: '#fff',
-    },
-    primary: {
-      main: '#218774',
-    },
-    secondary: {
-      main: '#2dbaa1',
-    },
-  },
-  typography: {
-    /* If changed, change in index.html, AppThemeProvider.tsx */
-    fontFamily: 'Inter, -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
-    fontSize: 14,
-  },
-  overrides: {
-    MuiAppBar: {
-      colorDefault: {
-        backgroundColor: '#fff',
-      },
-    },
-  },
-  props: {
-    ...ComponentPropsOverrides,
-  },
-  vh,
-});
 interface Props {
   ssrLocation?: string;
   ssrStaticRouterContext?: StaticRouterContext;
 }
 class Main extends Component<Props> {
+  readonly theme: Theme;
   customerTrackerPresent: boolean = false;
 
   constructor(props) {
     super(props);
+
+    this.theme = createMuiTheme({
+      palette: {
+        // type: 'dark',
+        background: {
+          // This is a very contested line, whether to have this white or transparent...
+          // Transparent is useful in PostStatus that allows transparency through an IFrame
+          // Everywhere else, it's more useful to have a solid color in order to cover up shadows and other things.
+          default: windowIso.location?.pathname.startsWith('/embed-status')
+            ? 'rgba(255,255,255,0)'
+            : '#fff',
+          paper: '#fff',
+        },
+        primary: {
+          main: '#218774',
+        },
+        secondary: {
+          main: '#2dbaa1',
+        },
+      },
+      typography: {
+        /* If changed, change in index.html, AppThemeProvider.tsx */
+        fontFamily: 'Inter, -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
+        fontSize: 14,
+      },
+      overrides: {
+        MuiAppBar: {
+          colorDefault: {
+            backgroundColor: '#fff',
+          },
+        },
+      },
+      props: {
+        ...ComponentPropsOverrides,
+      },
+      vh,
+    });
 
     if (isTracking() && !windowIso.isSsr) {
       try {
@@ -114,17 +117,17 @@ class Main extends Component<Props> {
     return (
       <React.StrictMode>
         <StylesProvider injectFirst>
-          <MuiThemeProvider theme={theme}>
+          <MuiThemeProvider theme={this.theme}>
             <MuiSnackbarProvider notistackRef={notistackRef}>
               <CssBaseline />
               <ServerErrorNotifier />
               <CaptchaChallenger />
               <RemoveSsrCss />
               <div style={{
-                minHeight: windowIso.isSsr ? undefined : theme.vh(100),
+                minHeight: windowIso.isSsr ? undefined : this.theme.vh(100),
                 display: 'flex',
                 flexDirection: 'column',
-                background: theme.palette.background.default,
+                background: this.theme.palette.background.default,
               }}>
                 <Router
                   {...(windowIso.isSsr ? {

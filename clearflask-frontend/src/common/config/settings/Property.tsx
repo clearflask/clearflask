@@ -213,9 +213,11 @@ export default class Property extends Component<Props, State> {
                   width: this.props.width,
                 },
               }}
-              uploadImage={(prop.subType === ConfigEditor.PropSubType.Rich
-                ? (file) => this.richEditorImageUploadRef.current!.uploadImage(file)
-                : undefined) as any}
+              {...{
+                uploadImage: prop.subType === ConfigEditor.PropSubType.Rich
+                  ? (file) => this.richEditorImageUploadRef.current!.uploadImage(file)
+                  : undefined
+              }}
               {...this.props.TextFieldProps}
             />
             {prop.subType === ConfigEditor.PropSubType.Rich && (

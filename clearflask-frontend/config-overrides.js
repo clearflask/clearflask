@@ -1,7 +1,6 @@
 
 const { useBabelRc, override, removeModuleScopePlugin } = require('customize-cra');
 const LoadablePlugin = require('@loadable/webpack-plugin');
-const path = require('path');
 
 module.exports = override(
   useBabelRc(),
