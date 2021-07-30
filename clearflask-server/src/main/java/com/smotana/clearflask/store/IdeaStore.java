@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.HistogramResponse;
@@ -231,7 +230,8 @@ public interface IdeaStore {
 
         Instant mergedToPostTime;
 
-        List<MergedPost> mergedPosts;
+        @NonNull
+        ImmutableSet<String> mergedPostIds;
 
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
@@ -290,7 +290,7 @@ public interface IdeaStore {
                     getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
                     getMergedToPostTime(),
-                    (getMergedPosts() == null || getMergedPosts().isEmpty()) ? null : Lists.transform(getMergedPosts(), MergedPost::getPostId));
+                    getMergedPostIds().asList());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -322,14 +322,8 @@ public interface IdeaStore {
                     getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
                     getMergedToPostTime(),
-                    (getMergedPosts() == null || getMergedPosts().isEmpty()) ? null : Lists.transform(getMergedPosts(), MergedPost::getPostId),
+                    getMergedPostIds().asList(),
                     vote);
-        }
-
-        public MergedPost toMergedPost() {
-            return new MergedPost(
-                    getIdeaId(),
-                    getCommentCount() > 0);
         }
     }
 }

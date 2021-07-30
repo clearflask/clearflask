@@ -100,11 +100,14 @@ public interface UserStore {
     Optional<UserModel> oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) throws ApiException;
 
     /**
+     * Create or return existing user tied to an account
+     */
+    UserModel accountCreateOrGet(String projectId, AccountStore.Account account);
+
+    /**
      * Create or return existing user.
      */
-    UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt);
-
-    UserModel createOrGet(String projectId, AccountStore.Account account);
+    UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt, boolean isMod);
 
     default String genUserSessionId() {
         return IdUtil.randomAscId();

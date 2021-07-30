@@ -17,6 +17,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     flexGrow: 1,
     width: 600,
+    height: '100%',
     maxWidth: '100%',
   },
   draggable: {

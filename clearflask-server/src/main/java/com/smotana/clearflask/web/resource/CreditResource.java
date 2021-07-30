@@ -60,7 +60,8 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
                         projectId,
                         creditIncome.getGuid(),
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getEmail())),
-                        Optional.ofNullable(Strings.emptyToNull(creditIncome.getName()))));
+                        Optional.ofNullable(Strings.emptyToNull(creditIncome.getName())),
+                        false));
         TransactionModel transaction = voteStore.balanceAdjustTransaction(
                 projectId,
                 user.getUserId(),

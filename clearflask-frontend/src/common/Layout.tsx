@@ -111,7 +111,7 @@ const styles = (theme: Theme) => createStyles({
     aligSelf: 'center',
   },
   appBar: {
-    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
+    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer),
     ...BoxLayoutBoxApplyStyles(theme),
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },

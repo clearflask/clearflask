@@ -141,24 +141,17 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         boolean isParent = ideaCommentSearch.getParentCommentId() != null;
         boolean isInitial = isParent && (ideaCommentSearch.getExcludeChildrenCommentIds() == null || ideaCommentSearch.getExcludeChildrenCommentIds().isEmpty());
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId).get();
-        ImmutableSet<String> mergedPostIdsWithComments = idea.getMergedPosts().stream()
-                .filter(mergedPost -> mergedPost.getHasComments() == Boolean.TRUE)
-                .map(IdeaStore.MergedPost::getPostId)
-                .collect(ImmutableSet.toImmutableSet());
         ImmutableSet<CommentModel> comments = commentStore.getCommentsForPost(
                 projectId,
                 ideaId,
-                mergedPostIdsWithComments,
+                idea.getMergedPostIds(),
                 Optional.ofNullable(Strings.emptyToNull(ideaCommentSearch.getParentCommentId())),
                 ideaCommentSearch.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(ideaCommentSearch.getExcludeChildrenCommentIds()));
-        ImmutableSet<String> mergedPostIds = idea.getMergedPosts().stream()
-                .map(IdeaStore.MergedPost::getPostId)
-                .collect(ImmutableSet.toImmutableSet());
         return new IdeaCommentSearchResponse(toCommentWithVotesAndAddMergedPostsAsComments(
                 projectId,
                 comments,
                 Optional.of(ideaId),
-                mergedPostIds,
+                idea.getMergedPostIds(),
                 isInitial ? configCommentStore.searchInitialFetchMax() : configCommentStore.searchSubsequentFetchMax(),
                 ideaCommentSearch.getExcludeChildrenCommentIds()));
     }

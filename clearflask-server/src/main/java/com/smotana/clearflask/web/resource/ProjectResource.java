@@ -237,7 +237,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                 .flatMap(cookie -> AuthenticationFilter.authenticateUserCookie(userStore, cookie))
                                 .map(UserStore.UserSession::getUserId)
                                 .flatMap(userId -> userStore.getUser(project.getProjectId(), userId))
-                                .orElseGet(() -> userStore.createOrGet(project.getProjectId(), account))
+                                .orElseGet(() -> {
+                                    UserModel user = userStore.accountCreateOrGet(project.getProjectId(), account);
+                                    UserStore.UserSession session = userStore.createSession(user,
+                                            Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
+                                    authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + project.getProjectId(), session.getSessionId(), session.getTtlInEpochSec());
+                                    return user;
+                                })
                                 .toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))));
 
         return new ConfigAndBindAllResult(byProjectId);
@@ -288,7 +294,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
         }
 
-        UserModel accountUser = userStore.createOrGet(projectId, account);
+        UserModel accountUser = userStore.accountCreateOrGet(projectId, account);
         UserStore.UserSession session = userStore.createSession(
                 accountUser,
                 Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());

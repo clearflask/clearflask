@@ -354,6 +354,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Override
     public ImmutableMap<String, UserModel> getUsers(String projectId, ImmutableCollection<String> userIds) {
+        if (userIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
         return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(userIds.stream()
                 .map(userId -> userSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -435,8 +438,10 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (userSearchAdmin.getIsMod() != null) {
             queryBuilder.must(QueryBuilders.termQuery("isMod", userSearchAdmin.getIsMod().booleanValue()));
         }
-        queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+        if (!Strings.isNullOrEmpty(userSearchAdmin.getSearchText())) {
+            queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                    .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+        }
         log.trace("User search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
@@ -1066,7 +1071,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return Optional.empty();
         }
 
-        UserModel userModel = createOrGet(projectId, guid, emailOpt, nameOpt);
+        UserModel userModel = createOrGet(projectId, guid, emailOpt, nameOpt, false);
 
         if (userModel.getAuthTokenValidityStart() != null
                 && claims.getIssuedAt() != null
@@ -1147,12 +1152,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return Optional.empty();
         }
 
-        return Optional.of(createOrGet(projectId, guid, emailOpt, nameOpt));
+        return Optional.of(createOrGet(projectId, guid, emailOpt, nameOpt, false));
     }
 
     @Extern
     @Override
-    public UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt) {
+    public UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt, boolean isMod) {
         Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.GUID, guid);
         if (!userOpt.isPresent() && emailOpt.isPresent()) {
             userOpt = getUserByIdentifier(projectId, IdentifierType.EMAIL, emailOpt.get());
@@ -1222,8 +1227,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public UserModel createOrGet(String projectId, AccountStore.Account account) {
-        return createOrGet(projectId, account.getAccountId(), Optional.of(account.getEmail()), Optional.of(account.getName()));
+    public UserModel accountCreateOrGet(String projectId, AccountStore.Account account) {
+        return createOrGet(projectId, account.getAccountId(), Optional.of(account.getEmail()), Optional.of(account.getName()), true);
     }
 
     @Extern

@@ -431,7 +431,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             private final Map<String, String> removeUpdates = Maps.newHashMap();
             private final Map<String, String> addUpdates = Maps.newHashMap();
             private final Map<String, String> deleteUpdates = Maps.newHashMap();
-            private Optional<String> conditionExpressionOpt = Optional.empty();
+            private final List<String> conditionExpressions = Lists.newArrayList();
 
             @Override
             public ExpressionBuilder set(String fieldName, Object object) {
@@ -533,48 +533,42 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             @Override
             public ExpressionBuilder condition(String expression) {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of(expression);
+                conditionExpressions.add(expression);
                 return this;
             }
 
             @Override
             public ExpressionBuilder conditionExists() {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of("attribute_exists(" + fieldMapping(partitionKeyName) + ")");
+                conditionExpressions.add("attribute_exists(" + fieldMapping(partitionKeyName) + ")");
                 return this;
             }
 
             @Override
             public ExpressionBuilder conditionNotExists() {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of("attribute_not_exists(" + fieldMapping(partitionKeyName) + ")");
+                conditionExpressions.add("attribute_not_exists(" + fieldMapping(partitionKeyName) + ")");
                 return this;
             }
 
             @Override
             public ExpressionBuilder conditionFieldEquals(String fieldName, Object objectOther) {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of(fieldMapping(partitionKeyName) + " = " + valueMapping(fieldName, objectOther));
+                conditionExpressions.add(fieldMapping(partitionKeyName) + " = " + valueMapping(fieldName, objectOther));
                 return this;
             }
 
             @Override
             public ExpressionBuilder conditionFieldExists(String fieldName) {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of("attribute_exists(" + fieldMapping(fieldName) + ")");
+                conditionExpressions.add("attribute_exists(" + fieldMapping(fieldName) + ")");
                 return this;
             }
 
             @Override
             public ExpressionBuilder conditionFieldNotExists(String fieldName) {
                 checkState(!built);
-                checkState(!conditionExpressionOpt.isPresent());
-                conditionExpressionOpt = Optional.of("attribute_not_exists(" + fieldMapping(fieldName) + ")");
+                conditionExpressions.add("attribute_not_exists(" + fieldMapping(fieldName) + ")");
                 return this;
             }
 
@@ -595,7 +589,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     updates.add("DELETE " + String.join(", ", deleteUpdates.values()));
                 }
                 final String update = String.join(" ", updates);
-                final Optional<String> conditionOpt = conditionExpressionOpt;
+                final Optional<String> conditionOpt = Optional.ofNullable(Strings.emptyToNull(String.join(" AND ", conditionExpressions)));
                 final ImmutableMap<String, String> nameImmutableMap = ImmutableMap.copyOf(nameMap);
                 final ImmutableMap<String, Object> valImmutableMap = ImmutableMap.copyOf(valMap);
                 return new Expression() {
@@ -606,7 +600,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
                     @Override
                     public String conditionExpression() {
-                        return conditionOpt.get();
+                        return conditionOpt.orElse(null);
                     }
 
                     @Override

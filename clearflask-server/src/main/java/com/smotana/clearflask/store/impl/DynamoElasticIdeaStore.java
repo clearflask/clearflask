@@ -350,6 +350,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds) {
+        if (ideaIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
         return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
                 .map(ideaId -> ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -473,8 +476,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         }
                     }
                 } while (expressionCursorOpt.isPresent());
-                // For simplicity, since we don't know expression value mappings here, just copy it blindly here
-                parentIdeaExpressionValueDiff -= idea.getExpressionsValue();
+
+                if (idea.getExpressionsValue() != null) {
+                    // For simplicity, since we don't know expression value mappings here, just copy it blindly here
+                    parentIdeaExpressionValueDiff -= idea.getExpressionsValue();
+                }
 
                 // Funding merge-back omitted, cannot merge back for now for simplicity
             }
@@ -535,7 +541,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge into a post that's already merged");
                 }
                 parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
-                parentIdeaExpressionBuilder.add("mergedPosts", idea.toMergedPost());
+                parentIdeaExpressionBuilder.add("mergedPostIds", ImmutableSet.of(idea.getIdeaId()));
             } else {
                 if (!parentIdeaId.equals(idea.getMergedToPostId())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge that's not merged");
@@ -548,7 +554,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Cannot undo a merge from a post that's already merged");
                 }
                 parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
-                parentIdeaExpressionBuilder.delete("mergedPosts", idea.toMergedPost());
+                parentIdeaExpressionBuilder.delete("mergedPostIds", ImmutableSet.of(idea.getIdeaId()));
             }
         } else {
             if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {
@@ -560,11 +566,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             }
             parentIdeaExpressionBuilder.conditionFieldNotExists("mergedToPostId");
             if (!undo) {
-                ideaExpressionBuilder.add("linkedToPostIds", parentIdeaId);
-                parentIdeaExpressionBuilder.add("linkedFromPostIds", ideaId);
+                ideaExpressionBuilder.add("linkedToPostIds", ImmutableSet.of(parentIdeaId));
+                parentIdeaExpressionBuilder.add("linkedFromPostIds", ImmutableSet.of(ideaId));
             } else {
-                ideaExpressionBuilder.delete("linkedToPostIds", parentIdeaId);
-                parentIdeaExpressionBuilder.delete("linkedFromPostIds", ideaId);
+                ideaExpressionBuilder.delete("linkedToPostIds", ImmutableSet.of(parentIdeaId));
+                parentIdeaExpressionBuilder.delete("linkedFromPostIds", ImmutableSet.of(ideaId));
             }
         }
 

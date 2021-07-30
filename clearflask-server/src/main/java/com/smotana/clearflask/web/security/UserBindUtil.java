@@ -152,7 +152,7 @@ public class UserBindUtil {
                     .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt)
                     .flatMap(accountSession -> accountStore.getAccountByAccountId(accountSession.getAccountId()));
             if (accountOpt.isPresent()) {
-                userOpt = Optional.of(userStore.createOrGet(projectId, accountOpt.get()));
+                userOpt = Optional.of(userStore.accountCreateOrGet(projectId, accountOpt.get()));
                 createSession = true;
             }
         }

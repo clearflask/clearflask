@@ -19,10 +19,12 @@ const urlsSkipCache = new Set([
 
 function createProxy() {
   const serverHttpp = httpp.createProxyServer({ xfwd: true });
-  serverHttpp.on("error", function (err, req, res) {
+  serverHttpp.on('error', function (err, req, res) {
     console.error(err);
-    res.statusCode = 500;
-    res.end();
+    res.writeHead(500, { 'Content-Type': 'text/javascript' });
+    res.end(JSON.stringify({
+      userFacingMessage: 'Oops, something went wrong',
+    }));
     return;
   });
   return serverHttpp;
