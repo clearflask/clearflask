@@ -51,7 +51,6 @@ import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
-import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
 import { dashboardOnDragEnd, OnDndHandled } from './dashboard/dashboardDndActionHandler';
@@ -63,8 +62,7 @@ import { renderRoadmap } from './dashboard/dashboardRoadmap';
 import { renderSettings } from './dashboard/dashboardSettings';
 import { renderUsers } from './dashboard/dashboardUsers';
 import { ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
-import WelcomePage from './dashboard/WelcomePage';
-import DemoApp, { getProject, Project as DemoProject } from './DemoApp';
+import DemoApp from './DemoApp';
 import Logo from './Logo';
 
 export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
@@ -258,6 +256,10 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  headerAction: {
+    alignSelf: 'center',
+    marginRight: theme.spacing(4),
+  },
 });
 interface Props {
 }
@@ -308,8 +310,6 @@ interface State {
 export class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
-  createProjectPromise: Promise<DemoProject> | undefined = undefined;
-  createProject: DemoProject | undefined = undefined;
   forcePathListener: ((forcePath: string) => void) | undefined;
   readonly searchAccounts: (newValue: string) => void;
   lastConfigVars?: string;
@@ -519,31 +519,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           ),
         });
         break;
-      case 'welcome':
-        setTitle('Welcome - Dashboard');
-        context.isOnboarding = true;
-        context.sections.push({
-          name: 'main',
-          content: (
-            <WelcomePage />
-          ),
-        });
-        break;
-      case 'created':
-        setTitle('Success - Dashboard');
-        if (!activeProject) {
-          context.showCreateProjectWarning = true;
-          break;
-        }
-        context.sections.push({
-          name: 'main',
-          content: (
-            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <CreatedPage key={activeProject.server.getProjectId()} server={activeProject.server} />
-            </Provider>
-          ),
-        });
-        break;
       case 'explore':
         this.renderExplore(context);
         break;
@@ -571,33 +546,29 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           content: (<RedirectIso to='/dashboard/settings/account/profile' />)
         });
         break;
-      // @ts-ignore fall-through
-      case 'welcome-create':
-        context.isOnboarding = true;
+      case 'welcome':
       case 'create':
-        setTitle('Create - Dashboard');
-        if (!this.createProjectPromise) {
-          this.createProjectPromise = getProject(undefined, undefined, { suppressSetTitle: true });
-          this.createProjectPromise.then(project => {
-            this.createProject = project;
-            this.forceUpdate();
-          })
+        const isOnboarding = activePath === 'welcome' && !projects.length;
+        if (isOnboarding) {
+          context.isOnboarding = true;
+          setTitle('Welcome');
+        } else {
+          setTitle('Create a project - Dashboard');
         }
         context.sections.push({
           name: 'main',
-          content: !!this.createProject && (
+          noPaper: true, collapseTopBottom: true, collapseLeft: true, collapseRight: true,
+          size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
+          content: (
             <CreatePage
-              previewProject={this.createProject}
+              isOnboarding={isOnboarding}
               projectCreated={(projectId) => {
                 localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
-                this.setState({ selectedProjectId: projectId }, () => {
-                  this.pageClicked('created');
-                });
+                this.setState({ selectedProjectId: projectId });
               }}
             />
           ),
         });
-        context.sections.push(this.renderPreviewCreateDemo());
         break;
       case 'settings':
         this.renderSettings(context);
@@ -1048,23 +1019,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         <div>
           TODO user create
         </div>
-      ),
-    };
-  }
-
-  renderPreviewCreateDemo(): Section {
-    return {
-      name: 'preview',
-      breakAction: 'drawer',
-      size: {},
-      content: this.createProject ? (
-        <DemoApp
-          key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
-          server={this.createProject.server}
-          settings={{ suppressSetTitle: true }}
-        />
-      ) : (
-        <LoadingPage />
       ),
     };
   }

@@ -414,6 +414,19 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
   }
 }
 
+export const HeaderLogoLogo = (props: {
+  logoUrl: string;
+  large?: boolean;
+}) => {
+  const classes = useStyles();
+
+  return (
+    <img alt='' src={props.logoUrl} className={classNames(
+      classes.logoImg,
+      props.large && classes.logoImgLarge,
+    )} />
+  );
+}
 
 export const HeaderLogo = (props: {
   config?: Client.Config,
@@ -433,10 +446,10 @@ export const HeaderLogo = (props: {
   );
 
   const logo = !props.config?.logoUrl ? undefined : (
-    <img alt='' src={props.config.logoUrl} className={classNames(
-      classes.logoImg,
-      props.large && classes.logoImgLarge,
-    )} />
+    <HeaderLogoLogo
+      logoUrl={props.config.logoUrl}
+      large={props.large}
+    />
   );
 
   const logoAndName = props.suppressLogoLink ? (

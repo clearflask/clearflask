@@ -15,10 +15,8 @@ import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import { preloadImage } from '../common/util/imageUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
-import { WelcomeImagePath } from './dashboard/WelcomePage';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
@@ -89,8 +87,6 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
     super(props);
 
     props.callOnMount?.();
-
-    preloadImage(WelcomeImagePath);
   }
 
   render() {
@@ -156,7 +152,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
               <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
                 Please enter your work email. Don't have one?&nbsp;
                 <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>
-                  &nbsp;with us.
+                &nbsp;with us.
               </div>
             )} />
           </Collapse>

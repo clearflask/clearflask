@@ -184,7 +184,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     var selectedCategory = categoryOptions.find(c => c.categoryId === draft.categoryId);
     if (!selectedCategory) {
       selectedCategory = categoryOptions[0];
-      draft.categoryId = selectedCategory.categoryId;
+      draft.categoryId = selectedCategory?.categoryId;
     }
     if (!selectedCategory) return null;
     if (this.state.draftFieldAuthorId !== undefined) draft.authorUserId = this.state.draftFieldAuthorId;

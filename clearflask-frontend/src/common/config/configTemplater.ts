@@ -47,7 +47,7 @@ export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
   templateRoadmap: true,
   templateChangelog: true,
 };
-interface CreateTemplateV2Result {
+export interface CreateTemplateV2Result {
   feedback?: FeedbackInstance;
   roadmap?: RoadmapInstance;
   changelog?: ChangelogInstance;
@@ -61,6 +61,7 @@ interface CreateTemplateV2Result {
 // TODO BUG BOUNTY
 // TODO QUESTION AND ANSWER
 // TODO FORUM
+/** Depcrecated, use CreateTemplateV2Options */
 export interface CreateTemplateOptions {
   templateFeedback?: boolean;
   templateRoadmap?: boolean;

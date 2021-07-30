@@ -1,30 +1,91 @@
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, Grid, Link, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import WarningIcon from '@material-ui/icons/ReportProblemOutlined';
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+/// <reference path="../../@types/transform-media-imports.d.ts"/>
+import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControlLabel, Hidden, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import CreatedImg from '../../../public/img/dashboard/created.svg';
+import FeaturesImg from '../../../public/img/landing/hero.svg';
+import DetailsImg from '../../../public/img/landing/understand.svg';
 import * as Admin from '../../api/admin';
-import DataMock from '../../api/dataMock';
-import ServerAdmin, { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
-import ServerMock from '../../api/serverMock';
+import ServerAdmin from '../../api/serverAdmin';
+import { HeaderLogoLogo } from '../../app/Header';
 import * as ConfigEditor from '../../common/config/configEditor';
-import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '../../common/config/configTemplater';
-import { RestrictedProperties, UpgradeAlert } from '../../common/config/settings/UpgradeWrapper';
-import { Device } from '../../common/DeviceContainer';
+import Templater, { CreateTemplateV2Options, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
+import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
-import debounce from '../../common/util/debounce';
 import { preloadImage } from '../../common/util/imageUtil';
-import { Project } from '../DemoApp';
-import Demo from '../landing/Demo';
-import OnboardingDemo from '../landing/OnboardingDemo';
+import Logo from '../Logo';
 import { CreatedImagePath } from './CreatedPage';
 
 const styles = (theme: Theme) => createStyles({
-  item: {
+  layout: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100%',
+  },
+  layoutHeader: {
+    margin: theme.spacing(2),
+    alignSelf: 'stretch',
+  },
+  layoutHeaderLogo: {},
+  layoutContentAndImage: {
+    display: 'flex',
+    alignItems: 'center',
+    flexGrow: 1,
+  },
+  layoutContentContainer: {
+    margin: theme.spacing(4, 'auto'),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  layoutContent: {},
+  layoutContentTitle: {},
+  layoutContentDescription: {},
+  layoutContentActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
     margin: theme.spacing(2),
   },
+  layoutContentAction: {
+    margin: theme.spacing(1),
+  },
+  layoutImage: {
+    margin: theme.spacing(8),
+    width: '100%',
+    maxWidth: '30vw',
+  },
+  layoutLimitWidth: {
+    // width: 500,
+    maxWidth: 500,
+  },
+  templateCards: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+  },
+  templateCard: {
+    margin: theme.spacing(4),
+    width: 200,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  projectDetailsFields: {
+    display: 'flex',
+    flexDirection: 'column',
+    margin: theme.spacing(2, 0),
+  },
+  subdomainFields: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  field: {
+    margin: theme.spacing(2, 1),
+    width: 300,
+    maxWidth: 300,
+  },
+
   link: {
     cursor: 'pointer',
     textDecoration: 'none!important',
@@ -67,267 +128,103 @@ const styles = (theme: Theme) => createStyles({
   flexBreak: {
     width: '100%',
   },
+  flexGrow: {
+    flexGrow: 1,
+  },
   warningIcon: {
     color: theme.palette.warning.main,
   },
 });
+const useStyles = makeStyles(styles);
 interface Props {
-  previewProject: Project;
+  isOnboarding: boolean;
   projectCreated: (projectId: string) => void;
 }
-interface ConnectProps {
-  accountPlanId?: string;
-}
-interface State extends CreateTemplateOptions {
-  step: number;
+interface State extends CreateTemplateV2Options {
+  step: 'feature-select' | 'project-details' | 'complete';
   isSubmitting?: boolean;
-  inviteSpecificPeople?: string;
+  createdProject?: Admin.NewProjectResult;
+  createdTemplates?: CreateTemplateV2Result;
 }
-class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
-  readonly updatePreview: () => void;
-  onboardingDemoRef: React.RefObject<any> = React.createRef();
+class CreatePage extends Component<Props & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
 
     this.state = {
-      ...createTemplateOptionsDefault,
-      step: 0,
+      ...createTemplateV2OptionsDefault,
+      step: 'feature-select',
     };
-
-    this.updatePreview = debounce(async () => {
-      const config = this.createConfig();
-      await this.mockData(config)
-      this.props.previewProject.editor.setConfig(config);
-      await this.props.previewProject.server.dispatch().then(d => d.userBind({
-        projectId: config.projectId,
-        userBind: {},
-      }));
-    }, DemoUpdateDelay);
-    this.updatePreview();
 
     preloadImage(CreatedImagePath);
   }
 
   render() {
-    const visibilityRequiresUpgrade = this.props.accountPlanId && RestrictedProperties[this.props.accountPlanId]?.some(restrictedPath =>
-      ConfigEditor.pathEquals(restrictedPath, ['users', 'onboarding', 'visibility']))
-    const ssoRequiresUpgrade = this.props.accountPlanId && RestrictedProperties[this.props.accountPlanId]?.some(restrictedPath =>
-      ConfigEditor.pathEquals(restrictedPath, ['users', 'onboarding', 'notificationMethods', 'sso']))
-    const upgradeRequired = !!visibilityRequiresUpgrade && !!this.state.projectPrivate
-      || !!ssoRequiresUpgrade && !!this.state.ssoAllowed;
-
-    const supportButtonGroupVal: string[] = [];
-    this.state.fundingAllowed && supportButtonGroupVal.push('funding');
-    this.state.votingAllowed && supportButtonGroupVal.push('voting');
-    this.state.expressionAllowed && supportButtonGroupVal.push('expression');
-
-    return (
-      <>
-        <Typography variant='h4' component='h1'>Create a new project</Typography>
-        <Typography variant='body1' component='p'>Each project has separate settings, content, and users.</Typography>
-        <Stepper activeStep={this.state.step} orientation='vertical'>
-          <Step key='plan' completed={false}>
-            <StepLabel>
-              <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 0 })} className={this.props.classes.link}>
-                Template Selection
-              </Link>
-            </StepLabel>
-            <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
-              <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
-                <TemplateCard
-                  title='Feedback'
-                  content='Collect feedback from customers.'
-                  checked={!!this.state.templateFeedback}
-                  onChange={() => this.setStateAndPreview({ templateFeedback: !this.state.templateFeedback })}
-                />
-                <TemplateCard
-                  title='Roadmap'
-                  disabled={!this.state.templateFeedback}
-                  content='Show a roadmap to your users'
-                  checked={!!this.state.templateRoadmap && !!this.state.templateFeedback}
-                  onChange={() => this.setStateAndPreview({ templateRoadmap: !this.state.templateRoadmap })}
-                />
-                <div className={this.props.classes.flexBreak} />
-                <TemplateCard
-                  title='Changelog'
-                  content='Update your users with new changes to your product.'
-                  checked={!!this.state.templateChangelog}
-                  onChange={() => this.setStateAndPreview({ templateChangelog: !this.state.templateChangelog })}
-                />
-                <TemplateCard
-                  title='Knowledge Base'
-                  content='Helpful articles around your product.'
-                  checked={!!this.state.templateKnowledgeBase}
-                  onChange={() => this.setStateAndPreview({ templateKnowledgeBase: !this.state.templateKnowledgeBase })}
-                />
-                {/* TODO <TemplateCard
-                  title='Community forum'
-                  content='Let your users discuss questions'
-                  checked={!!this.state.templateFeedback}
-                  onChange={() => this.setStateAndPreview({templateFeedback: !this.state.templateFeedback})}
-                /> */}
-                {/* <TemplateCard
-                  title='Blog'
-                  content='Add articles for your users'
-                  checked={!!this.state.templateBlog}
-                  onChange={() => this.setStateAndPreview({ templateBlog: !this.state.templateBlog })}
-                /> */}
-              </Grid>
-              <Typography variant='caption'>You can customize and add additional templates later.</Typography>
-              <Box display='flex' className={this.props.classes.item}>
-                <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
-              </Box>
-            </StepContent>
-          </Step>
-          <Step key='onboarding' completed={false}>
-            <StepLabel StepIconProps={upgradeRequired ? {
-              icon: (<WarningIcon color='inherit' className={this.props.classes.warningIcon} />),
-            } : undefined}>
-              <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
-                Onboarding
-              </Link>
-            </StepLabel>
-            <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
-              <Box display='flex' flexDirection='column' alignItems='flex-start' className={this.props.classes.item}>
-                <ToggleButtonGroup
-                  className={this.props.classes.visibilityButtonGroup}
-                  size='large'
-                  exclusive
-                  value={!!this.state.projectPrivate ? 'private' : 'public'}
-                  onChange={(e, val) => (val === 'private' || val === 'public') && this.setStateAndPreview({
-                    projectPrivate: val === 'private',
-                    anonAllowed: undefined,
-                    webPushAllowed: undefined,
-                    emailAllowed: undefined,
-                    emailDomainAllowed: undefined,
-                    ssoAllowed: undefined,
-                    inviteSpecificPeople: undefined,
-                  })}
-                >
-                  <ToggleButton value='public' classes={{ label: this.props.classes.visibilityButton }}>
-                    PUBLIC
-                    <Typography variant='caption' display='block'>Anyone can see</Typography>
-                  </ToggleButton>
-                  <ToggleButton value='private' classes={{ label: this.props.classes.visibilityButton }}>
-                    PRIVATE
-                    <Typography variant='caption' display='block'>Restricted access</Typography>
-                  </ToggleButton>
-                </ToggleButtonGroup>
-                <Collapse in={upgradeRequired} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
-                  <UpgradeAlert />
-                </Collapse>
-                <Collapse in={!!this.state.projectPrivate} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
-                  <FormControlLabel
-                    label={this.checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.ssoAllowed}
-                        onChange={e => this.setStateAndPreview({ ssoAllowed: !this.state.ssoAllowed })}
-                      />
-                    )}
+    switch (this.state.step) {
+      default:
+      case 'feature-select':
+        return (
+          <CreateLayout
+            key='feature-select'
+            isOnboarding={this.props.isOnboarding}
+            title='Choose features'
+            description='Please choose the functions you want to include in your project. You can always change your mind later'
+            stretchContent
+            img={FeaturesImg}
+            content={(
+              <>
+                <div className={this.props.classes.templateCards}>
+                  <TemplateCard
+                    className={this.props.classes.templateCard}
+                    title='Feedback'
+                    content='Collect feedback from customers.'
+                    checked={!!this.state.templateFeedback}
+                    onChange={() => this.setState({ templateFeedback: !this.state.templateFeedback })}
                   />
-                  <FormControlLabel
-                    label={(
-                      <span className={this.props.classes.inlineTextField}>
-                        Email from&nbsp;@
-                        <TextField
-                          style={{ width: 100 }}
-                          placeholder='company.com'
-                          required
-                          error={!!this.state.emailAllowed && !this.state.emailDomainAllowed}
-                          value={this.state.emailDomainAllowed || ''}
-                          onChange={e => this.setStateAndPreview({ emailDomainAllowed: e.target.value })}
-                        />
-                        &nbsp;domain
-                      </span>
-                    )}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.emailAllowed}
-                        onChange={e => this.setStateAndPreview({ emailAllowed: !this.state.emailAllowed })}
-                      />
-                    )}
+                  <TemplateCard
+                    className={this.props.classes.templateCard}
+                    title='Roadmap'
+                    content='Convert feedback into tasks and organize it in a public roadmap'
+                    checked={!!this.state.templateRoadmap}
+                    onChange={() => this.setState({ templateRoadmap: !this.state.templateRoadmap })}
                   />
-                  <div className={classNames(this.props.classes.onboardOption, this.props.classes.inlineTextField)}>
-                    &nbsp;&nbsp;&nbsp;
-                    <Typography variant='body1' component='span'>Invite specific people:</Typography>
-                    &nbsp;
-                    <TextField
-                      style={{ width: 216 }}
-                      placeholder='olivia@abc.com, joe@xyz.com'
-                      required
-                      value={this.state.inviteSpecificPeople || ''}
-                      onChange={e => this.setState({ inviteSpecificPeople: e.target.value })}
-                    />
-                  </div>
-                </Collapse>
-                <Collapse in={!this.state.projectPrivate} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
-                  <FormControlLabel
-                    label={this.checkboxLabel('Anonymous', 'Allow users to sign up with no contact information')}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.anonAllowed}
-                        onChange={e => this.setStateAndPreview({ anonAllowed: !this.state.anonAllowed })}
-                      />
-                    )}
+                  <TemplateCard
+                    className={this.props.classes.templateCard}
+                    title='Changelog'
+                    content='Keep your users updated with new changes in your product.'
+                    checked={!!this.state.templateChangelog}
+                    onChange={() => this.setState({ templateChangelog: !this.state.templateChangelog })}
                   />
-                  <FormControlLabel
-                    label={this.checkboxLabel('Browser Push', 'Allow users to sign up by receiving push messages directly in their browser')}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.webPushAllowed}
-                        onChange={e => this.setStateAndPreview({ webPushAllowed: !this.state.webPushAllowed })}
-                      />
-                    )}
-                  />
-                  <FormControlLabel
-                    label={this.checkboxLabel('Email', 'Allow users to sign up with their email')}
-                    className={this.props.classes.onboardOption}
-                    control={(
-                      <Checkbox
-                        color='primary'
-                        checked={!!this.state.emailAllowed}
-                        onChange={e => this.setStateAndPreview({ emailAllowed: !this.state.emailAllowed })}
-                      />
-                    )}
-                  />
-                </Collapse>
-                <Demo
-                  type='column'
-                  demoProject={Promise.resolve(this.props.previewProject)}
-                  initialSubPath='/embed/demo'
-                  demoFixedWidth={420}
-                  demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-                />
-              </Box>
-              <Typography variant='caption'>You can customize in more detail later.</Typography>
-              <Box display='flex' className={this.props.classes.item}>
-                <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
-              </Box>
-            </StepContent>
-          </Step>
-          <Step key='info' completed={false}>
-            <StepLabel>
-              <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 2 })} className={this.props.classes.link}>
-                Info
-              </Link>
-            </StepLabel>
-            <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
-              <Box display='flex' flexDirection='column' alignItems='flex-start' className={this.props.classes.item}>
+                </div>
+              </>
+            )}
+            actions={[(
+              <Button
+                variant='contained'
+                disableElevation
+                color='primary'
+                onClick={() => this.setState({ step: 'project-details' })}
+              >
+                Next
+              </Button>
+            )]}
+          />
+        );
+      case 'project-details':
+        return (
+          <CreateLayout
+            key='project-details'
+            isOnboarding={this.props.isOnboarding}
+            title='Fill out details'
+            description='Give us a few more details about your project.'
+            img={DetailsImg}
+            content={(
+              <div className={this.props.classes.projectDetailsFields}>
                 <TextField
-                  className={this.props.classes.item}
-                  id='website'
-                  label={this.props.previewProject.editor.getProperty(['website']).name}
-                  helperText={this.props.previewProject.editor.getProperty(['website']).description}
+                  className={this.props.classes.field}
+                  variant='outlined'
+                  autoFocus
+                  label='Your website (Optional)'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoWebsite || ''}
                   onChange={e => {
@@ -346,7 +243,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                     if (logoMatch && logoMatch[2]) {
                       logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
                     }
-                    this.setStateAndPreview({
+                    this.setState({
                       infoWebsite: e.target.value,
                       ...(!!logo ? { infoLogo: logo } : {}),
                       ...(!!slug ? { infoSlug: slug } : {}),
@@ -355,107 +252,110 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                   }}
                 />
                 <TextField
-                  className={this.props.classes.item}
-                  id='name'
-                  label={this.props.previewProject.editor.getProperty(['name']).name}
-                  helperText={this.props.previewProject.editor.getProperty(['name']).description}
-                  required
+                  className={this.props.classes.field}
+                  variant='outlined'
+                  label='Product name'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoName || ''}
                   onChange={e => {
                     const slug = this.nameToSlug(e.target.value);
-                    this.setStateAndPreview({
+                    this.setState({
                       infoName: e.target.value,
                       ...(!!slug ? { infoSlug: slug } : {}),
                     });
                   }}
                 />
+                <div className={this.props.classes.subdomainFields}>
+                  <TextField
+                    className={this.props.classes.field}
+                    variant='outlined'
+                    label='Subdomain'
+                    disabled={!!this.state.isSubmitting}
+                    value={this.state.infoSlug || ''}
+                    onChange={e => this.setState({ infoSlug: e.target.value })}
+                  />
+                  <Typography variant='h6' component='div'>.clearflask.com</Typography>
+                </div>
                 <TextField
-                  className={this.props.classes.item}
-                  id='slug'
-                  label={this.props.previewProject.editor.getProperty(['slug']).name}
-                  helperText={this.props.previewProject.editor.getProperty(['slug']).description}
-                  required
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoSlug || ''}
-                  onChange={e => this.setStateAndPreview({ infoSlug: e.target.value })}
-                />
-                <TextField
-                  className={this.props.classes.item}
-                  id='logo'
-                  label={this.props.previewProject.editor.getProperty(['logoUrl']).name}
-                  helperText={this.props.previewProject.editor.getProperty(['logoUrl']).description}
+                  className={this.props.classes.field}
+                  variant='outlined'
+                  label='Logo URL (Optional)'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoLogo || ''}
-                  onChange={e => this.setStateAndPreview({ infoLogo: e.target.value })}
+                  onChange={e => this.setState({ infoLogo: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        {this.state.infoLogo && (
+                          <HeaderLogoLogo logoUrl={this.state.infoLogo} />
+                        )}
+                      </InputAdornment>
+                    ),
+                  }}
                 />
-                <SubmitButton
-                  isSubmitting={this.state.isSubmitting}
-                  disabled={!this.state.infoName || !this.state.infoSlug || upgradeRequired}
-                  onClick={() => this.onCreate()} color='primary'>Create</SubmitButton>
-              </Box>
-            </StepContent>
-          </Step>
-        </Stepper>
-      </>
-    );
+              </div>
+            )}
+            actions={[(
+              <Button
+                variant='text'
+                onClick={() => this.setState({ step: 'feature-select' })}
+              >
+                Back
+              </Button>
+            ), (
+              <SubmitButton
+                variant='contained'
+                disableElevation
+                color='primary'
+                isSubmitting={this.state.isSubmitting}
+                disabled={!this.state.infoName || !this.state.infoSlug}
+                onClick={() => this.onCreate()}
+              >
+                Create
+              </SubmitButton>
+            )]}
+          />
+        );
+      case 'complete':
+        return (
+          <CreateLayout
+            key='complete'
+            isOnboarding={this.props.isOnboarding}
+            title='Success!'
+            description={`You've created ${this.state.infoName || 'your project'}.`}
+            img={CreatedImg}
+          />
+        );
+    }
   }
 
-  checkboxLabel(primary: string, secondary: string): React.ReactNode {
-    return (
-      <div>
-        <Typography variant='body1' component='p'>{primary}</Typography>
-        <Typography variant='caption' component='p'>{secondary}</Typography>
-      </div>
-    );
-  }
-
-  createConfig(): Admin.ConfigAdmin {
+  async createConfig(): Promise<{ config: Admin.ConfigAdmin, templates: CreateTemplateV2Result }> {
     const editor = new ConfigEditor.EditorImpl();
     const templater = Templater.get(editor);
-    templater.createTemplate(this.state);
-    return editor.getConfig();
-  }
-
-  async mockData(config: Admin.ConfigAdmin): Promise<void> {
-    const mocker = DataMock.get(config.projectId);
-    ServerMock.get().deleteProject(config.projectId);
-    ServerMock.get().getProject(config.projectId).config.config = config;
-
-    await mocker.templateMock(this.state);
-  }
-
-  setStateAndPreview<K extends keyof State>(stateUpdate: Pick<State, K>) {
-    this.setState(stateUpdate, this.updatePreview.bind(this));
+    const templates = await templater.createTemplateV2(this.state);
+    const config = editor.getConfig();
+    return { config, templates };
   }
 
   async onCreate() {
-    const inviteUserEmails = this.parseInvites(this.state.inviteSpecificPeople);
     this.setState({ isSubmitting: true });
     try {
       const d = await ServerAdmin.get().dispatchAdmin();
+      const configAndTemplates = await this.createConfig();
       const newProject = await d.projectCreateAdmin({
-        configAdmin: this.createConfig(),
+        configAdmin: configAndTemplates.config,
       });
-      this.setState({ isSubmitting: false });
+      this.setState({
+        isSubmitting: false,
+        step: 'complete',
+        createdProject: newProject,
+        createdTemplates: configAndTemplates.templates,
+      });
       this.props.projectCreated(newProject.projectId);
-      inviteUserEmails.forEach(inviteUserEmail => d.userCreateAdmin({
-        projectId: newProject.projectId,
-        userCreateAdmin: {
-          email: inviteUserEmail,
-        },
-      }));
     } catch (e) {
       this.setState({ isSubmitting: false });
       return;
     }
-  }
-
-  parseInvites(input?: string): string[] {
-    if (!input) return [];
-    return input.split(',')
-      .map(e => e.trim())
-      .filter(e => !!e)
   }
 
   nameToSlug(name: string): string | undefined {
@@ -467,24 +367,31 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
       .replace(/ +/g, '-');
   }
 }
+export default withStyles(styles, { withTheme: true })(CreatePage);
 
-interface TemplateCardProps {
+const TemplateCard = (props: {
+  className?: string;
   title: string;
   content: string;
   checked: boolean;
   disabled?: boolean;
   onChange: () => void;
-}
-
-const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCardProps & WithStyles<typeof styles, true>) => (
-  <Grid item key='feedback' xs={12} sm={6} md={9} lg={5}>
-    <Card elevation={0} className={classNames(props.classes.box, props.checked && props.classes.boxSelected, props.disabled && props.classes.disabled)}>
+}) => {
+  const classes = useStyles();
+  return (
+    <Card elevation={0} className={classNames(
+      props.className,
+      classes.box,
+      props.checked && classes.boxSelected,
+      props.disabled && classes.disabled,
+    )}>
       <CardHeader
         title={props.title}
         titleTypographyProps={{ align: 'center' }}
         subheaderTypographyProps={{ align: 'center' }}
       />
       <CardContent>{props.content}</CardContent>
+      <div className={classes.flexGrow} />
       <CardActions>
         <FormControlLabel
           control={(
@@ -498,11 +405,61 @@ const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCar
         />
       </CardActions>
     </Card>
-  </Grid>
-))
+  );
+};
 
-export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  return {
-    accountPlanId: state.account.account.account?.basePlanId,
-  };
-})(withStyles(styles, { withTheme: true })(CreatePage));
+const CreateLayout = (props: {
+  title: string;
+  isOnboarding?: boolean;
+  description: string;
+  stretchContent?: boolean;
+  content?: React.ReactNode;
+  actions?: React.ReactNode[];
+  img: Img;
+}) => {
+  const classes = useStyles();
+  return (
+    <div className={classes.layout}>
+      {props.isOnboarding && (
+        <div className={classes.layoutHeader}>
+          <div className={classes.layoutHeaderLogo}><Logo /></div>
+        </div>
+      )}
+      <div className={classes.layoutContentAndImage}>
+        <div className={classes.layoutContentContainer}>
+          <div className={classes.layoutLimitWidth}>
+            <Typography variant='h3' component='h1' className={classes.layoutContentTitle}>{props.title}</Typography>
+            <Typography variant='h6' component='div' className={classes.layoutContentDescription}>{props.description}</Typography>
+          </div>
+          {!!props.content && (
+            <div className={classNames(
+              classes.layoutContent,
+              !props.stretchContent && classes.layoutLimitWidth,
+            )}>{props.content}</div>
+          )}
+          {!!props.actions?.length && (
+            <div className={classNames(classes.layoutContentActions, classes.layoutLimitWidth)}>
+              {props.actions.map(action => (
+                <div className={classes.layoutContentAction}>
+                  {action}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <Hidden mdDown>
+          <ImgIso
+            alt=''
+            className={classes.layoutImage}
+            src={props.img.src}
+            aspectRatio={props.img.aspectRatio}
+            width={props.img.width}
+            height={props.img.height}
+            maxWidth={props.img.width}
+            maxHeight={props.img.height}
+          />
+        </Hidden>
+      </div>
+    </div>
+  );
+};

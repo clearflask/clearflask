@@ -162,8 +162,10 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
           help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
             + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
         },
+        action: { label: 'Create', onClick: () => this.pageClicked('post') },
         right: roadmapLink && (
           <Button
+            className={this.props.classes.headerAction}
             component={MuiLink}
             href={roadmapLink}
             target='_blank'

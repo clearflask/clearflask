@@ -298,7 +298,6 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         {!!header?.action && (
           <Button
             className={this.props.classes.headerAction}
-            variant='outlined'
             disableElevation
             color='primary'
             onClick={header.action.onClick}
