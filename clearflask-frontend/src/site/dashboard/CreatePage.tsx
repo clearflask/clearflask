@@ -13,9 +13,7 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
-import { preloadImage } from '../../common/util/imageUtil';
 import Logo from '../Logo';
-import { CreatedImagePath } from './CreatedPage';
 
 const styles = (theme: Theme) => createStyles({
   layout: {
@@ -155,8 +153,6 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       ...createTemplateV2OptionsDefault,
       step: 'feature-select',
     };
-
-    preloadImage(CreatedImagePath);
   }
 
   render() {
