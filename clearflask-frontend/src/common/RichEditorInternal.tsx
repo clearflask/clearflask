@@ -544,7 +544,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       <ClosablePopper
         zIndex={this.props.theme.zIndex.modal + 1}
         anchorElGetter={anchorElGetter}
-        disableCloseButton
+          closeButtonPosition='disable'
         arrow
         clickAway
         clickAwayProps={{

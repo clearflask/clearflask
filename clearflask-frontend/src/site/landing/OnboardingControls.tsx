@@ -26,6 +26,7 @@ const setSignupMethodsTemplate = (templater: Templater, signupMethods: SignupMet
   templater.usersOnboardingOAuthClear();
   if (signupMethods.includes(SignupMethods.Oauth)) templater.usersOnboardingOAuthAdd({
     buttonTitle: 'Google',
+    icon: 'Google',
     authorizeUrl: '/oauth',
   });
 }

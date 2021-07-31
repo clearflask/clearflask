@@ -189,7 +189,6 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     if (!selectedCategory) return null;
     if (this.state.draftFieldAuthorId !== undefined) draft.authorUserId = this.state.draftFieldAuthorId;
     if (this.state.draftFieldTitle !== undefined) draft.title = this.state.draftFieldTitle;
-    if (draft.title === undefined) draft.title = `New ${selectedCategory.name}`;
     if (this.state.draftFieldDescription !== undefined) draft.description = this.state.draftFieldDescription;
     if (this.state.draftFieldLinkedFromPostIds !== undefined) draft.linkedFromPostIds = this.state.draftFieldLinkedFromPostIds;
     if (this.state.draftFieldChosenTagIds !== undefined) draft.tagIds = this.state.draftFieldChosenTagIds;

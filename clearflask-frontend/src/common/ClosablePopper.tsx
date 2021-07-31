@@ -9,11 +9,17 @@ const styles = (theme: Theme) => createStyles({
   closeButton: {
     position: 'absolute',
     zIndex: -1, // Keep shadow behind popper
-    top: -24,
-    right: -24,
     maxWidth: 36,
     maxHeight: 36,
     color: theme.palette.primary.dark,
+  },
+  closeButtonTopRight: {
+    top: -24,
+    right: -24,
+  },
+  closeButtonTopLeft: {
+    top: -24,
+    left: -24,
   },
   closeButtonLabel: {
     width: 0,
@@ -101,7 +107,7 @@ interface Props extends PopperProps {
     height: number;
     width: number;
   };
-  disableCloseButton?: boolean;
+  closeButtonPosition?: 'top-left' | 'top-right' | 'disable';
   clickAway?: boolean;
   clickAwayProps?: Partial<React.ComponentProps<typeof ClickAwayListener>>;
   arrow?: boolean;
@@ -123,7 +129,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
       zIndex,
       onClose,
       anchorElGetter,
-      disableCloseButton,
+      closeButtonPosition,
       clickAway,
       clickAwayProps,
       arrow,
@@ -205,11 +211,15 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
                   {arrow && (
                     <span x-arrow='true' className={classes.arrow} ref={this.arrowRef} />
                   )}
-                  {!disableCloseButton && (
+                  {closeButtonPosition !== 'disable' && (
                     <IconButton
                       classes={{
                         label: classes.closeButtonLabel,
-                        root: classes.closeButton,
+                        root: classNames(
+                          classes.closeButton,
+                          (closeButtonPosition === 'top-right' || !closeButtonPosition) && classes.closeButtonTopRight,
+                          closeButtonPosition === 'top-left' && classes.closeButtonTopLeft,
+                        ),
                       }}
                       aria-label="Close"
                       onClick={() => onClose()}

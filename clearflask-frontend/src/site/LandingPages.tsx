@@ -3,7 +3,6 @@ import loadable from '@loadable/component';
 import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
-import AddCommentIcon from '@material-ui/icons/AddComment';
 import OncallIcon from '@material-ui/icons/Alarm';
 import LifecycleIcon from '@material-ui/icons/Autorenew';
 import BuildIcon from '@material-ui/icons/Build';
@@ -101,9 +100,10 @@ import Templater from '../common/config/configTemplater';
 import CreditView from '../common/config/CreditView';
 import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
-import Hr from '../common/Hr';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
+import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
+import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
@@ -674,10 +674,11 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
         arrow
         clickAway
         paperClassName={classes.demoEmbedPopper}
+        keepMounted
       >
         <iframe
           title='Demo: ClearFlask Feedback'
-          src={demoOpen ? `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${props.path || ''}` : 'about:blank'}
+          src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}/${props.path || ''}`}
           width='100%'
           height='100%'
           frameBorder={0}
@@ -2454,14 +2455,10 @@ export function LandingInstall() {
           title='Widget'
           description='Embed within your website using IFrames either entire ClearFlask portal or individual pages.'
           demo={(
-            <FakeBrowser fixedHeight={200} addressBarContent='yoursite.com'>
-              <div className={classes.demoEmbedButtons}>
-                <LandingDemoEmbed><FeedbackIcon /></LandingDemoEmbed>
-                <Hr vertical margins='35px' length='100px'>or</Hr>
-                <LandingDemoEmbed path='embed/feedback'><AddCommentIcon /></LandingDemoEmbed>
-                <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
-              </div>
-            </FakeBrowser>
+            <div className={classes.demoEmbedButtons}>
+              <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
+              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+            </div>
           )}
         />
         <Block
@@ -2469,20 +2466,18 @@ export function LandingInstall() {
           title='Embed Status'
           description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
           demo={(
-            <FakeBrowser fixedHeight={200} addressBarContent='yoursite.com'>
-              <div className={classes.demoStatusEmbedContainer}>
-                <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
-                <PostStatusIframe
-                  className={classes.demoStatusEmbedIframe}
-                  width={100}
-                  postId='ustom-subdomains-vr4'
-                  config={{
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                  }}
-                />
-              </div>
-            </FakeBrowser>
+            <div className={classes.demoStatusEmbedContainer}>
+              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
+              <PostStatusIframe
+                className={classes.demoStatusEmbedIframe}
+                width={100}
+                postId='ustom-subdomains-vr4'
+                config={{
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                }}
+              />
+            </div>
           )}
         />
       </HorizontalPanels>
@@ -2612,5 +2607,18 @@ export function LandingPricing() {
     <>
       <PricingPage />
     </>
+  );
+}
+
+export function LandingEmbedFeedbackPage() {
+  return (
+    <IframeWithUrlSync
+      browserPathPrefix='/my'
+      srcWithoutPathname={`${windowIso.location.protocol}//feedback.${windowIso.location.host}`}
+      pathnamePrefix='/embed'
+      frameBorder='0'
+      height={vh(100)}
+      width='100%'
+    />
   );
 }

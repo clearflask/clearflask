@@ -1078,6 +1078,7 @@ export default class Templater {
 
   usersOnboardingOAuthAdd(oauth: Partial<Admin.NotificationMethodsOauth>) {
     const index = this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).insert().path.slice(-1).pop() as number;
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'icon']).set(oauth.icon || '');
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'buttonTitle']).set(oauth.buttonTitle || '');
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'oauthId']).set(oauth.oauthId || '');
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'clientId']).set(oauth.clientId || '');

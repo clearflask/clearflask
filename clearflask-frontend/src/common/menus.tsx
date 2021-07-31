@@ -127,7 +127,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
           paperClassName={this.props.classes.menuPopperPaper}
           className={this.props.classes.menuPopper}
           clickAway
-          disableCloseButton
+          closeButtonPosition='disable'
           open={!!this.state.open}
           onClose={() => {
             ++this.lastEventId;

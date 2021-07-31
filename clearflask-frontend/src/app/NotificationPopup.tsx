@@ -24,7 +24,7 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
           anchorEl={this.props.anchorEl}
           arrow
           clickAway
-          disableCloseButton
+          closeButtonPosition='disable'
         >
           <NotificationList server={this.props.server} isInsidePaper />
         </ClosablePopper>

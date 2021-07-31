@@ -74,7 +74,7 @@ class DashboardSearchControls extends Component<Props & WithStyles<typeof styles
               <FilterIcon />
             </IconButton>
             <ClosablePopper
-              disableCloseButton
+              closeButtonPosition='disable'
               open={!!this.state.filtersOpen}
               onClose={() => this.setState({ filtersOpen: false })}
               placement='top'

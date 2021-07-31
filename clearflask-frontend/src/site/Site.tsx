@@ -6,6 +6,7 @@ import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
 import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
+import FeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
 import MenuIcon from '@material-ui/icons/Menu';
 import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
@@ -27,6 +28,7 @@ import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
+import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
 
@@ -51,6 +53,7 @@ const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "Land
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
+const LandingEmbedFeedbackPage = loadable(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -169,11 +172,10 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       {
         type: 'dropdown', title: 'Resources', items: [
           { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog' },
+          { type: 'button', link: '/my/roadmap', title: 'Roadmap' },
+          { type: 'divider' },
           { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs' },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API' },
-          { type: 'divider' },
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/roadmap`), linkIsExternal: true, title: 'Roadmap' },
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/feedback`), linkIsExternal: true, title: 'Feedback' },
         ]
       },
     ];
@@ -202,6 +204,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
+        <ClearFlaskEmbedHoverFeedback path='embed/feedback' Icon={FeedbackIcon} />
         <AppBar position='fixed' color='inherit' elevation={0} variant='elevation' className={this.props.classes.appBar}>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>
@@ -357,6 +360,9 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             <Route exact path='/pricing'>
               <SetTitle title='Pricing' />
               <PricingPage />
+            </Route>
+            <Route path='/my'>
+              <LandingEmbedFeedbackPage />
             </Route>
 
             <RouteWithStatus httpCode={404} >

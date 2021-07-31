@@ -8,6 +8,7 @@ import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
+import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
 import { RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
@@ -48,7 +49,6 @@ interface Props {
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
   settings?: StateSettings;
-  onAddGaCode?: (gaCode: string) => void;
   // Router matching
   match: match;
   history: History;
@@ -197,6 +197,7 @@ class App extends Component<Props> {
     return (
       <Provider store={this.server.getStore()}>
         <SentryIdentifyUser />
+        <IframeBroadcastPathname />
         <AppThemeProvider
           appRootId={appRootId}
           seed={projectId}

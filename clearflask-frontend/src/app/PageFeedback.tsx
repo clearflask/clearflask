@@ -231,11 +231,11 @@ const PageFeedback = (props: {
               )}
               onHasAnyChanged={(hasAny, count) => setSimilarCount(count)}
             />
-            <Button
+            {/* <Button
               disabled={!!relatedIsSubmittingPostId}
               variant='outlined'
               onClick={() => setRelatedClosed(true)}
-            >None</Button>
+            >None</Button> */}
           </div>
         </Collapse>
       )}
