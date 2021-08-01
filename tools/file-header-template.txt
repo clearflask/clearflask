@@ -1,0 +1,2 @@
+SPDX-FileCopyrightText: ${license.git.copyrightYears} ${owner} <${email}>
+SPDX-License-Identifier: ${license}

@@ -13,7 +13,7 @@
     <properties>
         <ice.version>${project.version}</ice.version>
         <java.version>10</java.version>
-
+        <COPYING.path>${basedir}${file.separator}COPYING</COPYING.path>
         <guice.version>4.2.1</guice.version>
         <guice-ext.version>4.0</guice-ext.version>
         <guava.version>26.0-jre</guava.version>
@@ -33,6 +33,7 @@
         <sqlite4java>1.0.392</sqlite4java>
         <node.version>v14.15.1</node.version>
         <frontend-maven-plugin.version>1.10.4</frontend-maven-plugin.version>
+        <license-maven-plugin.version>4.1</license-maven-plugin.version>
         <projectlombok.version>1.18.4</projectlombok.version>
         <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
         <batik.version>1.14</batik.version>
@@ -57,6 +58,78 @@
     </repositories>
 
     <build>
+        <plugins>
+            <plugin>
+                <inherited>false</inherited>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${license-maven-plugin.version}</version>
+                <configuration>
+                    <!-- Due to performance, only run this when necessary -->
+                    <skip>true</skip>
+                    <aggregate>true</aggregate>
+                    <headerDefinitions>
+                        <headerDefinition>tools${file.separator}comment-template-SINGLE_LINE_DOUBLEDASH_STYLE.xml
+                        </headerDefinition>
+                        <headerDefinition>tools${file.separator}comment-template-SINGLE_LINE_DOUBLEHASH_STYLE.xml
+                        </headerDefinition>
+                    </headerDefinitions>
+                    <licenseSets>
+                        <licenseSet>
+                            <includes>
+                                <include>**/*.java</include>
+                                <include>**/*.js</include>
+                                <include>**/*.jsx</include>
+                                <include>**/*.ts</include>
+                                <include>**/*.tsx</include>
+                                <include>**/*.yml</include>
+                                <include>**/*.yaml</include>
+                                <include>**/*.sql</include>
+                                <include>**/*.proto</include>
+                                <include>**/*.painless</include>
+                            </includes>
+                            <header>tools${file.separator}file-header-template.txt</header>
+                        </licenseSet>
+                    </licenseSets>
+                    <mapping>
+                        <java>SINGLE_LINE_DOUBLESLASH_STYLE</java>
+                        <js>SINGLE_LINE_DOUBLESLASH_STYLE</js>
+                        <jsx>SINGLE_LINE_DOUBLESLASH_STYLE</jsx>
+                        <ts>SINGLE_LINE_DOUBLESLASH_STYLE</ts>
+                        <tsx>SINGLE_LINE_DOUBLESLASH_STYLE</tsx>
+                        <yaml>SINGLE_LINE_DOUBLEHASH_STYLE</yaml>
+                        <yml>SINGLE_LINE_DOUBLEHASH_STYLE</yml>
+                        <sql>SINGLE_LINE_DOUBLEDASH_STYLE</sql>
+                        <painless>SINGLE_LINE_DOUBLESLASH_STYLE</painless>
+                        <proto>SINGLE_LINE_DOUBLESLASH_STYLE</proto>
+                    </mapping>
+                    <project>
+                        <inceptionYear>2019</inceptionYear>
+                    </project>
+                    <properties>
+                        <owner>Matus Faro</owner>
+                        <email>matus@smotana.com</email>
+                        <license>AGPL-3.0-only</license>
+                    </properties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.mycila</groupId>
+                        <artifactId>license-maven-plugin-git</artifactId>
+                        <version>${license-maven-plugin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>

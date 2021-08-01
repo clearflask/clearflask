@@ -12,4 +12,10 @@
             <outputDirectory>${file.separator}</outputDirectory>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>${project.parent.basedir}${file.separator}COPYING</source>
+            <outputDirectory>${file.separator}</outputDirectory>
+        </file>
+    </files>
 </assembly>

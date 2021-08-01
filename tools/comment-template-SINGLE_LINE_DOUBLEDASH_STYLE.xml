@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<additionalHeaders>
+    <SINGLE_LINE_DOUBLEDASH_STYLE>
+        <beforeEachLine><![CDATA[ -- ]]></beforeEachLine>
+        <firstLineDetectionPattern><![CDATA[ -- .*$]]></firstLineDetectionPattern>
+        <lastLineDetectionPattern><![CDATA[ -- .*$]]></lastLineDetectionPattern>
+        <allowBlankLines>false</allowBlankLines>
+        <isMultiline>false</isMultiline>
+        <padLines>false</padLines>
+    </SINGLE_LINE_DOUBLEDASH_STYLE>
+</additionalHeaders>

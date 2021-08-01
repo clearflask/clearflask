@@ -10,5 +10,9 @@
         <file>
             <source>${openapi.targetDirectory}${file.separator}frontend-schema${file.separator}schema.json</source>
         </file>
+        <file>
+            <source>${project.parent.basedir}${file.separator}COPYING</source>
+            <outputDirectory>${file.separator}</outputDirectory>
+        </file>
     </files>
 </assembly>
