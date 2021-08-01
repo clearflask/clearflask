@@ -250,6 +250,9 @@ export function MenuItemButton(props: {
   } else if (props.item['link'] !== undefined) {
     linkProps = {
       component: Link,
+      onClick: () => {
+        props.onClick?.();
+      },
       to: {
         pathname: props.item['link'],
         state: props.item.scrollState ? { [SCROLL_TO_STATE_KEY]: props.item.scrollState } : undefined,
@@ -259,8 +262,8 @@ export function MenuItemButton(props: {
     linkProps = {
       component: MuiLink,
       onClick: () => {
-        props.item['onClick'] && props.item['onClick']();
-        props.onClick && props.onClick();
+        props.onClick?.();
+        props.item['onClick']?.();
       },
       underline: 'none',
     };

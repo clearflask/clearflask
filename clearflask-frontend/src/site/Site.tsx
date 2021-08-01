@@ -172,7 +172,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       {
         type: 'dropdown', title: 'Resources', items: [
           { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog' },
-          { type: 'button', link: '/my/roadmap', title: 'Roadmap' },
+          { type: 'button', link: '/e/roadmap', title: 'Roadmap' },
           { type: 'divider' },
           { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs' },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API' },
@@ -361,7 +361,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
               <SetTitle title='Pricing' />
               <PricingPage />
             </Route>
-            <Route path='/my'>
+            <Route path='/e'>
               <LandingEmbedFeedbackPage />
             </Route>
 

@@ -48,7 +48,7 @@ import WidgetIcon from '@material-ui/icons/Widgets';
 import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
-import { Provider } from 'react-redux';
+import { Provider, shallowEqual, useSelector } from 'react-redux';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
@@ -89,7 +89,10 @@ import SupportImg from '../../public/img/landing/support.svg';
 import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
 import SalesImg from '../../public/img/support/sales.svg';
+import * as Admin from '../api/admin';
 import * as Client from '../api/client';
+import { ReduxStateAdmin } from '../api/serverAdmin';
+import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
@@ -2611,11 +2614,15 @@ export function LandingPricing() {
 }
 
 export function LandingEmbedFeedbackPage() {
+  const account = useSelector<ReduxStateAdmin, Admin.AccountAdmin | undefined>(state => state.account.account.account, shallowEqual);
+
   return (
     <IframeWithUrlSync
-      browserPathPrefix='/my'
+      redirectOnDirectAccess='/'
+      browserPathPrefix='/e'
       srcWithoutPathname={`${windowIso.location.protocol}//feedback.${windowIso.location.host}`}
       pathnamePrefix='/embed'
+      initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
       frameBorder='0'
       height={vh(100)}
       width='100%'

@@ -50,7 +50,7 @@ export const ClearFlaskEmbedHoverFeedback = (props: {
       >
         <Fab
           className={classes.fab}
-          onClick={() => setDemoOpen(true)}
+          onClick={() => setDemoOpen(!demoOpen)}
           color='primary'
           variant='extended'
         >
@@ -61,7 +61,7 @@ export const ClearFlaskEmbedHoverFeedback = (props: {
         </Fab>
       </div>
       <ClosablePopper
-        closeButtonPosition='disable'
+        closeButtonPosition='top-left'
         open={!!demoOpen}
         onClose={() => setDemoOpen(false)}
         placement='top'

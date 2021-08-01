@@ -17,7 +17,11 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     flexGrow: 1,
     width: 600,
-    height: '100%',
+    // This is a contested line:
+    // - Height of 100% ensures active drag doesnt cause weird truncation
+    // - Height of 100% is incorrect as (at least in the Dashboard Roadmap)
+    //   there is a neighbour title so 100% is actually overflows and scrolls
+    // height: '100%',
     maxWidth: '100%',
   },
   draggable: {
