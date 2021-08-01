@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { withSnackbar, WithSnackbarProps } from 'notistack';

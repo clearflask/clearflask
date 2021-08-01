@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { CardActionArea, Typography } from '@material-ui/core';
 import { createStyles, fade, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import classNames from 'classnames';

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 
 export function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;

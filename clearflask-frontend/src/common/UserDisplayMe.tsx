@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { Typography } from '@material-ui/core';
 import React from 'react';
 import { connect } from 'react-redux';

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tooltip, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import loadable from '@loadable/component';
 import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';

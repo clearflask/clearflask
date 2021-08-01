@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Dialog, DialogActions, DialogTitle, Divider, IconButton, isWidthDown, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import ChangeIcon from '@material-ui/icons/AutorenewRounded';

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, fade, FormControlLabel, Grid, IconButton, Switch, TextField } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import EditIcon from '@material-ui/icons/Edit';

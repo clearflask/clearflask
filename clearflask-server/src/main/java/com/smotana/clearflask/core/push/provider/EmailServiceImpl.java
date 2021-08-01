@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.core.push.provider;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;

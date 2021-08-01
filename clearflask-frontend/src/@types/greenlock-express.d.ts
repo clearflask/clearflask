@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 // From https://git.rootprojects.org/root/greenlock-express.js/issues/50#issue-2750
 declare module "greenlock-express" {
     import * as Express from "express";

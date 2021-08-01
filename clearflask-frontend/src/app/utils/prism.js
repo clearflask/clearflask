@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 // From: https://raw.githubusercontent.com/mui-org/material-ui/master/docs/src/modules/components/prism.js
 /* eslint-disable import/no-mutable-exports, global-require */
 import prism from 'prismjs';

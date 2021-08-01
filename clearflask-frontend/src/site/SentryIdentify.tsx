@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import * as Sentry from "@sentry/react";
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../api/admin';

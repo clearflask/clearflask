@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 /*
  * Taken from: https://github.com/apache/cassandra/blob/trunk/src/java/org/apache/cassandra/utils/UUIDGen.java
  *

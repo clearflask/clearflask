@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import { loremIpsum } from "lorem-ipsum";
 import { CreateTemplateOptions } from "../common/config/configTemplater";
 import { ChangelogCategoryIdPrefix } from "../common/config/template/changelog";

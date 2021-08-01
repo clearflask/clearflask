@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * Modified from https://github.com/Etoile984816138/quill-image-resize-module/blob/master/src/modules/Toolbar.js
  * 

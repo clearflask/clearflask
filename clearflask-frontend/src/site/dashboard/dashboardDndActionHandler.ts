@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../api/admin";
 import { Project } from "../../api/serverAdmin";
 import { FeedbackInstance } from "../../common/config/template/feedback";

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 // From: https://raw.githubusercontent.com/mui-org/material-ui/master/docs/src/modules/utils/textToHash.js
 function makeUnique(hash, unique, i = 1) {
   const uniqueHash = i === 1 ? hash : `${hash}-${i}`;

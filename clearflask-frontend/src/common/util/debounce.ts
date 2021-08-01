@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 
 // https://github.com/jashkenas/underscore/blob/master/modules/debounce.js
 // When a sequence of calls of the returned function ends, the argument

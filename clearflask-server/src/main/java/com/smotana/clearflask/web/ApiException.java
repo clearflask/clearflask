@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: AGPL-3.0-only
 /*
  * Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
  *
