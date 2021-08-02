@@ -147,7 +147,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 null,
                 null,
-                null);
+                ImmutableSet.of());
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
@@ -214,7 +214,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 null,
                 null,
-                null);
+                ImmutableSet.of());
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();

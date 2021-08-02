@@ -75,7 +75,7 @@ public class MockModelUtil {
                 ImmutableSet.of(),
                 null,
                 null,
-                null);
+                ImmutableSet.of());
     }
 
     public static CommentModel getRandomComment() {
