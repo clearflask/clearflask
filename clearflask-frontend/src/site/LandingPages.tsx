@@ -615,8 +615,10 @@ export function LandingGraveyard() {
 export function LandingHero() {
   return (
     <Hero
-      title='Listen to your users during product development'
-      description='Feedback Management Tool to prioritize your roadmap'
+      title={(
+        <>Open feedback.<br />Open roadmap.</>)}
+      description='Open-source Feedback Management Tool solution. Listen to your users during product development and prioritize your roadmap'
+      // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
       vidyard={{
         image: PromoThumb,
         uuid: 'EZK7e1kRjWzamC3PMMNuUh',

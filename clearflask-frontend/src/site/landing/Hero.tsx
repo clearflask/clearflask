@@ -51,7 +51,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  title?: string;
+  title?: string | React.ReactNode;
   description?: string | React.ReactNode;
   image?: Img;
   imagePath?: string;

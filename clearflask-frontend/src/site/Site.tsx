@@ -4,13 +4,17 @@
 import loadable from '@loadable/component';
 import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import CodeIcon from "@material-ui/icons/Code";
 import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
+import DocsIcon from '@material-ui/icons/DescriptionRounded';
 import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import RequestTrackingIcon from '@material-ui/icons/Forum';
+import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuIcon from '@material-ui/icons/Menu';
+import BlogIcon from '@material-ui/icons/MenuBookOutlined';
 import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import React, { Component } from 'react';
@@ -173,11 +177,12 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog' },
-          { type: 'button', link: '/e/roadmap', title: 'Roadmap' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          { type: 'button', link: '/e/roadmap', title: 'Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
           { type: 'divider' },
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs' },
-          { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
+          { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
+          { type: 'button', link: `https://github.com/clearflask/clearflask`, linkIsExternal: true, title: 'Source', icon: GitHubIcon },
         ]
       },
     ];
