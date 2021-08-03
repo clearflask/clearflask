@@ -1154,8 +1154,7 @@ public class KillBilling extends ManagedService implements Billing {
         return new AccountBillingPaymentActionRequired("stripe-next-action", ImmutableMap.of(
                 "paymentIntentClientSecret", paymentIntentClientSecret));
     }
-
-
+    
     public static Module module() {
         return new AbstractModule() {
             @Override

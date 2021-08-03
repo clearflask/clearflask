@@ -8,8 +8,8 @@
 
 <div align="center">
 
-Listen to your users during product development with [ClearFlask](https://clearflask.com/),
-an open-source Feedback Management Tool.
+Listen to your users during product development with [ClearFlask](https://clearflask.com/), an open-source Feedback
+Management Tool.
 
 </div>
 
@@ -32,7 +32,7 @@ For cloud hosting, sign up [here](https://clearflask.com/signup) to get started.
 be appreciated. We need to complete the following:
 
 - [ ] Replace DynamoDB, ElasticSearch and S3 with PostgreSQL and local file storage.
-- [ ] Stub out Payment Processor dependency
+- [x] Stub out Payment Processor dependency
 - [ ] Alternative landing page and dashboard for single-customer use-case
 - [ ] Dockerize and publish
 - [ ] Create Installation instructions

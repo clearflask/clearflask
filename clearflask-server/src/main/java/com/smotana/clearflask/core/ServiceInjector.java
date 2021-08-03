@@ -27,6 +27,8 @@ import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.SelfHostBilling;
+import com.smotana.clearflask.billing.SelfHostPlanStore;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.image.ImageNormalizationImpl;
@@ -107,7 +109,8 @@ public enum ServiceInjector {
     public enum Environment {
         TEST(false),
         DEVELOPMENT_LOCAL(false),
-        PRODUCTION_AWS(true);
+        PRODUCTION_AWS(true),
+        PRODUCTION_SELF_HOST(true);
 
         private boolean isProduction;
 
@@ -229,7 +232,9 @@ public enum ServiceInjector {
                 install(Application.module());
                 bind(HealthResource.class);
                 install(UserResource.module());
-                install(KillBillResource.module());
+                if (env != Environment.PRODUCTION_SELF_HOST) {
+                    install(KillBillResource.module());
+                }
                 install(AccountResource.module());
                 install(IdeaResource.module());
                 install(VoteResource.module());
@@ -239,11 +244,16 @@ public enum ServiceInjector {
                 install(ContentResource.module());
 
                 // Billing
-                install(KillBillClientProvider.module());
-                install(KillBilling.module());
-                install(KillBillSync.module());
-                install(StripeClientSetup.module());
-                install(KillBillPlanStore.module());
+                if (env == Environment.PRODUCTION_SELF_HOST) {
+                    install(SelfHostBilling.module());
+                    install(SelfHostPlanStore.module());
+                } else {
+                    install(KillBillClientProvider.module());
+                    install(KillBilling.module());
+                    install(KillBillSync.module());
+                    install(StripeClientSetup.module());
+                    install(KillBillPlanStore.module());
+                }
 
                 // Other
                 install(ApiExceptionMapperFilter.module());
