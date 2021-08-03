@@ -1,4 +1,5 @@
 {
+  "git.enableCommitSigning": true,
   "terminal.integrated.rendererType": "dom",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[typescript]": {
