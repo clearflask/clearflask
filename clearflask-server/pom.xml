@@ -458,6 +458,13 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.0</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>pl.project13.maven</groupId>
@@ -491,7 +498,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <configuration>
                     <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
-                    <protocExecutable>protoc</protocExecutable>
+                    <protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
                 <executions>
                     <execution>
