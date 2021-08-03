@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Annotation profile for clearflask-parent" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.4/lombok-1.18.4.jar" />
+        </processorPath>
+        <module name="clearflask-logging" />
+        <module name="clearflask-server" />
+        <module name="clearflask-legal" />
+        <module name="clearflask-frontend" />
+        <module name="clearflask-api" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="clearflask-api" target="10" />
+      <module name="clearflask-connect" target="10" />
+      <module name="clearflask-frontend" target="10" />
+      <module name="clearflask-legal" target="10" />
+      <module name="clearflask-logging" target="1.8" />
+      <module name="clearflask-parent" target="1.5" />
+      <module name="clearflask-server" target="10" />
+      <module name="clearflask-sni" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

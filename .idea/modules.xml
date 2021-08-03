@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/clearflask-api/clearflask-api.iml" filepath="$PROJECT_DIR$/clearflask-api/clearflask-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-frontend/clearflask-frontend.iml" filepath="$PROJECT_DIR$/clearflask-frontend/clearflask-frontend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-legal/clearflask-legal.iml" filepath="$PROJECT_DIR$/clearflask-legal/clearflask-legal.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-logging/clearflask-logging.iml" filepath="$PROJECT_DIR$/clearflask-logging/clearflask-logging.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-parent.iml" filepath="$PROJECT_DIR$/clearflask-parent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-server/clearflask-server.iml" filepath="$PROJECT_DIR$/clearflask-server/clearflask-server.iml" />
+    </modules>
+  </component>
+</project>

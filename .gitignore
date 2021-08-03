@@ -5,14 +5,11 @@ nb-configuration.xml
 .classpath
 .project
 .externalToolBuilders
-.idea
-*.iml
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 !.mvn/wrapper/maven-wrapper.jar
-.vscode
 .srl
 
 ### MAVEN ###
@@ -27,7 +24,9 @@ target/
 .springBeans
 
 ### IntelliJ IDEA ###
-.idea/
+.idea/workspace.xml
+.idea/shelf
+.idea/usage.statistics.xml
 *.iws
 *.iml
 *.ipr

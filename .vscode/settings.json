@@ -1,0 +1,21 @@
+{
+  "terminal.integrated.rendererType": "dom",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "formatFiles.excludePattern": "**/node_modules,**/.vscode,**/dist/**,**/.chrome,**/src/api/admin,**/src/api/client,**/src/api/schema",
+  "formatFiles.extensionsToInclude": "ts,tsx",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll.eslint": true
+  },
+  "editor.formatOnSave": true,
+  "prettier.requireConfig": true,
+  "prettier.jsxSingleQuote": true,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "es5"
+}

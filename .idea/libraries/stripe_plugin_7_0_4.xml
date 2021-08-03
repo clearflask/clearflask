@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="stripe-plugin-7.0.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/clearflask-server/target/kb-plugins/stripe-plugin-7.0.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/clearflask-server/target/kb-plugins/stripe-plugin-7.0.4.jar!/OSGI-OPT/src" />
+    </SOURCES>
+  </library>
+</component>
