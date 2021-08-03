@@ -90,6 +90,7 @@ export interface Props {
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
+  filterPosts?: (post: Client.Idea) => boolean;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
   navigatorRef?: MutableRef<PanelPostNavigator>;
   selectable?: 'highlight' | 'check';
@@ -190,7 +191,9 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
       ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
-    const hasAny = !!this.props.searchIdeas.length;
+    const searchIdeas = !this.props.filterPosts ? this.props.searchIdeas
+      : this.props.searchIdeas.filter(this.props.filterPosts);
+    const hasAny = !!searchIdeas.length;
     var content;
     if (!this.props.searchStatus || this.props.searchStatus === Status.REJECTED) {
       content = (
@@ -207,9 +210,9 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         </div>
       );
     } else {
-      if (!!this.props.onHasAnyChanged && (this.notifiedHasAnyCount !== this.props.searchIdeas.length)) {
-        this.notifiedHasAnyCount = this.props.searchIdeas.length;
-        this.props.onHasAnyChanged(hasAny, this.props.searchIdeas.length);
+      if (!!this.props.onHasAnyChanged && (this.notifiedHasAnyCount !== searchIdeas.length)) {
+        this.notifiedHasAnyCount = searchIdeas.length;
+        this.props.onHasAnyChanged(hasAny, searchIdeas.length);
       }
 
       const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
@@ -227,7 +230,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         this.props.onClickPost?.(postId);
         this.props.onClickPostExpand && this.setState({ expandedPostId: postId === this.state.expandedPostId ? undefined : postId });
       };
-      content = this.props.searchIdeas.map((idea, ideaIndex) => {
+      content = searchIdeas.map((idea, ideaIndex) => {
         var content: React.ReactNode;
         if (this.props.renderPost) {
           content = this.props.renderPost(idea, ideaIndex);

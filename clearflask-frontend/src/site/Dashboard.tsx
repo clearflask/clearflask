@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -930,13 +930,17 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       } : {}),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <DashboardPost
-            key={postId}
-            server={project.server}
-            postId={postId}
-            onClickPost={postId => this.pageClicked('post', [postId])}
-            onUserClick={userId => this.pageClicked('user', [userId])}
-          />
+          <Fade key={postId} in appear>
+            <div>
+              <DashboardPost
+                key={postId}
+                server={project.server}
+                postId={postId}
+                onClickPost={postId => this.pageClicked('post', [postId])}
+                onUserClick={userId => this.pageClicked('user', [userId])}
+              />
+            </div>
+          </Fade>
         </Provider>
       ),
     };
@@ -952,7 +956,11 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       size: UserPreviewSize,
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <UserPage key={userId} server={project.server} userId={userId} />
+          <Fade key={userId} in appear>
+            <div>
+              <UserPage key={userId} server={project.server} userId={userId} />
+            </div>
+          </Fade>
         </Provider>
       ),
     };
@@ -974,36 +982,40 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       size: PostPreviewSize,
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <PostCreateForm
-            key={draftId || 'new'}
-            server={project.server}
-            type='post'
-            mandatoryCategoryIds={mandatoryCategoryIds}
-            adminControlsDefaultVisibility='expanded'
-            logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
-            draftId={draftId}
-            onCreated={postId => {
-              this.setState({ [stateKey]: { type: 'post', id: postId } as PreviewState } as any);
-            }}
-            onDraftCreated={allowDrafts ? draft => {
-              this.setState({ [stateKey]: { type: 'create-post', draftId: draft.draftId } as PreviewState } as any);
-            } : undefined}
-            onDiscarded={(allowDrafts || !!draftId) ? () => {
-              this.setState({ [stateKey]: undefined } as any);
-            } : undefined}
-          />
-          <LogIn
-            actionTitle='Get notified of replies'
-            server={project.server}
-            open={!!this.state.postCreateOnLoggedIn}
-            onClose={() => this.setState({ postCreateOnLoggedIn: undefined })}
-            onLoggedInAndClose={userId => {
-              if (this.state.postCreateOnLoggedIn) {
-                this.state.postCreateOnLoggedIn(userId);
-                this.setState({ postCreateOnLoggedIn: undefined });
-              }
-            }}
-          />
+          <Fade key='post-create' in appear>
+            <div>
+              <PostCreateForm
+                key={draftId || 'new'}
+                server={project.server}
+                type='post'
+                mandatoryCategoryIds={mandatoryCategoryIds}
+                adminControlsDefaultVisibility='expanded'
+                logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
+                draftId={draftId}
+                onCreated={postId => {
+                  this.setState({ [stateKey]: { type: 'post', id: postId } as PreviewState } as any);
+                }}
+                onDraftCreated={allowDrafts ? draft => {
+                  this.setState({ [stateKey]: { type: 'create-post', draftId: draft.draftId } as PreviewState } as any);
+                } : undefined}
+                onDiscarded={(allowDrafts || !!draftId) ? () => {
+                  this.setState({ [stateKey]: undefined } as any);
+                } : undefined}
+              />
+              <LogIn
+                actionTitle='Get notified of replies'
+                server={project.server}
+                open={!!this.state.postCreateOnLoggedIn}
+                onClose={() => this.setState({ postCreateOnLoggedIn: undefined })}
+                onLoggedInAndClose={userId => {
+                  if (this.state.postCreateOnLoggedIn) {
+                    this.state.postCreateOnLoggedIn(userId);
+                    this.setState({ postCreateOnLoggedIn: undefined });
+                  }
+                }}
+              />
+            </div>
+          </Fade>
         </Provider>
       ),
     };
@@ -1018,9 +1030,11 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       breakAction: 'drawer',
       size: UserPreviewSize,
       content: (
-        <div>
-          TODO user create
-        </div>
+        <Fade key='user-create' in appear>
+          <div>
+            TODO user create
+          </div>
+        </Fade>
       ),
     };
   }
@@ -1068,15 +1082,17 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       breakAction: 'drawer',
       size: size || { breakWidth: 350, flexGrow: 100, maxWidth: 1024 },
       content: (
-        <div className={this.props.classes.previewEmptyMessage}>
-          <Typography component='div' variant='h5'>
-            {msg}
-          </Typography>
-          <EmptyIcon
-            fontSize='inherit'
-            className={this.props.classes.previewEmptyIcon}
-          />
-        </div>
+        <Fade key={msg} in appear>
+          <div className={this.props.classes.previewEmptyMessage}>
+            <Typography component='div' variant='h5'>
+              {msg}
+            </Typography>
+            <EmptyIcon
+              fontSize='inherit'
+              className={this.props.classes.previewEmptyIcon}
+            />
+          </div>
+        </Fade>
       ),
     };
   }

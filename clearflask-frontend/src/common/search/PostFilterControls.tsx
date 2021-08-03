@@ -19,6 +19,7 @@ interface Props {
   sortGroups?: (a: LabelGroup, b: LabelGroup) => number;
 }
 class PostFilterControls extends React.Component<Props & WithStyles<typeof styles, true>> {
+
   render() {
     const labels: PostLabels = postSearchToLabels(
       this.props.config,

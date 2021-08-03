@@ -66,6 +66,7 @@ import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif2.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
+import DemoFeedbackImg from '../../public/img/landing/demo-feedback.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
 import DemoPostResponseImg from '../../public/img/landing/demo-post-response.png';
@@ -298,44 +299,15 @@ export function Landing() {
       <Demo
         type='headingMain'
         title='Ask for feedback'
-        description='Collect your customer feedback and new ideas in one bucket'
+        description='Simple yet powerful feedback experience.'
         points={[
-          'Submit suggestions',
-          'Vote for your favorite idea',
-          'Discuss feature details',
+          'Extract actionable value',
+          'Avoid feature voting pitfalls',
+          'Keep the conversation open',
         ]}
         alignItems='center'
         demoWrap='browser'
-        demoFixedHeight={350}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoExplorer({
-          allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
-          display: {
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 2,
-            showCommentCount: false,
-            showCategoryName: false,
-            showCreated: false,
-            showAuthor: false,
-            showStatus: false,
-            showTags: false,
-            showVoting: false,
-            showVotingCount: false,
-            showFunding: false,
-            showExpression: false,
-          },
-        }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
-        mock={mocker => mocker.demoFeedbackType()
-          .then(() => mocker.mockLoggedIn())}
-        settings={{
-          demoDisableExplorerExpanded: true,
-          // demoBlurryShadow: true,
-          demoCreateAnimate: {
-            title: 'Add Dark Mode',
-            description: 'To reduce eye-strain, please add a low-light option. ',
-            similarSearchTerm: 'theme',
-          },
-        }}
+        demoImage={DemoFeedbackImg}
         buttonTitle='Learn more'
         buttonLink='/product/ask'
       />

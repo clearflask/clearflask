@@ -9,6 +9,7 @@ import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import PostFilterControls from '../../common/search/PostFilterControls';
 import { LabelGroup, PostFilterType } from '../../common/search/searchUtil';
+import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 
 const styles = (theme: Theme) => createStyles({
   horizontal: {
@@ -33,6 +34,11 @@ interface State {
 }
 class DashboardPostFilterControls extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
+
+  shouldComponentUpdate = customShouldComponentUpdate({
+    nested: new Set(['search', 'allowSearch', 'permanentSearch']),
+    presence: new Set(['onSearchChanged']),
+  });
 
   render() {
     return (

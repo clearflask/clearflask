@@ -206,6 +206,7 @@ const PageFeedback = (props: {
               widthExpand
               server={props.server}
               onClickPostExpand
+              filterPosts={post => post.ideaId !== createdPostId}
               wrapPost={(post, postNode, index) => (
                 <div className={classes.similarWrap}>
                   <SubmitButton

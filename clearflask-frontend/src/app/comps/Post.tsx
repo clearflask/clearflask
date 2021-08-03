@@ -450,7 +450,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   shouldComponentUpdate = customShouldComponentUpdate({
-    nested: new Set(['display', 'linkedPosts']),
+    nested: new Set(['display', 'idea']),
+    presence: new Set(['onClickTag', 'onClickCategory', 'onClickStatus', 'onClickPost', 'onUserClick', 'onDisconnect']),
     ignored: new Set(['fetchPostIds']),
   });
 
