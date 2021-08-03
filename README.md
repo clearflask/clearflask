@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://clearflask.com/" rel="noopener" target="_blank">
-    <img width="150" src="clearflask-resources/clearflask-logo.png" alt="ClearFlask logo">
+    <img width="100" src="./clearflask-resources/clearflask-logo.svg" alt="ClearFlask logo">
   </a>
 </p>
 
@@ -8,8 +8,8 @@
 
 <div align="center">
 
-Listen to your users during product development and prioritize your roadmap with [ClearFlask](https://clearflask.com/),
-an open-source Feedback Management Tool solution.
+Listen to your users during product development with [ClearFlask](https://clearflask.com/),
+an open-source Feedback Management Tool.
 
 </div>
 
