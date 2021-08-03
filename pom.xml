@@ -12,7 +12,7 @@
 
     <properties>
         <ice.version>${project.version}</ice.version>
-        <java.version>10</java.version>
+        <java.version>11</java.version>
         <COPYING.path>${basedir}${file.separator}COPYING</COPYING.path>
         <guice.version>4.2.1</guice.version>
         <guice-ext.version>4.0</guice-ext.version>

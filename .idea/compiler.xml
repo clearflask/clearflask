@@ -19,13 +19,13 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="clearflask-api" target="10" />
+      <module name="clearflask-api" target="11" />
       <module name="clearflask-connect" target="10" />
-      <module name="clearflask-frontend" target="10" />
-      <module name="clearflask-legal" target="10" />
+      <module name="clearflask-frontend" target="11" />
+      <module name="clearflask-legal" target="11" />
       <module name="clearflask-logging" target="1.8" />
       <module name="clearflask-parent" target="1.5" />
-      <module name="clearflask-server" target="10" />
+      <module name="clearflask-server" target="11" />
       <module name="clearflask-sni" target="1.8" />
     </bytecodeTargetLevel>
   </component>
