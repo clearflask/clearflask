@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
+import com.smotana.clearflask.billing.SelfHostBilling;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.CommentResource;
@@ -62,7 +63,7 @@ public class ServiceInjectorTest {
                 VoteResource.class,
                 ConnectResource.class,
                 HealthResource.class,
-                KillBillResource.class,
+                env != Environment.PRODUCTION_SELF_HOST ? KillBillResource.class : SelfHostBilling.class,
                 ProjectResource.class,
                 CreditResource.class,
                 ContentResource.class,
