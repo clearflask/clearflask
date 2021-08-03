@@ -19,4 +19,4 @@ jobs:
         architecture: x64
     - name: Maven build
       timeout-minutes: 20
-      run: mvn -B package --file pom.xml
+      run: mvn install
