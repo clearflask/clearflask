@@ -26,8 +26,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * DO NOT OPEN SOURCE
- *
  * Allows Guice binding of instances with dynamically injected properties based on a given Named name.
  *
  * Example below shows binding a Voice class to an Animal.

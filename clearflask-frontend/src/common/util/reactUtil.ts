@@ -5,6 +5,11 @@ import React, { useEffect, useRef } from "react";
 // Based on React
 
 // https://github.com/facebook/react/blob/master/packages/shared/objectIs.js
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This function is licensed under the MIT license.
+ */
 function is(x: any, y: any) {
   return (
     (x === y && (x !== 0 || 1 / x === 1 / y)) || (x !== x && y !== y) // eslint-disable-line no-self-compare
@@ -12,6 +17,11 @@ function is(x: any, y: any) {
 }
 
 // https://github.com/facebook/react/blob/master/packages/shared/hasOwnProperty.js
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This function is licensed under the MIT license.
+ */
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 function equal(objA: {}, objB: {}, conf?: customShouldComponentUpdateProps): boolean {
@@ -22,6 +32,11 @@ function equal(objA: {}, objB: {}, conf?: customShouldComponentUpdateProps): boo
   return equalObjectKeys(objA, objB, conf);
 }
 // https://github.com/facebook/react/blob/master/packages/shared/shallowEqual.js
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This function is licensed under the MIT license.
+ */
 function equalObjectKeys(objA, objB, conf?: customShouldComponentUpdateProps): boolean {
   if (!objA !== !objB) return false;
   if (!objA && !objB) return true;

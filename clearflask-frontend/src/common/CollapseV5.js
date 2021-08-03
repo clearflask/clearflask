@@ -5,8 +5,6 @@
  * Once we migrate, this can be deleted unless new functionality has been added.
  *
  * https://github.com/mui-org/material-ui/blob/a0cccf538eab4ea50b0601e7296ac583f16004f9/packages/material-ui/src/Collapse/Collapse.js
- *
- *
  */
 /**
  * The MIT License (MIT)
@@ -122,9 +120,9 @@ const CollapseRoot = styled('div', {
       styles[styleProps.orientation],
       styleProps.state === 'entered' && styles.entered,
       styleProps.state === 'exited' &&
-        !styleProps.in &&
-        styleProps.collapsedSize === '0px' &&
-        styles.hidden,
+      !styleProps.in &&
+      styleProps.collapsedSize === '0px' &&
+      styles.hidden,
     ];
   },
 })(({ theme, styleProps }) => ({
@@ -146,8 +144,8 @@ const CollapseRoot = styled('div', {
   ...(styleProps.state === 'exited' &&
     !styleProps.in &&
     styleProps.collapsedSize === '0px' && {
-      visibility: 'hidden',
-    }),
+    visibility: 'hidden',
+  }),
 }));
 
 const CollapseWrapper = styled('div', {

@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
 
-/** DO NOT OPEN SOURCE */
 @Slf4j
 public class NamedProviderBindingTest {
 

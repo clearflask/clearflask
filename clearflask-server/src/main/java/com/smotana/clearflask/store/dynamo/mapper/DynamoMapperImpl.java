@@ -232,7 +232,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         ImmutableList.Builder<BiConsumer<Item, T>> toItemArgsBuilder = ImmutableList.builder();
         ImmutableList.Builder<BiConsumer<ImmutableMap.Builder<String, AttributeValue>, T>> toAttrMapArgsBuilder = ImmutableList.builder();
 
+        long fieldsCount = 0;
         for (Field field : objClazz.getDeclaredFields()) {
+            if (field.isSynthetic()) {
+                continue; // Skips fields such as "$jacocodata" during tests
+            }
+            fieldsCount++;
             String fieldName = field.getName();
             checkState(Modifier.isFinal(field.getModifiers()),
                     "Cannot map class %s to item,field %s is not final",
@@ -324,7 +329,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         }
 
         // fromItem fromAttrVal ctor
-        Constructor<T> objCtor = findConstructor(objClazz, objClazz.getDeclaredFields().length);
+        Constructor<T> objCtor = findConstructor(objClazz, fieldsCount);
         objCtor.setAccessible(true);
 
         // fromItem
@@ -641,7 +646,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 expressionBuilderSupplier);
     }
 
-    private <T> Constructor<T> findConstructor(Class<T> objectClazz, int argc) {
+    private <T> Constructor<T> findConstructor(Class<T> objectClazz, long argc) {
         for (Constructor<?> constructorPotential : objectClazz.getDeclaredConstructors()) {
             // Let's only check for args size and assume all types are good...
             if (constructorPotential.getParameterCount() != argc) {

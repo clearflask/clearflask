@@ -99,7 +99,7 @@ public class KillBillSync extends ManagedService {
                     .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.NONE)
                     .setAutoReevaluationIntervalDays(20));
     /**
-     * Source: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
+     * Reports extracted from: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
      */
     private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
             // Dashboard views

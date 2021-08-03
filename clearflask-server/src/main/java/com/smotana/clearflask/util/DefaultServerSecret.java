@@ -28,9 +28,6 @@ import java.util.Base64;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-/**
- * DO NOT OPEN SOURCE
- */
 @Slf4j
 @Singleton
 public final class DefaultServerSecret implements ServerSecret {
