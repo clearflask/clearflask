@@ -8,6 +8,9 @@ build:
 build-no-test:
 	mvn install -DskipTests
 
+build-no-it:
+	mvn install -DskipITs
+
 build-server-no-test:
 	cd clearflask-server && mvn install -DskipTests
 
@@ -194,7 +197,7 @@ deploy-connect: ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar
 deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deploy-files
 
 deploy-rotate-instances:
-	./instance-refresh-and-wait.sh clearflask-server
+	tools/instance-refresh-and-wait.sh clearflask-server
 
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
@@ -205,7 +208,7 @@ deploy-cloudfront-invalidate-all:
 .nginx:
 	mkdir -p .nginx
 .nginx/%.pem: | .nginx
-	./self-signed-tls  -c=US -s=California -l="San Francisco" -o="Smotana" -u="IT" -n="localhost" -e="admin@localhost" -p="./.nginx/" -v
+	tools/self-signed-tls  -c=US -s=California -l="San Francisco" -o="Smotana" -u="IT" -n="localhost" -e="admin@localhost" -p="./.nginx/" -v
 	mv .nginx/localhost.crt .nginx/cert.pem;
 	mv .nginx/localhost.key .nginx/key.pem;
 .ONESHELL:
