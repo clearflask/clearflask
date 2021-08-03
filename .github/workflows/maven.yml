@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Set up Java
@@ -18,4 +18,5 @@ jobs:
         distribution: 'adopt'
         architecture: x64
     - name: Maven build
+      timeout-minutes: 20
       run: mvn -B package --file pom.xml
