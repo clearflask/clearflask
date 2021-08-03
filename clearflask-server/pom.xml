@@ -602,7 +602,7 @@
                                         <limit>
                                             <counter>CLASS</counter>
                                             <value>MISSEDCOUNT</value>
-                                            <maximum>33</maximum>
+                                            <maximum>50</maximum>
                                         </limit>
                                     </limits>
                                 </rule>
