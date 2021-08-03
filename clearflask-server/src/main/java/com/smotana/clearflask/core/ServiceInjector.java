@@ -270,6 +270,7 @@ public enum ServiceInjector {
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;
+                    case PRODUCTION_SELF_HOST:
                     case PRODUCTION_AWS:
                         bind(AWSCredentialsProvider.class).to(DefaultAWSCredentialsProviderChain.class);
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
