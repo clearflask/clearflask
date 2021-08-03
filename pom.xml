@@ -16,7 +16,7 @@
         <COPYING.path>${basedir}${file.separator}COPYING</COPYING.path>
         <guice.version>4.2.1</guice.version>
         <guice-ext.version>4.0</guice-ext.version>
-        <guava.version>29.0-jre</guava.version>
+        <guava.version>30.1.1-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <elastic.version>7.10.0</elastic.version>
