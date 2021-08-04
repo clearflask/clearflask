@@ -66,7 +66,7 @@ class HelpPopper extends Component<Props, State> {
           }}
         >
           {({ TransitionProps }) => (
-            <Fade {...TransitionProps}>
+            <Fade mountOnEnter unmountOnExit {...TransitionProps}>
               <Paper variant='outlined' className={this.props.classes.content}>
                 {this.props.title && (<Typography variant='h6'>{this.props.title}</Typography>)}
                 {this.props.description && (<Typography variant='body1'>{this.props.description}</Typography>)}

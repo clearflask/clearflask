@@ -217,7 +217,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
     const { classes, ...menuProps } = this.props;
     const isSelected = this.isSelected(this.props.page.path);
     return (
-      <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
+      <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" mountOnEnter unmountOnExit>
         <ListItem
           // selected={isSelected}
           className={classNames(
@@ -266,7 +266,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
             </>
           )} />
         </ListItem>
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
+        <Collapse in={expanded} timeout="auto" mountOnEnter unmountOnExit>
           {this.props.page.getChildren().all
             .map(child => {
               switch (child.type) {
@@ -333,7 +333,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
     const padding = paddingForLevel(1, this.props.pageGroup.path);
     const { classes, ...menuProps } = this.props;
     return (
-      <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
+      <Collapse in={childPages.length > 0} timeout="auto" mountOnEnter unmountOnExit>
         <div>
           <ListItem
             className={this.props.classes.menuItem}

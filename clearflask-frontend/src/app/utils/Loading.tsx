@@ -17,7 +17,7 @@ class Loading extends Component<Props> {
 
   render() {
     return (
-      <Fade in={true} timeout={this.props.showImmediately ? 0 : 3000}>
+      <Fade appear in timeout={this.props.showImmediately ? 0 : 3000}>
         <CircularProgress style={{
           ...this.styles.progress,
           // This is just a patch, circular progress flashes unstyled with SSR taking up whole page.

@@ -417,12 +417,12 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
       code={props.popup ? htmlPopup : htmlIframe}
       suppressStoreProvider
     >
-      <Collapse in={props.popup}>
+      <Collapse mountOnEnter in={props.popup}>
         <div style={{ padding: theme.spacing(4) }}>
           <div dangerouslySetInnerHTML={{ __html: htmlPopup }} />
         </div>
       </Collapse>
-      <Collapse in={!props.popup}>
+      <Collapse mountOnEnter in={!props.popup}>
         <div style={{ padding: theme.spacing(1) }}>
           <div dangerouslySetInnerHTML={{ __html: htmlIframe }} />
         </div>
@@ -985,7 +985,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
           />
         )}
       />
-      <Collapse in={visibility === Admin.OnboardingVisibilityEnum.Private} classes={{ wrapperInner: classes.usersOnboardOptions }}>
+      <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Private} classes={{ wrapperInner: classes.usersOnboardOptions }}>
         <FormControlLabel
           label={(
             <span className={classes.usersInlineTextField}>
@@ -1077,7 +1077,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
           </div>
         </div>
       </Collapse>
-      <Collapse in={visibility === Admin.OnboardingVisibilityEnum.Public} classes={{ wrapperInner: classes.usersOnboardOptions }}>
+      <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Public} classes={{ wrapperInner: classes.usersOnboardOptions }}>
         <FormControlLabel
           label={checkboxLabel('Guest', 'Allow users to sign up as a Guest. Hidden if Browser Push is available.')}
           className={classes.usersOnboardOption}
@@ -1315,26 +1315,26 @@ export const ProjectSettingsUsersOauth = (props: {
                 <MenuItem value='Custom'><CustomIcon />&nbsp;&nbsp;&nbsp;Other</MenuItem>
               </Select>
             </FormControl>
-            <Collapse in={newOauthType === 'Custom'} >
+            <Collapse mountOnEnter in={newOauthType === 'Custom'} >
               <p>To setup OAuth, you need to register first. If you are having trouble filling out all the fields, please contact support.</p>
               <p>You may be asked to provide a <b>Redirect URL</b> for security measures:</p>
               {projectLink && (
                 <pre>{projectLink + '/oauth'}</pre>
               )}
             </Collapse>
-            <Collapse in={!!newOauthType && newOauthType !== 'Custom'} >
+            <Collapse mountOnEnter in={!!newOauthType && newOauthType !== 'Custom'} >
               <p>To setup OAuth for {newOauthType}, you need to register to obtain a <b>Client ID</b> and <b>Client Secret</b>.</p>
               <p>You will be asked to provide a <b>Redirect URL</b> for security measures:</p>
               {projectLink && (
                 <pre>{projectLink + '/oauth'}</pre>
               )}
-              <Collapse in={newOauthType === 'Google'}>Visit <MuiLink href="https://console.developers.google.com/apis/credentials/oauthclient" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Github'}>Visit <MuiLink href="https://github.com/settings/applications/new" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Facebook'}>Visit <MuiLink href="https://developers.facebook.com/apps" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Gitlab'}>Visit <MuiLink href="https://gitlab.com/oauth/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Discord'}>Visit <MuiLink href="https://discordapp.com/developers/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Twitch'}>Visit <MuiLink href="https://glass.twitch.tv/console/apps/create" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse in={newOauthType === 'Azure'}>Visit <MuiLink href="https://portal.azure.com/" rel="noreferrer noopener" target="_blank">here</MuiLink> -&gt; "Azure Active Directory" -&gt; "App Registrations" to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Google'}>Visit <MuiLink href="https://console.developers.google.com/apis/credentials/oauthclient" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Github'}>Visit <MuiLink href="https://github.com/settings/applications/new" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Facebook'}>Visit <MuiLink href="https://developers.facebook.com/apps" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Gitlab'}>Visit <MuiLink href="https://gitlab.com/oauth/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Discord'}>Visit <MuiLink href="https://discordapp.com/developers/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Twitch'}>Visit <MuiLink href="https://glass.twitch.tv/console/apps/create" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'Azure'}>Visit <MuiLink href="https://portal.azure.com/" rel="noreferrer noopener" target="_blank">here</MuiLink> -&gt; "Azure Active Directory" -&gt; "App Registrations" to get started.</Collapse>
               <p>Once you are done, fill these out:</p>
               <TextField
                 className={classes.usersOauthAddProp}
@@ -1352,7 +1352,7 @@ export const ProjectSettingsUsersOauth = (props: {
                 value={clientSecret}
                 onChange={e => setClientSecret(e.target.value)}
               />
-              <Collapse in={newOauthType === 'Azure'}>
+              <Collapse mountOnEnter in={newOauthType === 'Azure'}>
                 <TextField
                   className={classes.usersOauthAddProp}
                   size='small'
@@ -1363,7 +1363,7 @@ export const ProjectSettingsUsersOauth = (props: {
                 />
               </Collapse>
             </Collapse>
-            <Collapse in={!!newOauthType} >
+            <Collapse mountOnEnter in={!!newOauthType} >
               <Button
                 className={classes.usersOauthAddAddButton}
                 variant='contained'
@@ -2159,7 +2159,7 @@ export const ProjectSettingsTagGroup = (props: {
           path={['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups', props.tagGroupIndex, 'userSettable']}
         />
       </div>
-      <Collapse in={props.tagGroup.tagIds.length > 1}>
+      <Collapse mountOnEnter in={props.tagGroup.tagIds.length > 1}>
         <div className={classes.feedbackTagGroupProperty}>
           <FormLabel>Number of required tags</FormLabel>
           <Slider
@@ -2194,7 +2194,7 @@ export const ProjectSettingsTagGroup = (props: {
         .map(tagId => tagsWithIndexes.find(t => t.tag.tagId === tagId))
         .filter(notEmpty)
         .map(tagWithIndex => (
-          <Collapse in={true} appear>
+          <Collapse mountOnEnter in={true} appear>
             <ProjectSettingsFeedbackTag
               server={props.server}
               editor={props.editor}
@@ -2784,7 +2784,7 @@ export class TemplateWrapper<T> extends Component<{
   renderCollapsibleConfirmation() {
     return (
       <>
-        <Collapse in={!!this.state.confirm}>
+        <Collapse mountOnEnter in={!!this.state.confirm}>
           <Alert
             style={{ maxWidth: 500 }}
             severity='warning'
@@ -2816,7 +2816,7 @@ export class TemplateWrapper<T> extends Component<{
             </div>
           </Alert>
         </Collapse>
-        <Collapse in={!this.state.confirm}>
+        <Collapse mountOnEnter in={!this.state.confirm}>
           {this.state.mappedValue && this.props.renderResolved?.(this.templater, this.state.mappedValue.val)}
         </Collapse>
       </>
@@ -2893,7 +2893,7 @@ const PropertyShowOrEdit = (props: {
   if (!props.allowEdit && editing) setEditing(false);
   return (
     <>
-      <Collapse in={!editing}>
+      <Collapse mountOnEnter in={!editing}>
         <div className={classes.showOrEdit}>
           {props.show}
           {props.allowEdit && (
@@ -2911,7 +2911,7 @@ const PropertyShowOrEdit = (props: {
           )}
         </div>
       </Collapse>
-      <Collapse in={editing}>
+      <Collapse mountOnEnter in={editing}>
         <div
           onClick={e => e.stopPropagation()}
           onFocus={e => e.stopPropagation()}

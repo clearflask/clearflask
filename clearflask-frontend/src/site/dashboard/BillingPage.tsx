@@ -375,7 +375,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         />
         <Dialog
           open={!!this.state.paymentActionOpen}
-          keepMounted
           onClose={paymentActionOnClose}
         >
           {this.state.paymentActionMessage ? (
@@ -497,7 +496,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             {paymentAction}
             <Dialog
               open={!!this.state.showAddPayment}
-              keepMounted
               onClose={() => this.setState({ showAddPayment: undefined })}
             >
               <ElementsConsumer>
@@ -513,7 +511,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     <DialogActions>
                       <Button onClick={() => this.setState({ showAddPayment: undefined })}>
                         Cancel
-                  </Button>
+                      </Button>
                       <SubmitButton
                         isSubmitting={this.state.isSubmitting}
                         disabled={!this.state.stripePaymentFilled || !elements || !stripe}
@@ -527,7 +525,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Dialog>
             <Dialog
               open={!!this.state.showCancelSubscription}
-              keepMounted
               onClose={() => this.setState({ showCancelSubscription: undefined })}
             >
               <DialogTitle>Stop subscription</DialogTitle>
@@ -537,7 +534,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <DialogActions>
                 <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
                   Cancel
-            </Button>
+                </Button>
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   style={{ color: this.props.theme.palette.error.main }}
@@ -556,7 +553,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Dialog>
             <Dialog
               open={!!this.state.showResumePlan}
-              keepMounted
               onClose={() => this.setState({ showResumePlan: undefined })}
             >
               <DialogTitle>Resume subscription</DialogTitle>
@@ -566,7 +562,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <DialogActions>
                 <Button onClick={() => this.setState({ showResumePlan: undefined })}>
                   Cancel
-            </Button>
+                </Button>
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   color='primary'
@@ -694,7 +690,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   }}
                 >
                   Switch plan
-              </Button>
+                </Button>
               </div>
             )}
             {this.props.isSuperAdmin && (

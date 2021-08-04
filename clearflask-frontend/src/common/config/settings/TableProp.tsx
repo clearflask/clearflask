@@ -182,7 +182,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
               label={helperText}
             />
           </div>
-          <Collapse in={this.props.data.value || false}>
+          <Collapse mountOnEnter in={this.props.data.value || false}>
             {content}
           </Collapse>
         </div>

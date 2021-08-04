@@ -285,7 +285,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     );
 
     return (
-      <InViewObserver ref={this.inViewObserverRef}>
+      <InViewObserver ref={this.inViewObserverRef} disabled={!this.props.settings.demoCreateAnimate}>
         <ExplorerTemplate
           className={classNames(
             this.props.className,

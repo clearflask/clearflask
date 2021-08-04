@@ -82,7 +82,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     const controls = postSearchToLabels(this.props.config, this.props.explorer, this.props.search);
     const isSearchable = isFilterControllable(this.props.explorer, PostFilterType.Search);
     return (
-      <InViewObserver ref={this.inViewObserverRef}>
+      <InViewObserver ref={this.inViewObserverRef} disabled={!this.props.settings.demoSearchAnimate}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
           <SelectionPicker
             value={controls.values}

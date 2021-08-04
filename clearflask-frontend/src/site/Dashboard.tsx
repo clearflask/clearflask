@@ -242,6 +242,13 @@ const styles = (theme: Theme) => createStyles({
   roadmapSectionTitle: {
     margin: theme.spacing(2, 2, 0),
   },
+  roadmapTaskSection: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  roadmapTaskList: {
+    flex: '1 1 0px',
+  },
   listWithSearchContainer: {
     minWidth: 0,
     height: '100%',
@@ -786,7 +793,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 style: { maxWidth: 730 },
               }}
             >
-              <Collapse in={(this.state.publishDialogStep || 0) === 0}>
+              <Collapse unmountOnExit in={(this.state.publishDialogStep || 0) === 0}>
                 <DialogTitle>User onboarding</DialogTitle>
                 <DialogContent>
                   <DialogContentText>Choose how your users will access your portal</DialogContentText>

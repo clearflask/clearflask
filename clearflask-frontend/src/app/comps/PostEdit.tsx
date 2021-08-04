@@ -800,7 +800,7 @@ export const PostSaveButton = (props: {
   return (
     <>
       {props.children}
-      <Collapse in={!!props.open}>
+      <Collapse mountOnEnter in={!!props.open}>
         <div className={classes.saveButtonActions}>
           {props.showNotify && (
             <FormControlLabel

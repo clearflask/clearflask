@@ -40,7 +40,6 @@ import { ThisOrThat } from '../../common/util/typeUtil';
 import { importFailed, importSuccess } from '../../Main';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
-import Loader from '../utils/Loader';
 import Loading from '../utils/Loading';
 import CommentList from './CommentList';
 import CommentReply from './CommentReply';
@@ -473,14 +472,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   render() {
     if (!this.props.idea) return (
-      <Loader skipFade loaded={false}>
-      </Loader>
+      <Loading />
     );
 
-    const isOnlyPostOnClick = (this.props.onClickPost && !this.props.onClickTag && !this.props.onClickCategory && !this.props.onClickStatus && !this.props.onUserClick);
+    const isOnlyPostOnClick = (!!this.props.onClickPost && !this.props.onClickTag && !this.props.onClickCategory && !this.props.onClickStatus && !this.props.onUserClick);
     return (
-      <Loader skipFade className={classNames(this.props.className)} loaded={!!this.props.idea}>
-        <InViewObserver ref={this.inViewObserverRef}>
+      <div className={classNames(this.props.className)}>
+        <InViewObserver ref={this.inViewObserverRef} disabled={
+          !this.props.settings.demoFundingControlAnimate && !this.props.settings.demoFundingAnimate && !this.props.settings.demoVotingExpressionsAnimate
+        }>
           <div
             className={classNames(
               this.props.classes.post,
@@ -504,7 +504,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                   {this.renderTitle()}
                   {this.renderDescription()}
                 </>
-              ))}
+              ), isOnlyPostOnClick)}
               {this.renderBottomBar()}
               {this.renderIWantThisCommentAdd()}
               {this.renderResponseAndStatus()}
@@ -532,7 +532,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             }}
           />
         </InViewObserver>
-      </Loader>
+      </div>
     );
   }
 
@@ -1637,7 +1637,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return content;
   }
 
-  renderTitleAndDescription(children: React.ReactNode) {
+  renderTitleAndDescription(children: React.ReactNode, isOnlyPostOnClick: boolean) {
     if (this.props.variant !== 'list'
       || !this.props.expandable
       || !!this.props.onClickPost
@@ -1649,7 +1649,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             this.props.classes.titleAndDescription,
             this.props.onClickPost && !this.props.disableOnClick && this.props.classes.clickable,
           )}
-          onClick={(this.props.onClickPost && !this.props.disableOnClick) ? () => this.props.onClickPost && this.props.idea?.ideaId
+          onClick={(this.props.onClickPost && !this.props.disableOnClick && !isOnlyPostOnClick) ? () => this.props.onClickPost && this.props.idea?.ideaId
             && this.props.onClickPost(this.props.idea.ideaId) : undefined}
         >
           {children}

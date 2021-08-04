@@ -164,7 +164,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     }
 
     return (
-      <InViewObserver ref={this.inViewObserverRef}>
+      <InViewObserver ref={this.inViewObserverRef} disabled={!this.props.settings.demoFundingControlAnimate}>
         <div style={this.props.style} className={`${this.props.className || ''} ${this.props.classes.container}`}>
           {showFirstIdea && this.props.idea && (<div>
             <FundingBar

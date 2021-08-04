@@ -119,6 +119,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       && !!this.state.email
       && !requiresWorkEmail
       && !!this.state.pass;
+    // Disabled for now
     // const emailDisposableList = import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList');
 
     return (
@@ -146,10 +147,11 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             onChange={e => {
               const newEmail = e.target.value;
               this.setState({ email: newEmail });
+              // Disabled for now
               // emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
             }}
           />
-          <Collapse in={!!requiresWorkEmail}>
+          <Collapse mountOnEnter in={!!requiresWorkEmail}>
             <Message severity='warning' message={(
               <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
                 Please enter your work email. Don't have one?&nbsp;

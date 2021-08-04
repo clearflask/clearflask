@@ -558,7 +558,7 @@ class DataMock {
     });
   }
 
-  mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 2): Promise<any> {
+  mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 3): Promise<any> {
     return this.getConfig()
       .then(config => {
         const promises: Promise<any>[] = [];

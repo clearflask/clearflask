@@ -322,7 +322,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 {((!this.props.actionTitle && !this.props.minimalistic) || typeof this.props.actionTitle === 'string') && (
                   <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle !== undefined ? this.props.actionTitle : 'Create account'}</ListSubheader>
                 )}
-                <Collapse in={notifOpts.has(NotificationType.SSO)}>
+                <Collapse mountOnEnter in={notifOpts.has(NotificationType.SSO)}>
                   <ListItem
                     button={!onlySingleOption as any}
                     selected={!onlySingleOption && selectedNotificationType === NotificationType.SSO}
@@ -338,12 +338,12 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       || this.props.config?.name
                       || 'External'} />
                   </ListItem>
-                  <Collapse in={onlySingleOption}>
+                  <Collapse mountOnEnter in={onlySingleOption}>
                     <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
                   </Collapse>
                 </Collapse>
                 {oauthOpts.map(oauthOpt => (
-                  <Collapse in={notifOpts.has(NotificationType.OAuth)}>
+                  <Collapse mountOnEnter in={notifOpts.has(NotificationType.OAuth)}>
                     <ListItem
                       button={!onlySingleOption as any}
                       selected={!onlySingleOption && selectedNotificationType === NotificationType.OAuth && selectedOauthType === oauthOpt.oauthId}
@@ -362,12 +362,12 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       </ListItemIcon>
                       <ListItemText primary={oauthOpt.buttonTitle} />
                     </ListItem>
-                    <Collapse in={onlySingleOption}>
+                    <Collapse mountOnEnter in={onlySingleOption}>
                       <Button color='primary' className={this.props.classes.allowButton} onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
                     </Collapse>
                   </Collapse>
                 ))}
-                <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
+                <Collapse mountOnEnter in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                   <ListItem
                     // https://github.com/mui-org/material-ui/pull/15049
                     button={!onlySingleOption as any}
@@ -378,11 +378,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListItemIcon><MobilePushIcon /></ListItemIcon>
                     <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
                   </ListItem>
-                  <Collapse in={onlySingleOptionRequiresAllow}>
+                  <Collapse mountOnEnter in={onlySingleOptionRequiresAllow}>
                     <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
                   </Collapse>
                 </Collapse>
-                <Collapse in={notifOpts.has(NotificationType.Browser)}>
+                <Collapse mountOnEnter in={notifOpts.has(NotificationType.Browser)}>
                   <ListItem
                     button={!onlySingleOption as any}
                     selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
@@ -392,11 +392,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListItemIcon><WebPushIcon /></ListItemIcon>
                     <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
                   </ListItem>
-                  <Collapse in={onlySingleOptionRequiresAllow}>
+                  <Collapse mountOnEnter in={onlySingleOptionRequiresAllow}>
                     <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
                   </Collapse>
                 </Collapse>
-                <Collapse in={notifOpts.has(NotificationType.Email)}>
+                <Collapse mountOnEnter in={notifOpts.has(NotificationType.Email)}>
                   <ListItem
                     button={!onlySingleOption as any}
                     selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
@@ -410,7 +410,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListItemText className={this.props.classes.noWrap} primary={!showEmailInputInline ? 'Email' : emailInput} />
                   </ListItem>
                 </Collapse>
-                <Collapse in={notifOpts.has(NotificationType.Silent)}>
+                <Collapse mountOnEnter in={notifOpts.has(NotificationType.Silent)}>
                   <ListItem
                     button={!onlySingleOption as any}
                     selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
@@ -421,7 +421,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListItemText primary={this.props.guestLabelOverride || 'Guest'} />
                   </ListItem>
                 </Collapse>
-                <Collapse in={!signupAllowed}>
+                <Collapse mountOnEnter in={!signupAllowed}>
                   <ListItem
                     disabled={true}
                   >
@@ -458,7 +458,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       disabled={this.state.isSubmitting}
                     />
                   )}
-                  <Collapse in={showEmailInput} unmountOnExit>
+                  <Collapse mountOnEnter in={showEmailInput} unmountOnExit>
                     <div>
                       {!showEmailInputInline && emailInput}
                       {showPasswordInput && (
@@ -503,7 +503,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           {signupAllowed && onboarding?.terms?.documents?.length && (
             <AcceptTerms overrideTerms={onboarding.terms.documents} />
           )}
-          <Collapse in={!!this.props.loggedInUser}>
+          <Collapse mountOnEnter in={!!this.props.loggedInUser}>
             <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
           </Collapse>
         </DialogContent>
@@ -655,7 +655,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     );
 
     return this.props.inline ? (
-      <Collapse in={!!this.props.open}>
+      <Collapse mountOnEnter in={!!this.props.open}>
         {dialogContent}
       </Collapse>
     ) : (

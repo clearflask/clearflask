@@ -126,15 +126,17 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
       name: getSearchKey(panel.search),
       size: { breakWidth: MinContentWidth, flexGrow: 1, maxWidth: MaxContentWidth, scroll: Orientation.Vertical },
       content: (
-        <>
+        <div className={this.props.classes.roadmapTaskSection}>
           <PanelTitle
             className={this.props.classes.roadmapSectionTitle}
             text={panel.title || onlyStatus?.name} color={onlyStatus?.color}
           />
-          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            {list}
-          </Provider>
-        </>
+          <div className={this.props.classes.roadmapTaskList}>
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              {list}
+            </Provider>
+          </div>
+        </div>
       ),
       ...(breakStackWithName ? {
         breakAction: 'stack',

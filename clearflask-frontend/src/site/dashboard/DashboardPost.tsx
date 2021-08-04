@@ -50,10 +50,8 @@ interface ConnectProps {
 }
 class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
-  constructor(props) {
-    super(props);
-
-    props.callOnMount?.();
+  componentDidMount() {
+    this.props.callOnMount?.();
   }
 
   render() {

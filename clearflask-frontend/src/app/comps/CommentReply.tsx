@@ -81,6 +81,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   render() {
     return (
       <Collapse
+        mountOnEnter
         in={this.props.collapseIn !== false}
         className={classNames(this.props.className, this.props.classes.addCommentFormOuter)}
       >

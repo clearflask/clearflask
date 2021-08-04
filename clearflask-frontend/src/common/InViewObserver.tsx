@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { InView } from 'react-intersection-observer';
 
 interface Props {
+  disabled?: boolean;
 }
 export default class InViewObserver extends Component<Props> {
   promise: Promise<IntersectionObserverEntry | undefined>;
@@ -13,7 +14,11 @@ export default class InViewObserver extends Component<Props> {
     super(props);
 
     this.resolve = () => { };
-    this.promise = new Promise(resolve => { this.resolve = resolve });
+    if (this.props.disabled) {
+      this.promise = Promise.resolve(undefined);
+    } else {
+      this.promise = new Promise(resolve => { this.resolve = resolve });
+    }
   }
 
   componentWillUnmount() {
@@ -25,6 +30,7 @@ export default class InViewObserver extends Component<Props> {
   }
 
   render() {
+    if (this.props.disabled) return this.props.children;
     return (
       <InView onChange={(inView, entry) => {
         if (inView) {

@@ -391,7 +391,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     }
 
     return (
-      <InViewObserver ref={this.inViewObserverRef}>
+      <InViewObserver ref={this.inViewObserverRef} disabled={!this.props.settings.demoMenuAnimate}>
         {header}
       </InViewObserver>
     );

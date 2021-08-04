@@ -247,7 +247,6 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
     return (
       <Dialog
         open={this.props.open}
-        keepMounted
         fullWidth={!this.props.onlyAllowLinkFrom}
         fullScreen={isMobile && !this.props.onlyAllowLinkFrom}
         scroll={isMobile ? 'paper' : undefined}

@@ -449,7 +449,7 @@ export default class Property extends Component<Props, State> {
         break;
       case ConfigEditor.PropertyType.Object:
         const subProps = (
-          <Collapse in={this.state.value} style={{ marginLeft: '30px' }}>
+          <Collapse mountOnEnter in={this.state.value} style={{ marginLeft: '30px' }}>
             {prop.childProperties && prop.childProperties
               .filter(childProp => !childProp.hide)
               .map(childProp => (

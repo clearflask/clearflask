@@ -180,7 +180,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
         </div>
       );
       subscribeToMe = (
-        <Collapse in={!isSubscribed}>
+        <Collapse mountOnEnter in={!isSubscribed}>
           {subscribeToMe}
         </Collapse>
       );

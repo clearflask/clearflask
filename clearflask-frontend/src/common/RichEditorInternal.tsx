@@ -489,7 +489,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                 'image', 'width', 'align',
               ]}
             />
-            <Collapse in={!!this.state.showFormats} className={this.props.classes.toggleButtonGroups}>
+            <Collapse mountOnEnter in={!!this.state.showFormats} className={this.props.classes.toggleButtonGroups}>
               <div className={this.props.classes.toggleButtonGroup}>
                 {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
                 {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
@@ -502,7 +502,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                   {this.renderToggleButtonCmpt(MoreIcon, false, () => this.setState({ showFormatsExtended: true }))}
                 </Fade>
               </div>
-              <Collapse in={!!this.state.showFormatsExtended}>
+              <Collapse mountOnEnter in={!!this.state.showFormatsExtended}>
                 <div className={this.props.classes.toggleButtonGroup}>
                   {this.renderToggleButton(Heading2Icon, undefined, 'header', 2)}
                   {this.renderToggleButton(Heading3Icon, undefined, 'header', 3)}
@@ -546,7 +546,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       <ClosablePopper
         zIndex={this.props.theme.zIndex.modal + 1}
         anchorElGetter={anchorElGetter}
-          closeButtonPosition='disable'
+        closeButtonPosition='disable'
         arrow
         clickAway
         clickAwayProps={{
