@@ -4,10 +4,12 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanApi;
@@ -15,6 +17,7 @@ import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
+import com.smotana.clearflask.api.model.AccountBindAdmin;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountLoginAs;
@@ -45,6 +48,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.OAuthUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -84,6 +88,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         @DefaultValue("P20D")
         Duration sessionRenewIfExpiringIn();
+
+        @DefaultValue("789180657123-biqq6mkgvrkirava961ujkacni5qebuf.apps.googleusercontent.com")
+        String oauthGoogleClientId();
+
+        @NoDefaultValue
+        String oauthGoogleClientSecret();
+
+        @DefaultValue("2c6e8437eaa489e69c38")
+        String oauthGithubClientId();
+
+        @NoDefaultValue
+        String oauthGithubClientSecret();
     }
 
     public static final String SUPER_ADMIN_AUTH_COOKIE_NAME = "cf_sup_auth";
@@ -92,7 +108,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     private Environment env;
+    @Inject
+    private Gson gson;
     @Inject
     private ProjectResource projectResource;
     @Inject
@@ -123,7 +143,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public AccountBindAdminResponse accountBindAdmin() {
+    public AccountBindAdminResponse accountBindAdmin(AccountBindAdmin accountBindAdmin) {
         Optional<Account> accountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt);
         Optional<Account> superAccountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountOpt);
         Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
@@ -147,11 +167,78 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
         }
 
+        boolean created = false;
+        if (accountOpt.isEmpty() && accountBindAdmin.getOauthToken() != null) {
+            String tokenUrl;
+            String userProfileUrl;
+            String clientSecret;
+            String guidJsonPath;
+            String nameJsonPath;
+            String emailJsonPath;
+            if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                tokenUrl = "https://github.com/login/oauth/access_token";
+                userProfileUrl = "https://api.github.com/user";
+                guidJsonPath = "id";
+                nameJsonPath = "name, login";
+                emailJsonPath = "email";
+                clientSecret = config.oauthGithubClientSecret();
+            } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
+                userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
+                guidJsonPath = "id";
+                nameJsonPath = "name";
+                emailJsonPath = "email";
+                clientSecret = config.oauthGoogleClientSecret();
+            } else {
+                throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
+            }
+            Optional<OAuthUtil.OAuthResult> oauthResult = OAuthUtil.fetch(
+                    gson,
+                    "account",
+                    "https://" + configApp.domain() + "/login",
+                    tokenUrl,
+                    userProfileUrl,
+                    guidJsonPath,
+                    nameJsonPath,
+                    emailJsonPath,
+                    accountBindAdmin.getOauthToken().getId(),
+                    clientSecret,
+                    accountBindAdmin.getOauthToken().getCode());
+            if (oauthResult.isPresent()) {
+                accountOpt = accountStore.getAccountByOauthGuid(oauthResult.get().getGuid());
+                if (accountOpt.isEmpty()) {
+                    try {
+                        accountOpt = Optional.of(accountStore.createAccount(new Account(
+                                accountStore.genAccountId(),
+                                oauthResult.get().getEmailOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
+                                        "OAuth provider did not give us your email, please sign up using an email directly.")),
+                                SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
+                                null,
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getBasePlanId()))
+                                        .orElseGet(() -> planStore.getPublicPlans().getPlans().get(0).getBasePlanId()),
+                                Instant.now(),
+                                oauthResult.get().getNameOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
+                                        "OAuth provider did not give us your name, please sign up using an email directly.")),
+                                null,
+                                ImmutableSet.of(),
+                                oauthResult.get().getGuid())).getAccount());
+                        created = true;
+                    } catch (ApiException ex) {
+                        if (Response.Status.CONFLICT.equals(ex.getStatus())) {
+                            throw new ApiException(Response.Status.CONFLICT, "You must login with your password.", ex);
+                        }
+                        throw ex;
+                    }
+                }
+            }
+        }
+
         return new AccountBindAdminResponse(
                 accountOpt.or(() -> superAccountOpt)
                         .map(account -> account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate))
                         .orElse(null),
-                superAccountOpt.isPresent());
+                superAccountOpt.isPresent(),
+                created);
     }
 
     @PermitAll
@@ -166,6 +253,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         Account account = accountOpt.get();
+
+        if (Strings.isNullOrEmpty(account.getPassword())) {
+            log.info("Account login with password for OAuth account with email {}", credentials.getEmail());
+            throw new ApiException(Response.Status.UNAUTHORIZED, "You must login using OAuth provider.");
+        }
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail());
         if (!account.getPassword().equals(passwordSupplied)) {
@@ -233,8 +325,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
-        Account account;
-        account = new Account(
+        Account account = new Account(
                 accountId,
                 signup.getEmail(),
                 SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
@@ -243,8 +334,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now(),
                 signup.getName(),
                 passwordHashed,
-                ImmutableSet.of());
-        accountStore.createAccount(account);
+                ImmutableSet.of(),
+                null);
+        account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
         // - It takes too long

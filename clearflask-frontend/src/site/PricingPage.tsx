@@ -16,9 +16,9 @@ import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
+import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
-import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 export const TrialInfoText = () => (
   <div>
@@ -31,6 +31,16 @@ export const StopTrialAfterActiveUsersReaches = 10;
 export const EstimatedPercUsersBecomeTracked = 0.05;
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
+  {
+    heading: 'How long is the trial for?',
+    body: (
+      <>
+        <p>
+          When you sign up for any plan, you can continue using ClearFlask for 14 days for free. At that point you will be asked to provide a payment method.
+        </p>
+      </>
+    ),
+  },
   {
     heading: 'What are tracked users?',
     body: (
@@ -47,7 +57,7 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Yes, you can switch between providers whenever you need to. We provide both import and export functionality via CSV format. Contact us for help.
+          Yes, you can switch between providers whenever you need to. We provide both import and export functionality via CSV format. You can also switch between self-hosted and cloud options. Contact us for help.
         </p>
       </>
     ),

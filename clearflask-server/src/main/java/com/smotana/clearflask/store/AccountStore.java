@@ -40,6 +40,8 @@ public interface AccountStore {
 
     Optional<Account> getAccountByApiKey(String apiKey);
 
+    Optional<Account> getAccountByOauthGuid(String oauthGuid);
+
     Optional<Account> getAccountByEmail(String email);
 
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
@@ -132,6 +134,7 @@ public interface AccountStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"apiKey"}, rangePrefix = "accountByApiKey")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"oauthGuid"}, rangePrefix = "accountByOauthGuid")
     class Account {
         @NonNull
         String accountId;
@@ -154,12 +157,14 @@ public interface AccountStore {
         @NonNull
         String name;
 
-        @NonNull
+        /** Empty if using OAuth guid */
         @ToString.Exclude
         String password;
 
         @NonNull
         ImmutableSet<String> projectIds;
+
+        String oauthGuid;
 
         /**
          * ClearFlask Feedback page guid

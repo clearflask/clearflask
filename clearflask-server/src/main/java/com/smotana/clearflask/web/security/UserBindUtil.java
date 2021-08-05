@@ -94,7 +94,7 @@ public class UserBindUtil {
         if (!userOpt.isPresent() && oauthTokenOpt.isPresent()) {
             Project project = projectStore.getProject(projectId, true).get();
             Optional<NotificationMethodsOauth> oauthMethodOpt = project.getVersionedConfigAdmin().getConfig().getUsers().getOnboarding().getNotificationMethods().getOauth().stream()
-                    .filter(nmo -> oauthTokenOpt.get().getId().equals(nmo.getOauthId()))
+                    .filter(nmo -> oauthTokenOpt.get().getId().equals(nmo.getClientId()))
                     .findAny();
             Optional<String> clientSecretOpt = oauthMethodOpt.flatMap(oauthMethod -> {
                 if (project.getVersionedConfigAdmin().getConfig().getOauthClientSecrets() == null) {

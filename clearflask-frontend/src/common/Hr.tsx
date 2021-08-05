@@ -42,8 +42,8 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   vertical?: boolean;
-  margins?: string;
-  length?: string;
+  margins?: string | number;
+  length?: string | number;
   isInsidePaper?: boolean;
 }
 

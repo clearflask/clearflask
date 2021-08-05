@@ -5,12 +5,12 @@ import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Route } from 'react-router-dom';
-import * as Client from '../api/client';
 import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
+import { OAuthFlow } from '../common/util/oauthUtil';
 import { RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
@@ -20,7 +20,6 @@ import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
 import BasePage from './BasePage';
-import { OAuthState, OAUTH_CODE_PARAM_NAME, OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX, OAUTH_STATE_PARAM_NAME } from './comps/LogIn';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
 import CustomPage from './CustomPage';
@@ -34,9 +33,6 @@ import Loading from './utils/Loading';
 import PrivateProjectLogin from './utils/PrivateProjectLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
-
-/** Broadcast successful bind to other tabs */
-export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
 
 /** If changed, also change in NotificationServiceImpl.java */
 export const AUTH_TOKEN_PARAM_NAME = 'authToken';
@@ -109,35 +105,8 @@ class App extends Component<Props> {
       this.props.history.replace(this.props.location.pathname);
     }
     // Used for OAuth
-    var oauthToken: Client.UserBindOauthToken | undefined;
-    const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
-    const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
-    if (oauthStateStr && oauthCode) {
-      var oauthState: OAuthState | undefined;
-      try {
-        const oauthStateCandidate = JSON.parse(oauthStateStr);
-        if (oauthStateCandidate
-          && typeof oauthStateCandidate === 'object'
-          && oauthStateCandidate.csrf
-          && typeof oauthStateCandidate.csrf === 'string'
-          && oauthStateCandidate.oid
-          && typeof oauthStateCandidate.oid === 'string') {
-          oauthState = oauthStateCandidate;
-        }
-      } catch (e) {
-        oauthState = undefined;
-      }
-      if (oauthState) {
-        const oauthCsrfExpected = sessionStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`);
-        if (oauthCsrfExpected === oauthState?.csrf) {
-          sessionStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.oid}`)
-          oauthToken = {
-            id: oauthState.oid,
-            code: oauthCode,
-          };
-        }
-      }
-    }
+    const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+    const oauthToken = oauthFlow.checkResult();
     // Used for logging in via web notification permission
     var browserPushToken;
     if (WebNotification.getInstance().getStatus() === WebNotificationStatus.Granted) {
@@ -177,9 +146,7 @@ class App extends Component<Props> {
     }
 
     if (!!result?.user) {
-      // Broadcast to other tabs of successful bind
-      localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
-      localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
+      oauthFlow.broadcastSuccess();
     }
   }
 

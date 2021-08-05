@@ -30,9 +30,8 @@ import WebNotification from '../../common/notification/webNotification';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { detectEnv, Environment } from '../../common/util/detectEnv';
-import randomUuid from '../../common/util/uuid';
+import { OAuthFlow, Unsubscribe } from '../../common/util/oauthUtil';
 import windowIso from '../../common/windowIso';
-import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
 import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
@@ -45,14 +44,6 @@ enum NotificationType {
   SSO = 'sso',
   OAuth = 'oauth',
 }
-
-export interface OAuthState {
-  csrf: string;
-  oid: string;
-}
-export const OAUTH_CODE_PARAM_NAME = 'code';
-export const OAUTH_STATE_PARAM_NAME = 'state';
-export const OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
 const styles = (theme: Theme) => createStyles({
   content: {
@@ -140,11 +131,12 @@ interface State {
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
   readonly emailInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   state: State = {};
-  storageListener?: any;
   externalSubmitEnabled: boolean = false;
+  readonly oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+  oauthListenerUnsubscribe: Unsubscribe | undefined;
 
   componentWillUnmount() {
-    this.storageListener && !windowIso.isSsr && windowIso.removeEventListener('storage', this.storageListener);
+    this.oauthListenerUnsubscribe?.();
   }
 
   render() {
@@ -695,9 +687,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   }
 
   listenForExternalBind() {
-    if (this.storageListener) return;
-    this.storageListener = (ev: StorageEvent) => {
-      if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
+    this.oauthListenerUnsubscribe = this.oauthFlow.listenForSuccess(() => {
       if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
         this.props.server.dispatch().then(d => d.userCreate({
           projectId: this.props.server.getProjectId(),
@@ -715,27 +705,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           userBind: {},
         }));
       }
-    }
-    !windowIso.isSsr && windowIso.addEventListener('storage', this.storageListener);
+    });
   }
 
   onClickOauthNotif(oauthConfig: Client.NotificationMethodsOauth) {
-    const oauthCsrfToken = randomUuid();
-    const oauthState: OAuthState = {
-      csrf: oauthCsrfToken,
-      oid: oauthConfig.oauthId,
-    };
-    const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
-    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthConfig.oauthId}`, oauthCsrfToken);
-    this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'oauth' });
-    !windowIso.isSsr && windowIso.open(`${oauthConfig.authorizeUrl}?`
-      + `response_type=code`
-      + `&client_id=${oauthConfig.clientId}`
-      + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}/oauth`
-      + `&scope=${oauthConfig.scope}`
-      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
-      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`);
+    this.listenForExternalBind();
+    this.oauthFlow.open(oauthConfig);
   }
 
   onClickSsoNotif() {

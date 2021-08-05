@@ -1770,9 +1770,10 @@ const Customize = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Open-source</Typography>
       <p><Typography>if you got the time, open-source gives you freedom for a custom solution and complete ownership.
-        The only contender, Fider licensed under AGPL3, is available on <ExternalLink url='https://github.com/getfider/fider'>Github</ExternalLink>.
-        Although Fider is lacking analytic features and scalable infrastructure, it is ideal for small to medium volume.</Typography></p>
-      <BrandList small platformIds={[PlatformFider]} />
+        The only contenders are Fider and ClearFlask both licensed under AGPL3.
+        While Fider is lacking analytic features and scalable infrastructure, it is ideal for small to medium volume.
+        Whereas ClearFlask can be deployed either via a PostgreSQL DB for small deployments or a scalable deployment with DynamoDB, ElasticSearch, S3, Load balancing and CloudFront</Typography></p>
+      <BrandList small platformIds={[PlatformClearFlask, PlatformFider]} />
 
       <Typography component='h4' variant='h6'>Whitelabel</Typography>
       <p><Typography>For optimal user experience, your customer should not sense they are leaving your website and using another platform for feedback.
@@ -2369,7 +2370,7 @@ const ExternalLinkPlatform = (props: ({
             label: props.platform.id,
           });
         }
-        window.open(props.type === 'pricing' ? props.platform.pricing.url : props.platform.url, '_blank', 'noopener');
+        !windowIso.isSsr && windowIso.open(props.type === 'pricing' ? props.platform.pricing.url : props.platform.url, '_blank', 'noopener');
       }}
     >
       <OpenIcon fontSize='inherit' />

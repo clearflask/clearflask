@@ -52,7 +52,7 @@ interface State {
   browserPush?: boolean;
   isMod?: boolean;
 }
-class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
+class UserEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
@@ -247,7 +247,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             </Grid>
             <Grid item xs={12} className={this.props.classes.row}>
               Account balance after adjustment:&nbsp;&nbsp;
-                <CreditView
+              <CreditView
                 val={(this.props.user.balance || 0) + (!balanceAdjustmentHasError && balanceAdjustmentChanged && this.state.balanceAdjustment !== undefined ? +this.state.balanceAdjustment : 0)}
                 credits={this.props.credits}
               />
@@ -351,4 +351,4 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
 }
 
 export default withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(PostEdit));
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(UserEdit));

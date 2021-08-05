@@ -86,7 +86,8 @@ public class AccountStoreIT extends AbstractIT {
                 Instant.now(),
                 "name",
                 "password",
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
@@ -145,7 +146,8 @@ public class AccountStoreIT extends AbstractIT {
                 Instant.now(),
                 "name",
                 "password",
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                null);
         store.createAccount(account).getIndexingFuture().get();
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -193,7 +195,8 @@ public class AccountStoreIT extends AbstractIT {
                 Instant.now(),
                 "name",
                 "password",
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                null);
         store.createAccount(account);
 
         String apiKey = "asdfgagasd";

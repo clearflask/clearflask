@@ -4,8 +4,9 @@ import { Button } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { OAuthFlow } from '../common/util/oauthUtil';
 import windowIso from '../common/windowIso';
-import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, SSO_TOKEN_PARAM_NAME } from './App';
+import { SSO_TOKEN_PARAM_NAME } from './App';
 import ErrorPage from './ErrorPage';
 
 const styles = (theme: Theme) => createStyles({
@@ -45,8 +46,8 @@ class DemoOnboardingLogin extends Component<Props & RouteComponentProps & WithSt
               this.setState({ fakeLoggedIn: true });
 
               // Broadcast to onboarding demo that login was successfully faked
-              localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
-              localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
+              const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+              oauthFlow.broadcastSuccess();
 
               // Close window
               !windowIso.isSsr && setTimeout(() => !windowIso.isSsr && windowIso.self.close(), 500);

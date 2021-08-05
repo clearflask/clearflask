@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../api/admin";
 import { StateConf } from "../../api/server";
+import { isProd } from "../util/detectEnv";
 import { textToHtml } from "../util/richEditorUtil";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
@@ -183,6 +184,11 @@ export default class Templater {
     if (opts.templateRoadmap) result.roadmap = await this.roadmapOn();
     if (opts.templateChangelog) result.changelog = await this.changelogOn();
     if (opts.templateLanding) result.landing = await this.landingOn();
+
+    if (!isProd()) {
+      this.styleWhite();
+    }
+
     return result;
   }
 

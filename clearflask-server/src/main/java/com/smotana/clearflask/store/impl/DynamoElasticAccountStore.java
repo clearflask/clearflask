@@ -126,6 +126,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     private TableSchema<Account> accountSchema;
     private IndexSchema<Account> accountByApiKeySchema;
+    private IndexSchema<Account> accountByOauthGuidSchema;
     private TableSchema<AccountEmail> accountIdByEmailSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
     private IndexSchema<AccountSession> sessionByAccountIdSchema;
@@ -134,6 +135,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     protected void serviceStart() throws Exception {
         accountSchema = dynamoMapper.parseTableSchema(Account.class);
         accountByApiKeySchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, Account.class);
+        accountByOauthGuidSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, Account.class);
         accountIdByEmailSchema = dynamoMapper.parseTableSchema(AccountEmail.class);
         sessionBySessionIdSchema = dynamoMapper.parseTableSchema(AccountSession.class);
         sessionByAccountIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
@@ -219,6 +221,31 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             throw new ApiException(Response.Status.UNAUTHORIZED, "Your API key is misconfigured");
         } else if (accountsByApiKey.size() == 1) {
             return Optional.of(accountsByApiKey.get(0));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Account> getAccountByOauthGuid(String oauthGuid) {
+        ImmutableList<Account> accounts = StreamSupport.stream(accountByOauthGuidSchema.index().query(new QuerySpec()
+                .withHashKey(accountByOauthGuidSchema.partitionKey(Map.of(
+                        "oauthGuid", oauthGuid)))
+                .withRangeKeyCondition(new RangeKeyCondition(accountByOauthGuidSchema.rangeKeyName())
+                        .beginsWith(accountByOauthGuidSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(accountByOauthGuidSchema::fromItem)
+                .collect(ImmutableList.toImmutableList());
+        if (accounts.size() > 1) {
+            if (LogUtil.rateLimitAllowLog("accountStore-multiple-accounts-same-apikey")) {
+                log.error("Multiple accounts found for same oauthKey, account emails {}",
+                        accounts.stream().map(Account::getEmail).collect(Collectors.toList()));
+            }
+            throw new ApiException(Response.Status.UNAUTHORIZED, "There is an issue with signing in to your account, please contact support");
+        } else if (accounts.size() == 1) {
+            return Optional.of(accounts.get(0));
         } else {
             return Optional.empty();
         }

@@ -134,14 +134,29 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       privacy: 'Here is a privacy policy.',
     });
   }
-  accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
-    return this.returnLater(this.loggedIn && this.account
-      ? {
+  accountBindAdmin(request: Admin.AccountBindAdminRequest): Promise<Admin.AccountBindAdminResponse> {
+    if (this.loggedIn && this.account) {
+      this.returnLater({
         account: this.account,
         isSuperAdmin: !!this.superLoggedIn || !!this.account.isSuperAdmin,
-      } : {
-        isSuperAdmin: false,
       });
+    }
+    if (request.accountBindAdmin.oauthToken) {
+      return this.accountSignupAdmin({
+        accountSignupAdmin: {
+          name: 'Joe Doe',
+          email: 'joe-doe@example.com',
+          password: 'unused-in-server-mock',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-monthly',
+        }
+      }).then(account => ({
+        account,
+        isSuperAdmin: !!this.superLoggedIn || !!account.isSuperAdmin,
+      }));
+    }
+    return this.returnLater({
+      isSuperAdmin: false,
+    });
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account

@@ -70,17 +70,8 @@ const styles = (theme: Theme) => createStyles({
   columnContent: {
     marginBottom: theme.spacing(4),
   },
-  edgeshadow: { // from edgeType prop
-    boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
-    width: 'fit-content',
-    alignSelf: 'center',
-  },
-  edgeoutline: { // from edgeType prop
+  boxShadow: {
     boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.2)',
-    border: '1px solid ' + theme.palette.divider,
-    width: '100%',
-    maxWidth: '100%',
-    alignSelf: 'center',
   },
 });
 
@@ -90,7 +81,7 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   demoImage?: Img;
-  demoWrap?: 'browser' | 'browser-dark',
+  demoWrap?: 'browser' | 'browser-dark' | 'shadow',
   demoWrapPadding?: number | string,
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
@@ -150,17 +141,35 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         </div>
       );
     }
+    const demoFixedWidth = this.props.demoFixedWidth || (this.props.demoImage ? '100%' : undefined);
+    const demoFixedHeight = this.props.demoFixedHeight;
+    const demoWrapPadding = this.props.demoWrapPadding;
     if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
       const isDark = this.props.demoWrap === 'browser-dark';
       demo = (
         <FakeBrowser
           darkMode={isDark}
-          contentPadding={this.props.demoWrapPadding}
-          fixedWidth={this.props.demoFixedWidth || (this.props.demoImage ? '100%' : undefined)}
-          fixedHeight={this.props.demoFixedHeight}
+          contentPadding={demoWrapPadding}
+          fixedWidth={demoFixedWidth}
+          fixedHeight={demoFixedHeight}
         >
           {demo}
         </FakeBrowser>
+      );
+    } else {
+      demo = (
+        <div
+          className={classNames(
+            this.props.demoWrap === 'shadow' && this.props.classes.boxShadow,
+          )}
+          style={{
+            padding: demoWrapPadding,
+            width: demoFixedWidth,
+            height: demoFixedHeight,
+          }}
+        >
+          {demo}
+        </div>
       );
     }
 

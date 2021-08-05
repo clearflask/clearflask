@@ -15,7 +15,6 @@ import RequestTrackingIcon from '@material-ui/icons/Forum';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuIcon from '@material-ui/icons/Menu';
 import BlogIcon from '@material-ui/icons/MenuBookOutlined';
-import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -38,11 +37,10 @@ import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
 
-const SigninPage = loadable(() => import(/* webpackChunkName: "SigninPage", webpackPrefetch: true */'./SigninPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const TrialSignupPage = loadable(() => import(/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */'./TrialSignupPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPrefetch: true */'./AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.Landing, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
@@ -168,10 +166,13 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
         type: 'dropdown', title: 'Solutions', items: [
           { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
           { type: 'button', link: '/solutions/product-roadmap', title: 'Product Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
+          // TODO Re-enable once Crowd-funding gets a revamp
+          // import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
+          // { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
           { type: 'divider' },
           { type: 'button', link: '/solutions/idea-management', title: 'Idea Management' },
-          { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum' },
+          // TODO Re-enable once Crowd-funding gets a revamp
+          // { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum' },
           { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback' },
         ]
       },
@@ -269,7 +270,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           <MuiAnimatedSwitch>
             <Route exact path='/login'>
               <SetTitle title='Login' />
-              <SigninPage />
+              <AccountEnterPage type='login' />
             </Route>
             <Route path='/contact'>
               <SetTitle title='Contact' />
@@ -277,7 +278,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Route>
             <Route exact path='/signup'>
               <SetTitle title='Sign up' />
-              <TrialSignupPage />
+              <AccountEnterPage type='signup' />
             </Route>
             <Route exact path='/sso'>
               <SetTitle title='Single sign-on' />
@@ -435,7 +436,7 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
   if (state.account.account.status === undefined) {
     connectProps.callOnMount = () => {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin({}));
+        .then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     };
   }
   return connectProps;

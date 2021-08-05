@@ -392,7 +392,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         await mocker.mock();
       }
       const dispatcher = await ServerAdmin.get().dispatchAdmin();
-      const result = await dispatcher.accountBindAdmin({});
+      const result = await dispatcher.accountBindAdmin({ accountBindAdmin: {} });
       this.setState({ binding: false })
       if (result.account) {
         dispatcher.configGetAllAndUserBindAllAdmin();

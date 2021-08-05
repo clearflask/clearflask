@@ -109,6 +109,22 @@ components:
         searchText:
           type: string
           description: Search by name and email.
+    AccountBindAdmin:
+      type: object
+      properties:
+        oauthToken:
+          type: object
+          required:
+          - id
+          - code
+          properties:
+            id:
+              type: string
+            code:
+              type: string
+            # Used if creating a new account
+            basePlanId:
+              type: string
     AccountSignupAdmin:
       type: object
       required:
@@ -381,6 +397,12 @@ components:
   post:
     operationId: accountBindAdmin
     tags: [AccountAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountBindAdmin'
     responses:
       '200':
         content:
@@ -394,6 +416,9 @@ components:
                 account:
                   $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
                 isSuperAdmin:
+                  type: boolean
+                # If using OAuth and account did not exist yet, indicate it was created
+                created:
                   type: boolean
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

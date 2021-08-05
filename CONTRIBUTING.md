@@ -10,11 +10,8 @@ Development has been done under Mac, Linux, and Windows (with WSL)
 
 The following requirements are a minimum:
 
-- Java
+- Java 11
 - Maven
-
-Other dependencies:
-
 - Makefile (for local and production deployment)
 - Docker (for local deployment)
 

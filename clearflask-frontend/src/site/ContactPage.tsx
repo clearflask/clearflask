@@ -148,7 +148,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
 
     if (props.accountStatus === undefined) {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin({}));
+        .then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     }
 
     forms.forEach(form => form.imagePath && preloadImage(form.imagePath));

@@ -22,10 +22,11 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 export interface Props {
-  alt: string;
+  alt?: string;
+  img?: Img;
   className?: string;
   imgClassName?: string;
-  src: string;
+  src?: string;
   height?: number | string;
   width?: number | string;
   maxHeight?: number;
@@ -38,19 +39,25 @@ export interface Props {
 }
 class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    const aspectRatio = this.props.aspectRatio || this.props.img?.aspectRatio;
+    const src = this.props.src || this.props.img?.src;
+    const width = this.props.width || (this.props.img?.aspectRatio ? '100%' : undefined);
+    const height = this.props.height;
+    const maxWidth = this.props.maxWidth || this.props.img?.width;
+    const maxHeight = this.props.maxHeight || this.props.img?.height;
     const scale = this.props.scale || 1;
     var img = (
       <img
-        alt={this.props.alt}
-        className={classNames(this.props.imgClassName, !!this.props.aspectRatio && this.props.classes.imageAspectRatio)}
-        src={this.props.src}
-        height={this.props.height}
-        width={this.props.width}
+        alt={this.props.alt || ''}
+        className={classNames(this.props.imgClassName, !!aspectRatio && this.props.classes.imageAspectRatio)}
+        src={src}
+        height={height}
+        width={width}
         style={this.props.style}
         {...this.props.imgProps}
       />
     );
-    if (this.props.aspectRatio) img = (
+    if (aspectRatio) img = (
       <div
         className={this.props.className}
         style={{
@@ -60,11 +67,11 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
         <div
           className={this.props.classes.container}
           style={{
-            paddingBottom: !!this.props.maxHeight
-              ? `min(${this.props.maxHeight * scale}px, ${100 / this.props.aspectRatio}%)`
-              : `${100 / this.props.aspectRatio}%`,
-            maxWidth: this.props.maxWidth ? this.props.maxWidth * scale : undefined,
-            maxHeight: this.props.maxHeight ? this.props.maxHeight * scale : undefined,
+            paddingBottom: !!maxHeight
+              ? `min(${maxHeight * scale}px, ${100 / aspectRatio}%)`
+              : `${100 / aspectRatio}%`,
+            maxWidth: maxWidth ? maxWidth * scale : undefined,
+            maxHeight: maxHeight ? maxHeight * scale : undefined,
           }}
         >
           {img}

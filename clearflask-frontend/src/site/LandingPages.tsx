@@ -63,9 +63,12 @@ import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-cre
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
+import DemoDashboardFeedbackImg from '../../public/img/landing/demo-dashboard-feedback.png';
+import DemoDashboardRoadmapImg from '../../public/img/landing/demo-dashboard-roadmap.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif2.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
+import DemoFeedbackWhatElseImg from '../../public/img/landing/demo-feedback-whatelse.png';
 import DemoFeedbackImg from '../../public/img/landing/demo-feedback.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
@@ -108,6 +111,8 @@ import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
+import ImgIso from '../common/ImgIso';
+import Stack from '../common/Stack';
 import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
 import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
@@ -294,42 +299,63 @@ export function Landing() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title="Here’s how our platform can help you understand your customers"
+        title="Here’s how our platform can help you"
       />
-      <Demo
+      <Block
         type='headingMain'
-        title='Ask for feedback'
-        description='Simple yet powerful feedback experience.'
+        title='Simple, yet powerful feedback experience'
+        description='Ask your customers for feedback on your product.'
         points={[
-          'Extract actionable value',
-          'Avoid feature voting pitfalls',
-          'Keep the conversation open',
+          'Extract actionable feedback',
+          'Avoid feature-voting pitfalls',
+          'Keep the line of communication open',
         ]}
         alignItems='center'
-        demoWrap='browser'
-        demoImage={DemoFeedbackImg}
+        demoFixedWidth='100%'
+        demoFixedHeight={500}
+        demo={(
+          <Stack
+            // raiseOnHover
+            contentSpacingVertical={200}
+            items={[{
+              content: (
+                <FakeBrowser>
+                  <ImgIso img={DemoFeedbackWhatElseImg} />
+                </FakeBrowser>
+              )
+            }, {
+              height: 'max-content',
+              width: 450,
+              content: (
+                <FakeBrowser>
+                  <ImgIso img={DemoFeedbackImg} />
+                </FakeBrowser>
+              )
+            }]}
+          />
+        )}
         buttonTitle='Learn more'
         buttonLink='/product/ask'
       />
-      <Demo
+      <Block
         mirror
         type='headingMain'
-        title='Analyze ideas'
-        description='Find the most wanted features by the most important customers.'
+        title='Analyze ideas and convert to actionable tasks'
+        description='Find the most valuable features by the most important customers.'
         points={[
-          'Explore feedback',
+          'Address feedback efficiently',
           'Validate new ideas',
           'Reach out for clarification',
         ]}
         alignItems='center'
-        demoWrap='browser'
-        demoImage={DemoSearchPostsImg}
+        demoWrap='shadow'
+        demoImage={DemoDashboardFeedbackImg}
         buttonTitle='Learn more'
         buttonLink='/product/analyze'
       />
       <Block
         type='headingMain'
-        title='Take action'
+        title='Plan out your roadmap and share it publicly'
         description='Become a customer-centric organization with transparent customer-driven product development.'
         points={[
           'Show off your Product Roadmap',
@@ -337,11 +363,27 @@ export function Landing() {
           'Engage your community',
         ]}
         alignItems='center'
+        demoFixedWidth='100%'
+        demoFixedHeight={500}
+        demo={(
+          <Stack
+            topLeftToBottomRight
+            // raiseOnHover
+            ascendingLevel
+            contentSpacingVertical={200}
+            items={[{
+              content: (
+                <FakeBrowser>
+                  <ImgIso img={DemoRoadmapImg} />
+                </FakeBrowser>
+              ),
+            }, {
+              content: (<ImgIso img={DemoDashboardRoadmapImg} />),
+            }]}
+          />
+        )}
         buttonTitle='Learn more'
         buttonLink='/product/act'
-        demoWrap='browser'
-        demoWrapPadding={24}
-        demoImage={DemoRoadmapImg}
       />
 
       <Block
@@ -589,7 +631,7 @@ export function LandingHero() {
     <Hero
       title={(
         <>Open feedback.<br />Open roadmap.</>)}
-      description='Open-source Feedback Management Tool solution. Listen to your users during product development and prioritize your roadmap'
+      description='Product Feedback Tool to keep you close to your customers'
       // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
       vidyard={{
         image: PromoThumb,
@@ -753,14 +795,12 @@ export function LandingLoop() {
   );
 }
 
-const LandingCollectFeedbackHeroTitle = 'Ask for feedback';
-const LandingCollectFeedbackHeroDescription = 'Collect customer feedback in one place from all your support channels';
 export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
   return (
     <Demo
       type={props.isHero ? 'hero' : 'headingMain'}
-      title={LandingCollectFeedbackHeroTitle}
-      description={LandingCollectFeedbackHeroDescription}
+      title='Ask for feedback'
+      description='Collect customer feedback all in one place from all your support channels'
       alignItems={props.isHero ? 'flex-start' : 'center'}
       image={props.isHero ? ListenImg : undefined}
       imageLocation='above'

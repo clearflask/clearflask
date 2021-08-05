@@ -16,7 +16,7 @@ export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((st
   if (state.account.account.status === undefined) {
     connectProps.callOnMount = () => {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin({}));
+        .then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     };
   }
 
