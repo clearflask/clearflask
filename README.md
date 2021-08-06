@@ -7,9 +7,24 @@
 <h1 align="center">ClearFlask</h1>
 
 <div align="center">
+  <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
+    <img alt="Build Status" src="https://img.shields.io/github/workflow/status/clearflask/clearflask/CI?style=for-the-badge">
+  </a>
+  <a href="https://github.com/clearflask/clearflask/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/clearflask/clearflask?include_prereleases&style=for-the-badge">
+  </a>
+  <a href="#cloud">
+    <img alt="Cloud version released" src="https://img.shields.io/badge/cloud-released-green?style=for-the-badge">
+  </a>
+  <a href="#self-hosting">
+    <img alt="Self-host version in alpha" src="https://img.shields.io/badge/self--host-alpha-yellow?style=for-the-badge">
+  </a>
+</div>
 
-Listen to your users during product development with [ClearFlask](https://clearflask.com/), an open-source Feedback
-Management Tool.
+<div align="center">
+
+ Listen to your users during product development with [ClearFlask](https://clearflask.com/)
+ <br />Open-source Feedback Management Tool.
 
 </div>
 
