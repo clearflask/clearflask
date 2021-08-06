@@ -44,6 +44,7 @@ At the end you will be left with Docker images in your local repo.
 
 1. Unpack the artifact `clearflask-release/target/clearflask-release-*-docker-compose-self-host.tar.gz`
 2. Copy `config-selfhost-template.cfg` to `config-selfhost.cfg` and fill out properties
+3. Copy `connect.config.template.json` to `connect.config.json` and fill out properties
 
 ## Run
 

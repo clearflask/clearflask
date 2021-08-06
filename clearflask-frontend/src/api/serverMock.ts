@@ -15,7 +15,7 @@ import * as Client from './client';
 /** Not really a secret, don't bother stealing this */
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
-export const SuperAdminEmail = 'admin@clearflask.com';
+export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
   'growth2-monthly': {

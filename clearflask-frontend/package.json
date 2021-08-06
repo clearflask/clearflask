@@ -140,7 +140,7 @@
     "use-query-params": "1.1.6"
   },
   "scripts": {
-    "start:frontend": "react-app-rewired start",
+    "start": "react-app-rewired start",
     "build": "npm run build-frontend && npm run build-connect",
     "build-frontend": "GENERATE_SOURCEMAP=true BUILD_PATH='./target/public' react-app-rewired build",
     "build-connect": "rm -fR target/dist && webpack --node-env production -c webpack.config.connect.js",

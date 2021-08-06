@@ -19,9 +19,13 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: clearflas
 	mkdir clearflask-release/target/run-docker-compose-local
 	tar -xzf clearflask-release/target/clearflask-release-0.1-docker-compose-local.tar.gz -C clearflask-release/target/run-docker-compose-local
 
-# local-up local-down local-rm
-local-%: clearflask-release/target/run-docker-compose-local/docker-compose.yml
-	cd clearflask-release/target/run-docker-compose-local && docker-compose $*
+local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
+	cd clearflask-release/target/run-docker-compose-local && docker-compose up -d
+	cd clearflask-release/target/run-docker-compose-local && docker-compose logs -f
+
+local-down: clearflask-release/target/run-docker-compose-local/docker-compose.yml
+	cd clearflask-release/target/run-docker-compose-local && docker-compose down -t 0
+	cd clearflask-release/target/run-docker-compose-local && docker-compose rm
 
 killbill-sleep-%:
 	curl -v \

@@ -69,6 +69,18 @@
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/docker-compose-selfhost/
+                                    </outputDirectory>
+                                    <includes>connect.config.template.json</includes>
+                                    <excludes>COPYING</excludes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-frontend</artifactId>
+                                    <classifier>connect</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/docker-root-connect/ROOT/
                                     </outputDirectory>
                                     <includes>**</includes>
@@ -140,7 +152,7 @@
                             <name>clearflask/clearflask-connect</name>
                             <build>
                                 <contextDir>${project.build.directory}/docker-root-connect</contextDir>
-                                <dockerFile>${basedir}/src/main/docker/build/connect.Dockerfile</dockerFile>
+                                <dockerFile>${basedir}/src/main/docker/dockerfile/connect.Dockerfile</dockerFile>
                                 <filter>@</filter>
                                 <tags>
                                     <tag>latest</tag>
@@ -152,7 +164,7 @@
                             <name>clearflask/clearflask-server</name>
                             <build>
                                 <contextDir>${project.build.directory}/docker-root-server</contextDir>
-                                <dockerFile>${basedir}/src/main/docker/build/server.Dockerfile</dockerFile>
+                                <dockerFile>${basedir}/src/main/docker/dockerfile/server.Dockerfile</dockerFile>
                                 <filter>@</filter>
                                 <tags>
                                     <tag>latest</tag>

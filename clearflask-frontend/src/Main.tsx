@@ -111,7 +111,7 @@ class Main extends Component<Props> {
 
   render() {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
-    if (windowIso.location.hostname === 'www.clearflask.com') {
+    if (windowIso.location.hostname.startsWith('www.')) {
       // Redirect www to homepage
       redirectIso(windowIso.location.origin.replace(`www.`, ''));
       return null;
@@ -211,7 +211,7 @@ class Main extends Component<Props> {
   isProject(): boolean {
     switch (detectEnv()) {
       case Environment.PRODUCTION:
-        return windowIso.location.hostname !== 'clearflask.com';
+        return windowIso.location.hostname !== windowIso.parentDomain;
       default:
       case Environment.DEVELOPMENT_FRONTEND:
       case Environment.DEVELOPMENT_LOCAL:

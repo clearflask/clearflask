@@ -16,7 +16,7 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
     ...createTemplateV2OptionsDefault,
     infoName: 'Sandbox',
     infoLogo: '/img/clearflask-logo.png',
-    infoWebsite: 'https://clearflask.com',
+    infoWebsite: `https://${windowIso.parentDomain}`,
     infoSlug: 'mock',
   });
   if (templateResult.roadmap) {

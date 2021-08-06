@@ -62,6 +62,10 @@ public class NetworkUtil {
     }
 
     public static void waitUntilPortOpen(int port) throws IOException {
+        waitUntilPortOpen("127.0.0.1", port);
+    }
+
+    public static void waitUntilPortOpen(String hostname, int port) throws IOException {
         Retryer<Boolean> retryer = RetryerBuilder.<Boolean>newBuilder()
                 .retryIfResult(result -> !result)
                 .withStopStrategy(StopStrategies.stopAfterDelay(1, TimeUnit.MINUTES))
@@ -70,7 +74,7 @@ public class NetworkUtil {
         try {
             retryer.call(() -> {
                 try {
-                    Socket s = new Socket(InetAddress.getLocalHost(), port);
+                    Socket s = new Socket(hostname, port);
                     s.close();
                     return true;
 

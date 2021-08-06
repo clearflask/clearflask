@@ -32,6 +32,7 @@ if (typeof window !== "undefined") {
   win = {};
   win.isSsr = true;
 }
+win.parentDomain = 'clearflask.com'
 
 export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;
@@ -43,6 +44,7 @@ export const WindowIsoSsrProvider = (props: {
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
   staticRouterContext: StaticRouterContext;
+  parentDomain: string;
 }) => {
   win['ENV'] = props.env;
   win['fetch'] = props.fetch;
@@ -53,20 +55,30 @@ export const WindowIsoSsrProvider = (props: {
   win['storesState'] = props.storesState;
   win['awaitPromises'] = props.awaitPromises;
   win['staticRouterContext'] = props.staticRouterContext;
+  win['parentDomain'] = props.parentDomain;
   return props.children;
 };
 
-export type WindowIso = Window & typeof globalThis & { isSsr: false } | NodeJS.Global & {
-  isSsr: true;
-  fetch: any;
-  ENV: 'development' | 'production' | 'local' | 'test';
-  location: URL;
-  setTitle: (title: string) => void;
-  setMaxAge: (maxAge: number) => void;
-  storesState: StoresState;
-  awaitPromises: Array<Promise<any>>;
-  staticRouterContext: StaticRouterContext;
-};
+export type WindowIso = {
+  // Both CSR and SSR
+  parentDomain: string;
+} & (( // SSR only
+  Window & typeof globalThis & {
+    isSsr: false
+  }
+) | ( // CSR only
+    NodeJS.Global & {
+      isSsr: true;
+      fetch: any;
+      ENV: 'development' | 'production' | 'local' | 'test';
+      location: URL;
+      setTitle: (title: string) => void;
+      setMaxAge: (maxAge: number) => void;
+      storesState: StoresState;
+      awaitPromises: Array<Promise<any>>;
+      staticRouterContext: StaticRouterContext;
+    }
+  ));
 
 const windowIso: WindowIso = win;
 export default windowIso;

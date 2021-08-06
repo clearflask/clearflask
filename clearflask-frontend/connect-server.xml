@@ -12,4 +12,14 @@
             <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>${basedir}/src/connect.config.template.json</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>${project.parent.basedir}/COPYING</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+    </files>
 </assembly>

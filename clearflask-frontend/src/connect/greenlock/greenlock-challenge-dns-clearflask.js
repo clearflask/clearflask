@@ -17,7 +17,7 @@ module.exports.create = function (config) {
 		zones: async ({ dnsHosts }) => {
 			console.log('challenge.dns.zones', dnsHosts);
 
-			return ['clearflask.com'];
+			return [connectConfig.parentDomain];
 		},
 
 		set: async ({ challenge: { dnsZone, dnsPrefix, dnsHost, keyAuthorizationDigest } }) => {

@@ -4,6 +4,7 @@ import * as Admin from "../../../api/admin";
 import ServerAdmin from "../../../api/serverAdmin";
 import { detectEnv, Environment } from "../../util/detectEnv";
 import randomUuid from "../../util/uuid";
+import windowIso from "../../windowIso";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
 
@@ -112,7 +113,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   if (!supportEmail && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
     // Since development environment mocking happens before user is logged in,
     // mock the email address here too
-    supportEmail = 'admin@clearflask.com';
+    supportEmail = 'admin@' + windowIso.parentDomain;
   }
   if (supportEmail
     && !onlyPageIds

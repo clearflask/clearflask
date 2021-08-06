@@ -37,7 +37,7 @@ function createApp(serverHttpp) {
 
   serverApp.use(compression());
 
-  if (process.env.ENV !== 'production') {
+  if (connectConfig.parentDomain !== 'clearflask.com') {
     serverApp.get("/asset-manifest.json", function (req, res) {
       fs.readFile(path.resolve(__dirname, 'public', 'asset-manifest.json'), 'utf8', (err, data) => {
         if (err) {

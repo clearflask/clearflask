@@ -10,8 +10,8 @@ export interface Term {
 }
 
 const legalDefault: Array<Term> = [
-  { shortName: 'Privacy', link: 'https://clearflask.com/privacy' },
-  { shortName: 'Terms', link: 'https://clearflask.com/terms' },
+  { shortName: 'Privacy', link: `https://${windowIso.parentDomain}/privacy` },
+  { shortName: 'Terms', link: `https://${windowIso.parentDomain}/terms` },
 ];
 
 const styles = (theme: Theme) => createStyles({

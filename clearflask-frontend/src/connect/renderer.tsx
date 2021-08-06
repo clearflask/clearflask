@@ -13,6 +13,7 @@ import { StaticRouterContext } from 'react-router';
 import { htmlDataCreate } from '../common/util/htmlData';
 import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
 import Main from '../Main';
+import connectConfig from './config';
 
 interface RenderResult {
   title: string;
@@ -111,6 +112,7 @@ export default function render() {
                   storesState={storesState}
                   awaitPromises={awaitPromises}
                   staticRouterContext={staticRouterContext}
+                  parentDomain={connectConfig.parentDomain}
                 >
                   <Main
                     ssrLocation={req.url}
