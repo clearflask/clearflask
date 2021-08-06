@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Link as MuiLink, Typography } from '@material-ui/core';
+import { Button, ButtonProps, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import CheckIcon from '@material-ui/icons/Check';
@@ -26,6 +26,9 @@ const styles = (theme: Theme) => createStyles({
   },
   button: {
     alignSelf: 'flex-end',
+  },
+  buttonFilled: {
+    marginTop: theme.spacing(2),
   },
   marker: {
     color: theme.palette.text.secondary,
@@ -53,9 +56,11 @@ export interface Props {
   points?: Array<string | React.ReactNode>;
   postStatusId?: string;
   buttonTitle?: string;
+  buttonVariant?: ButtonProps['variant'];
   buttonLinkExt?: string;
   buttonLink?: string;
   buttonState?: any;
+  buttonSuppressIcon?: boolean;
   variant?: 'hero' | 'headingMain' | 'heading' | 'content';
   titleCmpt?: string;
   icon?: React.ReactNode;
@@ -133,8 +138,12 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
         )}
         {this.props.buttonTitle && (
           <Button
-            className={this.props.classes.button}
-            variant='text'
+            className={classNames(
+              this.props.classes.button,
+              ((this.props.buttonVariant || 'text') !== 'text') && this.props.classes.buttonFilled,
+            )}
+            variant={this.props.buttonVariant || 'text'}
+            disableElevation
             color='primary'
             {...(this.props.buttonLink ? {
               component: Link,
@@ -149,8 +158,12 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
             } : {})}
           >
             {this.props.buttonTitle}
-            &nbsp;
-            <GoIcon />
+            {!this.props.buttonSuppressIcon && (
+              <>
+                &nbsp;
+                <GoIcon />
+              </>
+            )}
           </Button>
         )}
       </div>

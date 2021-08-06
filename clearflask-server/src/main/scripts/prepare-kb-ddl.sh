@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 SOURCE_DIR=$1
 TARGET=$2

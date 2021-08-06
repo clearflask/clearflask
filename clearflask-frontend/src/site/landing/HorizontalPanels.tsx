@@ -12,7 +12,7 @@ const styles = (theme: Theme) => createStyles({
   },
   content: {
     display: 'flex',
-    flex: '1 1 auto',
+    flex: '1 1 0px',
     padding: theme.spacing(4),
     justifyContent: 'space-between',
   },

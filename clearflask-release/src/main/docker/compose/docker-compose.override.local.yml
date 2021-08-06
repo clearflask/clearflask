@@ -1,0 +1,118 @@
+version: '3.8'
+services:
+  clearflask-connect:
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NODE_ENV=production
+      - ENV=local
+    extra_hosts:
+      - localhost.com:172.17.0.1
+      - acme.staging.localhost:172.17.0.1
+  clearflask-server:
+    environment:
+      - CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL
+    depends_on:
+      - killbill-engine
+      - elasticsearch
+      - localstack
+    volumes:
+      - ./server/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
+      - ./server/logging-dev.properties:/usr/local/tomcat/conf/logging.properties'
+    ports:
+      # JMX
+      - 9950:9950
+      - 9951:9951
+  nginx:
+    image: nginx
+    depends_on:
+      - clearflask-connect
+    ports:
+      - 443:8443
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+  killbill-engine:
+    image: killbill/killbill:0.22.20
+    depends_on:
+      - killbill-db
+    ports:
+      - 8082:8080
+    environment:
+      - KILLBILL_DAO_URL=jdbc:mysql://killbill-db:3306/killbill
+      - KILLBILL_DAO_USER=root
+      - KILLBILL_DAO_PASSWORD=killbill
+      - KILLBILL_SERVER_TEST_MODE=true
+      - KILLBILL_NOTIFICATIONQ_ANALYTICS_TABLE_NAME=analytics_notifications
+      - KILLBILL_NOTIFICATIONQ_ANALYTICS_HISTORY_TABLE_NAME=analytics_notifications_history
+    volumes:
+      - ./killbill-engine/killbill-setenv2.sh:/var/lib/tomcat/bin/setenv2.sh
+      - ./killbill-engine/logging-dev.properties:/var/lib/tomcat/conf/logging.properties
+      - ./killbill-engine/logback-killbill-engine.xml:/var/lib/killbill/logback.xml
+      - ./killbill-engine/killbill.sh:/var/lib/killbill/killbill.sh
+      - ./killbill-engine/kb-plugins:/var/lib/killbill/bundles/autoload
+  killbill-kaui:
+    image: killbill/kaui:2.0.5
+    depends_on:
+      - killbill-engine
+      - killbill-db
+    ports:
+      - 8081:8080
+    environment:
+      - KAUI_CONFIG_DAO_URL=jdbc:mysql://killbill-db:3306/kaui
+      - KAUI_CONFIG_DAO_USER=root
+      - KAUI_CONFIG_DAO_PASSWORD=killbill
+      - KAUI_KILLBILL_URL=http://killbill-engine:8082
+  killbill-db:
+    image: killbill/mariadb:0.22
+    volumes:
+      - ./killbill-db/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql
+    expose:
+      - 3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=killbill
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    ports:
+      - 9200:9200
+    environment:
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - discovery.type=single-node
+    mem_limit: 4g
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  localstack:
+    image: localstack/localstack-full
+    privileged: true
+    expose:
+      - 4566
+      - 4571
+    ports:
+      - 4582:8080
+    environment:
+      - DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOSTNAME=localhost
+      - HOSTNAME_EXTERNAL=localstack
+      - SERVICES=dynamodb,route53,ses,s3
+      - LS_LOG=debug
+      - START_WEB=1
+      - USE_SSL=0
+      - FORCE_NONINTERACTIVE=true
+# TODO have clearflask-connect use pebble
+#  pebble:
+#    image: letsencrypt/pebble
+#    ports:
+#      - 14000:14000
+#      - 15000:15000
+#    environment:
+#      - PEBBLE_VA_NOSLEEP=1
+#      - PEBBLE_VA_ALWAYS_VALID=1
+#      - PEBBLE_WFE_NONCEREJECT=0
+#      - PEBBLE_AUTHZREUSE=100
+#    extra_hosts:
+#      - localhost.com:172.17.0.1

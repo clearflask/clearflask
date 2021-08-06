@@ -5,7 +5,6 @@ import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
-import DividerCorner from '../../app/utils/DividerCorner';
 import FakeBrowser from '../../common/FakeBrowser';
 import ImgIso from '../../common/ImgIso';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
@@ -43,12 +42,9 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  controlsOuter: {
-    margin: theme.spacing(3),
+  controls: {
     float: 'right',
-  },
-  controlsInner: {
-    margin: theme.spacing(4),
+    marginTop: theme.spacing(4),
   },
   demoImage: {
     width: '100%',
@@ -179,15 +175,9 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}
         {demo}
         {this.props.controls && (
-          <DividerCorner
-            className={this.props.classes.controlsOuter}
-            width='160px'
-            height='40px'
-          >
-            <div className={this.props.classes.controlsInner}>
-              {this.props.controls}
-            </div>
-          </DividerCorner>
+          <div className={this.props.classes.controls}>
+            {this.props.controls}
+          </div>
         )}
       </>
     );

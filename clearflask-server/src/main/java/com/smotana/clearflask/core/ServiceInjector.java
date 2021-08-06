@@ -179,7 +179,9 @@ public enum ServiceInjector {
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
                 install(DynamoCertStore.module());
-                install(DefaultRoute53Provider.module());
+                if (env != Environment.PRODUCTION_SELF_HOST) {
+                    install(DefaultRoute53Provider.module());
+                }
                 install(ResourceLegalStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());

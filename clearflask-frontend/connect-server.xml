@@ -8,7 +8,7 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}${file.separator}dist</directory>
+            <directory>${project.build.directory}/dist</directory>
             <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>

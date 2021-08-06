@@ -20,6 +20,7 @@ import com.ning.http.client.Response;
 import com.smotana.clearflask.TestUtil;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
+import com.smotana.clearflask.api.model.AccountBindAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
@@ -449,7 +450,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected void refreshStatus() throws Exception {
-        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin().getAccount().getEmail()).get().getAccountId();
+        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin(new AccountBindAdmin(null)).getAccount().getEmail()).get().getAccountId();
         refreshStatus(accountId);
     }
 
@@ -535,18 +536,18 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     void assertSubscriptionStatus(SubscriptionStatus status) throws Exception {
-        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin().getAccount().getEmail()).get().getAccountId();
+        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin(new AccountBindAdmin(null)).getAccount().getEmail()).get().getAccountId();
         TestUtil.retry(() -> {
             refreshStatus(accountId);
-            assertEquals(status, accountResource.accountBindAdmin().getAccount().getSubscriptionStatus());
+            assertEquals(status, accountResource.accountBindAdmin(new AccountBindAdmin(null)).getAccount().getSubscriptionStatus());
         });
     }
 
     void assertPlanid(String planid) throws Exception {
-        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin().getAccount().getEmail()).get().getAccountId();
+        String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin(new AccountBindAdmin(null)).getAccount().getEmail()).get().getAccountId();
         TestUtil.retry(() -> {
             assertEquals(planid, billing.getSubscription(accountId).getPlanName());
-            assertEquals(planid, accountResource.accountBindAdmin().getAccount().getBasePlanId());
+            assertEquals(planid, accountResource.accountBindAdmin(new AccountBindAdmin(null)).getAccount().getBasePlanId());
         });
     }
 }

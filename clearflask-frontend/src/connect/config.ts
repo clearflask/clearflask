@@ -34,7 +34,7 @@ const connectConfig: ConnectConfig = {
   listenPort: 44380,
   chunksDomain: '/',
   email: 'hostmaster@clearflask.com',
-  apiBasePath: process.env.ENV === 'local' ? 'http://host.docker.internal:8080' : 'http://localhost:8080',
+  apiBasePath: process.env.ENV === 'local' ? 'http://clearflask-server:8080' : 'http://localhost:8080',
   ...(configLoaded || {}),
 };
 

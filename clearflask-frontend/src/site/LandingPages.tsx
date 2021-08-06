@@ -52,7 +52,9 @@ import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
+import AnyRelatedImg from '../../public/img/landing/any-related.png';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
+import CaptureFeedbackImg from '../../public/img/landing/capture-feedback.png';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
 import CommunityImg from '../../public/img/landing/community.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
@@ -63,6 +65,7 @@ import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-cre
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
+import DemoDashboardFeedbackVid from '../../public/img/landing/demo-dashboard-feedback.mp4';
 import DemoDashboardFeedbackImg from '../../public/img/landing/demo-dashboard-feedback.png';
 import DemoDashboardRoadmapImg from '../../public/img/landing/demo-dashboard-roadmap.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
@@ -72,6 +75,7 @@ import DemoFeedbackWhatElseImg from '../../public/img/landing/demo-feedback-what
 import DemoFeedbackImg from '../../public/img/landing/demo-feedback.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoPortalFeedbackVid from '../../public/img/landing/demo-portal-feedback.mp4';
 import DemoPostResponseImg from '../../public/img/landing/demo-post-response.png';
 import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
@@ -85,12 +89,12 @@ import IdeasImg from '../../public/img/landing/ideas.svg';
 import InstallImg from '../../public/img/landing/install.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
-import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
 import NotifyImg from '../../public/img/landing/notify.svg';
 import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
+import SeeWhatElseImg from '../../public/img/landing/see-what-else.png';
 import SupportImg from '../../public/img/landing/support.svg';
 import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
@@ -295,7 +299,6 @@ export function Landing() {
   return (
     <>
       <LandingHero />
-
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
@@ -334,7 +337,7 @@ export function Landing() {
             }]}
           />
         )}
-        buttonTitle='Learn more'
+        buttonTitle='See how'
         buttonLink='/product/ask'
       />
       <Block
@@ -385,13 +388,9 @@ export function Landing() {
         buttonTitle='Learn more'
         buttonLink='/product/act'
       />
+      <LandingPricingOptions />
 
-      <Block
-        className={classes.textAlignCenter}
-        type='headingOnly'
-        title='See how our solution can solve your problem'
-      />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={150}>
+      {/* <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={150}>
         <Block
           type='column'
           title='Idea Management'
@@ -419,7 +418,7 @@ export function Landing() {
           buttonTitle='Learn more'
           buttonLink='/solutions/product-roadmap'
         />
-      </HorizontalPanels>
+      </HorizontalPanels> */}
       {/* <Hidden mdDown>
         <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' padRight={1}>
           <Block
@@ -495,7 +494,7 @@ export function Landing() {
           buttonLink='/product/integrations'
         />
       </HorizontalPanels> */}
-      <LandingSales />
+      {/* <LandingSales /> */}
       {/* <LandingGraveyard /> */}
     </>
   );
@@ -619,7 +618,6 @@ export function LandingGraveyard() {
         buttonLink='/solutions/feature-crowdfunding'
       />
       <LandingLoop />
-      <LandingCollectFeedbackHero />
       <LandingEngagementHero />
       <LandingCustomizeHero />
     </>
@@ -643,6 +641,7 @@ export function LandingHero() {
       buttonRemark={(
         <TrialInfoText />
       )}
+      buttonAddOauth
     />
   );
 }
@@ -795,58 +794,118 @@ export function LandingLoop() {
   );
 }
 
-export function LandingCollectFeedbackHero(props: { isHero?: boolean }) {
-  return (
-    <Demo
-      type={props.isHero ? 'hero' : 'headingMain'}
-      title='Ask for feedback'
-      description='Collect customer feedback all in one place from all your support channels'
-      alignItems={props.isHero ? 'flex-start' : 'center'}
-      image={props.isHero ? ListenImg : undefined}
-      imageLocation='above'
-      displayAlign='flex-start'
-      // demoWrap='browser'
-      demoFixedHeight={350}
-      initialSubPath='/embed/demo'
-      template={templater => templater.demoExplorer({
-        allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
-        display: {
-          titleTruncateLines: 1,
-          descriptionTruncateLines: 2,
-          showCommentCount: false,
-          showCategoryName: false,
-          showCreated: false,
-          showAuthor: false,
-          showStatus: false,
-          showTags: false,
-          showVoting: false,
-          showVotingCount: false,
-          showFunding: false,
-          showExpression: false,
-        },
-      }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
-      mock={mocker => mocker.demoFeedbackType()}
-      settings={{
-        demoDisableExplorerExpanded: true,
-        // demoBlurryShadow: true,
-        demoCreateAnimate: {
-          title: 'Add Dark Mode',
-          description: 'To reduce eye-strain, please add a low-light option. ',
-          similarSearchTerm: 'theme',
-        },
-      }}
-      {...(props.isHero ? {} : {
-        buttonTitle: 'Learn more',
-        buttonLink: '/product/ask',
-      })}
-    />
-  );
-}
-
 export function LandingCollectFeedback() {
+  const classes = useStyles();
+  const onboardingDemoRef = useRef(null);
   return (
     <>
-      <LandingCollectFeedbackHero isHero />
+      <Demo
+        type='hero'
+        title='Ask for feedback'
+        description='Collect customer feedback all in one place from all your support channels'
+        demoImage={DemoPortalFeedbackVid}
+        demoWrap='browser'
+      />
+      <Block
+        title='#1 Capture words instead of votes'
+        description='Do not let your user get swayed by other opinions. Capture their unique opinion.'
+        image={CaptureFeedbackImg}
+        imageStyle={{ padding: 0 }}
+      />
+      <Block
+        title='#2 Link their opinion with an existing discussion'
+        description='Only after feedback is submitted, user can combine it with an existing idea to embrace further discussion around subtle differences of the same idea.'
+        image={AnyRelatedImg}
+        imageStyle={{ padding: 0 }}
+      />
+      <Block
+        title='#3 Curated discussions'
+        description='Ask your users about specific ideas that you are seeking feedback from. Ideal for validating an idea.'
+        image={SeeWhatElseImg}
+        imageStyle={{ padding: 0 }}
+      />
+      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+        <Block
+          type='column'
+          title='Capture feedback with every vote'
+          description=''
+          icon={(<IdeasIcon />)}
+        />
+        <Block
+          type='column'
+          title="Do not be left with one user's idea and 100s of upvotes. "
+          description=''
+          icon={(<IdeasIcon />)}
+        />
+        <Block
+          type='column'
+          title='Avoid feature voting'
+          description=''
+          icon={(<IdeasIcon />)}
+        />
+      </HorizontalPanels>
+
+      <Demo
+        type='headingMain'
+        alignItems='flex-start'
+        title='Keep a line of communication always open'
+        description='Introduce the least amount of friction by choosing the communication channel for your users.'
+        initialSubPath='/embed/demo'
+        demoFixedWidth={420}
+        template={templater => {
+          setInitSignupMethodsTemplate(templater);
+          templater.styleWhite();
+        }}
+        controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
+        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
+        <Block
+          type='column'
+          icon={(<LinkIcon />)}
+          title='Link accounts'
+          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO creates an ideal seamless experience with no additional login steps.'
+        />
+        <Block
+          type='column'
+          icon={(
+            <div className={classes.iconsContainer}>
+              <GoogleIcon />
+              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
+              <FacebookIcon />
+            </div>
+          )}
+          title='Sign in with ...'
+          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
+        <Block
+          type='column'
+          icon={(<EmailIcon />)}
+          title='Email sign-up'
+          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
+        />
+        <Block
+          type='column'
+          icon={(<NotificationIcon />)}
+          title='Browser Notifications'
+          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
+        <Block
+          type='column'
+          icon={(<GuestIcon />)}
+          title='Guest accounts'
+          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
+        />
+      </HorizontalPanels>
+
+
+
+
+
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
           type='column'
@@ -933,10 +992,12 @@ export function LandingCollectFeedback() {
 export function LandingPrioritization() {
   return (
     <>
-      <Hero
+      <Demo
+        type='hero'
         title='Analyze feedback'
         description='Organize all the data you collected to make the right decision'
-        image={AnalyzeImg}
+        demoImage={DemoDashboardFeedbackVid}
+        demoWrap='browser'
       />
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
@@ -2443,7 +2504,6 @@ export function LandingGrowWithUs() {
 
 export function LandingInstall() {
   const classes = useStyles();
-  const onboardingDemoRef = useRef(null);
   return (
     <>
       <Hero
@@ -2500,62 +2560,6 @@ export function LandingInstall() {
           )}
         />
       </HorizontalPanels>
-      <Demo
-        alignItems='center'
-        mirror
-        title='User onboarding'
-        description='Introduce least amount of friction by choosing the right sign-up options for your product.'
-        initialSubPath='/embed/demo'
-        demoFixedWidth={420}
-        template={templater => {
-          setInitSignupMethodsTemplate(templater);
-          templater.styleWhite();
-        }}
-        controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
-        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
-      />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
-        <Block
-          type='column'
-          icon={(<LinkIcon />)}
-          title='Link accounts'
-          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO creates an ideal seamless experience with no additional login steps.'
-        />
-        <Block
-          type='column'
-          icon={(
-            <div className={classes.iconsContainer}>
-              <GoogleIcon />
-              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
-              <FacebookIcon />
-            </div>
-          )}
-          title='Sign in with ...'
-          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
-        <Block
-          type='column'
-          icon={(<EmailIcon />)}
-          title='Email sign-up'
-          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
-        />
-        <Block
-          type='column'
-          icon={(<NotificationIcon />)}
-          title='Browser Notifications'
-          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
-        <Block
-          type='column'
-          icon={(<GuestIcon />)}
-          title='Guest accounts'
-          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
-        />
-      </HorizontalPanels>
       <Block
         title='Issue credits automatically'
         description='If you are using the Credit System, issue credits to your users automatically with your platform when they make a purchase or complete any action.'
@@ -2565,15 +2569,6 @@ export function LandingInstall() {
         demo={(<LandingCreditSystemLinkOptions />)}
         buttonTitle='See Feature Crowdfunding'
         buttonLink='/solutions/feature-crowdfunding'
-      />
-      <Block
-        title='Scale with us'
-        description='Our platform is built on robust infrastructure and security'
-        image={ArchitectureImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='See how'
-        buttonLink='/product/scale-with-us'
       />
     </>
   );
@@ -2619,6 +2614,40 @@ export function LandingSales() {
       buttonLink='/contact/sales'
       image={SalesImg}
     />
+  );
+}
+export function LandingPricingOptions() {
+  const classes = useStyles();
+  return (
+    <>
+      <Block
+        className={classes.textAlignCenter}
+        type='headingOnly'
+        title="How to get started"
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <Block
+          type='column'
+          title='Scalable cloud solution'
+          description='Hassle-free scalable solution with pay for what you use pricing.'
+          buttonTitle='Get started'
+          buttonLink='/signup'
+          buttonVariant='contained'
+          buttonSuppressIcon
+          image={ArchitectureImg}
+        />
+        <Block
+          type='column'
+          title='Self hosted solution'
+          description='Install and manage on your own infrastructure.'
+          buttonTitle='Open source'
+          buttonLink='/open-source'
+          buttonVariant='contained'
+          buttonSuppressIcon
+          image={HtmlImg}
+        />
+      </HorizontalPanels>
+    </>
   );
 }
 export function LandingPricing() {

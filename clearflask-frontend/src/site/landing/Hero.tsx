@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Grid, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import GithubIcon from '@material-ui/icons/GitHub';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import ServerAdmin from '../../api/serverAdmin';
+import GoogleIcon from '../../common/icon/GoogleIcon';
 import ImgIso from '../../common/ImgIso';
+import { OAuthFlow } from '../../common/util/oauthUtil';
+import { redirectIso } from '../../common/util/routerUtil';
 import Vidyard from '../../common/Vidyard';
 
 const styles = (theme: Theme) => createStyles({
@@ -34,19 +39,41 @@ const styles = (theme: Theme) => createStyles({
       padding: theme.spacing(8, 2),
     },
   },
-  buttonAndRemark: {
+  buttonContainer: {
     alignSelf: 'flex-end',
+    margin: theme.spacing(4, 8),
+    [theme.breakpoints.down('xs')]: {
+      margin: theme.spacing(4, 4),
+    },
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    margin: theme.spacing(4, 10),
-    [theme.breakpoints.down('sm')]: {
-      margin: theme.spacing(4, 6),
+    alignItems: 'stretch',
+    '& > *:not(:first-child)': {
+      marginLeft: 1,
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
+    },
+    '& > *:not(:last-child)': {
+      marginRight: 0,
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
     },
   },
+  buttonMain: {
+    position: 'relative', // For remark
+    fontWeight: 900,
+  },
+  buttonOauth: {
+    minWidth: 0,
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
+  },
   remark: {
+    position: 'absolute',
+    bottom: '-60%',
+    left: '50%',
+    transform: 'translateX(-50%)',
     textAlign: 'center',
-    margin: theme.spacing(1),
+    whiteSpace: 'nowrap',
   },
 });
 
@@ -64,8 +91,10 @@ interface Props {
   buttonLinkExt?: string;
   buttonLink?: string;
   buttonRemark?: React.ReactNode;
+  buttonAddOauth?: boolean;
 }
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
+  readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
 
   render() {
     const imageSrc = this.props.image?.src || this.props.imagePath;
@@ -106,14 +135,13 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
               {this.props.description}
             </Typography>
             {this.props.buttonTitle && (
-              <div
-                className={this.props.classes.buttonAndRemark}
-              >
+              <div className={this.props.classes.buttonContainer}>
                 <Button
-                  color='secondary'
+                  className={this.props.classes.buttonMain}
+                  color='primary'
                   variant='contained'
+                  size='large'
                   disableElevation
-                  style={{ fontWeight: 900, color: 'white', }}
                   {...(this.props.buttonLink ? {
                     component: Link,
                     to: this.props.buttonLink,
@@ -124,11 +152,35 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
                   } : {})}
                 >
                   {this.props.buttonTitle}
+                  {!!this.props.buttonRemark && (
+                    <div className={this.props.classes.remark}>
+                      <Typography variant='caption' component='div' color='textSecondary'>{this.props.buttonRemark}</Typography>
+                    </div>
+                  )}
                 </Button>
-                {!!this.props.buttonRemark && (
-                  <div className={this.props.classes.remark}>
-                    <Typography variant='caption' component='div' color='textSecondary'>{this.props.buttonRemark}</Typography>
-                  </div>
+                {this.props.buttonAddOauth && (
+                  <>
+                    <Button
+                      color='primary'
+                      variant='contained'
+                      disableElevation
+                      size='large'
+                      className={this.props.classes.buttonOauth}
+                      onClick={e => this.onOauth('google')}
+                    >
+                      <GoogleIcon />
+                    </Button>
+                    <Button
+                      color='primary'
+                      disableElevation
+                      variant='contained'
+                      size='large'
+                      className={this.props.classes.buttonOauth}
+                      onClick={e => this.onOauth('github')}
+                    >
+                      <GithubIcon />
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -136,6 +188,18 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
         </Grid>
       </div>
     );
+  }
+
+  onOauth(type: 'google' | 'github') {
+    this.oauthFlow.listenForSuccess(async () => {
+      const bindResult = await (await ServerAdmin.get().dispatchAdmin()).accountBindAdmin({ accountBindAdmin: {} });
+      if (!!bindResult.created) {
+        redirectIso('/dashboard/welcome');
+      } else if (!!bindResult.account) {
+        redirectIso('/dashboard');
+      }
+    });
+    this.oauthFlow.openForAccount(type);
   }
 }
 

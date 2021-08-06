@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  clearflask-connect:
+    environment:
+      - NODE_ENV=production
+      - ENV=production
+  clearflask-server:
+    environment:
+      - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
+    volumes:
+      # Copy from config-selfhost-template.cfg and modify
+      - ./config-selfhost.cfg:/opt/clearflask/config-prod.cfg

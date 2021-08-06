@@ -65,7 +65,7 @@ function createApp(serverHttpp) {
   });
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
-      target: process.env.ENV !== 'local' ? 'http://localhost:8080' : 'http://host.docker.internal:8080',
+      target: process.env.ENV !== 'local' ? 'http://localhost:8080' : 'http://clearflask-server:8080',
     });
   });
 

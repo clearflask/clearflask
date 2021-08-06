@@ -24,8 +24,14 @@ interface Img {
     // (useful for ::after padding aspect ratio hack)
     heightToWidthRatio: number
 }
+interface Vid extends Img { }
 
-//https://github.com/image-size/image-size#supported-formats
+// https://github.com/SidOfc/babel-plugin-transform-media-imports#configuration
+declare module '*.mp4' { const vid: Vid; export default vid; }
+declare module '*.ogv' { const vid: Vid; export default vid; }
+declare module '*.webm' { const vid: Vid; export default vid; }
+declare module '*.apng' { const img: Img; export default img; }
+// https://github.com/image-size/image-size#supported-formats
 declare module '*.svg' { const img: Img; export default img; }
 declare module '*.bmp' { const img: Img; export default img; }
 declare module '*.cur' { const img: Img; export default img; }

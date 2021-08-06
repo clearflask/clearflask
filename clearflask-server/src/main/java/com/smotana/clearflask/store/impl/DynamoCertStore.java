@@ -27,10 +27,12 @@ import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Action1;
 
+import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -56,7 +58,7 @@ public class DynamoCertStore implements CertStore {
     private Config config;
     @Inject
     private DynamoMapper dynamoMapper;
-    @Inject
+    @Inject(optional = true)
     private AmazonRoute53 route53;
 
     private TableSchema<KeypairModel> keypairSchema;
@@ -125,6 +127,9 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public Optional<String> getDnsChallenge(String host) {
+        if (route53 == null) {
+            throw new ApiException(Response.Status.NOT_IMPLEMENTED);
+        }
         checkArgument(allowedHostPredicate.test(host));
         ListResourceRecordSetsResult result = route53.listResourceRecordSets(new ListResourceRecordSetsRequest(config.hostedZoneId())
                 .withStartRecordType(RRType.TXT)
@@ -137,6 +142,9 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public void setDnsChallenge(String host, String value) {
+        if (route53 == null) {
+            throw new ApiException(Response.Status.NOT_IMPLEMENTED);
+        }
         checkArgument(allowedHostPredicate.test(host));
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),
@@ -150,6 +158,9 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public void deleteDnsChallenge(String host, String value) {
+        if (route53 == null) {
+            throw new ApiException(Response.Status.NOT_IMPLEMENTED);
+        }
         checkArgument(allowedHostPredicate.test(host));
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),

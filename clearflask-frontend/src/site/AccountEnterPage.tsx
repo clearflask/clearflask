@@ -24,7 +24,7 @@ import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import { OAuthFlow, OAuthProvider } from '../common/util/oauthUtil';
+import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
@@ -93,9 +93,10 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    columnGap: theme.spacing(3),
   },
   oauthEnter: {
-    margin: theme.spacing(3, 1, 1),
+    margin: theme.spacing(3, 0, 1),
     display: 'flex',
     alignItems: 'center',
     textTransform: 'none',
@@ -209,20 +210,22 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
               <Button
                 className={this.props.classes.oauthEnter}
                 variant='outlined'
+                fullWidth
                 size='large'
                 onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
               >
-                <GoogleIcon fontSize='inherit' />
-                &nbsp;Google
+                <GoogleIcon />
+                &nbsp;&nbsp;Google
               </Button>
               <Button
                 className={this.props.classes.oauthEnter}
                 variant='outlined'
+                fullWidth
                 size='large'
                 onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
               >
-                <GithubIcon fontSize='inherit' />
-                &nbsp;GitHub
+                <GithubIcon />
+                &nbsp;&nbsp;GitHub
               </Button>
             </div>
             <Hr isInsidePaper length={120} margins={15}>OR</Hr>
@@ -311,29 +314,10 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
   }
 
   onOauth(type: 'google' | 'github', selectedPlanId: string) {
-    var provider: OAuthProvider;
-    switch (type) {
-      case 'google':
-        provider = {
-          clientId: isProd() ? '789180657123-biqq6mkgvrkirava961ujkacni5qebuf.apps.googleusercontent.com' : 'google-client-id',
-          authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-          scope: 'profile email',
-        };
-        break;
-      case 'github':
-        provider = {
-          clientId: isProd() ? '2c6e8437eaa489e69c38' : 'github-client-id',
-          authorizeUrl: 'https://github.com/login/oauth/authorize',
-          scope: 'user:email',
-        };
-        break;
-      default:
-        return;
-    }
     this.oauthFlow.listenForSuccess(() => {
       ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     });
-    this.oauthFlow.open(provider, selectedPlanId);
+    this.oauthFlow.openForAccount(type, selectedPlanId);
   }
 
   onLogin() {
@@ -418,6 +402,7 @@ const EnterTemplate = (props: {
                 className={classes.submitButton}
                 color='primary'
                 fullWidth
+                size='large'
                 variant='contained'
                 disableElevation
                 isSubmitting={props.isSubmitting}

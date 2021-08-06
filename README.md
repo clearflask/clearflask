@@ -28,14 +28,7 @@ For cloud hosting, sign up [here](https://clearflask.com/signup) to get started.
 
 ### Self-hosting
 
-*Note*: self-hosting has not yet been optimized for single-customer use case and light-weight deployment. Any help would
-be appreciated. We need to complete the following:
-
-- [ ] Replace DynamoDB, ElasticSearch, S3, SES with PostgreSQL, SMTP.
-- [x] Stub out Payment Processor dependency
-- [ ] Alternative landing page and dashboard for single-customer use-case
-- [ ] Dockerize and publish
-- [ ] Create Installation instructions
+See [here](INSTALLATION.md)
 
 ## Contributing
 

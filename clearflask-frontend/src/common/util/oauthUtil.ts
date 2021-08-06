@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import windowIso from "../windowIso";
+import { isProd } from "./detectEnv";
 import randomUuid from "./uuid";
 
 const SUCCESS_LOCALSTORAGE_EVENT_KEY_PREFIX = 'login-success';
@@ -36,6 +37,29 @@ export class OAuthFlow {
 
   constructor(props: OAuthFlowProps) {
     this.props = props;
+  }
+
+  openForAccount(providerType: 'google' | 'github', extraData?: string) {
+    var provider: OAuthProvider;
+    switch (providerType) {
+      case 'google':
+        provider = {
+          clientId: isProd() ? '789180657123-biqq6mkgvrkirava961ujkacni5qebuf.apps.googleusercontent.com' : 'google-client-id',
+          authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+          scope: 'profile email',
+        };
+        break;
+      case 'github':
+        provider = {
+          clientId: isProd() ? '2c6e8437eaa489e69c38' : 'github-client-id',
+          authorizeUrl: 'https://github.com/login/oauth/authorize',
+          scope: 'user:email',
+        };
+        break;
+      default:
+        return;
+    }
+    this.open(provider, extraData);
   }
 
   open(provider: OAuthProvider, extraData?: string) {

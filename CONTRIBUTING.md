@@ -13,14 +13,16 @@ The following requirements are a minimum:
 - Java 11
 - Maven
 - Makefile (for local and production deployment)
-- Docker (for local deployment)
+- Docker
+- ffmpeg (For `babel-plugin-transform-media-imports`)
+- openssl (For local deployment)
 
 ## Building
 
 Building is straightforward and can be done by running:
 
 ```shell
-mvn install
+mvn clean install
 ```
 
 ## Local instance
@@ -28,7 +30,7 @@ mvn install
 Ensure Docker is running locally and the project is successfully compiled. Then run:
 
 ```shell
-make run-dev
+make local-up
 ```
 
 Point your browser at https://localhost

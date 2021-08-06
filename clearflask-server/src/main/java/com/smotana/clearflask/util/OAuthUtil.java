@@ -105,10 +105,10 @@ public class OAuthUtil {
                 Object profileResponseObj = Configuration.defaultConfiguration().jsonProvider().parse(profileResponse);
                 guid = JsonPath.read(profileResponseObj, guidJsonPath);
                 if (!Strings.isNullOrEmpty(nameJsonPath)) {
-                    nameOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, oauthProvider.getNameJsonPath())));
+                    nameOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, nameJsonPath)));
                 }
-                if (!Strings.isNullOrEmpty(emailJsonPath) {
-                    emailOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, oauthProvider.getEmailJsonPath())));
+                if (!Strings.isNullOrEmpty(emailJsonPath)) {
+                    emailOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, emailJsonPath)));
                 }
                 return Optional.of(new OAuthResult(guid, nameOpt, emailOpt));
             } catch (JsonPathException ex) {

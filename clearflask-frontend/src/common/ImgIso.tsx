@@ -4,6 +4,12 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 
+const isSrcVideo = (src: string): boolean => {
+  return src.endsWith('.mp4')
+    || src.endsWith('.ogv')
+    || src.endsWith('.webm');
+}
+
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'block',
@@ -23,7 +29,7 @@ const styles = (theme: Theme) => createStyles({
 });
 export interface Props {
   alt?: string;
-  img?: Img;
+  img?: Img | Vid;
   className?: string;
   imgClassName?: string;
   src?: string;
@@ -41,12 +47,24 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     const aspectRatio = this.props.aspectRatio || this.props.img?.aspectRatio;
     const src = this.props.src || this.props.img?.src;
+    const isVideo = !!src && isSrcVideo(src)
     const width = this.props.width || (this.props.img?.aspectRatio ? '100%' : undefined);
     const height = this.props.height;
     const maxWidth = this.props.maxWidth || this.props.img?.width;
     const maxHeight = this.props.maxHeight || this.props.img?.height;
     const scale = this.props.scale || 1;
-    var img = (
+    var media = isVideo ? (
+      <video
+        autoPlay={true}
+        loop={true}
+        className={classNames(this.props.imgClassName, !!aspectRatio && this.props.classes.imageAspectRatio)}
+        src={src}
+        height={height}
+        width={width}
+        style={this.props.style}
+        {...this.props.imgProps}
+      />
+    ) : (
       <img
         alt={this.props.alt || ''}
         className={classNames(this.props.imgClassName, !!aspectRatio && this.props.classes.imageAspectRatio)}
@@ -57,7 +75,7 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
         {...this.props.imgProps}
       />
     );
-    if (aspectRatio) img = (
+    if (aspectRatio) media = (
       <div
         className={this.props.className}
         style={{
@@ -74,11 +92,11 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
             maxHeight: maxHeight ? maxHeight * scale : undefined,
           }}
         >
-          {img}
+          {media}
         </div>
       </div>
     );
-    return img;
+    return media;
   }
 }
 

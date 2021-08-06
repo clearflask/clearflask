@@ -214,7 +214,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                                         "OAuth provider did not give us your email, please sign up using an email directly.")),
                                 SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
                                 null,
-                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getBasePlanId()))
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))
                                         .orElseGet(() -> planStore.getPublicPlans().getPlans().get(0).getBasePlanId()),
                                 Instant.now(),
                                 oauthResult.get().getNameOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,

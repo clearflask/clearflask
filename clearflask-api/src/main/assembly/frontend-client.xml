@@ -8,14 +8,14 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${openapi.targetDirectory}${file.separator}frontend-client${file.separator}src</directory>
-            <outputDirectory>${file.separator}</outputDirectory>
+            <directory>${openapi.targetDirectory}/frontend-client/src</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
     <files>
         <file>
-            <source>${project.parent.basedir}${file.separator}COPYING</source>
-            <outputDirectory>${file.separator}</outputDirectory>
+            <source>${project.parent.basedir}/COPYING</source>
+            <outputDirectory>/</outputDirectory>
         </file>
     </files>
 </assembly>

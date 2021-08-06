@@ -7,6 +7,9 @@ official architecture diagram until we have a better replacement.
 
 ![Architecture diagram](clearflask-resources/clearflask-architecture.png)
 
+***TODO** Show clearflask-connect architecture*
+***TODO** Show clearflask-server architecture*
+
 ## Project Structure
 
 #### clearflask-api
