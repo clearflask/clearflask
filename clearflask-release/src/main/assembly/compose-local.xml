@@ -14,14 +14,9 @@
     </fileSets>
     <files>
         <file>
-            <source>${basedir}/src/main/docker/compose/docker-compose.base.yml</source>
+            <source>${basedir}/src/main/docker/compose/docker-compose.local.yml</source>
             <outputDirectory>/</outputDirectory>
             <destName>docker-compose.yml</destName>
-        </file>
-        <file>
-            <source>${basedir}/src/main/docker/compose/docker-compose.override.local.yml</source>
-            <outputDirectory>/</outputDirectory>
-            <destName>docker-compose.override.yml</destName>
         </file>
         <file>
             <source>${project.parent.basedir}/COPYING</source>

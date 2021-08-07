@@ -1,12 +1,19 @@
 version: '3.8'
 services:
   clearflask-connect:
+    image: 'clearflask/clearflask-connect:latest'
+    depends_on:
+      - clearflask-server
+    ports:
+      - 80:3000
     environment:
       - NODE_ENV=production
       - ENV=production
   clearflask-server:
+    image: 'clearflask/clearflask-server:latest'
+    ports:
+      - 8080:8080
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
     volumes:
-      # Copy from config-selfhost-template.cfg and modify
       - ./config-selfhost.cfg:/opt/clearflask/config-prod.cfg

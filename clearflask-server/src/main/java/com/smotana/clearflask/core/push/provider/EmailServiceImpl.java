@@ -20,22 +20,32 @@ import com.amazonaws.services.simpleemailv2.model.SendEmailResult;
 import com.amazonaws.services.simpleemailv2.model.SendingPausedException;
 import com.amazonaws.services.simpleemailv2.model.TooManyRequestsException;
 import com.google.common.base.Charsets;
+import com.google.common.base.Enums;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.mailer.AsyncResponse;
+import org.simplejavamail.api.mailer.Mailer;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
+import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.mailer.MailerBuilder;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
@@ -44,6 +54,10 @@ public class EmailServiceImpl implements EmailService {
     public interface Config {
         @DefaultValue("true")
         boolean enabled();
+
+        /** Valid options: ses smtp */
+        @DefaultValue("ses")
+        String useService();
 
         @DefaultValue("noreply")
         String fromEmailLocalPart();
@@ -66,6 +80,23 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue(value = "events@clearflask.com", innerType = String.class)
         List<String> bccEmails();
+
+
+        /** Valid options: TransportStrategy */
+        @DefaultValue("SMTP_TLS")
+        String smtpStrategy();
+
+        @DefaultValue("localhost")
+        String smtpHost();
+
+        @DefaultValue("587")
+        int smtpPort();
+
+        @DefaultValue("")
+        String smtpUser();
+
+        @DefaultValue("")
+        String smtpPassword();
     }
 
     @Inject
@@ -73,11 +104,12 @@ public class EmailServiceImpl implements EmailService {
     @Inject
     private Application.Config configApp;
     @Inject
-    private AmazonSimpleEmailServiceV2 ses;
+    private Provider<AmazonSimpleEmailServiceV2> sesProvider;
     @Inject
     private GuavaRateLimiters guavaRateLimiters;
 
     private RateLimiter rateLimiter;
+    private Optional<Mailer> smtpOpt;
 
     @Inject
     private void setup() {
@@ -109,60 +141,97 @@ public class EmailServiceImpl implements EmailService {
         }
 
         String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
-        String emailDisplayName = config.emailDisplayName();
-        if (!Strings.isNullOrEmpty(emailDisplayName)) {
-            fromEmailAddress = emailDisplayName + " <" + fromEmailAddress + ">";
-        }
 
-        Destination destination = new Destination()
-                .withToAddresses(email.getToAddress());
-        if (config.bccOnTagTypes() != null
-                && config.bccOnTagTypes().contains(email.getTypeTag())) {
-            destination.withBccAddresses(config.bccEmails());
-        }
+        if ("ses".equals(config.useService())) {
+            String emailDisplayName = config.emailDisplayName();
+            if (!Strings.isNullOrEmpty(emailDisplayName)) {
+                fromEmailAddress = emailDisplayName + " <" + fromEmailAddress + ">";
+            }
 
-        SendEmailResult result;
-        try {
-            result = ses.sendEmail(new SendEmailRequest()
-                    .withDestination(destination)
-                    .withFromEmailAddress(fromEmailAddress)
-                    .withEmailTags(new MessageTag().withName("id").withValue(email.getProjectOrAccountId()),
-                            new MessageTag().withName("type").withValue(email.getTypeTag()))
-                    .withContent(new EmailContent().withSimple(new Message()
-                            .withSubject(new Content()
-                                    .withCharset(Charsets.UTF_8.name())
-                                    .withData(email.getSubject()))
-                            .withBody(new Body()
-                                    .withHtml(new Content()
-                                            .withCharset(Charsets.UTF_8.name())
-                                            .withData(email.getContentHtml()))
-                                    .withText(new Content()
-                                            .withCharset(Charsets.UTF_8.name())
-                                            .withData(email.getContentText()))))));
-        } catch (TooManyRequestsException | SendingPausedException | LimitExceededException ex) {
-            if (LogUtil.rateLimitAllowLog("emailpush-toomanyreqs")) {
-                log.warn("Email service limited, project/account id {} toAddress {} subject {}",
-                        email.getProjectOrAccountId(), email.getToAddress(), email.getSubject(), ex);
+            Destination destination = new Destination()
+                    .withToAddresses(email.getToAddress());
+            if (config.bccOnTagTypes() != null
+                    && config.bccOnTagTypes().contains(email.getTypeTag())) {
+                destination.withBccAddresses(config.bccEmails());
             }
-            return;
-        } catch (AccountSuspendedException ex) {
-            if (LogUtil.rateLimitAllowLog("emailpush-accountsuspended")) {
-                log.warn("Email service account suspended", ex);
+
+            SendEmailResult sendEmailResult;
+            try {
+                sendEmailResult = sesProvider.get().sendEmail(new SendEmailRequest()
+                        .withDestination(destination)
+                        .withFromEmailAddress(fromEmailAddress)
+                        .withEmailTags(new MessageTag().withName("id").withValue(email.getProjectOrAccountId()),
+                                new MessageTag().withName("type").withValue(email.getTypeTag()))
+                        .withContent(new EmailContent().withSimple(new Message()
+                                .withSubject(new Content()
+                                        .withCharset(Charsets.UTF_8.name())
+                                        .withData(email.getSubject()))
+                                .withBody(new Body()
+                                        .withHtml(new Content()
+                                                .withCharset(Charsets.UTF_8.name())
+                                                .withData(email.getContentHtml()))
+                                        .withText(new Content()
+                                                .withCharset(Charsets.UTF_8.name())
+                                                .withData(email.getContentText()))))));
+            } catch (TooManyRequestsException | SendingPausedException | LimitExceededException ex) {
+                if (LogUtil.rateLimitAllowLog("emailpush-toomanyreqs")) {
+                    log.warn("Email service limited, project/account id {} toAddress {} subject {}",
+                            email.getProjectOrAccountId(), email.getToAddress(), email.getSubject(), ex);
+                }
+                return;
+            } catch (AccountSuspendedException ex) {
+                if (LogUtil.rateLimitAllowLog("emailpush-accountsuspended")) {
+                    log.warn("Email service account suspended", ex);
+                }
+                return;
+            } catch (MessageRejectedException | MailFromDomainNotVerifiedException | NotFoundException | BadRequestException ex) {
+                if (LogUtil.rateLimitAllowLog("emailpush-misconfigured")) {
+                    log.warn("Email service misconfigured", ex);
+                }
+                return;
+            } catch (Exception ex) {
+                if (LogUtil.rateLimitAllowLog("emailpush-exception")) {
+                    log.warn("Email cannot be delivered", ex);
+                }
+                return;
             }
-            return;
-        } catch (MessageRejectedException | MailFromDomainNotVerifiedException | NotFoundException | BadRequestException ex) {
-            if (LogUtil.rateLimitAllowLog("emailpush-misconfigured")) {
-                log.warn("Email service misconfigured", ex);
+            log.trace("Email sent to {} project/account id {} message id {} subject {}",
+                    email.getToAddress(), email.getProjectOrAccountId(), sendEmailResult.getMessageId(), email.getSubject());
+        } else {
+            if (this.smtpOpt.isEmpty()) {
+                this.smtpOpt = Optional.of(MailerBuilder
+                        .withSMTPServer(
+                                config.smtpHost(),
+                                config.smtpPort(),
+                                config.smtpUser(),
+                                config.smtpPassword())
+                        .withTransportStrategy(Enums.getIfPresent(TransportStrategy.class, config.smtpStrategy())
+                                .or(TransportStrategy.SMTP_TLS))
+                        .async()
+                        .buildMailer());
             }
-            return;
-        } catch (Exception ex) {
-            if (LogUtil.rateLimitAllowLog("emailpush-exception")) {
-                log.warn("Email cannot be delivered", ex);
+            EmailPopulatingBuilder emailBuilder = EmailBuilder.startingBlank()
+                    .from(config.emailDisplayName(), fromEmailAddress)
+                    .to(email.getToAddress())
+                    .withSubject(email.getSubject())
+                    .withHTMLText(email.getContentHtml())
+                    .withPlainText(email.getContentText());
+            if (config.bccOnTagTypes() != null
+                    && config.bccOnTagTypes().contains(email.getTypeTag())) {
+                emailBuilder.bcc(config.bccEmails().stream().collect(Collectors.joining(",")));
             }
-            return;
+            AsyncResponse asyncResponse = this.smtpOpt.get().sendMail(emailBuilder
+                    .buildEmail(), true);
+            if (asyncResponse != null) {
+                asyncResponse.onException(ex -> {
+                    if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
+                        log.warn("Email cannot be delivered", ex);
+                    }
+                });
+                asyncResponse.onSuccess(() -> log.trace("Email sent to {} project/account id {} to {} subject {}",
+                        email.getToAddress(), email.getProjectOrAccountId(), email.getToAddress(), email.getSubject()));
+            }
         }
-        log.trace("Email sent to {} project/account id {} message id {} subject {}",
-                email.getToAddress(), email.getProjectOrAccountId(), result.getMessageId(), email.getSubject());
     }
 
     public static Module module() {

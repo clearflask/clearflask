@@ -238,6 +238,10 @@
             <artifactId>aws-java-sdk-route53</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
             <artifactId>sqlite4java</artifactId>
             <scope>test</scope>

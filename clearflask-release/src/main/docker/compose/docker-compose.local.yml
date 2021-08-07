@@ -1,6 +1,11 @@
 version: '3.8'
 services:
   clearflask-connect:
+    image: 'clearflask/clearflask-connect:latest'
+    depends_on:
+      - clearflask-server
+    ports:
+      - 80:3000
     environment:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - NODE_ENV=production
@@ -9,16 +14,17 @@ services:
       - localhost.com:172.17.0.1
       - acme.staging.localhost:172.17.0.1
   clearflask-server:
+    image: 'clearflask/clearflask-server:latest'
     environment:
       - CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL
     depends_on:
       - killbill-engine
-      - elasticsearch
       - localstack
     volumes:
       - ./server/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
       - ./server/logging-dev.properties:/usr/local/tomcat/conf/logging.properties'
     ports:
+      - 8080:8080
       # JMX
       - 9950:9950
       - 9951:9951
@@ -69,23 +75,6 @@ services:
       - 3306
     environment:
       - MYSQL_ROOT_PASSWORD=killbill
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    ports:
-      - 9200:9200
-    environment:
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
-      - discovery.type=single-node
-    mem_limit: 4g
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.0
-    depends_on:
-      - elasticsearch
-    ports:
-      - 5601:5601
-    environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   localstack:
     image: localstack/localstack-full
     privileged: true
@@ -98,21 +87,8 @@ services:
       - DEFAULT_REGION=us-east-1
       - LOCALSTACK_HOSTNAME=localhost
       - HOSTNAME_EXTERNAL=localstack
-      - SERVICES=dynamodb,route53,ses,s3
+      - SERVICES=dynamodb,route53,ses,s3,es
       - LS_LOG=debug
       - START_WEB=1
       - USE_SSL=0
       - FORCE_NONINTERACTIVE=true
-# TODO have clearflask-connect use pebble
-#  pebble:
-#    image: letsencrypt/pebble
-#    ports:
-#      - 14000:14000
-#      - 15000:15000
-#    environment:
-#      - PEBBLE_VA_NOSLEEP=1
-#      - PEBBLE_VA_ALWAYS_VALID=1
-#      - PEBBLE_WFE_NONCEREJECT=0
-#      - PEBBLE_AUTHZREUSE=100
-#    extra_hosts:
-#      - localhost.com:172.17.0.1

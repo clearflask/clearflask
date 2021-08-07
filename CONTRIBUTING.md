@@ -4,39 +4,9 @@
 
 Look at our [architecture page](ARCHITECTURE.md) to better understand the layout of this project.
 
-## Environment
-
-Development has been done under Mac, Linux, and Windows (with WSL)
-
-The following requirements are a minimum:
-
-- Java 11
-- Maven
-- Makefile (for local and production deployment)
-- Docker
-- ffmpeg (For `babel-plugin-transform-media-imports`)
-- openssl (For local deployment)
-
 ## Building
 
-Building is straightforward and can be done by running:
-
-```shell
-mvn clean install
-```
-
-## Local instance
-
-Ensure Docker is running locally and the project is successfully compiled. Then run:
-
-```shell
-make local-up
-```
-
-Point your browser at https://localhost
-
-It is recommended to add a `hosts` entry `127.0.0.1 localhost.com` and point your browser to https://localhost.com.
-Although this should be solved in a better way, it helps with cookies, subdomain detection, and a few other quirks.
+See how you can [build ClearFlask](BUILDING.md) locally
 
 ## Code style
 

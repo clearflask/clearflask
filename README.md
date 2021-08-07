@@ -23,8 +23,8 @@
 
 <div align="center">
 
- Listen to your users during product development with [ClearFlask](https://clearflask.com/)
- <br />Open-source Feedback Management Tool.
+Listen to your users during product development with [ClearFlask](https://clearflask.com/)
+<br />Open-source Feedback Management Tool.
 
 </div>
 
@@ -37,14 +37,15 @@ You can also open a merge request although we advise you to talk to us before do
 
 ## Hosting
 
-### Cloud
+### Managed
 
-For cloud hosting, sign up [here](https://clearflask.com/signup) to get started.
+For managed hosting, sign up [here](https://clearflask.com/signup) to get started. You can import/export data at any
+time.
 
 ### Self-hosting
 
-See [here](INSTALLATION.md)
+If you want to host it on your own infrastructure, see how you can do that [here](INSTALLATION.md)
 
 ## Contributing
 
-See [here](CONTRIBUTING.md)
+We appreciate any contributions and feedback. Please see [here](CONTRIBUTING.md) on how to contribute.
