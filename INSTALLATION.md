@@ -6,7 +6,7 @@
 - [Deploy dependencies](#deploy-dependencies)
     - [Via Docker](#via-docker)
     - [Via AWS](#via-aws)
-- [Improvements](#improvements)
+- [Installation improvements](#installation-improvements)
 
 ## Deploy ClearFlask
 
@@ -39,12 +39,11 @@ There are several dependencies required for ClearFlask that you must deploy:
 
 Required:
 
-- **AWS DynamoDB** (IAM access, tables are created on first start-up)
-- **AWS S3** for user file uploads (Create private bucket, IAM access)
-- **ElasticSearch** (Can use AWS ES)
-- **Google ReCaptcha** (Obtain keys [here](https://www.google.com/recaptcha/admin))
-- **AWS SES** or **SMTP service** for sending transactional emails (IAM access, need to apply for approval via AWS
-  support)
+- **AWS DynamoDB**
+- **AWS S3**
+- **ElasticSearch**
+- **AWS SES** or **SMTP service**
+- **Google ReCaptcha** (Obtain free keys [here](https://www.google.com/recaptcha/admin))
 
 Optional:
 
@@ -64,14 +63,38 @@ Although not intended for production, you can spin up all dependencies via Docke
 
 For production workload, you will want to spin up these dependencies yourself and point ClearFlask to their endpoints.
 
-- **AWS DynamoDB** (IAM access, tables are created on first start-up)
-- **AWS S3** for user file uploads (Create private bucket, IAM access)
-- **ElasticSearch** (Can use AWS ES)
-- **AWS SES** or **SMTP service** for sending transactional emails (IAM access, need to apply for approval via AWS
-  support)
-- **Google ReCaptcha** (Obtain keys [here](https://www.google.com/recaptcha/admin))
+##### IAM access
 
-## Improvements
+For AWS services, `clearflask-server` autodetects IAM using the `DefaultAWSCredentialsProviderChain`.
+
+Specify IAM either in environment, Java system properties, credentials file, EC2 Container service, or Web Identity
+token.
+
+##### AWS DynamoDB
+
+Provide IAM access including create table permission as table is created automatically by ClearFlask on startup.
+
+##### AWS S3
+
+Create a private bucket with IAM access to ClearFlask.
+
+You can also use an API-compatible alternative service such as Wasabi, MinIO...
+
+##### ElasticSearch
+
+Recommended is AWS ES, give the proper IAM access
+
+Alternatively you can deploy it yourself (cheaper) or host it on Elastic
+
+##### AWS SES
+
+In order to setup SES, you need to seek limit increase via AWS support.
+
+Change the config property `...EmailServiceImpl$Config.useService` to `ses` and give the proper IAM access.
+
+Alternatiely use any other email provider and fill out the SMTP settings
+
+## Installation improvements
 
 There is an effort to make self-hosting less painful.
 

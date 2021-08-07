@@ -3,6 +3,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
 import Delimited from '../app/utils/Delimited';
+import windowIso from './windowIso';
 
 export interface Term {
   shortName?: string;
