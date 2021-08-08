@@ -89,7 +89,8 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
             <div id='onboardingDemo' className={this.props.classes.content}>
               {this.state.loginOpen ? (
                 <LogIn
-                  actionTitle='Create account'
+                  actionTitle='Get notified of replies'
+                  guestLabelOverride='No follow-up'
                   server={this.props.server}
                   open={this.state.loginOpen}
                   onClose={() => this.setState({ loginOpen: false })}

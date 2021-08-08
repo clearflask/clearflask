@@ -86,9 +86,9 @@ import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
-import InstallImg from '../../public/img/landing/install.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
+import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
 import NotifyImg from '../../public/img/landing/notify.svg';
 import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
@@ -464,15 +464,6 @@ export function Landing() {
           buttonTitle='Learn more'
           buttonLink='/product/customize'
         />
-        <Block
-          type='column'
-          title='Install'
-          description='How to connect ClearFlask with your product.'
-          image={InstallImg}
-          imageLocation='above'
-          buttonTitle='Learn more'
-          buttonLink='/product/install'
-        />
       </HorizontalPanels>
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' padLeft={1}>
         <Block
@@ -620,6 +611,29 @@ export function LandingGraveyard() {
       <LandingLoop />
       <LandingEngagementHero />
       <LandingCustomizeHero />
+      <Demo
+        type='mediumDemo'
+        title='Stay on the same page'
+        description='Keep everyone on the same page with your product development'
+        mirror
+        image={Roadmap2Img}
+        imageLocation='above'
+        initialSubPath='/embed/demo'
+        alignItems='center'
+        template={templater => templater.demoBoard('Product roadmap', [
+          { title: 'Planned' }, { title: 'Completed' },
+        ])}
+        mock={mocker => mocker.demoBoard([
+          { status: '0' }, { status: '0' }, { status: '0' },
+          { status: '1' }, { status: '1' },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+          demoDisablePostOpen: true,
+        }}
+        buttonTitle='See a Roadmap'
+        buttonLink='/solutions/product-roadmap'
+      />
     </>
   );
 }
@@ -647,6 +661,7 @@ export function LandingHero() {
 }
 
 export function LandingClearFlaskDemo(props: Partial<React.ComponentProps<typeof Block>> & {
+  path?: string,
   fakeBrowserProps?: Partial<React.ComponentProps<typeof FakeBrowser>>,
 }) {
   const classes = useStyles();
@@ -661,7 +676,7 @@ export function LandingClearFlaskDemo(props: Partial<React.ComponentProps<typeof
           >
             <iframe
               title='Demo: ClearFlask Feedback'
-              src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}`}
+              src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}${props.path || ''}`}
               width='100%'
               height='100%'
               frameBorder={0}
@@ -803,52 +818,107 @@ export function LandingCollectFeedback() {
         type='hero'
         title='Ask for feedback'
         description='Collect customer feedback all in one place from all your support channels'
+        image={ListenImg}
+        imageLocation='above'
         demoImage={DemoPortalFeedbackVid}
         demoWrap='browser'
       />
       <Block
+        mirror
         title='#1 Capture words instead of votes'
-        description='Do not let your user get swayed by other opinions. Capture their unique opinion.'
-        image={CaptureFeedbackImg}
+        description='Reading customer feedback is insightful. Between an in-person interview (High friction, high value) and voting (Low friction, low value), a simple feedback box strikes the right balance.'
+        demoImage={CaptureFeedbackImg}
+        demoWrap='browser'
+        alignItems='center'
         imageStyle={{ padding: 0 }}
+        points={[
+          'Keeps a line of communnication from the feedback poster',
+          "Avoids voting-only feedback that leads to one person's idea and 100s of lazy upvotes",
+        ]}
+        spacingTopBottom={0}
       />
       <Block
-        title='#2 Link their opinion with an existing discussion'
-        description='Only after feedback is submitted, user can combine it with an existing idea to embrace further discussion around subtle differences of the same idea.'
-        image={AnyRelatedImg}
+        title='#2 Group with related ideas'
+        description='Only after feedback is submitted, user can combine it with an existing idea.'
+        demoImage={AnyRelatedImg}
+        demoWrap='browser'
+        alignItems='center'
         imageStyle={{ padding: 0 }}
+        points={[
+          'Extracts unbiased opinion before exposing community feedback',
+          'Embraces further discussion around subtle differences of the same idea'
+        ]}
+        spacingTopBottom={0}
       />
       <Block
+        mirror
         title='#3 Curated discussions'
-        description='Ask your users about specific ideas that you are seeking feedback from. Ideal for validating an idea.'
-        image={SeeWhatElseImg}
+        description='Ask your users about specific ideas that you are seeking feedback from.'
+        demoImage={SeeWhatElseImg}
+        demoWrap='browser'
+        alignItems='center'
         imageStyle={{ padding: 0 }}
+        points={[
+          'Ideal for new idea validations and shaping upcoming features',
+          'Easily find volunteer BETA testers for an upcoming feature',
+        ]}
+        spacingTopBottom={0}
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
-        <Block
+      <Block
+        title='Integration points'
+        spacingBottom={0}
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <LandingClearFlaskDemo
           type='column'
-          title='Capture feedback with every vote'
-          description=''
-          icon={(<IdeasIcon />)}
+          title='Portal'
+          path='/embed/feedback'
+          description={(
+            <>
+              Link directly from your app or website to your ClearFlask portal on a custom domain.
+            </>
+          )}
+          fakeBrowserProps={{
+            fixedHeight: 200,
+            addressBarContent: 'feedback.yoursite.com',
+            // darkMode: true,
+          }}
         />
         <Block
           type='column'
-          title="Do not be left with one user's idea and 100s of upvotes. "
-          description=''
-          icon={(<IdeasIcon />)}
+          title='Widget'
+          description='Embed inside your website using IFrames either entire ClearFlask portal or individual pages.'
+          demo={(
+            <div className={classes.demoEmbedButtons}>
+              <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
+              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+            </div>
+          )}
         />
         <Block
           type='column'
-          title='Avoid feature voting'
-          description=''
-          icon={(<IdeasIcon />)}
+          title='Embed Status'
+          description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
+          demo={(
+            <div className={classes.demoStatusEmbedContainer}>
+              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
+              <PostStatusIframe
+                className={classes.demoStatusEmbedIframe}
+                width={100}
+                postId='ustom-subdomains-vr4'
+                config={{
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                }}
+              />
+            </div>
+          )}
         />
       </HorizontalPanels>
-
       <Demo
         type='headingMain'
         alignItems='flex-start'
-        title='Keep a line of communication always open'
+        title='Alway keep a line of communication open'
         description='Introduce the least amount of friction by choosing the communication channel for your users.'
         initialSubPath='/embed/demo'
         demoFixedWidth={420}
@@ -863,8 +933,8 @@ export function LandingCollectFeedback() {
         <Block
           type='column'
           icon={(<LinkIcon />)}
-          title='Link accounts'
-          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO creates an ideal seamless experience with no additional login steps.'
+          title='Link your existing accounts'
+          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps.'
         />
         <Block
           type='column'
@@ -904,61 +974,10 @@ export function LandingCollectFeedback() {
 
 
 
-
-
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
-        <Block
-          type='column'
-          title='Feature request tracking'
-          description='Keep track of all your incoming feature requests with prioritization'
-          icon={(<IdeasIcon />)}
-          buttonTitle='See how'
-          buttonLink='/solutions/feature-request-tracking'
-        />
-        <Block
-          type='column'
-          title='Internal feedback'
-          description="Don't miss the email from Sales asking for your help. Collect feedback from within your private organization or customer-base."
-          icon={(<IdeasIcon />)}
-          buttonTitle='Learn more'
-          buttonLink='/solutions/internal-feedback'
-        />
-        <Block
-          type='column'
-          title='Link with your product'
-          description='Seamlessly integrate with your website or app as an extension of your product.'
-          icon={(<IdeasIcon />)}
-          buttonTitle='How to install'
-          buttonLink='/product/install'
-        />
-      </HorizontalPanels>
-      <Demo
-        type='mediumDemo'
-        title='Stay on the same page'
-        description='Keep everyone on the same page with your product development'
-        mirror
-        image={Roadmap2Img}
-        imageLocation='above'
-        initialSubPath='/embed/demo'
-        alignItems='center'
-        template={templater => templater.demoBoard('Product roadmap', [
-          { title: 'Planned' }, { title: 'Completed' },
-        ])}
-        mock={mocker => mocker.demoBoard([
-          { status: '0' }, { status: '0' }, { status: '0' },
-          { status: '1' }, { status: '1' },
-        ])}
-        settings={{
-          demoBlurryShadow: true,
-          demoDisablePostOpen: true,
-        }}
-        buttonTitle='See a Roadmap'
-        buttonLink='/solutions/product-roadmap'
-      />
       <Demo
         title='Build a community around your product'
         description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
-        alignItems='flex-start'
+        alignItems='center'
         initialSubPath='/embed/demo'
         demoFixedHeight={450}
         image={CommunityImg}
@@ -975,15 +994,18 @@ export function LandingCollectFeedback() {
           .then(() => mocker.mockLoggedIn())}
         demo={LandingCommentListDemo}
       />
-      <Block
-        title='Analyze feedback'
-        description='Organize all the data you collected to make the right decision'
-        image={AnalyzeImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='Continue'
-        buttonLink='/product/analyze'
-      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <GetStartedColumn />
+        <Block
+          title='Analyze feedback'
+          type='column'
+          description='Organize all the data you collected to make the right decision'
+          image={AnalyzeImg}
+          mirror
+          buttonTitle='Continue'
+          buttonLink='/product/analyze'
+        />
+      </HorizontalPanels>
     </>
   );
 }
@@ -1470,15 +1492,6 @@ export function LandingCustomize() {
           type='column'
         /> */}
       </HorizontalPanels>
-      <Block
-        title='Install'
-        description='How you can connect ClearFlask with your website or app'
-        image={InstallImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='See how'
-        buttonLink='/product/install'
-      />
     </>
   );
 }
@@ -2502,78 +2515,6 @@ export function LandingGrowWithUs() {
   );
 }
 
-export function LandingInstall() {
-  const classes = useStyles();
-  return (
-    <>
-      <Hero
-        title='Install'
-        description='How you can connect ClearFlask with your website or app'
-        image={InstallImg}
-      />
-      <Block
-        title='Integration points'
-      />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-        <LandingClearFlaskDemo
-          type='column'
-          title='Portal'
-          description={(
-            <>
-              Link directly from your app or website to your ClearFlask portal. Optionally use a custom domain <b>feedback.yoursite.com</b>
-            </>
-          )}
-          fakeBrowserProps={{
-            fixedHeight: 200,
-            addressBarContent: 'feedback.yoursite.com',
-            // darkMode: true,
-          }}
-        />
-        <Block
-          type='column'
-          title='Widget'
-          description='Embed within your website using IFrames either entire ClearFlask portal or individual pages.'
-          demo={(
-            <div className={classes.demoEmbedButtons}>
-              <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
-              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
-            </div>
-          )}
-        />
-        <Block
-          type='column'
-          title='Embed Status'
-          description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
-          demo={(
-            <div className={classes.demoStatusEmbedContainer}>
-              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
-              <PostStatusIframe
-                className={classes.demoStatusEmbedIframe}
-                width={100}
-                postId='ustom-subdomains-vr4'
-                config={{
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                }}
-              />
-            </div>
-          )}
-        />
-      </HorizontalPanels>
-      <Block
-        title='Issue credits automatically'
-        description='If you are using the Credit System, issue credits to your users automatically with your platform when they make a purchase or complete any action.'
-        alignItems='flex-start'
-        image={CrowdfundImg}
-        imageLocation='above'
-        demo={(<LandingCreditSystemLinkOptions />)}
-        buttonTitle='See Feature Crowdfunding'
-        buttonLink='/solutions/feature-crowdfunding'
-      />
-    </>
-  );
-}
-
 // export function LandingAboutUs() {
 //   return (
 //     <>
@@ -2654,6 +2595,22 @@ export function LandingPricing() {
   return (
     <>
       <PricingPage />
+    </>
+  );
+}
+export function GetStartedColumn() {
+  return (
+    <>
+      <Block
+        type='column'
+        title='Try it out for free'
+        description='Getting started is easy. Try out all the features during a trial period.'
+        buttonTitle='Get started'
+        buttonLink='/signup'
+        buttonVariant='contained'
+        buttonSuppressIcon
+        image={ArchitectureImg}
+      />
     </>
   );
 }

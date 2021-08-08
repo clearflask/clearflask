@@ -11,13 +11,8 @@ import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
-    [theme.breakpoints.up('md')]: {
-      padding: `${theme.vh(20)}px 10vw`,
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: `${theme.vh(10)}px 1vw`,
-    },
-    minHeight: theme.vh(100),
+    minHeight: theme.vh(40),
+    padding: `${theme.vh(10)}px 10vw`,
     display: 'flex',
     justifyContent: 'center',
   },
@@ -50,13 +45,10 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
   },
   image: {
-    padding: theme.spacing(8),
     width: '100%',
-    [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(0, 8, 8),
-    },
+    padding: theme.spacing(0, 8, 0),
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(0, 2, 6),
+      padding: theme.spacing(0, 2, 0),
     },
   },
   columnOnly: {
@@ -91,6 +83,9 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
   noSpacing?: boolean;
+  spacingTop?: string | number;
+  spacingBottom?: string | number;
+  spacingTopBottom?: string | number;
   displayAlign?: GridItemsAlignment;
   alignItems?: GridItemsAlignment;
 }
@@ -185,7 +180,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     if (this.props.type === 'demoOnly') {
       return (
         <div
-          className={classNames(!this.props.noSpacing && this.props.classes.spacing, this.props.className)}
+          className={classNames(
+            !this.props.noSpacing && this.props.classes.spacing,
+            this.props.className,
+          )}
+          style={{
+            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
+            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
+          }}
         >
           {display}
         </div>
@@ -220,7 +222,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     if (this.props.type === 'headingOnly') {
       return (
         <div
-          className={classNames(!this.props.noSpacing && this.props.classes.spacing, this.props.className)}
+          className={classNames(
+            !this.props.noSpacing && this.props.classes.spacing,
+            this.props.className,
+          )}
+          style={{
+            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
+            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
+          }}
         >
           {content}
         </div>
@@ -244,7 +253,17 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       const isMediumDemo = this.props.type === 'mediumDemo';
       return (
         <Grid
-          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : (isMediumDemo ? this.props.classes.spacingMediumDemo : this.props.classes.spacing)), this.props.className)}
+          className={classNames(
+            !this.props.noSpacing && (isHero
+              ? this.props.classes.heroSpacing
+              : (isMediumDemo
+                ? this.props.classes.spacingMediumDemo
+                : this.props.classes.spacing)),
+            this.props.className)}
+          style={{
+            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
+            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
+          }}
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}
