@@ -74,15 +74,40 @@ token.
 
 Provide IAM access including create table permission as table is created automatically by ClearFlask on startup.
 
+IAM actions:
+
+- CreateTable
+- BatchGetItem
+- GetItem
+- Query
+- BatchWriteItem
+- DeleteItem
+- PutItem
+- UpdateItem
+
 ##### AWS S3
 
 Create a private bucket with IAM access to ClearFlask.
+
+IAM actions:
+
+- ListBucket
+- GetObject
+- DeleteObject
+- PutObject
 
 You can also use an API-compatible alternative service such as Wasabi, MinIO...
 
 ##### ElasticSearch
 
 Recommended is AWS ES, give the proper IAM access
+
+IAM actions, all in these categories:
+
+- List
+- Read
+- Write
+- Tagging
 
 Alternatively you can deploy it yourself (cheaper) or host it on Elastic
 
@@ -92,7 +117,12 @@ In order to setup SES, you need to seek limit increase via AWS support.
 
 Change the config property `...EmailServiceImpl$Config.useService` to `ses` and give the proper IAM access.
 
-Alternatiely use any other email provider and fill out the SMTP settings
+IAM actions:
+
+- SendEmail
+- SendRawEmail
+
+Alternatively use any other email provider and fill out the SMTP settings
 
 ## Installation improvements
 
