@@ -6,7 +6,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
 import randomUuid from '../common/util/uuid';
 import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
@@ -93,7 +93,7 @@ export class Server {
       var result = await store.dispatch(msg);
       if (storeAdmin) await storeAdmin.dispatch(msg);
     } catch (response) {
-      if (detectEnv() !== Environment.PRODUCTION) {
+      if (!isProd()) {
         console.log("Dispatch error: ", msg, response);
         console.trace();
       }

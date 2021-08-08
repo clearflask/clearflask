@@ -150,54 +150,60 @@ class Main extends Component<Props> {
                     <EnvironmentNotifier key='env-notifier' />
                   )} />
                   <Switch>
-                    {isProject ? ([(
-                      <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                        <>
-                          <SetMaxAge val={24 * 60 * 60} />
-                          <PostStatus
-                            {...props}
-                            postId={props.match.params['postId'] || ''}
-                          />
-                        </>
-                      )} />
-                    ), (
-                      <Route key='app' path="/" render={props => (
-                        <>
-                          <SetMaxAge val={60} />
-                          <App slug={windowIso.location.hostname} {...props} />
-                        </>
-                      )} />
-                    )]) : ([(
-                      <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
-                        <Provider store={ServerAdmin.get().getStore()}>
-                          <SentryIdentifyAccount />
-                          <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
-                          <NoSsr>
-                            <Dashboard {...props} />
-                          </NoSsr>
-                          <IntercomWrapperMain />
-                          <HotjarWrapperMain />
-                        </Provider>
-                      )} />
-                    ), (
-                      <Route key='invoice' path="/invoice/:invoiceId" render={props => (
-                        <Provider store={ServerAdmin.get().getStore()}>
-                          <SentryIdentifyAccount />
-                          <SetMaxAge val={0} />
-                          <Invoice invoiceId={props.match.params['invoiceId']} />
-                        </Provider>
-                      )} />
-                    ), (
-                      <Route key='site' render={props => (
-                        <Provider store={ServerAdmin.get().getStore()}>
-                          <SentryIdentifyAccount />
-                          <SetMaxAge val={24 * 60 * 60} />
-                          <Site {...props} />
-                          <IntercomWrapperMain />
-                          <HotjarWrapperMain />
-                        </Provider>
-                      )} />
-                    )])}
+                    {[
+                      ...(isProject ? [(
+                        <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                          <>
+                            <SetMaxAge val={24 * 60 * 60} />
+                            <PostStatus
+                              {...props}
+                              postId={props.match.params['postId'] || ''}
+                            />
+                          </>
+                        )} />
+                      )] : []),
+                      ...(!isProject ? [(
+                        <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <SentryIdentifyAccount />
+                            <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
+                            <NoSsr>
+                              <Dashboard {...props} />
+                            </NoSsr>
+                            <IntercomWrapperMain />
+                            <HotjarWrapperMain />
+                          </Provider>
+                        )} />
+                      )] : []),
+                      ...(!isProject ? [(
+                        <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <SentryIdentifyAccount />
+                            <SetMaxAge val={0} />
+                            <Invoice invoiceId={props.match.params['invoiceId']} />
+                          </Provider>
+                        )} />
+                      )] : []),
+                      ...(isProject ? [(
+                        <Route key='app' path="/" render={props => (
+                          <>
+                            <SetMaxAge val={60} />
+                            <App slug={windowIso.location.hostname} {...props} />
+                          </>
+                        )} />
+                      )] : []),
+                      ...(!isProject ? [(
+                        <Route key='site' render={props => (
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <SentryIdentifyAccount />
+                            <SetMaxAge val={24 * 60 * 60} />
+                            <Site {...props} />
+                            <IntercomWrapperMain />
+                            <HotjarWrapperMain />
+                          </Provider>
+                        )} />
+                      )] : []),
+                    ]}
                   </Switch>
                 </Router>
               </div>

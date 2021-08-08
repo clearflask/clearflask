@@ -16,6 +16,7 @@ import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuIcon from '@material-ui/icons/Menu';
 import BlogIcon from '@material-ui/icons/MenuBookOutlined';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
@@ -29,6 +30,7 @@ import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import { MenuButton, MenuDropdown, MenuItems } from '../common/menus';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -76,7 +78,11 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     minHeight: theme.vh(100),
-    // paddingBottom: theme.spacing(6),
+  },
+  pageSingleCustomer: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
   },
   appBarSpacer: theme.mixins.toolbar,
   bottomBar: {
@@ -146,6 +152,28 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
   }
 
   render() {
+    const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
+    if (isSingleCustomer) {
+      return (
+        <div className={this.props.classes.pageSingleCustomer}>
+          <MuiAnimatedSwitch>
+            <Route exact path='/login'>
+              <SetTitle title='Login' />
+              <AccountEnterPage type='login' />
+            </Route>
+            <Route exact path='/signup'>
+              <SetTitle title='Sign up' />
+              <AccountEnterPage type='signup' />
+            </Route>
+            {isSingleCustomer && (
+              <Route>
+                <RedirectIso to='/login' />
+              </Route>
+            )}
+          </MuiAnimatedSwitch>
+        </div>
+      );
+    }
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
@@ -264,7 +292,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           </Container>
         </AppBar>
         <div className={this.props.classes.appBarSpacer} />
-        <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
+        <div className={classNames(this.props.classes.growAndFlex, this.props.classes.page)}>
           <MuiAnimatedSwitch>
             <Route exact path='/login'>
               <SetTitle title='Login' />

@@ -88,7 +88,8 @@ export default function render() {
                 statsFile,
                 entrypoints: ['main'],
                 outputPath: path.resolve(__dirname, '..', '..', 'build'),
-                publicPath: process.env.ENV !== 'production' ? '/' : undefined,
+                publicPath: (process.env.ENV !== 'production' && process.env.ENV !== 'selfhost')
+                  ? '/' : undefined,
               }),
               muiSheets: new ServerStyleSheets(),
               renderedScreen: '',

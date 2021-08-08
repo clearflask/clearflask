@@ -22,7 +22,8 @@ var connectConfig: ConnectConfig = {
   connectToken: 'EMPTY',
 };
 
-if (process.env.ENV === 'production') {
+if (process.env.ENV === 'production'
+  || process.env.ENV === 'selfhost') {
   try {
     const configLoaded = JSON.parse(fs.readFileSync(configFile));
     connectConfig = {

@@ -8,19 +8,19 @@ export enum Environment {
   DEVELOPMENT_FRONTEND = 'FRONTEND',
   DEVELOPMENT_LOCAL = 'LOCAL',
   PRODUCTION = 'PROD',
+  PRODUCTION_SELF_HOST = 'PROD_SELF_HOST',
 }
 
 export function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (windowIso['ENV'] === 'development' /* npm run start:dev */) {
+    if (windowIso.ENV === 'development' /* npm run start:dev */) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else if (windowIso['ENV'] === 'local' /* npm run start:local */) {
+    } else if (windowIso.ENV === 'local' /* npm run start:local */) {
       envCache = Environment.DEVELOPMENT_LOCAL;
+    } else if (windowIso.ENV === 'selfhost' /* npm run start:local */) {
+      envCache = Environment.PRODUCTION_SELF_HOST;
     } else if (process?.env?.NODE_ENV === 'development' /* npm run start:frontend */) {
       envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else if (windowIso.location.hostname.endsWith('localhost.com') /* fallback */
-      || windowIso.location.hostname.endsWith('localhost')) {
-      envCache = Environment.DEVELOPMENT_LOCAL;
     } else {
       envCache = Environment.PRODUCTION;
     }
@@ -29,7 +29,8 @@ export function detectEnv(): Environment {
 }
 
 export function isProd(): boolean {
-  return detectEnv() === Environment.PRODUCTION;
+  return detectEnv() === Environment.PRODUCTION
+    || detectEnv() === Environment.PRODUCTION_SELF_HOST;
 }
 
 export function isTracking(): boolean {

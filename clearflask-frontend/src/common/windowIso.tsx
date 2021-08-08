@@ -62,6 +62,7 @@ export const WindowIsoSsrProvider = (props: {
 export type WindowIso = {
   // Both CSR and SSR
   parentDomain: string;
+  ENV?: 'development' | 'production' | 'selfhost' | 'local' | 'test';
 } & (( // SSR only
   Window & typeof globalThis & {
     isSsr: false
@@ -70,7 +71,6 @@ export type WindowIso = {
     NodeJS.Global & {
       isSsr: true;
       fetch: any;
-      ENV: 'development' | 'production' | 'local' | 'test';
       location: URL;
       setTitle: (title: string) => void;
       setMaxAge: (maxAge: number) => void;

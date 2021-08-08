@@ -2,36 +2,10 @@
 
 ## Table of Contents:
 
-- [Deploy ClearFlask](#deploy-clearflask)
 - [Deploy dependencies](#deploy-dependencies)
     - [Via Docker](#via-docker)
     - [Via AWS](#via-aws)
-- [Installation improvements](#installation-improvements)
-
-## Deploy ClearFlask
-
-ClearFlask consists of two components:
-
-- Tomcat application for serving API requests
-- NodeJS for SSR, dynamic cert management and serving static files
-
-At this time, we have not published any releases just yet ahead of launch.
-
-For now see how to [build ClearFlask](BUILDING.md).
-
-### Install
-
-1. Unpack the artifact `clearflask-release/target/clearflask-release-*-docker-compose-self-host.tar.gz`
-2. Copy `config-selfhost-template.cfg` to `config-selfhost.cfg` and fill out properties
-3. Copy `connect.config.template.json` to `connect.config.json` and fill out properties
-
-### Run
-
-Now it is as simple as
-
-```shell
-docker-compose up
-```
+- [Deploy ClearFlask](#deploy-clearflask)
 
 ## Deploy dependencies
 
@@ -124,18 +98,32 @@ IAM actions:
 
 Alternatively use any other email provider and fill out the SMTP settings
 
-## Installation improvements
+## Deploy ClearFlask
 
-There is an effort to make self-hosting less painful.
+ClearFlask consists of two components:
 
-At this time it is considered in Alpha until we complete these tasks:
+- Tomcat application for serving API requests
+- NodeJS for SSR, dynamic cert management and serving static files
 
-- [x] Support for SMTP to replace SES
-- [x] Support for S3 alternative (Minio? LocalStack?)
-- [x] Support for DynamoDB alternative (Cassandra? dynamo-cassandra-proxy? LocalStack?)
-- [x] Stub out Payment Processor dependency
-- [x] Remove Route53 dependency
-- [ ] Alternative landing page and dashboard for single-customer use-case
-- [ ] Dockerize and publish
-    - [ ] Do not hardcode VAPID public key on client
-- [ ] Update Installation instructions
+At this time, we have not published any releases just yet ahead of launch.
+
+For now see how to [build ClearFlask](BUILDING.md).
+
+### Install
+
+1. Unpack the artifact `clearflask-release/target/clearflask-release-*-docker-compose-self-host.tar.gz`
+2. Copy `config-selfhost-template.cfg` to `config-selfhost.cfg` and fill out properties
+3. Copy `connect.config.template.json` to `connect.config.json` and fill out properties
+
+### Run
+
+Now it is as simple as
+
+```shell
+docker-compose up
+```
+
+### Setup
+
+After you configure your DNS, you can now create an account at `yoursite.com/signup`. Use the email address you
+configured via `superAdminEmailRegex` property.

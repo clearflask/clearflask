@@ -312,6 +312,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
         sanitizer.email(signup.getEmail());
         sanitizer.accountName(signup.getName());
+        if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(signup.getEmail())) {
+            new ApiException(Response.Status.BAD_REQUEST, "Only admins are allowed to sign up");
+        }
 
         String accountId = accountStore.genAccountId();
         Plan plan = planStore.getPublicPlans().getPlans().stream()

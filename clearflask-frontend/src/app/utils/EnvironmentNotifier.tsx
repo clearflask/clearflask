@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useSnackbar } from 'notistack';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { detectEnv, isProd } from '../../common/util/detectEnv';
 
 var wasShown = false;
 const EnvironmentNotifier = () => {
   const { enqueueSnackbar } = useSnackbar();
   const env = detectEnv();
 
-  if (env === Environment.PRODUCTION) return null;
+  if (isProd()) return null;
 
   if (wasShown) return null;
   wasShown = true;

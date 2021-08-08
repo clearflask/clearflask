@@ -8,7 +8,7 @@ services:
       - 80:3000
     environment:
       - NODE_ENV=production
-      - ENV=production
+      - ENV=selfhost
   clearflask-server:
     image: 'clearflask/clearflask-server:latest'
     ports:

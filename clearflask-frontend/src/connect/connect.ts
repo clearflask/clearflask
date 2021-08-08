@@ -75,7 +75,9 @@ function createApp(serverHttpp) {
 }
 
 
-if (process.env.ENV === 'production' || process.env.ENV === 'test') {
+if (process.env.ENV === 'production'
+  || process.env.ENV === 'selfhost'
+  || process.env.ENV === 'test') {
   greenlockExpress
     .init({
       agreeToTerms: true,

@@ -23,7 +23,7 @@ import GoogleIcon from '../common/icon/GoogleIcon';
 import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
-import { isProd, isTracking } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd, isTracking } from '../common/util/detectEnv';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
@@ -176,7 +176,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         return <LoadingPage />
       }
 
-      if (!selectedPlanId || !SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
+      if (detectEnv() === Environment.PRODUCTION_SELF_HOST || !selectedPlanId || !SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
         return <ErrorPage variant='warning' msg={(
           <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
             Direct sign ups are currently disabled. Instead,&nbsp;
@@ -196,6 +196,9 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
       }
     }
 
+    const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
+    const isOauthEnabled = !isSingleCustomer;
+
     return (
       <EnterTemplate
         title={(
@@ -206,28 +209,32 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         )}
         content={(
           <>
-            <div className={this.props.classes.oauthEnterContainer}>
-              <Button
-                className={this.props.classes.oauthEnter}
-                variant='outlined'
-                fullWidth
-                size='large'
-                onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
-              >
-                <GoogleIcon />
-                &nbsp;&nbsp;Google
-              </Button>
-              <Button
-                className={this.props.classes.oauthEnter}
-                variant='outlined'
-                fullWidth
-                size='large'
-                onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
-              >
-                <GithubIcon />
-                &nbsp;&nbsp;GitHub
-              </Button>
-            </div>
+            {isOauthEnabled && (
+              <>
+                <div className={this.props.classes.oauthEnterContainer}>
+                  <Button
+                    className={this.props.classes.oauthEnter}
+                    variant='outlined'
+                    fullWidth
+                    size='large'
+                    onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
+                  >
+                    <GoogleIcon />
+                    &nbsp;&nbsp;Google
+                  </Button>
+                  <Button
+                    className={this.props.classes.oauthEnter}
+                    variant='outlined'
+                    fullWidth
+                    size='large'
+                    onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
+                  >
+                    <GithubIcon />
+                    &nbsp;&nbsp;GitHub
+                  </Button>
+                </div>
+              </>
+            )}
             <Hr isInsidePaper length={120} margins={15}>OR</Hr>
             <Collapse in={this.props.type === 'signup'}>
               <TextField
