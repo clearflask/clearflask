@@ -1539,8 +1539,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (captcha) {
       headers.set('x-cf-challenge', JSON.stringify({
         version: 'RECAPTCHA_V2',
-        // Recaptcha 'clearflask-localhost' site key
-        challenge: '6Lcnvs4UAAAAAG2X4PqlukwjGIhgR_A_oXDt3XU2'
+        // Recaptcha 'clearflask-localhost2' site key
+        challenge: '6LewiegbAAAAAH4Epm0Burza9qNvWsCoNhTHsmug'
       }));
     }
     // eslint-disable-next-line no-throw-literal

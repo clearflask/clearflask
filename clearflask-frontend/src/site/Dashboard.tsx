@@ -380,7 +380,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       };
       Dashboard.stripePromise = loadStripe(isProd()
         ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
-        : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
+        : 'pk_test_51Dfi5vAl0n0hFnHPXRnnJdMKRKF6MMOWLQBwLl1ifwPZysg1wJNtYcumjgO8oPHlqITK2dXWlbwLEsPYas6jpUkY00Ryy3AtGP');
     }
     return Dashboard.stripePromise;
   }

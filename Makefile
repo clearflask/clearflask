@@ -18,6 +18,9 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: clearflas
 	rm -fr clearflask-release/target/run-docker-compose-local
 	mkdir clearflask-release/target/run-docker-compose-local
 	tar -xzf clearflask-release/target/clearflask-release-0.1-docker-compose-local.tar.gz -C clearflask-release/target/run-docker-compose-local
+	cp -n clearflask-release/target/run-docker-compose-local/server/config-local-template.cfg ./config-local.cfg \
+		&& echo IMPORTANT: Created config-local.cfg please adjust settings for local deployment
+	cp ./config-local.cfg clearflask-release/target/run-docker-compose-local/server/config-local.cfg
 
 local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
 	cd clearflask-release/target/run-docker-compose-local && docker-compose up -d

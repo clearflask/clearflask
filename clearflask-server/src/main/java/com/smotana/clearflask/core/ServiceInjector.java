@@ -270,7 +270,7 @@ public enum ServiceInjector {
                     case DEVELOPMENT_LOCAL:
                         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("test", "test")));
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
-                                getClass().getClassLoader().getResource("config-local.cfg").getPath());
+                                "/opt/clearflask/config-local.cfg");
                         break;
                     case PRODUCTION_SELF_HOST:
                     case PRODUCTION_AWS:

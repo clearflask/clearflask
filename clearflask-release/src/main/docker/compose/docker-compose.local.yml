@@ -22,7 +22,8 @@ services:
       - localstack
     volumes:
       - ./server/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
-      - ./server/logging-dev.properties:/usr/local/tomcat/conf/logging.properties'
+      - ./server/logging-dev.properties:/usr/local/tomcat/conf/logging.properties
+      - ./server/config-local.cfg:"/opt/clearflask/config-local.cfg
     ports:
       - 8080:8080
       # JMX

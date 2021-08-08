@@ -59,6 +59,9 @@ clearflask-resources/*.ico
 .config.toml
 builds/
 
+### Release
+/config-local.cfg
+
 ### Connect
 greenlock.d/
 .greenlockrc
