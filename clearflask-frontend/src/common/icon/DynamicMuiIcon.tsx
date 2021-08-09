@@ -12,6 +12,7 @@ import LinkAltIcon from './LinkAltIcon';
 import LockSimpleIcon from './LockSimpleIcon';
 import LogoutIcon from './LogoutIcon';
 import MicrosoftIcon from './MicrosoftIcon';
+import OpenSourceIcon from './OpenSourceIcon';
 import PinIcon from './PinIcon';
 import TwitchIcon from './TwitchIcon';
 import UnLinkAltIcon from './UnLinkAltIcon';
@@ -30,6 +31,7 @@ const IconOverrides = {
   'Pin': PinIcon,
   'LinkAlt': LinkAltIcon,
   'UnLinkAlt': UnLinkAltIcon,
+  'OpenSource': OpenSourceIcon,
 };
 
 const DynamicMuiIcon = (props: {

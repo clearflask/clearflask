@@ -11,8 +11,6 @@ import DocsIcon from '@material-ui/icons/DescriptionRounded';
 import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
-import RequestTrackingIcon from '@material-ui/icons/Forum';
-import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuIcon from '@material-ui/icons/Menu';
 import BlogIcon from '@material-ui/icons/MenuBookOutlined';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
@@ -28,6 +26,7 @@ import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import DemoOnboardingLogin from '../app/DemoOnboardingLogin';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
+import OpenSourceIcon from '../common/icon/OpenSourceIcon';
 import { MenuButton, MenuDropdown, MenuItems } from '../common/menus';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { detectEnv, Environment } from '../common/util/detectEnv';
@@ -42,7 +41,6 @@ import Logo from './Logo';
 const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPrefetch: true */'./AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.Landing, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
@@ -59,6 +57,7 @@ const LandingPrioritization = loadable(() => import(/* webpackChunkName: "Landin
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
 const LandingEmbedFeedbackPage = loadable(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
+const LandingOpenSource = loadable(() => import(/* webpackChunkName: "LandingOpenSource" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingOpenSource, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -78,11 +77,6 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     minHeight: theme.vh(100),
-  },
-  pageSingleCustomer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
   },
   appBarSpacer: theme.mixins.toolbar,
   bottomBar: {
@@ -155,23 +149,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
     const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
     if (isSingleCustomer) {
       return (
-        <div className={this.props.classes.pageSingleCustomer}>
-          <MuiAnimatedSwitch>
-            <Route exact path='/login'>
-              <SetTitle title='Login' />
-              <AccountEnterPage type='login' />
-            </Route>
-            <Route exact path='/signup'>
-              <SetTitle title='Sign up' />
-              <AccountEnterPage type='signup' />
-            </Route>
-            {isSingleCustomer && (
-              <Route>
-                <RedirectIso to='/login' />
-              </Route>
-            )}
-          </MuiAnimatedSwitch>
-        </div>
+        <RedirectIso to='/login' />
       );
     }
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
@@ -188,38 +166,38 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/compare', title: 'Compare', icon: CompareIcon },
         ]
       },
-      {
-        type: 'dropdown', title: 'Solutions', items: [
-          { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
-          { type: 'button', link: '/solutions/product-roadmap', title: 'Product Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          // TODO Re-enable once Crowd-funding gets a revamp
-          // import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
-          // { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
-          { type: 'divider' },
-          { type: 'button', link: '/solutions/idea-management', title: 'Idea Management' },
-          // TODO Re-enable once Crowd-funding gets a revamp
-          // { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum' },
-          { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback' },
-        ]
-      },
+      { type: 'button', link: '/pricing', title: 'Pricing' },
+      // TODO Needs a complete SEO revamp
+      // {
+      //   type: 'dropdown', title: 'Solutions', items: [
+      //     { type: 'button', link: '/solutions/feature-request-tracking', title: 'Feature Request Tracking', icon: RequestTrackingIcon },
+      //     { type: 'button', link: '/solutions/product-roadmap', title: 'Product Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+      //     // TODO Re-enable once Crowd-funding gets a revamp
+      //     // import CrowdfundingIcon from '@material-ui/icons/MonetizationOn';
+      //     // { type: 'button', link: '/solutions/feature-crowdfunding', title: 'Feature Crowdfunding', icon: CrowdfundingIcon },
+      //     { type: 'divider' },
+      //     { type: 'button', link: '/solutions/idea-management', title: 'Idea Management' },
+      //     // TODO Re-enable once Crowd-funding gets a revamp
+      //     // { type: 'button', link: '/solutions/content-creator-forum', title: 'Content Creator Forum' },
+      //     { type: 'button', link: '/solutions/internal-feedback', title: 'Internal Feedback' },
+      //   ]
+      // },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
-          { type: 'button', link: '/e/roadmap', title: 'Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'divider' },
           { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
-          { type: 'button', link: `https://github.com/clearflask/clearflask`, linkIsExternal: true, title: 'Source', icon: GitHubIcon },
+          { type: 'divider' },
+          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          { type: 'button', link: `/open-source`, title: 'Open source', icon: OpenSourceIcon },
+          { type: 'button', link: '/e/roadmap', title: 'Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
         ]
       },
     ];
     const menuItemsRight: Array<MenuButton> = [
       (!!this.props.account
         ? { type: 'button', link: '/dashboard', title: 'Dashboard' }
-        : ((this.props.location.pathname === '/' || this.props.location.pathname === '/signup')
-          ? { type: 'button', link: '/login', title: 'Log in' }
-          : { type: 'button', link: '/signup', title: 'Sign up' })),
-      { type: 'button', link: '/pricing', title: 'Pricing' },
+        : { type: 'button', link: '/login', title: 'Log in' }),
+      { type: 'button', link: '/signup', title: 'Get started', primary: true, },
     ];
     const bottomNavigation: Array<MenuButton | MenuDropdown> = [
       ...menuItemsLeft,
@@ -294,17 +272,9 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
         <div className={this.props.classes.appBarSpacer} />
         <div className={classNames(this.props.classes.growAndFlex, this.props.classes.page)}>
           <MuiAnimatedSwitch>
-            <Route exact path='/login'>
-              <SetTitle title='Login' />
-              <AccountEnterPage type='login' />
-            </Route>
             <Route path='/contact'>
               <SetTitle title='Contact' />
               <ContactPage />
-            </Route>
-            <Route exact path='/signup'>
-              <SetTitle title='Sign up' />
-              <AccountEnterPage type='signup' />
             </Route>
             <Route exact path='/sso'>
               <SetTitle title='Single sign-on' />
@@ -387,10 +357,16 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
               <SetTitle title='Internal Feedback' />
               <LandingInternalFeedback />
             </Route>
+
+            <Route exact path='/open-source'>
+              <SetTitle title='Open source' />
+              <LandingOpenSource />
+            </Route>
             <Route exact path='/pricing'>
               <SetTitle title='Pricing' />
               <PricingPage />
             </Route>
+
             <Route path='/e'>
               <LandingEmbedFeedbackPage />
             </Route>
@@ -439,7 +415,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Grid>
           </Container>
         </div>
-      </div>
+      </div >
     );
   }
 

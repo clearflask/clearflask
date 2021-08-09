@@ -177,141 +177,139 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       </>
     );
 
+    const spacingClassname = classNames(!this.props.noSpacing && (isHero
+      ? this.props.classes.heroSpacing
+      : (this.props.type === 'mediumDemo'
+        ? this.props.classes.spacingMediumDemo
+        : this.props.classes.spacing)));
+    const spacingStyle = {
+      paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
+      paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
+    }
+
+    var content;
     if (this.props.type === 'demoOnly') {
-      return (
+      content = (
         <div
           className={classNames(
-            !this.props.noSpacing && this.props.classes.spacing,
+            spacingClassname,
             this.props.className,
           )}
-          style={{
-            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
-            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
-          }}
+          style={spacingStyle}
         >
-          {display}
-        </div>
-      );
-    }
-
-    var blockVariant;
-    switch (this.props.type) {
-      case 'hero':
-        blockVariant = 'hero';
-        break;
-      default:
-      case 'largeDemo':
-        blockVariant = 'heading';
-        break;
-      case 'column':
-        blockVariant = 'content';
-        break;
-      case 'headingMain':
-      case 'headingOnly':
-        blockVariant = 'headingMain';
-        break;
-    }
-    const { classes, ...blockContentProps } = this.props;
-    const content = (
-      <BlockContent
-        variant={blockVariant}
-        {...blockContentProps}
-      />
-    );
-
-    if (this.props.type === 'headingOnly') {
-      return (
-        <div
-          className={classNames(
-            !this.props.noSpacing && this.props.classes.spacing,
-            this.props.className,
-          )}
-          style={{
-            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
-            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
-          }}
-        >
-          {content}
-        </div>
-      );
-    }
-
-    if (this.props.type === 'column') {
-      return (
-        <div
-          className={`${this.props.classes.columnOnly} ${this.props.className || ''}`}
-        >
-          <div className={this.props.classes.columnContent}>
-            {!!image && this.props.imageLocation === 'above' && image}
-            {content}
-          </div>
           {display}
         </div>
       );
     } else {
-      const isLargeDemo = this.props.type === 'largeDemo';
-      const isMediumDemo = this.props.type === 'mediumDemo';
-      return (
-        <Grid
-          className={classNames(
-            !this.props.noSpacing && (isHero
-              ? this.props.classes.heroSpacing
-              : (isMediumDemo
-                ? this.props.classes.spacingMediumDemo
-                : this.props.classes.spacing)),
-            this.props.className)}
-          style={{
-            paddingTop: this.props.spacingTop !== undefined ? this.props.spacingTop : this.props.spacingTopBottom,
-            paddingBottom: this.props.spacingBottom !== undefined ? this.props.spacingBottom : this.props.spacingTopBottom,
-          }}
-          container
-          wrap='wrap-reverse'
-          direction={!this.props.mirror ? 'row-reverse' : undefined}
-          alignItems={this.props.alignItems !== undefined ? this.props.alignItems
-            : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
-          justify='center'
-        >
-          <Grid
-            item
-            className={classNames(this.props.classes.grid)}
-            alignItems={this.props.displayAlign || 'center'}
-            xs={12}
-            md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)}
-            lg={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
-            xl={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+      var blockVariant;
+      switch (this.props.type) {
+        case 'hero':
+          blockVariant = 'hero';
+          break;
+        default:
+        case 'largeDemo':
+          blockVariant = 'heading';
+          break;
+        case 'column':
+          blockVariant = 'content';
+          break;
+        case 'headingMain':
+        case 'headingOnly':
+          blockVariant = 'headingMain';
+          break;
+      }
+      const { classes, ...blockContentProps } = this.props;
+      content = (
+        <BlockContent
+          variant={blockVariant}
+          {...blockContentProps}
+        />
+      );
+
+      if (this.props.type === 'headingOnly') {
+        content = (
+          <div
+            className={classNames(
+              spacingClassname,
+              this.props.className,
+            )}
+            style={spacingStyle}
           >
-            {display}
-          </Grid>
-          <Grid
-            item
-            className={this.props.classes.grid}
-            alignItems='center'
-            xs={12}
-            sm={8}
-            md={isMediumDemo ? 3 : 6}
-            lg={isMediumDemo ? 4 : 5}
-            xl={4}
-          >
-            {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
             {content}
-          </Grid>
-          {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
+          </div>
+        );
+      } else if (this.props.type === 'column') {
+        content = (
+          <div
+            className={`${this.props.classes.columnOnly} ${this.props.className || ''}`}
+          >
+            <div className={this.props.classes.columnContent}>
+              {!!image && this.props.imageLocation === 'above' && image}
+              {content}
+            </div>
+            {display}
+          </div>
+        );
+      } else {
+        const isLargeDemo = this.props.type === 'largeDemo';
+        const isMediumDemo = this.props.type === 'mediumDemo';
+        content = (
+          <Grid
+            className={classNames(
+              spacingClassname,
+              this.props.className)}
+            style={spacingStyle}
+            container
+            wrap='wrap-reverse'
+            direction={!this.props.mirror ? 'row-reverse' : undefined}
+            alignItems={this.props.alignItems !== undefined ? this.props.alignItems
+              : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
+            justify='center'
+          >
+            <Grid
+              item
+              className={classNames(this.props.classes.grid)}
+              alignItems={this.props.displayAlign || 'center'}
+              xs={12}
+              md={isLargeDemo ? 12 : (isMediumDemo ? 9 : 6)}
+              lg={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+              xl={isLargeDemo ? 12 : (isMediumDemo ? 8 : 6)}
+            >
+              {display}
+            </Grid>
             <Grid
               item
               className={this.props.classes.grid}
               alignItems='center'
               xs={12}
               sm={8}
-              md={6}
-              lg={5}
+              md={isMediumDemo ? 3 : 6}
+              lg={isMediumDemo ? 4 : 5}
               xl={4}
             >
-              {image}
+              {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
+              {content}
             </Grid>
-          )}
-        </Grid>
-      );
+            {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
+              <Grid
+                item
+                className={this.props.classes.grid}
+                alignItems='center'
+                xs={12}
+                sm={8}
+                md={6}
+                lg={5}
+                xl={4}
+              >
+                {image}
+              </Grid>
+            )}
+          </Grid>
+        );
+      }
     }
+
+    return content;
   }
 }
 

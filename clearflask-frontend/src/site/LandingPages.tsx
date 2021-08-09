@@ -3,7 +3,8 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, fade, makeStyles, Theme } from '@material-ui/core/styles';
+import AccessibilityIcon from '@material-ui/icons/AccessibilityNew';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
 import LifecycleIcon from '@material-ui/icons/Autorenew';
@@ -67,6 +68,7 @@ import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
 import DemoDashboardFeedbackVid from '../../public/img/landing/demo-dashboard-feedback.mp4';
 import DemoDashboardFeedbackImg from '../../public/img/landing/demo-dashboard-feedback.png';
+import DemoDashboardRoadmapVid from '../../public/img/landing/demo-dashboard-roadmap.mp4';
 import DemoDashboardRoadmapImg from '../../public/img/landing/demo-dashboard-roadmap.png';
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif2.png';
@@ -86,6 +88,7 @@ import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
+import InstallImg from '../../public/img/landing/install.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
@@ -98,6 +101,7 @@ import SeeWhatElseImg from '../../public/img/landing/see-what-else.png';
 import SupportImg from '../../public/img/landing/support.svg';
 import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
+import VersionControlImg from '../../public/img/landing/versioncontrol.svg';
 import SalesImg from '../../public/img/support/sales.svg';
 import * as Admin from '../api/admin';
 import * as Client from '../api/client';
@@ -115,6 +119,7 @@ import { Device } from '../common/DeviceContainer';
 import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
+import LockSimpleIcon from '../common/icon/LockSimpleIcon';
 import ImgIso from '../common/ImgIso';
 import Stack from '../common/Stack';
 import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
@@ -122,6 +127,7 @@ import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
+import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -609,7 +615,6 @@ export function LandingGraveyard() {
         buttonLink='/solutions/feature-crowdfunding'
       />
       <LandingLoop />
-      <LandingEngagementHero />
       <LandingCustomizeHero />
       <Demo
         type='mediumDemo'
@@ -640,23 +645,28 @@ export function LandingGraveyard() {
 
 export function LandingHero() {
   return (
-    <Hero
-      title={(
-        <>Open feedback.<br />Open roadmap.</>)}
-      description='Product Feedback Tool to keep you close to your customers'
-      // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
-      vidyard={{
-        image: PromoThumb,
-        uuid: 'EZK7e1kRjWzamC3PMMNuUh',
-      }}
-      mirror
-      buttonTitle='Get started'
-      buttonLink='/signup'
-      buttonRemark={(
-        <TrialInfoText />
-      )}
-      buttonAddOauth
-    />
+    <Background svg={{
+      d: 'm 172 63 c -170 -16 -71 162 -59 187 C 131 294 67 369 118 415 C 179 466 401 477 550 371 c 89 -59 226 139 379 -8 c 31 -36 196 -234 34 -287 c -309 -122 -184 87 -791 -13',
+      viewBox: '0 0 1200 500',
+    }} width={2400} height={1000}>
+      <Hero
+        title={(
+          <>Open feedback.<br />Open roadmap.</>)}
+        description='Product Feedback Tool to keep you close to your customers'
+        // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
+        vidyard={{
+          image: PromoThumb,
+          uuid: 'EZK7e1kRjWzamC3PMMNuUh',
+        }}
+        mirror
+        buttonTitle='Get started'
+        buttonLink='/signup'
+        buttonRemark={(
+          <TrialInfoText />
+        )}
+        buttonAddOauth
+      />
+    </Background>
   );
 }
 
@@ -709,7 +719,6 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
         arrow
         clickAway
         paperClassName={classes.demoEmbedPopper}
-        keepMounted
       >
         <iframe
           title='Demo: ClearFlask Feedback'
@@ -814,15 +823,20 @@ export function LandingCollectFeedback() {
   const onboardingDemoRef = useRef(null);
   return (
     <>
-      <Demo
-        type='hero'
-        title='Ask for feedback'
-        description='Collect customer feedback all in one place from all your support channels'
-        image={ListenImg}
-        imageLocation='above'
-        demoImage={DemoPortalFeedbackVid}
-        demoWrap='browser'
-      />
+      <Background svg={{
+        d: 'm 269 57 c -155 -7 -211 73 -180 144 C 135 297 50 378 119 519 c 64 58 463 65 569 -10 c 119 -87 483 103 528 -47 c 52 -187 137 -305 -104 -351 C 809 75 878 198 765 122 C 544 -30 434.3333 78.6667 269 57',
+        viewBox: '0 0 1400 500',
+      }} offsetY='-50px' width={1700} height={700}>
+        <Demo
+          type='hero'
+          title='Ask for feedback'
+          description='Collect customer feedback all in one place from all your support channels'
+          image={ListenImg}
+          imageLocation='above'
+          demoImage={DemoPortalFeedbackVid}
+          demoWrap='browser'
+        />
+      </Background>
       <Block
         mirror
         title='#1 Capture words instead of votes'
@@ -865,13 +879,13 @@ export function LandingCollectFeedback() {
         spacingTopBottom={0}
       />
       <Block
-        title='Integration points'
+        title='Integrate with your product'
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
         <LandingClearFlaskDemo
           type='column'
-          title='Portal'
+          title='Link to portal'
           path='/embed/feedback'
           description={(
             <>
@@ -879,14 +893,13 @@ export function LandingCollectFeedback() {
             </>
           )}
           fakeBrowserProps={{
-            fixedHeight: 200,
+            fixedHeight: 250,
             addressBarContent: 'feedback.yoursite.com',
-            // darkMode: true,
           }}
         />
         <Block
           type='column'
-          title='Widget'
+          title='Website Widget'
           description='Embed inside your website using IFrames either entire ClearFlask portal or individual pages.'
           demo={(
             <div className={classes.demoEmbedButtons}>
@@ -918,7 +931,7 @@ export function LandingCollectFeedback() {
       <Demo
         type='headingMain'
         alignItems='flex-start'
-        title='Alway keep a line of communication open'
+        title='Always keep a line of communication open'
         description='Introduce the least amount of friction by choosing the communication channel for your users.'
         initialSubPath='/embed/demo'
         demoFixedWidth={420}
@@ -1149,6 +1162,69 @@ export function LandingPrioritization() {
   );
 }
 
+export function LandingOpenSource() {
+  return (
+    <>
+      <Block
+        type='hero'
+        title="We're Open-Source"
+        description='Build software with us for the whole community or host an instance on your own infrastructure.'
+        image={VersionControlImg}
+      />
+      <Block
+        title='Why open source?'
+        spacingBottom={0}
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
+        <Block
+          type='column'
+          icon={(<IdeasIcon />)}
+          title='Open product development'
+          description='We are targetting companies that are not afraid to open up their product development. It makes sense for us to follow the same path.'
+        />
+        <Block
+          type='column'
+          icon={(<AccessibilityIcon />)}
+          title='Accessibility'
+          description='Some individuals or organizations cannot afford a product financially, but they do have developers to host their own instance and even contribute fixes and features back to the project.'
+        />
+        <Block
+          type='column'
+          icon={(<LockSimpleIcon />)}
+          title='Lock-in'
+          description='Open-source ensures your feet are not swept under you by a vendor if they raise their prices unreasonably, stop maintenance, or keep your data hostage.'
+        />
+      </HorizontalPanels>
+      <Block
+        title='Where is the source?'
+        spacingBottom={0}
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <Block
+          type='column'
+          icon={(<GithubIcon />)}
+          title='Contribute'
+          description='If you want to contribute a fix or a new feature, check out our project on GitHub.'
+          buttonTitle='Check it out'
+          buttonLinkExt='https://github.com/clearflask/clearflask'
+          buttonVariant='contained'
+          buttonSuppressIcon
+        />
+        <Block
+          type='column'
+          icon={(<StorageIcon />)}
+          title='Self-host'
+          description='If you are looking to host an instance on your own infrastructure, check out our installation intructions.'
+          buttonTitle='Installation'
+          buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
+          buttonVariant='contained'
+          buttonSuppressIcon
+        />
+      </HorizontalPanels>
+    </>
+  );
+}
+
 export function LandingCaseStudies() {
   return (
     <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
@@ -1233,26 +1309,24 @@ export function LandingEngagementRoadmap() {
   );
 }
 
-export function LandingEngagementHero(props: { isHero?: boolean }) {
-  return (
-    <Block
-      type={props.isHero ? 'hero' : 'headingMain'}
-      title='Act'
-      description='Become a customer-centric organization with transparent customer-driven product development.'
-      mirror
-      image={NotifyImg}
-      {...(props.isHero ? {} : {
-        buttonTitle: 'Learn more',
-        buttonLink: '/product/act',
-      })}
-    />
-  );
-}
 export function LandingEngagement() {
   return (
     <>
-      <LandingEngagementHero isHero />
-
+      <Background svg={{
+        d: 'M0.00,49.98 C150.00,150.00 271.49,-50.00 500.00,49.98 L500.00,0.00 L0.00,0.00 Z',
+        viewBox: '0 0 500 150',
+        flexible: true,
+      }}>
+        <Demo
+          type='hero'
+          title='Take action based on feedback'
+          description='Switch to customer-driven product development.'
+          demoImage={DemoDashboardRoadmapVid}
+          demoWrap='browser'
+          image={NotifyImg}
+          imageLocation='above'
+        />
+      </Background>
       <Block
         title='Keep your stakeholders informed'
         description='Transparency between development and your stakeholders is an important part of your success.'
@@ -2561,33 +2635,41 @@ export function LandingPricingOptions() {
   const classes = useStyles();
   return (
     <>
-      <Block
-        className={classes.textAlignCenter}
-        type='headingOnly'
-        title="How to get started"
-      />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <Background svg={{
+        d: 'M0.00,49.98 C170.43,327.13 274.26,-119.92 500.00,49.98 L500.00,150.00 L0.00,150.00 Z',
+        viewBox: '0 0 500 150',
+        flexible: true,
+      }}>
         <Block
-          type='column'
-          title='Scalable cloud solution'
-          description='Hassle-free scalable solution with pay for what you use pricing.'
-          buttonTitle='Get started'
-          buttonLink='/signup'
-          buttonVariant='contained'
-          buttonSuppressIcon
-          image={ArchitectureImg}
+          className={classes.textAlignCenter}
+          type='headingOnly'
+          title="How to get started"
         />
-        <Block
-          type='column'
-          title='Self hosted solution'
-          description='Install and manage on your own infrastructure.'
-          buttonTitle='Open source'
-          buttonLink='/open-source'
-          buttonVariant='contained'
-          buttonSuppressIcon
-          image={HtmlImg}
-        />
-      </HorizontalPanels>
+      </Background>
+      <Background backgroundColor={fade('#218774', 0.05)}>
+        <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+          <Block
+            type='column'
+            title='Scalable cloud solution'
+            description='Hassle-free scalable solution with pay for what you use pricing.'
+            buttonTitle='Try it out'
+            buttonLink='/signup'
+            buttonVariant='contained'
+            buttonSuppressIcon
+            image={ArchitectureImg}
+          />
+          <Block
+            type='column'
+            title='Self-hosted solution'
+            description='Install and manage on your own infrastructure.'
+            buttonTitle='Get started'
+            buttonLink='/open-source'
+            buttonVariant='contained'
+            buttonSuppressIcon
+            image={InstallImg}
+          />
+        </HorizontalPanels>
+      </Background>
     </>
   );
 }

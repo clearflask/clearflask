@@ -22,6 +22,7 @@ import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import { redirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
+import { SetTitle } from './common/util/titleUtil';
 import windowIso from './common/windowIso';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
@@ -46,6 +47,7 @@ const Dashboard = loadable(() => import(/* webpackChunkName: "dashboard" */'./si
 const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPrefetch: true */'./site/AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 interface Props {
   ssrLocation?: string;
@@ -193,6 +195,13 @@ class Main extends Component<Props> {
                         )} />
                       )] : []),
                       ...(!isProject ? [(
+                        <Route key='enter' exact path='/:type(login|signup)' render={props => (
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <SetTitle title={props.match.params['type'] === 'login' ? 'Login' : 'Sign up'} />
+                            <AccountEnterPage type={props.match.params['type'] === 'login' ? 'login' : 'signup'} />
+                          </Provider>
+                        )} />
+                      ), (
                         <Route key='site' render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
                             <SentryIdentifyAccount />

@@ -3,6 +3,7 @@
 import { Button, Grid, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GithubIcon from '@material-ui/icons/GitHub';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import ServerAdmin from '../../api/serverAdmin';
@@ -115,7 +116,7 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
       />
     ) : undefined);
     return (
-      <div className={this.props.classes.hero}>
+      <div className={classNames(this.props.classes.hero)}>
         <Grid container
           justify='center'
           wrap='wrap-reverse'

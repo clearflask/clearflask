@@ -48,7 +48,7 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     padding: theme.spacing(2),
-    flex: '1 1 auto',
+    minHeight: '100vh',
     overflow: 'hidden',
   },
   titleClearFlask: {

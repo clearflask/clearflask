@@ -9,15 +9,13 @@
 
 ## Deploy dependencies
 
-There are several dependencies required for ClearFlask that you must deploy:
+There are several dependencies required for ClearFlask that are required:
 
-Required:
-
-- **AWS DynamoDB**
-- **AWS S3**
+- **AWS DynamoDB** or alternative
+- **AWS S3** or alternative
 - **ElasticSearch**
-- **AWS SES** or **SMTP service**
-- **Google ReCaptcha** (Obtain free keys [here](https://www.google.com/recaptcha/admin))
+- **AWS SES** or any SMTP endpoint
+- **Google ReCaptcha** (Obtain free V2 keys [here](https://www.google.com/recaptcha/admin))
 
 Optional:
 
