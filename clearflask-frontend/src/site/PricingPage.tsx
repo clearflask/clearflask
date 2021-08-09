@@ -17,6 +17,7 @@ import HelpPopper from '../common/HelpPopper';
 import ImgIso from '../common/ImgIso';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
+import Background from './landing/Background';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 
@@ -65,10 +66,12 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
 ];
 
 const styles = (theme: Theme) => createStyles({
-  page: {
-    margin: theme.spacing(6),
-    [theme.breakpoints.down('xs')]: {
-      margin: theme.spacing(1),
+  section: {
+    width: theme.breakpoints.values.md,
+    margin: 'auto',
+    padding: theme.spacing(2, 6),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1),
     },
   },
   header: {
@@ -120,29 +123,35 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
 
   render() {
     return (
-      <div className={this.props.classes.page}>
-        <Container maxWidth='md'>
-          <div className={this.props.classes.header}>
-            <div>
-              <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
+      <>
+        <Background svg={{
+          d: 'M 0 49.98 C 0 120 16 137 94 136 C 361 122 252 -31 500 49.98 L 500 0 L 0 0 Z',
+          viewBox: '0 0 500 150',
+          flexible: true,
+        }}>
+          <div className={this.props.classes.section}>
+            <div className={this.props.classes.header}>
+              <div>
+                <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
+                <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
+              </div>
+              <Container maxWidth='md'>
+                <ImgIso
+                  alt=''
+                  className={this.props.classes.image}
+                  src={PricingImg.pathname}
+                  aspectRatio={PricingImg.aspectRatio}
+                  maxWidth={PricingImg.width}
+                  maxHeight={PricingImg.height}
+                />
+              </Container>
             </div>
-            <Container maxWidth='md'>
-              <ImgIso
-                alt=''
-                className={this.props.classes.image}
-                src={PricingImg.pathname}
-                aspectRatio={PricingImg.aspectRatio}
-                maxWidth={PricingImg.width}
-                maxHeight={PricingImg.height}
-              />
-            </Container>
           </div>
-        </Container>
+        </Background>
         <br />
         <br />
         <br />
-        <Container maxWidth='md'>
+        <div className={this.props.classes.section}>
           <Loader loaded={!!this.props.plans} skipFade>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
               {this.props.plans && this.props.plans.map((plan, index) => (
@@ -183,12 +192,12 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               </Grid>
             </Grid>
           </Loader>
-        </Container>
+        </div>
         <br />
         <br />
         <br />
         {this.props.featuresTable && (
-          <Container maxWidth='md'>
+          <div className={this.props.classes.section}>
             <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
               {this.props.featuresTable.features.map((feature, index) => (
                 <FeatureListItem
@@ -204,12 +213,12 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
               </Box>
             )}
-          </Container>
+          </div>
         )}
         <br />
         <br />
         <br />
-        <Container maxWidth='md'>
+        <div className={this.props.classes.section}>
           <Grid container spacing={5} alignItems='stretch' justify='center'>
             {Faq.map((faqItem, index) => (
               <Grid key={index} item xs={12} sm={6}>
@@ -225,8 +234,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               </Grid>
             ))}
           </Grid>
-        </Container>
-      </div>
+        </div>
+      </>
     );
   }
 

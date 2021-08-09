@@ -126,28 +126,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     super(props);
 
     if (this.props.navigatorRef) this.props.navigatorRef.current = this;
-
-    if (!!this.props.showDrafts && !this.props.draftSearchStatus) {
-      this.props.server.dispatchAdmin().then(d => d.ideaDraftSearchAdmin({
-        projectId: this.props.server.getProjectId(),
-        ideaDraftSearch: this.props.draftSearchMerged || {},
-      }));
-    }
-
-    if (!this.props.searchStatus) {
-      this.loadMore();
-    } else if (this.props.missingVotes?.length) {
-      const missingVotes = this.props.missingVotes;
-      this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
-        projectId: this.props.projectId!,
-        ideaIds: missingVotes,
-        myOwnIdeaIds: missingVotes
-          .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
-          .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
-          .map(idea => idea?.ideaId)
-          .filter(notEmpty),
-      }));
-    }
   }
 
   async loadMore(): Promise<undefined | Client.IdeaWithVoteSearchResponse | Admin.IdeaSearchResponse> {
@@ -175,7 +153,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 
   shouldComponentUpdate = customShouldComponentUpdate({
-    nested: new Set(['panel', 'displayDefaults', 'searchOverride', 'searchOverrideAdmin', 'PostProps']),
+    nested: new Set(['panel', 'displayDefaults', 'searchOverride', 'searchOverrideAdmin', 'PostProps', 'missingVotes']),
   });
 
   componentDidUpdate(prevProps, prevState) {
@@ -188,6 +166,28 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   }
 
   render() {
+    if (!!this.props.showDrafts && !this.props.draftSearchStatus) {
+      this.props.server.dispatchAdmin().then(d => d.ideaDraftSearchAdmin({
+        projectId: this.props.server.getProjectId(),
+        ideaDraftSearch: this.props.draftSearchMerged || {},
+      }));
+    }
+
+    if (!this.props.searchStatus) {
+      this.loadMore();
+    } else if (this.props.missingVotes?.length) {
+      const missingVotes = this.props.missingVotes;
+      this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
+        projectId: this.props.projectId!,
+        ideaIds: missingVotes,
+        myOwnIdeaIds: missingVotes
+          .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
+          .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
+          .map(idea => idea?.ideaId)
+          .filter(notEmpty),
+      }));
+    }
+
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
       ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];

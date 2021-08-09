@@ -8,12 +8,12 @@ import IntercomWrapper, { IntercomWrapperConnectProps } from './IntercomWrapper'
 const PROD_APP_ID = 'zklmfmdu';
 const TEST_APP_ID = 'ga9fvvhx';
 
-export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((state) => {
+export default connect<IntercomWrapperConnectProps, {}, { suppressBind?: boolean }, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: IntercomWrapperConnectProps = {
     dontUseThisComponentDirectly: true,
   };
 
-  if (state.account.account.status === undefined) {
+  if (state.account.account.status === undefined && !ownProps.suppressBind) {
     connectProps.callOnMount = () => {
       ServerAdmin.get().dispatchAdmin()
         .then(d => d.accountBindAdmin({ accountBindAdmin: {} }));

@@ -141,10 +141,12 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         this.cfReturnUrl = paramCfr;
       }
     } catch (er) { }
+  }
 
+  componentDidMount() {
     const oauthToken = this.oauthFlow.checkResult();
 
-    if (props.accountStatus === undefined) {
+    if (this.props.accountStatus === undefined) {
       ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({
         accountBindAdmin: {
           oauthToken: !oauthToken ? undefined : {

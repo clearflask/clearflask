@@ -282,7 +282,6 @@ interface ConnectProps {
 }
 interface State {
   currentPagePath: ConfigEditor.Path;
-  binding?: boolean;
   selectedProjectId?: string;
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
@@ -332,24 +331,12 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   constructor(props) {
     super(props);
 
+    this.state = {
+      currentPagePath: [],
+    };
+
     Dashboard.getStripePromise();
 
-    if (props.accountStatus === undefined) {
-      this.state = {
-        currentPagePath: [],
-        binding: true,
-      };
-      this.bind();
-    } else if (props.accountStatus === Status.FULFILLED && !props.configsStatus) {
-      this.state = {
-        currentPagePath: [],
-      };
-      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
-    } else {
-      this.state = {
-        currentPagePath: [],
-      };
-    }
     const searchAccountsDebounced = debounce(
       (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
         accountSearchSuperAdmin: {
@@ -365,6 +352,14 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     this.searchAccounts = newValue => {
       this.setState({ accountSearching: newValue });
       searchAccountsDebounced(newValue);
+    }
+  }
+
+  componentDidMount() {
+    if (this.props.accountStatus === undefined) {
+      this.bind();
+    } else if (!this.props.configsStatus) {
+      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
     }
   }
 
@@ -393,12 +388,12 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       }
       const dispatcher = await ServerAdmin.get().dispatchAdmin();
       const result = await dispatcher.accountBindAdmin({ accountBindAdmin: {} });
-      this.setState({ binding: false })
       if (result.account) {
         dispatcher.configGetAllAndUserBindAllAdmin();
+        this.forceUpdate();
       }
     } catch (er) {
-      this.setState({ binding: false });
+      this.forceUpdate();
     }
   }
 
@@ -407,7 +402,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   }
 
   render() {
-    if (!this.state.binding && this.props.accountStatus !== Status.FULFILLED && !this.props.account) {
+    if (this.props.accountStatus !== undefined && !this.props.account) {
       return (<Redirect to={{
         pathname: "/login",
         state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
@@ -912,11 +907,11 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     } else if (previewState.type === 'create-post') {
       section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts);
     } else if (previewState.type === 'post') {
-      section = this.renderPreviewPost(previewState.id, preview.project, previewState.headerTitle);
+      section = this.renderPreviewPost(previewState.id, preview.stateKey, preview.project, previewState.headerTitle);
     } else if (previewState.type === 'create-user') {
-      section = this.renderPreviewUserCreate(preview.project);
+      section = this.renderPreviewUserCreate(preview.stateKey, preview.project);
     } else if (previewState.type === 'user') {
-      section = this.renderPreviewUser(previewState.id, preview.project);
+      section = this.renderPreviewUser(previewState.id, preview.stateKey, preview.project);
     }
     if (section && preview.extra) {
       section = {
@@ -927,7 +922,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     return section;
   }
 
-  renderPreviewPost(postId: string, project: AdminProject, headerTitle?: string): Section {
+  renderPreviewPost(postId: string, stateKey: keyof State, project: AdminProject, headerTitle?: string): Section {
     return {
       name: 'preview',
       breakAction: 'drawer',
@@ -945,6 +940,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 postId={postId}
                 onClickPost={postId => this.pageClicked('post', [postId])}
                 onUserClick={userId => this.pageClicked('user', [userId])}
+                onDeleted={() => this.setState({ [stateKey]: undefined } as any)}
               />
             </div>
           </Fade>
@@ -953,7 +949,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     };
   }
 
-  renderPreviewUser(userId: string, project?: AdminProject): Section {
+  renderPreviewUser(userId: string, stateKey: string, project?: AdminProject): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
@@ -965,7 +961,13 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         <Provider key={project.projectId} store={project.server.getStore()}>
           <Fade key={userId} in appear>
             <div>
-              <UserPage key={userId} server={project.server} userId={userId} />
+              <UserPage
+                key={userId}
+                server={project.server}
+                userId={userId}
+                suppressSignOut
+                onDeleted={() => this.setState({ [stateKey]: undefined } as any)}
+              />
             </div>
           </Fade>
         </Provider>
@@ -1028,7 +1030,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     };
   }
 
-  renderPreviewUserCreate(project?: AdminProject): Section {
+  renderPreviewUserCreate(stateKey: keyof State, project?: AdminProject): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
@@ -1037,11 +1039,17 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       breakAction: 'drawer',
       size: UserPreviewSize,
       content: (
-        <Fade key='user-create' in appear>
-          <div>
-            TODO user create
-          </div>
-        </Fade>
+        <Provider key={project.projectId} store={project.server.getStore()}>
+          <Fade key='user-create' in appear>
+            <div>
+              <UserPage
+                server={project.server}
+                suppressSignOut
+                onDeleted={() => this.setState({ [stateKey]: undefined } as any)}
+              />
+            </div>
+          </Fade>
+        </Provider>
       ),
     };
   }

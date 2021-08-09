@@ -172,7 +172,7 @@ class Main extends Component<Props> {
                             <NoSsr>
                               <Dashboard {...props} />
                             </NoSsr>
-                            <IntercomWrapperMain />
+                            <IntercomWrapperMain suppressBind />
                             <HotjarWrapperMain />
                           </Provider>
                         )} />

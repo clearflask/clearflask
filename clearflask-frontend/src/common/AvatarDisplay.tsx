@@ -76,7 +76,7 @@ interface Props {
   type?: 'initials' | 'bauhaus' | 'beam',
   size?: number;
   user?: {
-    userId: string;
+    userId?: string;
     name?: string;
     isMod?: boolean;
     pic?: string;
@@ -95,7 +95,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'beam':
         avatar = (
           <BoringAvatar
-            name={userName}
+            name={userName.replaceAll(' ', '')}
             variant='beam'
             size={size}
             colors={[
@@ -111,7 +111,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'bauhaus':
         avatar = (
           <BoringAvatar
-            name={userName}
+            name={userName.replaceAll(' ', '')}
             variant='bauhaus'
             size={size}
             colors={[

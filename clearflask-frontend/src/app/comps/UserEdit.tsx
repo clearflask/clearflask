@@ -1,354 +1,840 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, IconButton, InputAdornment, Switch, TextField } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import EditIcon from '@material-ui/icons/Edit';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
+import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { Server } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
+import AvatarDisplay from '../../common/AvatarDisplay';
 import CreditView from '../../common/config/CreditView';
-import SubmitButton from '../../common/SubmitButton';
-import { saltHashPassword } from '../../common/util/auth';
+import WebNotification, { Status as WebNotificationStatus } from '../../common/notification/webNotification';
+import { DisplayUserName } from '../../common/UserDisplay';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import DividerCorner from '../utils/DividerCorner';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
+import LoadingPage from '../LoadingPage';
+import { PanelTitle } from './Panel';
 
 const styles = (theme: Theme) => createStyles({
-  row: {
-    padding: theme.spacing(2),
+  settings: {
+    minWidth: 400,
     display: 'flex',
+    flexDirection: 'column',
   },
-  dividerCorner: {
-    maxWidth: 600,
+  title: {
+    minWidth: '100%',
+    margin: theme.spacing(0, 5),
+  },
+  section: {
+    flex: '1 1 auto',
+    margin: theme.spacing(4, 1, 4),
+    maxWidth: 500,
+  },
+  item: {
+    marginTop: theme.spacing(2),
+    marginLeft: theme.spacing(4),
+  },
+  itemControls: {
+    display: 'flex',
+    alignItems: 'center',
   },
 });
-
 interface Props {
   className?: string;
   server: Server;
-  user: Admin.UserAdmin;
-  credits: Client.Credits;
-  isMe: boolean;
-  isInsideDialog?: boolean;
-  onUpdated: (user: Admin.UserAdmin) => void;
-  onDeleted: () => void;
-  /** If set, shows a close button */
-  onClose?: () => void;
+  /** If empty, create form is shown */
+  userId?: string;
+  suppressSignOut?: boolean;
+  onDeleted?: () => void;
+}
+interface ConnectProps {
+  configver?: string;
+  config?: Client.Config;
+  loggedInUser?: Client.UserMe;
+  loggedInUserBalance?: number;
+  user?: Client.User;
+  categories?: Client.Category[];
+  credits?: Client.Credits;
 }
 interface State {
+  createdUserId?: string;
+  userAdmin?: Admin.UserAdmin;
+  userAdminStatus?: Status;
   deleteDialogOpen?: boolean;
-  isSubmitting?: boolean;
-  name?: string;
+  displayName?: string;
   email?: string;
   password?: string;
   revealPassword?: boolean;
+  signoutWarnNoEmail?: boolean;
+  isMod?: boolean;
+  transactionCreateOpen?: boolean;
   balanceAdjustment?: string;
   balanceDescription?: string;
-  emailNotify?: boolean;
-  iosPush?: boolean;
-  androidPush?: boolean;
-  browserPush?: boolean;
-  isMod?: boolean;
 }
-class UserEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
+class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   state: State = {};
+  userAdminFetchedForUserId: string | undefined;
 
   render() {
-    const balanceAdjustmentChanged = this.state.balanceAdjustment !== undefined && (+this.state.balanceAdjustment !== 0);
-    const balanceAdjustmentHasError = !!this.state.balanceAdjustment && (!parseInt(this.state.balanceAdjustment) || !+this.state.balanceAdjustment || parseInt(this.state.balanceAdjustment) !== parseFloat(this.state.balanceAdjustment));
-    const canSubmit =
-      !balanceAdjustmentHasError
-      && (
-        this.state.name !== undefined
-        || this.state.email !== undefined
-        || this.state.password !== undefined
-        || balanceAdjustmentChanged
-        || this.state.emailNotify !== undefined
-        || this.state.iosPush !== undefined
-        || this.state.androidPush !== undefined
-        || this.state.browserPush !== undefined
-        || this.state.isMod !== undefined
-      );
+    const userId = this.props.userId || this.state.createdUserId;
 
-    var editForm = (
-      <>
-        <DialogContent>
-          <Grid container alignItems='baseline'>
-            <Grid item xs={8} className={this.props.classes.row}>
-              <TextField
-                variant='outlined'
-                size='small'
-                disabled={this.state.isSubmitting}
-                label='Name'
-                fullWidth
-                value={(this.state.name === undefined ? this.props.user.name : this.state.name) || ''}
-                onChange={e => this.setState({ name: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={4} className={this.props.classes.row}>
-              <TextField
-                variant='outlined'
-                size='small'
-                disabled={this.state.isSubmitting}
-                label='User ID'
-                fullWidth
-                value={this.props.user.userId}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                className={this.props.classes.row}
-                disabled={this.state.isSubmitting}
-                control={(
-                  <Switch
-                    checked={this.state.isMod === undefined ? this.props.user.isMod : this.state.isMod}
-                    onChange={(e, checked) => this.setState({ isMod: checked === this.props.user.isMod ? undefined : checked })}
-                    color='primary'
-                  />
-                )}
-                label={`Moderator`}
-              />
-            </Grid>
-            <Grid item xs={12} className={this.props.classes.row}>
-              <TextField
-                variant='outlined'
-                size='small'
-                disabled={this.state.isSubmitting || !!this.props.user.isExternal}
-                label='Email'
-                fullWidth
-                helperText={!!this.props.user.isExternal ? 'Cannot be changed' : undefined}
-                value={(this.state.email === undefined ? this.props.user.email : this.state.email) || ''}
-                onChange={e => this.setState({ email: e.target.value })}
-              />
-            </Grid>
-            {!this.props.user.isExternal && (
-              <Grid item xs={12} className={this.props.classes.row}>
-                <TextField
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Set password'
-                  type={this.state.revealPassword ? 'text' : 'password'}
-                  fullWidth
-                  value={this.state.password || ''}
-                  onChange={e => this.setState({ password: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          aria-label='Toggle password visibility'
-                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                          disabled={this.state.isSubmitting}
-                        >
-                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            )}
-            <Grid item xs={12}>
-              <FormControlLabel
-                className={this.props.classes.row}
-                disabled={this.state.isSubmitting
-                  || this.state.email === ''
-                  || (this.state.email === undefined && this.props.user.email === undefined)}
-                control={(
-                  <Switch
-                    checked={this.state.emailNotify === undefined ? this.props.user.emailNotify : this.state.emailNotify}
-                    onChange={(e, checked) => this.setState({ emailNotify: checked === this.props.user.emailNotify ? undefined : checked })}
-                    color='primary'
-                  />
-                )}
-                label={`Notifications sent to email`}
-              />
-            </Grid>
-            {this.props.user.iosPush && (
-              <Grid item xs={12}>
-                <FormControlLabel
-                  className={this.props.classes.row}
-                  disabled={this.state.isSubmitting}
-                  control={(
-                    <Switch
-                      checked={this.state.iosPush === undefined ? this.props.user.iosPush : this.state.iosPush}
-                      onChange={(e, checked) => this.setState({ iosPush: checked === this.props.user.iosPush ? undefined : checked })}
-                      color='primary'
-                    />
-                  )}
-                  label={`Notifications sent to Apple Push`}
-                />
-              </Grid>
-            )}
-            {this.props.user.androidPush && (
-              <Grid item xs={12}>
-                <FormControlLabel
-                  className={this.props.classes.row}
-                  disabled={this.state.isSubmitting}
-                  control={(
-                    <Switch
-                      checked={this.state.androidPush === undefined ? this.props.user.androidPush : this.state.androidPush}
-                      onChange={(e, checked) => this.setState({ androidPush: checked === this.props.user.androidPush ? undefined : checked })}
-                      color='primary'
-                    />
-                  )}
-                  label={`Notifications sent to Android Push`}
-                />
-              </Grid>
-            )}
-            {this.props.user.browserPush && (
-              <Grid item xs={12}>
-                <FormControlLabel
-                  className={this.props.classes.row}
-                  disabled={this.state.isSubmitting}
-                  control={(
-                    <Switch
-                      checked={this.state.browserPush === undefined ? this.props.user.browserPush : this.state.browserPush}
-                      onChange={(e, checked) => this.setState({ browserPush: checked === this.props.user.browserPush ? undefined : checked })}
-                      color='primary'
-                    />
-                  )}
-                  label={`Notifications sent to Browser Push`}
-                />
-              </Grid>
-            )}
-            <Grid item xs={6} className={this.props.classes.row}>
-              <TextField
-                variant='outlined'
-                size='small'
-                disabled={this.state.isSubmitting}
-                label='Balance'
-                value={this.state.balanceAdjustment || ''}
-                error={balanceAdjustmentHasError}
-                helperText={balanceAdjustmentHasError ? 'Invalid number' : (
-                  !this.state.balanceAdjustment ? undefined : (
-                    <CreditView
-                      val={+this.state.balanceAdjustment}
-                      credits={this.props.credits}
-                    />
-                  ))}
-                onChange={e => this.setState({ balanceAdjustment: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={6} className={this.props.classes.row}>
-              <TextField
-                variant='outlined'
-                size='small'
-                disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
-                label='Reason'
-                value={this.state.balanceDescription || ''}
-                onChange={e => this.setState({ balanceDescription: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={12} className={this.props.classes.row}>
-              Account balance after adjustment:&nbsp;&nbsp;
-              <CreditView
-                val={(this.props.user.balance || 0) + (!balanceAdjustmentHasError && balanceAdjustmentChanged && this.state.balanceAdjustment !== undefined ? +this.state.balanceAdjustment : 0)}
-                credits={this.props.credits}
-              />
+    const isMe = !!this.props.loggedInUser && this.props.loggedInUser.userId === userId;
+    const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
+
+    var content;
+    if (!userId) {
+      // Create form
+      if (!isModOrAdminLoggedIn) return null;
+      content = (
+        <div key='create-form' className={this.props.classes.section}>
+          <PanelTitle text='Create user' />
+          <Grid container alignItems='center' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+            <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+              <AvatarDisplay user={{
+                name: this.state.displayName || '',
+              }} size={40} />
             </Grid>
           </Grid>
-        </DialogContent>
-        <DialogActions>
-          {this.props.onClose && (
-            <Button onClick={() => this.props.onClose && this.props.onClose()}>Close</Button>
-          )}
-          <SubmitButton
-            isSubmitting={this.state.isSubmitting}
-            style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
-            onClick={() => this.setState({ deleteDialogOpen: true })}
-          >Delete</SubmitButton>
-          <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
-            this.setState({ isSubmitting: true });
-            this.props.server.dispatchAdmin().then(d => d.userUpdateAdmin({
-              projectId: this.props.server.getProjectId(),
-              userId: this.props.user.userId,
-              userUpdateAdmin: {
-                name: this.state.name,
-                email: this.state.email,
-                password: this.state.password !== undefined ? saltHashPassword(this.state.password) : undefined,
-                emailNotify: this.state.emailNotify,
-                iosPush: this.state.iosPush,
-                androidPush: this.state.androidPush,
-                browserPush: this.state.browserPush,
-                isMod: this.state.isMod,
-                transactionCreate: (this.state.balanceAdjustment !== undefined && balanceAdjustmentChanged) ? {
-                  amount: +this.state.balanceAdjustment,
-                  summary: this.state.balanceDescription,
-                } : undefined,
-              },
-            }, {
-              isMe: this.props.isMe,
-            }))
-              .then(user => {
-                this.setState({
-                  isSubmitting: false,
-                  name: undefined,
-                  email: undefined,
-                  password: undefined,
-                  revealPassword: undefined,
-                  balanceAdjustment: undefined,
-                  balanceDescription: undefined,
-                  emailNotify: undefined,
-                  iosPush: undefined,
-                  androidPush: undefined,
-                  browserPush: undefined,
-                  isMod: undefined,
-                });
-                this.props.onUpdated(user);
-              })
-              .catch(e => this.setState({ isSubmitting: false }))
-          }}>Save</SubmitButton>
-        </DialogActions>
-        <Dialog
-          open={!!this.state.deleteDialogOpen}
-          onClose={() => this.setState({ deleteDialogOpen: false })}
-        >
-          <DialogTitle>Delete Post</DialogTitle>
-          <DialogContent>
-            <DialogContentText>Are you sure you want to permanently delete this user?</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
-            <SubmitButton
-              isSubmitting={this.state.isSubmitting}
-              style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
-              onClick={() => {
-                this.setState({ isSubmitting: true });
-                this.props.server.dispatchAdmin().then(d => d.userDeleteAdmin({
+          <Grid container alignItems='center' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+            <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+              <TextField
+                value={this.state.displayName || ''}
+                onChange={e => this.setState({ displayName: e.target.value })}
+              />
+              <Button aria-label="Create" color='primary' style={{
+                visibility:
+                  !this.state.displayName ? 'hidden' : undefined
+              }} onClick={async () => {
+                if (!this.state.displayName || !isModOrAdminLoggedIn) {
+                  return;
+                }
+                const newUserAdmin = await (await this.props.server.dispatchAdmin()).userCreateAdmin({
                   projectId: this.props.server.getProjectId(),
-                  userId: this.props.user.userId,
-                }))
-                  .then(() => {
-                    this.setState({ isSubmitting: false });
-                    this.props.onDeleted();
-                  })
-                  .catch(e => this.setState({ isSubmitting: false }))
-              }}>Delete</SubmitButton>
-          </DialogActions>
-        </Dialog>
-      </>
-    );
+                  userCreateAdmin: { name: this.state.displayName },
+                });
+                this.setState({
+                  createdUserId: newUserAdmin.userId,
+                  userAdmin: newUserAdmin,
+                  displayName: undefined,
+                });
+              }}>Save</Button>
+            </Grid>
+          </Grid>
+        </div>
+      );
+    } else if (!isModOrAdminLoggedIn && !isMe) {
+      // View only
+      content = (
+        <div key='view-only' className={this.props.classes.section}>
+          <PanelTitle text='Info' />
+          <Grid container alignItems='center' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+            <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+              <AvatarDisplay user={this.props.user} size={40} />
+            </Grid>
+          </Grid>
+          <Grid container alignItems='center' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+            <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+              {DisplayUserName(this.props.user)}
+            </Grid>
+          </Grid>
+          <Grid container alignItems='center' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Registered</Typography></Grid>
+            <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+              <TimeAgo date={this.props.user?.created || 0} />
+            </Grid>
+          </Grid>
+        </div>
+      );
+    } else {
+      // Edit form (for both self and by admin/mod)
+      var user: Client.UserMe | Admin.UserAdmin | undefined;
+      var balance: number | undefined;
+      if (this.props.loggedInUser?.userId === userId) {
+        user = this.props.loggedInUser;
+        balance = this.props.loggedInUserBalance;
+      } else {
+        user = this.state.userAdmin;
+        balance = this.state.userAdmin?.balance;
+        if (this.userAdminFetchedForUserId !== userId) {
+          this.userAdminFetchedForUserId = userId;
+          this.props.server.dispatchAdmin().then(d => d.userGetAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+          }))
+            .then(userAdmin => this.setState({
+              userAdmin,
+              userAdminStatus: Status.FULFILLED,
+            }))
+            .catch(e => this.setState({
+              userAdminStatus: Status.REJECTED,
+            }));
+        }
+      }
 
-    editForm = this.props.isInsideDialog ? (
-      <div className={this.props.className}>
-        <DialogTitle>Edit user</DialogTitle>
-        {editForm}
+      if (!user) {
+        return (<LoadingPage />);
+      }
+
+      const balanceAdjustmentChanged = this.state.balanceAdjustment !== undefined && (+this.state.balanceAdjustment !== 0);
+      const balanceAdjustmentHasError = !!this.state.balanceAdjustment && (!parseInt(this.state.balanceAdjustment) || !+this.state.balanceAdjustment || parseInt(this.state.balanceAdjustment) !== parseFloat(this.state.balanceAdjustment));
+
+      const browserPushControl = this.renderBrowserPushControl(isMe, user);
+      // const androidPushControl = this.renderMobilePushControl(MobileNotificationDevice.Android);
+      // const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
+      const emailControl = this.renderEmailControl(isMe, user);
+
+      const isPushOrAnon = !user.email && !user.isExternal;
+
+      const categoriesWithSubscribe = (this.props.categories || []).filter(c => !!c.subscription);
+
+      content = (
+        <React.Fragment key='edit-user'>
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Account' />
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                <AvatarDisplay user={{
+                  ...user,
+                  ...(this.state.displayName !== undefined ? {
+                    name: this.state.displayName,
+                  } : {}),
+                  ...(this.state.email !== undefined ? {
+                    email: this.state.email,
+                  } : {}),
+                }} size={40} />
+              </Grid>
+            </Grid>
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                {!!user.isExternal ? (
+                  <Tooltip title="Cannot be changed" placement='top-start'>
+                    <Typography>{user.name || 'None'}</Typography>
+                  </Tooltip>
+                ) : (
+                  <>
+                    <TextField
+                      id='displayName'
+                      error={!user.name}
+                      value={(this.state.displayName === undefined ? user.name : this.state.displayName) || ''}
+                      onChange={e => this.setState({ displayName: e.target.value })}
+                    />
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.displayName
+                          || this.state.displayName === user.name
+                          ? 'hidden' : undefined
+                    }} onClick={async () => {
+                      if (!this.state.displayName
+                        || !user
+                        || this.state.displayName === user.name) {
+                        return;
+                      }
+                      if (isModOrAdminLoggedIn) {
+                        const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                          userUpdateAdmin: { name: this.state.displayName },
+                        });
+                        this.setState({ displayName: undefined, userAdmin: newUserAdmin });
+                      } else {
+                        await (await this.props.server.dispatch()).userUpdate({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                          userUpdate: { name: this.state.displayName },
+                        });
+                        this.setState({ displayName: undefined });
+                      }
+                    }}>Save</Button>
+                  </>
+                )}
+              </Grid>
+            </Grid>
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                {!!user.isExternal ? (
+                  <Tooltip title="Cannot be changed" placement='top-start'>
+                    <Typography>{user.email || 'None'}</Typography>
+                  </Tooltip>
+                ) : (
+                  <>
+                    <TextField
+                      id='email'
+                      value={(this.state.email === undefined ? user.email : this.state.email) || ''}
+                      onChange={e => this.setState({ email: e.target.value })}
+                      autoFocus={!!this.state.createdUserId}
+                    />
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.email
+                          || this.state.email === user.email
+                          ? 'hidden' : undefined
+                    }} onClick={async () => {
+                      if (!this.state.email
+                        || !user
+                        || this.state.email === user.email) {
+                        return;
+                      }
+                      if (isModOrAdminLoggedIn) {
+                        const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                          userUpdateAdmin: { email: this.state.email },
+                        });
+                        this.setState({ email: undefined, userAdmin: newUserAdmin });
+                      } else {
+                        await (await this.props.server.dispatch()).userUpdate({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                          userUpdate: { email: this.state.email },
+                        });
+                        this.setState({ email: undefined });
+                      }
+                    }}>Save</Button>
+                  </>
+                )}
+              </Grid>
+            </Grid>
+            {!user.isExternal && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                  <TextField
+                    id='password'
+                    value={this.state.password || ''}
+                    onChange={e => this.setState({ password: e.target.value })}
+                    type={this.state.revealPassword ? 'text' : 'password'}
+                    disabled={!this.state.email && !user.email}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            aria-label='Toggle password visibility'
+                            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                            disabled={!this.state.email && !user.email}
+                          >
+                            {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <Button aria-label="Save" color='primary' style={{
+                    visibility:
+                      !this.state.password
+                        || this.state.password === user.name
+                        ? 'hidden' : undefined
+                  }} onClick={async () => {
+                    if (!this.state.password
+                      || !user) {
+                      return;
+                    }
+                    if (isModOrAdminLoggedIn) {
+                      const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+                        projectId: this.props.server.getProjectId(),
+                        userId: userId!,
+                        userUpdateAdmin: { password: this.state.password },
+                      });
+                      this.setState({ password: undefined, userAdmin: newUserAdmin });
+                    } else {
+                      await (await this.props.server.dispatch()).userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: userId!,
+                        userUpdate: { password: this.state.password },
+                      });
+                      this.setState({ password: undefined });
+                    }
+                  }}>Save</Button>
+                </Grid>
+              </Grid>
+            )}
+            {this.props.credits && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Balance</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                  <CreditView val={balance || 0} credits={this.props.credits} />
+                  {isModOrAdminLoggedIn && (
+                    <>
+                      <IconButton onClick={() => this.setState({ transactionCreateOpen: !this.state.transactionCreateOpen })}>
+                        <EditIcon />
+                      </IconButton>
+                      <Collapse in={this.state.transactionCreateOpen}>
+                        <div>
+                          <TextField
+                            label='Adjustment amount'
+                            value={this.state.balanceAdjustment || ''}
+                            error={balanceAdjustmentHasError}
+                            helperText={balanceAdjustmentHasError ? 'Invalid number' : (
+                              !this.state.balanceAdjustment ? undefined : (
+                                <CreditView
+                                  val={+this.state.balanceAdjustment}
+                                  credits={this.props.credits}
+                                />
+                              ))}
+                            onChange={e => this.setState({ balanceAdjustment: e.target.value })}
+                          />
+                          <TextField
+                            label='Transaction note'
+                            value={this.state.balanceDescription || ''}
+                            onChange={e => this.setState({ balanceDescription: e.target.value })}
+                          />
+                          <Button aria-label="Save" color='primary' style={{
+                            visibility:
+                              (this.state.balanceAdjustment || 0) === 0
+                                ? 'hidden' : undefined
+                          }} onClick={async () => {
+                            if (this.state.balanceAdjustment === undefined
+                              || +this.state.balanceAdjustment === 0
+                              || !user) {
+                              return;
+                            }
+                            const dispatcher = await this.props.server.dispatchAdmin();
+                            const newUserAdmin = await dispatcher.userUpdateAdmin({
+                              projectId: this.props.server.getProjectId(),
+                              userId: userId!,
+                              userUpdateAdmin: {
+                                transactionCreate: {
+                                  amount: +this.state.balanceAdjustment,
+                                  summary: this.state.balanceDescription,
+                                }
+                              },
+                            });
+                            this.setState({
+                              userAdmin: newUserAdmin,
+                              transactionCreateOpen: false,
+                              balanceAdjustment: undefined,
+                              balanceDescription: undefined,
+                            });
+                          }}>Save</Button>
+                        </div>
+                      </Collapse>
+                    </>
+                  )}
+                </Grid>
+              </Grid>
+            )}
+            {isModOrAdminLoggedIn && (
+              <>
+                <Grid container alignItems='center' className={this.props.classes.item}>
+                  <Grid item xs={12} sm={6}><Typography>Is moderator</Typography></Grid>
+                  <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          color='default'
+                          checked={!!user.isMod}
+                          onChange={async (e, checked) => {
+                            const dispatcher = await this.props.server.dispatchAdmin();
+                            const newUserAdmin = await dispatcher.userUpdateAdmin({
+                              projectId: this.props.server.getProjectId(),
+                              userId: userId!,
+                              userUpdateAdmin: { isMod: !user?.isMod },
+                            });
+                            this.setState({ password: undefined, userAdmin: newUserAdmin });
+                          }}
+                        />
+                      )}
+                      label={(
+                        <FormHelperText component='span'>
+                          {user.isMod ? 'Yes' : 'No'}
+                        </FormHelperText>
+                      )}
+                    />
+                  </Grid>
+                </Grid>
+                <Grid container alignItems='center' className={this.props.classes.item}>
+                  <Grid item xs={12} sm={6}><Typography>User ID</Typography></Grid>
+                  <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                    <Typography>{userId}</Typography>
+                  </Grid>
+                </Grid>
+              </>
+            )}
+            {!!isMe && !this.props.suppressSignOut && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>
+                  Sign out of your account
+                  {!!isPushOrAnon && (
+                    <Collapse in={!!this.state.signoutWarnNoEmail}>
+                      <Alert
+                        variant='outlined'
+                        severity='warning'
+                      >
+                        Please add an email before signing out or delete your account instead.
+                      </Alert>
+                    </Collapse>
+                  )}
+                </Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                  <Button
+                    disabled={!!isPushOrAnon && !!this.state.signoutWarnNoEmail}
+                    onClick={() => {
+                      if (isPushOrAnon) {
+                        this.setState({ signoutWarnNoEmail: true });
+                      } else {
+                        this.props.server.dispatch().then(d => d.userLogout({
+                          projectId: this.props.server.getProjectId(),
+                        }));
+                      }
+                    }}
+                  >Sign out</Button>
+                </Grid>
+              </Grid>
+            )}
+            <Grid container alignItems='center' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>{isMe ? 'Delete your account' : 'Delete account'}</Typography></Grid>
+              <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                <Button
+                  onClick={() => this.setState({ deleteDialogOpen: true })}
+                >Delete</Button>
+                <Dialog
+                  open={!!this.state.deleteDialogOpen}
+                  onClose={() => this.setState({ deleteDialogOpen: false })}
+                >
+                  <DialogTitle>Delete account?</DialogTitle>
+                  <DialogContent>
+                    <DialogContentText>{isMe
+                      ? 'By deleting your account, you will be signed out of your account and your account will be permanently deleted including all of your data.'
+                      : 'Are you sure you want to permanently delete this user?'}</DialogContentText>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
+                    <Button style={{ color: this.props.theme.palette.error.main }} onClick={async () => {
+                      if (isModOrAdminLoggedIn) {
+                        await (await this.props.server.dispatchAdmin()).userDeleteAdmin({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                        });
+                      } else {
+                        await (await this.props.server.dispatch()).userDelete({
+                          projectId: this.props.server.getProjectId(),
+                          userId: userId!,
+                        });
+                      }
+                      this.props.onDeleted?.();
+                      this.setState({ deleteDialogOpen: false });
+                    }}>Delete</Button>
+                  </DialogActions>
+                </Dialog>
+              </Grid>
+            </Grid>
+          </div>
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Notifications' />
+            {browserPushControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{browserPushControl}</Grid>
+              </Grid>
+            )}
+            {/* {androidPushControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{androidPushControl}</Grid>
+              </Grid>
+            )}
+            {iosPushControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{iosPushControl}</Grid>
+              </Grid>
+            )} */}
+            {emailControl && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}>
+                  <Typography>
+                    Email
+                    {user.email !== undefined && (<Typography variant='caption'>&nbsp;({truncateWithElipsis(20, user.email)})</Typography>)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{emailControl}</Grid>
+              </Grid>
+            )}
+            {categoriesWithSubscribe.map(category => !!user && (
+              <Grid container alignItems='center' className={this.props.classes.item}>
+                <Grid item xs={12} sm={6}>
+                  <Typography>New {category.name}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
+                  {this.renderCategorySubscribeControl(category, isMe, user)}
+                </Grid>
+              </Grid>
+            ))}
+          </div>
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <div className={classNames(this.props.className, this.props.classes.settings)}>
+        {content}
       </div>
-    ) : (
-      <DividerCorner title='Edit User' className={classNames(this.props.className, this.props.classes.dividerCorner)}>
-        {editForm}
-      </DividerCorner>
     );
+  }
 
-    return editForm;
+  renderCategorySubscribeControl(category: Client.Category, isMe: boolean, user: Client.UserMe | Admin.UserAdmin) {
+    if (!category.subscription) return null;
+
+    const isSubscribed = user?.categorySubscriptions?.includes(category.categoryId);
+
+    if (!isMe) {
+      return user.browserPush ? 'Subscribed' : 'Not subscribed';
+    }
+
+    return (
+      <FormControlLabel
+        control={(
+          <Switch
+            color='default'
+            checked={!!isSubscribed}
+            onChange={async (e, checked) => {
+              const dispatcher = await this.props.server.dispatch();
+              await dispatcher.categorySubscribe({
+                projectId: this.props.server.getProjectId(),
+                categoryId: category.categoryId,
+                subscribe: !isSubscribed,
+              });
+            }}
+          />
+        )}
+        label={(
+          <FormHelperText component='span'>
+            {isSubscribed ? 'Subscribed' : 'Unsubscribed'}
+          </FormHelperText>
+        )}
+      />
+    );
+  }
+
+  renderBrowserPushControl(isMe: boolean, user: Client.UserMe | Admin.UserAdmin): React.ReactNode | null {
+    if (!this.props.config || !user || (!this.props.config.users.onboarding.notificationMethods.browserPush && !user.browserPush)) {
+      return null;
+    }
+
+    if (!isMe) {
+      return user.browserPush ? 'Receiving' : 'Not receiving';
+    }
+
+    const browserPushStatus = WebNotification.getInstance().getStatus();
+    var browserPushEnabled = !!user.browserPush;
+    var browserPushControlDisabled;
+    var browserPushLabel;
+    if (user.browserPush) {
+      browserPushControlDisabled = false;
+      browserPushLabel = 'Enabled';
+    } else {
+      switch (browserPushStatus) {
+        case WebNotificationStatus.Unsupported:
+          browserPushControlDisabled = true;
+          browserPushLabel = 'Not supported by your browser';
+          break;
+        case WebNotificationStatus.Denied:
+          browserPushControlDisabled = true;
+          browserPushLabel = 'You have declined access to notifications';
+          break;
+        default:
+        case WebNotificationStatus.Available:
+        case WebNotificationStatus.Granted:
+          browserPushControlDisabled = false;
+          browserPushLabel = 'Disabled';
+          break;
+      }
+    }
+
+    return (
+      <FormControlLabel
+        control={(
+          <Switch
+            color='default'
+            disabled={browserPushControlDisabled}
+            checked={browserPushEnabled}
+            onChange={(e, checked) => {
+              if (checked) {
+                WebNotification.getInstance().askPermission()
+                  .then(r => {
+                    if (r.type === 'success') {
+                      this.props.server.dispatch().then(d => d.userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: user.userId,
+                        userUpdate: { browserPushToken: r.token },
+                      }));
+                    } else if (r.type === 'error') {
+                      if (r.userFacingMsg) {
+                        this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup browser notifications', { variant: 'error', preventDuplicate: true });
+                      }
+                      this.forceUpdate();
+                    }
+                  });
+              } else {
+                this.props.server.dispatch().then(d => d.userUpdate({
+                  projectId: this.props.server.getProjectId(),
+                  userId: user.userId,
+                  userUpdate: { browserPushToken: '' },
+                }));
+              }
+            }}
+          />
+        )}
+        label={<FormHelperText component='span' error={browserPushControlDisabled}>{browserPushLabel}</FormHelperText>}
+      />
+    );
+  }
+
+  // renderMobilePushControl(device: MobileNotificationDevice) {
+  //   if (!this.props.config || !user || (!this.props.config.users.onboarding.notificationMethods.mobilePush && (
+  //     (device === MobileNotificationDevice.Android && !user.androidPush)
+  //     || (device === MobileNotificationDevice.Ios && !user.iosPush)
+  //   ))) {
+  //     return;
+  //   }
+
+
+  //   const mobilePushStatus = MobileNotification.getInstance().getStatus();
+  //   var mobilePushEnabled = false;
+  //   var mobilePushControlDisabled;
+  //   var mobilePushLabel;
+  //   if ((device === MobileNotificationDevice.Android && user.androidPush)
+  //     || (device === MobileNotificationDevice.Ios && user.iosPush)) {
+  //     mobilePushEnabled = true;
+  //     mobilePushControlDisabled = false;
+  //     mobilePushLabel = 'Enabled';
+  //   } else if (MobileNotification.getInstance().getDevice() !== device) {
+  //     mobilePushControlDisabled = true;
+  //     mobilePushLabel = 'Not supported on current device';
+  //   } else {
+  //     switch (mobilePushStatus) {
+  //       case MobileNotificationStatus.Disconnected:
+  //         mobilePushControlDisabled = true;
+  //         mobilePushLabel = 'Not supported on current device';
+  //         break;
+  //       case MobileNotificationStatus.Denied:
+  //         mobilePushControlDisabled = true;
+  //         mobilePushLabel = 'You have declined access to notifications';
+  //         break;
+  //       default:
+  //       case MobileNotificationStatus.Available:
+  //       case MobileNotificationStatus.Subscribed:
+  //         mobilePushControlDisabled = false;
+  //         mobilePushLabel = 'Supported by your browser';
+  //         break;
+  //     }
+  //   }
+
+  //   return (
+  //     <FormControlLabel
+  //       control={(
+  //         <Switch
+  //           color='default'
+  //           disabled={mobilePushControlDisabled}
+  //           checked={mobilePushEnabled}
+  //           onChange={(e, checked) => {
+  //             if (checked) {
+  //               WebNotification.getInstance().askPermission()
+  //                 .then(r => {
+  //                   if (r.type === 'success') {
+  //                     this.props.server.dispatch().userUpdate({
+  //                       projectId: this.props.server.getProjectId(),
+  //                       userId: userId!,
+  //                       userUpdate: device === MobileNotificationDevice.Android
+  //                         ? { androidPushToken: r.token }
+  //                         : { iosPushToken: r.token },
+  //                     });
+  //                   } else if (r.type === 'error') {
+  //                     if (r.userFacingMsg) {
+  //                       this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup mobile notifications', { variant: 'error', preventDuplicate: true });
+  //                     }
+  //                     this.forceUpdate();
+  //                   }
+  //                 });
+  //             } else {
+  //               this.props.server.dispatch().userUpdate({
+  //                 projectId: this.props.server.getProjectId(),
+  //                 userId: userId!,
+  //                 userUpdate: device === MobileNotificationDevice.Android
+  //                   ? { androidPushToken: '' }
+  //                   : { iosPushToken: '' },
+  //               });
+  //             }
+  //           }}
+  //         />
+  //       )}
+  //       label={<FormHelperText component='span' error={mobilePushControlDisabled}>{mobilePushLabel}</FormHelperText>}
+  //     />
+  //   );
+  // }
+
+  renderEmailControl(isMe: boolean, user: Client.UserMe | Admin.UserAdmin) {
+    if (!this.props.config || !user || (!this.props.config.users.onboarding.notificationMethods.email && !user.email)) {
+      return;
+    }
+
+    if (!isMe) {
+      return user.browserPush ? 'Receiving' : 'Not receiving';
+    }
+
+    var enabled;
+    var controlDisabled;
+    var label;
+    if (user.email) {
+      controlDisabled = false;
+      enabled = user.emailNotify;
+      if (user.emailNotify) {
+        label = 'Enabled';
+      } else {
+        label = 'Disabled';
+      }
+    } else {
+      controlDisabled = true;
+      enabled = false;
+      label = 'No email on account';
+    }
+
+    return (
+      <FormControlLabel
+        control={(
+          <Switch
+            color='default'
+            disabled={controlDisabled}
+            checked={enabled}
+            onChange={async (e, checked) => {
+              this.props.server.dispatch().then(d => d.userUpdate({
+                projectId: this.props.server.getProjectId(),
+                userId: user.userId,
+                userUpdate: { emailNotify: checked },
+              }));
+            }}
+          />
+        )}
+        label={<FormHelperText component='span' error={controlDisabled}>{label}</FormHelperText>}
+      />
+    );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(UserEdit));
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  const connectProps: ConnectProps = {
+    configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
+    loggedInUser: state.users.loggedIn.user,
+    loggedInUserBalance: state.credits.myBalance.balance,
+    user: ownProps.userId ? state.users.byId[ownProps.userId]?.user : undefined,
+    categories: state.conf.conf?.content.categories,
+    credits: state.conf.conf ? state.conf.conf.users.credits : undefined,
+  };
+  return connectProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(withSnackbar(UserEdit))));

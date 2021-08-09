@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
-import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
+import { createStyles, Theme, useTheme, WithStyles, withStyles } from '@material-ui/core/styles';
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
@@ -108,15 +108,16 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
   }
 }
 
-export const CommentDelete = withTheme((props: {
+export const CommentDelete = (props: {
   server: Server;
   comment: Client.CommentWithVote;
   asAdmin: boolean
   open?: boolean;
   onClose: () => void;
   onDelete: () => void;
-} & WithTheme) => {
+}) => {
   const [isSubmitting, setSubmitting] = useState(false);
+  const theme = useTheme();
   return (
     <Dialog
       open={!!props.open}
@@ -130,7 +131,7 @@ export const CommentDelete = withTheme((props: {
         <Button onClick={props.onClose}>Cancel</Button>
         <SubmitButton
           isSubmitting={isSubmitting}
-          style={{ color: !isSubmitting ? props.theme.palette.error.main : undefined }}
+          style={{ color: !isSubmitting ? theme.palette.error.main : undefined }}
           onClick={() => {
             setSubmitting(true);
             (props.asAdmin
@@ -155,7 +156,7 @@ export const CommentDelete = withTheme((props: {
       </DialogActions>
     </Dialog>
   )
-});
+};
 
 export default withStyles(styles, { withTheme: true })(
   withMediaQuery(theme => theme.breakpoints.down('xs'))(CommentEdit));

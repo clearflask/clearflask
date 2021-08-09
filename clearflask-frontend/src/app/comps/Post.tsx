@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import loadable from '@loadable/component';
-import { Button, Chip, Typography } from '@material-ui/core';
+import { Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
 import UnmergeIcon from '@material-ui/icons/CallSplit';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
+import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
@@ -30,6 +31,7 @@ import PinIcon from '../../common/icon/PinIcon';
 import UnLinkAltIcon from '../../common/icon/UnLinkAltIcon';
 import InViewObserver from '../../common/InViewObserver';
 import RichViewer from '../../common/RichViewer';
+import SubmitButton from '../../common/SubmitButton';
 import TruncateFade from '../../common/TruncateFade';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
@@ -372,6 +374,7 @@ type Props = {
   onClickStatus?: (statusId: string) => void;
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
+  onDeleted?: () => void;
   isSubmittingDisconnect?: boolean;
   onDisconnect?: () => void;
   disconnectType?: ConnectType;
@@ -398,6 +401,8 @@ interface State {
   fundingExpanded?: boolean;
   expressionExpanded?: boolean;
   logInOpen?: boolean;
+  deleteDialogOpen?: boolean;
+  isSubmittingDelete?: boolean;
   isSubmittingVote?: Client.VoteOption;
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
@@ -551,6 +556,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         this.renderRespond(),
         this.renderCommentAdd(),
         this.renderConnect(),
+        this.renderDelete(),
       ].filter(notEmpty);
     } else {
       leftSide = [
@@ -809,6 +815,57 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           />
         </Provider>
       </React.Fragment>
+    );
+  }
+
+  renderDelete() {
+    const isMod = this.props.server.isModOrAdminLoggedIn();
+    if (this.props.variant === 'list'
+      || !this.props.idea?.ideaId
+      || !isMod) return null;
+
+    return (
+      <>
+        <MyButton
+          key='delete'
+          buttonVariant='post'
+          Icon={DeleteIcon}
+          onClick={e => this.setState({ deleteDialogOpen: true })}
+        >
+          Delete
+        </MyButton>
+        <Dialog
+          open={!!this.state.deleteDialogOpen}
+          onClose={() => this.setState({ deleteDialogOpen: false })}
+        >
+          <DialogTitle>Delete post</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Are you sure you want to permanently delete this post?</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ deleteDialogOpen: false })}
+            >Cancel</Button>
+            <SubmitButton
+              isSubmitting={this.state.isSubmittingDelete}
+              style={{ color: !this.state.isSubmittingDelete ? this.props.theme.palette.error.main : undefined }}
+              onClick={async () => {
+                this.setState({ isSubmittingDelete: true });
+                try {
+                  if (!this.props.idea?.ideaId) return;
+                  await (await this.props.server.dispatchAdmin()).ideaDeleteAdmin({
+                    projectId: this.props.server.getProjectId(),
+                    ideaId: this.props.idea.ideaId,
+                  });
+                  this.props.onDeleted?.();
+                } finally {
+                  this.setState({ isSubmittingDelete: false });
+                }
+              }}>
+              Delete
+            </SubmitButton>
+          </DialogActions>
+        </Dialog>
+      </>
     );
   }
 

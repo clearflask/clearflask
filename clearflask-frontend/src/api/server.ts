@@ -431,6 +431,7 @@ export interface StateIdeas {
       status: Status,
       ideaIds?: string[],
       cursor?: string,
+      filterStatusIds?: string[],
     }
   };
   maxFundAmountSeen: number;
@@ -459,8 +460,6 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [action.meta.request.ideaId]: { status: Status.REJECTED },
         }
       };
-    case Admin.ideaCreateAdminActionStatus.Fulfilled:
-    case Client.ideaCreateActionStatus.Fulfilled:
     case Client.ideaGetActionStatus.Fulfilled:
       return {
         ...state,
@@ -473,15 +472,16 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
-    case Client.ideaDeleteActionStatus.Fulfilled:
-    case Admin.ideaDeleteAdminActionStatus.Fulfilled:
-      const { [action.meta.request.ideaId]: removedIdea, ...byIdWithoutDeleted } = state.byId;
-      return {
-        ...state,
-        byId: byIdWithoutDeleted,
-      };
-    case Admin.ideaUpdateAdminActionStatus.Fulfilled:
-    case Client.ideaUpdateActionStatus.Fulfilled:
+    case Admin.ideaCreateAdminActionStatus.Fulfilled:
+    case Client.ideaCreateActionStatus.Fulfilled:
+      var bySearchFilteredForCreate = {};
+      const createdIdeaStatus = action.payload.statusId;
+      Object.entries(state.bySearch).forEach(([searchKey, search]) => {
+        if ((createdIdeaStatus === undefined && !search.filterStatusIds?.length)
+          || (createdIdeaStatus !== undefined && search.filterStatusIds?.includes(createdIdeaStatus))) {
+          bySearchFilteredForCreate[searchKey] = undefined;
+        }
+      });
       return {
         ...state,
         byId: {
@@ -491,6 +491,62 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
             status: Status.FULFILLED,
           },
         },
+        bySearch: Object.keys(bySearchFilteredForCreate).length > 0 ? {
+          ...state.bySearch,
+          ...bySearchFilteredForCreate,
+        } : state.bySearch,
+        maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
+      };
+    case Client.ideaDeleteActionStatus.Fulfilled:
+    case Admin.ideaDeleteAdminActionStatus.Fulfilled:
+      const { [action.meta.request.ideaId]: removedIdea, ...byIdWithoutDeleted } = state.byId;
+      var bySearchFilteredForDelete = {};
+      Object.entries(state.bySearch).forEach(([searchKey, search]) => {
+        if (search.ideaIds?.includes(action.meta.request.ideaId)) {
+          bySearchFilteredForDelete[searchKey] = {
+            ...search,
+            ideaIds: search.ideaIds.filter(ideaId => ideaId !== action.meta.request.ideaId),
+          };
+        }
+      });
+      return {
+        ...state,
+        byId: byIdWithoutDeleted,
+        bySearch: Object.keys(bySearchFilteredForDelete).length > 0 ? {
+          ...state.bySearch,
+          ...bySearchFilteredForDelete,
+        } : state.bySearch,
+      };
+    case Admin.ideaUpdateAdminActionStatus.Fulfilled:
+    case Client.ideaUpdateActionStatus.Fulfilled:
+      var bySearchFilteredForUpdate = {};
+      const updatedIdeaStatus = state.byId[action.meta.request.ideaId]?.idea?.statusId;
+      const updatedToIdeaStatus = action.type === Admin.ideaUpdateAdminActionStatus.Fulfilled
+        ? action.meta.request.ideaUpdateAdmin.statusId : undefined;
+      Object.entries(state.bySearch).forEach(([searchKey, search]) => {
+        if ((updatedIdeaStatus === undefined && !search.filterStatusIds?.length)
+          || (updatedIdeaStatus !== undefined && search.filterStatusIds?.includes(updatedIdeaStatus))) {
+          bySearchFilteredForUpdate[searchKey] = undefined;
+        }
+        if (updatedToIdeaStatus !== undefined && updatedToIdeaStatus !== updatedIdeaStatus
+          && ((updatedToIdeaStatus === undefined && !search.filterStatusIds?.length)
+            || (updatedToIdeaStatus !== undefined && search.filterStatusIds?.includes(updatedToIdeaStatus)))) {
+          bySearchFilteredForUpdate[searchKey] = undefined;
+        }
+      });
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.ideaId]: {
+            idea: action.payload,
+            status: Status.FULFILLED,
+          },
+        },
+        bySearch: Object.keys(bySearchFilteredForUpdate).length > 0 ? {
+          ...state.bySearch,
+          ...bySearchFilteredForUpdate,
+        } : state.bySearch,
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
     case Client.ideaMergeActionStatus.Fulfilled:
@@ -625,6 +681,9 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
       searchKey = getSearchKey(action.type === Admin.ideaSearchAdminActionStatus.Fulfilled
         ? action.meta.request.ideaSearchAdmin
         : action.meta.request.ideaSearch);
+      var filterStatusIds = action.type === Admin.ideaSearchAdminActionStatus.Fulfilled
+        ? action.meta.request.ideaSearchAdmin.filterStatusIds
+        : action.meta.request.ideaSearch.filterStatusIds;
       return {
         ...state,
         byId: {
@@ -650,6 +709,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
                 (action.payload.results as Client.Idea[]).map(idea => idea.ideaId)
               ),
             cursor: action.payload.cursor,
+            filterStatusIds,
           }
         },
         maxFundAmountSeen: Math.max(

@@ -4,7 +4,7 @@ import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
 import { notEmpty } from '../common/util/arrayUtil';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
@@ -107,8 +107,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static get(): ServerMock {
     if (ServerMock.instance === undefined) {
       ServerMock.instance = new ServerMock();
-      if (!windowIso.isSsr && detectEnv() !== Environment.PRODUCTION) {
-        windowIso['mockdb'] = ServerMock.instance.db;
+      if (!windowIso.isSsr && !isProd()) {
+        windowIso['db'] = ServerMock.instance.db;
       }
     }
     return ServerMock.instance;
@@ -136,7 +136,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountBindAdmin(request: Admin.AccountBindAdminRequest): Promise<Admin.AccountBindAdminResponse> {
     if (this.loggedIn && this.account) {
-      this.returnLater({
+      return this.returnLater({
         account: this.account,
         isSuperAdmin: !!this.superLoggedIn || !!this.account.isSuperAdmin,
       });

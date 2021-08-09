@@ -47,6 +47,7 @@ import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import AntiSpamIcon from '@material-ui/icons/VerifiedUser';
 import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import TransparentIcon from '@material-ui/icons/VisibilityOutlined';
+import KeyIcon from '@material-ui/icons/VpnKey';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
@@ -498,6 +499,7 @@ export function Landing() {
 }
 
 export function LandingGraveyard() {
+  const classes = useStyles();
   return (
     <>
       <div style={{ height: '100vh' }} />
@@ -639,6 +641,48 @@ export function LandingGraveyard() {
         buttonTitle='See a Roadmap'
         buttonLink='/solutions/product-roadmap'
       />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
+        <Block
+          type='column'
+          icon={(<LinkIcon />)}
+          title='Link your existing accounts'
+          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps.'
+        />
+        <Block
+          type='column'
+          icon={(
+            <div className={classes.iconsContainer}>
+              <GoogleIcon />
+              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
+              <FacebookIcon />
+            </div>
+          )}
+          title='Sign in with ...'
+          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
+        <Block
+          type='column'
+          icon={(<EmailIcon />)}
+          title='Email sign-up'
+          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
+        />
+        <Block
+          type='column'
+          icon={(<NotificationIcon />)}
+          title='Browser Notifications'
+          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
+        <Block
+          type='column'
+          icon={(<GuestIcon />)}
+          title='Guest accounts'
+          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
+        />
+      </HorizontalPanels>
     </>
   );
 }
@@ -931,8 +975,8 @@ export function LandingCollectFeedback() {
       <Demo
         type='headingMain'
         alignItems='flex-start'
-        title='Always keep a line of communication open'
-        description='Introduce the least amount of friction by choosing the communication channel for your users.'
+        title='Keep a line of communication open'
+        description='Let your users choose the least frictionless communication how to get notified of replies to their ideas.'
         initialSubPath='/embed/demo'
         demoFixedWidth={420}
         template={templater => {
@@ -941,51 +985,14 @@ export function LandingCollectFeedback() {
         }}
         controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
         demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
+        points={[
+          { text: 'Single Sign-On to link existing accounts', icon: KeyIcon },
+          { text: 'Easy sign-in with an OAuth provider', icon: [GoogleIcon, GithubIcon, FacebookIcon] },
+          { text: 'Email signup with magic link or password', icon: EmailIcon },
+          { text: 'Browser push notifications ', icon: NotificationIcon },
+          { text: 'Guest accounts that can be upgraded later', icon: GuestIcon },
+        ]}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
-        <Block
-          type='column'
-          icon={(<LinkIcon />)}
-          title='Link your existing accounts'
-          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps.'
-        />
-        <Block
-          type='column'
-          icon={(
-            <div className={classes.iconsContainer}>
-              <GoogleIcon />
-              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
-              <FacebookIcon />
-            </div>
-          )}
-          title='Sign in with ...'
-          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
-        <Block
-          type='column'
-          icon={(<EmailIcon />)}
-          title='Email sign-up'
-          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
-        />
-        <Block
-          type='column'
-          icon={(<NotificationIcon />)}
-          title='Browser Notifications'
-          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
-        <Block
-          type='column'
-          icon={(<GuestIcon />)}
-          title='Guest accounts'
-          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
-        />
-      </HorizontalPanels>
-
-
 
       <Demo
         title='Build a community around your product'
