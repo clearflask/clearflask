@@ -151,7 +151,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             draggingPostIdSubscription={this.draggingPostIdSubscription}
             dragDropSensorApi={this.state.dragDropSensorApi}
             fallbackClickHandler={fallbackClickHandler}
-            statusColorGivenCategoies={new Set([categoryId])}
+            statusColorGivenCategories={[categoryId]}
             PostListProps={{
               hideIfEmpty: true,
               search: {

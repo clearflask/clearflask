@@ -14,6 +14,7 @@ import { RoadmapInstance } from '../../common/config/template/roadmap';
 import HoverArea from '../../common/HoverArea';
 import { FilterControlTitle } from '../../common/search/FilterControls';
 import { dndDrag } from '../../common/util/dndUtil';
+import { customReactMemoEquals } from '../../common/util/reactUtil';
 import RenderControl from '../../common/util/RenderControl';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import Subscription from '../../common/util/subscriptionUtil';
@@ -189,7 +190,7 @@ const DashboardQuickActions = (props: {
 }
 export default DashboardQuickActions;
 
-export const QuickActionPostList = (props: {
+const QuickActionPostList = React.memo((props: {
   server: Server;
   title?: {
     name: string;
@@ -199,7 +200,7 @@ export const QuickActionPostList = (props: {
   selectedPostId?: string;
   draggingPostIdSubscription: Subscription<string | undefined>;
   dragDropSensorApi?: SensorAPI;
-  statusColorGivenCategoies?: Set<string>;
+  statusColorGivenCategories?: string[];
   fallbackClickHandler: (draggableId: string, dstDroppableId: string) => Promise<boolean>;
   PostListProps?: Partial<React.ComponentProps<typeof PostList>>;
 }) => {
@@ -209,11 +210,11 @@ export const QuickActionPostList = (props: {
   useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
 
   const statusIdToColor = useSelector<ReduxState, { [statusId: string]: string } | undefined>(state => {
-    if (!props.statusColorGivenCategoies) return;
+    if (!props.statusColorGivenCategories?.length) return;
     const statusIdToColor = {};
     state.conf.conf?.content.categories
       .forEach(category => {
-        if (!props.statusColorGivenCategoies?.has(category.categoryId)) return;
+        if (!props.statusColorGivenCategories?.includes(category.categoryId)) return;
         category.workflow.statuses.forEach(status => {
           if (status.color === undefined) return;
           statusIdToColor[status.statusId] = status.color;
@@ -258,7 +259,12 @@ export const QuickActionPostList = (props: {
       {...props.PostListProps}
     />
   );
-}
+}, customReactMemoEquals({
+  nested: new Set(['PostListProps', 'DroppableProvidedProps', 'statusColorGivenCategories', 'title']),
+  presence: new Set(['fallbackClickHandler', 'getDroppableId']),
+}));
+QuickActionPostList.displayName = 'QuickActionPostList';
+export { QuickActionPostList };
 
 export const QuickActionArea = (props: {
   droppableId: string;

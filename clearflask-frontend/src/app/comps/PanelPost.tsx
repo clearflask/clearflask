@@ -156,6 +156,23 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     nested: new Set(['panel', 'displayDefaults', 'searchOverride', 'searchOverrideAdmin', 'PostProps', 'missingVotes']),
   });
 
+  componentDidMount() {
+    if (!this.props.searchStatus) {
+      this.loadMore();
+    } else if (this.props.missingVotes?.length) {
+      const missingVotes = this.props.missingVotes;
+      this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
+        projectId: this.props.projectId!,
+        ideaIds: missingVotes,
+        myOwnIdeaIds: missingVotes
+          .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
+          .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
+          .map(idea => idea?.ideaId)
+          .filter(notEmpty),
+      }));
+    }
+  }
+
   componentDidUpdate(prevProps, prevState) {
     if (!!this.props.navigatorChanged
       && (this.props.searchCursor !== prevProps.searchCursor
@@ -170,21 +187,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       this.props.server.dispatchAdmin().then(d => d.ideaDraftSearchAdmin({
         projectId: this.props.server.getProjectId(),
         ideaDraftSearch: this.props.draftSearchMerged || {},
-      }));
-    }
-
-    if (!this.props.searchStatus) {
-      this.loadMore();
-    } else if (this.props.missingVotes?.length) {
-      const missingVotes = this.props.missingVotes;
-      this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
-        projectId: this.props.projectId!,
-        ideaIds: missingVotes,
-        myOwnIdeaIds: missingVotes
-          .map(ideaId => this.props.searchIdeas.find(i => i.ideaId === ideaId))
-          .filter(idea => idea?.authorUserId === this.props.loggedInUser?.userId)
-          .map(idea => idea?.ideaId)
-          .filter(notEmpty),
       }));
     }
 
