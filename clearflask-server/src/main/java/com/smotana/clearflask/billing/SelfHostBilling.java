@@ -180,6 +180,11 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
+    public boolean tryAutoUpgradePlan(AccountStore.Account account, String requiredPlanId) {
+        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+    }
+
+    @Override
     public Invoices getInvoices(String accountId, Optional<String> cursorOpt) {
         return new Invoices(null, ImmutableList.of());
     }

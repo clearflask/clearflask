@@ -59,6 +59,17 @@ public interface Billing {
 
     Subscription changePlanToFlatYearly(String accountId, long yearlyPrice);
 
+    /**
+     * If user attempts to use a feature outside of their plan determined by PlanStore's
+     * verifyActionMeetsPlanRestrictions
+     * and verifyConfigMeetsPlanRestrictions, try to auto-upgrade to required plan.
+     *
+     * As of writing this, only possible when on trial period without payment method set.
+     *
+     * @return True if eligible for auto-upgrade and upgrade is kicked off in background
+     */
+    boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId);
+
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
     String getInvoiceHtml(String accountId, UUID invoiceId);

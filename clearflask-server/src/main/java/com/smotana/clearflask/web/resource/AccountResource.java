@@ -35,6 +35,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -313,7 +314,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         sanitizer.email(signup.getEmail());
         sanitizer.accountName(signup.getName());
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(signup.getEmail())) {
-            new ApiException(Response.Status.BAD_REQUEST, "Only admins are allowed to sign up");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Only admins are allowed to sign up");
         }
 
         String accountId = accountStore.genAccountId();
@@ -381,7 +382,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     throw new ApiException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
                 }
             }
-            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
+            try {
+                planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
+            } catch (RequiresUpgradeException ex) {
+                if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+                    throw ex;
+                }
+            }
             account = accountStore.updateApiKey(account.getAccountId(), accountUpdateAdmin.getApiKey());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {

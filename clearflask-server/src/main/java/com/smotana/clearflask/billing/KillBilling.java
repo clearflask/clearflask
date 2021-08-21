@@ -802,6 +802,25 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Override
+    public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
+        if (!ACTIVETRIAL.equals(accountInDyn.getStatus())) {
+            return false;
+        }
+        if (getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()) {
+            return false;
+        }
+        usageExecutor.submit(() -> {
+            try {
+                changePlan(accountInDyn.getAccountId(), requiredPlanId);
+            } catch (Throwable th) {
+                log.error("Failed to auto upgrade accountId {} to plan {}",
+                        accountInDyn.getAccountId(), requiredPlanId, th);
+            }
+        });
+        return true;
+    }
+
+    @Override
     public Invoices getInvoices(String accountId, Optional<String> cursorOpt) {
         try {
             Optional<String> nextPaginationUrlOpt = cursorOpt
@@ -1154,7 +1173,7 @@ public class KillBilling extends ManagedService implements Billing {
         return new AccountBillingPaymentActionRequired("stripe-next-action", ImmutableMap.of(
                 "paymentIntentClientSecret", paymentIntentClientSecret));
     }
-    
+
     public static Module module() {
         return new AbstractModule() {
             @Override

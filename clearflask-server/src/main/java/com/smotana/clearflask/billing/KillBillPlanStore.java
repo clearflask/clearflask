@@ -276,13 +276,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException {
+    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws RequiresUpgradeException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
                 switch (action) {
                     case API_KEY:
-                        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use API on your plan");
+                        throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use API on your plan");
                 }
                 return;
             case "standard-monthly":
@@ -293,35 +293,35 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException {
+    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws RequiresUpgradeException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use OAuth on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use OAuth on your plan");
                 }
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use SSO on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Templates on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Google Analytics on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Google Analytics on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to use Intercom on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Intercom on your plan");
                 }
                 return;
             case "standard-monthly":

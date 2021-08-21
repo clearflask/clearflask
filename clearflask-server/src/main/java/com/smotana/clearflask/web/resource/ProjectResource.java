@@ -31,7 +31,9 @@ import com.smotana.clearflask.api.model.Tag;
 import com.smotana.clearflask.api.model.UserBind;
 import com.smotana.clearflask.api.model.UserBindResponse;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -127,6 +129,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private AuthCookie authCookie;
     @Inject
     private UserBindUtil userBindUtil;
+    @Inject
+    private Billing billing;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -262,7 +266,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         //
 
         Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
-        planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+        try {
+            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+        } catch (RequiresUpgradeException ex) {
+            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+                throw ex;
+            }
+        }
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
@@ -280,7 +290,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         sanitizer.subdomain(configAdmin.getSlug());
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(sanitizer::domain);
         Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
-        planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+        try {
+            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+        } catch (RequiresUpgradeException ex) {
+            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+                throw ex;
+            }
+        }
 
         String projectId = projectStore.genProjectId(configAdmin.getSlug());
         configAdmin = configAdmin.toBuilder().projectId(projectId).build();

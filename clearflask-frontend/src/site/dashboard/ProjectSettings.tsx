@@ -860,12 +860,13 @@ export const ProjectSettingsUsersOnboardingDemo = (props: {
     />
   );
 }
-export const ProjectSettingsUsersOnboarding = (props: Omit<React.ComponentProps<typeof ProjectSettingsUsersOnboardingInternal>, 'accountBasePlanId'>) => {
+export const ProjectSettingsUsersOnboarding = (props: Omit<React.ComponentProps<typeof ProjectSettingsUsersOnboardingInternal>, 'accountBasePlanId' | 'accountSubscriptionStatus'>) => {
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
-  if (!accountBasePlanId) return null;
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+  if (!accountBasePlanId || !accountSubscriptionStatus) return null;
   return (
     <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-      <ProjectSettingsUsersOnboardingInternal accountBasePlanId={accountBasePlanId} {...props} />
+      <ProjectSettingsUsersOnboardingInternal accountBasePlanId={accountBasePlanId} accountSubscriptionStatus={accountSubscriptionStatus} {...props} />
     </Provider>
   );
 }
@@ -873,6 +874,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
   accountBasePlanId: string;
+  accountSubscriptionStatus: Admin.SubscriptionStatus;
   onPageClicked?: () => void;
   inviteMods?: string[];
   setInviteMods?: (inviteMods: string[]) => void;
@@ -916,7 +918,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   );
   return (
     <>
-      <UpgradeWrapper accountBasePlanId={props.accountBasePlanId} propertyPath={['users', 'onboarding', 'visibility']}>
+      <UpgradeWrapper accountBasePlanId={props.accountBasePlanId} subscriptionStatus={props.accountSubscriptionStatus} propertyPath={['users', 'onboarding', 'visibility']}>
         <ToggleButtonGroup
           className={classes.usersVisibilityButtonGroup}
           size='large'
@@ -1254,6 +1256,7 @@ export const ProjectSettingsUsersOauth = (props: {
 }) => {
   const classes = useStyles();
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const subscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
   const [expandedType, setExpandedType] = useState<'oauth' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
   const [newOauthType, setNewOauthType] = useState<string>('');
@@ -1272,7 +1275,7 @@ export const ProjectSettingsUsersOauth = (props: {
           </>
         )}
         content={(
-          <UpgradeWrapper accountBasePlanId={accountBasePlanId} propertyPath={['users', 'onboarding', 'notificationMethods', 'oauth']}>
+          <UpgradeWrapper accountBasePlanId={accountBasePlanId} subscriptionStatus={subscriptionStatus} propertyPath={['users', 'onboarding', 'notificationMethods', 'oauth']}>
             <div className={classes.feedbackAccordionContainer}>
               {props.editor.getConfig().users.onboarding.notificationMethods.oauth.map((oauth, oauthIndex) => (
                 <ProjectSettingsUsersOauthItem

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
+import { Action, RestrictedActions } from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
 import { notEmpty } from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
@@ -242,10 +243,21 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!!request.accountUpdateAdmin.cancelEndOfTerm) this.account.subscriptionStatus = Admin.SubscriptionStatus.ActiveNoRenewal;
     if (!!request.accountUpdateAdmin.resume) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
     if (request.accountUpdateAdmin.basePlanId) {
-      this.account.planId = request.accountUpdateAdmin.basePlanId
-      this.account.basePlanId = request.accountUpdateAdmin.basePlanId
+      this.account.planId = request.accountUpdateAdmin.basePlanId;
+      this.account.basePlanId = request.accountUpdateAdmin.basePlanId;
     };
-    if (request.accountUpdateAdmin.apiKey) this.account.apiKey = request.accountUpdateAdmin.apiKey;
+    if (request.accountUpdateAdmin.apiKey) {
+      this.account.apiKey = request.accountUpdateAdmin.apiKey;
+      if (RestrictedActions[this.account.basePlanId]?.has(Action.API_KEY)) {
+        // Auto-upgrade test, simulate Java-land background upgrade
+        setTimeout(() => {
+          if (this.account) {
+            this.account.planId = 'standard2-monthly';
+            this.account.basePlanId = 'standard2-monthly';
+          }
+        }, 500);
+      }
+    }
     return this.returnLater(this.account);
   }
   accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {

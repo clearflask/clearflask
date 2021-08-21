@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
+import * as Admin from '../../../api/admin';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import { Path, pathEquals } from '../configEditor';
 
@@ -68,9 +69,11 @@ interface Props {
   propertyPath?: Path;
   action?: Action;
   accountBasePlanId?: string;
+  subscriptionStatus?: Admin.SubscriptionStatus;
 }
 interface ConnectProps {
   accountBasePlanId?: string;
+  subscriptionStatus?: Admin.SubscriptionStatus;
 }
 interface State {
   clicked?: boolean;
@@ -106,12 +109,14 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   isActionRestricted(): boolean {
     return this.props.action !== undefined
       && this.props.accountBasePlanId !== undefined
+      && this.props.subscriptionStatus !== Admin.SubscriptionStatus.ActiveTrial
       && RestrictedActions[this.props.accountBasePlanId]?.has(this.props.action);
   }
 
   isPropertyRestricted(): boolean {
     return this.props.propertyPath !== undefined
       && this.props.accountBasePlanId !== undefined
+      && this.props.subscriptionStatus !== Admin.SubscriptionStatus.ActiveTrial
       && RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
         pathEquals(restrictedPath, this.props.propertyPath!))
   }
@@ -133,5 +138,6 @@ export const UpgradeAlert = (props: { className?: string }) => (
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
     accountBasePlanId: ownProps.accountBasePlanId !== undefined ? ownProps.accountBasePlanId : state.account.account.account?.basePlanId,
+    subscriptionStatus: ownProps.subscriptionStatus !== undefined ? ownProps.subscriptionStatus : state.account.account.account?.subscriptionStatus,
   };
 })(withStyles(styles, { withTheme: true })(UpgradeWrapper));

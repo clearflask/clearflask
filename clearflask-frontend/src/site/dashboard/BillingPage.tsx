@@ -195,7 +195,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
-    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, setPaymentAction, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
         paymentTitle = 'Automatic renewal is active';
@@ -273,6 +273,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         cardState = 'warn';
         showSetPayment = true;
         setPaymentTitle = 'Resume with new payment method';
+        setPaymentAction = 'Add and resume subscription';
         showResumePlan = true;
         resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
         if (this.props.accountBilling?.billingPeriodEnd) {
@@ -517,7 +518,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         disabled={!this.state.stripePaymentFilled || !elements || !stripe}
                         color='primary'
                         onClick={() => this.onPaymentSubmit(elements!, stripe!)}
-                      >Add</SubmitButton>
+                      >{setPaymentAction || 'Add'}</SubmitButton>
                     </DialogActions>
                   </>
                 )}
