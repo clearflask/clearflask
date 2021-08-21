@@ -10,7 +10,7 @@ The following requirements are a minimum:
 - Maven
 - Makefile (for local and production deployment)
 - Docker
-- ffmpeg (For `babel-plugin-transform-media-imports`)
+- ffmpeg and ffprobe (For `babel-plugin-transform-media-imports`)
 - openssl (For local deployment)
 
 ```shell

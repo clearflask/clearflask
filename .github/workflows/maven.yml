@@ -11,12 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Java
+    - name: Setup Java
       uses: actions/setup-java@v2
       with:
         java-version: '11'
         distribution: 'adopt'
         architecture: x64
+    - name: Setup FFmpeg
+      uses: FedericoCarboni/setup-ffmpeg@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Maven build
       timeout-minutes: 20
       run: mvn install
