@@ -28,6 +28,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   suppressMargins?: boolean;
+  suppressName?: boolean;
 }
 class Logo extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
@@ -43,8 +44,12 @@ class Logo extends Component<Props & WithStyles<typeof styles, true>> {
           maxWidth={LogoImg.width}
           maxHeight={LogoImg.height}
         />
-        <span className={this.props.classes.clear}>Clear</span>
-        <span className={this.props.classes.flask}>Flask</span>
+        {!this.props.suppressName && (
+          <>
+            <span className={this.props.classes.clear}>Clear</span>
+            <span className={this.props.classes.flask}>Flask</span>
+          </>
+        )}
       </div>
     );
 

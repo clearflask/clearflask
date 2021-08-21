@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Collapse, Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -67,6 +68,9 @@ const styles = (theme: Theme) => createStyles({
     flex: 'none',
   },
   paper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     textAlign: 'center',
     zIndex: 5,
     position: 'relative',
@@ -85,18 +89,13 @@ const styles = (theme: Theme) => createStyles({
   },
   welcomeBack: {
     fontWeight: 'bold',
+    marginBottom: theme.spacing(2),
   },
   signUpHere: {
     textDecoration: 'none',
   },
-  oauthEnterContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    columnGap: theme.spacing(3),
-  },
   oauthEnter: {
-    margin: theme.spacing(3, 0, 1),
+    margin: theme.spacing(1, 0),
     display: 'flex',
     alignItems: 'center',
     textTransform: 'none',
@@ -120,6 +119,7 @@ interface ConnectProps {
 }
 interface State {
   isSubmitting?: boolean;
+  useEmail?: boolean; // login & signup
   email?: string; // login & signup
   pass?: string; // login & signup
   name?: string; // signup only
@@ -200,6 +200,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
 
     const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
     const isOauthEnabled = !isSingleCustomer;
+    const signUpOrLogIn = this.props.type === 'signup' ? 'Sign up ' : 'Log in ';
 
     return (
       <EnterTemplate
@@ -209,101 +210,116 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
             <span className={this.props.classes.titleClearFlask}>ClearFlask</span>
           </>
         )}
-        content={(
+        renderContent={submitButton => (
           <>
             {isOauthEnabled && (
               <>
-                <div className={this.props.classes.oauthEnterContainer}>
-                  <Button
-                    className={this.props.classes.oauthEnter}
-                    variant='outlined'
-                    fullWidth
-                    size='large'
-                    onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
-                  >
-                    <GoogleIcon />
-                    &nbsp;&nbsp;Google
-                  </Button>
-                  <Button
-                    className={this.props.classes.oauthEnter}
-                    variant='outlined'
-                    fullWidth
-                    size='large'
-                    onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
-                  >
-                    <GithubIcon />
-                    &nbsp;&nbsp;GitHub
-                  </Button>
-                </div>
+                <Button
+                  className={this.props.classes.oauthEnter}
+                  variant='outlined'
+                  fullWidth
+                  size='large'
+                  onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
+                >
+                  <GoogleIcon />
+                  &nbsp;&nbsp;{signUpOrLogIn}with Google
+                </Button>
+                <Button
+                  className={this.props.classes.oauthEnter}
+                  variant='outlined'
+                  fullWidth
+                  size='large'
+                  onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
+                >
+                  <GithubIcon />
+                  &nbsp;&nbsp;{signUpOrLogIn}with GitHub
+                </Button>
               </>
             )}
-            <Hr isInsidePaper length={120} margins={15}>OR</Hr>
-            <Collapse in={this.props.type === 'signup'}>
-              <TextField
+            <Collapse in={!this.state.useEmail}>
+              <Button
+                className={this.props.classes.oauthEnter}
                 variant='outlined'
                 fullWidth
-                margin='normal'
-                placeholder='Your name / organization'
-                required
-                value={this.state.name || ''}
-                onChange={e => this.setState({ name: e.target.value })}
-              />
+                size='large'
+                onClick={e => this.setState({ useEmail: true })}
+              >
+                <EmailIcon />
+                &nbsp;&nbsp;{signUpOrLogIn}with Email
+              </Button>
             </Collapse>
-            <TextField
-              variant='outlined'
-              fullWidth
-              required
-              value={this.state.email || ''}
-              onChange={e => {
-                const newEmail = e.target.value;
-                this.setState({ email: newEmail });
-                if (this.props.type === 'signup') {
-                  import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList')
-                    .then(eu => this.setState({
-                      emailIsFreeOrDisposable: eu.isDisposable(newEmail),
-                    }));
-                }
-              }}
-              placeholder={this.props.type === 'login' ? 'Email' : 'Business email'}
-              type='email'
-              margin='normal'
-              disabled={this.state.isSubmitting}
-            />
-            <Collapse in={this.props.type === 'signup' && !!this.state.emailIsFreeOrDisposable}>
-              <Message severity='warning' message={(
-                <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
-                  Cannot use a disposable email. Is this a mistake?&nbsp;
-                  <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>
-                  &nbsp;with us.
-                </div>
-              )} />
+            <Collapse in={this.state.useEmail}>
+              <div>
+                <Hr isInsidePaper length={120} margins={15}>OR</Hr>
+                <Collapse in={this.props.type === 'signup'}>
+                  <TextField
+                    variant='outlined'
+                    fullWidth
+                    margin='normal'
+                    placeholder='Your name / organization'
+                    required
+                    value={this.state.name || ''}
+                    onChange={e => this.setState({ name: e.target.value })}
+                  />
+                </Collapse>
+                <TextField
+                  variant='outlined'
+                  fullWidth
+                  required
+                  value={this.state.email || ''}
+                  onChange={e => {
+                    const newEmail = e.target.value;
+                    this.setState({ email: newEmail });
+                    if (this.props.type === 'signup') {
+                      import(/* webpackChunkName: "emailDisposableList" */'../common/util/emailDisposableList')
+                        .then(eu => this.setState({
+                          emailIsFreeOrDisposable: eu.isDisposable(newEmail),
+                        }));
+                    }
+                  }}
+                  placeholder={this.props.type === 'login' ? 'Email' : 'Business email'}
+                  type='email'
+                  margin='normal'
+                  disabled={this.state.isSubmitting}
+                />
+                <Collapse in={this.props.type === 'signup' && !!this.state.emailIsFreeOrDisposable}>
+                  <Message severity='warning' message={(
+                    <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
+                      Cannot use a disposable email. Is this a mistake?&nbsp;
+                      <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>
+                      &nbsp;with us.
+                    </div>
+                  )} />
+                </Collapse>
+                <TextField
+                  variant='outlined'
+                  fullWidth
+                  required
+                  value={this.state.pass || ''}
+                  onChange={e => this.setState({ pass: e.target.value })}
+                  placeholder='Password'
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  margin='normal'
+                  disabled={this.state.isSubmitting}
+                />
+                {this.props.type === 'signup' && (
+                  <AcceptTerms />
+                )}
+                {submitButton}
+              </div>
             </Collapse>
-            <TextField
-              variant='outlined'
-              fullWidth
-              required
-              value={this.state.pass || ''}
-              onChange={e => this.setState({ pass: e.target.value })}
-              placeholder='Password'
-              type={this.state.revealPassword ? 'text' : 'password'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <IconButton
-                      aria-label='Toggle password visibility'
-                      onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                    >
-                      {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-              margin='normal'
-              disabled={this.state.isSubmitting}
-            />
-            {this.props.type === 'signup' && (
-              <AcceptTerms />
-            )}
           </>
         )}
         submitTitle={this.props.type === 'signup' ? 'Create account' : 'Continue'}
@@ -315,7 +331,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         isSubmitting={this.state.isSubmitting}
         onSubmit={this.props.type === 'signup' ? this.signUp.bind(this, selectedPlanId!) : this.onLogin.bind(this)}
         footerText={this.props.type === 'signup' ? 'Have an account?' : 'No account?'}
-        footerActionText={this.props.type === 'signup' ? 'Login Here!' : 'Sign up Here!'}
+        footerActionText={this.props.type === 'signup' ? 'Log in Here!' : 'Sign up Here!'}
         footerLinkTo={this.props.type === 'signup' ? '/login' : 'signup'}
         alternateLayout={this.props.type === 'signup'}
       />
@@ -377,7 +393,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
 
 const EnterTemplate = (props: {
   title: React.ReactNode;
-  content: React.ReactNode;
+  renderContent: (submitButton: React.ReactNode) => React.ReactNode;
   submitTitle: React.ReactNode;
   submitDisabled?: boolean;
   isSubmitting?: boolean;
@@ -406,26 +422,29 @@ const EnterTemplate = (props: {
               <Typography component='h1' variant='h4' color='textPrimary' className={classes.welcomeBack}>
                 {props.title}
               </Typography>
-              {props.content}
-              <SubmitButton
-                className={classes.submitButton}
-                color='primary'
-                fullWidth
-                size='large'
-                variant='contained'
-                disableElevation
-                isSubmitting={props.isSubmitting}
-                disabled={props.submitDisabled}
-                onClick={props.onSubmit}
-              >{props.submitTitle}</SubmitButton>
-              <Typography component="span" variant="caption" color="textPrimary">
-                {props.footerText}&nbsp;
-              </Typography>
-              <Link to={props.footerLinkTo} className={classes.signUpHere}>
-                <Typography component="span" variant="caption" color="primary">
-                  {props.footerActionText}
+              {props.renderContent((
+                <SubmitButton
+                  className={classes.submitButton}
+                  color='primary'
+                  fullWidth
+                  size='large'
+                  variant='contained'
+                  disableElevation
+                  isSubmitting={props.isSubmitting}
+                  disabled={props.submitDisabled}
+                  onClick={props.onSubmit}
+                >{props.submitTitle}</SubmitButton>
+              ))}
+              <div>
+                <Typography component="span" variant="caption" color="textPrimary">
+                  {props.footerText}&nbsp;
                 </Typography>
-              </Link>
+                <Link to={props.footerLinkTo} className={classes.signUpHere}>
+                  <Typography component="span" variant="caption" color="primary">
+                    {props.footerActionText}
+                  </Typography>
+                </Link>
+              </div>
             </Paper>
           </div>
         </div>

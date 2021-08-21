@@ -55,10 +55,16 @@ class Stack extends Component<Props & WithStyles<typeof styles, true> & WithWidt
     var spacingHor = this.props.contentSpacingHorizontal || spacing;
     var spacingVer = this.props.contentSpacingVertical || spacing;
 
+    var marginTopBottom = overlap ? spacingVer * ((count - 1) / 2) : 0;
+    var marginLeftRight = overlap ? spacingHor * ((count - 1) / 2) : 0;
+
     return (
       <div className={this.props.classes.container} style={{
-        margin: overlap ? spacing * (count - 1) / 2 : 0,
-        height: overlap ? 300 + count * spacingVer : undefined,
+        marginTop: marginTopBottom,
+        marginBottom: marginTopBottom,
+        marginLeft: marginLeftRight,
+        marginRight: marginLeftRight,
+        height: overlap ? 300 : undefined,
       }}>
         {this.props.items.map((item, contentNumber) => (
           <Paper

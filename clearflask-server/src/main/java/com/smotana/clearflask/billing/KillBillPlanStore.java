@@ -55,6 +55,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
     private static final String TERMS_API = "Integrate with any external service via our API and webhooks";
     private static final String TERMS_INTERCOM = "Add Intercom widget on every page";
+    private static final String TERMS_BILLING = "Custom billing and invoicing";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
             "growth2-monthly",
             "standard2-monthly",
@@ -63,27 +64,27 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
                     pp, ImmutableList.of(
-                    new PlanPerk("Unlimited projects", null),
-                    new PlanPerk("Credit System", null),
-                    new PlanPerk("Roadmap", null)),
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Changelog", null)),
                     null, null))
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("standard-monthly", pp -> new Plan("standard-monthly", "Standard",
                     pp, ImmutableList.of(
-                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))
             .put("growth2-monthly", pp -> new Plan("growth2-monthly", "Growth",
                     pp, ImmutableList.of(
-                    new PlanPerk("Unlimited projects", null),
-                    new PlanPerk("Credit System", null),
-                    new PlanPerk("Roadmap", null)),
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Changelog", null)),
                     null, null))
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
-                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))
             .build();
@@ -92,23 +93,25 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, ImmutableList.of(
                     new PlanPerk("Flat annual price", null),
                     new PlanPerk("Tailored plan", null),
-                    new PlanPerk("SLA", null)),
+                    new PlanPerk("Support & SLA", null)),
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
-            ImmutableList.of("Growth", "Standard"),
+            ImmutableList.of("Growth", "Standard", "Flat"),
             ImmutableList.of(
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes"), TERMS_SITE_TEMPLATE)
+                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
+                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
+                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
+                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
+                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
+                    new FeaturesTableFeatures("Volume discount", ImmutableList.of("No", "No", "Yes"), null),
+                    new FeaturesTableFeatures("Billing & Invoicing", ImmutableList.of("No", "No", "Yes"), TERMS_BILLING)
             ), null);
 
     @Inject

@@ -132,6 +132,9 @@ const styles = (theme: Theme) => createStyles({
   flexGrow: {
     flexGrow: 1,
   },
+  action: {
+    padding: theme.spacing(0, 2, 1),
+  },
   warningIcon: {
     color: theme.palette.warning.main,
   },
@@ -391,7 +394,7 @@ const TemplateCard = (props: {
       />
       <CardContent>{props.content}</CardContent>
       <div className={classes.flexGrow} />
-      <CardActions>
+      <CardActions className={classes.action}>
         <FormControlLabel
           control={(
             <Checkbox color="primary"

@@ -51,7 +51,7 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props {
   className?: string;
-  title?: string;
+  title?: string | React.ReactNode;
   marker?: string;
   description?: string | React.ReactNode;
   points?: Array<string | {

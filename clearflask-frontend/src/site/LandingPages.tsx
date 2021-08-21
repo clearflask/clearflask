@@ -65,6 +65,7 @@ import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
+import DemoChangelogImg from '../../public/img/landing/demo-changelog.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
 import DemoDashboardFeedbackVid from '../../public/img/landing/demo-dashboard-feedback.mp4';
@@ -316,9 +317,9 @@ export function Landing() {
         title='Simple, yet powerful feedback experience'
         description='Ask your customers for feedback on your product.'
         points={[
-          'Extract actionable feedback',
+          'Keep feedback out in the open',
+          'Let users discuss amongst themselves',
           'Avoid feature-voting pitfalls',
-          'Keep the line of communication open',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -353,7 +354,7 @@ export function Landing() {
         title='Analyze ideas and convert to actionable tasks'
         description='Find the most valuable features by the most important customers.'
         points={[
-          'Address feedback efficiently',
+          'Extract actionable feedback',
           'Validate new ideas',
           'Reach out for clarification',
         ]}
@@ -368,13 +369,12 @@ export function Landing() {
         title='Plan out your roadmap and share it publicly'
         description='Become a customer-centric organization with transparent customer-driven product development.'
         points={[
-          'Show off your Product Roadmap',
-          'Keep stakeholders informed',
-          'Engage your community',
+          'Product Roadmap',
+          'Changelog of releases',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
-        demoFixedHeight={500}
+        // demoFixedHeight={500}
         demo={(
           <Stack
             topLeftToBottomRight
@@ -384,11 +384,19 @@ export function Landing() {
             items={[{
               content: (
                 <FakeBrowser>
+                  <ImgIso img={DemoChangelogImg} />
+                </FakeBrowser>
+              ),
+              width: 330,
+            }, {
+              content: (
+                <FakeBrowser>
                   <ImgIso img={DemoRoadmapImg} />
                 </FakeBrowser>
               ),
             }, {
               content: (<ImgIso img={DemoDashboardRoadmapImg} />),
+              height: 'max-content',
             }]}
           />
         )}
@@ -696,7 +704,7 @@ export function LandingHero() {
       <Hero
         title={(
           <>Open feedback.<br />Open roadmap.</>)}
-        description='Product Feedback Tool to keep you close to your customers'
+        description='Product feedback and ideation tool to keep you close with your customers.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
           image: PromoThumb,
@@ -708,7 +716,7 @@ export function LandingHero() {
         buttonRemark={(
           <TrialInfoText />
         )}
-        buttonAddOauth
+      // buttonAddOauth
       />
     </Background>
   );
@@ -910,7 +918,11 @@ export function LandingCollectFeedback() {
       />
       <Block
         mirror
-        title='#3 Curated discussions'
+        title={(
+          <>
+            #3 <b>Wants</b> instead of <b>upvotes</b>
+          </>
+        )}
         description='Ask your users about specific ideas that you are seeking feedback from.'
         demoImage={SeeWhatElseImg}
         demoWrap='browser'
@@ -923,10 +935,10 @@ export function LandingCollectFeedback() {
         spacingTopBottom={0}
       />
       <Block
-        title='Integrate with your product'
+        title='Easily integrates with your product'
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
+      <HorizontalPanels wrapBelow='md' maxContentWidth='sm' maxWidth='lg' staggerHeight={100}>
         <LandingClearFlaskDemo
           type='column'
           title='Link to portal'
@@ -952,7 +964,7 @@ export function LandingCollectFeedback() {
             </div>
           )}
         />
-        <Block
+        {/* <Block
           type='column'
           title='Embed Status'
           description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
@@ -970,7 +982,7 @@ export function LandingCollectFeedback() {
               />
             </div>
           )}
-        />
+        /> */}
       </HorizontalPanels>
       <Demo
         type='headingMain'
@@ -1203,7 +1215,7 @@ export function LandingOpenSource() {
         />
       </HorizontalPanels>
       <Block
-        title='Where is the source?'
+        title='Where can I get started?'
         spacingBottom={0}
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
@@ -2667,7 +2679,7 @@ export function LandingPricingOptions() {
           />
           <Block
             type='column'
-            title='Self-hosted solution'
+            title='Open-source self-hosted solution'
             description='Install and manage on your own infrastructure.'
             buttonTitle='Get started'
             buttonLink='/open-source'

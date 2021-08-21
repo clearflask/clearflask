@@ -63,7 +63,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import { renderRoadmap } from './dashboard/dashboardRoadmap';
 import { renderSettings } from './dashboard/dashboardSettings';
 import { renderUsers } from './dashboard/dashboardUsers';
-import { ProjectSettingsInstallPortal, ProjectSettingsInstallWidget, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
+import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
 import DemoApp from './DemoApp';
 import Logo from './Logo';
 
@@ -314,6 +314,7 @@ interface State {
   feedback?: FeedbackInstance | null;
   roadmap?: RoadmapInstance | null;
   changelog?: ChangelogInstance | null;
+  hasUncategorizedCategories?: boolean;
 }
 export class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
@@ -456,10 +457,34 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     if (activeProject && this.lastConfigVars !== this.props.configVers) {
       this.lastConfigVars = this.props.configVers;
       const templater = Templater.get(activeProject.editor);
-      templater.feedbackGet().then(i => this.setState({ feedback: i || null })).catch(e => this.setState({ feedback: undefined }));
-      templater.roadmapGet().then(i => this.setState({ roadmap: i || null })).catch(e => this.setState({ roadmap: undefined }));
-      templater.landingGet().then(i => this.setState({ landing: i || null })).catch(e => this.setState({ landing: undefined }));
-      templater.changelogGet().then(i => this.setState({ changelog: i || null })).catch(e => this.setState({ changelog: undefined }));
+      const feedbackPromise = templater.feedbackGet();
+      const roadmapPromise = templater.roadmapGet();
+      const landingPromise = templater.landingGet();
+      const changelogPromise = templater.changelogGet();
+      feedbackPromise
+        .then(i => this.setState({ feedback: i || null }))
+        .catch(e => this.setState({ feedback: undefined }));
+      roadmapPromise
+        .then(i => this.setState({ roadmap: i || null }))
+        .catch(e => this.setState({ roadmap: undefined }));
+      landingPromise
+        .then(i => this.setState({ landing: i || null }))
+        .catch(e => this.setState({ landing: undefined }));
+      changelogPromise
+        .then(i => this.setState({ changelog: i || null }))
+        .catch(e => this.setState({ changelog: undefined }));
+
+      const allPromise = Promise.all([feedbackPromise, roadmapPromise, changelogPromise]);
+      allPromise
+        .then(all => {
+          const hasUncategorizedCategories = !activeProject.editor.getConfig().content.categories.every(category =>
+            category.categoryId === all[0]?.categoryAndIndex.category.categoryId
+            || category.categoryId === all[1]?.categoryAndIndex.category.categoryId
+            || category.categoryId === all[2]?.categoryAndIndex.category.categoryId
+          );
+          this.setState({ hasUncategorizedCategories });
+        })
+        .catch(e => this.setState({ hasUncategorizedCategories: true }));
     }
 
     const context: DashboardPageContext = {
@@ -651,9 +676,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
             toolbarShow={!context.isOnboarding}
             toolbarLeft={(
               <div className={this.props.classes.toolbarLeft}>
-                <Link to='/dashboard' className={this.props.classes.logoLink}>
-                  <Logo suppressMargins />
-                </Link>
+                <Logo suppressMargins suppressName />
                 <Tabs
                   className={this.props.classes.tabs}
                   variant='standard'
@@ -662,21 +685,34 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     indicator: this.props.classes.tabsIndicator,
                     flexContainer: this.props.classes.tabsFlexContainer,
                   }}
-                  value={activePath}
+                  value={activePath || 'home'}
                   indicatorColor="primary"
                   textColor="primary"
                 >
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/explore'
-                    value='explore'
+                    to='/dashboard'
+                    value='home'
                     disableRipple
-                    label='Explore'
+                    label='Home'
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
                   />
+                  {!!this.state.hasUncategorizedCategories && (
+                    <Tab
+                      className={this.props.classes.tab}
+                      component={Link}
+                      to='/dashboard/explore'
+                      value='explore'
+                      disableRipple
+                      label='Explore'
+                      classes={{
+                        root: this.props.classes.tabRoot,
+                      }}
+                    />
+                  )}
                   {this.state.feedback !== null && (
                     <Tab
                       className={this.props.classes.tab}
@@ -804,9 +840,12 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
               <Collapse in={(this.state.publishDialogStep || 0) === 1}>
                 <DialogTitle>Installation</DialogTitle>
                 <DialogContent>
-                  <DialogContentText>Choose how to link your product with your ClearFlask portal</DialogContentText>
+                  <DialogContentText>Link your product website or app with your ClearFlask portal</DialogContentText>
                   <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
-                  <ProjectSettingsInstallWidget server={activeProject.server} editor={activeProject.editor} />
+                  <Link
+                    to='/dashboard/settings/project/install'
+                    onClick={() => this.setState({ publishDialogShown: false })}
+                  >See more options</Link>
                 </DialogContent>
               </Collapse>
               <DialogActions>
@@ -861,7 +900,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                       this.setState({
                         publishDialogShown: false,
                       });
-                    }}>Visit</Button>
+                    }}>Visit Portal</Button>
                 )}
               </DialogActions>
             </Dialog>

@@ -6,7 +6,6 @@ import AllIdeasIcon from '@material-ui/icons/AllInclusive';
 import DiscussionIcon from '@material-ui/icons/ChatBubbleOutlined';
 import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
 import UsersIcon from '@material-ui/icons/PersonAdd';
-import classNames from 'classnames';
 import moment from 'moment';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -15,13 +14,11 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import * as ConfigEditor from '../../common/config/configEditor';
-import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { initialWidth } from '../../common/util/screenUtil';
-import GraphBox from './GraphBox';
 import Histogram from './Histogram';
 
 const statePrefixAggregate = 'aggr-';
@@ -250,7 +247,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             />
           </div>
         </div>
-        <div className={classNames(
+        {/* <div className={classNames(
           this.props.classes.stats,
           this.props.classes.scrollVertical,
         )}>
@@ -288,7 +285,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
               )}
             />
           )}
-        </div>
+        </div> */}
       </div>
     );
   }

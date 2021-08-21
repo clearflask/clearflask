@@ -23,16 +23,16 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     pricing: { basePrice: 10, baseMau: 50, unitPrice: 10, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Credit System' },
       { desc: 'Roadmap' },
+      { desc: 'Changelog' },
     ],
   },
   'standard2-monthly': {
     basePlanId: 'standard2-monthly', title: 'Standard',
     pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: 'Single Sign-On' },
       { desc: 'Private projects' },
+      { desc: 'SSO and OAuth' },
       { desc: 'Site template' },
     ],
   },
@@ -41,20 +41,23 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     perks: [
       { desc: 'Flat annual price' },
       { desc: 'Tailored plan' },
-      { desc: 'SLA' },
+      { desc: 'Support & SLA' },
     ],
   },
 };
 const FeaturesTable: Admin.FeaturesTable | undefined = {
-  plans: ['Growth', 'Standard'],
+  plans: ['Growth', 'Standard', 'Flat'],
   features: [
-    { feature: 'Projects', values: ['No limit', 'No limit'] },
-    { feature: 'Credit System', values: ['Yes', 'Yes'] },
-    { feature: 'Roadmap view', values: ['Yes', 'Yes'] },
-    { feature: 'Content customization', values: ['Yes', 'Yes'] },
-    { feature: 'Private projects', values: ['No', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
-    { feature: 'SSO and OAuth', values: ['No', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
-    { feature: 'Site template', values: ['No', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
+    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
+    { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
+    { feature: 'Credit System', values: ['Yes', 'Yes', 'Yes'] },
+    { feature: 'Content customization', values: ['Yes', 'Yes', 'Yes'] },
+    { feature: 'Private projects', values: ['No', 'Yes', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
+    { feature: 'SSO and OAuth', values: ['No', 'Yes', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
+    { feature: 'Site template', values: ['No', 'Yes', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
+    { feature: 'Volume discount', values: ['No', 'No', 'Yes'] },
+    { feature: 'Billing & Invoicing', values: ['No', 'No', 'Yes'], terms: 'Customized billing and invoicing.' },
   ],
 };
 

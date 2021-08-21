@@ -423,7 +423,7 @@ export const HeaderLogoLogo = (props: {
   const classes = useStyles();
 
   return (
-    <img alt='' src={props.logoUrl} className={classNames(
+    <img alt=' ' src={props.logoUrl} className={classNames(
       classes.logoImg,
       props.large && classes.logoImgLarge,
     )} />

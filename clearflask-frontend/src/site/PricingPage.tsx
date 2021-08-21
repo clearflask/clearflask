@@ -128,7 +128,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           d: 'M 0 49.98 C 0 120 16 137 94 136 C 361 122 252 -31 500 49.98 L 500 0 L 0 0 Z',
           viewBox: '0 0 500 150',
           flexible: true,
-        }}>
+        }} height={500} align='top'>
           <div className={this.props.classes.section}>
             <div className={this.props.classes.header}>
               <div>
@@ -147,94 +147,93 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               </Container>
             </div>
           </div>
-        </Background>
-        <br />
-        <br />
-        <br />
-        <div className={this.props.classes.section}>
-          <Loader loaded={!!this.props.plans} skipFade>
-            <Grid container spacing={5} alignItems='stretch' justify='center'>
-              {this.props.plans && this.props.plans.map((plan, index) => (
-                <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
-                  <PricingPlan
-                    customPrice='1000+'
-                    plan={plan}
-                    selected={this.state.highlightedBasePlanid === plan.basePlanId
-                      || this.state.callForQuote && !plan.pricing}
-                    actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
-                    actionOnClick={() => {
-                      if (isTracking()) {
-                        ReactGA.event({
-                          category: 'pricing',
-                          action: 'click-plan',
-                          label: plan.basePlanId,
-                        });
-                      }
-                    }}
-                    actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
-                      ? {
-                        pathname: '/signup',
-                        state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
-                      }
-                      : '/contact/sales'}
+          <br />
+          <br />
+          <div className={this.props.classes.section}>
+            <Loader loaded={!!this.props.plans} skipFade>
+              <Grid container spacing={5} alignItems='stretch' justify='center'>
+                {this.props.plans && this.props.plans.map((plan, index) => (
+                  <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
+                    <PricingPlan
+                      customPrice='1000+'
+                      plan={plan}
+                      selected={this.state.highlightedBasePlanid === plan.basePlanId
+                        || this.state.callForQuote && !plan.pricing}
+                      actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+                      remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
+                      actionOnClick={() => {
+                        if (isTracking()) {
+                          ReactGA.event({
+                            category: 'pricing',
+                            action: 'click-plan',
+                            label: plan.basePlanId,
+                          });
+                        }
+                      }}
+                      actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
+                        ? {
+                          pathname: '/signup',
+                          state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
+                        }
+                        : '/contact/sales'}
+                    />
+                  </Grid>
+                ))}
+                <Grid item key='slider' xs={12} sm={6} md={4}>
+                  <PricingSlider
+                    plans={this.props.plans || []}
+                    onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
+                      highlightedBasePlanid: callForQuote ? undefined : basePlanId,
+                      callForQuote,
+                    })}
                   />
                 </Grid>
-              ))}
-              <Grid item key='slider' xs={12} sm={6} md={4}>
-                <PricingSlider
-                  plans={this.props.plans || []}
-                  onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
-                    highlightedBasePlanid: callForQuote ? undefined : basePlanId,
-                    callForQuote,
-                  })}
-                />
               </Grid>
-            </Grid>
-          </Loader>
-        </div>
-        <br />
-        <br />
-        <br />
-        {this.props.featuresTable && (
-          <div className={this.props.classes.section}>
-            <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
-              {this.props.featuresTable.features.map((feature, index) => (
-                <FeatureListItem
-                  key={feature.feature}
-                  planContents={this.mapFeaturesTableValues(feature.values)}
-                  name={feature.feature}
-                  helpText={feature.terms}
-                />
-              ))}
-            </FeatureList>
-            {this.props.featuresTable.extraTerms && (
-              <Box display='flex' justifyContent='center'>
-                <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
-              </Box>
-            )}
+            </Loader>
           </div>
-        )}
-        <br />
-        <br />
-        <br />
-        <div className={this.props.classes.section}>
-          <Grid container spacing={5} alignItems='stretch' justify='center'>
-            {Faq.map((faqItem, index) => (
-              <Grid key={index} item xs={12} sm={6}>
-                <div className={this.props.classes.faqItem}>
-                  <Typography component='div' variant='h5'>
-                    {faqItem.heading}
-                  </Typography>
-                  <br />
-                  <Typography component='div' variant='body1' color='textSecondary'>
-                    {faqItem.body}
-                  </Typography>
-                </div>
-              </Grid>
-            ))}
-          </Grid>
-        </div>
+          <br />
+          <br />
+          <br />
+          {this.props.featuresTable && (
+            <div className={this.props.classes.section}>
+              <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
+                {this.props.featuresTable.features.map((feature, index) => (
+                  <FeatureListItem
+                    key={feature.feature}
+                    planContents={this.mapFeaturesTableValues(feature.values)}
+                    name={feature.feature}
+                    helpText={feature.terms}
+                  />
+                ))}
+              </FeatureList>
+              {this.props.featuresTable.extraTerms && (
+                <Box display='flex' justifyContent='center'>
+                  <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
+                </Box>
+              )}
+            </div>
+          )}
+          <br />
+          <br />
+          <br />
+          <div className={this.props.classes.section}>
+            <Grid container spacing={5} alignItems='stretch' justify='center'>
+              {Faq.map((faqItem, index) => (
+                <Grid key={index} item xs={12} sm={6}>
+                  <div className={this.props.classes.faqItem}>
+                    <Typography component='div' variant='h5'>
+                      {faqItem.heading}
+                    </Typography>
+                    <br />
+                    <Typography component='div' variant='body1' color='textSecondary'>
+                      {faqItem.body}
+                    </Typography>
+                  </div>
+                </Grid>
+              ))}
+            </Grid>
+          </div>
+        </Background>
       </>
     );
   }
