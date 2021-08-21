@@ -86,6 +86,7 @@ interface Props {
   server: Server;
   isDashboard?: boolean;
   explorer: Client.PageExplorer;
+  createFormAdminControlsDefaultVisibility?: React.ComponentProps<typeof PostCreateForm>['adminControlsDefaultVisibility'],
   onClickPost?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
 }
@@ -255,7 +256,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           server={this.props.server}
           type={isLarge ? 'large' : 'regular'}
           mandatoryTagIds={this.props.explorer.search.filterTagIds}
-          adminControlsDefaultVisibility={this.props.isDashboard ? 'expanded' : 'hidden'}
+          adminControlsDefaultVisibility={this.props.createFormAdminControlsDefaultVisibility || (this.props.isDashboard ? 'expanded' : 'hidden')}
           titleInputRef={this.titleInputRef}
           searchSimilar={(text, categoryId) => this.setState({ searchSimilar: text })}
           logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ onLoggedIn: resolve }))}

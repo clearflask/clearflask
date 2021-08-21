@@ -8,7 +8,7 @@ import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 import { changelogGet, ChangelogInstance, changelogOff, changelogOn } from "./template/changelog";
-import { feedbackGet, FeedbackInstance, feedbackOn, feedbackPageOff, feedbackUpdateWithRoadmap } from "./template/feedback";
+import { feedbackGet, FeedbackInstance, feedbackOn, feedbackUpdateWithRoadmap } from "./template/feedback";
 import { landingGet, LandingInstance, landingOff, landingOn } from "./template/landing";
 import { feedbackAndRoadmapGet, roadmapGet, RoadmapInstance, roadmapOn, roadmapPageOff } from "./template/roadmap";
 import { _findCategoryByPrefix, _findPageByPrefix, _pageDelete } from "./template/templateUtils";
@@ -36,6 +36,7 @@ export const configStateEqual = (left?: StateConf, right?: StateConf): boolean =
 export interface CreateTemplateV2Options {
   templateLanding?: boolean;
   templateFeedback?: boolean;
+  templateFeedbackIsClassic?: boolean;
   templateRoadmap?: boolean;
   templateChangelog?: boolean;
 
@@ -124,7 +125,6 @@ export default class Templater {
 
   feedbackGet = feedbackGet;
   feedbackOn = feedbackOn;
-  feedbackPageOff = feedbackPageOff;
   feedbackUpdateWithRoadmap = feedbackUpdateWithRoadmap;
 
   roadmapGet = roadmapGet;
@@ -180,7 +180,7 @@ export default class Templater {
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
 
     const result: CreateTemplateV2Result = {};
-    if (opts.templateFeedback) result.feedback = await this.feedbackOn();
+    if (opts.templateFeedback) result.feedback = await this.feedbackOn(opts.templateFeedbackIsClassic ? 'explorer' : 'feedback');
     if (opts.templateRoadmap) result.roadmap = await this.roadmapOn();
     if (opts.templateChangelog) result.changelog = await this.changelogOn();
     if (opts.templateLanding) result.landing = await this.landingOn();

@@ -49,6 +49,7 @@ import MicrosoftIcon from '../../common/icon/MicrosoftIcon';
 import TwitchIcon from '../../common/icon/TwitchIcon';
 import MyAccordion from '../../common/MyAccordion';
 import MyColorPicker from '../../common/MyColorPicker';
+import { FilterControlSelect } from '../../common/search/FilterControls';
 import SubmitButton from '../../common/SubmitButton';
 import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { notEmpty } from '../../common/util/arrayUtil';
@@ -158,7 +159,7 @@ const styles = (theme: Theme) => createStyles({
   tagPreviewContainer: {
     padding: theme.spacing(4, 2),
   },
-  previewExplorer: {
+  maxContent: {
     width: 'max-content',
     height: 'max-content',
   },
@@ -1535,7 +1536,7 @@ export const ProjectSettingsLanding = (props: {
                             fixedWidth: 350,
                           }}
                         >
-                          <div className={classNames(classes.previewPageTitleDescription, classes.previewExplorer)}>
+                          <div className={classNames(classes.previewPageTitleDescription, classes.maxContent)}>
                             <PageTitleDescription page={landing.pageAndIndex.page} suppressSpacing />
                           </div>
                         </BrowserPreview>
@@ -1577,7 +1578,7 @@ export const ProjectSettingsLanding = (props: {
                             fixedHeight: 400,
                           }}
                         >
-                          <div className={classNames(classes.previewLandingLink, classes.previewExplorer)}>
+                          <div className={classNames(classes.previewLandingLink, classes.maxContent)}>
                             <LandingLink
                               server={props.server}
                               config={props.editor.getConfig()}
@@ -1819,7 +1820,7 @@ export const ProjectSettingsFeedback = (props: {
                 variant='contained'
                 color='primary'
                 disableElevation
-                onClick={() => templater.feedbackOn()}
+                onClick={() => templater.feedbackOn('feedback')}
               >
                 Create feedback
               </Button>
@@ -1828,8 +1829,14 @@ export const ProjectSettingsFeedback = (props: {
             <>
               {intro}
               <Section
-                title='Public page'
-                description='Customize your public page for collecting feedback.'
+                title='Public feedback page'
+                description={(
+                  <>
+                    Customize your public page for collecting feedback.
+                    <p>The <b>Feedback Form</b> is recommended as it focuses on capturing user feedback first and showing other feedback later.</p>
+                    <p>Whereas the <b>Classic Explorer</b> allows all users to search and filter others' feedback immediately.</p>
+                  </>
+                )}
                 preview={(
                   <>
                     {!!feedback.pageAndIndex && (
@@ -1839,34 +1846,39 @@ export const ProjectSettingsFeedback = (props: {
                         addressBar='project'
                         projectPath={feedback.pageAndIndex.page.slug}
                         FakeBrowserProps={{
-                          fixedWidth: 350,
-                          fixedHeight: 500,
+                          fixedWidth: 700,
+                          fixedHeight: 700,
                         }}
                       >
-                        <div className={classes.previewExplorer}>
-                          <CustomPage
-                            key={props.server.getProjectId()}
-                            server={props.server}
-                            pageSlug={feedback.pageAndIndex.page.slug}
-                          />
-                        </div>
+                        <CustomPage
+                          key={props.server.getProjectId()}
+                          server={props.server}
+                          pageSlug={feedback.pageAndIndex.page.slug}
+                          ideaExplorerCreateFormAdminControlsDefaultVisibility='none'
+                        />
                       </BrowserPreview>
                     )}
                   </>
                 )}
                 content={(
                   <>
-                    <FormControlLabel
-                      label={!!feedback.pageAndIndex ? 'Shown' : 'Hidden'}
-                      control={(
-                        <Switch
-                          checked={!!feedback.pageAndIndex}
-                          onChange={(e, checked) => !!feedback.pageAndIndex
-                            ? templater.feedbackPageOff(feedback)
-                            : templater.feedbackOn()}
-                          color='primary'
-                        />
-                      )}
+                    <FilterControlSelect
+                      type='radio'
+                      labels={[
+                        { label: 'Feedback Form', value: 'feedback' },
+                        { label: 'Classic Explorer', value: 'explorer' },
+                        { label: 'Off', value: 'off' },
+                      ]}
+                      selected={(!feedback.pageAndIndex?.page.explorer && !feedback.pageAndIndex?.page.feedback)
+                        ? 'off'
+                        : (feedback.pageAndIndex.page.feedback ? 'feedback' : 'explorer')}
+                      onToggle={(val) => {
+                        if (val === 'off'
+                          || val === 'feedback'
+                          || val === 'explorer') {
+                          templater.feedbackOn(val);
+                        }
+                      }}
                     />
                     {!!feedback.pageAndIndex && (
                       <>

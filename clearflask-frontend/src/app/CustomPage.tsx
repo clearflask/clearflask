@@ -134,6 +134,7 @@ interface Props {
   server: Server;
   pageSlug: string;
   landingLinkOpenInNew?: boolean;
+  ideaExplorerCreateFormAdminControlsDefaultVisibility?: React.ComponentProps<typeof IdeaExplorer>['createFormAdminControlsDefaultVisibility'],
 }
 interface ConnectProps {
   configver?: string;
@@ -238,6 +239,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
             className={this.props.classes.explorer}
             server={this.props.server}
             explorer={explorer}
+            createFormAdminControlsDefaultVisibility={this.props.ideaExplorerCreateFormAdminControlsDefaultVisibility}
           />
         );
       }

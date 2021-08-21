@@ -122,6 +122,7 @@ import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
 import LockSimpleIcon from '../common/icon/LockSimpleIcon';
+import OpenSourceIcon from '../common/icon/OpenSourceIcon';
 import ImgIso from '../common/ImgIso';
 import Stack from '../common/Stack';
 import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
@@ -1188,6 +1189,7 @@ export function LandingOpenSource() {
         type='hero'
         title="We're Open-Source"
         description='Build software with us for the whole community or host an instance on your own infrastructure.'
+        icon={<OpenSourceIcon />}
         image={VersionControlImg}
       />
       <Block

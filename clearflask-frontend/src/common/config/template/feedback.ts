@@ -12,11 +12,11 @@ const FeedbackCategoryIdPrefix = 'feedback-';
 const FeedbackPageIdPrefix = 'feedback-';
 const FeedbackStatusAcceptedPrefix = 'accepted-';
 
-export type PageWithFeedback = Admin.Page & Required<Pick<Admin.Page, 'feedback'>>;
+export type PageWithFeedback = Admin.Page & (Required<Pick<Admin.Page, 'feedback'>> | Required<Pick<Admin.Page, 'explorer'>>);
 export interface FeedbackInstance {
   categoryAndIndex: CategoryAndIndex;
   pageAndIndex?: {
-    page: PageWithFeedback;
+    page: Admin.Page;
     index: number;
   },
   statusIdAccepted?: string;
@@ -26,7 +26,7 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
   const categoryAndIndex = await this._findCategoryByPrefix(FeedbackCategoryIdPrefix, 'Feedback');
   if (!categoryAndIndex) return undefined;
 
-  const pageAndIndex = await this._findPageByPrefix(FeedbackPageIdPrefix, 'Feedback', page => !!page.feedback);
+  const pageAndIndex = await this._findPageByPrefix(FeedbackPageIdPrefix, 'Feedback', page => !!page.feedback || !!page.explorer);
 
   const feedback: FeedbackInstance = {
     categoryAndIndex,
@@ -38,7 +38,7 @@ export async function feedbackGet(this: Templater): Promise<FeedbackInstance | u
   return feedback;
 }
 
-export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
+export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' | 'explorer'): Promise<FeedbackInstance> {
   var feedback = await this.feedbackGet();
 
   // Create Category
@@ -77,16 +77,16 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
     feedback = (await this.feedbackGet())!;
   }
 
-  // Create page
-  if (!feedback.pageAndIndex) {
+  // Create/modify page
+  if (pageType === 'off' && !!feedback.pageAndIndex) {
+    this._pageDelete(feedback.pageAndIndex.page.pageId);
+  } else if (
+    pageType === 'feedback' && !feedback.pageAndIndex?.page.feedback
+    || pageType === 'explorer' && !feedback.pageAndIndex?.page.explorer
+  ) {
     const roadmap = await this.roadmapGet();
-    const page: PageWithFeedback = {
-      pageId: FeedbackPageIdPrefix + randomUuid(),
-      name: 'Feedback',
-      slug: stringToSlug('feedback'),
-      icon: 'RecordVoiceOver',
-      panels: [],
-      board: undefined,
+
+    const pageComponent: Partial<Admin.Page> & (Required<Pick<Admin.Page, 'feedback'>> | Required<Pick<Admin.Page, 'explorer'>>) = pageType === 'feedback' ? {
       feedback: {
         categoryId: feedback.categoryAndIndex.category.categoryId,
         // ENABLE this when we have a knowledge base, also a new method feedbackUpdateWithKnowledgeBase
@@ -145,28 +145,85 @@ export async function feedbackOn(this: Templater): Promise<FeedbackInstance> {
         },
         ...getDebate(feedback, roadmap),
       },
+    } : {
+      explorer: {
+        search: {
+          filterCategoryIds: [
+            feedback.categoryAndIndex.category.categoryId,
+            ...(!!roadmap ? [roadmap.categoryAndIndex.category.categoryId] : []),
+          ],
+        },
+        display: {
+          titleTruncateLines: 1,
+          descriptionTruncateLines: 3,
+          responseTruncateLines: 2,
+          showCommentCount: true,
+          showCategoryName: undefined,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: undefined,
+          showTags: true,
+          showVoting: false,
+          showVotingCount: true,
+          showFunding: true,
+          showExpression: true,
+          showEdit: false,
+        },
+        allowCreate: {
+          actionTitle: 'Suggest',
+          actionTitleLong: 'Suggest an idea',
+        },
+        allowSearch: {
+          enableSort: true,
+          enableSearchText: true,
+          enableSearchByCategory: true,
+          enableSearchByStatus: true,
+          enableSearchByTag: true,
+        },
+      }
     };
-    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    pagesProp.insert().setRaw(page);
+
+    if (!feedback.pageAndIndex) {
+      const page: PageWithFeedback = {
+        pageId: FeedbackPageIdPrefix + randomUuid(),
+        name: 'Feedback',
+        slug: stringToSlug('feedback'),
+        icon: 'RecordVoiceOver',
+        panels: [],
+        board: undefined,
+        ...pageComponent,
+      };
+      const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+      pagesProp.insert().setRaw(page);
+    } else {
+      if (!!pageComponent.explorer !== !!feedback.pageAndIndex.page.explorer) {
+        this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'explorer']).setRaw(pageComponent.explorer);
+      }
+      if (!!pageComponent.feedback !== !!feedback.pageAndIndex.page.feedback) {
+        this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback']).setRaw(pageComponent.feedback);
+      }
+    }
 
     feedback = (await this.feedbackGet())!;
   }
 
-  // Add page to menu
-  const isInMenu = this.editor.getConfig().layout.menu.some(menu => menu.pageIds.some(pageId => pageId === feedback?.pageAndIndex?.page.pageId));
-  if (!isInMenu) {
-    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(),
-      pageIds: [feedback.pageAndIndex!.page.pageId],
-    }));
-  }
+  if (!!feedback.pageAndIndex) {
+    // Add page to menu
+    const isInMenu = this.editor.getConfig().layout.menu.some(menu => menu.pageIds.some(pageId => pageId === feedback?.pageAndIndex?.page.pageId));
+    if (!isInMenu) {
+      const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+      (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+        menuId: randomUuid(),
+        pageIds: [feedback.pageAndIndex!.page.pageId],
+      }));
+    }
 
-  // Add to landing page
-  const landing = await this.landingGet();
-  const isInLanding = landing?.pageAndIndex.page.landing.links.some(link => link.linkToPageId === feedback?.pageAndIndex?.page.pageId);
-  if (!!landing && !isInLanding) {
-    this.landingOn(new Set([feedback.pageAndIndex!.page.pageId]));
+    // Add to landing page
+    const landing = await this.landingGet();
+    const isInLanding = landing?.pageAndIndex.page.landing.links.some(link => link.linkToPageId === feedback?.pageAndIndex?.page.pageId);
+    if (!!landing && !isInLanding) {
+      this.landingOn(new Set([feedback.pageAndIndex!.page.pageId]));
+    }
   }
 
   return feedback;
@@ -252,7 +309,15 @@ export async function feedbackUpdateWithRoadmap(this: Templater, roadmap?: Roadm
       userMergeableCategoryIdsProp.set(new Set([feedback.categoryAndIndex.category.categoryId]));
     }
   }
-  if (feedback?.pageAndIndex?.page.feedback.related) {
+  if (feedback?.pageAndIndex?.page.explorer) {
+    const relatedFilterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'search', 'filterCategoryIds']);
+    if (roadmap) {
+      relatedFilterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
+    } else {
+      relatedFilterCategoryIdsProp.set(new Set([feedback.categoryAndIndex.category.categoryId]));
+    }
+  }
+  if (feedback?.pageAndIndex?.page.feedback?.related) {
     const relatedFilterCategoryIdsProp = this._get<ConfigEditor.LinkMultiProperty>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'related', 'panel', 'search', 'filterCategoryIds']);
     if (roadmap) {
       relatedFilterCategoryIdsProp.insert(roadmap.categoryAndIndex.category.categoryId);
@@ -260,17 +325,11 @@ export async function feedbackUpdateWithRoadmap(this: Templater, roadmap?: Roadm
       relatedFilterCategoryIdsProp.set(new Set([feedback.categoryAndIndex.category.categoryId]));
     }
   }
-  if (!!feedback?.pageAndIndex?.page.feedback.debate) {
+  if (!!feedback?.pageAndIndex?.page.feedback?.debate) {
     const debates = getDebate(feedback, roadmap);
     this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'debate'])
       .setRaw(debates.debate);
     this._get<ConfigEditor.Page>(['layout', 'pages', feedback.pageAndIndex.index, 'feedback', 'debate2'])
       .setRaw(debates.debate2);
-  }
-}
-
-export async function feedbackPageOff(this: Templater, feedback: FeedbackInstance): Promise<void> {
-  if (feedback.pageAndIndex) {
-    this._pageDelete(feedback.pageAndIndex.page.pageId);
   }
 }
