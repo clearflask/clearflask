@@ -1,3 +1,3 @@
 set -ex
 
-rm *.ico *.png
+rm favicon.ico clearflask-logo*.png
