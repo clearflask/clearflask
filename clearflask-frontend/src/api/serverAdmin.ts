@@ -4,6 +4,7 @@ import { applyMiddleware, combineReducers, compose, createStore, Store } from 'r
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
+import Cache from '../common/util/cache';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
@@ -30,6 +31,7 @@ export default class ServerAdmin {
 
   readonly projects: { [projectId: string]: Project } = {};
   readonly dispatcherAdmin: Admin.Dispatcher;
+  readonly dispatchDebounceCache = new Cache(1000);
   readonly store: Store<ReduxStateAdmin, Admin.Actions>;
 
   constructor() {
@@ -85,7 +87,7 @@ export default class ServerAdmin {
     return Object.values(this.projects).map(p => p.server);
   }
   dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
-    return Server.__dispatch(props, this.dispatcherAdmin);
+    return Server.__dispatch(props, this.dispatcherAdmin, this.dispatchDebounceCache);
   }
 
   getProject(projectId: string): Project | undefined {

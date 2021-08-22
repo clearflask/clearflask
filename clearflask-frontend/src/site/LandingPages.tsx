@@ -11,6 +11,7 @@ import LifecycleIcon from '@material-ui/icons/Autorenew';
 import BuildIcon from '@material-ui/icons/Build';
 import ContentDeliveryIcon from '@material-ui/icons/Cached';
 import CategoryIcon from '@material-ui/icons/Category';
+import ChangeIcon from '@material-ui/icons/ChangeHistory';
 import ApiIcon from '@material-ui/icons/Code';
 import BlogIcon from '@material-ui/icons/Description';
 import ClientIcon from '@material-ui/icons/Devices';
@@ -1349,31 +1350,31 @@ export function LandingEngagement() {
         />
       </Background>
       <Block
-        title='Keep your stakeholders informed'
+        title='Keep everyone informed'
         description='Transparency between development and your stakeholders is an important part of your success.'
         image={SupportImg}
         imageStyleOuter={{ maxWidth: 400, padding: 0, }}
         alignItems='flex-start'
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm'>
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='md'>
         <Block
           type='column'
           title='Product roadmap'
-          description='Public or stakeholder-only roadmap to keep everyone up to date on the high-level progress.'
-          icon={(<RespondIcon />)}
-          image={DemoRoadmapImg}
-          imageStyleOuter={{ padding: 'unset' }}
-          buttonTitle='See a Roadmap'
-          buttonLink='/solutions/product-roadmap'
+          description='Show off a public roadmap to get your users excited for upcoming features'
+          icon={(<RoadmapIcon style={{ transform: 'rotate(180deg)' }} />)}
+          demoImage={DemoRoadmapImg}
+          demoWrap='browser'
         />
         <Block
           type='column'
-          title='Respond to suggestions'
-          description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
-          icon={(<RespondIcon />)}
-          image={DemoPostResponseImg}
-          imageStyleOuter={{ padding: 'unset' }}
+          title='Release Changelog'
+          description='Let users view your recent product updates. Let them subscribe via email or web push notifications.'
+          icon={(<ChangeIcon />)}
+          demoImage={DemoChangelogImg}
+          demoWrap='browser'
         />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
           type='column'
           title='Status updates'
@@ -1382,6 +1383,14 @@ export function LandingEngagement() {
           image={DemoEmailNotificationImg}
           imageStyleOuter={{ padding: 'unset' }}
           imageScale={0.3}
+        />
+        <Block
+          type='column'
+          title='Respond to suggestions'
+          description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
+          icon={(<RespondIcon />)}
+          image={DemoPostResponseImg}
+          imageStyleOuter={{ padding: 'unset' }}
         />
       </HorizontalPanels>
 

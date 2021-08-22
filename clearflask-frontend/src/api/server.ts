@@ -5,6 +5,7 @@ import { applyMiddleware, combineReducers, compose, createStore, Store } from 'r
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
+import Cache from '../common/util/cache';
 import debounce from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
@@ -25,6 +26,7 @@ export const challengeSubscribers: ChallengeSubscribers = {}
 export interface DispatchProps {
   ssr?: boolean;
   ssrStatusPassthrough?: boolean;
+  debounce?: boolean | number; // optionally set to expiry in ms
 }
 export const ignoreSearchKeys = 'ignoreSearchKeys';
 
@@ -45,6 +47,7 @@ export class Server {
   readonly store: Store<ReduxState, AllActions>;
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Admin.Dispatcher;
+  readonly dispatchDebounceCache = new Cache(1000);
 
   // NOTE: If creating multiple projects, only one project can have projectId undefined
   // and is conside
@@ -194,39 +197,74 @@ export class Server {
   }
 
   dispatch(props: DispatchProps = {}): Promise<Client.Dispatcher> {
-    return Server.__dispatch(props, this.dispatcherClient);
+    return Server.__dispatch(props, this.dispatcherClient, this.dispatchDebounceCache);
   }
 
   dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
-    return Server.__dispatch(props, this.dispatcherAdmin);
+    return Server.__dispatch(props, this.dispatcherAdmin, this.dispatchDebounceCache);
   }
 
-  static __dispatch<D>(props: DispatchProps = {}, dispatcher: D): Promise<D> {
+  static __dispatch<D extends object>(props: DispatchProps = {}, dispatcher: D, debounceCache: Cache): Promise<D> {
     if (!props.ssr && windowIso.isSsr) {
       return new Promise(() => { }); // Promise that never resolves
     }
-    const dispatchPromise = Promise.resolve(dispatcher);
-    if (props.ssr && windowIso.isSsr) {
-      windowIso.awaitPromises.push(dispatchPromise);
-      // Extend the 'then' method and add any API calls
-      // to the list of promises to wait for in SSR
-      dispatchPromise.then = (function (_super) {
-        return function (this: any) {
-          var apiPromise = _super.apply(this, arguments as any);
-          if (props.ssrStatusPassthrough) {
-            apiPromise = apiPromise.catch(err => {
-              if (!windowIso.isSsr) return;
-              if (isNaN(err?.status)) {
-                windowIso.staticRouterContext.statusCode = 500;
-              } else {
-                windowIso.staticRouterContext.statusCode = err.status;
-              }
-            })
+    var dispatchPromise = Promise.resolve(dispatcher);
+
+    if (props.debounce || (props.ssr && windowIso.isSsr)) {
+      dispatchPromise = dispatchPromise.then(dispatcher => {
+        return new Proxy(dispatcher, {
+          get(target, prop) {
+            if (typeof target[prop] === 'function') {
+              return new Proxy(target[prop], {
+                apply: (target, thisArg, argumentsList) => {
+                  // Skip anonymous functions
+                  if (target.name === '') {
+                    return Reflect.apply(target, thisArg, argumentsList);
+                  }
+                  var result;
+                  if (props.debounce) {
+                    // Debounce same calls
+                    debounceCache.cleanup();
+                    const key = getSearchKey({
+                      fun: target?.name,
+                      req: argumentsList?.[0],
+                    });
+                    result = debounceCache.get(key);
+                    if (!result) {
+                      result = Reflect.apply(target, thisArg, argumentsList);
+                      debounceCache.put(key, result, typeof props.debounce === 'number' ? props.debounce : 2000);
+                    }
+                  } else {
+                    result = Reflect.apply(target, thisArg, argumentsList);
+                  }
+                  // SSR passthrough
+                  if (!!result.catch && props.ssrStatusPassthrough && windowIso.isSsr) {
+                    result = result.catch(err => {
+                      if (!windowIso.isSsr) return;
+                      if (isNaN(err?.status)) {
+                        windowIso.staticRouterContext.statusCode = 500;
+                      } else {
+                        windowIso.staticRouterContext.statusCode = err.status;
+                      }
+                    });
+                  }
+                  // SSR await promise
+                  if (!!result.then && props.ssr && windowIso.isSsr) {
+                    windowIso.awaitPromises.push(result);
+                  }
+                  // Finally return it
+                  return result;
+                }
+              });
+            } else {
+              return Reflect.get(target, prop);
+            }
           }
-          if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
-          return apiPromise;
-        };
-      })(dispatchPromise.then) as any;
+        });
+      });
+      if (props.ssr && windowIso.isSsr) {
+        windowIso.awaitPromises.push(dispatchPromise);
+      }
     }
     return dispatchPromise;
   }

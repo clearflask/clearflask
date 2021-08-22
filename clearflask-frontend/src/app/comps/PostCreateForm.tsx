@@ -11,7 +11,7 @@ import { ReduxState, Server } from '../../api/server';
 import BareTextField from '../../common/BareTextField';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import SubmitButton from '../../common/SubmitButton';
-import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
 import PostSelection from '../../site/dashboard/PostSelection';
@@ -160,7 +160,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
     this.searchSimilarDebounced = !props.searchSimilar ? undefined : debounce(
       (title?: string, categoryId?: string) => !!title && this.props.searchSimilar?.(title, categoryId),
-      SimilarTypeDebounceTime);
+      this.props.type === 'post' ? SimilarTypeDebounceTime : SearchTypeDebounceTime);
   }
 
   shouldComponentUpdate = customShouldComponentUpdate({
@@ -181,7 +181,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       ...this.props.draft,
       draftId: this.props.draftId
     };
-    const categoryOptions = PostCreateForm.getCategoryOptions(this.props);
+
+    const showModOptions = this.showModOptions();
+    const categoryOptions = (this.props.mandatoryCategoryIds?.length
+      ? this.props.categories?.filter(c => (showModOptions || c.userCreatable) && this.props.mandatoryCategoryIds?.includes(c.categoryId))
+      : this.props.categories?.filter(c => showModOptions || c.userCreatable)
+    ) || [];
+
     if (this.state.draftFieldChosenCategoryId !== undefined) draft.categoryId = this.state.draftFieldChosenCategoryId;
     var selectedCategory = categoryOptions.find(c => c.categoryId === draft.categoryId);
     if (!selectedCategory) {
@@ -303,13 +309,15 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         )}
         <Grid item xs={this.props.type === 'large' ? 6 : 12} container justify='flex-end' className={this.props.classes.createGridItem}>
           <Grid item>
-            {PostCreateForm.showModOptions(this.props) && !this.state.adminControlsExpanded && (
-              <Button
-                onClick={e => this.setState({ adminControlsExpanded: true })}
-              >
-                Admin
-              </Button>
-            )}
+            {this.props.adminControlsDefaultVisibility !== 'none'
+              && this.props.server.isModOrAdminLoggedIn()
+              && !this.state.adminControlsExpanded && (
+                <Button
+                  onClick={e => this.setState({ adminControlsExpanded: true })}
+                >
+                  Admin
+                </Button>
+              )}
             {buttonDiscard}
             {buttonDraftSave}
             {buttonSubmit}
@@ -525,7 +533,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     selectedCategory?: Client.Category,
     StatusSelectProps?: Partial<React.ComponentProps<typeof StatusSelect>>,
   ): React.ReactNode | null {
-    if (!this.state.adminControlsExpanded || !PostCreateForm.showModOptions(this.props) || !selectedCategory?.workflow.statuses.length) return null;
+    if (!this.showModOptions() || !selectedCategory?.workflow.statuses.length) return null;
     return (
       <StatusSelect
         show='all'
@@ -553,7 +561,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         label='Tags'
         category={selectedCategory}
         tagIds={draft.tagIds}
-        isModOrAdminLoggedIn={PostCreateForm.showModOptions(this.props)}
+        isModOrAdminLoggedIn={this.showModOptions()}
         onChange={(tagIds, errorStr) => this.setState({
           draftFieldChosenTagIds: tagIds,
           tagSelectHasError: !!errorStr,
@@ -572,7 +580,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     draft: Partial<Admin.IdeaDraftAdmin>,
     UserSelectionProps?: Partial<React.ComponentProps<typeof UserSelection>>,
   ): React.ReactNode | null {
-    if (!this.state.adminControlsExpanded || !PostCreateForm.showModOptions(this.props)) return null;
+    if (!this.showModOptions()) return null;
     return (
       <UserSelection
         variant='outlined'
@@ -596,8 +604,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     FormControlLabelProps?: Partial<React.ComponentProps<typeof FormControlLabel>>,
     SwitchProps?: Partial<React.ComponentProps<typeof Switch>>,
   ): React.ReactNode | null {
-    if (!this.state.adminControlsExpanded
-      || !PostCreateForm.showModOptions(this.props)
+    if (!this.showModOptions()
       || !selectedCategory?.subscription) return null;
     return (
       <FormControlLabel
@@ -625,8 +632,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>,
     TextFieldComponent?: React.ElementType<React.ComponentProps<typeof TextField>>,
   ): React.ReactNode {
-    if (!this.state.adminControlsExpanded
-      || !PostCreateForm.showModOptions(this.props)
+    if (!this.showModOptions()
       || !selectedCategory?.subscription
       || !draft.notifySubscribers) return null;
     const TextFieldCmpt = TextFieldComponent || TextField;
@@ -653,8 +659,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>,
     TextFieldComponent?: React.ElementType<React.ComponentProps<typeof TextField>>,
   ): React.ReactNode {
-    if (!this.state.adminControlsExpanded
-      || !PostCreateForm.showModOptions(this.props)
+    if (!this.showModOptions()
       || !selectedCategory?.subscription
       || !draft.notifySubscribers) return null;
     const TextFieldCmpt = TextFieldComponent || TextField;
@@ -680,7 +685,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     draft: Partial<Admin.IdeaDraftAdmin>,
     PostSelectionProps?: Partial<React.ComponentProps<typeof PostSelection>>,
   ): React.ReactNode | null {
-    if (!this.state.adminControlsExpanded || !PostCreateForm.showModOptions(this.props)) return null;
+    if (!this.showModOptions()) return null;
     return (
       <PostSelection
         server={this.props.server}
@@ -945,6 +950,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             statusId: draft.statusId,
             notifySubscribers: draft.notifySubscribers,
             tagIds: draft.tagIds || [],
+            linkedFromPostIds: draft.linkedFromPostIds,
           },
         });
       } else {
@@ -974,17 +980,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     return idea.ideaId;
   }
 
-  static showModOptions(props: React.ComponentProps<typeof PostCreateForm>): boolean {
-    return props.adminControlsDefaultVisibility !== 'none'
-      && props.server.isModOrAdminLoggedIn();
-  }
-
-  static getCategoryOptions(props: React.ComponentProps<typeof PostCreateForm>): Client.Category[] {
-    const showModOptions = PostCreateForm.showModOptions(props);
-    return (props.mandatoryCategoryIds?.length
-      ? props.categories?.filter(c => (showModOptions || c.userCreatable) && props.mandatoryCategoryIds?.includes(c.categoryId))
-      : props.categories?.filter(c => showModOptions || c.userCreatable)
-    ) || [];
+  showModOptions(): boolean {
+    return !!this.state.adminControlsExpanded
+      && (this.props.adminControlsDefaultVisibility !== 'none'
+        && this.props.server.isModOrAdminLoggedIn());
   }
 }
 

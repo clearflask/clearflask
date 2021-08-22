@@ -132,7 +132,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     if (!this.props.projectId) return;
     if (!!this.props.searchStatus && !this.props.searchCursor) return;
     if (!this.props.searchOverrideAdmin) {
-      return await (await this.props.server.dispatch({ ssr: true })).ideaSearch({
+      return await (await this.props.server.dispatch({ ssr: true, debounce: true })).ideaSearch({
         projectId: this.props.projectId,
         ideaSearch: {
           ...(this.props.panel?.search || {}),
@@ -141,7 +141,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         cursor: this.props.searchCursor,
       });
     } else {
-      return await (await this.props.server.dispatchAdmin({ ssr: true })).ideaSearchAdmin({
+      return await (await this.props.server.dispatchAdmin({ ssr: true, debounce: true })).ideaSearchAdmin({
         projectId: this.props.projectId,
         ideaSearchAdmin: {
           ...(this.props.panel?.search || {}),
@@ -157,9 +157,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   });
 
   componentDidMount() {
-    if (!this.props.searchStatus) {
-      this.loadMore();
-    } else if (this.props.missingVotes?.length) {
+    if (this.props.missingVotes?.length) {
       const missingVotes = this.props.missingVotes;
       this.props.server.dispatch().then(d => d.ideaVoteGetOwn({
         projectId: this.props.projectId!,
@@ -184,10 +182,14 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
 
   render() {
     if (!!this.props.showDrafts && !this.props.draftSearchStatus) {
-      this.props.server.dispatchAdmin().then(d => d.ideaDraftSearchAdmin({
+      this.props.server.dispatchAdmin({ debounce: true }).then(d => d.ideaDraftSearchAdmin({
         projectId: this.props.server.getProjectId(),
         ideaDraftSearch: this.props.draftSearchMerged || {},
       }));
+    }
+
+    if (!this.props.searchStatus) {
+      this.loadMore();
     }
 
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined

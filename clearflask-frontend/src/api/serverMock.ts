@@ -865,7 +865,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {
     throw new Error("Method not implemented.");
   }
-  ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaWithVote> {
+  async ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaWithVote> {
     const author = this.getProject(request.projectId).users.find(user => user.userId === request.ideaCreateAdmin.authorUserId);
     if (!author) return this.throwLater(404, 'Author of idea not found');
     const idea: Admin.Idea = {
@@ -881,6 +881,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.ideaCreateAdmin.statusId === undefined) {
       idea.statusId = this.getProject(request.projectId).config.config.content.categories
         .find(c => c.categoryId === request.ideaCreateAdmin.categoryId)!.workflow.entryStatus;
+    }
+    for (const linkedFromPostId of (request.ideaCreateAdmin.linkedFromPostIds || [])) {
+      const linkedFromPost: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === linkedFromPostId);
+      linkedFromPost.linkedToPostIds = [...(linkedFromPost.linkedToPostIds || []), idea.ideaId];
     }
     this.getProject(request.projectId).ideas.push(idea);
     this.getProject(request.projectId).votes.push({
