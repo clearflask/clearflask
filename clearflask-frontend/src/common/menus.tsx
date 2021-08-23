@@ -274,7 +274,7 @@ export function MenuItemButton(props: {
     <Button
       size='large'
       key={props.item.title}
-      color={props.item.primary ? 'primary' : undefined}
+      color={props.item.primary ? 'primary' : 'inherit'}
       variant={props.item.primary ? 'contained' : undefined}
       disableElevation
       className={classNames(
