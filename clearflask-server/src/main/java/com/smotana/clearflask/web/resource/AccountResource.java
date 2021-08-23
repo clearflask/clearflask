@@ -169,7 +169,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         boolean created = false;
-        if (accountOpt.isEmpty() && accountBindAdmin.getOauthToken() != null) {
+        if (accountOpt.isEmpty()
+                && accountBindAdmin != null
+                && accountBindAdmin.getOauthToken() != null) {
             String tokenUrl;
             String userProfileUrl;
             String clientSecret;
