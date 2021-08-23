@@ -107,8 +107,6 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   editor: ConfigEditor.Editor;
-  onClickPost: (postId: string) => void;
-  onUserClick: (userId: string) => void;
   feedback?: FeedbackInstance;
   roadmap?: RoadmapInstance;
   changelog?: ChangelogInstance;

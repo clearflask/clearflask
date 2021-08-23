@@ -421,9 +421,11 @@ export const HeaderLogoLogo = (props: {
   large?: boolean;
 }) => {
   const classes = useStyles();
+  const logoUrl = (props.logoUrl.startsWith('https://') || props.logoUrl.startsWith('http://'))
+    ? props.logoUrl : `https://${props.logoUrl}`;
 
   return (
-    <img alt=' ' src={props.logoUrl} className={classNames(
+    <img alt=' ' src={logoUrl} className={classNames(
       classes.logoImg,
       props.large && classes.logoImgLarge,
     )} />

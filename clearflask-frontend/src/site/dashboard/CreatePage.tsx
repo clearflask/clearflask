@@ -227,6 +227,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   variant='outlined'
                   autoFocus
                   label='Your website (Optional)'
+                  placeholder='example.com'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoWebsite || ''}
                   onChange={e => {
@@ -257,6 +258,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   className={this.props.classes.field}
                   variant='outlined'
                   label='Product name'
+                  placeholder='Vandelay Industries'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoName || ''}
                   onChange={e => {
@@ -272,6 +274,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                     className={this.props.classes.field}
                     variant='outlined'
                     label='Subdomain'
+                    placeholder='vandelay-industries'
                     disabled={!!this.state.isSubmitting}
                     value={this.state.infoSlug || ''}
                     onChange={e => this.setState({ infoSlug: e.target.value })}
@@ -282,6 +285,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   className={this.props.classes.field}
                   variant='outlined'
                   label='Logo URL (Optional)'
+                  placeholder='example.com/favicon.ico'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoLogo || ''}
                   onChange={e => this.setState({ infoLogo: e.target.value })}

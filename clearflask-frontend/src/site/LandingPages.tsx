@@ -67,6 +67,7 @@ import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
 import DemoChangelogImg from '../../public/img/landing/demo-changelog.png';
+import DemoChangelog2Img from '../../public/img/landing/demo-changelog2.png';
 import DemoCrowdfundImg from '../../public/img/landing/demo-crowdfund.png';
 import DemoCrowdfund2Img from '../../public/img/landing/demo-crowdfund2.png';
 import DemoDashboardFeedbackVid from '../../public/img/landing/demo-dashboard-feedback.mp4';
@@ -80,8 +81,9 @@ import DemoFeedbackWhatElseImg from '../../public/img/landing/demo-feedback-what
 import DemoFeedbackImg from '../../public/img/landing/demo-feedback.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoPinnedResponseImg from '../../public/img/landing/demo-pinned-response.png';
 import DemoPortalFeedbackVid from '../../public/img/landing/demo-portal-feedback.mp4';
-import DemoPostResponseImg from '../../public/img/landing/demo-post-response.png';
+import DemoPostImg from '../../public/img/landing/demo-post.png';
 import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
 import DemoSearchPostsImg from '../../public/img/landing/demo-search-posts.png';
@@ -118,7 +120,9 @@ import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import Templater from '../common/config/configTemplater';
 import CreditView from '../common/config/CreditView';
-import { Device } from '../common/DeviceContainer';
+import { ChangelogInstance } from '../common/config/template/changelog';
+import { FeedbackInstance } from '../common/config/template/feedback';
+import { RoadmapInstance } from '../common/config/template/roadmap';
 import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
@@ -131,14 +135,14 @@ import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
+import DashboardHome from './dashboard/DashboardHome';
+import { TemplateWrapper } from './dashboard/ProjectSettings';
 import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
@@ -247,12 +251,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     minWidth: 'unset',
     textTransform: 'unset',
   },
-  demo: {
-    width: '100%',
-    maxWidth: 1025,
-    margin: 'auto',
-    marginBottom: theme.spacing(24),
-  },
   smallBlock: {
     maxWidth: 'max-content',
     margin: 'auto',
@@ -312,16 +310,15 @@ export function Landing() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title="Here’s how our platform can help you"
+        title="Here's how our platform can help you"
       />
       <Block
         type='headingMain'
         title='Simple, yet powerful feedback experience'
         description='Ask your customers for feedback on your product.'
         points={[
-          'Keep feedback out in the open',
+          'Keep feedback out in the public',
           'Let users discuss amongst themselves',
-          'Avoid feature-voting pitfalls',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -353,22 +350,35 @@ export function Landing() {
       <Block
         mirror
         type='headingMain'
-        title='Analyze ideas and convert to actionable tasks'
+        title='Convert ideas into actionable tasks'
         description='Find the most valuable features by the most important customers.'
         points={[
           'Extract actionable feedback',
+          'Kanban task management',
           'Validate new ideas',
-          'Reach out for clarification',
+          'Identify opportunities',
         ]}
         alignItems='center'
-        demoWrap='shadow'
-        demoImage={DemoDashboardFeedbackImg}
+        demoFixedWidth='100%'
+        demo={(
+          <Stack
+            contentSpacingVertical={200}
+            float='right' // overflow left
+            items={[{
+              content: (<ImgIso img={DemoDashboardRoadmapImg} />),
+              height: 'max-content',
+            }, {
+              content: (<ImgIso img={DemoDashboardFeedbackImg} />),
+              height: 'max-content',
+            }]}
+          />
+        )}
         buttonTitle='Learn more'
         buttonLink='/product/analyze'
       />
       <Block
         type='headingMain'
-        title='Plan out your roadmap and share it publicly'
+        title='Share progress with your community'
         description='Become a customer-centric organization with transparent customer-driven product development.'
         points={[
           'Product Roadmap',
@@ -386,6 +396,14 @@ export function Landing() {
             items={[{
               content: (
                 <FakeBrowser>
+                  <ImgIso img={DemoPostImg} />
+                </FakeBrowser>
+              ),
+              width: 300,
+              height: 'max-content',
+            }, {
+              content: (
+                <FakeBrowser>
                   <ImgIso img={DemoChangelogImg} />
                 </FakeBrowser>
               ),
@@ -396,9 +414,6 @@ export function Landing() {
                   <ImgIso img={DemoRoadmapImg} />
                 </FakeBrowser>
               ),
-            }, {
-              content: (<ImgIso img={DemoDashboardRoadmapImg} />),
-              height: 'max-content',
             }]}
           />
         )}
@@ -515,7 +530,6 @@ export function LandingGraveyard() {
       <div style={{ height: '100vh' }} />
       <Hero title='Landing components graveyard' />
 
-      <LandingClearFlaskDemo noSpacing type='demoOnly' />
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
           type='column'
@@ -693,6 +707,79 @@ export function LandingGraveyard() {
           description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
         />
       </HorizontalPanels>
+      <Block
+        type='headingMain'
+        title='Give your most-valuable customers a proportionate voice'
+        description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
+        alignItems='flex-start'
+        image={ValueImg}
+        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
+      />
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+        <Demo
+          type='column'
+          title='Keep it simple with voting'
+          description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('vote')}
+          // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoVotingExpressionsAnimate: [
+              { type: 'vote', upvote: true },
+            ],
+          }}
+          demoFixedHeight={150}
+          containerPortal
+        />
+        <Demo
+          type='column'
+          title='Expressions for a wider range of feedback'
+          description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('express')}
+          // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoVotingExpressionsAnimate: [
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+            ],
+          }}
+          demoFixedHeight={420}
+          containerPortal
+        />
+        <Demo
+          type='column'
+          title='Credit System for advanced prioritization'
+          description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('fund')}
+          // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={450}
+          containerPortal
+          settings={{
+            demoDisablePostOpen: true,
+            demoBlurryShadow: true,
+            demoFundingControlAnimate: [
+              { index: 0, fundDiff: 20 },
+              { index: 1, fundDiff: -30 },
+              { index: 2, fundDiff: 20 },
+            ],
+          }}
+          buttonTitle='See Feature Crowdfunding'
+          buttonLink='/solutions/feature-crowdfunding'
+        />
+      </HorizontalPanels>
+      <div className={classes.demoEmbedButtons}>
+        <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
+        <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+      </div>
     </>
   );
 }
@@ -705,8 +792,8 @@ export function LandingHero() {
     }} width={2400} height={1000}>
       <Hero
         title={(
-          <>Open feedback.<br />Open roadmap.</>)}
-        description='Product feedback and ideation tool to keep you close with your customers.'
+          <>Build products<br />in the open.</>)}
+        description='Product ideation tool to gather community feedback and prioritize your roadmap.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
           image: PromoThumb,
@@ -724,32 +811,24 @@ export function LandingHero() {
   );
 }
 
-export function LandingClearFlaskDemo(props: Partial<React.ComponentProps<typeof Block>> & {
+export function LandingClearFlaskDemo(props: {
   path?: string,
   fakeBrowserProps?: Partial<React.ComponentProps<typeof FakeBrowser>>,
 }) {
   const classes = useStyles();
-  const { fakeBrowserProps, ...blockProps } = props;
   return (
-    <div className={classes.demo}>
-      <Block
-        demo={(
-          <FakeBrowser
-            fixedHeight={500}
-            {...fakeBrowserProps}
-          >
-            <iframe
-              title='Demo: ClearFlask Feedback'
-              src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}${props.path || ''}`}
-              width='100%'
-              height='100%'
-              frameBorder={0}
-            />
-          </FakeBrowser>
-        )}
-        {...blockProps}
+    <FakeBrowser
+      fixedHeight={500}
+      {...props.fakeBrowserProps}
+    >
+      <iframe
+        title='Demo: ClearFlask Feedback'
+        src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}${props.path || ''}`}
+        width='100%'
+        height='100%'
+        frameBorder={0}
       />
-    </div>
+    </FakeBrowser>
   );
 }
 
@@ -892,11 +971,16 @@ export function LandingCollectFeedback() {
         />
       </Background>
       <Block
-        mirror
+        className={classes.textAlignCenter}
+        type='headingOnly'
+        title='Simple feedback flow'
+        spacingBottom={0}
+      />
+      <Block
         title='#1 Capture words instead of votes'
         description='Reading customer feedback is insightful. Between an in-person interview (High friction, high value) and voting (Low friction, low value), a simple feedback box strikes the right balance.'
         demoImage={CaptureFeedbackImg}
-        demoWrap='browser'
+        // demoWrap='browser'
         alignItems='center'
         imageStyle={{ padding: 0 }}
         points={[
@@ -909,7 +993,7 @@ export function LandingCollectFeedback() {
         title='#2 Group with related ideas'
         description='Only after feedback is submitted, user can combine it with an existing idea.'
         demoImage={AnyRelatedImg}
-        demoWrap='browser'
+        // demoWrap='browser'
         alignItems='center'
         imageStyle={{ padding: 0 }}
         points={[
@@ -919,95 +1003,96 @@ export function LandingCollectFeedback() {
         spacingTopBottom={0}
       />
       <Block
-        mirror
         title={(
           <>
             #3 <b>Wants</b> instead of <b>upvotes</b>
           </>
         )}
-        description='Ask your users about specific ideas that you are seeking feedback from.'
+        description='Ask your users about specific ideas that you are seeking feedback from. Always asks the user why a feature is wanted.'
         demoImage={SeeWhatElseImg}
-        demoWrap='browser'
+        // demoWrap='browser'
         alignItems='center'
         imageStyle={{ padding: 0 }}
         points={[
-          'Ideal for new idea validations and shaping upcoming features',
-          'Easily find volunteer BETA testers for an upcoming feature',
+          'Idea validation and brainstorming',
+          'Find volunteer BETA testers for an upcoming feature',
         ]}
         spacingTopBottom={0}
       />
       <Block
-        title='Easily integrates with your product'
-        spacingBottom={0}
-      />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='sm' maxWidth='lg' staggerHeight={100}>
-        <LandingClearFlaskDemo
-          type='column'
-          title='Link to portal'
-          path='/embed/feedback'
-          description={(
-            <>
-              Link directly from your app or website to your ClearFlask portal on a custom domain.
-            </>
-          )}
-          fakeBrowserProps={{
-            fixedHeight: 250,
-            addressBarContent: 'feedback.yoursite.com',
-          }}
-        />
-        <Block
-          type='column'
-          title='Website Widget'
-          description='Embed inside your website using IFrames either entire ClearFlask portal or individual pages.'
-          demo={(
-            <div className={classes.demoEmbedButtons}>
-              <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
-              <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
-            </div>
-          )}
-        />
-        {/* <Block
-          type='column'
-          title='Embed Status'
-          description='Create a direct link to a particular idea or feature. Useful if you want to raise awareness of future functionality.'
-          demo={(
-            <div className={classes.demoStatusEmbedContainer}>
-              <Typography className={classes.demoStatusEmbedText}>Custom domains</Typography>
-              <PostStatusIframe
-                className={classes.demoStatusEmbedIframe}
-                width={100}
-                postId='ustom-subdomains-vr4'
-                config={{
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                }}
-              />
-            </div>
-          )}
-        /> */}
-      </HorizontalPanels>
-      <Demo
-        type='headingMain'
-        alignItems='flex-start'
-        title='Keep a line of communication open'
-        description='Let your users choose the least frictionless communication how to get notified of replies to their ideas.'
-        initialSubPath='/embed/demo'
+        // type='headingMain'
+        alignItems='center'
+        title='Keep a two-way channel for incoming feedback'
+        description='Let your users choose the preferred communication how to get notified when their ideas a addressed.'
         demoFixedWidth={420}
-        template={templater => {
-          setInitSignupMethodsTemplate(templater);
-          templater.styleWhite();
-        }}
-        controls={project => (<OnboardingControls onboardingDemoRef={onboardingDemoRef} templater={project.templater} />)}
-        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={onboardingDemoRef} server={project.server} />)}
-        points={[
-          { text: 'Single Sign-On to link existing accounts', icon: KeyIcon },
-          { text: 'Easy sign-in with an OAuth provider', icon: [GoogleIcon, GithubIcon, FacebookIcon] },
-          { text: 'Email signup with magic link or password', icon: EmailIcon },
-          { text: 'Browser push notifications ', icon: NotificationIcon },
-          { text: 'Guest accounts that can be upgraded later', icon: GuestIcon },
-        ]}
+        image={InternalFeedbackImg}
+        imageLocation='above'
+        demo={(
+          <>
+            <div className={classes.point}>
+              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Single Sign-On
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Link existing user accounts
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  OAuth
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  External sign-in including
+                  &nbsp;
+                  <GoogleIcon fontSize='inherit' />
+                  &nbsp;
+                  <GithubIcon fontSize='inherit' />
+                  &nbsp;
+                  <FacebookIcon fontSize='inherit' />
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <EmailIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Email
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Signup with email (magic link, domain-whitelist, password)
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <NotificationIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Browser push
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Send a notification right to their browser
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <GuestIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Guest
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Guests with in-app notifications
+                </Typography>
+              </div>
+            </div>
+          </>
+        )}
       />
-
       <Demo
         title='Build a community around your product'
         description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
@@ -1027,6 +1112,22 @@ export function LandingCollectFeedback() {
         mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
           .then(() => mocker.mockLoggedIn())}
         demo={LandingCommentListDemo}
+      />
+      <Block
+        title='Integrate with your product'
+        description='Use a custom domain to host your ClearFlask portal or embed it directly on your site or app.'
+        image={LoopImg}
+        imageLocation='above'
+        demo={(
+          <>
+            <FakeBrowser
+              fixedHeight='max-content'
+              addressBarContent='feedback.yoursite.com'
+            >
+              <ImgIso img={CaptureFeedbackImg} />
+            </FakeBrowser>
+          </>
+        )}
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <GetStartedColumn />
@@ -1055,20 +1156,41 @@ export function LandingPrioritization() {
         demoImage={DemoDashboardFeedbackVid}
         demoWrap='browser'
       />
+      <Demo
+        type='demoOnly'
+        template={templater => templater.createTemplateV2()}
+        spacingTop={0}
+        demo={project => (
+          <Provider store={project.server.getStore()}>
+            <TemplateWrapper<[FeedbackInstance | undefined, RoadmapInstance | undefined, ChangelogInstance | undefined]>
+              key={project.server.getProjectId()}
+              editor={project.editor}
+              mapper={templater => Promise.all([templater.feedbackGet(), templater.roadmapGet(), templater.changelogGet()])}
+              renderResolved={(templater, [feedback, roadmap, changelog]) => (
+                <DashboardHome
+                  server={project.server}
+                  editor={project.editor}
+                  feedback={feedback}
+                  roadmap={roadmap}
+                  changelog={changelog}
+                />
+              )}
+            />
+          </Provider>
+        )}
+      />
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
           type='column'
-          title='Identify top ideas'
+          title='Identify opportunities'
           description='Understand what your users want. Search and Filter by Categories, Tags and Statuses.'
           image={DemoSearchPostsImg}
-        // imageLocation='above'
         />
         <Block
           type='column'
           title='Drill-down'
           description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement for us, give us feedback!'
           image={DemoStatsIdeaImg}
-          // imageLocation='above'
           postStatusId='customer-segmentation-and-analytics-pgi'
         />
       </HorizontalPanels>
@@ -1099,75 +1221,6 @@ export function LandingPrioritization() {
           icon={(<MoodBadIcon />)}
           title="Gauge users' reactions"
           description='Analyze feedback to shape your idea for success.'
-        />
-      </HorizontalPanels>
-      <Block
-        type='headingMain'
-        title='Give your most-valuable customers a proportionate voice'
-        description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
-        alignItems='flex-start'
-        image={ValueImg}
-        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
-      />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
-        <Demo
-          type='column'
-          title='Keep it simple with voting'
-          description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('vote')}
-          // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
-          mock={mocker => mocker.demoPrioritization()}
-          settings={{
-            demoDisablePostOpen: true,
-            demoBlurryShadow: true,
-            demoVotingExpressionsAnimate: [
-              { type: 'vote', upvote: true },
-            ],
-          }}
-          demoFixedHeight={150}
-          containerPortal
-        />
-        <Demo
-          type='column'
-          title='Expressions for a wider range of feedback'
-          description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('express')}
-          // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
-          mock={mocker => mocker.demoPrioritization()}
-          settings={{
-            demoDisablePostOpen: true,
-            demoBlurryShadow: true,
-            demoVotingExpressionsAnimate: [
-              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
-              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
-            ],
-          }}
-          demoFixedHeight={420}
-          containerPortal
-        />
-        <Demo
-          type='column'
-          title='Credit System for advanced prioritization'
-          description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('fund')}
-          // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
-          mock={mocker => mocker.demoPrioritization()}
-          demoFixedHeight={450}
-          containerPortal
-          settings={{
-            demoDisablePostOpen: true,
-            demoBlurryShadow: true,
-            demoFundingControlAnimate: [
-              { index: 0, fundDiff: 20 },
-              { index: 1, fundDiff: -30 },
-              { index: 2, fundDiff: 20 },
-            ],
-          }}
-          buttonTitle='See Feature Crowdfunding'
-          buttonLink='/solutions/feature-crowdfunding'
         />
       </HorizontalPanels>
       <Block
@@ -1356,7 +1409,7 @@ export function LandingEngagement() {
         imageStyleOuter={{ maxWidth: 400, padding: 0, }}
         alignItems='flex-start'
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='md'>
+      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
         <Block
           type='column'
           title='Product roadmap'
@@ -1370,11 +1423,11 @@ export function LandingEngagement() {
           title='Release Changelog'
           description='Let users view your recent product updates. Let them subscribe via email or web push notifications.'
           icon={(<ChangeIcon />)}
-          demoImage={DemoChangelogImg}
+          demoImage={DemoChangelog2Img}
           demoWrap='browser'
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
         <Block
           type='column'
           title='Status updates'
@@ -1389,7 +1442,7 @@ export function LandingEngagement() {
           title='Respond to suggestions'
           description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
           icon={(<RespondIcon />)}
-          image={DemoPostResponseImg}
+          image={DemoPinnedResponseImg}
           imageStyleOuter={{ padding: 'unset' }}
         />
       </HorizontalPanels>
@@ -2666,7 +2719,7 @@ export function LandingPricingOptions() {
   return (
     <>
       <Background svg={{
-        d: 'M0.00,49.98 C170.43,327.13 274.26,-119.92 500.00,49.98 L500.00,150.00 L0.00,150.00 Z',
+        d: 'M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z',
         viewBox: '0 0 500 150',
         flexible: true,
       }}>

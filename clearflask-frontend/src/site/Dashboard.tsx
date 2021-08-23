@@ -510,8 +510,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 <DashboardHome
                   server={activeProject.server}
                   editor={activeProject.editor}
-                  onClickPost={postId => this.pageClicked('post', [postId])}
-                  onUserClick={userId => this.pageClicked('user', [userId])}
                   feedback={this.state.feedback || undefined}
                   roadmap={this.state.roadmap || undefined}
                   changelog={this.state.changelog || undefined}

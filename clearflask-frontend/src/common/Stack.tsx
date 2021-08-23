@@ -28,6 +28,7 @@ export interface Props {
   ascendingLevel?: boolean
   contentSpacingHorizontal?: number;
   contentSpacingVertical?: number;
+  float?: 'left' | 'right';
 }
 interface State {
   hoveringContent?: number;
@@ -65,6 +66,7 @@ class Stack extends Component<Props & WithStyles<typeof styles, true> & WithWidt
         marginLeft: marginLeftRight,
         marginRight: marginLeftRight,
         height: overlap ? 300 : undefined,
+        float: this.props.float,
       }}>
         {this.props.items.map((item, contentNumber) => (
           <Paper

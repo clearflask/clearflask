@@ -98,7 +98,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
             style={{
               height: this.props.demoFixedHeight,
               width: this.props.demoFixedWidth,
-              overflow: 'hidden',
+              // overflow: 'hidden',
               position: 'relative', // For containerPortal
               pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
             }}

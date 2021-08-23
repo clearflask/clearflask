@@ -14,8 +14,9 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
   const templater = Templater.get(editor);
   const templateResult = await templater.createTemplateV2({
     ...createTemplateV2OptionsDefault,
+    // templateFeedbackIsClassic: true,
     infoName: 'Sandbox',
-    infoLogo: '/img/clearflask-logo.png',
+    infoLogo: 'https://clearflask.com/img/clearflask-logo.png',
     infoWebsite: `https://${windowIso.parentDomain}`,
     infoSlug: 'mock',
   });

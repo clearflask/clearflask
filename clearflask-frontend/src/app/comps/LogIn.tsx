@@ -508,7 +508,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               <SubmitButton
                 color='primary'
                 isSubmitting={this.state.isSubmitting}
-                disabled={!isSubmittable}
+                disabled={!isSubmittable && !this.props.loggedInUser}
                 onClick={doSubmit}
               >{this.props.actionSubmitTitle || 'Continue'}</SubmitButton>
             ) : (!!this.props.onClose ? (
