@@ -27,6 +27,7 @@ import { saltHashPassword } from '../common/util/auth';
 import { detectEnv, Environment, isProd, isTracking } from '../common/util/detectEnv';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
+import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
 
@@ -101,7 +102,7 @@ const styles = (theme: Theme) => createStyles({
     textTransform: 'none',
   },
   enterTemplate: {
-    height: '100%',
+    minHeight: vh(100),
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
