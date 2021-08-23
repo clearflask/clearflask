@@ -18,7 +18,7 @@ var connectConfig: ConnectConfig = {
   listenPort: 44380,
   email: 'hostmaster@clearflask.com',
   apiBasePath: process.env.ENV === 'local' ? 'http://clearflask-server:8080' : 'http://localhost:8080',
-  parentDomain: 'clearflask.com',
+  parentDomain: process.env.ENV === 'local' ? 'localhost.com' : 'clearflask.com',
   connectToken: 'EMPTY',
 };
 
@@ -38,8 +38,6 @@ if (process.env.ENV === 'production'
 } else {
   connectConfig = {
     ...connectConfig,
-    // If changed, also change in config-prod.cfg
-    connectToken: '7cb1e1c26f5d4705a213529257d081c6',
     workerCount: 2,
     acmeDirectoryUrl: 'https://acme.staging.localhost:14000/dir',
     parentDomain: 'localhost.com',

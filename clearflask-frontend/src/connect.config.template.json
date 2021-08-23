@@ -1,4 +1,4 @@
 {
-  "connectToken": "<MUST_MATCH_SERVER_CONFIG>",
-  "parentDomain": "clearflask.com"
+  "connectToken": "7cb1e1c26f5d4705a213529257d081c6",
+  "parentDomain": "localhost.com"
 }

@@ -13,6 +13,8 @@ services:
     extra_hosts:
       - localhost.com:172.17.0.1
       - acme.staging.localhost:172.17.0.1
+    volumes:
+      - ./connect/connect.config.json:/opt/clearflask/connect.config.json
   clearflask-server:
     image: 'clearflask/clearflask-server:latest'
     environment:
@@ -20,10 +22,11 @@ services:
     depends_on:
       - killbill-engine
       - localstack
+      - elasticsearch
     volumes:
       - ./server/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
       - ./server/logging-dev.properties:/usr/local/tomcat/conf/logging.properties
-      - ./server/config-local.cfg:"/opt/clearflask/config-local.cfg
+      - ./server/config-local.cfg:/opt/clearflask/config-local.cfg
     ports:
       - 8080:8080
       # JMX
@@ -76,6 +79,14 @@ services:
       - 3306
     environment:
       - MYSQL_ROOT_PASSWORD=killbill
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    expose:
+      - 9200
+    environment:
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - discovery.type=single-node
+    mem_limit: 4g
   localstack:
     image: localstack/localstack-full
     privileged: true
@@ -88,7 +99,7 @@ services:
       - DEFAULT_REGION=us-east-1
       - LOCALSTACK_HOSTNAME=localhost
       - HOSTNAME_EXTERNAL=localstack
-      - SERVICES=dynamodb,route53,ses,s3,es
+      - SERVICES=dynamodb,route53,ses,s3
       - LS_LOG=debug
       - START_WEB=1
       - USE_SSL=0

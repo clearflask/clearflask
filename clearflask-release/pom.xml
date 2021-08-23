@@ -41,6 +41,17 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-frontend</artifactId>
+                                    <classifier>connect</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/docker-compose-local/connect/
+                                    </outputDirectory>
+                                    <includes>connect.config.template.json</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
                                     <artifactId>clearflask-server</artifactId>
                                     <classifier>local-run</classifier>
                                     <version>${project.version}</version>

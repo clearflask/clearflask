@@ -19,16 +19,19 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: clearflas
 	mkdir clearflask-release/target/run-docker-compose-local
 	tar -xzf clearflask-release/target/clearflask-release-0.1-docker-compose-local.tar.gz -C clearflask-release/target/run-docker-compose-local
 	cp -n clearflask-release/target/run-docker-compose-local/server/config-local-template.cfg ./config-local.cfg \
-		&& echo IMPORTANT: Created config-local.cfg please adjust settings for local deployment
+		&& echo IMPORTANT: Created config-local.cfg please adjust settings for local deployment || true
 	cp ./config-local.cfg clearflask-release/target/run-docker-compose-local/server/config-local.cfg
+	cp -n clearflask-release/target/run-docker-compose-local/connect/connect.config.template.json ./connect.config.json \
+		&& echo IMPORTANT: Created connect.config.json please adjust settings for local deployment || true
+	cp ./connect.config.json clearflask-release/target/run-docker-compose-local/connect/connect.config.json
 
 local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
-	cd clearflask-release/target/run-docker-compose-local && docker-compose up -d
-	cd clearflask-release/target/run-docker-compose-local && docker-compose logs -f
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml up -d
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml logs -f
 
 local-down: clearflask-release/target/run-docker-compose-local/docker-compose.yml
-	cd clearflask-release/target/run-docker-compose-local && docker-compose down -t 0
-	cd clearflask-release/target/run-docker-compose-local && docker-compose rm
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml down -t 0
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml rm
 
 killbill-sleep-%:
 	curl -v \
