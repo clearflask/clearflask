@@ -43,6 +43,12 @@
             <level>WARN</level>
         </filter>
     </appender>
+    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+        <options>
+            <dsn>https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409</dsn>
+        </options>
+        <minimumEventLevel>WARN</minimumEventLevel>
+    </appender>
 
     <logger name="ch.qos.logback" level="INFO"/>
     <logger name="com.kik.config.ice" level="INFO"/>
@@ -51,6 +57,7 @@
     <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>
+        <appender-ref ref="SENTRY"/>
     </root>
 
 </configuration>

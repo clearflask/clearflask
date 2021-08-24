@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import * as Sentry from "@sentry/node";
+import { Integrations } from "@sentry/tracing";
 import compression from 'compression';
 import express from 'express';
 import fs from 'fs';
@@ -11,6 +13,13 @@ import connectConfig from './config';
 import GreenlockClearFlaskManager from './greenlock/greenlock-manager-clearflask';
 import httpx from './httpx';
 import reactRenderer from './renderer';
+
+Sentry.init({
+  dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
+  integrations: [new Integrations.Express()],
+  tracesSampleRate: 0.1,
+  environment: process.env.ENV,
+});
 
 const urlsSkipCache = new Set([
   '/index.html',

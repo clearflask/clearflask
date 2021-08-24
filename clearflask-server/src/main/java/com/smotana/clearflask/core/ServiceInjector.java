@@ -292,7 +292,7 @@ public enum ServiceInjector {
         };
     }
 
-    private static Environment detectEnvironment() {
+    public static Environment detectEnvironment() {
         String envEnvironment = System.getenv("CLEARFLASK_ENVIRONMENT");
         if (envEnvironment != null) {
             return Environment.valueOf(envEnvironment);

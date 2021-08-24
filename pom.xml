@@ -14,6 +14,7 @@
         <ice.version>${project.version}</ice.version>
         <java.version>11</java.version>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
+        <sentry.version>5.1.1</sentry.version>
         <guava.version>30.1.1-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
@@ -289,6 +290,16 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
                 <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-logback</artifactId>
+                <version>${sentry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-servlet</artifactId>
+                <version>${sentry.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
