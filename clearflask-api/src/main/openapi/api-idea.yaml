@@ -459,7 +459,7 @@ components:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
 /project/{projectId}/ideagetall:
-  get:
+  post:
     operationId: ideaGetAll
     tags: [Idea]
     parameters:
