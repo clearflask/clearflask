@@ -211,6 +211,10 @@ export class Server {
     var dispatchPromise = Promise.resolve(dispatcher);
 
     if (props.debounce || (props.ssr && windowIso.isSsr)) {
+      // Proxy our dispatcher to:
+      // - Await all API calls
+      // - Attach handler for status passthrough
+      // - Debounce API callse
       dispatchPromise = dispatchPromise.then(dispatcher => {
         return new Proxy(dispatcher, {
           get(target, prop) {
@@ -262,10 +266,25 @@ export class Server {
           }
         });
       });
-      if (props.ssr && windowIso.isSsr) {
-        windowIso.awaitPromises.push(dispatchPromise);
-      }
     }
+
+    // We need to await for our proxy to get called so let's
+    // assert ourselves at the end of the next promise chain
+    // and ensure we await it in SSR
+    if (props.ssr && windowIso.isSsr) {
+      // Await the Dispatcher first
+      windowIso.awaitPromises.push(dispatchPromise);
+      // Await all subsequent 'then' calls
+      // Note: 'then' is also called during async-await so it works there too.
+      dispatchPromise.then = (function (_super) {
+        return function (this: any) {
+          var apiPromise = _super.apply(this, arguments as any);
+          if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
+          return apiPromise;
+        };
+      })(dispatchPromise.then) as any;
+    }
+
     return dispatchPromise;
   }
 

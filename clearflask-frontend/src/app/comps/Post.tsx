@@ -748,7 +748,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             onBlurAndEmpty={() => this.setState({ commentExpanded: undefined })}
           />
         )}
-        {(this.props.idea.commentCount || this.props.idea.mergedPostIds?.length) && (
+        {(!!this.props.idea.commentCount || !!this.props.idea.mergedPostIds?.length) && (
           <CommentList
             server={this.props.server}
             logIn={this.logIn.bind(this)}
@@ -1576,7 +1576,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             user={author}
             baseline
           />
-          {status && (
+          {!!status && (
             <>
               <Typography variant='body1'>changed to&nbsp;</Typography>
               {status}
@@ -1588,7 +1588,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             </Typography>
           )}
         </div>
-        {response}
+        {!!response && response}
       </div>
     );
 

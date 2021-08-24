@@ -205,7 +205,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse commentHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {
-        return userStore.histogram(projectId, histogramSearchAdmin);
+        return commentStore.histogram(projectId, histogramSearchAdmin);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
