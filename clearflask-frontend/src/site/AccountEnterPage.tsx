@@ -171,6 +171,10 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
 
     if (this.props.type === 'login') {
       if (this.props.accountStatus === Status.FULFILLED) {
+        if (this.props.cfJwt && this.cfReturnUrl) {
+          windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
+          return (<ErrorPage msg='Redirecting you back...' variant='success' />);
+        }
         return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] ||
           (this.bindCausedAccountCreation ? '/welcome' : '/dashboard')} />);
       }
@@ -191,10 +195,6 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
 
     } else {
       if (this.props.accountStatus === Status.FULFILLED) {
-        if (this.props.cfJwt && this.cfReturnUrl) {
-          windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
-          return (<ErrorPage msg='Redirecting you back...' variant='success' />);
-        }
         return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
       }
     }
