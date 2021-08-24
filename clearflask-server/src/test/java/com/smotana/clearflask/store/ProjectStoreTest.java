@@ -17,6 +17,7 @@ import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class ProjectStoreTest extends AbstractTest {
         super.configure();
 
         bindMock(ContentStore.class);
+        bindMock(ProjectUpgrader.class);
 
         install(Modules.override(
                 Application.module(),

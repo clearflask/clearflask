@@ -28,6 +28,7 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -72,6 +73,7 @@ public class IdeaStoreIT extends AbstractIT {
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
                 DynamoProjectStore.module(),
+                ProjectUpgraderImpl.module(),
                 IntercomUtil.module()
         ).with(new AbstractModule() {
             @Override

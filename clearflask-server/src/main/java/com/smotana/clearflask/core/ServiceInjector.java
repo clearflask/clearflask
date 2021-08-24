@@ -77,7 +77,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.ProjectUpgrader;
+import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -268,7 +268,7 @@ public enum ServiceInjector {
                 install(IntercomUtil.module());
                 install(ImageNormalizationImpl.module());
                 bind(ConfigSchemaUpgrader.class);
-                bind(ProjectUpgrader.class);
+                install(ProjectUpgraderImpl.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

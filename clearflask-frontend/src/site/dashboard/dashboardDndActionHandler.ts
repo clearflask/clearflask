@@ -90,10 +90,10 @@ const indexToOrder = (
   const postAfter = !!postIdAfter ? state.ideas.byId[postIdBefore]?.idea : undefined;
   const valBefore = postBefore?.order ? postBefore?.created.getTime() : undefined;
   const valAfter = postAfter?.order ? postAfter?.created.getTime() : undefined;
-  if (valBefore === undefined && valAfter === undefined) return undefined;
-  if (valBefore === undefined) return valAfter - 1; // At the beginning of the list
-  if (valAfter === undefined) return valBefore + 1; // At the end of the list
-  return valBefore + ((valAfter - valBefore) / 2)
+  if (valBefore !== undefined && valAfter !== undefined) return valBefore + ((valAfter - valBefore) / 2);
+  if (valAfter !== undefined) return valAfter - 1; // At the beginning of the list
+  if (valBefore !== undefined) return valBefore + 1; // At the end of the list
+  return undefined;
 };
 
 const feedbackToTask = async (

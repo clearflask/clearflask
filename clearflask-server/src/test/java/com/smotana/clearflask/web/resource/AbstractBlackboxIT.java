@@ -83,6 +83,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
 import com.smotana.clearflask.web.Application;
@@ -215,6 +216,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoDraftStore.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoProjectStore.module(),
+                ProjectUpgraderImpl.module(),
                 DynamoElasticUserStore.module(),
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),

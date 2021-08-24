@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.smotana.clearflask.util.ProjectUpgrader.PROJECT_VERSION_LATEST;
+import static com.smotana.clearflask.util.ProjectUpgraderImpl.PROJECT_VERSION_LATEST;
 import static org.junit.Assert.*;
 
 @Slf4j

@@ -80,7 +80,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.util.ProjectUpgrader.PROJECT_VERSION_LATEST;
+import static com.smotana.clearflask.util.ProjectUpgraderImpl.PROJECT_VERSION_LATEST;
 
 @Slf4j
 @Singleton
