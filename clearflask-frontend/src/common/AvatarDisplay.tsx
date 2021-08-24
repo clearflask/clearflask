@@ -95,7 +95,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'beam':
         avatar = (
           <BoringAvatar
-            name={userName.replaceAll(' ', '')}
+            name={userName.replaceAll(/ /g, '')}
             variant='beam'
             size={size}
             colors={[
@@ -111,7 +111,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'bauhaus':
         avatar = (
           <BoringAvatar
-            name={userName.replaceAll(' ', '')}
+            name={userName.replace(/ /g, '')}
             variant='bauhaus'
             size={size}
             colors={[
