@@ -604,7 +604,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         ImmutableSet.of(),
                         null,
                         null,
-                        ImmutableSet.of());
+                        ImmutableSet.of(),
+                        null);
             })).get();
         } catch (ApiException ex) {
             throw ex;

@@ -581,6 +581,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           case Admin.IdeaSearchAdminSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
           case Admin.IdeaSearchAdminSortByEnum.New: return r.created.getTime() - l.created.getTime();
           case Admin.IdeaSearchAdminSortByEnum.Random: return Math.random() - 0.5;
+          case Admin.IdeaSearchAdminSortByEnum.DragAndDrop: return (r.order || r.created.getTime()) - (l.order || l.created.getTime());
         }
       }])
       , request.ideaSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor), 1000);

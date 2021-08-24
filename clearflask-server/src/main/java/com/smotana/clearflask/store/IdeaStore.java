@@ -235,6 +235,12 @@ public interface IdeaStore {
         @NonNull
         ImmutableSet<String> mergedPostIds;
 
+        /**
+         * Unitless order relative to other posts for displaying.
+         * Created time is used by default if not present.
+         */
+        Double order;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
         }
@@ -292,7 +298,8 @@ public interface IdeaStore {
                     getLinkedFromPostIds().asList(),
                     getMergedToPostId(),
                     getMergedToPostTime(),
-                    getMergedPostIds().asList());
+                    getMergedPostIds().asList(),
+                    getOrder());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -325,6 +332,7 @@ public interface IdeaStore {
                     getMergedToPostId(),
                     getMergedToPostTime(),
                     getMergedPostIds().asList(),
+                    getOrder(),
                     vote);
         }
     }

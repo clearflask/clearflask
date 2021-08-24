@@ -110,7 +110,12 @@ public interface ProjectStore {
         @NonNull
         String version;
 
-        /** Schema version mainly used for automatic upgrades */
+        /**
+         * Schema version mainly used for automatic upgrades
+         *
+         * @deprecated ConfigSchemaUpgrader auto-upgrades during JSON serialization.
+         */
+        @Deprecated
         Long schemaVersion;
 
         @NonNull
@@ -118,6 +123,13 @@ public interface ProjectStore {
 
         @NonNull
         String configJson;
+
+        /**
+         * Version for auto-upgrades.
+         *
+         * Currently only for ElasticSearch schema updates
+         */
+        Long projectVersion;
     }
 
     @Value

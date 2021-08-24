@@ -125,7 +125,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
               showExpression: false,
             },
             search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
+              sortBy: Admin.IdeaSearchSortByEnum.DragAndDrop,
               filterCategoryIds: [roadmap!.categoryAndIndex.category.categoryId],
               filterStatusIds: [status.statusId],
             })

@@ -140,7 +140,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         boolean enableHistograms();
     }
 
-    private static final String IDEA_INDEX = "idea";
+    public static final String IDEA_INDEX = "idea";
     private static final long EXP_DECAY_PERIOD_MILLIS = Duration.ofDays(7).toMillis();
 
     @Inject
@@ -241,6 +241,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "type", "keyword"))
                         .put("trendScore", ImmutableMap.of(
                                 "type", "double"))
+                        .put("order", ImmutableMap.of(
+                                "type", "double"))
                         .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
@@ -313,6 +315,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .put("expressionsValue", orNull(idea.getExpressionsValue()))
                         .put("expressions", idea.getExpressions() == null ? ExplicitNull.get() : idea.getExpressions().keySet())
                         .put("trendScore", orNull(idea.getTrendScore()))
+                        // In dynamo this is empty unless explicitly set.
+                        // In ES it is always populated for sorting as it is
+                        // not easy to fallback to a value of created unless
+                        // script sorting is used.
+                        .put("order", idea.getOrder() != null ? idea.getOrder() : idea.getCreated().toEpochMilli())
                         .build()), XContentType.JSON);
         if (setRefreshPolicy) {
             req.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL);
@@ -798,6 +805,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             .seed(IdUtil.randomId())
                             .setField("created"));
                     break;
+                case DRAGANDDROP:
+                    sortFields = ImmutableList.of("order");
+                    sortOrderOpt = Optional.of(SortOrder.ASC);
+                    break;
                 default:
                     throw new ApiException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
@@ -895,6 +906,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         null,
                         null,
                         null,
+                        null,
                         null),
                 Optional.empty());
     }
@@ -968,6 +980,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("fundGoal")
                     .put(ideaSchema.toDynamoValue("fundGoal", ideaUpdateAdmin.getFundGoal())));
             indexUpdates.put("fundGoal", ideaUpdateAdmin.getFundGoal());
+        }
+        if (ideaUpdateAdmin.getOrder() != null) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("order")
+                    .put(ideaSchema.toDynamoValue("order", ideaUpdateAdmin.getOrder())));
+            indexUpdates.put("order", ideaUpdateAdmin.getOrder());
         }
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());

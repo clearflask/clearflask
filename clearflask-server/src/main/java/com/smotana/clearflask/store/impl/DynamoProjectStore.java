@@ -58,6 +58,7 @@ import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -79,6 +80,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+import static com.smotana.clearflask.util.ProjectUpgrader.PROJECT_VERSION_LATEST;
 
 @Slf4j
 @Singleton
@@ -123,6 +125,8 @@ public class DynamoProjectStore implements ProjectStore {
     private Sanitizer sanitizer;
     @Inject
     private ConfigSchemaUpgrader configSchemaUpgrader;
+    @Inject
+    private ProjectUpgrader projectUpgrader;
     @Inject
     private IntercomUtil intercomUtil;
 
@@ -229,7 +233,8 @@ public class DynamoProjectStore implements ProjectStore {
                 versionedConfigAdmin.getVersion(),
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
                 ImmutableSet.of(),
-                gson.toJson(versionedConfigAdmin.getConfig()));
+                gson.toJson(versionedConfigAdmin.getConfig()),
+                PROJECT_VERSION_LATEST);
         try {
             ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.<TransactWriteItem>builder()
                     .add(new TransactWriteItem().withPut(new Put()
@@ -462,13 +467,12 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     private Project getProjectWithUpgrade(ProjectModel projectModel) {
+        // Upgrade config schema if necessary
         Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(projectModel.getConfigJson());
-
         if (configUpgradedOpt.isPresent()) {
             projectModel = projectModel.toBuilder()
                     .configJson(configUpgradedOpt.get())
                     .build();
-
             try {
                 projectSchema.table().putItem(new PutItemSpec()
                         .withItem(projectSchema.toItem(projectModel))
@@ -479,6 +483,20 @@ public class DynamoProjectStore implements ProjectStore {
                 log.warn("Writing upgraded project failed, will let someone else upgrade it later", ex);
             }
             projectCache.invalidate(projectModel.getProjectId());
+        }
+
+        // Upgrade project if necessary
+        Optional<Long> projectVersionUpgradedOpt = projectUpgrader.upgrade(projectModel);
+        if (projectVersionUpgradedOpt.isPresent()) {
+            projectModel = projectModel.toBuilder()
+                    .projectVersion(projectVersionUpgradedOpt.get())
+                    .build();
+            projectSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(projectSchema.primaryKey(Map.of(
+                            "projectId", projectModel.getProjectId())))
+                    .withNameMap(Map.of("#projectVersion", "projectVersion"))
+                    .withValueMap(Map.of(":projectVersion", projectModel.getProjectVersion()))
+                    .withUpdateExpression("SET #projectVersion = :projectVersion"));
         }
 
         return new ProjectImpl(projectModel);

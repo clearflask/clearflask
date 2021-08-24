@@ -71,11 +71,13 @@ import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.BeanUtil;
+import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -265,6 +267,8 @@ public enum ServiceInjector {
                 install(Sanitizer.module());
                 install(IntercomUtil.module());
                 install(ImageNormalizationImpl.module());
+                bind(ConfigSchemaUpgrader.class);
+                bind(ProjectUpgrader.class);
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

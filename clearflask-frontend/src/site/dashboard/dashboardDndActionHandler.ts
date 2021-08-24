@@ -76,6 +76,26 @@ const addToSearch = (
   return true;
 };
 
+const indexToOrder = (
+  activeProject: Project,
+  searchKey: string,
+  index: number,
+): number | undefined => {
+  const state = activeProject.server.getStore().getState();
+  const searchIdeaIds = state.ideas.bySearch[searchKey]?.ideaIds;
+  if (!searchIdeaIds) return undefined;
+  const postIdBefore = searchIdeaIds[index - 1];
+  const postIdAfter = searchIdeaIds[index];
+  const postBefore = !!postIdBefore ? state.ideas.byId[postIdBefore]?.idea : undefined;
+  const postAfter = !!postIdAfter ? state.ideas.byId[postIdBefore]?.idea : undefined;
+  const valBefore = postBefore?.order ? postBefore?.created.getTime() : undefined;
+  const valAfter = postAfter?.order ? postAfter?.created.getTime() : undefined;
+  if (valBefore === undefined && valAfter === undefined) return undefined;
+  if (valBefore === undefined) return valAfter - 1; // At the beginning of the list
+  if (valAfter === undefined) return valBefore + 1; // At the end of the list
+  return valBefore + ((valAfter - valBefore) / 2)
+};
+
 const feedbackToTask = async (
   activeProject: Project,
   srcPost: Admin.Idea,
@@ -84,6 +104,7 @@ const feedbackToTask = async (
   roadmap: RoadmapInstance,
   srcSearchKey?: string,
   dstSearchKey?: string,
+  dstIndex?: number,
 ): Promise<string> => {
   const dispatcherAdmin = await activeProject.server.dispatchAdmin();
   const taskId = (await dispatcherAdmin.ideaCreateAdmin({
@@ -95,6 +116,7 @@ const feedbackToTask = async (
       title: srcPost.title,
       description: srcPost.description,
       tagIds: [],
+      order: (dstSearchKey && dstIndex !== undefined) ? indexToOrder(activeProject, dstSearchKey, dstIndex) : undefined,
     },
   }, { [ignoreSearchKeys]: new Set([dstSearchKey]) })).ideaId;
   if (feedback.statusIdAccepted) {
@@ -145,7 +167,6 @@ export const dashboardOnDragEnd = async (
 
   await onPreHandling?.(dstDroppable, srcPost);
 
-  var dispatcherAdmin: Admin.Dispatcher | undefined;
   switch (dstDroppable.type) {
 
     case 'quick-action-delete':
@@ -245,7 +266,10 @@ export const dashboardOnDragEnd = async (
           await (await activeProject.server.dispatchAdmin()).ideaUpdateAdmin({
             projectId: activeProject.projectId,
             ideaId: srcPost.ideaId,
-            ideaUpdateAdmin: { statusId: dstDroppable.statusId },
+            ideaUpdateAdmin: {
+              statusId: dstDroppable.statusId,
+              order: dstSearchKey ? indexToOrder(activeProject, dstSearchKey, dstIndex) : undefined,
+            },
           }, { [ignoreSearchKeys]: new Set([srcSearchKey, dstSearchKey]) });
         } catch (e) {
           !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
@@ -267,7 +291,8 @@ export const dashboardOnDragEnd = async (
             feedback,
             roadmap,
             srcSearchKey,
-            dstSearchKey);
+            dstSearchKey,
+            dstIndex);
         } catch (e) {
           !!dstSearchKey && removeFromSearch(activeProject, dstSearchKey, taskId);
           !!srcSearchKey && !!srcIndex && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);

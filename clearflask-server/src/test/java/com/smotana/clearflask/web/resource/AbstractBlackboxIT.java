@@ -58,6 +58,7 @@ import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
@@ -148,6 +149,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected AccountStore accountStore;
     @Inject
     protected UserStore userStore;
+    @Inject
+    protected IdeaStore ideaStore;
     @Inject
     protected AccountApi kbAccount;
     @Inject

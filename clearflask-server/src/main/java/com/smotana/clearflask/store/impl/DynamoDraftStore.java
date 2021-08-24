@@ -98,7 +98,8 @@ public class DynamoDraftStore implements DraftStore {
                 ideaCreateAdmin.getStatusId(),
                 ideaCreateAdmin.getFundGoal(),
                 ideaCreateAdmin.getNotifySubscribers(),
-                ImmutableSet.copyOf(ideaCreateAdmin.getLinkedFromPostIds()));
+                ImmutableSet.copyOf(ideaCreateAdmin.getLinkedFromPostIds()),
+                ideaCreateAdmin.getOrder());
         setDraft(draftModel, Optional.empty());
         return draftModel;
     }

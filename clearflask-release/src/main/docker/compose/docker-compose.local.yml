@@ -75,14 +75,14 @@ services:
     image: killbill/mariadb:0.22
     volumes:
       - ./killbill-db/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql
-    expose:
-      - 3306
+    ports:
+      - 3306:3306
     environment:
       - MYSQL_ROOT_PASSWORD=killbill
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    expose:
-      - 9200
+    ports:
+      - 9200:9200
     environment:
       - ES_JAVA_OPTS=-Xms2g -Xmx2g
       - discovery.type=single-node
@@ -90,10 +90,9 @@ services:
   localstack:
     image: localstack/localstack-full
     privileged: true
-    expose:
-      - 4566
-      - 4571
     ports:
+      - 4566:4566
+      - 4571:4571
       - 4582:8080
     environment:
       - DEFAULT_REGION=us-east-1

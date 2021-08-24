@@ -25,7 +25,7 @@
       <module name="clearflask-frontend" target="11" />
       <module name="clearflask-legal" target="11" />
       <module name="clearflask-logging" target="1.8" />
-      <module name="clearflask-parent" target="1.5" />
+      <module name="clearflask-parent" target="11" />
       <module name="clearflask-release" target="11" />
       <module name="clearflask-server" target="11" />
       <module name="clearflask-sni" target="1.8" />

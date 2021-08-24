@@ -14,6 +14,7 @@ components:
             - Top
             - New
             - Random
+            - DragAndDrop
         filterCategoryIds:
           x-clearflask-prop: { order: 1, name: 'Category', description: 'Display only posts from these categories' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
@@ -232,6 +233,9 @@ components:
           type: array
           items:
             type: string
+        order:
+          type: number
+          format: double
     IdeaConnectResponse:
       type: object
       required:
@@ -306,6 +310,9 @@ components:
               type: array
               items:
                 type: string
+            order:
+              type: number
+              format: double
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
@@ -347,6 +354,9 @@ components:
             suppressNotifications:
               description: Suppresses notifications if status or response was changed
               type: boolean
+            order:
+              type: number
+              format: double
     Hits:
       type: object
       required:

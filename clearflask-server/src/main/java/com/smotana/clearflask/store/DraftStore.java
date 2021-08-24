@@ -113,6 +113,8 @@ public interface DraftStore {
         @NonNull
         ImmutableSet<String> linkedFromPostIds;
 
+        Double order;
+        
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId());
         }
@@ -145,6 +147,7 @@ public interface DraftStore {
                     getFundGoal(),
                     getNotifySubscribers(),
                     getLinkedFromPostIds().asList(),
+                    getOrder(),
                     getDraftId(),
                     getLastSaved());
         }
