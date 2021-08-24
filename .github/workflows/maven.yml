@@ -22,5 +22,5 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Maven build
-      timeout-minutes: 20
+      timeout-minutes: 30
       run: mvn install
