@@ -153,18 +153,18 @@ const ConnectedPost = (props: {
         variant='list'
         display={{
           titleTruncateLines: 1,
-          descriptionTruncateLines: 2,
+          descriptionTruncateLines: 1,
           responseTruncateLines: 0,
-          showCommentCount: true,
+          showCommentCount: false,
           showCategoryName: props.containerPost?.categoryId !== props.post.categoryId,
-          showCreated: true,
-          showAuthor: true,
-          showStatus: false,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: true,
           showTags: false,
           showVoting: false,
-          showVotingCount: true,
-          showFunding: true,
-          showExpression: true,
+          showVotingCount: false,
+          showFunding: false,
+          showExpression: false,
         }}
         {...props.PostProps}
       />

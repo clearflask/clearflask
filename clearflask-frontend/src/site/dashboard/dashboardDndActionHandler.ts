@@ -112,6 +112,7 @@ const feedbackToTask = async (
   return taskId;
 };
 
+export type OnDndPreHandling = (to: DroppableData, post: Admin.Idea) => Promise<any>;
 export type OnDndHandled = (to: DroppableData, post: Admin.Idea, createdId?: string) => Promise<any>;
 
 export const dashboardOnDragEnd = async (
@@ -124,6 +125,7 @@ export const dashboardOnDragEnd = async (
   feedback?: FeedbackInstance,
   roadmap?: RoadmapInstance,
   onHandled?: OnDndHandled,
+  onPreHandling?: OnDndPreHandling,
 ): Promise<boolean> => {
   const srcPost = activeProject.server.getStore().getState().ideas.byId[draggableId]?.idea;
   if (!srcPost) return false;
@@ -141,103 +143,137 @@ export const dashboardOnDragEnd = async (
   const srcSearchKey: string | undefined = srcDroppable?.['searchKey'];
   const dstSearchKey: string | undefined = dstDroppable?.['searchKey'];
 
+  await onPreHandling?.(dstDroppable, srcPost);
+
   var dispatcherAdmin: Admin.Dispatcher | undefined;
   switch (dstDroppable.type) {
 
     case 'quick-action-delete':
-      dispatcherAdmin = await activeProject.server.dispatchAdmin();
-      await dispatcherAdmin.ideaDeleteAdmin({
-        projectId: activeProject.projectId,
-        ideaId: srcPost.ideaId,
-      }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
-      await onHandled?.(dstDroppable, srcPost);
-      // Technically we could let ideaDeleteAdmin remove it for us, but the
-      // handler onHandled opens the next post and if it's removed,
-      // it loses its place.
+      // Technically we could let ideaDeleteAdmin remove it for us,
+      // but let's make it seem responsive
       !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
+      try {
+        await (await activeProject.server.dispatchAdmin()).ideaDeleteAdmin({
+          projectId: activeProject.projectId,
+          ideaId: srcPost.ideaId,
+        }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
+      } catch (e) {
+        !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+        throw e;
+      }
+      await onHandled?.(dstDroppable, srcPost);
       return true;
 
     case 'quick-action-feedback-change-status':
-      dispatcherAdmin = await activeProject.server.dispatchAdmin();
-      await dispatcherAdmin.ideaUpdateAdmin({
-        projectId: activeProject.projectId,
-        ideaId: srcPost.ideaId,
-        ideaUpdateAdmin: { statusId: dstDroppable.statusId },
-      }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
-      await onHandled?.(dstDroppable, srcPost);
       !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
+      try {
+        await (await activeProject.server.dispatchAdmin()).ideaUpdateAdmin({
+          projectId: activeProject.projectId,
+          ideaId: srcPost.ideaId,
+          ideaUpdateAdmin: { statusId: dstDroppable.statusId },
+        }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
+      } catch (e) {
+        !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+        throw e;
+      }
+      await onHandled?.(dstDroppable, srcPost);
       return true;
 
     case 'quick-action-create-task-from-feedback-with-status':
       if (!roadmap || !feedback) return false;
-      const taskId = await feedbackToTask(
-        activeProject,
-        srcPost,
-        dstDroppable.statusId,
-        feedback,
-        roadmap,
-        srcSearchKey);
-      await onHandled?.(dstDroppable, srcPost, taskId);
       !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
+      var taskId;
+      try {
+        taskId = await feedbackToTask(
+          activeProject,
+          srcPost,
+          dstDroppable.statusId,
+          feedback,
+          roadmap,
+          srcSearchKey);
+      } catch (e) {
+        !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+        throw e;
+      }
+      await onHandled?.(dstDroppable, srcPost, taskId);
       return true;
 
     case 'quick-action-feedback-merge-duplicate':
-      dispatcherAdmin = await activeProject.server.dispatchAdmin();
-      await dispatcherAdmin.ideaMergeAdmin({
-        projectId: activeProject.projectId,
-        ideaId: srcPost.ideaId,
-        parentIdeaId: dstDroppable.postId,
-      });
-      await onHandled?.(dstDroppable, srcPost);
       !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
+      try {
+        await (await activeProject.server.dispatchAdmin()).ideaMergeAdmin({
+          projectId: activeProject.projectId,
+          ideaId: srcPost.ideaId,
+          parentIdeaId: dstDroppable.postId,
+        });
+      } catch (e) {
+        !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+        throw e;
+      }
+      await onHandled?.(dstDroppable, srcPost);
       return true;
 
     case 'quick-action-feedback-link-with-task-and-accept':
-      dispatcherAdmin = await activeProject.server.dispatchAdmin();
-      await dispatcherAdmin.ideaLinkAdmin({
-        projectId: activeProject.projectId,
-        ideaId: srcPost.ideaId,
-        parentIdeaId: dstDroppable.postId,
-      });
-      if (feedback?.statusIdAccepted) {
-        await dispatcherAdmin.ideaUpdateAdmin({
+      !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
+      try {
+        await (await activeProject.server.dispatchAdmin()).ideaLinkAdmin({
           projectId: activeProject.projectId,
           ideaId: srcPost.ideaId,
-          ideaUpdateAdmin: { statusId: feedback.statusIdAccepted },
-        }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
+          parentIdeaId: dstDroppable.postId,
+        });
+        if (feedback?.statusIdAccepted) {
+          await (await activeProject.server.dispatchAdmin()).ideaUpdateAdmin({
+            projectId: activeProject.projectId,
+            ideaId: srcPost.ideaId,
+            ideaUpdateAdmin: { statusId: feedback.statusIdAccepted },
+          }, { [ignoreSearchKeys]: new Set([srcSearchKey]) });
+        }
+      } catch (e) {
+        !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+        throw e;
       }
       await onHandled?.(dstDroppable, srcPost);
-      !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
       return true;
 
     case 'roadmap-panel':
       if (!roadmap || !dstDroppable.statusId) return false;
       if (srcPost.categoryId === roadmap.categoryAndIndex.category.categoryId) {
         // Change task status
-        dispatcherAdmin = await activeProject.server.dispatchAdmin();
-        await dispatcherAdmin.ideaUpdateAdmin({
-          projectId: activeProject.projectId,
-          ideaId: srcPost.ideaId,
-          ideaUpdateAdmin: { statusId: dstDroppable.statusId },
-        }, { [ignoreSearchKeys]: new Set([srcSearchKey, dstSearchKey]) });
-        await onHandled?.(dstDroppable, srcPost);
         !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
         !!dstSearchKey && addToSearch(activeProject, dstSearchKey, dstIndex, srcPost.ideaId);
+        try {
+          await (await activeProject.server.dispatchAdmin()).ideaUpdateAdmin({
+            projectId: activeProject.projectId,
+            ideaId: srcPost.ideaId,
+            ideaUpdateAdmin: { statusId: dstDroppable.statusId },
+          }, { [ignoreSearchKeys]: new Set([srcSearchKey, dstSearchKey]) });
+        } catch (e) {
+          !!srcSearchKey && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+          !!dstSearchKey && removeFromSearch(activeProject, dstSearchKey, srcPost.ideaId);
+          throw e;
+        }
+        await onHandled?.(dstDroppable, srcPost);
         return true;
       } else if (!!feedback && srcPost.categoryId === feedback.categoryAndIndex.category.categoryId) {
+        if (!feedback) return false;
         // Convert feedback to task with status
-        if (!roadmap || !feedback) return false;
-        const taskId = await feedbackToTask(
-          activeProject,
-          srcPost,
-          dstDroppable.statusId,
-          feedback,
-          roadmap,
-          srcSearchKey,
-          dstSearchKey);
-        await onHandled?.(dstDroppable, srcPost);
         !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
         !!dstSearchKey && !!dstIndex && addToSearch(activeProject, dstSearchKey, dstIndex, taskId);
+        try {
+          const taskId = await feedbackToTask(
+            activeProject,
+            srcPost,
+            dstDroppable.statusId,
+            feedback,
+            roadmap,
+            srcSearchKey,
+            dstSearchKey);
+        } catch (e) {
+          !!dstSearchKey && removeFromSearch(activeProject, dstSearchKey, taskId);
+          !!srcSearchKey && !!srcIndex && addToSearch(activeProject, srcSearchKey, srcIndex, srcPost.ideaId);
+          throw e;
+        }
+        await onHandled?.(dstDroppable, srcPost);
         return true;
       } else {
         return false;

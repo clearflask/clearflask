@@ -28,7 +28,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
 
   const selectedPostId = this.state.feedbackPreview?.type === 'post' ? this.state.feedbackPreview.id : undefined;
 
-  context.onDndHandled = async (to, post, createdId) => {
+  context.onDndPreHandling = async (to, post) => {
     if (post.ideaId === selectedPostId) {
       // Open next posts
       const success = await this.feedbackListRef.current?.next();
@@ -36,7 +36,9 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
       // If not next post, at least close the current one 
       if (!success) this.setState({ feedbackPreview: undefined });
     }
+  };
 
+  context.onDndHandled = async (to, post, createdId) => {
     // Show snackbar for certain actions
     if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
       this.showSnackbar({

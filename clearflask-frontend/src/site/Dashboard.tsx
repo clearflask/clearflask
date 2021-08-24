@@ -55,7 +55,7 @@ import windowIso from '../common/windowIso';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
-import { dashboardOnDragEnd, OnDndHandled } from './dashboard/dashboardDndActionHandler';
+import { dashboardOnDragEnd, OnDndHandled, OnDndPreHandling } from './dashboard/dashboardDndActionHandler';
 import { renderExplore } from './dashboard/dashboardExplore';
 import { renderFeedback } from './dashboard/dashboardFeedback';
 import DashboardHome from './dashboard/DashboardHome';
@@ -109,6 +109,7 @@ export interface DashboardPageContext {
   showCreateProjectWarning?: boolean;
   showWarning?: string;
   onDndHandled?: OnDndHandled;
+  onDndPreHandling?: OnDndPreHandling;
 };
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
@@ -668,7 +669,8 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
               result.destination.index,
               this.state.feedback || undefined,
               this.state.roadmap || undefined,
-              context.onDndHandled);
+              context.onDndHandled,
+              context.onDndPreHandling);
           }}
         >
           <Layout
