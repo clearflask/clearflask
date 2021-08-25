@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Divider, Grow, Link as MuiLink, MenuItem, SvgIconTypeMap } from '@material-ui/core';
+import { Button, Divider, Grow, MenuItem, SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
@@ -245,7 +245,7 @@ export function MenuItemButton(props: {
   var linkProps: object | undefined;
   if (props.item['linkIsExternal'] !== undefined) {
     linkProps = {
-      component: MuiLink,
+      component: 'a',
       href: props.item['link'],
       underline: 'none',
     };
@@ -262,7 +262,7 @@ export function MenuItemButton(props: {
     };
   } else {
     linkProps = {
-      component: MuiLink,
+      component: 'a',
       onClick: () => {
         props.onClick?.();
         props.item['onClick']?.();

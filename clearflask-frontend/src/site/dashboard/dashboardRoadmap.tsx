@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Link as MuiLink } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import React from 'react';
 import { Provider } from 'react-redux';
@@ -170,7 +170,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
         right: roadmapLink && (
           <Button
             className={this.props.classes.headerAction}
-            component={MuiLink}
+            component={'a' as any}
             href={roadmapLink}
             target='_blank'
             underline='none'

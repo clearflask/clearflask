@@ -16,6 +16,7 @@ import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { MutableRef } from '../../common/util/refUtil';
 import { selectorContentWrap } from '../../common/util/reselectUtil';
 import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
+import windowIso from '../../common/windowIso';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import LoadMoreButton from './LoadMoreButton';
@@ -189,7 +190,8 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     }
 
     if (!this.props.searchStatus) {
-      this.loadMore();
+      const loadMorePromise = this.loadMore();
+      if (!!windowIso.isSsr) windowIso.awaitPromises.push(loadMorePromise);
     }
 
     const widthExpandMarginClassName = this.props.widthExpandMargin === undefined

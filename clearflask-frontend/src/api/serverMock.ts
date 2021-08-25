@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import jsonwebtoken from 'jsonwebtoken';
+import cloneDeep from 'lodash.clonedeep';
 import * as ConfigEditor from '../common/config/configEditor';
 import { Action, RestrictedActions } from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
@@ -124,7 +125,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   supportMessage(request: Admin.SupportMessageRequest): Promise<void> {
     console.log('Received support message with content:', request.supportMessage.content);
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   plansGet(): Promise<Admin.PlansGetResponse> {
     return this.returnLater({
@@ -199,7 +200,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;
     this.superLoggedIn = false;
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
@@ -232,7 +233,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     Object.keys(this.db).forEach(projectId => delete this.db[projectId]);
     this.account = undefined;
     this.accountPass = undefined;
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   accountUpdateAdmin(request: Admin.AccountUpdateAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
@@ -321,7 +322,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   accountBillingSyncPaymentsAdmin(): Promise<void> {
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
     const invoiceDate = new Date();
@@ -632,7 +633,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       currDay = new Date(currDay.getTime() + intervalInDays * 86400000);
     }
 
-    return this.returnLater(results, undefined, true);
+    return this.returnLater(results, undefined);
   }
   ideaCategoryAggregateAdmin(request: Admin.IdeaCategoryAggregateAdminRequest): Promise<Admin.IdeaAggregateResponse> {
     const project = this.getProject(request.projectId);
@@ -719,7 +720,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.getProject(request.projectId).users.splice(userIdIndex, 1);
     }
     this.getProject(request.projectId).loggedInUser = undefined;
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   async userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
     const project = this.getProject(request.projectId);
@@ -760,7 +761,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   async verifySsoTokenIfExists(project, ssoToken?: string) {
   }
   forgotPassword(request: Client.ForgotPasswordRequest): Promise<void> {
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   userLogin(request: Client.UserLoginRequest): Promise<Client.UserMeWithBalance> {
     const user = this.getProject(request.projectId).users.find(user => user.email === request.userLogin.email);
@@ -777,7 +778,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
     const user: Admin.UserAdmin = this.getImmutable(
@@ -836,14 +837,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId
         || notification.notificationId !== request.notificationId);
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId);
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -911,7 +912,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (ideaIndex !== -1) {
       this.getProject(request.projectId).ideas.splice(ideaIndex, 1);
     }
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -1023,8 +1024,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(draft);
   }
   ideaDraftGetAdmin(request: Admin.IdeaDraftGetAdminRequest): Promise<Admin.IdeaDraftAdmin> {
-    return this.returnLater(this.getProject(request.projectId).drafts
-      .find(draft => request.draftId === draft.draftId));
+    const draft = this.getProject(request.projectId).drafts
+      .find(draft => request.draftId === draft.draftId);
+    if (!draft) return this.throwLater(404, 'Draft not found');
+    return this.returnLater(draft);
   }
   ideaDraftSearchAdmin(request: Admin.IdeaDraftSearchAdminRequest): Promise<Admin.IdeaDraftSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).drafts
@@ -1042,13 +1045,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       lastSaved: new Date(),
       draftId,
     };
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   ideaDraftDeleteAdmin(request: Admin.IdeaDraftDeleteAdminRequest): Promise<void> {
     const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
     if (draftIndex === -1) return this.throwLater(404, 'Draft not found');
     this.getProject(request.projectId).ideas.splice(draftIndex, 1);
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
@@ -1086,14 +1089,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {
     this.deleteProject(request.projectId);
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   projectExportAdmin(request: Admin.ProjectExportAdminRequest): Promise<Admin.FileDownload> {
     return this.returnLater({
       filename: `${request.projectId}.csv`,
       contentType: 'application/csv',
       blob: new Blob(['a,b\n1,4'], { type: 'application/csv' }),
-    }, undefined, true);
+    }, undefined);
   }
   projectImportPostAdmin(request: Admin.ProjectImportPostAdminRequest): Promise<Admin.ImportResponse> {
     return this.returnLater({
@@ -1138,7 +1141,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (this.getProject(request.projectId).loggedInUser?.userId === request.userId) {
       this.getProject(request.projectId).loggedInUser = undefined;
     }
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   userDeleteBulkAdmin(request: Admin.UserDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -1360,7 +1363,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(loggedInUser);
   }
   accountNoopAdmin(): Promise<void> {
-    return this.returnLater();
+    return this.returnLater(undefined);
   }
   ideaSubscribeAdmin(request: Admin.IdeaSubscribeAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -1531,11 +1534,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return adminUser;
   }
 
-  async returnLater<T>(returnValue: T | undefined = undefined, additionalLatency?: number, skipStringify?: boolean): Promise<T> {
+  async returnLater<T>(returnValue: T, additionalLatency?: number): Promise<T> {
     // if (!isProd()) console.log('Server SEND:', returnValue);
     if (additionalLatency) await this.wait(additionalLatency);
     await this.waitLatency();
-    return skipStringify ? returnValue : (returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue)));
+    return cloneDeep<T>(returnValue);
   }
 
   async throwLater(httpStatus: number, userFacingMessage?: string): Promise<any> {

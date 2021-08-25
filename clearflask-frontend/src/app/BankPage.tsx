@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Link as MuiLink, Typography } from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -59,7 +59,7 @@ class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles
             )}
             {!!this.props.credits?.creditPurchase?.redirectUrl && (
               <Button
-                component={MuiLink}
+                component={'a' as any}
                 className={classNames(this.props.classes.spacing, this.props.classes.linkGetMore)}
                 color='primary'
                 href={this.props.credits.creditPurchase.redirectUrl}

@@ -4,6 +4,7 @@ import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentTe
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
+import CheckIcon from '@material-ui/icons/Check';
 import CodeIcon from '@material-ui/icons/Code';
 import SettingsIcon from '@material-ui/icons/Settings';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -775,17 +776,17 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     ...((!!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
                     {
                       type: 'dropdown', title: this.props.account.name, items: [
-                        ...(projects.map(p => p.projectId !== activeProjectId ? {
-                          type: 'header' as 'header', title: p.editor.getConfig().name,
-                        } : {
+                        ...(projects.map(p => ({
                           type: 'button' as 'button', onClick: () => {
                             const selectedProjectId = p.projectId;
                             if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
                               localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
                               this.setState({ selectedProjectId });
                             }
-                          }, title: p.editor.getConfig().name
-                        })),
+                          }, title: p.editor.getConfig().name,
+
+                          icon: p.projectId === activeProjectId ? CheckIcon : undefined
+                        }))),
                         { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
                         { type: 'divider' },
                         { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
