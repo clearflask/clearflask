@@ -43,20 +43,41 @@ killbill-sleep-%:
          -X PUT \
          "http://127.0.0.1:8082/1.0/kb/test/clock?days=$*"
 
+get-project-version:
+	$(eval PROJECT_VERSION := $(shell mvn -q -Dexec.executable=echo -Dexec.args='$${project.version}' --non-recursive exec:exec))
+
+release-patch:
+	mvn build-helper:parse-version -B release:prepare \
+	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion} \
+	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion}-SNAPSHOT \
+        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+
+release-minor:
+	mvn build-helper:parse-version -B release:prepare \
+	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0 \
+	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0-SNAPSHOT \
+        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+
+release-major:
+	mvn build-helper:parse-version -B release:prepare \
+	    -DreleaseVersion=\$${parsedVersion.nextMajorVersion}.0.0 \
+	    -DdevelopmentVersion=\$${parsedVersion.nextMajorVersion}.0.0-SNAPSHOT \
+        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+
 deploy:
 	make deploy-server
 	make deploy-connect
 	make deploy-rotate-instances
 	make deploy-cloudfront-invalidate-all
 
-deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
-	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
+deploy-server: get-project-version
+	aws s3 cp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war s3://clearflask-secret/clearflask-server-0.1.war
 
-deploy-logging: ./clearflask-logging/target/clearflask-logging-0.1-standalone.jar
-	aws s3 cp ./clearflask-logging/target/clearflask-logging-0.1-standalone.jar s3://killbill-secret/clearflask-logging-0.1-standalone.jar
+deploy-logging: get-project-version
+	aws s3 cp ./clearflask-logging/target/clearflask-logging-$(PROJECT_VERSION)-standalone.jar s3://killbill-secret/clearflask-logging-0.1-standalone.jar
 
-deploy-connect: ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz
-	aws s3 cp ./clearflask-frontend/target/clearflask-frontend-0.1-connect.tar.gz s3://clearflask-secret/clearflask-frontend-0.1-connect.tar.gz
+deploy-connect: get-project-version
+	aws s3 cp ./clearflask-frontend/target/clearflask-frontend-$(PROJECT_VERSION)-connect.tar.gz s3://clearflask-secret/clearflask-frontend-0.1-connect.tar.gz
 
 deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deploy-files
 
@@ -72,4 +93,5 @@ deploy-cloudfront-invalidate-all:
 .PHONY: \
 	build \
 	build-no-test \
-	killbill-sleep-%
+	killbill-sleep-% \
+	get-project-version

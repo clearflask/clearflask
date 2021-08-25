@@ -5,13 +5,12 @@
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>0.1</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
 
     <properties>
-        <ice.version>${project.version}</ice.version>
         <java.version>11</java.version>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
         <sentry.version>5.1.1</sentry.version>
@@ -48,6 +47,19 @@
         <module>clearflask-server</module>
         <module>clearflask-release</module>
     </modules>
+
+    <scm>
+        <url>git@github.com:clearflask/clearflask.git</url>
+        <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
+        <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/clearflask</url>
+        </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>
@@ -134,6 +146,14 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.0-M4</version>
+                <configuration>
+                    <releaseProfiles>docker-images-push</releaseProfiles>
                 </configuration>
             </plugin>
         </plugins>
