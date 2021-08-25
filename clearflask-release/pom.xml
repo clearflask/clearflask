@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>clearflask-parent</artifactId>
@@ -156,6 +157,7 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
+                    <pushRegistry>ghcr.io</pushRegistry>
                     <verbose>true</verbose>
                     <images>
                         <image>
@@ -224,9 +226,15 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <configuration>
-                            <pushRegistry>https://ghcr.io/clearflask/clearflask</pushRegistry>
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>push</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

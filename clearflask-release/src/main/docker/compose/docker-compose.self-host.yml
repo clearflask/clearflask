@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   clearflask-connect:
-    image: 'clearflask/clearflask-connect:latest'
+    image: ghcr.io/clearflask/clearflask-connect:latest
     depends_on:
       - clearflask-server
     ports:
@@ -10,7 +10,7 @@ services:
       - NODE_ENV=production
       - ENV=selfhost
   clearflask-server:
-    image: 'clearflask/clearflask-server:latest'
+    image: ghcr.io/clearflask/clearflask-server:latest
     ports:
       - 8080:8080
     environment:
