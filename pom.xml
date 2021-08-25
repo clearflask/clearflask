@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -34,8 +35,8 @@
         <projectlombok.version>1.18.4</projectlombok.version>
         <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
         <batik.version>1.14</batik.version>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>
@@ -51,13 +52,13 @@
         <url>git@github.com:clearflask/clearflask.git</url>
         <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
         <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <distributionManagement>
         <repository>
             <id>github</id>
-            <url>https://maven.pkg.github.com/clearflask</url>
+            <url>https://maven.pkg.github.com/clearflask/clearflask</url>
         </repository>
     </distributionManagement>
 
