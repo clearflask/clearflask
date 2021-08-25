@@ -83,13 +83,13 @@ const indexToOrder = (
 ): number | undefined => {
   const state = activeProject.server.getStore().getState();
   const searchIdeaIds = state.ideas.bySearch[searchKey]?.ideaIds;
-  if (!searchIdeaIds) return undefined;
+  if (!searchIdeaIds?.length) return undefined;
   const postIdBefore = searchIdeaIds[index - 1];
   const postIdAfter = searchIdeaIds[index];
   const postBefore = !!postIdBefore ? state.ideas.byId[postIdBefore]?.idea : undefined;
   const postAfter = !!postIdAfter ? state.ideas.byId[postIdBefore]?.idea : undefined;
-  const valBefore = postBefore?.order ? postBefore?.created.getTime() : undefined;
-  const valAfter = postAfter?.order ? postAfter?.created.getTime() : undefined;
+  const valBefore = postBefore?.order !== undefined ? postBefore?.order : postBefore?.created.getTime();
+  const valAfter = postAfter?.order !== undefined ? postAfter?.order : postAfter?.created.getTime();
   if (valBefore !== undefined && valAfter !== undefined) return valBefore + ((valAfter - valBefore) / 2);
   if (valAfter !== undefined) return valAfter - 1; // At the beginning of the list
   if (valBefore !== undefined) return valBefore + 1; // At the end of the list
