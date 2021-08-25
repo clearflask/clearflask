@@ -14,6 +14,9 @@ nb-configuration.xml
 
 ### MAVEN ###
 target/
+release.properties
+pom.xml.releaseBackup
+pom.xml.versionsBackup
 
 ### STS ###
 .apt_generated

@@ -50,19 +50,19 @@ release-patch:
 	mvn build-helper:parse-version -B release:prepare \
 	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion} \
 	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion}-SNAPSHOT \
-        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+        release:perform
 
 release-minor:
 	mvn build-helper:parse-version -B release:prepare \
 	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0 \
 	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0-SNAPSHOT \
-        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+        release:perform
 
 release-major:
 	mvn build-helper:parse-version -B release:prepare \
 	    -DreleaseVersion=\$${parsedVersion.nextMajorVersion}.0.0 \
 	    -DdevelopmentVersion=\$${parsedVersion.nextMajorVersion}.0.0-SNAPSHOT \
-        release:perform -DskipTests -Darguments=-DskipTests -DpreparationGoals=clean
+        release:perform
 
 deploy:
 	make deploy-server
