@@ -791,7 +791,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                         { type: 'divider' },
                         { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
                         { type: 'divider' },
-                        { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
+                        // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
                         { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
                         { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
                         { type: 'divider' },
