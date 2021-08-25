@@ -80,6 +80,10 @@ function createApp(serverHttpp) {
 
   serverApp.all('/*', reactRenderer());
 
+  serverApp.on('error', function (err) {
+    console.error('Failed with', err);
+  });
+
   return serverApp;
 }
 
