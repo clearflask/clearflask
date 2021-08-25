@@ -95,7 +95,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'beam':
         avatar = (
           <BoringAvatar
-            name={userName.replaceAll(/ /g, '')}
+            name={userName.replace(/ /g, '')}
             variant='beam'
             size={size}
             colors={[
