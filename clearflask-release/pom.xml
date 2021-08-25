@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>clearflask-release</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.2</version>
 
     <name>clearflask-release</name>
     <url>https://clearflask.com</url>
@@ -38,6 +38,18 @@
                                     <outputDirectory>${project.build.directory}/docker-root-server/ROOT/
                                     </outputDirectory>
                                     <includes>**</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-server</artifactId>
+                                    <classifier>selfhost-run</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/docker-root-server/ROOT/
+                                    </outputDirectory>
+                                    <includes>**</includes>
+                                    <excludes>COPYING</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
@@ -83,7 +95,6 @@
                                     <outputDirectory>${project.build.directory}/docker-compose-selfhost/
                                     </outputDirectory>
                                     <includes>connect.config.template.json</includes>
-                                    <excludes>COPYING</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>

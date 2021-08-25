@@ -2,14 +2,27 @@
 
 ## Table of Contents:
 
+- [TLDR](#tldr)
 - [Deploy dependencies](#deploy-dependencies)
     - [Via Docker](#via-docker)
     - [Via AWS](#via-aws)
 - [Deploy ClearFlask](#deploy-clearflask)
 
+## TLDR
+
+Download `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docker files and
+configuration [from here](https://github.com/clearflask/clearflask/packages/955621), unpack and run the following:
+
+```shell
+# Dependencies
+docker-compose -f docker-compose.deps.yml up
+# ClearFlask
+docker-compose up
+```
+
 ## Deploy dependencies
 
-There are several dependencies required for ClearFlask that are required:
+There are several dependencies you need for running ClearFlask:
 
 - **AWS DynamoDB** or alternative
 - **AWS S3** or alternative
@@ -17,7 +30,7 @@ There are several dependencies required for ClearFlask that are required:
 - **AWS SES** or any SMTP endpoint
 - **Google ReCaptcha** (Obtain free V2 keys [here](https://www.google.com/recaptcha/admin))
 
-Optional:
+And a few optional:
 
 - **CloudFront** as a CDN (Use in front of `clearflask-connect`)
 - **KillBill** for billing and payment processing. (Self-hosting is preconfigured for unlimited plans)
@@ -27,9 +40,10 @@ Optional:
 
 Although not intended for production, you can spin up all dependencies via Docker.
 
-1. Unpack the artifact if haven't
-   already `clearflask-release/target/clearflask-release-*-docker-compose-self-host.tar.gz`
+1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz`
 2. Run `docker-compose -f docker-compose.deps.yml up`
+
+All database content will be written to local `data` folder.
 
 ### Via AWS
 
@@ -103,15 +117,11 @@ ClearFlask consists of two components:
 - Tomcat application for serving API requests
 - NodeJS for SSR, dynamic cert management and serving static files
 
-At this time, we have not published any releases just yet ahead of launch.
-
-For now see how to [build ClearFlask](BUILDING.md).
-
 ### Install
 
-1. Unpack the artifact `clearflask-release/target/clearflask-release-*-docker-compose-self-host.tar.gz`
-2. Copy `config-selfhost-template.cfg` to `config-selfhost.cfg` and fill out properties
-3. Copy `connect.config.template.json` to `connect.config.json` and fill out properties
+1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz`
+2. Modify `config-selfhost.cfg`
+3. Modify `connect.config.json`
 
 ### Run
 

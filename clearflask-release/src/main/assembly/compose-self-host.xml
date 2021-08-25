@@ -6,13 +6,17 @@
     <formats>
         <format>tar.gz</format>
     </formats>
-    <fileSets>
-        <fileSet>
-            <directory>${project.build.directory}/docker-compose-selfhost</directory>
-            <outputDirectory>/</outputDirectory>
-        </fileSet>
-    </fileSets>
     <files>
+        <file>
+            <source>${project.build.directory}/docker-compose-selfhost/config-selfhost-template.cfg</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>config-selfhost.cfg</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/docker-compose-selfhost/connect.config.template.json</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>connect.config.json</destName>
+        </file>
         <file>
             <source>${basedir}/src/main/docker/compose/docker-compose.self-host.yml</source>
             <outputDirectory>/</outputDirectory>

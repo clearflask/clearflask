@@ -14,4 +14,6 @@ RUN apt-get update && \
 HEALTHCHECK --start-period=30s --interval=5s --timeout=1m --retries=3 \
     CMD wget --spider http://localhost:8080/api/health || exit 1
 RUN rm -fr /usr/local/tomcat/webapps/*
+ADD logging.properties /usr/local/tomcat/conf/logging.properties
 ADD ROOT/ /usr/local/tomcat/webapps/ROOT
+ADD logback.xml /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml

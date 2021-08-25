@@ -8,6 +8,16 @@
     </formats>
     <files>
         <file>
+            <source>${basedir}/src/test/resources/logback-dev.xml</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>logback.xml</destName>
+        </file>
+        <file>
+            <source>${basedir}/src/test/resources/logging-dev.properties</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>logging.properties</destName>
+        </file>
+        <file>
             <source>${basedir}/src/main/resources/config-selfhost-template.cfg</source>
             <outputDirectory>/</outputDirectory>
         </file>

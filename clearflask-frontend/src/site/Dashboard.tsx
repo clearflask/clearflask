@@ -279,7 +279,6 @@ interface ConnectProps {
   account?: AdminClient.AccountAdmin;
   isSuperAdmin: boolean;
   configsStatus?: Status;
-  configVers: string;
   bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
 interface State {
@@ -323,7 +322,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   unsubscribes: { [projectId: string]: () => void } = {};
   forcePathListener: ((forcePath: string) => void) | undefined;
   readonly searchAccounts: (newValue: string) => void;
-  lastConfigVars?: string;
+  lastConfigVer?: string;
   similarPostWasClicked?: {
     originalPostId: string;
     similarPostId: string;
@@ -457,8 +456,8 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     const activeProjectId: string | undefined = selectedLabel?.value;
     const activeProject = projects.find(p => p.projectId === activeProjectId);
 
-    if (activeProject && this.lastConfigVars !== this.props.configVers) {
-      this.lastConfigVars = this.props.configVers;
+    if (activeProject && this.lastConfigVer !== activeProject.configVersion) {
+      this.lastConfigVer = activeProject.configVersion;
       const templater = Templater.get(activeProject.editor);
       const feedbackPromise = templater.feedbackGet();
       const roadmapPromise = templater.roadmapGet();
@@ -1240,7 +1239,6 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     account: state.account.account.account,
     isSuperAdmin: state.account.isSuperAdmin,
     configsStatus: state.configs.configs.status,
-    configVers: Object.values(state.configs.configs.byProjectId || {}).map(c => c.config.version).join('/'),
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;

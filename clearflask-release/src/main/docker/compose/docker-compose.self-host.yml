@@ -9,6 +9,8 @@ services:
     environment:
       - NODE_ENV=production
       - ENV=selfhost
+    volumes:
+      - ./connect.config.json:/opt/clearflask/connect.config.json
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:

@@ -33,12 +33,14 @@ public class Application extends ResourceConfig {
     public Application(ServiceLocator serviceLocator) {
         super();
         log.info("Initializing Sentry");
-        Sentry.init(options -> {
-            ServiceInjector.Environment env = ServiceInjector.detectEnvironment();
-            options.setEnvironment(env.name());
-            options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
-            options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
-        });
+        ServiceInjector.Environment env = ServiceInjector.detectEnvironment();
+        if (!ServiceInjector.Environment.PRODUCTION_SELF_HOST.equals(env)) {
+            Sentry.init(options -> {
+                options.setEnvironment(env.name());
+                options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
+                options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
+            });
+        }
 
         log.info("Initializing Application");
         packages(getClass().getPackage().getName());
