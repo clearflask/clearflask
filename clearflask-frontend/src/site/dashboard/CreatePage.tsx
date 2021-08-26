@@ -375,7 +375,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
 }
 export default withStyles(styles, { withTheme: true })(CreatePage);
 
-const TemplateCard = (props: {
+export const TemplateCard = (props: {
   className?: string;
   title: string;
   content: string;

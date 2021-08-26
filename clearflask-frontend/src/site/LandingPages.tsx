@@ -118,7 +118,7 @@ import PostStatusIframe from '../app/PostStatusIframe';
 import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
-import Templater from '../common/config/configTemplater';
+import Templater, { createTemplateV2OptionsDefault } from '../common/config/configTemplater';
 import CreditView from '../common/config/CreditView';
 import { ChangelogInstance } from '../common/config/template/changelog';
 import { FeedbackInstance } from '../common/config/template/feedback';
@@ -135,8 +135,10 @@ import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
+import { TemplateCard } from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
 import { TemplateWrapper } from './dashboard/ProjectSettings';
+import { Project } from './DemoApp';
 import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
@@ -299,6 +301,17 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   textAlignCenter: {
     textAlign: 'center',
+  },
+  templateCards: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+  },
+  templateCard: {
+    margin: theme.spacing(4),
+    width: 200,
+    display: 'flex',
+    flexDirection: 'column',
   },
 }));
 
@@ -1884,6 +1897,84 @@ export function LandingFeatureRequestTracking() {
           buttonLink='/solutions/feature-crowdfunding'
         />
       </HorizontalPanels>
+    </>
+  );
+}
+
+export function LandingDemo() {
+  return (
+    <>
+      <Demo
+        type='demoOnly'
+        template={templater => templater.createTemplateV2()}
+        mock={async mocker => {
+          const userMe = await mocker.mockLoggedIn(1000, false);
+          await mocker.mockItems(userMe);
+        }}
+        initialSubPath='/'
+        demoFixedHeight={vh(80)}
+        demoWrap='browser'
+        controls={project => (<LandingDemoControls project={project} />)}
+        controlsLocation='top'
+        settings={{
+          demoScrollY: true,
+          suppressSetTitle: true,
+        }}
+      />
+    </>
+  );
+}
+
+function LandingDemoControls(props: {
+  project: Project;
+}) {
+  const classes = useStyles();
+  const [roadmapEnabled, setRoadmapEnabled] = useState<boolean>(!!createTemplateV2OptionsDefault.templateRoadmap);
+  const [changelogEnabled, setChangelogEnabled] = useState<boolean>(!!createTemplateV2OptionsDefault.templateChangelog);
+  return (
+    <>
+      <div className={classes.templateCards}>
+        <TemplateCard
+          className={classes.templateCard}
+          title='Feedback'
+          content='Collect feedback from customers.'
+          checked={!!createTemplateV2OptionsDefault.templateFeedback}
+          onChange={() => { }}
+          disabled
+        />
+        <TemplateCard
+          className={classes.templateCard}
+          title='Roadmap'
+          content='Convert feedback into tasks and organize it in a public roadmap'
+          checked={!!roadmapEnabled}
+          onChange={async () => {
+            const enable = !roadmapEnabled;
+            if (enable) {
+              props.project.templater.roadmapOn();
+            } else {
+              const roadmap = await props.project.templater.roadmapGet();
+              !!roadmap && props.project.templater.roadmapPageOff(roadmap);
+            }
+            setRoadmapEnabled(enable);
+          }}
+        />
+        <TemplateCard
+          className={classes.templateCard}
+          title='Changelog'
+          content='Keep your users updated with new changes in your product.'
+          checked={!!changelogEnabled}
+          onChange={async () => {
+            const enable = !changelogEnabled;
+            if (enable) {
+              props.project.templater.changelogOn();
+            } else {
+              const changelog = await props.project.templater.changelogGet();
+              !!changelog && props.project.templater.changelogOff(changelog);
+            }
+            setChangelogEnabled(enable);
+          }}
+        />
+      </div>
     </>
   );
 }

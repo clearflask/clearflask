@@ -37,7 +37,12 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  controls: {
+  controlsTop: {
+    marginBottom: theme.spacing(4),
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  controlsBottomRight: {
     float: 'right',
     marginTop: theme.spacing(4),
   },
@@ -67,6 +72,7 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   className?: string;
   type?: 'largeDemo' | 'mediumDemo' | 'hero' | 'column' | 'headingMain' | 'demoOnly' | 'headingOnly';
   controls?: React.ReactNode;
+  controlsLocation?: 'bottom-right' | 'top';
   demo?: React.ReactNode;
   demoImage?: Img;
   demoWrap?: 'browser' | 'browser-dark' | 'shadow',
@@ -164,13 +170,17 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       );
     }
 
-
     const display = (
       <>
         {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}
+        {!!this.props.controls && this.props.controlsLocation === 'top' && (
+          <div className={this.props.classes.controlsTop}>
+            {this.props.controls}
+          </div>
+        )}
         {demo}
-        {this.props.controls && (
-          <div className={this.props.classes.controls}>
+        {!!this.props.controls && (!this.props.controlsLocation || this.props.controlsLocation === 'bottom-right') && (
+          <div className={this.props.classes.controlsBottomRight}>
             {this.props.controls}
           </div>
         )}

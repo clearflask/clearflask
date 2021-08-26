@@ -14,6 +14,7 @@ import FeedbackIcon from '@material-ui/icons/Feedback';
 import MenuIcon from '@material-ui/icons/Menu';
 import BlogIcon from '@material-ui/icons/MenuBookOutlined';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
+import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -50,6 +51,7 @@ const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCust
 const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagement, fallback: (<Loading />) });
 const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
 const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
+const LandingDemo = loadable(() => import(/* webpackChunkName: "LandingDemo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingDemo, fallback: (<Loading />) });
 const LandingIdeaManagement = loadable(() => import(/* webpackChunkName: "LandingIdeaManagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIdeaManagement, fallback: (<Loading />) });
 const LandingIntegrations = loadable(() => import(/* webpackChunkName: "LandingIntegrations" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingIntegrations, fallback: (<Loading />) });
 const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "LandingInternalFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingInternalFeedback, fallback: (<Loading />) });
@@ -158,6 +160,8 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/ask', title: 'Ask', icon: CollectIcon },
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/act', title: 'Act', icon: ActIcon },
+          { type: 'divider' },
+          { type: 'button', link: '/product/demo', title: 'Demo', icon: DemoIcon },
           { type: 'divider' },
           { type: 'button', link: '/product/customize', title: 'Customize' },
           { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
@@ -331,6 +335,10 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             <Route exact path='/product/scale-with-us'>
               <SetTitle title='Scale with us' />
               <LandingGrowWithUs />
+            </Route>
+            <Route exact path='/product/demo'>
+              <SetTitle title='Demo' />
+              <LandingDemo />
             </Route>
 
             <Route exact path='/solutions/feature-request-tracking'>
