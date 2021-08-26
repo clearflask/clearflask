@@ -13,11 +13,8 @@
   <a href="https://github.com/clearflask/clearflask/releases">
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/clearflask/clearflask?include_prereleases&style=for-the-badge">
   </a>
-  <a href="#cloud">
-    <img alt="Cloud version released" src="https://img.shields.io/badge/cloud-released-green?style=for-the-badge">
-  </a>
-  <a href="#self-hosting">
-    <img alt="Self-host version in alpha" src="https://img.shields.io/badge/self--host-alpha-yellow?style=for-the-badge">
+  <a href="https://github.com/clearflask/clearflask/blob/master/COPYING">
+    <img alt="License" src="https://img.shields.io/github/license/clearflask/clearflask?style=for-the-badge">
   </a>
 </div>
 
@@ -28,24 +25,19 @@ Listen to your users during product development with [ClearFlask](https://clearf
 
 </div>
 
-## Issues
+## Get involved
 
 Submit an [issue here](https://feedback.clearflask.com/issue) or
 a [suggestion here](https://feedback.clearflask.com/feedback).
 
-You can also open a merge request although we advise you to talk to us before doing major work.
+You can also open a merge request. Please [see here](CONTRIBUTING.md) on how to contribute.
 
 ## Hosting
 
-### Managed
+#### Cloud
 
-For managed hosting, sign up [here](https://clearflask.com/signup) to get started. You can import/export data at any
-time.
+For managed hosting, [sign up here](https://clearflask.com/signup) to get started.
 
-### Self-hosting
+#### Self-hosting
 
-If you want to host it on your own infrastructure, see how you can do that [here](INSTALLATION.md)
-
-## Contributing
-
-We appreciate any contributions and feedback. Please see [here](CONTRIBUTING.md) on how to contribute.
+If you want to host it on your own infrastructure, [launch it here](INSTALLATION.md).
