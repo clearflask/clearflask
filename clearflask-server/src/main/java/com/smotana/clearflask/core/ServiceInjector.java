@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.core;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.ServiceManager;
@@ -53,6 +49,7 @@ import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
+import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
@@ -167,6 +164,7 @@ public enum ServiceInjector {
                 install(GuavaRateLimiters.module());
 
                 // Stores
+                install(ConfigAwsCredentialsProvider.module());
                 install(DefaultDynamoDbProvider.module());
                 install(DefaultS3ClientProvider.module());
                 install(DefaultElasticSearchProvider.module());
@@ -272,13 +270,11 @@ public enum ServiceInjector {
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:
-                        bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("test", "test")));
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 "/opt/clearflask/config-local.cfg");
                         break;
                     case PRODUCTION_SELF_HOST:
                     case PRODUCTION_AWS:
-                        bind(AWSCredentialsProvider.class).to(DefaultAWSCredentialsProviderChain.class);
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 "/opt/clearflask/config-prod.cfg");
                         break;
