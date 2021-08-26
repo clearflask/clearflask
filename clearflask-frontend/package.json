@@ -144,6 +144,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
+    "start:connect": "DEBUG=express:query NODE_ENV=production ENV=development ./node/node --unhandled-rejections=strict --trace-warnings src/connect/bootstrap.js",
     "build": "npm run build-frontend && npm run build-connect",
     "build-frontend": "GENERATE_SOURCEMAP=true BUILD_PATH='./target/public' react-app-rewired build",
     "build-connect": "rm -fR target/dist && webpack --node-env production -c webpack.config.connect.js",

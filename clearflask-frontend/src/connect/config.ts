@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-const fs = require('fs');
+import fs from 'fs';
+import path from 'path';
 
 const configFile = '/opt/clearflask/connect.config.json';
 
@@ -12,22 +13,29 @@ export interface ConnectConfig {
   workerCount?: number, // Leave blank to match cores
   apiBasePath: string,
   parentDomain: string,
+  publicPath: string;
+  isInsideWebpack?: boolean;
+  disableAutoFetchCertificate?: boolean;
 }
 
 var connectConfig: ConnectConfig = {
   listenPort: 44380,
   email: 'hostmaster@clearflask.com',
-  apiBasePath: process.env.ENV === 'local' ? 'http://clearflask-server:8080' : 'http://localhost:8080',
-  parentDomain: process.env.ENV === 'local' ? 'localhost.com' : 'clearflask.com',
+  apiBasePath: 'http://localhost:8080',
+  parentDomain: 'clearflask.com',
   connectToken: 'EMPTY',
+  publicPath: path.resolve(__dirname, 'public'),
+  disableAutoFetchCertificate: process.env.ENV === 'development',
 };
 
 if (process.env.ENV === 'production'
-  || process.env.ENV === 'selfhost') {
+  || process.env.ENV === 'selfhost'
+  || process.env.ENV === 'local') {
   try {
     const configLoaded = JSON.parse(fs.readFileSync(configFile));
     connectConfig = {
       ...connectConfig,
+      isInsideWebpack: true,
       ...(configLoaded || {}),
     };
   }
@@ -38,9 +46,10 @@ if (process.env.ENV === 'production'
 } else {
   connectConfig = {
     ...connectConfig,
+    isInsideWebpack: false,
     workerCount: 2,
-    acmeDirectoryUrl: 'https://acme.staging.localhost:14000/dir',
     parentDomain: 'localhost.com',
+    publicPath: path.resolve(__dirname, '..', '..', 'public'),
   };
 }
 

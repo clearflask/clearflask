@@ -23,11 +23,6 @@
             <destName>docker-compose.yml</destName>
         </file>
         <file>
-            <source>${basedir}/src/main/docker/compose/docker-compose.self-host-deps.yml</source>
-            <outputDirectory>/</outputDirectory>
-            <destName>docker-compose.deps.yml</destName>
-        </file>
-        <file>
             <source>${project.parent.basedir}/COPYING</source>
             <outputDirectory>/</outputDirectory>
         </file>

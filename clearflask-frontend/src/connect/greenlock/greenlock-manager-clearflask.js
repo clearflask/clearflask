@@ -77,7 +77,9 @@ Manager.create = function (opts) {
         console.log('manager.find', opts);
         if (opts.servername) return [await manager.get({ servername: opts.servername })];
         if (opts.servernames) return await Promise.all(opts.servernames.map(servername => manager.get({ servername })));
-        return []; // TODO implement warming up cache
+        // TODO implement warming up cache
+        // For now return base domain only
+        return [await manager.get({ servername: connectConfig.parentDomain })];
 
         // return [{ subject, altnames, renewAt, deletedAt }];
     };
@@ -88,14 +90,8 @@ Manager.create = function (opts) {
     //
     manager.remove = async function (opts) {
         console.log('manager.remove', opts.subject);
-        await ServerConnect.get()
-            .dispatch()
-            .certDeleteConnect(
-                {
-                    domain: opts.subject,
-                },
-                undefined,
-                { 'x-cf-connect-token': connectConfig.connectToken });
+
+
         return null;
     };
 

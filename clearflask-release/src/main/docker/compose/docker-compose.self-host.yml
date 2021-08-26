@@ -1,16 +1,25 @@
 version: '3.8'
+volumes:
+  data:
+    driver: local
 services:
   clearflask-connect:
     image: ghcr.io/clearflask/clearflask-connect:latest
     depends_on:
       - clearflask-server
     ports:
-      - 80:3000
+      - 80:9080
+      - 443:9443
     environment:
       - NODE_ENV=production
       - ENV=selfhost
     volumes:
       - ./connect.config.json:/opt/clearflask/connect.config.json
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:9080/asset-manifest.json"]
+    interval: 5s
+    timeout: 15s
+    retries: 2
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:
@@ -19,3 +28,53 @@ services:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
     volumes:
       - ./config-selfhost.cfg:/opt/clearflask/config-prod.cfg
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+    interval: 5s
+    timeout: 15s
+    retries: 2
+  # ElasticSearch
+  elasticsearch:
+    profiles:
+      - with-deps
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    expose:
+      - 9200
+    environment:
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - discovery.type=single-node
+    mem_limit: 4g
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+  # (Optional) ElasticSearch web ui
+  kibana:
+    profiles:
+      - with-deps
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  # For DynamoDB, S3 and SES alternative
+  localstack:
+    profiles:
+      - with-deps
+    image: localstack/localstack
+    expose:
+      - 4566
+      - 4571
+    environment:
+      - DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOSTNAME=localstack
+      - HOSTNAME_EXTERNAL=localstack
+      - SERVICES=dynamodb,ses,s3
+      - LS_LOG=warn
+      - START_WEB=0
+      - USE_SSL=0
+      - FORCE_NONINTERACTIVE=true
+      - data_DIR=/tmp/localstack/data
+    volumes:
+      - ./data/localstack:/tmp/localstack

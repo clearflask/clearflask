@@ -23,7 +23,7 @@ interface RenderResult {
   maxAge?: number;
 }
 
-const statsFile = path.resolve(__dirname, 'public', 'loadable-stats.json')
+const statsFile = path.resolve(connectConfig.publicPath, 'loadable-stats.json')
 
 const PH_ENV = '%ENV%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
@@ -36,7 +36,7 @@ const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
-  const filePath = path.resolve(__dirname, 'public', 'index.html');
+  const filePath = path.resolve(connectConfig.publicPath, 'index.html');
   fs.readFile(filePath, 'utf8', (err, html) => {
     if (!err) {
       resolve(html);

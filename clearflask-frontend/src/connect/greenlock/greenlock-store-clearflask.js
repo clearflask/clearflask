@@ -5,8 +5,6 @@
 const { default: connectConfig } = require('../config');
 const { default: ServerConnect } = require("../serverConnect");
 
-// TODO https://git.rootprojects.org/root/greenlock-store-memory.js
-
 module.exports.create = function (opts) {
     console.log('ClearFlask Greenlock Store Started');
     const store = {};

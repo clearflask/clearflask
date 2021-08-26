@@ -10,7 +10,6 @@ import httpp from 'http-proxy';
 import path from 'path';
 import serveStatic from 'serve-static';
 import connectConfig from './config';
-import GreenlockClearFlaskManager from './greenlock/greenlock-manager-clearflask';
 import httpx from './httpx';
 import reactRenderer from './renderer';
 
@@ -50,7 +49,7 @@ function createApp(serverHttpp) {
 
   if (connectConfig.parentDomain !== 'clearflask.com') {
     serverApp.get("/asset-manifest.json", function (req, res) {
-      fs.readFile(path.resolve(__dirname, 'public', 'asset-manifest.json'), 'utf8', (err, data) => {
+      fs.readFile(path.resolve(connectConfig.publicPath, 'asset-manifest.json'), 'utf8', (err, data) => {
         if (err) {
           res.sendStatus(404);
         } else {
@@ -60,7 +59,7 @@ function createApp(serverHttpp) {
     });
   }
 
-  serverApp.use(serveStatic(path.resolve(__dirname, 'public'), {
+  serverApp.use(serveStatic(connectConfig.publicPath, {
     index: false,
     maxAge: '7d',
     setHeaders: (res, path, stat) => {
@@ -72,7 +71,7 @@ function createApp(serverHttpp) {
 
   serverApp.get('/api', function (req, res) {
     res.header(`Cache-Control', 'public, max-age=${7 * 24 * 60 * 60}`);
-    res.sendFile(path.resolve(__dirname, 'public', 'api', 'index.html'));
+    res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'index.html'));
   });
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
@@ -89,15 +88,12 @@ function createApp(serverHttpp) {
   return serverApp;
 }
 
-
-if (process.env.ENV === 'production'
-  || process.env.ENV === 'selfhost'
-  || process.env.ENV === 'test') {
+if (!connectConfig.disableAutoFetchCertificate) {
   greenlockExpress
     .init({
       agreeToTerms: true,
-      renewOffset: "-45d",
-      renewStagger: "15d",
+      renewOffset: '-45d',
+      renewStagger: '15d',
       packageRoot: process.cwd(),
       configDir: './greenlock.d',
       packageAgent: 'clearflask/1.0',
@@ -106,20 +102,20 @@ if (process.env.ENV === 'production'
       cluster: true,
       debug: true,
       workers: connectConfig.workerCount,
-      managerInstance: GreenlockClearFlaskManager,
       manager: {
-        module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-manager-clearflask.js`
+        module: './src/connect/greenlock/greenlock-manager-clearflask.js',
       },
       store: {
-        module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-store-clearflask.js`
+        module: '../../../src/connect/greenlock/greenlock-store-clearflask.js',
       },
       challenges: {
         "http-01": {
-          module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js`,
+          module: '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js',
         },
-        "dns-01": {
-          module: `/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js`,
-        },
+        // For now wildcard challenges are disabled
+        // "dns-01": {
+        //   module: '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js',
+        // },
       },
       notify: (event, details) => {
         console.log('EVENT:', event, details);
@@ -164,7 +160,7 @@ if (process.env.ENV === 'production'
       console.log('Master Started');
     });
 } else {
-  createApp(createProxy()).listen(3000, "0.0.0.0", function () {
-    console.info("App on", 3000);
+  createApp(createProxy()).listen(9080, "0.0.0.0", function () {
+    console.info("App on", 9080);
   });
 }

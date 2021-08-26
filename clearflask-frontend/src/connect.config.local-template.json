@@ -1,0 +1,6 @@
+{
+  "connectToken": "7cb1e1c26f5d4705a213529257d081c6",
+  "disableAutoFetchCertificate": true,
+  "parentDomain": "localhost.com",
+  "apiBasePath": "http://clearflask-server:8080"
+}
