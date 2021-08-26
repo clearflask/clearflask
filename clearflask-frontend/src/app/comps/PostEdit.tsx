@@ -637,7 +637,7 @@ export const PostEditStatus = (props: {
   if (!category?.workflow.statuses.length) return null;
   return (
     <StatusSelect
-      show='next'
+      show='all'
       workflow={category?.workflow}
       variant='outlined'
       size='small'
