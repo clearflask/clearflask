@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>clearflask-parent</artifactId>
@@ -48,6 +49,17 @@
                                     <outputDirectory>${project.build.directory}/docker-root-server/ROOT/
                                     </outputDirectory>
                                     <includes>**</includes>
+                                    <excludes>COPYING</excludes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-server</artifactId>
+                                    <classifier>selfhost-run</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/docker-root-server/</outputDirectory>
+                                    <includes>logback.xml,logging.properties</includes>
                                     <excludes>COPYING</excludes>
                                 </artifactItem>
                                 <artifactItem>
