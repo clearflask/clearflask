@@ -119,7 +119,10 @@ export const postSearchToLabels = (
     controls.permanent.push(label);
   } else {
     controls.groups++;
-    Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
+    Object.keys(Client.IdeaSearchSortByEnum).filter(
+      sortBy => sortBy !== Client.IdeaSearchSortByEnum.DragAndDrop
+        && sortBy !== Client.IdeaSearchSortByEnum.Random
+    ).forEach(sortBy => {
       const label: Label = getLabel(PostFilterType.Sort, sortBy, sortBy);
       controls.options.push(label);
       if (searchModified && searchModified.sortBy === sortBy) {

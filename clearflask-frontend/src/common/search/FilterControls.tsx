@@ -106,13 +106,13 @@ export const FilterControlSelect = (props: {
   const Control = props.type === 'check' ? Checkbox : Radio;
   return (
     <div
-      key={`group-${props.name || 'noname'}`}
+      key={`group-${props.name || 'noname'}-${props.type}`}
       className={classes.group}
     >
       <FilterControlTitle name={props.name} />
       {props.labels.map(label => (
         <FormControlLabel
-          key={`label-${label.label}`}
+          key={`label-${label.label}-${label.value}`}
           style={{ color: label.color }}
           label={(
             <Typography
