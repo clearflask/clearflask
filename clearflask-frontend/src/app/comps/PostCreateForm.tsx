@@ -178,6 +178,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       authorUserId: this.props.loggedInUserId,
       title: this.props.defaultTitle,
       description: this.props.defaultDescription,
+      tagIds: [],
       ...this.props.draft,
       draftId: this.props.draftId
     };
