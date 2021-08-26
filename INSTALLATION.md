@@ -14,9 +14,12 @@ Download `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docke
 configuration [from here](https://github.com/clearflask/clearflask/packages/955621), unpack and run the following:
 
 ```shell
-# Dependencies
+# Start dependencies
 docker-compose -f docker-compose.deps.yml up
-# ClearFlask
+```
+Wait until started and run:
+```shell
+# ClearFlask service
 docker-compose up
 ```
 
