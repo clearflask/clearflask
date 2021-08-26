@@ -17,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -98,7 +99,8 @@ public class DynamoDraftStore implements DraftStore {
                 ideaCreateAdmin.getStatusId(),
                 ideaCreateAdmin.getFundGoal(),
                 ideaCreateAdmin.getNotifySubscribers(),
-                ImmutableSet.copyOf(ideaCreateAdmin.getLinkedFromPostIds()),
+                ideaCreateAdmin.getLinkedFromPostIds() == null ? ImmutableSet.of()
+                        : ideaCreateAdmin.getLinkedFromPostIds().stream().filter(id -> !Strings.isNullOrEmpty(id)).collect(ImmutableSet.toImmutableSet()),
                 ideaCreateAdmin.getOrder());
         setDraft(draftModel, Optional.empty());
         return draftModel;
