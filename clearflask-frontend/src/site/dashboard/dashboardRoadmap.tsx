@@ -210,8 +210,8 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
 
   const roadmapSection = renderRoadmapSection();
   const backlogSection = renderStatusSection(this.state.roadmap.statusIdBacklog);
-  const completedSection = renderStatusSection(this.state.roadmap.statusIdCompleted);
-  const closedSection = renderStatusSection(this.state.roadmap.statusIdClosed, completedSection?.name);
+  const closedSection = renderStatusSection(this.state.roadmap.statusIdClosed);
+  const completedSection = renderStatusSection(this.state.roadmap.statusIdCompleted, closedSection?.name);
   const missingStatusSections = this.state.roadmap.categoryAndIndex.category.workflow.statuses
     .filter(status => !seenStatusIds.has(status.statusId))
     .map(status => renderStatusSection(status))
