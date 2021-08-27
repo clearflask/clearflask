@@ -5,7 +5,6 @@ const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const PermissionsOutputPlugin = require('webpack-permissions-plugin');
-const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   entry: path.resolve(__dirname, 'src', 'connect', 'connect.ts'),

@@ -34,6 +34,13 @@ const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
 const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
 const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
+export const replaceParentDomain(html) {
+  if (connectConfig.parentDomain === 'clearflask.com') return html;
+  return html.replace(
+    /https:\/\/clearflask\.com/g,
+    `${connectConfig.disableAutoFetchCertificate ? 'http' : 'https'}://${connectConfig.parentDomain}`)
+}
+
 // Cache index.html in memory
 const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) => {
   const filePath = path.resolve(connectConfig.publicPath, 'index.html');
@@ -45,6 +52,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
     }
   });
 }).then(htmlStr => {
+  htmlStr = replaceParentDomain(htmlStr);
   const $ = htmlparser.load(htmlStr);
   $('#loader-css').remove();
   $('noscript').remove();
@@ -88,7 +96,7 @@ export default function render() {
                 statsFile,
                 entrypoints: ['main'],
                 outputPath: path.resolve(__dirname, '..', '..', 'build'),
-                publicPath: (process.env.ENV !== 'production' && process.env.ENV !== 'selfhost')
+                publicPath: (connectConfig.parentDomain !== 'clearflask.com')
                   ? '/' : undefined,
               }),
               muiSheets: new ServerStyleSheets(),

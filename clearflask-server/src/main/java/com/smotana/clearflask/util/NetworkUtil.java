@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -65,11 +66,20 @@ public class NetworkUtil {
         waitUntilPortOpen("127.0.0.1", port);
     }
 
+    public static void waitUntilPortOpen(String urlStr) throws IOException {
+        URL url = new URL(urlStr);
+        waitUntilPortOpen(
+                url.getHost(),
+                url.getPort() != -1
+                        ? url.getPort()
+                        : url.getDefaultPort());
+    }
+
     public static void waitUntilPortOpen(String hostname, int port) throws IOException {
         Retryer<Boolean> retryer = RetryerBuilder.<Boolean>newBuilder()
                 .retryIfResult(result -> !result)
-                .withStopStrategy(StopStrategies.stopAfterDelay(1, TimeUnit.MINUTES))
-                .withWaitStrategy(WaitStrategies.exponentialWait(50, 1, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.MINUTES))
+                .withWaitStrategy(WaitStrategies.exponentialWait(50, 5, TimeUnit.SECONDS))
                 .build();
         try {
             retryer.call(() -> {

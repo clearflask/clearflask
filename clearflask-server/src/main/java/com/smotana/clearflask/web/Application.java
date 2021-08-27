@@ -27,6 +27,9 @@ public class Application extends ResourceConfig {
     public interface Config {
         @DefaultValue("clearflask.com")
         String domain();
+
+        @DefaultValue("false")
+        boolean startupWaitUntilDeps();
     }
 
     @Inject

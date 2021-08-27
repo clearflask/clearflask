@@ -17,6 +17,8 @@ configuration [from here](https://github.com/clearflask/clearflask/packages/9556
 docker-compose --profile with-deps up
 ```
 
+Point your browser at [http://localhost](http://localhost)
+
 ## Deploy dependencies
 
 There are several dependencies you need for running ClearFlask:
@@ -120,4 +122,4 @@ ClearFlask consists of two components:
 3. Carefully read and modify `connect.config.json`. Particularly, unset `disableAutoFetchCertificate` if your DNS is
    configured.
 4. Run `docker-compose up` or `docker-compose --profile with-deps up` to also run dependencies.
-5. Point your browser at `http://localhost:80` or if you configured DNS `https://yoursite.com`.
+5. Point your browser at `http://localhost` or if you configured DNS `https://yoursite.com`.

@@ -48,7 +48,7 @@ if (process.env.ENV === 'production'
     ...connectConfig,
     isInsideWebpack: false,
     workerCount: 2,
-    parentDomain: 'localhost.com',
+    parentDomain: 'localhost',
     publicPath: path.resolve(__dirname, '..', '..', 'public'),
   };
 }

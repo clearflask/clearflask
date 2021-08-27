@@ -6,10 +6,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.util.NetworkUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.api.gen.AccountApi;
@@ -35,6 +38,8 @@ import org.killbill.billing.client.api.gen.TagApi;
 import org.killbill.billing.client.api.gen.TagDefinitionApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.api.gen.UsageApi;
+
+import java.io.IOException;
 
 @Slf4j
 @Singleton
@@ -67,10 +72,20 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
 
     @Override
     public KillBillHttpClient get() {
         String serviceEndpoint = String.format("%s://%s:%d", config.requireTls() ? "https" : "http", config.host(), config.port());
+        if (configApp.startupWaitUntilDeps()) {
+            log.info("Waiting for KillBill to be up {}", serviceEndpoint);
+            try {
+                NetworkUtil.waitUntilPortOpen(config.host(), config.port());
+            } catch (IOException ex) {
+                throw new ProvisionException("Failed to wait until KillBill port opened", ex);
+            }
+        }
         log.info("Opening KillBill client on {}", serviceEndpoint);
         return new KillBillHttpClient(
                 serviceEndpoint,

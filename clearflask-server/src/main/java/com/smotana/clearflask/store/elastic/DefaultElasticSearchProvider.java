@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.store.elastic;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
@@ -10,12 +11,15 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
+import com.smotana.clearflask.util.NetworkUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -23,6 +27,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +46,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     private Gson gson;
     @Inject
     private Environment env;
@@ -49,6 +56,14 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     public RestHighLevelClient get() {
+        if (configApp.startupWaitUntilDeps() && !Strings.isNullOrEmpty(config.serviceEndpoint())) {
+            log.info("Waiting for ElasticSearch to be up {}", config.serviceEndpoint());
+            try {
+                NetworkUtil.waitUntilPortOpen(config.serviceEndpoint());
+            } catch (IOException ex) {
+                throw new ProvisionException("Failed to wait until ElasticSearch port opened", ex);
+            }
+        }
         log.info("Opening ElasticSearch client on {}", config.serviceEndpoint());
         if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient

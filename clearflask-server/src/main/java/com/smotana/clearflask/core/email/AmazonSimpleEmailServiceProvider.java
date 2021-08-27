@@ -11,15 +11,20 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.util.NetworkUtil;
+import com.smotana.clearflask.web.Application;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.Optional;
 
-
+@Slf4j
 @Singleton
 public class AmazonSimpleEmailServiceProvider extends ManagedService implements Provider<AmazonSimpleEmailServiceV2> {
 
@@ -34,15 +39,25 @@ public class AmazonSimpleEmailServiceProvider extends ManagedService implements 
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     private AWSCredentialsProvider awsCredentialsProvider;
 
     private Optional<AmazonSimpleEmailServiceV2> sesOpt = Optional.empty();
 
     @Override
     public AmazonSimpleEmailServiceV2 get() {
+        if (configApp.startupWaitUntilDeps() && !Strings.isNullOrEmpty(config.serviceEndpoint())) {
+            log.info("Waiting for SES to be up {}", config.serviceEndpoint());
+            try {
+                NetworkUtil.waitUntilPortOpen(config.serviceEndpoint());
+            } catch (IOException ex) {
+                throw new ProvisionException("Failed to wait until SES port opened", ex);
+            }
+        }
+        log.info("Opening SES client on {}", config.serviceEndpoint());
         AmazonSimpleEmailServiceV2ClientBuilder sesBuilder = AmazonSimpleEmailServiceV2ClientBuilder.standard()
                 .withCredentials(awsCredentialsProvider);
-
         String region = config.region();
         String serviceEndpoint = config.serviceEndpoint();
         if (!Strings.isNullOrEmpty(serviceEndpoint) && !Strings.isNullOrEmpty(region)) {
@@ -53,7 +68,6 @@ public class AmazonSimpleEmailServiceProvider extends ManagedService implements 
         } else {
             throw new IllegalArgumentException("SES Config is misconfigured, no region or endpoint set");
         }
-
         sesOpt = Optional.of(sesBuilder.build());
         return sesOpt.get();
     }

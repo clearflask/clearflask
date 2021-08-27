@@ -54,7 +54,7 @@ public class Sanitizer {
         @DefaultValue(value = "", innerType = String.class)
         Set<String> skipCheckForDomains();
 
-        @DefaultValue(value = "clearflask.com,localhost.com", innerType = String.class)
+        @DefaultValue(value = "clearflask.com,localhost", innerType = String.class)
         Set<String> reservedDomains();
 
         @DefaultValue("sni.clearflask.com")

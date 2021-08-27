@@ -11,7 +11,7 @@ import path from 'path';
 import serveStatic from 'serve-static';
 import connectConfig from './config';
 import httpx from './httpx';
-import reactRenderer from './renderer';
+import reactRenderer, { replaceParentDomain } from './renderer';
 
 if (process.env.ENV !== 'selfhost') {
   Sentry.init({
@@ -42,21 +42,33 @@ function createProxy() {
   return serverHttpp;
 }
 
+const cacheReplaceAndSend = {};
+function replaceAndSend(res, filePath) {
+  if (!!cacheReplaceAndSend[filePath]) {
+    res.send(cacheReplaceAndSend[filePath]);
+  } else {
+    fs.readFile(path.resolve(connectConfig.publicPath, 'asset-manifest.json'), 'utf8', (err, data) => {
+      if (err) {
+        res.sendStatus(404);
+      } else {
+        cacheReplaceAndSend[filePath] = replaceParentDomain(data);
+        res.send(cacheReplaceAndSend[filePath]);
+      }
+    });
+  }
+}
+
 function createApp(serverHttpp) {
   const serverApp = express();
 
   serverApp.use(compression());
 
   if (connectConfig.parentDomain !== 'clearflask.com') {
-    serverApp.get("/asset-manifest.json", function (req, res) {
-      fs.readFile(path.resolve(connectConfig.publicPath, 'asset-manifest.json'), 'utf8', (err, data) => {
-        if (err) {
-          res.sendStatus(404);
-        } else {
-          res.send(data.replace(/https:\/\/clearflask\.com/g, ''));
-        }
+    ['/asset-manifest.json', '/index.html'].forEach(pathToReplace => {
+      serverApp.get(pathToReplace, function (req, res) {
+        replaceAndSend(res, pathToReplace);
       });
-    });
+    })
   }
 
   serverApp.use(serveStatic(connectConfig.publicPath, {
@@ -71,6 +83,7 @@ function createApp(serverHttpp) {
 
   serverApp.get('/api', function (req, res) {
     res.header(`Cache-Control', 'public, max-age=${7 * 24 * 60 * 60}`);
+    replaceAndSend(res, '/api/index.html')
     res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'index.html'));
   });
   serverApp.all('/api/*', function (req, res) {

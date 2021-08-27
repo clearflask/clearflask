@@ -35,7 +35,4 @@ Ensure Docker is running locally and the project is successfully compiled. Then 
 make local-up
 ```
 
-Point your browser at https://localhost
-
-It is recommended to add a `hosts` entry `127.0.0.1 localhost.com` and point your browser to https://localhost.com.
-Although this should be solved in a better way, it helps with cookies, subdomain detection, and a few other quirks.
+Point your browser at [http://localhost](http://localhost)

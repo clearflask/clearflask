@@ -18,7 +18,7 @@ import Loading from './app/utils/Loading';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
+import { isTracking } from './common/util/detectEnv';
 import { redirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
@@ -224,15 +224,7 @@ class Main extends Component<Props> {
   }
 
   isProject(): boolean {
-    switch (detectEnv()) {
-      case Environment.PRODUCTION:
-        return windowIso.location.hostname !== windowIso.parentDomain;
-      default:
-      case Environment.DEVELOPMENT_FRONTEND:
-      case Environment.DEVELOPMENT_LOCAL:
-        return windowIso.location.hostname !== 'localhost'
-          && windowIso.location.hostname !== 'localhost.com';
-    }
+    return windowIso.location.hostname !== windowIso.parentDomain;
   }
 }
 
