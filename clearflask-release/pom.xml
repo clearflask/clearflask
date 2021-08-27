@@ -105,7 +105,7 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/docker-compose-selfhost/
                                     </outputDirectory>
-                                    <includes>connect.config.selfhost-template.json</includes>
+                                    <includes>connect.config.selfhost.json</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>

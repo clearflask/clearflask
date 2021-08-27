@@ -18,7 +18,7 @@
             <destName>logging.properties</destName>
         </file>
         <file>
-            <source>${basedir}/src/main/resources/config-selfhost-template.cfg</source>
+            <source>${basedir}/src/main/resources/config-selfhost.cfg</source>
             <outputDirectory>/</outputDirectory>
         </file>
         <file>

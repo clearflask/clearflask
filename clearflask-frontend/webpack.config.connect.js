@@ -18,7 +18,12 @@ module.exports = {
     extensions: ['.es6', '.es', '.jsx', '.js', '.mjs', '.tsx', '.ts', '.mts'],
   },
   target: 'node',
-  externals: [nodeExternals()],
+  /**
+   * This doesn't work.
+   * 
+   * Amount of times I did this mistake in the past: 2
+   */
+  // externals: [nodeExternals()],
   node: {
     __dirname: false,
     __filename: false,

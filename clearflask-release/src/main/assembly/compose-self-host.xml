@@ -8,12 +8,11 @@
     </formats>
     <files>
         <file>
-            <source>${project.build.directory}/docker-compose-selfhost/config-selfhost-template.cfg</source>
+            <source>${project.build.directory}/docker-compose-selfhost/config-selfhost.cfg</source>
             <outputDirectory>/</outputDirectory>
-            <destName>config-selfhost.cfg</destName>
         </file>
         <file>
-            <source>${project.build.directory}/docker-compose-selfhost/connect.config.selfhost-template.json</source>
+            <source>${project.build.directory}/docker-compose-selfhost/connect.config.selfhost.json</source>
             <outputDirectory>/</outputDirectory>
             <destName>connect.config.json</destName>
         </file>

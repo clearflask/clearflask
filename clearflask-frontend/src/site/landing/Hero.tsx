@@ -40,12 +40,15 @@ const styles = (theme: Theme) => createStyles({
       padding: theme.spacing(8, 2),
     },
   },
-  buttonContainer: {
+  buttonsContainer: {
+    display: 'flex',
     alignSelf: 'flex-end',
     margin: theme.spacing(4, 8),
     [theme.breakpoints.down('xs')]: {
       margin: theme.spacing(4, 4),
     },
+  },
+  buttonContainer: {
     display: 'flex',
     alignItems: 'stretch',
     '& > *:not(:first-child)': {
@@ -67,6 +70,9 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 0,
     paddingLeft: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
+  },
+  button2: {
+    marginRight: theme.spacing(2),
   },
   remark: {
     position: 'absolute',
@@ -93,6 +99,8 @@ interface Props {
   buttonLink?: string;
   buttonRemark?: React.ReactNode;
   buttonAddOauth?: boolean;
+  button2Title?: string;
+  button2Link?: string;
 }
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
@@ -136,53 +144,68 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
               {this.props.description}
             </Typography>
             {this.props.buttonTitle && (
-              <div className={this.props.classes.buttonContainer}>
-                <Button
-                  className={this.props.classes.buttonMain}
-                  color='primary'
-                  variant='contained'
-                  size='large'
-                  disableElevation
-                  {...(this.props.buttonLink ? {
-                    component: Link,
-                    to: this.props.buttonLink,
-                  } : {})}
-                  {...(this.props.buttonLinkExt ? {
-                    component: 'a',
-                    href: this.props.buttonLinkExt,
-                  } : {})}
-                >
-                  {this.props.buttonTitle}
-                  {!!this.props.buttonRemark && (
-                    <div className={this.props.classes.remark}>
-                      <Typography variant='caption' component='div' color='textSecondary'>{this.props.buttonRemark}</Typography>
-                    </div>
-                  )}
-                </Button>
-                {this.props.buttonAddOauth && (
-                  <>
-                    <Button
-                      color='primary'
-                      variant='contained'
-                      disableElevation
-                      size='large'
-                      className={this.props.classes.buttonOauth}
-                      onClick={e => this.onOauth('google')}
-                    >
-                      <GoogleIcon />
-                    </Button>
-                    <Button
-                      color='primary'
-                      disableElevation
-                      variant='contained'
-                      size='large'
-                      className={this.props.classes.buttonOauth}
-                      onClick={e => this.onOauth('github')}
-                    >
-                      <GithubIcon />
-                    </Button>
-                  </>
+              <div className={this.props.classes.buttonsContainer}>
+                {!!this.props.button2Title && (
+                  <Button
+                    variant='outlined'
+                    size='large'
+                    className={this.props.classes.button2}
+                    {...(this.props.button2Link ? {
+                      component: Link,
+                      to: this.props.button2Link,
+                    } : {})}
+                  >
+                    {this.props.button2Title}
+                  </Button>
                 )}
+                <div className={this.props.classes.buttonContainer}>
+                  <Button
+                    className={this.props.classes.buttonMain}
+                    color='primary'
+                    variant='contained'
+                    size='large'
+                    disableElevation
+                    {...(this.props.buttonLink ? {
+                      component: Link,
+                      to: this.props.buttonLink,
+                    } : {})}
+                    {...(this.props.buttonLinkExt ? {
+                      component: 'a',
+                      href: this.props.buttonLinkExt,
+                    } : {})}
+                  >
+                    {this.props.buttonTitle}
+                    {!!this.props.buttonRemark && (
+                      <div className={this.props.classes.remark}>
+                        <Typography variant='caption' component='div' color='textSecondary'>{this.props.buttonRemark}</Typography>
+                      </div>
+                    )}
+                  </Button>
+                  {this.props.buttonAddOauth && (
+                    <>
+                      <Button
+                        color='primary'
+                        variant='contained'
+                        disableElevation
+                        size='large'
+                        className={this.props.classes.buttonOauth}
+                        onClick={e => this.onOauth('google')}
+                      >
+                        <GoogleIcon />
+                      </Button>
+                      <Button
+                        color='primary'
+                        disableElevation
+                        variant='contained'
+                        size='large'
+                        className={this.props.classes.buttonOauth}
+                        onClick={e => this.onOauth('github')}
+                      >
+                        <GithubIcon />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </Grid>

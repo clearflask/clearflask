@@ -15,11 +15,11 @@ services:
       - ENV=selfhost
     volumes:
       - ./connect.config.json:/opt/clearflask/connect.config.json
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:9080/asset-manifest.json"]
-    interval: 5s
-    timeout: 15s
-    retries: 2
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9080/asset-manifest.json" ]
+      interval: 5s
+      timeout: 15s
+      retries: 2
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:
@@ -27,12 +27,12 @@ services:
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
     volumes:
-      - ./config-selfhost.cfg:/opt/clearflask/config-prod.cfg
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
-    interval: 5s
-    timeout: 15s
-    retries: 2
+      - ./config-selfhost.cfg:/opt/clearflask/config-selfhost.cfg
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
+      interval: 5s
+      timeout: 15s
+      retries: 2
   # ElasticSearch
   elasticsearch:
     profiles:

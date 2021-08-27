@@ -36,12 +36,17 @@ interface Props {
   demoPreventInteraction?: boolean
   demoProject?: Promise<Project>;
   demoScrollYOnClick?: boolean;
+  demoWrapBrowserShowProjectUrlWithPrefix?: string;
   scale?: number;
   settings?: StateSettings;
   containerPortal?: boolean;
   demoInsetFade?: boolean;
 }
-class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
+interface State {
+  demoWrapBrowserUrl?: string;
+}
+class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>, State> {
+  state: State = {};
   demoProjectId?: string;
   readonly projectPromise: Promise<Project>;
   readonly containerRef = React.createRef<any>();
@@ -83,6 +88,8 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
               server={project.server}
               intialSubPath={this.props.initialSubPath}
               settings={this.settings}
+              onPathChange={!this.props.demoWrapBrowserShowProjectUrlWithPrefix ? undefined
+                : path => this.setState({ demoWrapBrowserUrl: path })}
             />
           );
         if (this.props.scale !== undefined) {
@@ -125,6 +132,9 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
     return (
       <Block
         {...blockProps}
+        demoWrapBrowserUrl={!!this.props.demoWrapBrowserShowProjectUrlWithPrefix
+          ? this.props.demoWrapBrowserShowProjectUrlWithPrefix + (this.state.demoWrapBrowserUrl || '')
+          : blockProps.demoWrapBrowserUrl}
         controls={this.props.controls && (
           <Promised promise={this.projectPromise} render={project => this.props.controls && this.props.controls(project)} />
         )}

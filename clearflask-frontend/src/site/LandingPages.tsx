@@ -818,7 +818,9 @@ export function LandingHero() {
         buttonRemark={(
           <TrialInfoText />
         )}
-      // buttonAddOauth
+        // buttonAddOauth
+        button2Title='See Demo'
+        button2Link='/product/demo'
       />
     </Background>
   );
@@ -1914,6 +1916,7 @@ export function LandingDemo() {
         initialSubPath='/'
         demoFixedHeight={vh(80)}
         demoWrap='browser'
+        demoWrapBrowserShowProjectUrlWithPrefix='https://feedback.yoursite.com'
         controls={project => (<LandingDemoControls project={project} />)}
         controlsLocation='top'
         settings={{

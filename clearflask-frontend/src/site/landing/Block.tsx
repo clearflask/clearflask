@@ -76,6 +76,7 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   demo?: React.ReactNode;
   demoImage?: Img;
   demoWrap?: 'browser' | 'browser-dark' | 'shadow',
+  demoWrapBrowserUrl?: string,
   demoWrapPadding?: number | string,
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
@@ -145,6 +146,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       const isDark = this.props.demoWrap === 'browser-dark';
       demo = (
         <FakeBrowser
+          addressBarContent={this.props.demoWrapBrowserUrl}
           darkMode={isDark}
           contentPadding={demoWrapPadding}
           fixedWidth={demoFixedWidth}

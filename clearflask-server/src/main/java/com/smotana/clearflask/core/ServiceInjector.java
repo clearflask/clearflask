@@ -274,6 +274,9 @@ public enum ServiceInjector {
                                 "/opt/clearflask/config-local.cfg");
                         break;
                     case PRODUCTION_SELF_HOST:
+                        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
+                                "/opt/clearflask/config-selfhost.cfg");
+                        break;
                     case PRODUCTION_AWS:
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 "/opt/clearflask/config-prod.cfg");

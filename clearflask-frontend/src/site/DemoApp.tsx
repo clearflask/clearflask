@@ -64,6 +64,7 @@ interface Props {
   server: Server;
   intialSubPath?: string;
   forcePathSubscribe?: (listener: (forcePath: string) => void) => void;
+  onPathChange?: (path: string) => void;
   settings?: StateSettings;
 }
 
@@ -78,6 +79,12 @@ export default class DemoApp extends Component<Props> {
       <MemoryRouter initialEntries={this.props.intialSubPath ? [`${this.props.intialSubPath || '/'}`] : undefined}>
         <Route path="/" render={props => (
           <>
+            {this.props.onPathChange && (
+              <Route path='/' render={routeProps => {
+                this.props.onPathChange?.(routeProps.location.pathname)
+                return null;
+              }} />
+            )}
             {this.props.forcePathSubscribe && (
               <ForceUrl forcePathSubscribe={this.props.forcePathSubscribe} />
             )}

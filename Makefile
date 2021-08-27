@@ -21,9 +21,9 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: clearflas
 	cp -n clearflask-release/target/run-docker-compose-local/server/config-local-template.cfg ./config-local.cfg \
 		&& echo IMPORTANT: Created config-local.cfg please adjust settings for local deployment || true
 	cp ./config-local.cfg clearflask-release/target/run-docker-compose-local/server/config-local.cfg
-	cp -n clearflask-release/target/run-docker-compose-local/connect/connect.config.template.json ./connect.config.json \
+	cp -n clearflask-release/target/run-docker-compose-local/connect/connect.config.local-template.json ./connect.config-local.json \
 		&& echo IMPORTANT: Created connect.config.json please adjust settings for local deployment || true
-	cp ./connect.config.json clearflask-release/target/run-docker-compose-local/connect/connect.config.json
+	cp ./connect.config-local.json clearflask-release/target/run-docker-compose-local/connect/connect.config.json
 
 local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
 	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml up -d
