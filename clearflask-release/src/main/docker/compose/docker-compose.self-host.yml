@@ -63,6 +63,6 @@ services:
       - START_WEB=0
       - USE_SSL=0
       - FORCE_NONINTERACTIVE=true
-      - data_DIR=/tmp/localstack/data
+      - DATA_DIR=/tmp/localstack/data
     volumes:
       - ./data/localstack:/tmp/localstack

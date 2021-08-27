@@ -155,7 +155,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 Optional.of(ideaId),
                 idea.getMergedPostIds(),
                 isInitial ? configCommentStore.searchInitialFetchMax() : configCommentStore.searchSubsequentFetchMax(),
-                ideaCommentSearch.getExcludeChildrenCommentIds()));
+                ideaCommentSearch.getExcludeChildrenCommentIds() == null ? ImmutableList.of() : ideaCommentSearch.getExcludeChildrenCommentIds()));
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})
