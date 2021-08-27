@@ -47,7 +47,7 @@ function replaceAndSend(res, filePath) {
   if (!!cacheReplaceAndSend[filePath]) {
     res.send(cacheReplaceAndSend[filePath]);
   } else {
-    fs.readFile(path.resolve(connectConfig.publicPath, 'asset-manifest.json'), 'utf8', (err, data) => {
+    fs.readFile(path.resolve(connectConfig.publicPath, filePath), 'utf8', (err, data) => {
       if (err) {
         res.sendStatus(404);
       } else {
@@ -88,7 +88,7 @@ function createApp(serverHttpp) {
   });
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
-      target: process.env.ENV !== 'local' ? 'http://localhost:8080' : 'http://clearflask-server:8080',
+      target: connectConfig.apiBasePath,
     });
   });
 

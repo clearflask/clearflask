@@ -34,7 +34,7 @@ const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
 const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
 const PH_STORE_CONTENT = '%STORE_CONTENT%';
 
-export const replaceParentDomain(html) {
+export const replaceParentDomain = (html) => {
   if (connectConfig.parentDomain === 'clearflask.com') return html;
   return html.replace(
     /https:\/\/clearflask\.com/g,
@@ -115,6 +115,7 @@ export default function render() {
                 <WindowIsoSsrProvider
                   env={process.env.ENV || process.env.NODE_ENV as any}
                   fetch={fetch}
+                  apiBasePath={connectConfig.apiBasePath}
                   url={requested_url}
                   setTitle={newTitle => rr.title = newTitle}
                   setMaxAge={maxAge => rr.maxAge = maxAge}

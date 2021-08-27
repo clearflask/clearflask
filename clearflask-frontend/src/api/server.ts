@@ -171,14 +171,11 @@ export class Server {
   }
 
   static augmentApiBasePath(basePath: string): string {
-    switch (detectEnv()) {
-      case Environment.DEVELOPMENT_FRONTEND:
-        break;
-      default:
-        basePath = basePath.replace('https://clearflask.com', `${windowIso.location.protocol}//${windowIso.location.host}`);
-        break;
+    if (windowIso.isSsr) {
+      return basePath.replace('https://clearflask.com', windowIso.apiBasePath);
+    } else {
+      return basePath.replace('https://clearflask.com', `${windowIso.location.protocol}//${windowIso.location.host}`);
     }
-    return basePath;
   }
 
   getProjectId(): string {

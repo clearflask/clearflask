@@ -37,6 +37,7 @@ win.parentDomain = 'clearflask.com'
 export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;
   fetch: any;
+  apiBasePath: string;
   env: 'development' | 'production' | 'local' | 'test';
   url: string;
   setTitle: (title: string) => void;
@@ -48,6 +49,7 @@ export const WindowIsoSsrProvider = (props: {
 }) => {
   win['ENV'] = props.env;
   win['fetch'] = props.fetch;
+  win['apiBasePath'] = props.apiBasePath;
   const url = new URL(props.url);
   win['location'] = url;
   win['setTitle'] = props.setTitle;
@@ -63,14 +65,15 @@ export type WindowIso = {
   // Both CSR and SSR
   parentDomain: string;
   ENV?: 'development' | 'production' | 'selfhost' | 'local' | 'test';
-} & (( // SSR only
+} & (( // CSR only
   Window & typeof globalThis & {
-    isSsr: false
+    isSsr: false;
   }
-) | ( // CSR only
+) | ( // SSR only
     NodeJS.Global & {
       isSsr: true;
       fetch: any;
+      apiBasePath: string;
       location: URL;
       setTitle: (title: string) => void;
       setMaxAge: (maxAge: number) => void;
