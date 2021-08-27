@@ -15,7 +15,6 @@ configuration [from here](https://github.com/clearflask/clearflask/packages/9556
 
 ```shell
 docker-compose --profile with-deps up
-```
 
 ## Deploy dependencies
 
