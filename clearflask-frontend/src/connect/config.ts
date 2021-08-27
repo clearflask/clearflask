@@ -32,7 +32,7 @@ if (process.env.ENV === 'production'
   || process.env.ENV === 'selfhost'
   || process.env.ENV === 'local') {
   try {
-    const configLoaded = JSON.parse(fs.readFileSync(configFile));
+    const configLoaded = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     connectConfig = {
       ...connectConfig,
       isInsideWebpack: true,
