@@ -14,7 +14,11 @@
     </fileSets>
     <files>
         <file>
-            <source>${basedir}/src/connect.config.template.json</source>
+            <source>${basedir}/src/connect.config.local-template.json</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/src/connect.config.selfhost-template.json</source>
             <outputDirectory>/</outputDirectory>
         </file>
         <file>

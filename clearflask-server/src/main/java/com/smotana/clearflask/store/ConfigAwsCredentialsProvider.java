@@ -10,8 +10,10 @@ import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +32,8 @@ public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
         String awsSecretKey();
     }
 
-    public ConfigAwsCredentialsProvider(Config config) {
+    @Inject
+    protected ConfigAwsCredentialsProvider(Config config) {
         super(new AWSCredentialsProvider() {
                   @Override
                   public AWSCredentials getCredentials() {
@@ -64,6 +67,7 @@ public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
             @Override
             protected void configure() {
                 bind(AWSCredentialsProvider.class).to(ConfigAwsCredentialsProvider.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

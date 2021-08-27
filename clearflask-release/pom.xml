@@ -71,7 +71,7 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/docker-compose-local/connect/
                                     </outputDirectory>
-                                    <includes>connect.config.template.json</includes>
+                                    <includes>connect.config.local-template.json</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
@@ -105,7 +105,7 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/docker-compose-selfhost/
                                     </outputDirectory>
-                                    <includes>connect.config.template.json</includes>
+                                    <includes>connect.config.selfhost-template.json</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>

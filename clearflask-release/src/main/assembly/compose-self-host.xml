@@ -13,7 +13,7 @@
             <destName>config-selfhost.cfg</destName>
         </file>
         <file>
-            <source>${project.build.directory}/docker-compose-selfhost/connect.config.template.json</source>
+            <source>${project.build.directory}/docker-compose-selfhost/connect.config.selfhost-template.json</source>
             <outputDirectory>/</outputDirectory>
             <destName>connect.config.json</destName>
         </file>

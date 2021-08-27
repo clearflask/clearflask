@@ -5,6 +5,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const PermissionsOutputPlugin = require('webpack-permissions-plugin');
+const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   entry: path.resolve(__dirname, 'src', 'connect', 'connect.ts'),
@@ -17,6 +18,7 @@ module.exports = {
     extensions: ['.es6', '.es', '.jsx', '.js', '.mjs', '.tsx', '.ts', '.mts'],
   },
   target: 'node',
+  externals: [nodeExternals()],
   node: {
     __dirname: false,
     __filename: false,
@@ -40,7 +42,6 @@ module.exports = {
       {
         './src/connect/greenlock/greenlock-manager-clearflask.js': './connect/greenlock/greenlock-manager-clearflask.js',
         '../../../src/connect/greenlock/greenlock-store-clearflask.js': './connect/greenlock/greenlock-store-clearflask.js',
-        '../../../src/connect/greenlock/greenlock-store-selfsigned.js': './connect/greenlock/greenlock-store-selfsigned.js',
         '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js': './connect/greenlock/greenlock-challenge-http-clearflask.js',
         '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js': './connect/greenlock/greenlock-challenge-dns-clearflask.js',
       }

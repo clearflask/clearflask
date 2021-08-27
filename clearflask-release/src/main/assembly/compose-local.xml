@@ -10,9 +10,17 @@
         <fileSet>
             <directory>${project.build.directory}/docker-compose-local</directory>
             <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>connect.config.local-template.json</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
     <files>
+        <file>
+            <source>${project.build.directory}/docker-compose-local/connect.config.local-template.json</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>connect.config.template.json</destName>
+        </file>
         <file>
             <source>${basedir}/src/main/docker/compose/docker-compose.local.yml</source>
             <outputDirectory>/</outputDirectory>

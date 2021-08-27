@@ -213,10 +213,10 @@
                         <goals>
                             <goal>npm</goal>
                         </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
                             <arguments>run build</arguments>
                         </configuration>
+                        <phase>prepare-package</phase>
                     </execution>
                 </executions>
                 <configuration>
@@ -232,7 +232,7 @@
                 <executions>
                     <execution>
                         <id>copy-resources</id>
-                        <phase>compile</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
