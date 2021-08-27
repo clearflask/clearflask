@@ -84,6 +84,15 @@ services:
       - ES_JAVA_OPTS=-Xms2g -Xmx2g
       - discovery.type=single-node
     mem_limit: 4g
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   localstack:
     image: localstack/localstack-full
     privileged: true

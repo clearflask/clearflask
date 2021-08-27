@@ -46,18 +46,6 @@ services:
     mem_limit: 4g
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data
-  # (Optional) ElasticSearch web ui
-  kibana:
-    profiles:
-      - with-deps
-    image: docker.elastic.co/kibana/kibana:7.10.0
-    depends_on:
-      - elasticsearch
-    ports:
-      - 5601:5601
-    environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   # For DynamoDB, S3 and SES alternative
   localstack:
     profiles:

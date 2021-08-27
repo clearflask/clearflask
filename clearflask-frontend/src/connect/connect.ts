@@ -64,9 +64,9 @@ function createApp(serverHttpp) {
   serverApp.use(compression());
 
   if (connectConfig.parentDomain !== 'clearflask.com') {
-    ['/asset-manifest.json', '/index.html'].forEach(pathToReplace => {
-      serverApp.get(pathToReplace, function (req, res) {
-        replaceAndSend(res, pathToReplace);
+    ['asset-manifest.json', 'index.html'].forEach(file => {
+      serverApp.get(`/${file}`, function (req, res) {
+        replaceAndSend(res, file);
       });
     })
   }

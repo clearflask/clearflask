@@ -577,6 +577,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         break;
       case 'welcome':
       case 'create':
+        context.showProjectLink = true;
         const isOnboarding = activePath === 'welcome' && !projects.length;
         if (isOnboarding) {
           context.isOnboarding = true;
@@ -772,7 +773,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 <MenuItems
                   items={[
                     ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
-                    ...((!!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
+                    ...((!!context.showProjectLink && !!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
                     {
                       type: 'dropdown', title: this.props.account.name, items: [
                         ...(projects.map(p => ({

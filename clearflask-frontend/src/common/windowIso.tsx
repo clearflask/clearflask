@@ -32,7 +32,12 @@ if (typeof window !== "undefined") {
   win = {};
   win.isSsr = true;
 }
-win.parentDomain = 'clearflask.com'
+if (!win.ENV) {
+  win.ENV = 'production';
+}
+if (!win.parentDomain) {
+  win.parentDomain = 'clearflask.com';
+}
 
 export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;

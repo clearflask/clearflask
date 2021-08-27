@@ -23,9 +23,8 @@ interface RenderResult {
   maxAge?: number;
 }
 
-const statsFile = path.resolve(connectConfig.publicPath, 'loadable-stats.json')
-
 const PH_ENV = '%ENV%';
+const PH_PARENT_DOMAIN = '%PARENT_DOMAIN%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
 const PH_LINK_TAGS = '%LINK_TAGS%';
 const PH_STYLE_TAGS = '%STYLE_TAGS%';
@@ -63,6 +62,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_ENV);
+  $('body').append(PH_PARENT_DOMAIN);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
   $('body').find('script').remove();
@@ -93,8 +93,9 @@ export default function render() {
             const rr: RenderResult = {
               title: 'ClearFlask',
               extractor: renderResult?.extractor || new ChunkExtractor({
-                statsFile,
+                statsFile: path.resolve(connectConfig.publicPath, 'loadable-stats.json'),
                 entrypoints: ['main'],
+                // SSR public path, for CSR see index.tsx
                 outputPath: path.resolve(__dirname, '..', '..', 'build'),
                 publicPath: (connectConfig.parentDomain !== 'clearflask.com')
                   ? '/' : undefined,
@@ -160,6 +161,12 @@ export default function render() {
         html = html.replace(PH_ENV, `<script>window.ENV='${process.env.ENV}'</script>`);
       } else {
         html = html.replace(PH_ENV, '');
+      }
+
+      if (connectConfig.parentDomain !== 'clearflask.com') {
+        html = html.replace(PH_PARENT_DOMAIN, `<script>window.parentDomain='${connectConfig.parentDomain}'</script>`);
+      } else {
+        html = html.replace(PH_PARENT_DOMAIN, '');
       }
 
       // Page title

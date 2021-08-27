@@ -6,6 +6,7 @@ import { Integrations } from "@sentry/tracing";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { detectEnv, Environment, isProd } from './common/util/detectEnv';
+import windowIso from './common/windowIso';
 import Main from './Main';
 
 if (detectEnv() !== Environment.PRODUCTION_SELF_HOST) {
@@ -15,6 +16,12 @@ if (detectEnv() !== Environment.PRODUCTION_SELF_HOST) {
     tracesSampleRate: !isProd() ? 1.0 : 0.1,
     environment: detectEnv(),
   });
+}
+
+// CSR public path, for SSR see renderer.tsx
+declare var __webpack_public_path__: string;
+if (!windowIso.isSsr && windowIso.parentDomain !== 'clearflask.com') {
+  __webpack_public_path__ = '/';
 }
 
 if (detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {

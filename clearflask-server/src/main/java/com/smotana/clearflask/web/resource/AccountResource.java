@@ -316,7 +316,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         sanitizer.email(signup.getEmail());
         sanitizer.accountName(signup.getName());
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(signup.getEmail())) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Only admins are allowed to sign up");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Only super admins are allowed to sign up");
         }
 
         String accountId = accountStore.genAccountId();

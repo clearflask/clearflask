@@ -51,7 +51,7 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        // No-op
     }
 
     @Override
@@ -141,12 +141,12 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public SubscriptionStatus updateAndGetEntitlementStatus(SubscriptionStatus currentStatus, Account account, Subscription subscription, String reason) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        return getEntitlementStatus(account, subscription);
     }
 
     @Override
     public void updatePaymentToken(String accountId, Gateway type, String paymentToken) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
@@ -161,27 +161,27 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public Subscription cancelSubscription(String accountId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
     public Subscription resumeSubscription(String accountId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
     public Subscription changePlan(String accountId, String planId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
     public Subscription changePlanToFlatYearly(String accountId, long yearlyPrice) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account account, String requiredPlanId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
@@ -191,7 +191,7 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public String getInvoiceHtml(String accountId, UUID invoiceId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override
@@ -240,7 +240,7 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public void finalizeInvoice(String accountId, UUID invoiceId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed");
+        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 
     @Override

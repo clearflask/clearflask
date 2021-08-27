@@ -10,14 +10,18 @@
 
 ## TLDR
 
-Download `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docker files and
-configuration [from here](https://github.com/clearflask/clearflask/packages/955621), unpack and run the following:
+Ensure you have [Docker](https://www.docker.com/products/docker-desktop) installed and started.
+
+Download the [latest release](https://github.com/clearflask/clearflask/packages/955621)
+of `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docker Compose definition and configuration files.
+Unpack it all, and run the the following in the same directory:
 
 ```shell
 docker-compose --profile with-deps up
 ```
 
-Point your browser at [http://localhost](http://localhost)
+Point your browser at [http://localhost/signup](http://localhost/signup) and create an account using
+email `admin@localhost`.
 
 ## Deploy dependencies
 
@@ -115,11 +119,14 @@ ClearFlask consists of two components:
 - Tomcat application for serving API requests
 - NodeJS for SSR, dynamic cert management and serving static files
 
-### Run
+### Setup
 
 1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz`
 2. Carefully read and modify `config-selfhost.cfg`.
-3. Carefully read and modify `connect.config.json`. Particularly, unset `disableAutoFetchCertificate` if your DNS is
-   configured.
-4. Run `docker-compose up` or `docker-compose --profile with-deps up` to also run dependencies.
-5. Point your browser at `http://localhost` or if you configured DNS `https://yoursite.com`.
+3. Carefully read and modify `connect.config.json`.
+
+### Run
+
+1. Run `docker-compose up` or `docker-compose --profile with-deps up` to also start dependencies.
+2. Point your browser at `http://localhost/signup` or if you configured your DNS `https://yoursite.com/signup`.
+3. Create an account using `admin@localhost` email or based on your configuration of `superAdminEmailRegex`.

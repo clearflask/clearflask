@@ -166,24 +166,23 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
   }
 
   render() {
+    if (this.props.accountStatus === Status.FULFILLED) {
+      if (this.props.cfJwt && this.cfReturnUrl) {
+        windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
+        return (<ErrorPage msg='Redirecting you back...' variant='success' />);
+      }
+      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] ||
+        (this.bindCausedAccountCreation ? '/welcome' : '/dashboard')} />);
+    }
+
     const selectedPlanId = ((this.props.location.state as any)?.[PRE_SELECTED_BASE_PLAN_ID] as string | undefined)
       || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
 
-    if (this.props.type === 'login') {
-      if (this.props.accountStatus === Status.FULFILLED) {
-        if (this.props.cfJwt && this.cfReturnUrl) {
-          windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
-          return (<ErrorPage msg='Redirecting you back...' variant='success' />);
-        }
-        return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] ||
-          (this.bindCausedAccountCreation ? '/welcome' : '/dashboard')} />);
-      }
-
+    if (this.props.type === 'signup') {
       if (!selectedPlanId && !this.props.plans) {
         return <LoadingPage />
       }
-
-      if (detectEnv() === Environment.PRODUCTION_SELF_HOST || !selectedPlanId || !SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== 'true') {
+      if (!selectedPlanId || !SIGNUP_PROD_ENABLED && isProd() && new URL(windowIso.location.href).searchParams.get('please') !== undefined) {
         return <ErrorPage variant='warning' msg={(
           <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
             Direct sign ups are currently disabled. Instead,&nbsp;
@@ -191,11 +190,6 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
             &nbsp;with us.
           </div>
         )} />
-      }
-
-    } else {
-      if (this.props.accountStatus === Status.FULFILLED) {
-        return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
       }
     }
 

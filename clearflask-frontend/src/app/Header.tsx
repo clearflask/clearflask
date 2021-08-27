@@ -307,7 +307,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         <IconButton
           className={this.props.classes.actionButton}
           aria-label='Dashboard'
-          onClick={() => !windowIso.isSsr && windowIso.open(`https://clearflask.com/dashboard?projectId=${this.props.server.getProjectId()}`, '_self')}
+          onClick={() => !windowIso.isSsr && windowIso.open(`https://${windowIso.parentDomain}/dashboard?projectId=${this.props.server.getProjectId()}`, '_self')}
         >
           <SettingsIcon fontSize='inherit' />
         </IconButton>
