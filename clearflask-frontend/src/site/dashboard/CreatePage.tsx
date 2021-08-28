@@ -170,8 +170,8 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
           <CreateLayout
             key='feature-select'
             isOnboarding={this.props.isOnboarding}
-            title='Choose features'
-            description='Please choose the functions you want to include in your project. You can always change your mind later'
+            title='Standard features'
+            description='Please choose the functions you want to include in your project. You can always change your mind later or customize your own.'
             stretchContent
             img={FeaturesImg}
             content={(

@@ -266,6 +266,7 @@ export default class Templater {
 
   styleWhite() {
     this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#ffffff');
+    this._get<ConfigEditor.BooleanProperty>(['style', 'palette', 'darkMode']).set(false);
   }
 
   styleDark() {
@@ -693,12 +694,25 @@ export default class Templater {
       slug: stringToSlug('blog'),
       description: undefined,
       panels: [],
+      icon: 'MenuBook',
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
         allowCreate: undefined,
         display: Admin.PostDisplayToJSON({
-          titleTruncateLines: 0,
-          descriptionTruncateLines: 2,
+          titleTruncateLines: 2,
+          descriptionTruncateLines: 10,
+          showCommentCount: false,
+          showCategoryName: false,
+          showCreated: true,
+          showAuthor: false,
+          showStatus: false,
+          showTags: false,
+          showVoting: false,
+          showVotingCount: false,
+          showFunding: false,
+          showExpression: false,
+          responseTruncateLines: 0,
+          showEdit: false,
         }),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [articleCategoryId],

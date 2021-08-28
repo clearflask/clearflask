@@ -223,7 +223,7 @@ class App extends Component<Props> {
                       pageTitle='Page not found'
                       showFooter
                     >
-                      <ErrorPage msg='Page not found' variant='error' />
+                      <ErrorPage pageNotFound />
                     </BasePage>
                   </RouteWithStatus>
                 )}

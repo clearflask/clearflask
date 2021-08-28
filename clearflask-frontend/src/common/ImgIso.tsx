@@ -47,8 +47,8 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     const aspectRatio = this.props.aspectRatio || this.props.img?.aspectRatio;
     const src = this.props.src || this.props.img?.src;
-    const isVideo = !!src && isSrcVideo(src)
-    const width = this.props.width || (this.props.img?.aspectRatio ? '100%' : undefined);
+    const isVideo = !!src && isSrcVideo(src);
+    const width = this.props.width !== undefined ? this.props.width : (this.props.img?.aspectRatio ? '100%' : undefined);
     const height = this.props.height;
     const maxWidth = this.props.maxWidth || this.props.img?.width;
     const maxHeight = this.props.maxHeight || this.props.img?.height;

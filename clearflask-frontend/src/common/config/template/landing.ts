@@ -126,6 +126,8 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   return landing;
 }
 
-export async function landingOff(this: Templater, landing: LandingInstance): Promise<void> {
+export async function landingOff(this: Templater, landing?: LandingInstance): Promise<void> {
+  if (!landing) landing = await this.landingGet();
+  if (!landing) return;
   this._pageDelete(landing.pageAndIndex.page.pageId);
 }

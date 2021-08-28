@@ -381,7 +381,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
 
             <RouteWithStatus httpCode={404} >
               <SetTitle title='Page not found' />
-              <ErrorPage msg='Page not found' variant='error' />
+              <ErrorPage pageNotFound />
             </RouteWithStatus>
           </MuiAnimatedSwitch>
         </div>

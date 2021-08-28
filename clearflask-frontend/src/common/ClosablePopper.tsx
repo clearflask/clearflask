@@ -8,6 +8,9 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
+  hidden: {
+    left: '-100% !important',
+  },
   closeButton: {
     position: 'absolute',
     zIndex: -1, // Keep shadow behind popper
@@ -184,7 +187,11 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
             }}
           transition
           {...popperProps}
-          className={classNames(classes.popper, popperProps.className)}
+          className={classNames(
+            classes.popper,
+            popperProps.className,
+            !popperProps.open && classes.hidden,
+          )}
           modifiers={{
             ...(arrow ? {
               arrow: {

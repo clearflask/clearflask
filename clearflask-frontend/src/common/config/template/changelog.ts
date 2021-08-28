@@ -183,7 +183,9 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
   return changelog;
 }
 
-export async function changelogOff(this: Templater, changelog: ChangelogInstance): Promise<void> {
+export async function changelogOff(this: Templater, changelog?: ChangelogInstance): Promise<void> {
+  if (!changelog) changelog = await this.changelogGet();
+  if (!changelog) return;
   if (changelog.pageAndIndex) {
     this._pageDelete(changelog.pageAndIndex.page.pageId);
   }

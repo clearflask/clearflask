@@ -146,7 +146,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
   render() {
     if (this.props.pageNotFound) {
-      return (<ErrorPage msg='Oops, page not found' />);
+      return (<ErrorPage pageNotFound />);
     }
 
     const template = (this.props.config?.style.templates?.pages || []).find(p => p.pageId === this.props.page?.pageId)?.template;

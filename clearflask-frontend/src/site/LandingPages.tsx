@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Button, ButtonGroup, Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, fade, makeStyles, Theme } from '@material-ui/core/styles';
 import AccessibilityIcon from '@material-ui/icons/AccessibilityNew';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
@@ -137,10 +137,8 @@ import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
-import { TemplateCard } from './dashboard/CreatePage';
 import DashboardHome from './dashboard/DashboardHome';
 import { TemplateWrapper } from './dashboard/ProjectSettings';
-import { Project } from './DemoApp';
 import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
@@ -303,6 +301,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
   textAlignCenter: {
     textAlign: 'center',
+  },
+  demoCustomizeControl: {
+    margin: theme.spacing(2),
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
   },
   templateCards: {
     display: 'flex',
@@ -1906,6 +1910,8 @@ export function LandingFeatureRequestTracking() {
 }
 
 export function LandingDemo() {
+  const classes = useStyles();
+  const [customized, setCustomize] = useState<boolean>(false);
   return (
     <>
       <Background svg={{
@@ -1923,14 +1929,27 @@ export function LandingDemo() {
             <TrialInfoText />
           )}
         />
+        <ButtonGroup disableElevation variant='outlined' className={classes.demoCustomizeControl}>
+          <Button disabled={!customized} onClick={() => setCustomize(false)}>Out of the box</Button>
+          <Button disabled={customized} onClick={() => setCustomize(true)}>Customized</Button>
+        </ButtonGroup>
         <Demo
+          key={customized ? 'custom' : 'not-custom'}
           type='demoOnly'
           spacingTop={0}
-          template={templater => templater.createTemplateV2({
-            ...createTemplateV2OptionsDefault,
-            infoName: 'GreatProduct',
-            infoLogo: `${windowIso.location.protocol}//${windowIso.location.host}/img/landing/GreatProductLogo.png`
-          })}
+          template={async templater => {
+            await templater.createTemplateV2({
+              ...createTemplateV2OptionsDefault,
+              templateFeedbackIsClassic: !!customized,
+              templateLanding: !customized,
+              templateRoadmap: !customized,
+              templateChangelog: !customized,
+              infoName: 'GreatProduct',
+              infoLogo: `${windowIso.location.protocol}//${windowIso.location.host}/img/landing/GreatProductLogo.png`
+            });
+            if (customized) templater.styleDark();
+            if (customized) templater.templateBlog(true);
+          }}
           mock={async mocker => {
             const userMe = await mocker.mockLoggedIn(1000, false);
             await mocker.mockItems(userMe);
@@ -1938,10 +1957,8 @@ export function LandingDemo() {
           initialSubPath='/'
           demoFixedWidth='min(100%, 1024px)'
           demoFixedHeight={vh(80)}
-          demoWrap='browser'
+          demoWrap={!customized ? 'browser' : 'browser-dark'}
           demoWrapBrowserShowProjectUrlWithPrefix='https://feedback.yoursite.com'
-
-          // controls={project => (<LandingDemoControls project={project} />)}
           controlsLocation='top'
           settings={{
             demoScrollY: true,
@@ -1978,60 +1995,6 @@ export function LandingDemo() {
           image={Server2Img}
         />
       </HorizontalPanels>
-    </>
-  );
-}
-
-function LandingDemoControls(props: {
-  project: Project;
-}) {
-  const classes = useStyles();
-  const [roadmapEnabled, setRoadmapEnabled] = useState<boolean>(!!createTemplateV2OptionsDefault.templateRoadmap);
-  const [changelogEnabled, setChangelogEnabled] = useState<boolean>(!!createTemplateV2OptionsDefault.templateChangelog);
-  return (
-    <>
-      <div className={classes.templateCards}>
-        <TemplateCard
-          className={classes.templateCard}
-          title='Feedback'
-          content='Collect feedback from customers.'
-          checked={!!createTemplateV2OptionsDefault.templateFeedback}
-          onChange={() => { }}
-          disabled
-        />
-        <TemplateCard
-          className={classes.templateCard}
-          title='Roadmap'
-          content='Convert feedback into tasks and organize it in a public roadmap'
-          checked={!!roadmapEnabled}
-          onChange={async () => {
-            const enable = !roadmapEnabled;
-            if (enable) {
-              props.project.templater.roadmapOn();
-            } else {
-              const roadmap = await props.project.templater.roadmapGet();
-              !!roadmap && props.project.templater.roadmapPageOff(roadmap);
-            }
-            setRoadmapEnabled(enable);
-          }}
-        />
-        <TemplateCard
-          className={classes.templateCard}
-          title='Changelog'
-          content='Keep your users updated with new changes in your product.'
-          checked={!!changelogEnabled}
-          onChange={async () => {
-            const enable = !changelogEnabled;
-            if (enable) {
-              props.project.templater.changelogOn();
-            } else {
-              const changelog = await props.project.templater.changelogGet();
-              !!changelog && props.project.templater.changelogOff(changelog);
-            }
-            setChangelogEnabled(enable);
-          }}
-        />
-      </div>
     </>
   );
 }
