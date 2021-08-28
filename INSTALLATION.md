@@ -35,10 +35,11 @@ There are several dependencies you need for running ClearFlask:
 - **AWS S3** or alternative
 - **ElasticSearch**
 - **AWS SES** or any SMTP endpoint
-- **Google ReCaptcha** (Obtain free V2 keys [here](https://www.google.com/recaptcha/admin))
+- **Google ReCaptcha**
 
 And a few optional:
 
+- **Let's Encrypt** automagic certificate management
 - **CloudFront** as a CDN (Use in front of `clearflask-connect`)
 - **KillBill** for billing and payment processing. (Self-hosting is preconfigured for unlimited plans)
 - ~~**AWS Route53**~~ (Was and may be used in the future for automatic LetsEncrypt DNS challenges)
@@ -57,10 +58,7 @@ For production workload, you will want to spin up these dependencies yourself an
 
 ##### IAM access
 
-For AWS services, `clearflask-server` autodetects IAM using the `DefaultAWSCredentialsProviderChain`.
-
-Specify IAM either in environment, Java system properties, credentials file, EC2 Container service, or Web Identity
-token.
+For AWS services, `clearflask-server` autodetects Access Keys using either a configuration property or the default locations. If you are running in EC2 or ECS, keys detection is automated, you just need to create the appropriate IAM role.
 
 ##### AWS DynamoDB
 
@@ -131,24 +129,23 @@ ClearFlask consists of two components:
 
 #### Dashboard account
 
-For you to manage the dashboard, you need to whitelist an email to be able to create an account:
+For you to manage the dashboard, you need to whitelist an email to be able to create a super-admin account:
 
-- `config-selfhost.cfg`
-  .`com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`: `^admin@yoursite.com$`
+`config-selfhost.cfg:com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`: `^admin@yoursite.com$`
 
-After you sign-up it is recommended to disable further signups using:
+After you sign-up, disable further signups using:
 
-`config-selfhost.cfg`.`com.smotana.clearflask.web.resource.AccountResource$Config.signupEnabled`: `false`
+`config-selfhost.cfg:com.smotana.clearflask.web.resource.AccountResource$Config.signupEnabled`: `false`
 
 #### DNS and certificates
 
 By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com`, ensure your
 DNS is correctly pointing to this server, and set these config parameters:
 
-- `connect.config.json`.`parentDomain`: `yoursite.com`
-- `connect.config.json`.`disableAutoFetchCertificate`: `false`
-- `config-selfhost.cfg`.`com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
-- `config-selfhost.cfg`.`com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
+- `connect.config.json:parentDomain`: `yoursite.com`
+- `connect.config.json:disableAutoFetchCertificate`: `false`
+- `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
+- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
 
 Once you load the site for the first time, a Certificate is automagically fetched for you and auto-renewed as needed.
 
