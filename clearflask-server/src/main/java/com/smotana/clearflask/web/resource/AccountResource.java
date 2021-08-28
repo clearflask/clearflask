@@ -101,6 +101,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         @NoDefaultValue
         String oauthGithubClientSecret();
+
+        @DefaultValue("true")
+        boolean signupEnabled();
     }
 
     public static final String SUPER_ADMIN_AUTH_COOKIE_NAME = "cf_sup_auth";
@@ -313,6 +316,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
+        if (!config.signupEnabled()) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
+        }
+
         sanitizer.email(signup.getEmail());
         sanitizer.accountName(signup.getName());
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(signup.getEmail())) {

@@ -2,19 +2,21 @@
 
 ## Table of Contents:
 
-- [TLDR](#tldr)
+- [Quick start](#quick-start)
 - [Deploy dependencies](#deploy-dependencies)
     - [Via Docker](#via-docker)
     - [Via AWS](#via-aws)
 - [Deploy ClearFlask](#deploy-clearflask)
+    - [Setup](#setup)
+    - [Run](#run)
 
-## TLDR
+## Quick start
 
 Ensure you have [Docker](https://www.docker.com/products/docker-desktop) installed and started.
 
 Download the [latest release](https://github.com/clearflask/clearflask/packages/955621)
 of `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docker Compose definition and configuration files.
-Unpack it all, and run the the following in the same directory:
+Unpack it all, and run the following in the same directory:
 
 ```shell
 docker-compose --profile with-deps up
@@ -22,6 +24,8 @@ docker-compose --profile with-deps up
 
 Point your browser at [http://localhost/signup](http://localhost/signup) and create an account using
 email `admin@localhost`.
+
+That's it!
 
 ## Deploy dependencies
 
@@ -124,6 +128,29 @@ ClearFlask consists of two components:
 1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz`
 2. Carefully read and modify `config-selfhost.cfg`.
 3. Carefully read and modify `connect.config.json`.
+
+#### Dashboard account
+
+For you to manage the dashboard, you need to whitelist an email to be able to create an account:
+
+- `config-selfhost.cfg`
+  .`com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`: `^admin@yoursite.com$`
+
+After you sign-up it is recommended to disable further signups using:
+
+`config-selfhost.cfg`.`com.smotana.clearflask.web.resource.AccountResource$Config.signupEnabled`: `false`
+
+#### DNS and certificates
+
+By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com`, ensure your
+DNS is correctly pointing to this server, and set these config parameters:
+
+- `connect.config.json`.`parentDomain`: `yoursite.com`
+- `connect.config.json`.`disableAutoFetchCertificate`: `false`
+- `config-selfhost.cfg`.`com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
+- `config-selfhost.cfg`.`com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
+
+Once you load the site for the first time, a Certificate is automagically fetched for you and auto-renewed as needed.
 
 ### Run
 
