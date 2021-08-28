@@ -18,7 +18,6 @@ import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import { SentryIdentifyUser } from '../site/SentryIdentify';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
-import BankPage from './BankPage';
 import BasePage from './BasePage';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
@@ -232,11 +231,6 @@ class App extends Component<Props> {
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
                     <UserPage server={this.server} userId={props.match.params.userId} />
-                  </BasePage>
-                )} />
-                <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
-                  <BasePage pageTitle='Bank' showFooter={!props.match.params['embed']}>
-                    <BankPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (

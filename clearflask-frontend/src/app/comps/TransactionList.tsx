@@ -13,7 +13,6 @@ import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import ErrorMsg from '../ErrorMsg';
-import DividerCorner from '../utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
   transactionsTable: {
@@ -57,54 +56,52 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
     var cumulativeBalance = this.props.balance || 0;
     return (
       <div className={this.props.className}>
-        <DividerCorner title='Transaction history' height='100%'>
-          <div className={this.props.classes.transactionsTable}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell key='date'>Date</TableCell>
-                  <TableCell key='type'>Type</TableCell>
-                  <TableCell key='description'>Description</TableCell>
-                  <TableCell key='amount' align='right'>Amount</TableCell>
-                  <TableCell key='balance' align='right'>Account balance</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {this.props.credits !== undefined && this.props.balance !== undefined && this.props.transactions !== undefined && this.props.transactions.map(transaction => {
-                  const transactionBalance = cumulativeBalance;
-                  cumulativeBalance += transaction.amount;
-                  return (
-                    <TableRow key={transaction.transactionId}>
-                      <TableCell key='date'>
-                        <Typography><TimeAgo date={transaction.created} /></Typography>
-                      </TableCell>
-                      <TableCell key='type'>
-                        <Typography>{transaction.transactionType}</Typography>
-                      </TableCell>
-                      <TableCell key='description'>
-                        {transaction.summary}
-                        {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
-                          <Button
-                            component={Link}
-                            to={preserveEmbed(`/post/${transaction.targetId}`, this.props.location)}
-                          >
-                            View
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell key='amount'>
-                        <CreditView val={transaction.amount} credits={this.props.credits!} />
-                      </TableCell>
-                      <TableCell key='balance'>
-                        <CreditView val={transactionBalance} credits={this.props.credits!} />
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </DividerCorner>
+        <div className={this.props.classes.transactionsTable}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell key='date'>Date</TableCell>
+                <TableCell key='type'>Type</TableCell>
+                <TableCell key='description'>Description</TableCell>
+                <TableCell key='amount' align='right'>Amount</TableCell>
+                <TableCell key='balance' align='right'>Account balance</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {this.props.credits !== undefined && this.props.balance !== undefined && this.props.transactions !== undefined && this.props.transactions.map(transaction => {
+                const transactionBalance = cumulativeBalance;
+                cumulativeBalance += transaction.amount;
+                return (
+                  <TableRow key={transaction.transactionId}>
+                    <TableCell key='date'>
+                      <Typography><TimeAgo date={transaction.created} /></Typography>
+                    </TableCell>
+                    <TableCell key='type'>
+                      <Typography>{transaction.transactionType}</Typography>
+                    </TableCell>
+                    <TableCell key='description'>
+                      {transaction.summary}
+                      {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
+                        <Button
+                          component={Link}
+                          to={preserveEmbed(`/post/${transaction.targetId}`, this.props.location)}
+                        >
+                          View
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell key='amount'>
+                      <CreditView val={transaction.amount} credits={this.props.credits!} />
+                    </TableCell>
+                    <TableCell key='balance'>
+                      <CreditView val={transactionBalance} credits={this.props.credits!} />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
         {this.props.getNextTransactions && (
           <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.props.getNextTransactions && this.props.getNextTransactions()}>
             Show more

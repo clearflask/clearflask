@@ -7,6 +7,9 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import UserContributions from '../common/UserContributions';
+import FundingControl from './comps/FundingControl';
+import { PanelTitle } from './comps/Panel';
+import TransactionList from './comps/TransactionList';
 import UserEdit from './comps/UserEdit';
 import ErrorPage from './ErrorPage';
 
@@ -16,8 +19,8 @@ const styles = (theme: Theme) => createStyles({
     width: 'max-content',
     maxWidth: 1024,
   },
-  userContributions: {
-    marginTop: theme.spacing(4),
+  section: {
+    padding: theme.spacing(4, 0),
   },
 });
 interface Props {
@@ -25,6 +28,7 @@ interface Props {
 }
 interface ConnectProps {
   userMe?: Client.UserMe;
+  credits?: Client.Credits;
 }
 class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
   render() {
@@ -35,7 +39,19 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     return (
       <div className={this.props.classes.page}>
         <UserEdit server={this.props.server} userId={this.props.userMe.userId} />
-        <div className={this.props.classes.userContributions}>
+        {this.props.credits && (
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Funded' />
+            <FundingControl server={this.props.server} />
+          </div>
+        )}
+        {this.props.credits && (
+          <div className={this.props.classes.section}>
+            <PanelTitle text='Transaction history' />
+            <TransactionList server={this.props.server} />
+          </div>
+        )}
+        <div className={this.props.classes.section}>
           <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
         </div>
       </div>
@@ -46,6 +62,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const connectProps: ConnectProps = {
     userMe: state.users.loggedIn.user,
+    credits: state.conf.conf?.users.credits,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withSnackbar(AccountPage)));

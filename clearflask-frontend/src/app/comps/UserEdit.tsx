@@ -46,6 +46,11 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
   },
+  linkGetMore: {
+    marginLeft: theme.spacing(1),
+    display: 'flex',
+    minWidth: 'max-content',
+  },
 });
 interface Props {
   className?: string;
@@ -187,7 +192,6 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
         return (<LoadingPage />);
       }
 
-      const balanceAdjustmentChanged = this.state.balanceAdjustment !== undefined && (+this.state.balanceAdjustment !== 0);
       const balanceAdjustmentHasError = !!this.state.balanceAdjustment && (!parseInt(this.state.balanceAdjustment) || !+this.state.balanceAdjustment || parseInt(this.state.balanceAdjustment) !== parseFloat(this.state.balanceAdjustment));
 
       const browserPushControl = this.renderBrowserPushControl(isMe, user);
@@ -367,6 +371,19 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                 <Grid item xs={12} sm={6}><Typography>Balance</Typography></Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                   <CreditView val={balance || 0} credits={this.props.credits} />
+                  {isMe && !!this.props.credits?.creditPurchase?.redirectUrl && (
+                    <Button
+                      component={'a' as any}
+                      className={this.props.classes.linkGetMore}
+                      color='primary'
+                      href={this.props.credits.creditPurchase.redirectUrl}
+                      target='_blank'
+                      underline='none'
+                      rel='noopener nofollow'
+                    >
+                      {this.props.credits.creditPurchase.buttonTitle || 'Get more'}
+                    </Button>
+                  )}
                   {isModOrAdminLoggedIn && (
                     <>
                       <IconButton onClick={() => this.setState({ transactionCreateOpen: !this.state.transactionCreateOpen })}>

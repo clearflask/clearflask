@@ -106,7 +106,7 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
         return `/post/${notification.relatedIdeaId}`;
       }
     } else {
-      return `/transaction`;
+      return `/account`;
     }
   }
 
