@@ -90,6 +90,18 @@ deploy-cloudfront-invalidate:
 deploy-cloudfront-invalidate-all:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths "/*"
 
+autoscale-server-suspend:
+	aws autoscaling suspend-processes --auto-scaling-group-name clearflask-server --scaling-processes Launch Terminate
+
+autoscale-server-resume:
+	aws autoscaling resume-processes --auto-scaling-group-name clearflask-server --scaling-processes Launch Terminate
+
+autoscale-killbill-suspend:
+	aws autoscaling suspend-processes --auto-scaling-group-name killbill-webserver --scaling-processes Launch Terminate
+
+autoscale-killbill-resume:
+	aws autoscaling resume-processes --auto-scaling-group-name killbill-webserver --scaling-processes Launch Terminate
+
 .PHONY: \
 	build \
 	build-no-test \
