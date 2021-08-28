@@ -17,6 +17,7 @@ import com.smotana.clearflask.store.ContentStore.ContentUrl;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -49,6 +50,7 @@ public class S3ContentStoreIT extends AbstractTest {
 
         install(Modules.override(
                 S3ContentStore.module(),
+                Application.module(),
                 DefaultS3ClientProvider.module()
         ).with(new AbstractModule() {
             @Override

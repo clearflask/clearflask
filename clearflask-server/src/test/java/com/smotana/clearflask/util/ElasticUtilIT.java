@@ -16,6 +16,7 @@ import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ElasticUtil.PaginationType;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexRequest;
@@ -65,6 +66,7 @@ public class ElasticUtilIT extends AbstractIT {
 
         install(Modules.override(
                 ElasticUtil.module(),
+                Application.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 Sanitizer.module(),
                 GsonProvider.module(),
