@@ -116,18 +116,26 @@ if (!connectConfig.disableAutoFetchCertificate) {
       debug: true,
       workers: connectConfig.workerCount,
       manager: {
-        module: './src/connect/greenlock/greenlock-manager-clearflask.js',
+        module: connectConfig.isInsideWebpack
+          ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-manager-clearflask.js'
+          : './src/connect/greenlock/greenlock-manager-clearflask.js',
       },
       store: {
-        module: '../../../src/connect/greenlock/greenlock-store-clearflask.js',
+        module: connectConfig.isInsideWebpack
+          ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-store-clearflask.js'
+          : '../../../src/connect/greenlock/greenlock-store-clearflask.js',
       },
       challenges: {
         "http-01": {
-          module: '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js',
+          module: connectConfig.isInsideWebpack
+            ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js'
+            : '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js',
         },
         // For now wildcard challenges are disabled
         // "dns-01": {
-        //   module: '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js',
+        //   module: connectConfig.isInsideWebpack
+        //     ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js'
+        //     : '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js',
         // },
       },
       notify: (event, details) => {

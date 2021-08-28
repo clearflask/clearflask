@@ -44,10 +44,10 @@ module.exports = {
       /@root[\/\\]greenlock/,
       path.resolve(__dirname, 'src'),
       {
-        './src/connect/greenlock/greenlock-manager-clearflask.js': './connect/greenlock/greenlock-manager-clearflask.js',
-        '../../../src/connect/greenlock/greenlock-store-clearflask.js': './connect/greenlock/greenlock-store-clearflask.js',
-        '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js': './connect/greenlock/greenlock-challenge-http-clearflask.js',
-        '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js': './connect/greenlock/greenlock-challenge-dns-clearflask.js',
+        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-manager-clearflask.js': './connect/greenlock/greenlock-manager-clearflask.js',
+        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-store-clearflask.js': './connect/greenlock/greenlock-store-clearflask.js',
+        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js': './connect/greenlock/greenlock-challenge-http-clearflask.js',
+        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js': './connect/greenlock/greenlock-challenge-dns-clearflask.js',
       }
     ),
     new CopyPlugin({
