@@ -40,7 +40,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     whiteSpace: 'nowrap',
-    minWidth: 200,
+    minWidth: 500,
     width: 'max-content',
     maxWidth: '100%',
   },

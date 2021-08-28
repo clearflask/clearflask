@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Collapse, Divider, Fade, IconButton } from '@material-ui/core';
+import { Collapse, Divider, Fade, IconButton } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExpandDownIcon from '@material-ui/icons/ExpandMore';
 import classNames from 'classnames';
@@ -13,7 +13,6 @@ import LogIn from './comps/LogIn';
 import { Direction, PanelTitle } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
 import PostCreateForm from './comps/PostCreateForm';
-import ErrorMsg from './ErrorMsg';
 
 const styles = (theme: Theme) => createStyles({
   spacing: {
@@ -179,7 +178,7 @@ const PageFeedback = (props: {
           </SubmitButton>
         </div>
       </Collapse>
-      <Collapse in={!!createdPostId}>
+      {/* <Collapse in={!!createdPostId}>
         <div className={classes.thankyou}>
           <ErrorMsg msg='Thank you' variant='success' action={(
             <Button
@@ -190,7 +189,7 @@ const PageFeedback = (props: {
             >Again</Button>
           )} />
         </div>
-      </Collapse>
+      </Collapse> */}
       {!!similarText && !!props.pageFeedback.related && (
         <Collapse in={!!createdPostId && !!similarCount && !relatedClosed}>
           <div className={classes.related}>

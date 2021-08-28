@@ -93,16 +93,18 @@ import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
 import HtmlImg from '../../public/img/landing/html.png';
 import IdeasImg from '../../public/img/landing/ideas.svg';
-import InstallImg from '../../public/img/landing/install.svg';
 import IntegrationImg from '../../public/img/landing/integration.svg';
 import InternalFeedbackImg from '../../public/img/landing/internalfeedback.svg';
 import ListenImg from '../../public/img/landing/listen.svg';
 import LoopImg from '../../public/img/landing/loop.svg';
 import NotifyImg from '../../public/img/landing/notify.svg';
 import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
+import ProudImg from '../../public/img/landing/proud.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
 import SeeWhatElseImg from '../../public/img/landing/see-what-else.png';
+import Server2Img from '../../public/img/landing/server2.svg';
+import Server3Img from '../../public/img/landing/server3.svg';
 import SupportImg from '../../public/img/landing/support.svg';
 import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
@@ -1906,24 +1908,76 @@ export function LandingFeatureRequestTracking() {
 export function LandingDemo() {
   return (
     <>
-      <Demo
-        type='demoOnly'
-        template={templater => templater.createTemplateV2()}
-        mock={async mocker => {
-          const userMe = await mocker.mockLoggedIn(1000, false);
-          await mocker.mockItems(userMe);
-        }}
-        initialSubPath='/'
-        demoFixedHeight={vh(80)}
+      <Background svg={{
+        d: 'M 0 49.98 C 2 97 124 189 249 86 C 320 36 492 166 500 49.98 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 150',
+        flexible: true,
+      }} height={500} align='top'>
+        <Hero
+          title='Check out our demo'
+          description='Pre-packaged with Feedback, Roadmap and Changelog.'
+          image={ProudImg}
+          buttonTitle='Or try it out'
+          buttonLink='/signup'
+          buttonRemark={(
+            <TrialInfoText />
+          )}
+        />
+        <Demo
+          type='demoOnly'
+          spacingTop={0}
+          template={templater => templater.createTemplateV2({
+            ...createTemplateV2OptionsDefault,
+            infoName: 'GreatProduct',
+            infoLogo: `${windowIso.location.protocol}//${windowIso.location.host}/img/landing/GreatProductLogo.png`
+          })}
+          mock={async mocker => {
+            const userMe = await mocker.mockLoggedIn(1000, false);
+            await mocker.mockItems(userMe);
+          }}
+          initialSubPath='/'
+          demoFixedWidth='min(100%, 1024px)'
+          demoFixedHeight={vh(80)}
+          demoWrap='browser'
+          demoWrapBrowserShowProjectUrlWithPrefix='https://feedback.yoursite.com'
+
+          // controls={project => (<LandingDemoControls project={project} />)}
+          controlsLocation='top'
+          settings={{
+            demoScrollY: true,
+            suppressSetTitle: true,
+          }}
+        />
+      </Background>
+      <Block
+        mirror
+        type='mediumDemo'
+        title='Feedback'
+        description='Quickly address incoming feedback: respond, shelve, merge it or convert it to a task.'
+        alignItems='center'
+        demoImage={DemoDashboardFeedbackVid}
         demoWrap='browser'
-        demoWrapBrowserShowProjectUrlWithPrefix='https://feedback.yoursite.com'
-        controls={project => (<LandingDemoControls project={project} />)}
-        controlsLocation='top'
-        settings={{
-          demoScrollY: true,
-          suppressSetTitle: true,
-        }}
       />
+      <Block
+        type='mediumDemo'
+        title='Roadmap'
+        description='Plan out your roadmap with a Kanban style drag-n-drop UI.'
+        alignItems='center'
+        demoImage={DemoDashboardRoadmapVid}
+        demoWrap='browser'
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
+        <Block
+          type='column'
+          title='Love it?'
+          description='Try it out for free and customize further.'
+          buttonTitle='Get started'
+          buttonLink='/signup'
+          buttonVariant='contained'
+          buttonSuppressIcon
+          image={Server2Img}
+        />
+      </HorizontalPanels>
     </>
   );
 }
@@ -2827,25 +2881,31 @@ export function LandingPricingOptions() {
         <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
           <Block
             type='column'
+            icon={(<ServerIcon />)}
             title='Scalable cloud solution'
             description='Hassle-free scalable solution with pay for what you use pricing.'
             buttonTitle='Try it out'
             buttonLink='/signup'
             buttonVariant='contained'
             buttonSuppressIcon
-            image={ArchitectureImg}
+            image={Server2Img}
           />
           <Block
             type='column'
+            icon={(<OpenSourceIcon />)}
             title='Open-source self-hosted solution'
             description='Install and manage on your own infrastructure.'
             buttonTitle='Get started'
             buttonLink='/open-source'
             buttonVariant='contained'
             buttonSuppressIcon
-            image={InstallImg}
+            image={Server3Img}
           />
         </HorizontalPanels>
+        <br />
+        <br />
+        <br />
+        <br />
       </Background>
     </>
   );

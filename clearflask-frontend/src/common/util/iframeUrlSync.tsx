@@ -16,7 +16,7 @@ export const IframeWithUrlSync = (props: {
   redirectOnDirectAccess?: boolean | string; // Optional different pathnamePrefix
 } & Omit<React.HTMLProps<HTMLIFrameElement>, 'src'>) => {
   const { browserPathPrefix, srcWithoutPathname, pathnamePrefix, initialQuery, redirectOnDirectAccess, ...iframeProps } = props;
-  const getBrowserPathname = () => (!!windowIso.isSsr || !windowIso.location.pathname.startsWith(browserPathPrefix))
+  const getBrowserPathname = () => (!windowIso.location.pathname.startsWith(browserPathPrefix))
     ? undefined
     : windowIso.location.pathname.substr(browserPathPrefix.length);
   const history = useHistory();
@@ -60,7 +60,7 @@ export const IframeWithUrlSync = (props: {
   }
 
   if (redirectOnDirectAccess !== undefined && windowIso.isSsr) {
-    redirectIso(srcWithoutPathname + (redirectOnDirectAccess || pathnamePrefix || '') + (browserPathname || '') + (initialQuery || ''));
+    redirectIso(srcWithoutPathname + (redirectOnDirectAccess !== true ? redirectOnDirectAccess : (pathnamePrefix || '')) + (browserPathname || '') + (initialQuery || ''));
     return null;
   }
 

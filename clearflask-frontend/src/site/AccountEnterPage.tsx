@@ -36,6 +36,12 @@ export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 export const SIGNUP_PROD_ENABLED = true;
 export const PRE_SELECTED_BASE_PLAN_ID = 'preSelectedPlanId';
 
+export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string => {
+  return !!account
+    ? `${url}?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}`
+    : url;
+}
+
 const styles = (theme: Theme) => createStyles({
   link: {
     color: 'unset',

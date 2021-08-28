@@ -1,10 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../../api/admin";
-import ServerAdmin from "../../../api/serverAdmin";
-import { detectEnv, Environment } from "../../util/detectEnv";
 import randomUuid from "../../util/uuid";
-import windowIso from "../../windowIso";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
 
@@ -109,22 +106,22 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     }));
   }
 
-  var supportEmail = ServerAdmin.get().getStore().getState().account.account.account?.email;
-  if (!supportEmail && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-    // Since development environment mocking happens before user is logged in,
-    // mock the email address here too
-    supportEmail = 'admin@' + windowIso.parentDomain;
-  }
-  if (supportEmail
-    && !onlyPageIds
-    && !landing.pageAndIndex.page.landing?.links.some(l => l.url?.startsWith('mailto:'))) {
-    (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      icon: 'AlternateEmail',
-      title: 'Contact',
-      description: 'Let us know if you need direct help.',
-      url: `mailto:${supportEmail}`,
-    }));
-  }
+  // var supportEmail = ServerAdmin.get().getStore().getState().account.account.account?.email;
+  // if (!supportEmail && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+  //   // Since development environment mocking happens before user is logged in,
+  //   // mock the email address here too
+  //   supportEmail = 'admin@' + windowIso.parentDomain;
+  // }
+  // if (supportEmail
+  //   && !onlyPageIds
+  //   && !landing.pageAndIndex.page.landing?.links.some(l => l.url?.startsWith('mailto:'))) {
+  //   (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
+  //     icon: 'AlternateEmail',
+  //     title: 'Contact',
+  //     description: 'Let us know if you need direct help.',
+  //     url: `mailto:${supportEmail}`,
+  //   }));
+  // }
 
   return landing;
 }

@@ -55,8 +55,9 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
     const scale = this.props.scale || 1;
     var media = isVideo ? (
       <video
-        autoPlay={true}
-        loop={true}
+        autoPlay
+        muted // Some browsers will not autoply unmuted
+        loop
         className={classNames(this.props.imgClassName, !!aspectRatio && this.props.classes.imageAspectRatio)}
         src={src}
         height={height}

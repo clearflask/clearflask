@@ -12,7 +12,6 @@ import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import MenuIcon from '@material-ui/icons/Menu';
-import BlogIcon from '@material-ui/icons/MenuBookOutlined';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
@@ -23,7 +22,6 @@ import { Link, NavLink } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import DemoOnboardingLogin from '../app/DemoOnboardingLogin';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
@@ -35,6 +33,7 @@ import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
+import { urlAddCfJwt } from './AccountEnterPage';
 import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
@@ -188,12 +187,13 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       // },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
+          { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
           { type: 'divider' },
-          { type: 'button', link: this.urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
           { type: 'button', link: `/open-source`, title: 'Open source', icon: OpenSourceIcon },
-          { type: 'button', link: '/e/roadmap', title: 'Roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/e/roadmap', title: 'Our roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/e/feedback', title: 'Feedback', icon: FeedbackIcon },
         ]
       },
     ];
@@ -425,12 +425,6 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
         </div>
       </div >
     );
-  }
-
-  urlAddCfJwt(url: string): string {
-    return !!this.props.account
-      ? `${url}?${SSO_TOKEN_PARAM_NAME}=${this.props.account.cfJwt}`
-      : url;
   }
 }
 

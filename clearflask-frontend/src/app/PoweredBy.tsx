@@ -3,6 +3,7 @@
 import { Link as MuiLink } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import windowIso from '../common/windowIso';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -16,14 +17,13 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.primary,
   },
 });
-
 class PoweredBy extends Component<WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <MuiLink underline='none' target="_blank" href='https://clearflask.com/'>
+      <MuiLink underline='none' target="_blank" href={`https://clearflask.com/?utm_source=${windowIso.location.hostname}&utm_medium=pby_footer`}>
         <div className={this.props.classes.container}>
-          <div className={this.props.classes.poweredBy}>Powered by&nbsp;</div>
+          <div className={this.props.classes.poweredBy}>We run on&nbsp;</div>
           <div className={this.props.classes.name}>ClearFlask</div>
         </div>
       </MuiLink>

@@ -66,6 +66,9 @@ const styles = (theme: Theme) => createStyles({
   boxShadow: {
     boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.2)',
   },
+  fakeBrowser: {
+    margin: 'auto',
+  },
 });
 
 export interface Props extends Omit<BlockContentProps, 'variant'> {
@@ -77,6 +80,7 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   demoImage?: Img;
   demoWrap?: 'browser' | 'browser-dark' | 'shadow',
   demoWrapBrowserUrl?: string,
+  demoWrapBrowserProps?: Partial<React.ComponentProps<typeof FakeBrowser>>;
   demoWrapPadding?: number | string,
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
@@ -146,11 +150,13 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       const isDark = this.props.demoWrap === 'browser-dark';
       demo = (
         <FakeBrowser
+          className={this.props.classes.fakeBrowser}
           addressBarContent={this.props.demoWrapBrowserUrl}
           darkMode={isDark}
           contentPadding={demoWrapPadding}
           fixedWidth={demoFixedWidth}
           fixedHeight={demoFixedHeight}
+          {...this.props.demoWrapBrowserProps}
         >
           {demo}
         </FakeBrowser>
