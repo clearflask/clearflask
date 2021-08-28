@@ -18,7 +18,7 @@ import Loading from './app/utils/Loading';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { isTracking } from './common/util/detectEnv';
+import { detectEnv, Environment, isProd, isTracking } from './common/util/detectEnv';
 import { redirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
@@ -118,7 +118,15 @@ class Main extends Component<Props> {
       redirectIso(windowIso.location.origin.replace(`www.`, ''));
       return null;
     }
-    const isProject = this.isProject();
+
+    const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    const isParentDomain = windowIso.location.hostname === windowIso.parentDomain
+      || (!isProd() && windowIso.location.hostname === 'localhost');
+
+    const showSite = isParentDomain && !isSelfHost;
+    const showProject = !showSite;
+    const showDashboard = isParentDomain || isSelfHost;
+
     return (
       <React.StrictMode>
         <StylesProvider injectFirst>
@@ -153,18 +161,7 @@ class Main extends Component<Props> {
                   )} />
                   <Switch>
                     {[
-                      ...(isProject ? [(
-                        <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                          <>
-                            <SetMaxAge val={24 * 60 * 60} />
-                            <PostStatus
-                              {...props}
-                              postId={props.match.params['postId'] || ''}
-                            />
-                          </>
-                        )} />
-                      )] : []),
-                      ...(!isProject ? [(
+                      ...(showDashboard ? [(
                         <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
                             <SentryIdentifyAccount />
@@ -176,8 +173,7 @@ class Main extends Component<Props> {
                             <HotjarWrapperMain />
                           </Provider>
                         )} />
-                      )] : []),
-                      ...(!isProject ? [(
+                      ), (
                         <Route key='invoice' path="/invoice/:invoiceId" render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
                             <SentryIdentifyAccount />
@@ -185,24 +181,34 @@ class Main extends Component<Props> {
                             <Invoice invoiceId={props.match.params['invoiceId']} />
                           </Provider>
                         )} />
-                      )] : []),
-                      ...(isProject ? [(
-                        <Route key='app' path="/" render={props => (
-                          <>
-                            <SetMaxAge val={60} />
-                            <App slug={windowIso.location.hostname} {...props} />
-                          </>
-                        )} />
-                      )] : []),
-                      ...(!isProject ? [(
+                      ), (
                         <Route key='enter' exact path='/:type(login|signup)' render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
                             <SetTitle title={props.match.params['type'] === 'login' ? 'Login' : 'Sign up'} />
                             <AccountEnterPage type={props.match.params['type'] === 'login' ? 'login' : 'signup'} />
                           </Provider>
                         )} />
+                      )] : []),
+                      ...(showProject ? [(
+                        <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                          <>
+                            <SetMaxAge val={24 * 60 * 60} />
+                            <PostStatus
+                              {...props}
+                              postId={props.match.params['postId'] || ''}
+                            />
+                          </>
+                        )} />
                       ), (
-                        <Route key='site' render={props => (
+                        <Route key='app' path='/' render={props => (
+                          <>
+                            <SetMaxAge val={60} />
+                            <App slug={windowIso.location.hostname} {...props} />
+                          </>
+                        )} />
+                      )] : []),
+                      ...(showSite ? [(
+                        <Route key='site' path='/' render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
                             <SentryIdentifyAccount />
                             <SetMaxAge val={24 * 60 * 60} />
@@ -221,10 +227,6 @@ class Main extends Component<Props> {
         </StylesProvider>
       </React.StrictMode>
     );
-  }
-
-  isProject(): boolean {
-    return windowIso.location.hostname !== windowIso.parentDomain;
   }
 }
 

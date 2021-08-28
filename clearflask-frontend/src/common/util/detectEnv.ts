@@ -13,14 +13,17 @@ export enum Environment {
 
 export function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (windowIso.ENV === 'development' /* npm run start:dev */) {
-      envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else if (windowIso.ENV === 'local' /* npm run start:local */) {
+    if (windowIso.ENV === 'local') {
       envCache = Environment.DEVELOPMENT_LOCAL;
-    } else if (windowIso.ENV === 'selfhost' /* npm run start:local */) {
+    } else if (windowIso.ENV === 'selfhost') {
       envCache = Environment.PRODUCTION_SELF_HOST;
-    } else if (process?.env?.NODE_ENV === 'development' /* npm run start:frontend */) {
-      envCache = Environment.DEVELOPMENT_FRONTEND;
+    } else if (windowIso.ENV === 'development' || process?.env?.NODE_ENV === 'development') {
+      const paramsEnv = new URL(windowIso.location.href).searchParams.get('env');
+      if (!!paramsEnv && Object.values(Environment).includes(paramsEnv as any)) {
+        envCache = paramsEnv as Environment;
+      } else {
+        envCache = Environment.DEVELOPMENT_FRONTEND;
+      }
     } else {
       envCache = Environment.PRODUCTION;
     }

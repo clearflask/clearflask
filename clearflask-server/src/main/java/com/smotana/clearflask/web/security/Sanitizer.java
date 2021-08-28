@@ -51,6 +51,9 @@ public class Sanitizer {
         @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api,domain,cname,sni,upload", innerType = String.class)
         Set<String> reservedSubdomains();
 
+        @DefaultValue("false")
+        boolean skipCheckForAllDomains();
+
         @DefaultValue(value = "", innerType = String.class)
         Set<String> skipCheckForDomains();
 
@@ -161,6 +164,11 @@ public class Sanitizer {
     public void domain(String domain) {
         if (Strings.isNullOrEmpty(domain)) {
             throw new ApiException(BAD_REQUEST, "Custom domain is empty");
+        }
+
+        if (config.skipCheckForAllDomains()) {
+            log.debug("Skipping custom domain validation for {}", domain);
+            return;
         }
 
         if (Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {

@@ -15,6 +15,7 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
 
@@ -269,18 +270,29 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                     });
                   }}
                 />
-                <div className={this.props.classes.subdomainFields}>
+                {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
                   <TextField
                     className={this.props.classes.field}
                     variant='outlined'
-                    label='Subdomain'
-                    placeholder='vandelay-industries'
+                    label='Portal domain'
                     disabled={!!this.state.isSubmitting}
-                    value={this.state.infoSlug || ''}
+                    value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
                     onChange={e => this.setState({ infoSlug: e.target.value })}
                   />
-                  <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
-                </div>
+                ) : (
+                  <div className={this.props.classes.subdomainFields}>
+                    <TextField
+                      className={this.props.classes.field}
+                      variant='outlined'
+                      label='Portal subdomain'
+                      placeholder='vandelay-industries'
+                      disabled={!!this.state.isSubmitting}
+                      value={this.state.infoSlug || ''}
+                      onChange={e => this.setState({ infoSlug: e.target.value })}
+                    />
+                    <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
+                  </div>
+                )}
                 <TextField
                   className={this.props.classes.field}
                   variant='outlined'
@@ -338,7 +350,12 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
   async createConfig(): Promise<{ config: Admin.ConfigAdmin, templates: CreateTemplateV2Result }> {
     const editor = new ConfigEditor.EditorImpl();
     const templater = Templater.get(editor);
-    const templates = await templater.createTemplateV2(this.state);
+    const templates = await templater.createTemplateV2({
+      ...this.state,
+      ...(detectEnv() === Environment.PRODUCTION_SELF_HOST ? {
+        infoDomain: this.state.infoDomain || windowIso.parentDomain,
+      } : {})
+    });
     const config = editor.getConfig();
     return { config, templates };
   }

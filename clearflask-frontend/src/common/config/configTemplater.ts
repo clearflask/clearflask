@@ -43,6 +43,7 @@ export interface CreateTemplateV2Options {
   infoWebsite?: string;
   infoName?: string;
   infoSlug?: string;
+  infoDomain?: string;
   infoLogo?: string;
 }
 export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
@@ -176,6 +177,7 @@ export default class Templater {
   async createTemplateV2(opts: CreateTemplateV2Options = createTemplateV2OptionsDefault): Promise<CreateTemplateV2Result> {
     this._get<ConfigEditor.StringProperty>(['name']).set(opts.infoName || 'My App');
     if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
+    if (!!opts.infoDomain) this._get<ConfigEditor.StringProperty>(['domain']).set(opts.infoDomain);
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
 
