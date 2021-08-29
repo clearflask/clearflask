@@ -4,6 +4,7 @@ import { applyMiddleware, combineReducers, compose, createStore, Store } from 'r
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
+import { AllTourActions, reducerTour, ReduxStateTour, stateTourDefault } from '../common/tour';
 import Cache from '../common/util/cache';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
@@ -25,6 +26,8 @@ export interface Project {
   subscribeToUnsavedChanges: (subscriber: () => void) => () => void;
   resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
+
+type AllActionsAdmin = Admin.Actions | AllTourActions;
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
@@ -167,6 +170,7 @@ export default class ServerAdmin {
       plans: statePlansDefault,
       configs: stateConfigsDefault,
       legal: stateLegalDefault,
+      tour: stateTourDefault,
     };
     return state;
   }
@@ -202,7 +206,7 @@ const stateAccountDefault = {
   account: {},
   billing: {},
 };
-function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin.Actions): StateAccount {
+function reducerAccount(state: StateAccount = stateAccountDefault, action: AllActionsAdmin): StateAccount {
   switch (action.type) {
     case Admin.accountSignupAdminActionStatus.Pending:
     case Admin.accountLoginAdminActionStatus.Pending:
@@ -307,7 +311,7 @@ const statePlansDefault = {
   plans: {},
   changeOptions: {},
 };
-function reducerPlans(state: StatePlans = statePlansDefault, action: Admin.Actions): StatePlans {
+function reducerPlans(state: StatePlans = statePlansDefault, action: AllActionsAdmin): StatePlans {
   switch (action.type) {
     case Admin.plansGetActionStatus.Pending:
       return {
@@ -348,7 +352,7 @@ export interface StateConfigs {
 const stateConfigsDefault = {
   configs: {},
 };
-function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin.Actions): StateConfigs {
+function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: AllActionsAdmin): StateConfigs {
   switch (action.type) {
     case Admin.configGetAllAndUserBindAllAdminActionStatus.Pending:
       return {
@@ -428,7 +432,7 @@ export interface StateLegal {
   legal?: Admin.LegalResponse;
 }
 const stateLegalDefault = {};
-function reducerLegal(state: StateLegal = stateLegalDefault, action: Admin.Actions): StateLegal {
+function reducerLegal(state: StateLegal = stateLegalDefault, action: AllActionsAdmin): StateLegal {
   switch (action.type) {
     case Admin.legalGetActionStatus.Pending:
       return {
@@ -450,7 +454,7 @@ function reducerLegal(state: StateLegal = stateLegalDefault, action: Admin.Actio
   }
 }
 
-export interface ReduxStateAdmin {
+export interface ReduxStateAdmin extends ReduxStateTour {
   account: StateAccount;
   plans: StatePlans;
   configs: StateConfigs;
@@ -461,4 +465,5 @@ export const reducersAdmin = combineReducers({
   plans: reducerPlans,
   configs: reducerConfigs,
   legal: reducerLegal,
+  tour: reducerTour,
 });

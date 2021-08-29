@@ -11,7 +11,7 @@ import { getSearchKey } from '../../api/server';
 import { Orientation } from '../../common/ContentScroll';
 import { LayoutState, Section } from '../../common/Layout';
 import setTitle from "../../common/util/titleUtil";
-import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
+import { ClearFlaskTour, Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import { dashboardOnDragEnd, droppableDataSerialize } from "./dashboardDndActionHandler";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
 import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './DashboardQuickActions';
@@ -212,7 +212,14 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             </div>
           </Fade>
         ),
-        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        action: {
+          label: 'Create',
+          onClick: () => this.pageClicked('post'),
+          tourAnchorProps: {
+            anchorId: 'feedback-page-create-btn',
+            tour: ClearFlaskTour,
+          },
+        },
       },
     },
   });
@@ -233,10 +240,6 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
         header: { title: { title: 'New task' } },
       } : {}),
       size: PostPreviewSize,
-      header: {
-        title: { title: 'Changelog' },
-        action: { label: 'Create', onClick: () => this.pageClicked('post') },
-      },
     }),
   });
 

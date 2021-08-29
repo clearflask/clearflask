@@ -974,7 +974,6 @@ export function LandingLoop() {
 
 export function LandingCollectFeedback() {
   const classes = useStyles();
-  const onboardingDemoRef = useRef(null);
   return (
     <>
       <Background svg={{

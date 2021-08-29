@@ -10,6 +10,7 @@ import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import HelpPopper from './HelpPopper';
+import { TourAnchor } from './tour';
 import { notEmpty } from './util/arrayUtil';
 import keyMapper from './util/keyMapper';
 import { withMediaQueries, WithMediaQueries } from './util/MediaQuery';
@@ -26,6 +27,7 @@ export interface HeaderTitle {
 export interface HeaderAction {
   label: string;
   onClick: () => void;
+  tourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 }
 export interface Header {
   left?: React.ReactNode;
@@ -266,6 +268,26 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
 
   renderHeaderContent(header?: Header, breakAction: BreakAction = 'show'): React.ReactNode | null {
     if (!header && breakAction !== 'drawer') return null;
+
+    const genHeaderActionBtn = ((label, onClick, className?: string) => (
+      <Button
+        className={className}
+        disableElevation
+        color='primary'
+        onClick={onClick}
+      >{label}</Button>
+    ))
+    const headerAction = !!header?.action && (header.action.tourAnchorProps ? (
+      <TourAnchor {...header.action.tourAnchorProps} className={this.props.classes.headerAction}>
+        {(next) => genHeaderActionBtn(header.action?.label, () => {
+          header.action?.onClick();
+          next();
+        })}
+      </TourAnchor>
+    ) : genHeaderActionBtn(
+      header.action.label,
+      header.action.onClick,
+      this.props.classes.headerAction));
     return (
       <>
         {header?.left}
@@ -297,14 +319,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             <div className={this.props.classes.grow} />
           </>
         )}
-        {!!header?.action && (
-          <Button
-            className={this.props.classes.headerAction}
-            disableElevation
-            color='primary'
-            onClick={header.action.onClick}
-          >{header.action.label}</Button>
-        )}
+        {headerAction}
         {header?.right}
       </>
     );

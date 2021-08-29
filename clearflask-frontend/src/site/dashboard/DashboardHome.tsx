@@ -18,15 +18,12 @@ import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
+import { TourChecklist } from '../../common/tour';
 import { initialWidth } from '../../common/util/screenUtil';
+import { ClearFlaskTour } from '../Dashboard';
 import Histogram from './Histogram';
 
 const statePrefixAggregate = 'aggr-';
-const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
-const workflowPreviewDimensions = {
-  width: 700,
-  height: 200,
-};
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -245,7 +242,11 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             />
           </div>
         </div>
-        {/* <div className={classNames(
+        <TourChecklist tour={ClearFlaskTour} />
+        {/* For now, workflow previews are disabled, they were kind of ugly here
+        const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
+        const workflowPreviewDimensions = { width: 700, height: 200 };
+        <div className={classNames(
           this.props.classes.stats,
           this.props.classes.scrollVertical,
         )}>

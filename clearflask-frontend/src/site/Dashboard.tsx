@@ -44,6 +44,7 @@ import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import SubmitButton from '../common/SubmitButton';
+import { TourDefinition } from '../common/tour';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -67,6 +68,21 @@ import { renderUsers } from './dashboard/dashboardUsers';
 import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
 import DemoApp from './DemoApp';
 import Logo from './Logo';
+
+export const ClearFlaskTour: TourDefinition = {
+  guides: {
+    'feedback-page': {
+      title: 'Manage incoming feedback', description: 'lorem ipsum',
+      initialStepId: 'create-btn', steps: {
+        'create-btn': {
+          title: 'Create feedback', description: "First let's capture feedback from a customer email",
+          openPath: '/dashboard/feedback',
+          anchorId: 'feedback-page-create-btn',
+        },
+      },
+    },
+  },
+};
 
 export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
   return `${windowIso.location.protocol}//${escapeHtml(config.domain) || `${escapeHtml(config.slug)}.${windowIso.location.host}`}`
