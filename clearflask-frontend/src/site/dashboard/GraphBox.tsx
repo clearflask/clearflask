@@ -61,7 +61,7 @@ interface Props {
   icon?: OverridableComponent<SvgIconTypeMap>;
   title: React.ReactNode;
   value?: React.ReactNode;
-  chart: React.ReactNode;
+  chart?: React.ReactNode;
   chartAsBackground?: {
     width: number | string,
     height: number | string,

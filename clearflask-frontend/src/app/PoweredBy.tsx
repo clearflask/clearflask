@@ -23,7 +23,7 @@ class PoweredBy extends Component<WithStyles<typeof styles, true>> {
     return (
       <MuiLink underline='none' target="_blank" href={`https://clearflask.com/?utm_source=${windowIso.location.hostname}&utm_medium=pby_footer`}>
         <div className={this.props.classes.container}>
-          <div className={this.props.classes.poweredBy}>We run on&nbsp;</div>
+          <div className={this.props.classes.poweredBy}>Powered by&nbsp;</div>
           <div className={this.props.classes.name}>ClearFlask</div>
         </div>
       </MuiLink>

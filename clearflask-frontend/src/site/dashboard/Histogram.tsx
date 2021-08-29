@@ -52,37 +52,36 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
 
   componentDidMount() {
     if (!this.state.results) {
-      this.props.server.dispatchAdmin()
+      this.props.server.dispatchAdmin({ debounce: true })
         .then(this.props.search)
         .then(results => this.setState({ results }));
     }
   }
 
   render() {
-    if (!this.state.results) return null;
-
-    // Fill missing data with zeroes
-    const data: Array<{ x: number, y: number }> = [];
-    const startDate: Date | undefined = this.props.xAxis?.min || this.state.results.points[0]?.ts;
-    if (startDate) {
-      var pointsIndex = 0;
-      const endDate: Date = this.props.xAxis?.max || this.state.results.points[this.state.results.points.length - 1]!.ts;
-      for (var currDate = moment(startDate); currDate.diff(endDate, 'days') <= 0; currDate.add(1, 'days')) {
-        var cnt = 0;
-        const currPoint = this.state.results.points[pointsIndex];
-        if (currPoint && currDate.isSame(currPoint.ts, 'day')) {
-          cnt = currPoint.cnt;
-          pointsIndex++;
+    var chart;
+    if (!!this.state.results) {
+      // Fill missing data with zeroes
+      const data: Array<{ x: number, y: number }> = [];
+      const startDate: Date | undefined = this.props.xAxis?.min || this.state.results.points[0]?.ts;
+      if (startDate) {
+        var pointsIndex = 0;
+        const endDate: Date = this.props.xAxis?.max || this.state.results.points[this.state.results.points.length - 1]!.ts;
+        for (var currDate = moment(startDate); currDate.diff(endDate, 'days') <= 0; currDate.add(1, 'days')) {
+          var cnt = 0;
+          const currPoint = this.state.results.points[pointsIndex];
+          if (currPoint && currDate.isSame(currPoint.ts, 'day')) {
+            cnt = currPoint.cnt;
+            pointsIndex++;
+          }
+          data.push({
+            x: currDate.valueOf(),
+            y: cnt,
+          })
         }
-        data.push({
-          x: currDate.valueOf(),
-          y: cnt,
-        })
       }
-    }
 
-    const chart = (
-      <span className={this.props.classes.chart}>
+      chart = (
         <ReactApexChart
           series={[{
             data,
@@ -164,16 +163,27 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
           width={this.props.chartWidth}
           height={this.props.chartHeight}
         />
-      </span>
-    );
+      );
+    } else {
+      chart = (<Loading />);
+    }
 
     return (
       <GraphBox
         className={this.props.className}
         icon={this.props.icon}
         title={this.props.title}
-        chart={chart}
-        value={this.state.results.hits?.value || 0}
+        chart={(
+          <div className={this.props.classes.chart} style={{
+            width: this.props.chartWidth,
+            height: this.props.chartHeight,
+          }}>
+            {chart}
+          </div>
+        )}
+        value={this.state.results === undefined
+          ? ' '
+          : this.state.results.hits?.value || 0}
       />
     );
   }

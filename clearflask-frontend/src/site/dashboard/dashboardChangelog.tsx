@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Divider } from '@material-ui/core';
+import { Button, Divider } from '@material-ui/core';
+import VisibilityIcon from '@material-ui/icons/Visibility';
 import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { Orientation } from '../../common/ContentScroll';
 import { LayoutState } from '../../common/Layout';
 import setTitle from "../../common/util/titleUtil";
-import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
+import { Dashboard, DashboardPageContext, getProjectLink, PostPreviewSize } from "../Dashboard";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
 import DashboardSearchControls from './DashboardSearchControls';
 import PostList from './PostList';
@@ -95,6 +96,9 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
     ),
   });
 
+  const conf = activeProject.server.getStore().getState().conf.conf;
+  const projectLink = !!conf && getProjectLink(conf);
+  const changelogLink = (!this.state.changelog || !projectLink) ? undefined : `${projectLink}/${this.state.changelog.pageAndIndex?.page.slug}`;
   const preview = this.renderPreview({
     project: activeProject,
     stateKey: 'changelogPreview',
@@ -106,6 +110,20 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
       header: {
         title: { title: 'Changelog' },
         action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        right: changelogLink && (
+          <Button
+            className={this.props.classes.headerAction}
+            component={'a' as any}
+            href={changelogLink}
+            target='_blank'
+            underline='none'
+            rel='noopener nofollow'
+          >
+            Public view
+            &nbsp;
+            <VisibilityIcon fontSize='inherit' />
+          </Button>
+        ),
       },
     },
   });
