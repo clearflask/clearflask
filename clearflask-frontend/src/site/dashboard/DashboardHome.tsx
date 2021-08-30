@@ -8,11 +8,12 @@ import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
 import UsersIcon from '@material-ui/icons/PersonAdd';
 import moment from 'moment';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import * as ConfigEditor from '../../common/config/configEditor';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
@@ -242,7 +243,9 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             />
           </div>
         </div>
-        <TourChecklist tour={ClearFlaskTour} />
+        <Provider store={ServerAdmin.get().getStore()}>
+          <TourChecklist tour={ClearFlaskTour} />
+        </Provider>
         {/* For now, workflow previews are disabled, they were kind of ugly here
         const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
         const workflowPreviewDimensions = { width: 700, height: 200 };

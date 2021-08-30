@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
+import { Backdrop, ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { TransitionProps } from '@material-ui/core/transitions';
 import CloseIcon from '@material-ui/icons/Close';
@@ -119,6 +119,7 @@ interface Props extends PopperProps {
   transitionCmpt?: (props: TransitionProps) => any;
   transitionProps?: any;
   placement?: PopperPlacementType;
+  useBackdrop?: boolean;
 }
 class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> {
   readonly anchorRef = React.createRef<HTMLDivElement>();
@@ -141,6 +142,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
       transitionCmpt,
       transitionProps,
       placement,
+      useBackdrop,
       ...popperProps
     } = this.props;
 
@@ -159,6 +161,13 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
 
     return (
       <>
+        <div ref={this.anchorRef} />
+        {!!useBackdrop && (
+          <Backdrop
+            open={!!popperProps.open}
+            onClick={() => clickAway && onClose()}
+          />
+        )}
         <Popper
           placement={placement || 'right-start'}
           anchorEl={this.props.anchorEl !== undefined
@@ -205,11 +214,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
           {props => (
             <ClickAwayListener
               mouseEvent='onMouseDown'
-              onClickAway={() => {
-                if (clickAway) {
-                  onClose();
-                }
-              }}
+              onClickAway={() => clickAway && onClose()}
               {...clickAwayProps}
             >
               <TransitionCmpt
@@ -242,7 +247,6 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
             </ClickAwayListener>
           )}
         </Popper>
-        <div ref={this.anchorRef} />
       </>
     );
   }

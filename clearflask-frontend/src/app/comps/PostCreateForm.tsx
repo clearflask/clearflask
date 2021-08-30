@@ -3,17 +3,20 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import BareTextField from '../../common/BareTextField';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import SubmitButton from '../../common/SubmitButton';
+import { TourAnchor } from '../../common/tour';
 import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
+import { ClearFlaskTour } from '../../site/Dashboard';
 import PostSelection from '../../site/dashboard/PostSelection';
 import UserSelection from '../../site/dashboard/UserSelection';
 import CategorySelect from './CategorySelect';
@@ -837,16 +840,26 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     if (!!this.props.externalSubmit) return null;
 
     return (
-      <SubmitButton
-        color='primary'
-        variant='contained'
-        disableElevation
-        isSubmitting={this.state.isSubmitting}
-        disabled={!enableSubmit}
-        onClick={e => enableSubmit && this.createClickSubmit(draft)}
-      >
-        {!draft.authorUserId && this.props.unauthenticatedSubmitButtonTitle || 'Submit'}
-      </SubmitButton>
+      <Provider store={ServerAdmin.get().getStore()}>
+        <TourAnchor anchorId='post-create-form-submit-btn' tour={ClearFlaskTour}>
+          {(next) => (
+            <SubmitButton
+              color='primary'
+              variant='contained'
+              disableElevation
+              isSubmitting={this.state.isSubmitting}
+              disabled={!enableSubmit}
+              onClick={e => {
+                enableSubmit && this.createClickSubmit(draft);
+                next();
+              }}
+              {...SubmitButtonProps}
+            >
+              {!draft.authorUserId && this.props.unauthenticatedSubmitButtonTitle || 'Submit'}
+            </SubmitButton>
+          )}
+        </TourAnchor>
+      </Provider>
     );
   }
 

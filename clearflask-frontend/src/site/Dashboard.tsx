@@ -78,6 +78,12 @@ export const ClearFlaskTour: TourDefinition = {
           title: 'Create feedback', description: "First let's capture feedback from a customer email",
           openPath: '/dashboard/feedback',
           anchorId: 'feedback-page-create-btn',
+          nextStepId: 'submit-feedback',
+        },
+        'submit-feedback': {
+          title: 'Submit feedback', description: 'Save the newly created feedback',
+          openPath: '/dashboard/feedback',
+          anchorId: 'post-create-form-submit-btn',
         },
       },
     },

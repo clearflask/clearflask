@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Paper, Typography } from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { History, Location } from 'history';
 import React, { useRef } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import ClosablePopper from './ClosablePopper';
-import { isProd } from './util/detectEnv';
 
 // Guided product tour backed by Redux
 
@@ -64,7 +64,36 @@ export function reducerTour(state: StateTour = {}, action: AllTourActions | any)
   }
 }
 
+const setStep = async (
+  dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions>,
+  history: History,
+  location: Location,
+  guideId?: string,
+  stepId?: string,
+  step?: TourDefinitionGuideStep,
+) => {
+  if (!!step?.openPath && location.pathname !== step.openPath) {
+    history.push(step.openPath);
+  }
+  dispatch({
+    type: 'tourSetStep', payload: {
+      activeStep: undefined,
+    }
+  });
+  if ((!!guideId && !!stepId)) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    dispatch({
+      type: 'tourSetStep', payload: {
+        activeStep: { guideId, stepId },
+      }
+    });
+  }
+}
+
 const styles = (theme: Theme) => createStyles({
+  anchorPaper: {
+    padding: theme.spacing(2),
+  },
 });
 const useStyles = makeStyles(styles);
 
@@ -76,7 +105,7 @@ export const TourChecklist = (props: {
   const history = useHistory();
   const location = useLocation();
 
-  if (isProd()) return null; // TODO enable in prod
+  if (1) return null; // TODO enable
 
   return (
     <div>
@@ -86,17 +115,9 @@ export const TourChecklist = (props: {
           {guide.description}
           <Button
             onClick={() => {
-              dispatch({
-                type: 'tourSetStep', payload: {
-                  activeStep: {
-                    guideId, stepId: guide.initialStepId,
-                  }
-                }
-              });
-              const openPath = guide.steps[guide.initialStepId]?.openPath;
-              if (!!openPath && location.pathname !== openPath) {
-                history.push(openPath);
-              }
+              const initialStep = guide.steps[guide.initialStepId];
+              if (!initialStep) return;
+              setStep(dispatch, history, location, guideId, guide.initialStepId, initialStep);
             }}
           >Go</Button>
         </div>
@@ -114,6 +135,7 @@ export const TourAnchor = React.forwardRef((props: {
   tour: TourDefinition;
   anchorId: string;
   anchorRef?: React.RefObject<HTMLElement>;
+  ClosablePopperProps?: Partial<React.ComponentProps<typeof ClosablePopper>>;
 }, ref: React.Ref<TourAnchorHandle>) => {
   const classes = useStyles();
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -125,24 +147,20 @@ export const TourAnchor = React.forwardRef((props: {
   const activeGuide = !!activeGuideId ? props.tour.guides[activeGuideId] : undefined;
   const activeStepId = useSelector<ReduxStateTour, string | undefined>(state => state.tour.activeStep?.stepId, shallowEqual);
   const activeStep = !!activeStepId ? activeGuide?.steps[activeStepId] : undefined;
+  const activeAnchorId = activeStep?.anchorId;
 
   const next = () => {
-    if (!activeGuideId || !activeStep) return;
-    dispatch({
-      type: 'tourSetStep', payload: {
-        activeStep: !!activeStep.nextStepId
-          ? { guideId: activeGuideId, stepId: activeStep.nextStepId }
-          : undefined,
-      }
-    });
-    if (!!activeStep.openPath && location.pathname !== activeStep.openPath) {
-      history.push(activeStep.openPath);
-    }
+    if (activeStep?.anchorId !== props.anchorId || !activeGuideId) return;
+    const nextStepId = activeStep.nextStepId;
+    const nextStep = !!nextStepId ? activeGuide?.steps[nextStepId] : undefined;
+    setStep(dispatch, history, location,
+      activeGuideId, nextStepId, nextStep);
   };
-  React.useImperativeHandle(ref, () => ({ next }), [activeGuideId, activeStep, location.pathname]);
+  React.useImperativeHandle(ref, () => ({ next }),
+    [activeAnchorId, activeGuideId, activeStep, location.pathname]);
 
   var popper;
-  if (activeStep) {
+  if (activeStep?.anchorId === props.anchorId) {
     popper = (
       <ClosablePopper
         open
@@ -150,17 +168,15 @@ export const TourAnchor = React.forwardRef((props: {
         placement='bottom'
         anchorEl={(props.anchorRef || anchorRef).current}
         arrow
-        clickAway
         closeButtonPosition='disable'
+        paperClassName={classes.anchorPaper}
       >
-        <Paper>
-          {!!activeStep.title && (
-            <Typography variant='h6'>{activeStep.title}</Typography>
-          )}
-          {!!activeStep.description && (
-            <Typography variant='body1'>{activeStep.description}</Typography>
-          )}
-        </Paper>
+        {!!activeStep.title && (
+          <Typography variant='h6'>{activeStep.title}</Typography>
+        )}
+        {!!activeStep.description && (
+          <Typography variant='body1'>{activeStep.description}</Typography>
+        )}
       </ClosablePopper>
     );
   }

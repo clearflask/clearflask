@@ -218,6 +218,9 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           tourAnchorProps: {
             anchorId: 'feedback-page-create-btn',
             tour: ClearFlaskTour,
+            ClosablePopperProps: {
+              useBackdrop: true,
+            },
           },
         },
       },
