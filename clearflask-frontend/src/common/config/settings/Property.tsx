@@ -115,7 +115,7 @@ export default class Property extends Component<Props, State> {
                     placeholder='#FFF'
                     defaultValue={prop.defaultValue}
                     value={this.state.value || ''}
-                    onChange={color => (prop as ConfigEditor.StringProperty).set(color || undefined)}
+                    onChange={color => this.propSet(color || undefined)}
                     error={!!prop.errorMsg}
                     InputLabelProps={{
                       shrink: shrink,

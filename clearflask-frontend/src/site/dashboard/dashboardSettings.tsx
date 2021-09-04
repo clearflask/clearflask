@@ -17,11 +17,6 @@ import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog,
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
-  if (!context.activeProject) {
-    setTitle('Settings - Dashboard');
-    context.showCreateProjectWarning = true;
-    return;
-  }
   if (!this.props.account) {
     setTitle('Settings - Dashboard');
     context.showWarning = 'Not logged in';
@@ -61,27 +56,29 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             { type: 'heading', text: 'Account' } as MenuHeading,
             { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
             { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
-            { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
-            { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/onboard', name: 'Onboard', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 } as MenuItem,
-            { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 } as MenuItem,
-            { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
-            { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
-            { type: 'item', slug: 'settings/project/domain', name: 'Domain', offset: 2 } as MenuItem,
-            { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
-            { type: 'heading', text: 'Advanced' } as MenuHeading,
-            {
-              type: 'project',
-              name: 'General',
-              slug: 'settings/project/advanced',
-              offset: 1,
-              projectId: activeProject.server.getProjectId(),
-              page: activeProject.editor.getPage([]),
-            } as MenuProject,
+            ...(!activeProject ? [] : [
+              { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
+              { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/onboard', name: 'Onboard', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 } as MenuItem,
+              { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 } as MenuItem,
+              { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 2 } as MenuItem,
+              { type: 'item', slug: 'settings/project/domain', name: 'Domain', offset: 2 } as MenuItem,
+              { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 } as MenuItem,
+              { type: 'heading', text: 'Advanced' } as MenuHeading,
+              {
+                type: 'project',
+                name: 'General',
+                slug: 'settings/project/advanced',
+                offset: 1,
+                projectId: activeProject.server.getProjectId(),
+                page: activeProject.editor.getPage([]),
+              } as MenuProject,
+            ]),
           ]}
           activePath={activePath}
           activeSubPath={activeSubPath}
@@ -133,6 +130,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
 
   var mainContent: SectionContent;
   if (activeSubPath[0] === 'project' && activeSubPath[1] === 'advanced') {
+    if (!activeProject) { context.showCreateProjectWarning = true; return; }
     const pagePath = activeSubPath.slice(2);
     try {
       var currentPage = activeProject.editor.getPage(pagePath);
@@ -174,6 +172,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         break;
     }
   } else if (activeSubPath[0] === 'project') {
+    if (!activeProject) { context.showCreateProjectWarning = true; return; }
     switch (activeSubPath[1]) {
       case 'install':
         mainContent = (<ProjectSettingsInstall server={activeProject.server} editor={activeProject.editor} />);

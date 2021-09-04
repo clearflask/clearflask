@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { CSSProperties } from '@material-ui/styles';
-import { applyMiddleware, combineReducers, compose, createStore, Store } from 'redux';
-import reduxPromiseMiddleware from 'redux-promise-middleware';
-import thunk from 'redux-thunk';
+import { combineReducers, createStore, Store } from 'redux';
 import * as ConfigEditor from '../common/config/configEditor';
 import Cache from '../common/util/cache';
 import debounce from '../common/util/debounce';
@@ -36,7 +34,7 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
-type AllActions = Admin.Actions | Client.Actions
+export type AllActions = Admin.Actions | Client.Actions
   | updateSettingsAction
   | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction
   | draftSearchResultAddDraftAction;
@@ -52,19 +50,8 @@ export class Server {
   // NOTE: If creating multiple projects, only one project can have projectId undefined
   // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
-    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
-    if (!windowIso.isSsr) {
-      const composeEnhancers =
-        windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
-            serialize: true,
-            name: projectId,
-          })
-          : compose;
-      storeMiddleware = composeEnhancers(storeMiddleware);
-    }
-
     const projectStoreId = projectId || windowIso.location.hostname;
+    const storeMiddleware = ServerAdmin.createStoreMiddleware(projectStoreId);
     if (windowIso.isSsr) {
       windowIso.storesState.serverStores = windowIso.storesState.serverStores || {};
       windowIso.storesState.serverStores[projectStoreId] = windowIso.storesState.serverStores[projectStoreId]

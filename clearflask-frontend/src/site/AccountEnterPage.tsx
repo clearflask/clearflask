@@ -121,6 +121,7 @@ interface Props {
 interface ConnectProps {
   callOnMount?: () => void,
   accountStatus?: Status;
+  account?: Admin.AccountAdmin;
   cfJwt?: string;
   plans?: Admin.Plan[];
 }
@@ -172,7 +173,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
   }
 
   render() {
-    if (this.props.accountStatus === Status.FULFILLED) {
+    if (this.props.accountStatus === Status.FULFILLED && !!this.props.account) {
       if (this.props.cfJwt && this.cfReturnUrl) {
         windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
@@ -458,6 +459,7 @@ const EnterTemplate = (props: {
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
+    account: state.account.account.account,
     plans: state.plans.plans.plans,
     cfJwt: state.account.account.account?.cfJwt,
   };

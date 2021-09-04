@@ -55,6 +55,7 @@ import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
 import randomUuid from '../../common/util/uuid';
+import windowIso from '../../common/windowIso';
 import { getProjectLink } from '../Dashboard';
 import { getProject, Project } from '../DemoApp';
 import Demo from '../landing/Demo';
@@ -224,6 +225,13 @@ const styles = (theme: Theme) => createStyles({
   usersOnboardOptions: {
     display: 'flex',
     flexDirection: 'column',
+  },
+  domainField: {
+    display: 'flex',
+    alignItems: 'flex-end',
+  },
+  domainFieldText: {
+    marginBottom: 5,
   },
 });
 const useStyles = makeStyles(styles);
@@ -755,8 +763,8 @@ export const ProjectSettingsBranding = (props: {
         )}
         content={(
           <>
-            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'darkMode']} />
             <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'primary']} />
+            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'darkMode']} />
           </>
         )}
       />
@@ -775,39 +783,21 @@ export const ProjectSettingsDomain = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  return (
-    <ProjectSettingsBase title='Custom Domain'>
-      <Section
-        preview={(
-          <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-            <ProjectSettingsDomainPreview server={props.server} />
-          </Provider>
-        )}
-        content={(
-          <>
-            <PropertyByPath server={props.server} editor={props.editor} path={['slug']} />
-            <PropertyByPath server={props.server} editor={props.editor} path={['domain']} />
-          </>
-        )}
-      />
-    </ProjectSettingsBase>
-  );
-}
-export const ProjectSettingsDomainPreview = (props: {
-  server: Server;
-}) => {
   const classes = useStyles();
-  const config = useSelector<ReduxState, Admin.Config | undefined>(state => state.conf.conf, shallowEqual);
-  if (!config) return null;
-  const projectLink = getProjectLink(config);
   return (
-    <BrowserPreview server={props.server} suppressStoreProvider FakeBrowserProps={{
-      addressBarContent: (
-        <span className={classes.projectLink}>
-          {projectLink}
-        </span>),
-    }}>
-    </BrowserPreview>
+    <ProjectSettingsBase title='Custom Domain' description={`Customize your portal's URL to either use ${windowIso.parentDomain} or your own custom domain.`}>
+      <div className={classes.domainField}>
+        <Typography variant='h6' component='div' className={classes.domainFieldText}>https://&nbsp;</Typography>
+        <PropertyByPath overrideDescription='' server={props.server} editor={props.editor} path={['slug']} />
+        <Typography variant='h6' component='div' className={classes.domainFieldText}>&nbsp;{`.${windowIso.parentDomain}`}</Typography>
+      </div>
+      <div className={classes.domainField}>
+        <Typography variant='h6' component='div' className={classes.domainFieldText}>https://&nbsp;</Typography>
+        <PropertyByPath overrideDescription='' server={props.server} editor={props.editor} path={['domain']} />
+      </div>
+      <Typography variant='body1' component='div'>Ensure your DNS settings are configured with your domain set to CNAME sni.clearflask.com</Typography>
+      <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
+    </ProjectSettingsBase>
   );
 }
 

@@ -1,35 +1,50 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Typography } from '@material-ui/core';
+import { Button, MobileStepper, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { History, Location } from 'history';
-import React, { useRef } from 'react';
+import React, { createContext, useContext, useRef } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import ClosablePopper from './ClosablePopper';
+import ScrollAnchor from './util/ScrollAnchor';
 
 // Guided product tour backed by Redux
 
 interface TourDefinitionGuideStep {
   anchorId: string;
+  showButtonNext?: boolean | string;
   title: string;
   description: string;
   openPath?: string;
-  nextStepId?: string;
+  overrideNextStepId?: string;
+  scrollTo?: boolean;
+}
+export enum TourDefinitionGuideState {
+  Available = 'available',
+  Completed = 'completed',
+  Skipped = 'skipped',
 }
 interface TourDefinitionGuide {
+  state: TourDefinitionGuideState;
   title: string;
-  description: string;
-  initialStepId: string;
+  disableSkip?: boolean;
   steps: {
     [stepId: string]: TourDefinitionGuideStep,
+  };
+  onComplete?: {
+    openPath?: string;
   };
 }
 export interface TourDefinition {
   guides: {
     [guideId: string]: TourDefinitionGuide,
   };
+  groups?: Array<{
+    title: string;
+    guideIds: Array<string>;
+  }>;
 }
 
 interface tourSetAnchorAction {
@@ -68,56 +83,96 @@ const setStep = async (
   dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions>,
   history: History,
   location: Location,
-  guideId?: string,
+  guideId: string,
+  guide: TourDefinitionGuide,
+  onGuideCompleted: TourData['onGuideCompleted'],
   stepId?: string,
   step?: TourDefinitionGuideStep,
 ) => {
-  if (!!step?.openPath && location.pathname !== step.openPath) {
-    history.push(step.openPath);
-  }
   dispatch({
     type: 'tourSetStep', payload: {
       activeStep: undefined,
     }
   });
-  if ((!!guideId && !!stepId)) {
+  if (!!stepId && !!step) {
+    if (!!step.openPath && location.pathname !== step.openPath) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      history.push(step.openPath);
+    }
     await new Promise(resolve => setTimeout(resolve, 500));
     dispatch({
       type: 'tourSetStep', payload: {
         activeStep: { guideId, stepId },
       }
     });
+  } else {
+    if (guide.onComplete?.openPath) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      history.push(guide.onComplete.openPath);
+    }
+    onGuideCompleted?.(guideId, guide);
   }
 }
 
 const styles = (theme: Theme) => createStyles({
   anchorPaper: {
     padding: theme.spacing(2),
+    maxWidth: 370,
+  },
+  stepper: {
+    marginTop: theme.spacing(1),
+  },
+  actionArea: {
+    display: 'flex',
+  },
+  flexGrow: {
+    flexGrow: 1,
   },
 });
 const useStyles = makeStyles(styles);
 
-export const TourChecklist = (props: {
+interface TourData {
   tour: TourDefinition;
+  onGuideCompleted: (guideId: string, guide: TourDefinitionGuide) => void;
+  onGuideSkipped: (guideId: string, guide: TourDefinitionGuide) => void;
+}
+export const TourContext = createContext<TourData | undefined>(undefined);
+export const TourProvider = (props: {
+  children?: any;
+} & TourData) => {
+  const { children, ...tourData } = props;
+  return (
+    <TourContext.Provider value={tourData}>
+      {children}
+    </TourContext.Provider>
+  );
+};
+
+export const TourChecklist = (props: {
 }) => {
+  const { tour, onGuideCompleted, onGuideSkipped } = useContext(TourContext)!;
   const classes = useStyles();
   const dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions> = useDispatch();
   const history = useHistory();
   const location = useLocation();
 
-  if (1) return null; // TODO enable
-
+  if (!tour) return null;
   return (
     <div>
-      {Object.entries(props.tour.guides).map(([guideId, guide]) => (
+      {Object.entries(tour.guides).map(([guideId, guide]) => (
         <div>
           {guide.title}
-          {guide.description}
+          {!guide.disableSkip && (
+            <Button
+              disabled={guide.state !== TourDefinitionGuideState.Available}
+              onClick={() => onGuideSkipped(guideId, guide)}
+            >Skip</Button>
+          )}
           <Button
             onClick={() => {
-              const initialStep = guide.steps[guide.initialStepId];
-              if (!initialStep) return;
-              setStep(dispatch, history, location, guideId, guide.initialStepId, initialStep);
+              const initialStepEntry = Object.entries(guide.steps)[0];
+              if (!initialStepEntry) return;
+              setStep(dispatch, history, location, guideId, guide, onGuideCompleted, initialStepEntry[0], initialStepEntry[1]);
             }}
           >Go</Button>
         </div>
@@ -131,12 +186,13 @@ type TourAnchorHandle = {
 }
 export const TourAnchor = React.forwardRef((props: {
   className?: string;
-  children?: React.ReactNode | ((next: (() => void)) => React.ReactNode);
-  tour: TourDefinition;
+  children?: React.ReactNode | ((next: (() => void), isActive: boolean) => React.ReactNode);
   anchorId: string;
   anchorRef?: React.RefObject<HTMLElement>;
+  placement?: React.ComponentProps<typeof ClosablePopper>['placement'];
   ClosablePopperProps?: Partial<React.ComponentProps<typeof ClosablePopper>>;
 }, ref: React.Ref<TourAnchorHandle>) => {
+  const { tour, onGuideCompleted } = useContext(TourContext) || {};
   const classes = useStyles();
   const anchorRef = useRef<HTMLSpanElement>(null);
   const dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions> = useDispatch();
@@ -144,55 +200,92 @@ export const TourAnchor = React.forwardRef((props: {
   const location = useLocation();
 
   const activeGuideId = useSelector<ReduxStateTour, string | undefined>(state => state.tour.activeStep?.guideId, shallowEqual);
-  const activeGuide = !!activeGuideId ? props.tour.guides[activeGuideId] : undefined;
+  const activeGuide = !!activeGuideId ? tour?.guides[activeGuideId] : undefined;
   const activeStepId = useSelector<ReduxStateTour, string | undefined>(state => state.tour.activeStep?.stepId, shallowEqual);
   const activeStep = !!activeStepId ? activeGuide?.steps[activeStepId] : undefined;
   const activeAnchorId = activeStep?.anchorId;
+  const isActive = !!activeStep && (activeStep?.anchorId === props.anchorId);
+  var nextStepId = activeStep?.overrideNextStepId;
+  if (isActive && !nextStepId && activeGuide) {
+    const stepIds = Object.keys(activeGuide.steps);
+    const activeIndex = stepIds.findIndex(stepId => stepId === activeStepId);
+    if (activeIndex !== -1 && activeIndex < stepIds.length) {
+      nextStepId = stepIds[activeIndex + 1];
+    }
+  }
+  const nextStep = !!nextStepId ? activeGuide?.steps[nextStepId] : undefined;
 
   const next = () => {
-    if (activeStep?.anchorId !== props.anchorId || !activeGuideId) return;
-    const nextStepId = activeStep.nextStepId;
-    const nextStep = !!nextStepId ? activeGuide?.steps[nextStepId] : undefined;
-    setStep(dispatch, history, location,
-      activeGuideId, nextStepId, nextStep);
+    if (!isActive || !activeGuideId || !activeGuide || !onGuideCompleted) return;
+    setStep(dispatch, history, location, activeGuideId, activeGuide, onGuideCompleted, nextStepId, nextStep);
   };
   React.useImperativeHandle(ref, () => ({ next }),
-    [activeAnchorId, activeGuideId, activeStep, location.pathname]);
+    [activeAnchorId, activeGuideId, activeStep, location.pathname, nextStepId]);
 
   var popper;
-  if (activeStep?.anchorId === props.anchorId) {
+  if (isActive && !!activeStep && !!activeGuide) {
+    const stepsTotal = Object.keys(activeGuide.steps).length;
+    const stepIndex = Object.keys(activeGuide.steps).findIndex(stepId => stepId === activeStepId);
     popper = (
       <ClosablePopper
         open
         onClose={() => dispatch({ type: 'tourSetStep', payload: { activeStep: undefined } })}
-        placement='bottom'
         anchorEl={(props.anchorRef || anchorRef).current}
         arrow
         closeButtonPosition='disable'
         paperClassName={classes.anchorPaper}
+        placement={props.placement || 'bottom'}
+        {...props.ClosablePopperProps}
       >
         {!!activeStep.title && (
           <Typography variant='h6'>{activeStep.title}</Typography>
         )}
         {!!activeStep.description && (
-          <Typography variant='body1'>{activeStep.description}</Typography>
+          <Typography variant='body1' color='textSecondary'>{activeStep.description}</Typography>
         )}
+        <div className={classes.actionArea}>
+          {stepsTotal > 0 && stepIndex !== undefined && (
+            <MobileStepper
+              className={classes.stepper}
+              variant='dots'
+              position='static'
+              steps={stepsTotal}
+              activeStep={stepIndex}
+              backButton={null}
+              nextButton={null}
+            />
+          )}
+          <div className={classes.flexGrow} />
+          {!!activeStep.showButtonNext && (
+            <Button color='primary' onClick={next}>
+              {typeof activeStep.showButtonNext === 'string' ? activeStep.showButtonNext : (!!nextStepId ? 'Next' : 'Finish')}
+            </Button>
+          )}
+        </div>
       </ClosablePopper>
     );
   }
 
-  const children = typeof props.children === 'function'
-    ? props.children(next) : props.children;
-  return props.anchorRef ? (
+  const scrollTo = isActive && !!activeStep?.scrollTo ? (
+    <ScrollAnchor scrollOnMount />
+  ) : null;
+
+  var content = (
     <>
-      {children}
+      {typeof props.children === 'function' ? props.children(next, isActive) : props.children}
+      {scrollTo}
       {popper}
     </>
-  ) : (
-    <span ref={anchorRef} className={props.className}>
-      {children}
-      {popper}
-    </span>
   );
+
+  if (!props.anchorRef) {
+    content = (
+      <span ref={anchorRef} className={props.className}>
+        {content}
+      </span>
+    );
+  }
+
+  return content;
 });
 

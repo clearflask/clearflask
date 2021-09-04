@@ -8,16 +8,20 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { getSearchKey } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import { Orientation } from '../../common/ContentScroll';
 import { LayoutState, Section } from '../../common/Layout';
+import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
-import { ClearFlaskTour, Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
+import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import { dashboardOnDragEnd, droppableDataSerialize } from "./dashboardDndActionHandler";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
 import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './DashboardQuickActions';
 import DashboardSearchControls from './DashboardSearchControls';
 import DragndropPostList from './DragndropPostList';
 
+const helperMerge = 'Merge duplicate feedback into one. Combined content, comments, votes and subscribers.';
+const helperLink = 'Link with a related task and mark feedback as accepted. Subscribers will be notified.';
 export async function renderFeedback(this: Dashboard, context: DashboardPageContext) {
   setTitle('Feedback - Dashboard');
   if (!context.activeProject) {
@@ -116,7 +120,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
       this.state.roadmap || undefined,
       context.onDndHandled);
   };
-  const renderRelatedContent = (type: 'feedback' | 'task'): React.ReactNode | null => {
+  const renderRelatedContent = (type: 'feedback' | 'task', isTourActive?: boolean): React.ReactNode | null => {
     if (this.state.feedbackPreview?.type !== 'post') return null;
     const categoryId = type === 'feedback' ? this.state.feedback?.categoryAndIndex.category.categoryId : this.state.roadmap?.categoryAndIndex.category.categoryId;
     if (!categoryId) return null;
@@ -128,10 +132,10 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             server={activeProject.server}
             title={type === 'feedback' ? {
               name: 'Merge feedback',
-              helpDescription: 'Merge with another duplicate feedback. Content, comments, votes and subscribers will all be merged in.',
+              helpDescription: helperMerge,
             } : {
               name: 'Link to task',
-              helpDescription: 'Link with a related task and mark feedback as accepted. Subscribers will be notified.',
+              helpDescription: helperLink,
             }}
             getDroppableId={post => {
               if (post.categoryId === this.state.feedback?.categoryAndIndex.category.categoryId) {
@@ -155,13 +159,25 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             fallbackClickHandler={fallbackClickHandler}
             statusColorGivenCategories={[categoryId]}
             PostListProps={{
-              hideIfEmpty: true,
               search: {
                 sortBy: Admin.IdeaSearchAdminSortByEnum.New,
                 filterCategoryIds: [categoryId],
                 limit: 3,
                 similarToIdeaId: this.state.feedbackPreview.id,
               },
+            }}
+            showSampleItem={!isTourActive ? undefined : `Sample related ${type}`}
+            disabledDuringTour={!!isTourActive}
+            FirstTimeNoticeProps={type === 'feedback' ? {
+              id: 'feedback-merge',
+              title: 'Merge feedback',
+              description: helperMerge,
+              confirmButtonTitle: 'Merge',
+            } : {
+              id: 'feedback-link-task',
+              title: 'Link to task',
+              description: helperLink,
+              confirmButtonTitle: 'Link',
             }}
           />
         </Provider>
@@ -175,8 +191,16 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
     noPaper: true, collapseRight: true, collapseLeft: true, collapseTopBottom: true,
     content: layoutState => (
       <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
-        {renderRelatedContent('task')}
-        {renderRelatedContent('feedback')}
+        <Provider store={ServerAdmin.get().getStore()}>
+          <TourAnchor anchorId='feedback-page-link-or-merge' placement='left'>
+            {(next, isActive) => (
+              <>
+                {renderRelatedContent('task', isActive)}
+                {renderRelatedContent('feedback', isActive)}
+              </>
+            )}
+          </TourAnchor>
+        </Provider>
       </div>
     ),
   };
@@ -217,10 +241,6 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: () => this.pageClicked('post'),
           tourAnchorProps: {
             anchorId: 'feedback-page-create-btn',
-            tour: ClearFlaskTour,
-            ClosablePopperProps: {
-              useBackdrop: true,
-            },
           },
         },
       },

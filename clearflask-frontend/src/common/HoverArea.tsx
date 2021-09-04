@@ -32,7 +32,7 @@ const HoverArea = (props: {
   disableHoverBelow?: Breakpoint;
   children: (hoverAreaProps, isHovering: boolean, isHoverDisabled: boolean) => React.ReactNode;
 }) => {
-  const [hoverAreaProps, isHovering, isHoverDisabled] = useHoverArea();
+  const [hoverAreaProps, isHovering, isHoverDisabled] = useHoverArea(props.disableHoverBelow);
 
   return props.children(hoverAreaProps, isHovering, isHoverDisabled) as any;
 };

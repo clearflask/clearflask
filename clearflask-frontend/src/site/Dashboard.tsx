@@ -30,6 +30,7 @@ import { BoardContainer, BoardPanel } from '../app/CustomPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
+import ClearFlaskTourProvider from '../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
@@ -44,7 +45,6 @@ import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import SubmitButton from '../common/SubmitButton';
-import { TourDefinition } from '../common/tour';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -69,27 +69,6 @@ import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding, TemplateW
 import DemoApp from './DemoApp';
 import Logo from './Logo';
 
-export const ClearFlaskTour: TourDefinition = {
-  guides: {
-    'feedback-page': {
-      title: 'Manage incoming feedback', description: 'lorem ipsum',
-      initialStepId: 'create-btn', steps: {
-        'create-btn': {
-          title: 'Create feedback', description: "First let's capture feedback from a customer email",
-          openPath: '/dashboard/feedback',
-          anchorId: 'feedback-page-create-btn',
-          nextStepId: 'submit-feedback',
-        },
-        'submit-feedback': {
-          title: 'Submit feedback', description: 'Save the newly created feedback',
-          openPath: '/dashboard/feedback',
-          anchorId: 'post-create-form-submit-btn',
-        },
-      },
-    },
-  },
-};
-
 export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
   return `${windowIso.location.protocol}//${escapeHtml(config.domain) || `${escapeHtml(config.slug)}.${windowIso.location.host}`}`
 }
@@ -110,7 +89,8 @@ export type OpenPost = (postId?: string, redirectPage?: string) => void;
 
 type PreviewState = {
   type: 'create-post',
-  draftId?: string
+  draftId?: string,
+  defaultStatusId?: string,
 } | {
   type: 'post',
   id: string,
@@ -413,11 +393,12 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       const dispatcher = await ServerAdmin.get().dispatchAdmin();
       const result = await dispatcher.accountBindAdmin({ accountBindAdmin: {} });
       if (result.account) {
-        dispatcher.configGetAllAndUserBindAllAdmin();
-        this.forceUpdate();
+        await dispatcher.configGetAllAndUserBindAllAdmin();
       }
+      this.forceUpdate();
     } catch (er) {
       this.forceUpdate();
+      throw er;
     }
   }
 
@@ -426,9 +407,9 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   }
 
   render() {
-    if (this.props.accountStatus !== undefined && !this.props.account) {
+    if (this.props.accountStatus === Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
-        pathname: "/login",
+        pathname: '/login',
         state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
       }} />);
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.bindByProjectId || !this.props.account) {
@@ -615,8 +596,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
             <CreatePage
               isOnboarding={isOnboarding}
               projectCreated={(projectId) => {
-                localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
-                this.setState({ selectedProjectId: projectId });
+                this.setSelectedProjectId(projectId);
               }}
             />
           ),
@@ -658,280 +638,301 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     const projectLink = (!!activeProjectConf && !!context.showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
 
-    return (
-      <Elements stripe={Dashboard.getStripePromise()}>
+    var content = (
+      <>
         {this.props.account && (
           <SubscriptionStatusNotifier account={this.props.account} />
         )}
-        <DragDropContext
-          enableDefaultSensors
-          sensors={[api => {
-            if (this.state.dragDropSensorApi !== api) {
-              this.setState({ dragDropSensorApi: api });
-            }
-          }]}
-          onBeforeCapture={(before) => {
-            if (!activeProject) return;
-
-            const srcPost = activeProject.server.getStore().getState().ideas.byId[before.draggableId]?.idea;
-            if (!srcPost) return;
-
-            this.draggingPostIdSubscription.notify(srcPost.ideaId);
-          }}
-          onDragEnd={(result, provided) => {
-            this.draggingPostIdSubscription.notify(undefined);
-
-            if (!result.destination || !activeProject) return;
-
-            dashboardOnDragEnd(
-              activeProject,
-              result.source.droppableId,
-              result.source.index,
-              result.draggableId,
-              result.destination.droppableId,
-              result.destination.index,
-              this.state.feedback || undefined,
-              this.state.roadmap || undefined,
-              context.onDndHandled,
-              context.onDndPreHandling);
-          }}
-        >
-          <Layout
-            toolbarShow={!context.isOnboarding}
-            toolbarLeft={(
-              <div className={this.props.classes.toolbarLeft}>
-                <Logo suppressMargins suppressName />
-                <Tabs
-                  className={this.props.classes.tabs}
-                  variant='standard'
-                  scrollButtons='off'
+        <Layout
+          toolbarShow={!context.isOnboarding}
+          toolbarLeft={(
+            <div className={this.props.classes.toolbarLeft}>
+              <Logo suppressMargins suppressName />
+              <Tabs
+                className={this.props.classes.tabs}
+                variant='standard'
+                scrollButtons='off'
+                classes={{
+                  indicator: this.props.classes.tabsIndicator,
+                  flexContainer: this.props.classes.tabsFlexContainer,
+                }}
+                value={activePath || 'home'}
+                indicatorColor="primary"
+                textColor="primary"
+              >
+                <Tab
+                  className={this.props.classes.tab}
+                  component={Link}
+                  to='/dashboard'
+                  value='home'
+                  disableRipple
+                  label='Home'
                   classes={{
-                    indicator: this.props.classes.tabsIndicator,
-                    flexContainer: this.props.classes.tabsFlexContainer,
+                    root: this.props.classes.tabRoot,
                   }}
-                  value={activePath || 'home'}
-                  indicatorColor="primary"
-                  textColor="primary"
-                >
-                  <Tab
-                    className={this.props.classes.tab}
-                    component={Link}
-                    to='/dashboard'
-                    value='home'
-                    disableRipple
-                    label='Home'
-                    classes={{
-                      root: this.props.classes.tabRoot,
-                    }}
-                  />
-                  {!!this.state.hasUncategorizedCategories && (
-                    <Tab
-                      className={this.props.classes.tab}
-                      component={Link}
-                      to='/dashboard/explore'
-                      value='explore'
-                      disableRipple
-                      label='Explore'
-                      classes={{
-                        root: this.props.classes.tabRoot,
-                      }}
-                    />
-                  )}
-                  {this.state.feedback !== null && (
-                    <Tab
-                      className={this.props.classes.tab}
-                      component={Link}
-                      to='/dashboard/feedback'
-                      value='feedback'
-                      disableRipple
-                      label='Feedback'
-                      classes={{
-                        root: this.props.classes.tabRoot,
-                      }}
-                    />
-                  )}
-                  {this.state.roadmap !== null && (
-                    <Tab
-                      className={this.props.classes.tab}
-                      component={Link}
-                      to='/dashboard/roadmap'
-                      value='roadmap'
-                      disableRipple
-                      label='Roadmap'
-                      classes={{
-                        root: this.props.classes.tabRoot,
-                      }}
-                    />
-                  )}
-                  {this.state.changelog !== null && (
-                    <Tab
-                      className={this.props.classes.tab}
-                      component={Link}
-                      to='/dashboard/changelog'
-                      value='changelog'
-                      disableRipple
-                      label='Changelog'
-                      classes={{
-                        root: this.props.classes.tabRoot,
-                      }}
-                    />
-                  )}
-                  <Tab
-                    className={this.props.classes.tab}
-                    component={Link}
-                    to='/dashboard/users'
-                    value='users'
-                    disableRipple
-                    label='Users'
-                    classes={{
-                      root: this.props.classes.tabRoot,
-                    }}
-                  />
-                </Tabs>
-              </div>
-            )}
-            toolbarRight={
-              <>
-                <MenuItems
-                  items={[
-                    ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
-                    ...((!!context.showProjectLink && !!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
-                    {
-                      type: 'dropdown', title: this.props.account.name, items: [
-                        ...(projects.map(p => ({
-                          type: 'button' as 'button', onClick: () => {
-                            const selectedProjectId = p.projectId;
-                            if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
-                              localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
-                              this.setState({ selectedProjectId });
-                            }
-                          }, title: p.editor.getConfig().name,
-
-                          icon: p.projectId === activeProjectId ? CheckIcon : undefined
-                        }))),
-                        { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
-                        { type: 'divider' },
-                        { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
-                        { type: 'divider' },
-                        // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                        { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
-                        { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
-                        { type: 'divider' },
-                        {
-                          type: 'button', onClick: () => {
-                            ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
-                            redirectIso('/login');
-                          }, title: 'Sign out', icon: LogoutIcon
-                        },
-                      ]
-                    }
-                  ]}
                 />
-              </>
-            }
-            previewShow={!!this.state.previewShowOnPage && this.state.previewShowOnPage === activePath}
-            previewShowNot={() => {
-              this.setState({ previewShowOnPage: undefined });
-              context.previewOnClose?.();
-            }}
-            previewForceShowClose={!!context.previewOnClose}
-            sections={context.sections}
-          />
-          {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
-            <Dialog
-              maxWidth='md'
-              fullWidth={this.props.width === 'xs'}
-              open={!!this.state.publishDialogShown}
-              onClose={() => this.setState({ publishDialogShown: false })}
-              scroll='body'
-              PaperProps={{
-                style: { maxWidth: 730 },
-              }}
-            >
-              <Collapse unmountOnExit in={(this.state.publishDialogStep || 0) === 0}>
-                <DialogTitle>User onboarding</DialogTitle>
-                <DialogContent>
-                  <DialogContentText>Choose how your users will access your portal</DialogContentText>
-                  <ProjectSettingsUsersOnboarding
-                    server={activeProject.server}
-                    editor={activeProject.editor}
-                    onPageClicked={() => this.setState({ publishDialogShown: false })}
-                    inviteMods={this.state.publishDialogInviteMods || []}
-                    setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+                {!!this.state.hasUncategorizedCategories && (
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/explore'
+                    value='explore'
+                    disableRipple
+                    label='Explore'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
                   />
-                </DialogContent>
-              </Collapse>
-              <Collapse in={(this.state.publishDialogStep || 0) === 1}>
-                <DialogTitle>Installation</DialogTitle>
-                <DialogContent>
-                  <DialogContentText>Link your product website or app with your ClearFlask portal</DialogContentText>
-                  <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
-                  <Link
-                    to='/dashboard/settings/project/install'
-                    onClick={() => this.setState({ publishDialogShown: false })}
-                  >See more options</Link>
-                </DialogContent>
-              </Collapse>
-              <DialogActions>
-                <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
-                {(this.state.publishDialogStep || 0) === 0 && (
-                  <SubmitButton
-                    isSubmitting={this.state.publishDialogSubmitting}
-                    color='primary'
-                    variant='contained'
-                    disableElevation
-                    onClick={async e => {
-                      if (!activeProject) return;
-                      this.setState({ publishDialogSubmitting: true });
-                      (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
-                      try {
-                        await this.publishChanges(activeProject);
-                      } catch (e) {
-                        this.setState({ publishDialogSubmitting: false });
-                        return;
-                      }
-                      const d = await activeProject.server.dispatchAdmin();
-                      const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
-                      try {
-                        for (const mod of this.state.publishDialogInviteMods || []) {
-                          d.userCreateAdmin({
-                            projectId: activeProject.server.getProjectId(),
-                            userCreateAdmin: {
-                              email: mod,
-                            },
-                          });
-                          inviteModsRemaining.delete(mod);
-                        }
-                      } catch (e) {
-                        this.setState({ publishDialogSubmitting: false });
-                        return;
-                      } finally {
-                        this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
-                      }
-                      this.setState({
-                        publishDialogSubmitting: false,
-                        publishDialogStep: (this.state.publishDialogStep || 0) + 1,
-                      });
-                    }}>Publish</SubmitButton>
                 )}
-                {(this.state.publishDialogStep || 0) === 1 && (
-                  <Button
-                    color='primary'
-                    variant='contained'
-                    disableElevation
-                    onClick={e => {
-                      !windowIso.isSsr && windowIso.open(projectLink, '_blank');
-                      this.setState({
-                        publishDialogShown: false,
-                      });
-                    }}>Visit Portal</Button>
+                {this.state.feedback !== null && (
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/feedback'
+                    value='feedback'
+                    disableRipple
+                    label='Feedback'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
                 )}
-              </DialogActions>
-            </Dialog>
+                {this.state.roadmap !== null && (
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/roadmap'
+                    value='roadmap'
+                    disableRipple
+                    label='Roadmap'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
+                )}
+                {this.state.changelog !== null && (
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/changelog'
+                    value='changelog'
+                    disableRipple
+                    label='Changelog'
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
+                )}
+                <Tab
+                  className={this.props.classes.tab}
+                  component={Link}
+                  to='/dashboard/users'
+                  value='users'
+                  disableRipple
+                  label='Users'
+                  classes={{
+                    root: this.props.classes.tabRoot,
+                  }}
+                />
+              </Tabs>
+            </div>
           )}
-        </DragDropContext>
+          toolbarRight={
+            <>
+              <MenuItems
+                items={[
+                  ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
+                  ...((!!context.showProjectLink && !!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
+                  {
+                    type: 'dropdown', title: this.props.account.name, items: [
+                      ...(projects.map(p => ({
+                        type: 'button' as 'button', onClick: () => {
+                          const selectedProjectId = p.projectId;
+                          if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
+                            this.setSelectedProjectId(selectedProjectId);
+                          }
+                        }, title: p.editor.getConfig().name,
+
+                        icon: p.projectId === activeProjectId ? CheckIcon : undefined
+                      }))),
+                      { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
+                      { type: 'divider' },
+                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
+                      { type: 'divider' },
+                      // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
+                      { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
+                      { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
+                      { type: 'divider' },
+                      {
+                        type: 'button', onClick: () => {
+                          ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
+                          redirectIso('/login');
+                        }, title: 'Sign out', icon: LogoutIcon
+                      },
+                    ]
+                  }
+                ]}
+              />
+            </>
+          }
+          previewShow={!!this.state.previewShowOnPage && this.state.previewShowOnPage === activePath}
+          previewShowNot={() => {
+            this.setState({ previewShowOnPage: undefined });
+            context.previewOnClose?.();
+          }}
+          previewForceShowClose={!!context.previewOnClose}
+          sections={context.sections}
+        />
+        {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
+          <Dialog
+            maxWidth='md'
+            fullWidth={this.props.width === 'xs'}
+            open={!!this.state.publishDialogShown}
+            onClose={() => this.setState({ publishDialogShown: false })}
+            scroll='body'
+            PaperProps={{
+              style: { maxWidth: 730 },
+            }}
+          >
+            <Collapse unmountOnExit in={(this.state.publishDialogStep || 0) === 0}>
+              <DialogTitle>User onboarding</DialogTitle>
+              <DialogContent>
+                <DialogContentText>Choose how your users will access your portal</DialogContentText>
+                <ProjectSettingsUsersOnboarding
+                  server={activeProject.server}
+                  editor={activeProject.editor}
+                  onPageClicked={() => this.setState({ publishDialogShown: false })}
+                  inviteMods={this.state.publishDialogInviteMods || []}
+                  setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
+                />
+              </DialogContent>
+            </Collapse>
+            <Collapse in={(this.state.publishDialogStep || 0) === 1}>
+              <DialogTitle>Installation</DialogTitle>
+              <DialogContent>
+                <DialogContentText>Link your product website or app with your ClearFlask portal</DialogContentText>
+                <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
+                <Link
+                  to='/dashboard/settings/project/install'
+                  onClick={() => this.setState({ publishDialogShown: false })}
+                >See more options</Link>
+              </DialogContent>
+            </Collapse>
+            <DialogActions>
+              <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
+              {(this.state.publishDialogStep || 0) === 0 && (
+                <SubmitButton
+                  isSubmitting={this.state.publishDialogSubmitting}
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  onClick={async e => {
+                    if (!activeProject) return;
+                    this.setState({ publishDialogSubmitting: true });
+                    (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
+                    try {
+                      await this.publishChanges(activeProject);
+                    } catch (e) {
+                      this.setState({ publishDialogSubmitting: false });
+                      return;
+                    }
+                    const d = await activeProject.server.dispatchAdmin();
+                    const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
+                    try {
+                      for (const mod of this.state.publishDialogInviteMods || []) {
+                        d.userCreateAdmin({
+                          projectId: activeProject.server.getProjectId(),
+                          userCreateAdmin: {
+                            email: mod,
+                          },
+                        });
+                        inviteModsRemaining.delete(mod);
+                      }
+                    } catch (e) {
+                      this.setState({ publishDialogSubmitting: false });
+                      return;
+                    } finally {
+                      this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
+                    }
+                    this.setState({
+                      publishDialogSubmitting: false,
+                      publishDialogStep: (this.state.publishDialogStep || 0) + 1,
+                    });
+                  }}>Publish</SubmitButton>
+              )}
+              {(this.state.publishDialogStep || 0) === 1 && (
+                <Button
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  onClick={e => {
+                    !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                    this.setState({
+                      publishDialogShown: false,
+                    });
+                  }}>Visit Portal</Button>
+              )}
+            </DialogActions>
+          </Dialog>
+        )}
+      </>
+    );
+
+    content = (
+      <Elements stripe={Dashboard.getStripePromise()}>
+        {content}
       </Elements>
     );
+
+    content = (
+      <DragDropContext
+        enableDefaultSensors
+        sensors={[api => {
+          if (this.state.dragDropSensorApi !== api) {
+            this.setState({ dragDropSensorApi: api });
+          }
+        }]}
+        onBeforeCapture={(before) => {
+          if (!activeProject) return;
+
+          const srcPost = activeProject.server.getStore().getState().ideas.byId[before.draggableId]?.idea;
+          if (!srcPost) return;
+
+          this.draggingPostIdSubscription.notify(srcPost.ideaId);
+        }}
+        onDragEnd={(result, provided) => {
+          this.draggingPostIdSubscription.notify(undefined);
+
+          if (!result.destination || !activeProject) return;
+
+          dashboardOnDragEnd(
+            activeProject,
+            result.source.droppableId,
+            result.source.index,
+            result.draggableId,
+            result.destination.droppableId,
+            result.destination.index,
+            this.state.feedback || undefined,
+            this.state.roadmap || undefined,
+            context.onDndHandled,
+            context.onDndPreHandling);
+        }}
+      >
+        {content}
+      </DragDropContext>
+    );
+
+    content = (
+      <ClearFlaskTourProvider
+        feedback={this.state.feedback || undefined}
+        roadmap={this.state.roadmap || undefined}
+        changelog={this.state.changelog || undefined}
+      >
+        {content}
+      </ClearFlaskTourProvider>
+    );
+
+    return content;
   }
 
   renderExplore = renderExplore;
@@ -968,7 +969,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     if (!previewState) {
       section = preview.renderEmpty !== undefined ? this.renderPreviewEmpty(preview.renderEmpty) : null;
     } else if (previewState.type === 'create-post') {
-      section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts);
+      section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts, previewState.defaultStatusId);
     } else if (previewState.type === 'post') {
       section = this.renderPreviewPost(previewState.id, preview.stateKey, preview.project, previewState.headerTitle);
     } else if (previewState.type === 'create-user') {
@@ -1044,6 +1045,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     draftId?: string,
     mandatoryCategoryIds?: string[],
     allowDrafts?: boolean,
+    defaultStatusId?: string,
   ): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
@@ -1064,6 +1066,11 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 adminControlsDefaultVisibility='expanded'
                 logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
                 draftId={draftId}
+                defaultStatusId={defaultStatusId}
+                defaultConnectSearch={(stateKey === 'changelogPreview' && this.state.roadmap) ? {
+                  filterCategoryIds: [this.state.roadmap.categoryAndIndex.category.categoryId],
+                  filterStatusIds: this.state.roadmap.statusIdCompleted ? [this.state.roadmap.statusIdCompleted] : undefined,
+                } : undefined}
                 onCreated={postId => {
                   this.setState({ [stateKey]: { type: 'post', id: postId } as PreviewState } as any);
                 }}
@@ -1252,6 +1259,18 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           ))}
         </>
       ),
+    });
+  }
+
+  setSelectedProjectId(selectedProjectId: string) {
+    localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
+    this.setState({
+      selectedProjectId,
+      feedback: undefined,
+      landing: undefined,
+      roadmap: undefined,
+      changelog: undefined,
+      hasUncategorizedCategories: undefined,
     });
   }
 }

@@ -122,7 +122,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         helperText={this.props.helperText}
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
-        formatHeader={inputValue => !inputValue && `Type to search`}
+        formatHeader={inputValue => !inputValue && `Type to search${this.props.allowCreate ? '/create' : ''}`}
         options={options}
         loading={isSearching}
         disableClearable={!this.props.allowClear}

@@ -3,22 +3,25 @@
 import { CardActionArea, Typography } from '@material-ui/core';
 import { createStyles, fade, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import React, { useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
+import React, { useEffect, useRef, useState } from 'react';
 import { Droppable, SensorAPI } from 'react-beautiful-dnd';
-import { shallowEqual, useSelector } from 'react-redux';
+import { Provider, shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server } from '../../api/server';
-import { Project } from '../../api/serverAdmin';
+import ServerAdmin, { Project } from '../../api/serverAdmin';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import HoverArea from '../../common/HoverArea';
 import { FilterControlTitle } from '../../common/search/FilterControls';
+import { TourAnchor } from '../../common/tour';
 import { dndDrag } from '../../common/util/dndUtil';
 import { customReactMemoEquals } from '../../common/util/reactUtil';
 import RenderControl from '../../common/util/RenderControl';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import Subscription from '../../common/util/subscriptionUtil';
 import { droppableDataSerialize } from './dashboardDndActionHandler';
+import FirstTimeNotice, { FirstTimeNoticeHandle } from './FirstTimeNotice';
 import PostList from './PostList';
 
 export type FallbackClickHandler = (draggableId: string, dstDroppableId: string) => Promise<boolean>;
@@ -80,6 +83,9 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 const useStyles = makeStyles(styles);
+const helperChangeStatus = 'Change the feedback status and notify all subscribers';
+const helperConvertToTask = 'Creates a task and places it on your roadmap. Feedback is marked as Accepted, linked to your task, and all subscribers notified.';
+const helperDelete = 'Deletes permanently without notifying subscribers';
 const DashboardQuickActions = (props: {
   activeProject: Project;
   onClickPost: (postId: string) => void;
@@ -97,6 +103,12 @@ const DashboardQuickActions = (props: {
 
   const classes = useStyles();
   const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const noticeChangeStatusRef = useRef<FirstTimeNoticeHandle>(null);
+  const noticeConvertToTaskRef = useRef<FirstTimeNoticeHandle>(null);
+  const noticeDeleteRef = useRef<FirstTimeNoticeHandle>(null);
+
   const quickActionsPostId = draggingPostId || props.selectedPostId;
   const quickActionsPost = useSelector<ReduxState, Admin.Idea | undefined>(state => !quickActionsPostId ? undefined : state.ideas.byId[quickActionsPostId]?.idea, shallowEqual);
 
@@ -122,7 +134,7 @@ const DashboardQuickActions = (props: {
       {feedbackNextStatusActions?.length && (
         <>
           <FilterControlTitle name='Change status' className={classes.feedbackTitle} help={{
-            description: 'Change the feedback status and notify all subscribers',
+            description: helperChangeStatus,
           }} />
           <div className={classes.postActionGroup}>
             {feedbackNextStatusActions.map(status => {
@@ -138,7 +150,10 @@ const DashboardQuickActions = (props: {
                   droppableId={droppableId}
                   color={status.color}
                   enabled={enabled && nextStatusIds.has(status.statusId)}
-                  onClick={onClick}
+                  onClick={async droppableId => {
+                    if (! await noticeChangeStatusRef.current?.invoke()) return;
+                    return await onClick?.(droppableId);
+                  }}
                   title={status.name}
                 />
               );
@@ -147,31 +162,44 @@ const DashboardQuickActions = (props: {
         </>
       )}
       {roadmapNextStatusActions?.length && (
-        <>
-          <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} help={{
-            description: 'Creates a task and places it on your roadmap. Feedback is marked as Accepted, linked to your task, and all subscribers notified.',
-          }} />
-          <div className={classes.postActionGroup}>
-            {roadmapNextStatusActions.map(status => (
-              <QuickActionArea
-                key={status.statusId}
-                isDragging={!!draggingPostId}
-                droppableId={droppableDataSerialize({
-                  type: 'quick-action-create-task-from-feedback-with-status',
-                  dropbox: true,
-                  statusId: status.statusId,
-                })}
-                color={status.color}
-                enabled={enabled && (!statusAccepted || nextStatusIds.has(statusAccepted.statusId))}
-                onClick={onClick}
-                title={status.name}
-              />
-            ))}
-          </div>
-        </>
+        <Provider store={ServerAdmin.get().getStore()}>
+          <TourAnchor anchorId='feedback-page-convert-to-task' placement='left'>
+            {(next, isActive) => (
+              <>
+                <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} help={{
+                  description: helperConvertToTask,
+                }} />
+                <div className={classes.postActionGroup}>
+                  {roadmapNextStatusActions.map(status => (
+                    <QuickActionArea
+                      key={status.statusId}
+                      isDragging={!!draggingPostId}
+                      droppableId={droppableDataSerialize({
+                        type: 'quick-action-create-task-from-feedback-with-status',
+                        dropbox: true,
+                        statusId: status.statusId,
+                      })}
+                      color={status.color}
+                      enabled={enabled && (!statusAccepted || nextStatusIds.has(statusAccepted.statusId))}
+                      onClick={async droppableId => {
+                        if (isActive) {
+                          enqueueSnackbar('Disabled during tutorial', { variant: 'warning', preventDuplicate: true });
+                          return;
+                        }
+                        if (! await noticeConvertToTaskRef.current?.invoke()) return;
+                        return await onClick?.(droppableId);
+                      }}
+                      title={status.name}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </TourAnchor>
+        </Provider>
       )}
       <FilterControlTitle name='Delete' className={classes.feedbackTitle} help={{
-        description: 'Deletes permanently without notifying subscribers',
+        description: helperDelete,
       }} />
       <QuickActionArea
         key='delete'
@@ -182,9 +210,36 @@ const DashboardQuickActions = (props: {
         })}
         color={theme.palette.error.dark}
         enabled={enabled}
-        onClick={onClick}
+        onClick={async droppableId => {
+          if (! await noticeDeleteRef.current?.invoke()) return;
+          return await onClick?.(droppableId);
+        }}
         title='Delete'
       />
+      <Provider store={ServerAdmin.get().getStore()}>
+        <FirstTimeNotice
+          ref={noticeChangeStatusRef}
+          id='feedback-change-status'
+          title='Change status'
+          description={helperChangeStatus}
+          confirmButtonTitle='Change'
+        />
+        <FirstTimeNotice
+          ref={noticeConvertToTaskRef}
+          id='feedback-convert-to-task'
+          title='Create task'
+          description={helperConvertToTask}
+          confirmButtonTitle='Convert'
+        />
+        <FirstTimeNotice
+          ref={noticeDeleteRef}
+          id='feedback-delete'
+          title='Permanently delete'
+          description={helperDelete}
+          confirmButtonTitle='Delete'
+          confirmButtonRed
+        />
+      </Provider>
     </div>
   );
 }
@@ -203,8 +258,14 @@ const QuickActionPostList = React.memo((props: {
   statusColorGivenCategories?: string[];
   fallbackClickHandler: (draggableId: string, dstDroppableId: string) => Promise<boolean>;
   PostListProps?: Partial<React.ComponentProps<typeof PostList>>;
+  showSampleItem?: string;
+  disabledDuringTour?: boolean;
+  FirstTimeNoticeProps?: React.ComponentPropsWithoutRef<typeof FirstTimeNotice>;
 }) => {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const noticeRef = useRef<FirstTimeNoticeHandle>(null);
 
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
   useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
@@ -229,7 +290,7 @@ const QuickActionPostList = React.memo((props: {
   const onClick = (!enabled || !!draggingPostId) ? undefined
     : onClickAction(props.dragDropSensorApi, props.fallbackClickHandler, quickActionsPostId);
 
-  return (
+  var content = (
     <PostList
       key={props.server.getProjectId()}
       server={props.server}
@@ -249,16 +310,49 @@ const QuickActionPostList = React.memo((props: {
               isDragging={!!draggingPostId}
               droppableId={droppableId}
               enabled={enabled}
-              onClick={onClick}
+              onClick={async droppableId => {
+                if (props.disabledDuringTour) {
+                  enqueueSnackbar('Disabled during tutorial', { variant: 'warning', preventDuplicate: true });
+                  return;
+                }
+                if (!!noticeRef.current && ! await noticeRef.current.invoke()) return;
+                return await onClick?.(droppableId);
+              }}
               color={(!statusIdToColor || !idea.statusId) ? undefined : statusIdToColor[idea.statusId]}
               title={truncateWithElipsis(30, idea.title)}
             />
           );
         },
+        renderEmpty: !props.showSampleItem ? undefined : () => (
+          <QuickActionArea
+            key={`sample-item-${props.showSampleItem}`}
+            isDragging={false}
+            droppableId='disabled-for-dropping'
+            enabled={false}
+            title={props.showSampleItem}
+          />
+        ),
       }}
+      hideIfEmpty={!props.showSampleItem}
       {...props.PostListProps}
     />
   );
+
+  if (props.FirstTimeNoticeProps) {
+    content = (
+      <>
+        {content}
+        <Provider store={ServerAdmin.get().getStore()}>
+          <FirstTimeNotice
+            {...props.FirstTimeNoticeProps}
+            ref={noticeRef}
+          />
+        </Provider>
+      </>
+    );
+  }
+
+  return content;
 }, customReactMemoEquals({
   nested: new Set(['PostListProps', 'DroppableProvidedProps', 'statusColorGivenCategories', 'title']),
   presence: new Set(['fallbackClickHandler', 'getDroppableId']),
@@ -271,7 +365,7 @@ export const QuickActionArea = (props: {
   isDragging: boolean;
   feedback?: FeedbackInstance | null;
   enabled?: boolean;
-  onClick?: (droppableId: string) => Promise<boolean>;
+  onClick?: (droppableId: string) => Promise<any>;
   color?: string;
   title?: string;
 }) => {

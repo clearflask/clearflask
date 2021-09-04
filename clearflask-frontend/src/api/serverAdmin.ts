@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { applyMiddleware, combineReducers, compose, createStore, Store } from 'redux';
+import { applyMiddleware, combineReducers, compose, createStore, Store, StoreEnhancer } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { AllTourActions, reducerTour, ReduxStateTour, stateTourDefault } from '../common/tour';
 import Cache from '../common/util/cache';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
@@ -27,7 +27,7 @@ export interface Project {
   resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
 
-type AllActionsAdmin = Admin.Actions | AllTourActions;
+export type AllActionsAdmin = Admin.Actions | AllTourActions;
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
@@ -52,18 +52,7 @@ export default class ServerAdmin {
       msg => Server._dispatch(msg, this.store),
       new Admin.Api(new Admin.Configuration(apiConf), apiOverride));
 
-    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
-    if (!isProd()) {
-      const composeEnhancers =
-        !windowIso.isSsr && windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
-            serialize: true,
-            name: 'main',
-          })
-          : compose;
-      storeMiddleware = composeEnhancers(storeMiddleware);
-    }
-
+    const storeMiddleware = ServerAdmin.createStoreMiddleware('main');
     if (windowIso.isSsr) {
       windowIso.storesState.serverAdminStore = windowIso.storesState.serverAdminStore
         || createStore(reducersAdmin, ServerAdmin._initialState(), storeMiddleware);
@@ -84,6 +73,21 @@ export default class ServerAdmin {
 
   getStore(): Store<ReduxStateAdmin, Admin.Actions> {
     return this.store;
+  }
+
+  static createStoreMiddleware(name: string): StoreEnhancer {
+    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
+    if (!windowIso.isSsr) {
+      const composeEnhancers =
+        windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+            serialize: true,
+            name,
+          })
+          : compose;
+      storeMiddleware = composeEnhancers(storeMiddleware);
+    }
+    return storeMiddleware;
   }
 
   getServers(): Server[] {
@@ -211,6 +215,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
     case Admin.accountSignupAdminActionStatus.Pending:
     case Admin.accountLoginAdminActionStatus.Pending:
     case Admin.accountLoginAsSuperAdminActionStatus.Pending:
+    case Admin.accountBindAdminActionStatus.Pending:
       return {
         ...state,
         account: {
@@ -221,6 +226,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
     case Admin.accountSignupAdminActionStatus.Rejected:
     case Admin.accountLoginAdminActionStatus.Rejected:
     case Admin.accountLoginAsSuperAdminActionStatus.Rejected:
+    case Admin.accountBindAdminActionStatus.Rejected:
       return {
         ...state,
         account: {
@@ -230,8 +236,8 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
       };
     case Admin.accountSignupAdminActionStatus.Fulfilled:
     case Admin.accountLoginAdminActionStatus.Fulfilled:
-    case Admin.accountUpdateAdminActionStatus.Fulfilled:
     case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
+    case Admin.accountUpdateAdminActionStatus.Fulfilled:
       return {
         ...state,
         isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin,
@@ -242,10 +248,9 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
         billing: {},
       };
     case Admin.accountBindAdminActionStatus.Fulfilled:
-      if (!action.payload.account) return state;
       return {
         ...state,
-        isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin || !!action.payload.account.isSuperAdmin,
+        isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin || !!action.payload.account?.isSuperAdmin,
         account: {
           status: Status.FULFILLED,
           account: action.payload.account,

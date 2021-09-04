@@ -4,7 +4,7 @@ import loadable from '@loadable/component';
 import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
-import { ProviderContext } from 'notistack';
+import { SnackbarProvider } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
@@ -28,7 +28,7 @@ import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
 import { SentryIdentifyAccount } from './site/SentryIdentify';
 
-const notistackRef = React.createRef<ProviderContext>();
+const notistackRef = React.createRef<SnackbarProvider>();
 export const resolveDefault = imported => imported.default;
 export const importSuccess = i => {
   closeLoadingScreen();

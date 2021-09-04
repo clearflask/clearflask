@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Typography } from '@material-ui/core';
+import { Fade, IconButton, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -81,10 +81,32 @@ export const PanelTitle = (props: {
   className?: string;
   text?: React.ReactNode;
   color?: string;
+  iconAction?: {
+    icon: React.ReactNode;
+    onClick: () => void;
+    transparent?: boolean;
+  };
 } & Omit<Partial<React.ComponentPropsWithoutRef<typeof Typography>>, 'color'>) => {
   const { text, color, ...TypographyProps } = props;
   const theme = useTheme();
   if (!props.text) return null;
+
+  var iconAction;
+  if (props.iconAction) {
+    iconAction = (
+      <IconButton onClick={props.iconAction.onClick}>
+        {props.iconAction.icon}
+      </IconButton>
+    );
+    if (props.iconAction.transparent !== undefined) {
+      iconAction = (
+        <Fade in={!props.iconAction.transparent}>
+          {iconAction}
+        </Fade>
+      );
+    }
+  }
+
   return (
     <Typography
       className={props.className}
@@ -94,6 +116,7 @@ export const PanelTitle = (props: {
       {...TypographyProps}
     >
       {text}
+      {iconAction}
     </Typography>
   );
 }

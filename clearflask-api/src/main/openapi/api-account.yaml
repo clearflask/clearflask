@@ -180,6 +180,10 @@ components:
           type: string
         isSuperAdmin:
           type: boolean
+        attrs:
+          type: object
+          additionalProperties:
+            type: string
     SubscriptionStatus:
       type: string
       enum:
@@ -219,6 +223,10 @@ components:
           type: boolean
         resume:
           type: boolean
+        attrs:
+          type: object
+          additionalProperties:
+            type: string
     AccountUpdateSuperAdmin:
       type: object
       properties:

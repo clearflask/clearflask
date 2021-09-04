@@ -1,24 +1,39 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { IconButton } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { IconButton, Theme } from '@material-ui/core';
+import { createStyles, darken, lighten, makeStyles } from '@material-ui/core/styles';
 import DismissIcon from '@material-ui/icons/CloseRounded';
-import { ProviderContext, SnackbarProvider } from 'notistack';
+import { SnackbarProvider } from 'notistack';
 import React from 'react';
 
-const muiSnackbarStyles = makeStyles({
-  dismissButton: {
-    color: 'white',
-  },
+// Matches Mui Alert: https://github.com/mui-org/material-ui/blob/master/packages/material-ui-lab/src/Alert/Alert.js#L27
+const muiSnackbarStyles = makeStyles((theme: Theme) => {
+  const getColor = theme.palette.type === 'light' ? darken : lighten;
+  const getBackgroundColor = theme.palette.type === 'light' ? lighten : darken;
+
+  return createStyles({
+    snackbar: {
+    },
+    dismissButton: {
+      color: 'white',
+    },
+    standardWarning: {
+      backgroundColor: '#bd9700',
+    },
+  });
 });
 const MuiSnackbarProvider = (props: {
   children: React.ReactNode;
-  notistackRef?: React.RefObject<ProviderContext>;
+  notistackRef?: React.RefObject<SnackbarProvider>;
 }) => {
-  const notistackRef = props.notistackRef || React.createRef<ProviderContext>();
+  const notistackRef = props.notistackRef || React.createRef<SnackbarProvider>();
   const classes = muiSnackbarStyles();
   return (
     <SnackbarProvider
+      classes={{
+        root: classes.snackbar,
+        variantWarning: classes.standardWarning,
+      }}
       ref={notistackRef}
       preventDuplicate
       maxSnack={3}

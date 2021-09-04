@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Backdrop, ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
+import { ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { TransitionProps } from '@material-ui/core/transitions';
 import CloseIcon from '@material-ui/icons/Close';
@@ -162,12 +162,6 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     return (
       <>
         <div ref={this.anchorRef} />
-        {!!useBackdrop && (
-          <Backdrop
-            open={!!popperProps.open}
-            onClick={() => clickAway && onClose()}
-          />
-        )}
         <Popper
           placement={placement || 'right-start'}
           anchorEl={this.props.anchorEl !== undefined

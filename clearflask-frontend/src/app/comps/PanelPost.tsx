@@ -66,6 +66,12 @@ const styles = (theme: Theme) => createStyles({
       '&:last-child': { paddingBottom: theme.spacing(6) },
     },
   },
+  item: {
+    transition: theme.transitions.create(['opacity']),
+  },
+  itemLoading: {
+    opacity: 0.5,
+  },
 });
 const useStyles = makeStyles(styles);
 export interface Props {
@@ -90,6 +96,7 @@ export interface Props {
   hideLoadMore?: boolean;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
+  renderEmpty?: () => React.ReactNode;
   wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
   filterPosts?: (post: Client.Idea) => boolean;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
@@ -249,6 +256,8 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           content = (
             <Post
               className={classNames(
+                this.props.classes.item,
+                this.props.searchStatus !== Status.FULFILLED && this.props.classes.itemLoading,
                 this.props.postClassName,
               )}
               classNamePadding={classNames(
@@ -293,15 +302,17 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         content = (
           <>
             {content}
-            <div
-              className={classNames(
-                this.props.widthExpand && widthExpandMarginClassName,
-                this.props.classes.placeholder,
-              )}
-            >
-              <Typography variant='overline' style={{
-              }}>Empty</Typography>
-            </div>
+            {this.props.renderEmpty ? this.props.renderEmpty() : (
+              <div
+                className={classNames(
+                  this.props.widthExpand && widthExpandMarginClassName,
+                  this.props.classes.placeholder,
+                )}
+              >
+                <Typography variant='overline' style={{
+                }}>Empty</Typography>
+              </div>
+            )}
           </>
         );
       }
@@ -345,43 +356,40 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     if (!this.props.showDrafts) return undefined;
 
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
+    const hasAny = !!this.props.draftSearchDrafts?.length;
     var content;
-    switch (this.props.searchStatus || Status.PENDING) {
-      default:
-      case Status.REJECTED:
-        content = (
-          <ErrorMsg msg='Failed to load drafts' />
+    if (!this.props.searchStatus || this.props.searchStatus === Status.REJECTED) {
+      content = (
+        <ErrorMsg msg='Failed to load drafts' />
+      );
+    } else if (!hasAny) {
+      content = undefined;
+    } else {
+      if (!this.props.draftSearchDrafts?.length) return undefined;
+      content = this.props.draftSearchDrafts.map(draft => {
+        var draftContent: React.ReactNode = (
+          <DraftItem
+            className={classNames(
+              this.props.classes.item,
+              this.props.searchStatus !== Status.FULFILLED && this.props.classes.itemLoading,
+              widthExpandMarginClassName,
+            )}
+            server={this.props.server}
+            draft={draft}
+            onClick={!this.props.showDrafts?.onClickDraft ? undefined : () => this.props.showDrafts?.onClickDraft?.(draft.draftId)}
+          />
         );
-        break;
-      case Status.PENDING:
-        if (hideIfEmpty) return undefined;
-        content = (
-          <Loading />
-        );
-        break;
-      case Status.FULFILLED:
-        if (!this.props.draftSearchDrafts?.length) return undefined;
-        content = this.props.draftSearchDrafts.map(draft => {
-          var draftContent: React.ReactNode = (
-            <DraftItem
-              className={widthExpandMarginClassName}
-              server={this.props.server}
-              draft={draft}
-              onClick={!this.props.showDrafts?.onClickDraft ? undefined : () => this.props.showDrafts?.onClickDraft?.(draft.draftId)}
-            />
+        if (this.props.selectable) {
+          draftContent = this.selectableWrapItem(draft.draftId, draftContent);
+        } else {
+          draftContent = (
+            <React.Fragment key={draft.draftId}>
+              {draftContent}
+            </React.Fragment>
           );
-          if (this.props.selectable) {
-            draftContent = this.selectableWrapItem(draft.draftId, draftContent);
-          } else {
-            draftContent = (
-              <React.Fragment key={draft.draftId}>
-                {draftContent}
-              </React.Fragment>
-            );
-          }
-          return draftContent;
-        });
-        break;
+        }
+        return draftContent;
+      });
     }
     return content;
   }
@@ -570,11 +578,9 @@ export default keyMapper(
     const selectIdeas = selectorContentWrap(createSelector(
       [selectSearch, selectIdeasById],
       (search, byId) => {
-        const ideas = (search?.ideaIds || []).map(ideaId => {
-          const idea = byId[ideaId];
-          if (!idea || idea.status !== Status.FULFILLED) return undefined;
-          return idea.idea;
-        }).filter(notEmpty);
+        const ideas = (search?.ideaIds || [])
+          .map(ideaId => byId[ideaId]?.idea)
+          .filter(notEmpty);
         return ideas.length ? ideas : undefined;
       }));
 
@@ -597,11 +603,9 @@ export default keyMapper(
     const selectDrafts = selectorContentWrap(createSelector(
       [selectDraftsSearch, selectDraftsById],
       (search, byId) => {
-        const drafts = (search?.draftIds || []).map(draftId => {
-          const draft = byId[draftId];
-          if (!draft || draft.status !== Status.FULFILLED) return undefined;
-          return draft.draft;
-        }).filter(notEmpty);
+        const drafts = (search?.draftIds || [])
+          .map(draftId => byId[draftId]?.draft)
+          .filter(notEmpty);
         return drafts.length ? drafts : undefined;
       }));
 

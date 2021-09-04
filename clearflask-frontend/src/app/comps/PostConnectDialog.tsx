@@ -178,6 +178,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onlyAllowLinkFrom?: boolean;
+  defaultSearch?: Admin.IdeaSearchAdmin;
 } & ({
   post: Client.Idea,
   onSubmit?: never,
@@ -204,6 +205,7 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
     this.state = {
       action: 'link',
       directionReversed: !!this.props.onlyAllowLinkFrom,
+      search: this.props.defaultSearch,
     };
   }
 

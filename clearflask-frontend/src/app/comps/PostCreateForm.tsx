@@ -16,7 +16,6 @@ import { TourAnchor } from '../../common/tour';
 import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { initialWidth } from '../../common/util/screenUtil';
-import { ClearFlaskTour } from '../../site/Dashboard';
 import PostSelection from '../../site/dashboard/PostSelection';
 import UserSelection from '../../site/dashboard/UserSelection';
 import CategorySelect from './CategorySelect';
@@ -111,6 +110,8 @@ interface Props {
   adminControlsDefaultVisibility?: 'expanded' | 'hidden' | 'none';
   defaultTitle?: string;
   defaultDescription?: string;
+  defaultStatusId?: string;
+  defaultConnectSearch?: Admin.IdeaSearchAdmin
   unauthenticatedSubmitButtonTitle?: string;
   labelDescription?: string;
   labelTitle?: string;
@@ -181,6 +182,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       authorUserId: this.props.loggedInUserId,
       title: this.props.defaultTitle,
       description: this.props.defaultDescription,
+      statusId: this.props.defaultStatusId,
       tagIds: [],
       ...this.props.draft,
       draftId: this.props.draftId
@@ -461,25 +463,32 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
   renderEditTitle(draft: Partial<Admin.IdeaDraftAdmin>, PostEditTitleProps?: Partial<React.ComponentProps<typeof PostEditTitle>>): React.ReactNode {
     return (
-      <PostEditTitle
-        value={draft.title || ''}
-        onChange={value => {
-          this.setState({ draftFieldTitle: value })
-          if ((draft.title || '') !== value) {
-            this.searchSimilarDebounced?.(value, draft.categoryId);
-          }
-        }}
-        isSubmitting={this.state.isSubmitting}
-        {...PostEditTitleProps}
-        TextFieldProps={{
-          size: this.props.type === 'large' ? 'medium' : 'small',
-          ...(this.props.labelTitle ? { label: this.props.labelTitle } : {}),
-          InputProps: {
-            inputRef: this.props.titleInputRef,
-          },
-          ...PostEditTitleProps?.TextFieldProps,
-        }}
-      />
+      <Provider store={ServerAdmin.get().getStore()}>
+        <TourAnchor anchorId='post-create-form-edit-title' placement='left'>
+          {next => (
+            <PostEditTitle
+              value={draft.title || ''}
+              onChange={value => {
+                this.setState({ draftFieldTitle: value })
+                if ((draft.title || '') !== value) {
+                  this.searchSimilarDebounced?.(value, draft.categoryId);
+                }
+              }}
+              isSubmitting={this.state.isSubmitting}
+              {...PostEditTitleProps}
+              TextFieldProps={{
+                onKeyPress: next, // Since onChange is cached, let's utilize onKeyPress
+                size: this.props.type === 'large' ? 'medium' : 'small',
+                ...(this.props.labelTitle ? { label: this.props.labelTitle } : {}),
+                InputProps: {
+                  inputRef: this.props.titleInputRef,
+                },
+                ...PostEditTitleProps?.TextFieldProps,
+              }}
+            />
+          )}
+        </TourAnchor>
+      </Provider>
     );
   }
   renderEditDescription(draft: Partial<Admin.IdeaDraftAdmin>, PostEditDescriptionProps?: Partial<React.ComponentProps<typeof PostEditDescription>>): React.ReactNode {
@@ -738,8 +747,6 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   }
 
   renderButtonLink(): React.ReactNode | null {
-    if (!this.props.onDiscarded || !this.props.draftId) return null;
-
     return (
       <>
         <MyButton
@@ -759,6 +766,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             connectDialogOpen: false,
             draftFieldLinkedFromPostIds: [...(new Set([...(this.state.draftFieldLinkedFromPostIds || []), selectedPostId]))],
           })}
+          defaultSearch={this.props.defaultConnectSearch}
         />
       </>
     );
@@ -841,8 +849,8 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
     return (
       <Provider store={ServerAdmin.get().getStore()}>
-        <TourAnchor anchorId='post-create-form-submit-btn' tour={ClearFlaskTour}>
-          {(next) => (
+        <TourAnchor anchorId='post-create-form-submit-btn'>
+          {next => (
             <SubmitButton
               color='primary'
               variant='contained'
