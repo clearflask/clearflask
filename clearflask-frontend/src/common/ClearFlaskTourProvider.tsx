@@ -148,9 +148,9 @@ const ClearFlaskTourProvider = (props: {
               onComplete: { openPath: '/dashboard' },
             },
           }),
-          'onboarding': {
-            state: getGuideState('onboarding', account),
-            title: 'Public/private visibility and Onboarding users',
+          'visibility': {
+            state: getGuideState('visibility', account),
+            title: "Toggle portal's public visibility",
             steps: {
               'visibility': {
                 title: 'Visibility', description: 'Choose whether you want to have your portal publicly available.',
@@ -158,8 +158,20 @@ const ClearFlaskTourProvider = (props: {
                 showButtonNext: 'Skip',
                 anchorId: 'settings-onboard-visibility',
               },
+              'publish-changes': {
+                title: 'Save changes', description: 'Publish your changes live.',
+                anchorId: 'settings-publish-changes',
+              },
+            },
+            onComplete: { openPath: '/dashboard' },
+          },
+          'onboarding': {
+            state: getGuideState('onboarding', account),
+            title: 'Public/private visibility and Onboarding users',
+            steps: {
               'methods': {
                 title: 'Onboarding', description: 'Choose how your users can sign-up here',
+                openPath: '/dashboard/settings/project/onboard',
                 showButtonNext: true,
                 anchorId: 'settings-onboard-methods',
               },
@@ -210,7 +222,7 @@ const ClearFlaskTourProvider = (props: {
             // But at the moment it's not simple and this is good enough for now.
             state: getGuideState('add-payment', account),
             disableSkip: true,
-            title: 'Add a payment card to continue using our service',
+            title: 'Add a payment card',
             steps: {
               'review-plan': {
                 title: 'Review plan', description: 'Look over your current plan',
@@ -228,8 +240,8 @@ const ClearFlaskTourProvider = (props: {
           },
         },
         groups: [
-          { title: 'Getting started', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page'] },
-          { title: 'Project customization', guideIds: ['onboarding', 'custom-domain', 'install'] },
+          { title: 'See what you can do with ClearFlask', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page'] },
+          { title: 'Customize your portal', guideIds: ['visibility', 'onboarding', 'custom-domain', 'install'] },
           { title: 'Account', guideIds: ['invite-teammates', 'add-payment'] },
         ],
       }}

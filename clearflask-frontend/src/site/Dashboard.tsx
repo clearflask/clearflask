@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, Hidden, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -26,7 +26,6 @@ import { PanelPostNavigator } from '../app/comps/PanelPost';
 import PostCreateForm from '../app/comps/PostCreateForm';
 import { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
-import { BoardContainer, BoardPanel } from '../app/CustomPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
@@ -45,6 +44,7 @@ import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import SubmitButton from '../common/SubmitButton';
+import { TourChecklist } from '../common/tour';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -65,7 +65,7 @@ import DashboardPost from './dashboard/DashboardPost';
 import { renderRoadmap } from './dashboard/dashboardRoadmap';
 import { renderSettings } from './dashboard/dashboardSettings';
 import { renderUsers } from './dashboard/dashboardUsers';
-import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding, TemplateWrapper } from './dashboard/ProjectSettings';
+import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding } from './dashboard/ProjectSettings';
 import DemoApp from './DemoApp';
 import Logo from './Logo';
 
@@ -519,7 +519,12 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   roadmap={this.state.roadmap || undefined}
                   changelog={this.state.changelog || undefined}
                 />
-                <Hidden smDown>
+              </Provider>
+              <Provider store={ServerAdmin.get().getStore()}>
+                <TourChecklist />
+              </Provider>
+              {/* <Hidden smDown>
+                <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                   <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
                     key='roadmap-public'
                     type='dialog'
@@ -545,8 +550,8 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                       </Provider>
                     )}
                   />
-                </Hidden>
-              </Provider>
+                </Provider>
+              </Hidden> */}
             </div>
           ),
         });

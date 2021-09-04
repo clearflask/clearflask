@@ -1,13 +1,18 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, MobileStepper, Typography } from '@material-ui/core';
+import { Button, Collapse, Fade, IconButton, LinearProgress, ListItem, ListItemIcon, MobileStepper, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import CheckIcon from '@material-ui/icons/CheckCircle';
+import SkipIcon from '@material-ui/icons/NotInterested';
+import StartIcon from '@material-ui/icons/PlayCircleOutline';
+import classNames from 'classnames';
 import { History, Location } from 'history';
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import ClosablePopper from './ClosablePopper';
+import { notEmpty } from './util/arrayUtil';
 import ScrollAnchor from './util/ScrollAnchor';
 
 // Guided product tour backed by Redux
@@ -41,7 +46,7 @@ export interface TourDefinition {
   guides: {
     [guideId: string]: TourDefinitionGuide,
   };
-  groups?: Array<{
+  groups: Array<{
     title: string;
     guideIds: Array<string>;
   }>;
@@ -96,10 +101,10 @@ const setStep = async (
   });
   if (!!stepId && !!step) {
     if (!!step.openPath && location.pathname !== step.openPath) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 250));
       history.push(step.openPath);
     }
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 250));
     dispatch({
       type: 'tourSetStep', payload: {
         activeStep: { guideId, stepId },
@@ -107,7 +112,7 @@ const setStep = async (
     });
   } else {
     if (guide.onComplete?.openPath) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 250));
       history.push(guide.onComplete.openPath);
     }
     onGuideCompleted?.(guideId, guide);
@@ -127,6 +132,44 @@ const styles = (theme: Theme) => createStyles({
   },
   flexGrow: {
     flexGrow: 1,
+  },
+  guideContainer: {
+    margin: theme.spacing(0, 4),
+    position: 'relative',
+  },
+  guide: {
+    display: 'flex',
+    alignItems: 'center',
+    paddingRight: 40, // cover absolutely positioned skip icon
+  },
+  areaCompleted: {
+    opacity: 0.5,
+  },
+  checklist: {
+    margin: theme.spacing(4),
+    width: 500,
+  },
+  checklistGroup: {
+    margin: theme.spacing(3, 2, 1),
+    border: '1px solid ' + theme.palette.divider,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  skipIcon: {
+    fontSize: '0.7em',
+  },
+  guideIcon: {
+    fontSize: '2em',
+    margin: theme.spacing(1),
+  },
+  listTrailingAction: {
+    position: 'absolute',
+    right: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+  },
+  progressBackground: {
+    backgroundColor: theme.palette.divider,
   },
 });
 const useStyles = makeStyles(styles);
@@ -157,27 +200,103 @@ export const TourChecklist = (props: {
   const location = useLocation();
 
   if (!tour) return null;
-  return (
-    <div>
-      {Object.entries(tour.guides).map(([guideId, guide]) => (
-        <div>
-          {guide.title}
-          {!guide.disableSkip && (
-            <Button
-              disabled={guide.state !== TourDefinitionGuideState.Available}
-              onClick={() => onGuideSkipped(guideId, guide)}
-            >Skip</Button>
-          )}
-          <Button
+
+  const groups = tour.groups.map(group => {
+    var completedCount = 0;
+    const guides = group.guideIds.map(guideId => {
+      const guide = tour.guides[guideId];
+      if (!guide) return null;
+      if (guide.state !== TourDefinitionGuideState.Available) completedCount++;
+      return (
+        <div className={classes.guideContainer}>
+          <ListItem
+            key={guideId}
+            button
+            className={classNames(
+              classes.guide,
+              guide.state !== TourDefinitionGuideState.Available && classes.areaCompleted,
+            )}
             onClick={() => {
               const initialStepEntry = Object.entries(guide.steps)[0];
               if (!initialStepEntry) return;
               setStep(dispatch, history, location, guideId, guide, onGuideCompleted, initialStepEntry[0], initialStepEntry[1]);
             }}
-          >Go</Button>
+          >
+            <ListItemIcon>
+              {guide.state === TourDefinitionGuideState.Completed && (
+                <CheckIcon fontSize='inherit' color='primary' className={classes.guideIcon} />
+              )}
+              {guide.state === TourDefinitionGuideState.Available && (
+                <StartIcon fontSize='inherit' className={classes.guideIcon} />
+              )}
+              {guide.state === TourDefinitionGuideState.Skipped && (
+                <SkipIcon fontSize='inherit' className={classes.guideIcon} />
+              )}
+            </ListItemIcon>
+            <Typography variant='body1'>{guide.title}</Typography>
+            <div className={classes.flexGrow} />
+          </ListItem>
+          {!guide.disableSkip && (
+            <div className={classes.listTrailingAction}>
+              <Fade in={guide.state === TourDefinitionGuideState.Available}>
+                <IconButton
+                  disabled={guide.state !== TourDefinitionGuideState.Available}
+                  onClick={e => {
+                    onGuideSkipped(guideId, guide);
+                  }}
+                >
+                  <SkipIcon fontSize='inherit' className={classes.skipIcon} />
+                </IconButton>
+              </Fade>
+            </div>
+          )}
         </div>
-      ))}
+      );
+    }).filter(notEmpty);
+    return (
+      <TourChecklistGroup
+        key={group.title}
+        title={group.title}
+        guides={guides}
+        completePerc={(completedCount / guides.length) * 100}
+      />
+    );
+  });
+
+  return (
+    <div className={classes.checklist}>
+      {groups}
     </div>
+  );
+}
+const TourChecklistGroup = (props: {
+  title: string,
+  guides: React.ReactNode,
+  completePerc: number;
+}) => {
+  const classes = useStyles();
+  const [expand, setExpand] = useState<boolean>(false);
+  return (
+    <>
+      <div className={classNames(
+        classes.checklistGroup,
+        props.completePerc >= 100 && classes.areaCompleted,
+      )}>
+        <ListItem button onClick={() => setExpand(!expand)}>
+          <Typography variant='h6'>{props.title}</Typography>
+        </ListItem>
+        <LinearProgress
+          variant='determinate'
+          value={props.completePerc}
+          classes={{
+            determinate: classes.progressBackground,
+          }}
+        />
+      </div>
+      <Collapse in={expand}>
+        {props.guides}
+      </Collapse>
+    </>
   );
 }
 

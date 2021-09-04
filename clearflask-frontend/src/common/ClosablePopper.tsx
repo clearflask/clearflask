@@ -29,19 +29,19 @@ const styles = (theme: Theme) => createStyles({
   closeButtonLabel: {
     width: 0,
     height: 0,
-    boxShadow: `-7px 4px 42px 8px rgba(0,0,0,.1)`,
+    boxShadow: `-7px 4px 42px 8px rgba(0,0,0,.2)`,
   },
   closeIcon: {
     fontSize: 26,
     borderRadius: 30,
   },
   paper: {
-    boxShadow: `-7px 4px 42px 8px rgba(0,0,0,.1)`,
+    boxShadow: `-7px 4px 42px 8px rgba(0,0,0,.2)`,
     overflow: 'hidden',
   },
   arrow: {
     position: 'absolute',
-    fontSize: 7,
+    fontSize: 14,
     width: '3em',
     height: '3em',
     '&::before': {

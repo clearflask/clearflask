@@ -240,9 +240,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             />
           </div>
         </div>
-        {/* <Provider store={ServerAdmin.get().getStore()}>
-          <TourChecklist />
-        </Provider> */}
         {/* For now, workflow previews are disabled, they were kind of ugly here
         const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
         const workflowPreviewDimensions = { width: 700, height: 200 };
