@@ -9,10 +9,11 @@ import * as Admin from '../../api/admin';
 import { getSearchKey } from '../../api/server';
 import { PanelTitle } from '../../app/comps/Panel';
 import { MaxContentWidth, MinContentWidth } from '../../app/comps/Post';
+import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import { Orientation } from '../../common/ContentScroll';
 import HoverArea from '../../common/HoverArea';
 import { Section } from '../../common/Layout';
-import { TourAnchor } from '../../common/tour';
+import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, getProjectLink } from "../Dashboard";
@@ -80,12 +81,12 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
     var tourAnchor;
     if (status.statusId === this.state.roadmap.statusIdBacklog) {
       tourAnchor = {
-        props: { anchorId: 'roadmap-page-section-backlog', placement: 'right' },
+        props: { anchorId: 'roadmap-page-section-backlog', placement: 'right-start' },
         location: 'section',
       };
     } else if (status.statusId === this.state.roadmap.statusIdCompleted) {
       tourAnchor = {
-        props: { anchorId: 'roadmap-page-section-completed', placement: 'left' },
+        props: { anchorId: 'roadmap-page-section-completed', placement: 'left-start' },
         location: 'section',
       };
     }
@@ -140,6 +141,10 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
             searchKey: getSearchKey(panel.search),
             statusId: onlyStatus?.statusId,
           })}
+          dragSelectedTourAnchorProps={{
+            anchorId: 'roadmap-page-selected-drag-me',
+            disablePortal: true,
+          }}
           {...PostListProps}
         />
       );
@@ -149,49 +154,48 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
         {list}
       </Provider>
     );
-    if (tourAnchor?.location === 'section') {
-      list = (
-        <TourAnchor {...tourAnchor.props}>
-          {list}
-        </TourAnchor>
-      );
-    }
-
-    const genTitle = (transparent: boolean, extraOnClick?: () => void) => (
-      <PanelTitle
-        className={this.props.classes.roadmapSectionTitle}
-        text={panel.title || onlyStatus?.name} color={onlyStatus?.color}
-        iconAction={!onlyStatus ? undefined : {
-          icon: (<AddIcon />),
-          onClick: () => {
-            this.setState({
-              previewShowOnPage: 'roadmap',
-              roadmapPreview: { type: 'create-post', defaultStatusId: onlyStatus.statusId },
-            });
-            extraOnClick?.();
-          },
-          transparent,
-        }}
-      />
-    );
 
     return {
       name: getSearchKey(panel.search),
       size: { breakWidth: MinContentWidth, flexGrow: 1, maxWidth: MaxContentWidth, scroll: Orientation.Vertical },
       content: (
         <HoverArea disableHoverBelow='sm'>
-          {(hoverAreaProps, isHovering, isHoverDisabled) => (
-            <div className={this.props.classes.roadmapTaskSection} {...hoverAreaProps}>
-              {tourAnchor?.location === 'add' ? (
-                <TourAnchor {...tourAnchor.props}>
-                  {(next, isActive) => genTitle(!isActive && !isHovering && !isHoverDisabled, next)}
-                </TourAnchor>
-              ) : genTitle(!isHovering && !isHoverDisabled)}
-              <div className={this.props.classes.roadmapTaskList}>
-                {list}
+          {(hoverAreaProps, isHovering, isHoverDisabled) => {
+            var content = (
+              <>
+                <PanelTitle
+                  className={this.props.classes.roadmapSectionTitle}
+                  text={panel.title || onlyStatus?.name} color={onlyStatus?.color}
+                  iconAction={!onlyStatus ? undefined : {
+                    icon: (<AddIcon />),
+                    onClick: () => {
+                      this.setState({
+                        previewShowOnPage: 'roadmap',
+                        roadmapPreview: { type: 'create-post', defaultStatusId: onlyStatus.statusId },
+                      });
+                    },
+                    transparent: !isHovering && !isHoverDisabled,
+                    tourAnchorProps: tourAnchor?.location === 'add' ? tourAnchor.props : undefined
+                  }}
+                />
+                <div className={this.props.classes.roadmapTaskList}>
+                  {list}
+                </div>
+              </>
+            );
+
+            content = tourAnchor?.location === 'section' ? (
+              <TourAnchor {...tourAnchor.props} className={this.props.classes.roadmapTaskSection} DivProps={hoverAreaProps}>
+                {content}
+              </TourAnchor>
+            ) : (
+              <div className={this.props.classes.roadmapTaskSection} {...hoverAreaProps}>
+                {content}
               </div>
-            </div>
-          )}
+            );
+
+            return content;
+          }}
         </HoverArea>
       ),
       ...(breakStackWithName ? {
@@ -227,11 +231,16 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
         },
         action: { label: 'Create', onClick: () => this.pageClicked('post') },
         right: roadmapLink && (
-          <TourAnchor className={this.props.classes.headerAction} anchorId='roadmap-page-public-view' placement='bottom'>
-            {next => (
+          <TourAnchor anchorId='roadmap-page-public-view' placement='bottom' zIndex={zb => zb.appBar + 1}>
+            {(next, isActive, anchorRef) => (
               <Button
+                ref={anchorRef}
+                className={this.props.classes.headerAction}
                 component={'a' as any}
-                onClick={next}
+                onClick={() => {
+                  next();
+                  tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
+                }}
                 href={roadmapLink}
                 target='_blank'
                 underline='none'
@@ -250,14 +259,12 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
         breakWidth: roadmapSections.reduce((width, section) => width + (section.size?.breakWidth || 0), 0),
       },
       content: (
-        <TourAnchor anchorId='roadmap-page-section-roadmap' placement='left'>
-          <div className={this.props.classes.roadmapContainer}>
-            {roadmapSections.map(section => (
-              <div className={this.props.classes.roadmapSection}>
-                {section.content}
-              </div>
-            ))}
-          </div>
+        <TourAnchor anchorId='roadmap-page-section-roadmap' placement='left' className={this.props.classes.roadmapContainer}>
+          {roadmapSections.map(section => (
+            <div className={this.props.classes.roadmapSection}>
+              {section.content}
+            </div>
+          ))}
         </TourAnchor>
       ),
     };

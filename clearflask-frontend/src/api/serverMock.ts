@@ -259,10 +259,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         }, 500);
       }
     }
-    if (!!request.accountUpdateAdmin.attrs) this.account.attrs = {
-      ...(this.account.attrs || {}),
-      ...request.accountUpdateAdmin.attrs,
-    };
+    if (!!request.accountUpdateAdmin.attrs) {
+      this.account.attrs = {
+        ...(this.account.attrs || {}),
+        ...request.accountUpdateAdmin.attrs,
+      };
+    }
     return this.returnLater(this.account);
   }
   accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {

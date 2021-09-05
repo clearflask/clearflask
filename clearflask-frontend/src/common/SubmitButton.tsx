@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, CircularProgress } from '@material-ui/core';
+import { Button, ButtonProps, CircularProgress } from '@material-ui/core';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 
 interface Props {
+  buttonRef?: ButtonProps['ref'];
   isSubmitting?: boolean;
 }
 interface State {
@@ -24,6 +25,7 @@ export default class SubmitButton extends Component<Props & React.ComponentProps
     const { isSubmitting, children, ...buttonProps } = this.props;
     return (
       <Button
+        ref={this.props.buttonRef}
         {...buttonProps}
         className={classNames(buttonProps.className)}
         disabled={isSubmitting || buttonProps.disabled}

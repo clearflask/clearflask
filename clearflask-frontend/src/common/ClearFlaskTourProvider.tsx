@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import { useTheme } from '@material-ui/core';
 import React from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../api/admin';
@@ -15,7 +16,7 @@ const getGuideState = (guideId: string, account?: Admin.AccountAdmin): TourDefin
 const getGuideAttrId = (guideId: string): string => {
   return `guide-state-${guideId}`;
 }
-export const setGuideState = async (guideId: string, state: TourDefinitionGuideState) => {
+const setGuideState = async (guideId: string, state: TourDefinitionGuideState) => {
   (await ServerAdmin.get().dispatchAdmin()).accountUpdateAdmin({
     accountUpdateAdmin: {
       attrs: {
@@ -24,6 +25,12 @@ export const setGuideState = async (guideId: string, state: TourDefinitionGuideS
     },
   });
 }
+export const tourSetGuideState = async (guideId: string, state: TourDefinitionGuideState) => {
+  const account = ServerAdmin.get().getStore().getState().account.account.account;
+  if (!account) return;
+  if (getGuideState(guideId, account) === state) return;
+  setGuideState(guideId, state);
+}
 
 const ClearFlaskTourProvider = (props: {
   children?: any;
@@ -31,10 +38,16 @@ const ClearFlaskTourProvider = (props: {
   roadmap?: RoadmapInstance;
   changelog?: ChangelogInstance;
 }) => {
+  const theme = useTheme();
   const account = useSelector<ReduxStateAdmin, Admin.AccountAdmin | undefined>(state => state.account.account.account, shallowEqual);
   return (
     <TourProvider
       tour={{
+        /**
+         * TODO:
+         * - Import data
+         * - Invite teammates
+         */
         guides: {
           ...(!props.feedback ? {} : {
             'feedback-page': {
@@ -42,20 +55,16 @@ const ClearFlaskTourProvider = (props: {
               title: 'Manage incoming feedback',
               steps: {
                 'create-btn': {
-                  title: 'Create feedback form', description: "First let's capture feedback from a customer.",
+                  title: 'Capture feedback', description: "First let's capture feedback from a customer.",
                   openPath: '/dashboard/feedback',
                   anchorId: 'feedback-page-create-btn',
-                },
-                'edit-title': {
-                  title: 'Describe feedback', description: 'Create an informative summary (ie "Product Tour is too boring")',
-                  anchorId: 'post-create-form-edit-title',
                 },
                 'submit-feedback': {
                   title: 'Submit feedback', description: 'Save the newly created feedback',
                   anchorId: 'post-create-form-submit-btn',
                 },
                 'convert-to-task': {
-                  title: 'Convert feedback into tasks', description: 'Creates a task and places it on your roadmap. Feedback is marked as Accepted, linked to your task, and all subscribers notified.',
+                  title: 'Convert feedback into a task', description: 'Creates a task and places it on your roadmap. Feedback is marked as Accepted, linked to your task, and all subscribers notified.',
                   anchorId: 'feedback-page-convert-to-task',
                   showButtonNext: true,
                 },
@@ -98,17 +107,15 @@ const ClearFlaskTourProvider = (props: {
                   title: 'Create a task', description: "Let's create your first task on the public roadmap.",
                   anchorId: 'roadmap-page-section-roadmap-create-btn',
                 },
-                'edit-title': {
-                  title: 'Describe task', description: 'Create a nice title for your task. (ie "Fix all of the bugs")',
-                  anchorId: 'post-create-form-edit-title',
-                },
-                'submit-feedback': {
-                  title: 'Submit feedback', description: 'Save the newly created feedback',
+                'submit-task': {
+                  title: 'Submit task', description: 'Save the newly created task',
                   anchorId: 'post-create-form-submit-btn',
+                  showDelay: 500,
                 },
-                'public-view': {
-                  title: 'Success!', description: 'Check out your task in a public view',
-                  anchorId: 'roadmap-page-public-view',
+                'drag-roadmap': {
+                  title: 'Pick me up', description: 'And drag me around the roadmap.',
+                  showButtonNext: 'I had enough',
+                  anchorId: 'roadmap-page-selected-drag-me',
                 },
               },
               onComplete: { openPath: '/dashboard' },
@@ -124,10 +131,6 @@ const ClearFlaskTourProvider = (props: {
                   openPath: '/dashboard/changelog',
                   anchorId: 'changelog-page-create-btn',
                 },
-                'edit-title': {
-                  title: 'Describe your change', description: 'Create your changelog title such as "August update" or "Version 2.0.4"',
-                  anchorId: 'post-create-form-edit-title',
-                },
                 'link-to-task': {
                   title: 'Link with tasks', description: 'Optionally you can link to your completed tasks or feedback here',
                   anchorId: 'post-create-form-link-to-task',
@@ -135,19 +138,31 @@ const ClearFlaskTourProvider = (props: {
                 'save-draft': {
                   title: 'Save as a draft', description: 'Useful if you are not quite ready to publish yet. Drafts are private to you only. I keep a draft open at all times and add any completed tasks on the go.',
                   anchorId: 'post-create-form-save-draft',
+                  zIndex: zb => zb.modal - 1,
                 },
                 'submit-feedback': {
                   title: 'Submit feedback', description: 'Save the newly created feedback',
                   anchorId: 'post-create-form-submit-btn',
                 },
-                'public-view': {
-                  title: 'Success!', description: 'Check out your changelog in a public view',
-                  anchorId: 'changelog-page-public-view',
-                },
+                // 'public-view': {
+                //   title: 'Success!', description: 'Check out your changelog in a public view',
+                //   anchorId: 'changelog-page-public-view',
+                // },
               },
               onComplete: { openPath: '/dashboard' },
             },
           }),
+          'visit-project': {
+            state: getGuideState('visit-project', account),
+            title: 'Check out your portal',
+            steps: {
+              'visit-project': {
+                title: 'Check it out over here', description: 'This will take you to the publicly accessible portal. If you set it to private, you will be asked to sign-in first.',
+                anchorId: 'dashboard-visit-portal',
+              },
+            },
+            onComplete: { openPath: '/dashboard' },
+          },
           'visibility': {
             state: getGuideState('visibility', account),
             title: "Toggle portal's public visibility",
@@ -155,29 +170,31 @@ const ClearFlaskTourProvider = (props: {
               'visibility': {
                 title: 'Visibility', description: 'Choose whether you want to have your portal publicly available.',
                 openPath: '/dashboard/settings/project/onboard',
-                showButtonNext: 'Skip',
+                showButtonComplete: 'This is fine',
                 anchorId: 'settings-onboard-visibility',
               },
               'publish-changes': {
                 title: 'Save changes', description: 'Publish your changes live.',
                 anchorId: 'settings-publish-changes',
+                showDelay: 500,
               },
             },
             onComplete: { openPath: '/dashboard' },
           },
           'onboarding': {
             state: getGuideState('onboarding', account),
-            title: 'Public/private visibility and Onboarding users',
+            title: 'Choose how users can sign up',
             steps: {
               'methods': {
                 title: 'Onboarding', description: 'Choose how your users can sign-up here',
                 openPath: '/dashboard/settings/project/onboard',
-                showButtonNext: true,
+                showButtonComplete: 'This is fine',
                 anchorId: 'settings-onboard-methods',
               },
               'publish-changes': {
                 title: 'Save changes', description: 'Publish your changes live.',
                 anchorId: 'settings-publish-changes',
+                showDelay: 500,
               },
             },
             onComplete: { openPath: '/dashboard' },
@@ -187,19 +204,19 @@ const ClearFlaskTourProvider = (props: {
             title: 'Setup a custom domain for your portal',
             steps: {
               'dns-settings': {
-                title: 'Visibility', description: 'Choose whether you want to have your portal publicly available.',
-                openPath: '/dashboard/settings/project/onboard',
-                showButtonNext: 'Skip',
-                anchorId: 'settings-onboard-visibility',
+                title: 'DNS settings', description: 'First you need to configure your DNS settings to point your domain "example.com" as a CNAME of "sni.clearflask.com"',
+                openPath: '/dashboard/settings/project/domain',
+                showButtonNext: 'Done',
+                anchorId: 'settings-domain-dns-info',
               },
               'custom-domain': {
-                title: 'Onboarding', description: 'Choose how your users can sign-up here',
-                showButtonNext: true,
-                anchorId: 'settings-onboard-methods',
+                title: 'Set domain', description: 'Type in your custom domain here.',
+                anchorId: 'settings-domain-custom',
               },
               'publish-changes': {
                 title: 'Save changes', description: 'Publish your changes live.',
                 anchorId: 'settings-publish-changes',
+                showDelay: 500,
               },
             },
             onComplete: { openPath: '/dashboard' },
@@ -211,7 +228,7 @@ const ClearFlaskTourProvider = (props: {
               'copy': {
                 title: 'Link it', description: 'Copy the following HTML into your website.',
                 openPath: '/dashboard/settings/project/install',
-                showButtonNext: true,
+                showButtonNext: 'Got it',
                 anchorId: 'settings-install-portal-code',
               },
             },
@@ -230,23 +247,33 @@ const ClearFlaskTourProvider = (props: {
                 showButtonNext: true,
                 anchorId: 'settings-billing-plan',
               },
-              'add-payment': {
-                title: 'Add payment', description: 'Look over your current plan',
+              'add-payment-btn': {
+                title: 'Add a payment here',
                 scrollTo: true,
-                anchorId: 'settings-billing-plan',
+                anchorId: 'settings-add-payment-open',
+              },
+              'add-payment-popup': {
+                title: 'Type in your credit card information',
+                anchorId: 'settings-add-payment-popup',
+              },
+              'payment-review': {
+                title: 'Success!', description: 'Thank you for supporting ClearFlask',
+                showButtonNext: true,
+                anchorId: 'settings-credit-card',
               },
             },
             onComplete: { openPath: '/dashboard' },
           },
         },
         groups: [
-          { title: 'See what you can do with ClearFlask', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page'] },
-          { title: 'Customize your portal', guideIds: ['visibility', 'onboarding', 'custom-domain', 'install'] },
-          { title: 'Account', guideIds: ['invite-teammates', 'add-payment'] },
+          { title: 'See what you can do with ClearFlask', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page', 'visit-project'] },
+          { title: 'Customize the look and feel', guideIds: ['visibility', 'onboarding', 'custom-domain'] },
+          { title: 'Release your portal to your users', guideIds: ['invite-teammates', 'install', 'add-payment'] },
         ],
       }}
       onGuideCompleted={(guideId, guide) => setGuideState(guideId, TourDefinitionGuideState.Completed)}
       onGuideSkipped={(guideId, guide) => setGuideState(guideId, TourDefinitionGuideState.Skipped)}
+      onGuideUnSkipped={(guideId, guide) => setGuideState(guideId, TourDefinitionGuideState.Available)}
     >
       {props.children}
     </TourProvider>

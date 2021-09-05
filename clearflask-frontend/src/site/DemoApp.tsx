@@ -33,7 +33,7 @@ export async function getProject(
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   template && template(templater);
-  await DataMock.mockAccountCreate();
+  await DataMock.getOrMockAccountCreate();
   const d = await server.dispatchAdmin();
   await d.projectCreateAdmin({
     configAdmin: editor.getConfig(),

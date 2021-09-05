@@ -17,7 +17,7 @@ export interface Props {
 }
 class ScrollAnchor extends Component<Props & RouteComponentProps> {
   readonly scrollToRef: React.RefObject<HTMLDivElement> = React.createRef();
-  unlisten?: () => void;
+  unlistenHistory?: () => void;
 
   async scrollNow() {
     if (windowIso.isSsr) {
@@ -54,7 +54,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
     super(props);
 
     if (props.scrollOnNavigate || !!props.scrollOnStateName || props.scrollOnAnchorTag) {
-      this.unlisten = props.history.listen((location, action) => {
+      this.unlistenHistory = props.history.listen((location, action) => {
         if (action !== 'POP'
           && !!props.scrollOnStateName
           && props.scrollOnStateName === (location.state as any)?.[SCROLL_TO_STATE_KEY]) {
@@ -108,7 +108,7 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   }
 
   componentWillUnmount() {
-    this.unlisten && this.unlisten();
+    this.unlistenHistory?.();
   }
 }
 

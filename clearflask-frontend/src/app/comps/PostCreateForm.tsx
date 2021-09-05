@@ -343,10 +343,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       <PostTitle
         variant='page'
         title={draft.title || ''}
-        editable={title => (this.renderEditTitle(draft, {
+        editable={this.renderEditTitle(draft, {
           bare: true,
           autoFocusAndSelect: !this.props.draftId, // Only focus on completely fresh forms
-        }))}
+        })}
       />
     );
     const editDescription = (
@@ -463,32 +463,25 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
   renderEditTitle(draft: Partial<Admin.IdeaDraftAdmin>, PostEditTitleProps?: Partial<React.ComponentProps<typeof PostEditTitle>>): React.ReactNode {
     return (
-      <Provider store={ServerAdmin.get().getStore()}>
-        <TourAnchor anchorId='post-create-form-edit-title' placement='left'>
-          {next => (
-            <PostEditTitle
-              value={draft.title || ''}
-              onChange={value => {
-                this.setState({ draftFieldTitle: value })
-                if ((draft.title || '') !== value) {
-                  this.searchSimilarDebounced?.(value, draft.categoryId);
-                }
-              }}
-              isSubmitting={this.state.isSubmitting}
-              {...PostEditTitleProps}
-              TextFieldProps={{
-                onKeyPress: next, // Since onChange is cached, let's utilize onKeyPress
-                size: this.props.type === 'large' ? 'medium' : 'small',
-                ...(this.props.labelTitle ? { label: this.props.labelTitle } : {}),
-                InputProps: {
-                  inputRef: this.props.titleInputRef,
-                },
-                ...PostEditTitleProps?.TextFieldProps,
-              }}
-            />
-          )}
-        </TourAnchor>
-      </Provider>
+      <PostEditTitle
+        value={draft.title || ''}
+        onChange={value => {
+          this.setState({ draftFieldTitle: value })
+          if ((draft.title || '') !== value) {
+            this.searchSimilarDebounced?.(value, draft.categoryId);
+          }
+        }}
+        isSubmitting={this.state.isSubmitting}
+        {...PostEditTitleProps}
+        TextFieldProps={{
+          size: this.props.type === 'large' ? 'medium' : 'small',
+          ...(this.props.labelTitle ? { label: this.props.labelTitle } : {}),
+          InputProps: {
+            inputRef: this.props.titleInputRef,
+          },
+          ...PostEditTitleProps?.TextFieldProps,
+        }}
+      />
     );
   }
   renderEditDescription(draft: Partial<Admin.IdeaDraftAdmin>, PostEditDescriptionProps?: Partial<React.ComponentProps<typeof PostEditDescription>>): React.ReactNode {
@@ -749,14 +742,25 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   renderButtonLink(): React.ReactNode | null {
     return (
       <>
-        <MyButton
-          buttonVariant='post'
-          disabled={this.state.isSubmitting}
-          Icon={LinkAltIcon}
-          onClick={e => this.setState({ connectDialogOpen: true })}
-        >
-          Link
-        </MyButton>
+        <Provider store={ServerAdmin.get().getStore()}>
+          <TourAnchor anchorId='post-create-form-link-to-task'>
+            {(next, isActive, anchorRef) => (
+              <MyButton
+                buttonRef={anchorRef}
+                buttonVariant='post'
+                disabled={this.state.isSubmitting}
+                Icon={LinkAltIcon}
+                onClick={e => {
+                  this.setState({ connectDialogOpen: true });
+                  next();
+                }}
+
+              >
+                Link
+              </MyButton>
+            )}
+          </TourAnchor>
+        </Provider>
         <PostConnectDialog
           onlyAllowLinkFrom
           server={this.props.server}
@@ -828,15 +832,25 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       .some(stateKey => stateKey.startsWith('draftField') && this.state[stateKey] !== undefined);
 
     return (
-      <SubmitButton
-        variant='text'
-        disabled={!hasAnyChanges}
-        isSubmitting={this.state.isSubmitting}
-        onClick={e => this.draftSave(draft)}
-        {...SubmitButtonProps}
-      >
-        Save draft
-      </SubmitButton>
+      <Provider store={ServerAdmin.get().getStore()}>
+        <TourAnchor anchorId='post-create-form-save-draft'>
+          {(next, isActive, anchorRef) => (
+            <SubmitButton
+              buttonRef={anchorRef}
+              variant='text'
+              disabled={!hasAnyChanges}
+              isSubmitting={this.state.isSubmitting}
+              onClick={e => {
+                this.draftSave(draft);
+                next();
+              }}
+              {...SubmitButtonProps}
+            >
+              Save draft
+            </SubmitButton>
+          )}
+        </TourAnchor>
+      </Provider >
     );
   }
 
@@ -849,9 +863,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
     return (
       <Provider store={ServerAdmin.get().getStore()}>
-        <TourAnchor anchorId='post-create-form-submit-btn'>
-          {next => (
+        <TourAnchor anchorId='post-create-form-submit-btn' zIndex={zb => zb.modal + 1}>
+          {(next, isActive, anchorRef) => (
             <SubmitButton
+              buttonRef={anchorRef}
               color='primary'
               variant='contained'
               disableElevation

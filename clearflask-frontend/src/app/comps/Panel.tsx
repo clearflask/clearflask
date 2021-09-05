@@ -5,6 +5,7 @@ import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { contentScrollApplyStyles, Orientation, Side } from '../../common/ContentScroll';
+import { TourAnchor } from '../../common/tour';
 import DividerCorner from '../utils/DividerCorner';
 
 export enum Direction {
@@ -85,27 +86,27 @@ export const PanelTitle = (props: {
     icon: React.ReactNode;
     onClick: () => void;
     transparent?: boolean;
+    tourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
   };
 } & Omit<Partial<React.ComponentPropsWithoutRef<typeof Typography>>, 'color'>) => {
   const { text, color, ...TypographyProps } = props;
   const theme = useTheme();
   if (!props.text) return null;
 
-  var iconAction;
-  if (props.iconAction) {
-    iconAction = (
-      <IconButton onClick={props.iconAction.onClick}>
-        {props.iconAction.icon}
-      </IconButton>
-    );
-    if (props.iconAction.transparent !== undefined) {
-      iconAction = (
-        <Fade in={!props.iconAction.transparent}>
-          {iconAction}
+  const iconAction = props.iconAction ? (
+    <TourAnchor {...props.iconAction.tourAnchorProps} {...{ transparent: props.iconAction?.transparent as any }}>
+      {(next, isActive, anchorRef) => (
+        <Fade in={!props.iconAction?.transparent || isActive}>
+          <IconButton ref={anchorRef} onClick={() => {
+            props.iconAction?.onClick();
+            next();
+          }}>
+            {props.iconAction?.icon}
+          </IconButton>
         </Fade>
-      );
-    }
-  }
+      )}
+    </TourAnchor>
+  ) : undefined;
 
   return (
     <Typography

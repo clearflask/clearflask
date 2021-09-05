@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { AppBar, Button, Divider, Drawer, IconButton, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
+import { AppBar, Button, Divider, Drawer, IconButton, Portal, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import CloseIcon from '@material-ui/icons/Close';
@@ -115,7 +115,7 @@ const styles = (theme: Theme) => createStyles({
     aligSelf: 'center',
   },
   appBar: {
-    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer),
+    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
     ...BoxLayoutBoxApplyStyles(theme),
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },
@@ -243,7 +243,6 @@ interface State {
 }
 class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof styles, true> & WithWidthProps, State> {
   readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
-  readonly containerRef = React.createRef<HTMLDivElement>();
 
   constructor(props) {
     super(props);
@@ -269,25 +268,22 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
   renderHeaderContent(header?: Header, breakAction: BreakAction = 'show'): React.ReactNode | null {
     if (!header && breakAction !== 'drawer') return null;
 
-    const genHeaderActionBtn = ((label, onClick, className?: string) => (
-      <Button
-        className={className}
-        disableElevation
-        color='primary'
-        onClick={onClick}
-      >{label}</Button>
-    ))
-    const headerAction = !!header?.action && (header.action.tourAnchorProps ? (
-      <TourAnchor {...header.action.tourAnchorProps} className={this.props.classes.headerAction}>
-        {(next) => genHeaderActionBtn(header.action?.label, () => {
-          header.action?.onClick();
-          next();
-        })}
+    const headerAction = !header?.action ? undefined : (
+      <TourAnchor {...header.action.tourAnchorProps}>
+        {(next, isActive, anchorRef) => (
+          <Button
+            ref={anchorRef}
+            className={this.props.classes.headerAction}
+            disableElevation
+            color='primary'
+            onClick={() => {
+              header.action?.onClick();
+              next();
+            }}
+          >{header.action?.label}</Button>
+        )}
       </TourAnchor>
-    ) : genHeaderActionBtn(
-      header.action.label,
-      header.action.onClick,
-      this.props.classes.headerAction));
+    );
     return (
       <>
         {header?.left}
@@ -475,26 +471,28 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     });
 
     return (
-      <div ref={this.containerRef}>
+      <div>
         {!!this.props.toolbarShow && (
-          <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
-            <Toolbar>
-              {!!contentMenu && (
-                <IconButton
-                  color="inherit"
-                  aria-label="Open drawer"
-                  onClick={this.handleDrawerToggle.bind(this)}
-                  className={this.props.classes.menuButton}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              {this.props.toolbarLeft}
-              <div className={this.props.classes.grow} />
-              {this.props.toolbarRight}
-            </Toolbar>
-            <Divider />
-          </AppBar>
+          <Portal>
+            <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
+              <Toolbar>
+                {!!contentMenu && (
+                  <IconButton
+                    color="inherit"
+                    aria-label="Open drawer"
+                    onClick={this.handleDrawerToggle.bind(this)}
+                    className={this.props.classes.menuButton}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                )}
+                {this.props.toolbarLeft}
+                <div className={this.props.classes.grow} />
+                {this.props.toolbarRight}
+              </Toolbar>
+              <Divider />
+            </AppBar>
+          </Portal>
         )}
         {!!contentMenu && (
           <Drawer
@@ -508,7 +506,6 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
               width: sectionMenu?.size?.maxWidth || sectionMenu?.size?.width || sectionMenu?.size?.breakWidth || '100%',
             }}
             ModalProps={{
-              container: () => this.containerRef.current!,
               keepMounted: true,
             }}
           >
@@ -528,9 +525,6 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             }}
             style={{
               width: sectionPreview?.size?.maxWidth || sectionPreview?.size?.width || sectionPreview?.size?.breakWidth || '100%',
-            }}
-            ModalProps={{
-              container: () => this.containerRef.current!
             }}
           >
             {!!this.props.toolbarShow && (<div className={this.props.classes.toolbarSpacer} />)}

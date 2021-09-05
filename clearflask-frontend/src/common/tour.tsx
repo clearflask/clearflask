@@ -3,15 +3,18 @@
 import { Button, Collapse, Fade, IconButton, LinearProgress, ListItem, ListItemIcon, MobileStepper, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckCircle';
-import SkipIcon from '@material-ui/icons/NotInterested';
 import StartIcon from '@material-ui/icons/PlayCircleOutline';
+import UnSkipIcon from '@material-ui/icons/Visibility';
+import SkipIcon from '@material-ui/icons/VisibilityOff';
 import classNames from 'classnames';
 import { History, Location } from 'history';
+import { ReferenceObject as PopperReferenceObject } from 'popper.js';
 import React, { createContext, useContext, useRef, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import ClosablePopper from './ClosablePopper';
+import HoverArea from './HoverArea';
 import { notEmpty } from './util/arrayUtil';
 import ScrollAnchor from './util/ScrollAnchor';
 
@@ -20,11 +23,15 @@ import ScrollAnchor from './util/ScrollAnchor';
 interface TourDefinitionGuideStep {
   anchorId: string;
   showButtonNext?: boolean | string;
+  showButtonComplete?: boolean | string;
   title: string;
-  description: string;
+  description?: string;
   openPath?: string;
   overrideNextStepId?: string;
   scrollTo?: boolean;
+  showDelay?: number;
+  placement?: React.ComponentProps<typeof ClosablePopper>['placement'];
+  zIndex?: React.ComponentProps<typeof ClosablePopper>['zIndex'];
 }
 export enum TourDefinitionGuideState {
   Available = 'available',
@@ -104,7 +111,7 @@ const setStep = async (
       await new Promise(resolve => setTimeout(resolve, 250));
       history.push(step.openPath);
     }
-    await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise(resolve => setTimeout(resolve, step.showDelay !== undefined ? step.showDelay : 250));
     dispatch({
       type: 'tourSetStep', payload: {
         activeStep: { guideId, stepId },
@@ -149,6 +156,10 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(4),
     width: 500,
   },
+  checklistHeader: {
+    color: theme.palette.text.hint,
+    marginLeft: theme.spacing(4),
+  },
   checklistGroup: {
     margin: theme.spacing(3, 2, 1),
     border: '1px solid ' + theme.palette.divider,
@@ -177,7 +188,8 @@ const useStyles = makeStyles(styles);
 interface TourData {
   tour: TourDefinition;
   onGuideCompleted: (guideId: string, guide: TourDefinitionGuide) => void;
-  onGuideSkipped: (guideId: string, guide: TourDefinitionGuide) => void;
+  onGuideSkipped?: (guideId: string, guide: TourDefinitionGuide) => void;
+  onGuideUnSkipped?: (guideId: string, guide: TourDefinitionGuide) => void;
 }
 export const TourContext = createContext<TourData | undefined>(undefined);
 export const TourProvider = (props: {
@@ -193,14 +205,16 @@ export const TourProvider = (props: {
 
 export const TourChecklist = (props: {
 }) => {
-  const { tour, onGuideCompleted, onGuideSkipped } = useContext(TourContext)!;
+  const tourContext = useContext(TourContext);
   const classes = useStyles();
   const dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions> = useDispatch();
   const history = useHistory();
   const location = useLocation();
 
-  if (!tour) return null;
+  if (!tourContext) return null;
+  const { tour, onGuideCompleted, onGuideSkipped, onGuideUnSkipped } = tourContext;
 
+  var singleGroupAlreadyExpanded = false;
   const groups = tour.groups.map(group => {
     var completedCount = 0;
     const guides = group.guideIds.map(guideId => {
@@ -208,63 +222,82 @@ export const TourChecklist = (props: {
       if (!guide) return null;
       if (guide.state !== TourDefinitionGuideState.Available) completedCount++;
       return (
-        <div className={classes.guideContainer}>
-          <ListItem
-            key={guideId}
-            button
-            className={classNames(
-              classes.guide,
-              guide.state !== TourDefinitionGuideState.Available && classes.areaCompleted,
-            )}
-            onClick={() => {
-              const initialStepEntry = Object.entries(guide.steps)[0];
-              if (!initialStepEntry) return;
-              setStep(dispatch, history, location, guideId, guide, onGuideCompleted, initialStepEntry[0], initialStepEntry[1]);
-            }}
-          >
-            <ListItemIcon>
-              {guide.state === TourDefinitionGuideState.Completed && (
-                <CheckIcon fontSize='inherit' color='primary' className={classes.guideIcon} />
+        <HoverArea>
+          {(hoverAreaProps, isHovering, isHoverDisabled) => (
+            <div className={classes.guideContainer} {...hoverAreaProps}>
+              <ListItem
+                key={guideId}
+                button
+                className={classNames(
+                  classes.guide,
+                  guide.state !== TourDefinitionGuideState.Available && classes.areaCompleted,
+                )}
+                onClick={() => {
+                  const initialStepEntry = Object.entries(guide.steps)[0];
+                  if (!initialStepEntry) return;
+                  setStep(dispatch, history, location, guideId, guide, onGuideCompleted, initialStepEntry[0], initialStepEntry[1]);
+                }}
+              >
+                <ListItemIcon>
+                  {guide.state === TourDefinitionGuideState.Completed && (
+                    <CheckIcon fontSize='inherit' color='primary' className={classes.guideIcon} />
+                  )}
+                  {guide.state === TourDefinitionGuideState.Available && (
+                    <StartIcon fontSize='inherit' className={classes.guideIcon} />
+                  )}
+                  {guide.state === TourDefinitionGuideState.Skipped && (
+                    <SkipIcon fontSize='inherit' className={classes.guideIcon} />
+                  )}
+                </ListItemIcon>
+                <Typography variant='body1'>{guide.title}</Typography>
+                <div className={classes.flexGrow} />
+              </ListItem>
+              {!guide.disableSkip && (
+                <div className={classes.listTrailingAction}>
+                  <Fade in={(isHovering || isHoverDisabled)
+                    && ((guide.state === TourDefinitionGuideState.Available && !!onGuideSkipped) || (guide.state === TourDefinitionGuideState.Skipped && !!onGuideUnSkipped))}>
+                    <IconButton
+                      aria-label='Skip'
+                      onClick={e => {
+                        if (guide.state === TourDefinitionGuideState.Available) {
+                          onGuideSkipped?.(guideId, guide);
+                        } else {
+                          onGuideUnSkipped?.(guideId, guide);
+                        }
+                      }}
+                    >
+                      {guide.state === TourDefinitionGuideState.Available
+                        ? (<SkipIcon fontSize='inherit' className={classes.skipIcon} />)
+                        : (<UnSkipIcon fontSize='inherit' className={classes.skipIcon} />)}
+                    </IconButton>
+                  </Fade>
+                </div>
               )}
-              {guide.state === TourDefinitionGuideState.Available && (
-                <StartIcon fontSize='inherit' className={classes.guideIcon} />
-              )}
-              {guide.state === TourDefinitionGuideState.Skipped && (
-                <SkipIcon fontSize='inherit' className={classes.guideIcon} />
-              )}
-            </ListItemIcon>
-            <Typography variant='body1'>{guide.title}</Typography>
-            <div className={classes.flexGrow} />
-          </ListItem>
-          {!guide.disableSkip && (
-            <div className={classes.listTrailingAction}>
-              <Fade in={guide.state === TourDefinitionGuideState.Available}>
-                <IconButton
-                  disabled={guide.state !== TourDefinitionGuideState.Available}
-                  onClick={e => {
-                    onGuideSkipped(guideId, guide);
-                  }}
-                >
-                  <SkipIcon fontSize='inherit' className={classes.skipIcon} />
-                </IconButton>
-              </Fade>
             </div>
           )}
-        </div>
+        </HoverArea>
       );
     }).filter(notEmpty);
+    const completePerc = (completedCount / guides.length) * 100;
+    var shouldDefaultExpand = false;
+    if (!singleGroupAlreadyExpanded && completePerc < 100) {
+      singleGroupAlreadyExpanded = true;
+      shouldDefaultExpand = true;
+    }
     return (
       <TourChecklistGroup
         key={group.title}
         title={group.title}
         guides={guides}
-        completePerc={(completedCount / guides.length) * 100}
+        completePerc={completePerc}
+        defaultExpanded={shouldDefaultExpand}
       />
     );
   });
 
   return (
     <div className={classes.checklist}>
+      <Typography variant='h4' className={classes.checklistHeader}>Quick start</Typography>
       {groups}
     </div>
   );
@@ -273,9 +306,10 @@ const TourChecklistGroup = (props: {
   title: string,
   guides: React.ReactNode,
   completePerc: number;
+  defaultExpanded?: boolean;
 }) => {
   const classes = useStyles();
-  const [expand, setExpand] = useState<boolean>(false);
+  const [expand, setExpand] = useState<boolean>(!!props.defaultExpanded);
   return (
     <>
       <div className={classNames(
@@ -299,21 +333,28 @@ const TourChecklistGroup = (props: {
     </>
   );
 }
-
-type TourAnchorHandle = {
+export type TourAnchorHandle = {
   next: () => void,
 }
 export const TourAnchor = React.forwardRef((props: {
+  anchorId?: string;
   className?: string;
-  children?: React.ReactNode | ((next: (() => void), isActive: boolean) => React.ReactNode);
-  anchorId: string;
-  anchorRef?: React.RefObject<HTMLElement>;
+  children?: React.ReactNode | ((
+    next: (() => void),
+    isActive: boolean,
+    // If your element is not listed, freely add it here,
+    // The type system of RefObject is weird as it doesn't accept a generic type of PopperReferenceObject
+    anchorRef: React.RefObject<PopperReferenceObject & HTMLElement & HTMLDivElement & HTMLInputElement & HTMLSpanElement & HTMLButtonElement & HTMLAnchorElement>,
+  ) => React.ReactNode);
+  disablePortal?: React.ComponentProps<typeof ClosablePopper>['disablePortal'];
+  zIndex?: React.ComponentProps<typeof ClosablePopper>['zIndex'];
   placement?: React.ComponentProps<typeof ClosablePopper>['placement'];
   ClosablePopperProps?: Partial<React.ComponentProps<typeof ClosablePopper>>;
+  DivProps?: Partial<React.HTMLAttributes<HTMLDivElement>>;
 }, ref: React.Ref<TourAnchorHandle>) => {
   const { tour, onGuideCompleted } = useContext(TourContext) || {};
   const classes = useStyles();
-  const anchorRef = useRef<HTMLSpanElement>(null);
+  const anchorRef = useRef<any>(null);
   const dispatch: ThunkDispatch<ReduxStateTour, undefined, AllTourActions> = useDispatch();
   const history = useHistory();
   const location = useLocation();
@@ -323,7 +364,7 @@ export const TourAnchor = React.forwardRef((props: {
   const activeStepId = useSelector<ReduxStateTour, string | undefined>(state => state.tour.activeStep?.stepId, shallowEqual);
   const activeStep = !!activeStepId ? activeGuide?.steps[activeStepId] : undefined;
   const activeAnchorId = activeStep?.anchorId;
-  const isActive = !!activeStep && (activeStep?.anchorId === props.anchorId);
+  const isActive = !!props.anchorId && !!activeStep && (activeStep?.anchorId === props.anchorId);
   var nextStepId = activeStep?.overrideNextStepId;
   if (isActive && !nextStepId && activeGuide) {
     const stepIds = Object.keys(activeGuide.steps);
@@ -338,6 +379,10 @@ export const TourAnchor = React.forwardRef((props: {
     if (!isActive || !activeGuideId || !activeGuide || !onGuideCompleted) return;
     setStep(dispatch, history, location, activeGuideId, activeGuide, onGuideCompleted, nextStepId, nextStep);
   };
+  const complete = () => {
+    if (!isActive || !activeGuideId || !activeGuide || !onGuideCompleted) return;
+    setStep(dispatch, history, location, activeGuideId, activeGuide, onGuideCompleted, undefined, undefined);
+  };
   React.useImperativeHandle(ref, () => ({ next }),
     [activeAnchorId, activeGuideId, activeStep, location.pathname, nextStepId]);
 
@@ -349,12 +394,17 @@ export const TourAnchor = React.forwardRef((props: {
       <ClosablePopper
         open
         onClose={() => dispatch({ type: 'tourSetStep', payload: { activeStep: undefined } })}
-        anchorEl={(props.anchorRef || anchorRef).current}
+        // // Do not use ref anchorEl, anchor in Dashboard save changes button doesn't render properly
+        // anchorElGetter={() => anchorRef.current?.getBoundingClientRect()}
+        anchorEl={anchorRef.current}
         arrow
         closeButtonPosition='disable'
         paperClassName={classes.anchorPaper}
-        placement={props.placement || 'bottom'}
         {...props.ClosablePopperProps}
+        disablePortal={props.disablePortal}
+        placement={activeStep.placement || props.placement || props.ClosablePopperProps?.placement || 'bottom'}
+        zIndex={activeStep.zIndex !== undefined ? activeStep.zIndex
+          : (props.zIndex !== undefined ? props.zIndex : props.ClosablePopperProps?.zIndex)}
       >
         {!!activeStep.title && (
           <Typography variant='h6'>{activeStep.title}</Typography>
@@ -363,7 +413,7 @@ export const TourAnchor = React.forwardRef((props: {
           <Typography variant='body1' color='textSecondary'>{activeStep.description}</Typography>
         )}
         <div className={classes.actionArea}>
-          {stepsTotal > 0 && stepIndex !== undefined && (
+          {stepsTotal > 1 && stepIndex !== undefined && (
             <MobileStepper
               className={classes.stepper}
               variant='dots'
@@ -380,6 +430,11 @@ export const TourAnchor = React.forwardRef((props: {
               {typeof activeStep.showButtonNext === 'string' ? activeStep.showButtonNext : (!!nextStepId ? 'Next' : 'Finish')}
             </Button>
           )}
+          {!!activeStep.showButtonComplete && (
+            <Button color='primary' onClick={complete}>
+              {typeof activeStep.showButtonComplete === 'string' ? activeStep.showButtonComplete : 'Finish'}
+            </Button>
+          )}
         </div>
       </ClosablePopper>
     );
@@ -391,17 +446,17 @@ export const TourAnchor = React.forwardRef((props: {
 
   var content = (
     <>
-      {typeof props.children === 'function' ? props.children(next, isActive) : props.children}
+      {typeof props.children === 'function' ? props.children(next, isActive, anchorRef) : props.children}
       {scrollTo}
       {popper}
     </>
   );
 
-  if (!props.anchorRef) {
+  if (typeof props.children !== 'function') {
     content = (
-      <span ref={anchorRef} className={props.className}>
+      <div ref={anchorRef} className={props.className} {...props.DivProps}>
         {content}
-      </span>
+      </div>
     );
   }
 

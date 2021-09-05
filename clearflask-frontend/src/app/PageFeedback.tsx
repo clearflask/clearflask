@@ -206,7 +206,7 @@ const PageFeedback = (props: {
               server={props.server}
               onClickPostExpand
               filterPosts={post => post.ideaId !== createdPostId}
-              wrapPost={(post, postNode, index) => (
+              wrapPost={(post, postNode, index, selected) => (
                 <div className={classes.similarWrap}>
                   <SubmitButton
                     isSubmitting={relatedIsSubmittingPostId === post.ideaId}

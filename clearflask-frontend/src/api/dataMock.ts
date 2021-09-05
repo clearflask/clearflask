@@ -480,7 +480,9 @@ class DataMock {
     return Promise.resolve();
   }
 
-  static mockAccountCreate(): Promise<Admin.AccountAdmin> {
+  static async getOrMockAccountCreate(): Promise<Admin.AccountAdmin> {
+    const account = ServerMock.get().account;
+    if (account) return account;
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
         name: 'Matus Faro',

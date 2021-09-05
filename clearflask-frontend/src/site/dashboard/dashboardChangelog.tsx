@@ -5,8 +5,10 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
+import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import { Orientation } from '../../common/ContentScroll';
 import { LayoutState } from '../../common/Layout';
+import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, getProjectLink, PostPreviewSize } from "../Dashboard";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
@@ -109,20 +111,35 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
       size: PostPreviewSize,
       header: {
         title: { title: 'Changelog' },
-        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        action: {
+          label: 'Create',
+          onClick: () => this.pageClicked('post'),
+          tourAnchorProps: {
+            anchorId: 'changelog-page-create-btn',
+          },
+        },
         right: changelogLink && (
-          <Button
-            className={this.props.classes.headerAction}
-            component={'a' as any}
-            href={changelogLink}
-            target='_blank'
-            underline='none'
-            rel='noopener nofollow'
-          >
-            Public view
-            &nbsp;
-            <VisibilityIcon fontSize='inherit' />
-          </Button>
+          <TourAnchor anchorId='changelog-page-public-view' placement='bottom'>
+            {(next, isActive, anchorRef) => (
+              <Button
+                ref={anchorRef}
+                className={this.props.classes.headerAction}
+                component={'a' as any}
+                onClick={() => {
+                  next();
+                  tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
+                }}
+                href={changelogLink}
+                target='_blank'
+                underline='none'
+                rel='noopener nofollow'
+              >
+                Public view
+                &nbsp;
+                <VisibilityIcon fontSize='inherit' />
+              </Button>
+            )}
+          </TourAnchor>
         ),
       },
     },

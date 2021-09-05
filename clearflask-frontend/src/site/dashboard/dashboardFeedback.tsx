@@ -193,11 +193,11 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
       <div className={classNames(layoutState.enableBoxLayout && this.props.classes.feedbackQuickActionsTopMargin)}>
         <Provider store={ServerAdmin.get().getStore()}>
           <TourAnchor anchorId='feedback-page-link-or-merge' placement='left'>
-            {(next, isActive) => (
-              <>
+            {(next, isActive, anchorRef) => (
+              <span ref={anchorRef}>
                 {renderRelatedContent('task', isActive)}
                 {renderRelatedContent('feedback', isActive)}
-              </>
+              </span>
             )}
           </TourAnchor>
         </Provider>

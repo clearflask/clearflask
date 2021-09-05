@@ -97,7 +97,7 @@ export interface Props {
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
   renderPost?: (post: Client.Idea, index: number) => React.ReactNode;
   renderEmpty?: () => React.ReactNode;
-  wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number) => React.ReactNode;
+  wrapPost?: (post: Client.Idea, postNode: React.ReactNode, index: number, selected: boolean) => React.ReactNode;
   filterPosts?: (post: Client.Idea) => boolean;
   onHasAnyChanged?: (hasAny: boolean, count: number) => void;
   navigatorRef?: MutableRef<PanelPostNavigator>;
@@ -277,7 +277,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           );
         }
         if (this.props.wrapPost) {
-          content = this.props.wrapPost(idea, content, ideaIndex);
+          content = this.props.wrapPost(idea, content, ideaIndex, this.props.selected === idea.ideaId);
         }
         if (this.props.selectable) {
           content = this.selectableWrapItem(idea.ideaId, content);

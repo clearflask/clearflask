@@ -861,7 +861,7 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
     <>
       <IconButton
         onClick={() => setDemoOpen(true)}
-        ref={anchorRef}
+        innerRef={anchorRef}
       >
         {props.children}
       </IconButton>

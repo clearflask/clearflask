@@ -26,6 +26,7 @@ import CustomPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescripti
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
+import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
 import DataSettings from '../../common/config/settings/DataSettings';
@@ -52,6 +53,7 @@ import MyColorPicker from '../../common/MyColorPicker';
 import { FilterControlSelect } from '../../common/search/FilterControls';
 import SubmitButton from '../../common/SubmitButton';
 import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
+import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
 import randomUuid from '../../common/util/uuid';
@@ -275,9 +277,11 @@ export const ProjectSettingsInstallPortal = (props: {
     <Section
       title='Portal'
       preview={(
-        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-          <ProjectSettingsInstallPortalPreview server={props.server} />
-        </Provider>
+        <TourAnchor anchorId='settings-install-portal-code' placement='bottom'>
+          <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+            <ProjectSettingsInstallPortalPreview server={props.server} />
+          </Provider>
+        </TourAnchor>
       )}
       content={(
         <>
@@ -791,12 +795,18 @@ export const ProjectSettingsDomain = (props: {
         <PropertyByPath overrideDescription='' server={props.server} editor={props.editor} path={['slug']} />
         <Typography variant='h6' component='div' className={classes.domainFieldText}>&nbsp;{`.${windowIso.parentDomain}`}</Typography>
       </div>
-      <div className={classes.domainField}>
-        <Typography variant='h6' component='div' className={classes.domainFieldText}>https://&nbsp;</Typography>
-        <PropertyByPath overrideDescription='' server={props.server} editor={props.editor} path={['domain']} />
-      </div>
-      <Typography variant='body1' component='div'>Ensure your DNS settings are configured with your domain set to CNAME sni.clearflask.com</Typography>
-      <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
+      <TourAnchor anchorId='settings-domain-custom' placement='top-start'>
+        {(next, isActive, anchorRef) => (
+          <div ref={anchorRef} className={classes.domainField}>
+            <Typography variant='h6' component='div' className={classes.domainFieldText}>https://&nbsp;</Typography>
+            <PropertyByPath overrideDescription='' server={props.server} editor={props.editor} path={['domain']} TextFieldProps={{ onKeyDown: next }} />
+          </div>
+        )}
+      </TourAnchor>
+      <TourAnchor anchorId='settings-domain-dns-info' placement='bottom'>
+        <Typography variant='body1' component='div'>Ensure your DNS settings are configured with your domain set to CNAME sni.clearflask.com</Typography>
+        <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
+      </TourAnchor>
     </ProjectSettingsBase>
   );
 }
@@ -907,218 +917,247 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
     </div>
   );
   return (
-    <>
+    <Provider store={ServerAdmin.get().getStore()}>
       <UpgradeWrapper accountBasePlanId={props.accountBasePlanId} subscriptionStatus={props.accountSubscriptionStatus} propertyPath={['users', 'onboarding', 'visibility']}>
-        <ToggleButtonGroup
-          className={classes.usersVisibilityButtonGroup}
-          size='large'
-          exclusive
-          value={visibility || ''}
-          onChange={(e, val) => {
-            const visibilityProp = (props.editor.getProperty(['users', 'onboarding', 'visibility']) as ConfigEditor.EnumProperty);
-            if (val === 'Private' && visibilityProp.value !== Admin.OnboardingVisibilityEnum.Private) {
-              visibilityProp.set(Admin.OnboardingVisibilityEnum.Private);
-              (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'anonymous']) as ConfigEditor.ObjectProperty).set(undefined);
-              (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'browserPush']) as ConfigEditor.BooleanProperty).set(false);
-              (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).set(undefined);
-            } else if (val === 'Public' && visibilityProp.value !== Admin.OnboardingVisibilityEnum.Public) {
-              visibilityProp.set(Admin.OnboardingVisibilityEnum.Public);
-              (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).set(undefined);
-            }
-          }}
-        >
-          <ToggleButton value='Public' classes={{ label: classes.usersVisibilityButton }}>
-            PUBLIC
-            <Typography variant='caption' display='block'>Anyone can see</Typography>
-          </ToggleButton>
-          <ToggleButton value='Private' classes={{ label: classes.usersVisibilityButton }}>
-            PRIVATE
-            <Typography variant='caption' display='block'>Restricted access</Typography>
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </UpgradeWrapper>
-      <FormControlLabel
-        label={checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
-        className={classes.usersOnboardOption}
-        control={(
-          <Checkbox
-            color='primary'
-            checked={!!sso}
-            onChange={e => {
-              if (sso) {
-                (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'sso']) as ConfigEditor.ObjectProperty).set(undefined);
-              } else {
-                history.push(`/dashboard/settings/project/onboard/sso`);
-                props.onPageClicked?.();
-              }
-            }}
-          />
-        )}
-      />
-      <FormControlLabel
-        label={checkboxLabel('OAuth', visibility === Admin.OnboardingVisibilityEnum.Public
-          ? 'Authenticate from an external service such as Facebook, Google or GitHub'
-          : 'Authenticate from your OAuth-compatible service')}
-        className={classes.usersOnboardOption}
-        control={(
-          <Checkbox
-            color='primary'
-            checked={!!oauthNum}
-            onChange={e => {
-              if (oauthNum) {
-                const oauthProp = props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'oauth']) as ConfigEditor.ArrayProperty;
-                for (var i = 0; i < oauthNum; i++) {
-                  oauthProp.delete(0);
+        <TourAnchor anchorId='settings-onboard-visibility' placement='bottom'>
+          {(next, isActive, anchorRef) => (
+            <ToggleButtonGroup
+              ref={anchorRef}
+              className={classes.usersVisibilityButtonGroup}
+              size='large'
+              exclusive
+              value={visibility || ''}
+              onChange={(e, val) => {
+                const visibilityProp = (props.editor.getProperty(['users', 'onboarding', 'visibility']) as ConfigEditor.EnumProperty);
+                if (val === 'Private' && visibilityProp.value !== Admin.OnboardingVisibilityEnum.Private) {
+                  visibilityProp.set(Admin.OnboardingVisibilityEnum.Private);
+                  (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'anonymous']) as ConfigEditor.ObjectProperty).set(undefined);
+                  (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'browserPush']) as ConfigEditor.BooleanProperty).set(false);
+                  (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).set(undefined);
+                } else if (val === 'Public' && visibilityProp.value !== Admin.OnboardingVisibilityEnum.Public) {
+                  visibilityProp.set(Admin.OnboardingVisibilityEnum.Public);
+                  (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).set(undefined);
                 }
-              } else {
-                history.push(`/dashboard/settings/project/onboard/oauth`);
-                props.onPageClicked?.();
-              }
-            }}
-          />
-        )}
-      />
-      <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Private} classes={{ wrapperInner: classes.usersOnboardOptions }}>
-        <FormControlLabel
-          label={(
-            <span className={classes.usersInlineTextField}>
-              Email from&nbsp;
-              <TextField
-                style={{ width: 140 }}
-                placeholder='company.com'
-                required
-                disabled={!email}
-                error={!!email && !allowedDomain}
-                value={allowedDomain}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position='start'>
-                      <EmailAtIcon fontSize='inherit' />
-                    </InputAdornment>
-                  ),
-                }}
-                onChange={e => setAllowedDomain(e.target.value || '')}
-              />
-            </span>
+                next();
+                tourSetGuideState('visibility', TourDefinitionGuideState.Completed);
+              }}
+            >
+              <ToggleButton value='Public' classes={{ label: classes.usersVisibilityButton }}>
+                PUBLIC
+                <Typography variant='caption' display='block'>Anyone can see</Typography>
+              </ToggleButton>
+              <ToggleButton value='Private' classes={{ label: classes.usersVisibilityButton }}>
+                PRIVATE
+                <Typography variant='caption' display='block'>Restricted access</Typography>
+              </ToggleButton>
+            </ToggleButtonGroup>
           )}
-          className={classes.usersOnboardOption}
-          control={(
-            <Checkbox
-              color='primary'
-              checked={!!email?.allowedDomains}
-              indeterminate={!!email && !email.allowedDomains}
-              onChange={e => {
-                (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).setRaw(!email?.allowedDomains
-                  ? Admin.EmailSignupToJSON({
-                    mode: Admin.EmailSignupModeEnum.SignupAndLogin,
-                    password: Admin.EmailSignupPasswordEnum.None,
-                    verification: Admin.EmailSignupVerificationEnum.None,
-                    allowedDomains: [allowedDomain],
-                  }) : undefined);
-              }}
-            />
-          )}
-        />
-        <div className={classNames(classes.usersOnboardOption, classes.usersInlineTextField)}>
-          <Typography variant='body1' component='span'>Invite moderators by email</Typography>
-          <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
-            <SelectionPicker
-              style={{
-                flexGrow: 1,
-              }}
-              TextFieldProps={{
-                variant: 'outlined',
-                size: 'small',
-                fullWidth: true,
-              }}
-              disabled={inviteModsSubmitting}
-              showTags
-              limitTags={1}
-              isMulti
-              placeholder={`joe@${websiteWithoutProtocol || 'xyz.com'}`}
-              value={inviteModsLabels}
-              options={inviteModsLabels}
-              onValueCreate={email => setInviteMods([...inviteMods, email])}
-              onValueChange={labels => setInviteMods([...(labels.map(l => l.value))])}
-            />
-            {!inviteModsControlled && (
-              <SubmitButton
-                aria-label='Invite'
-                color='primary'
-                style={{ visibility: !inviteModsLabels.length ? 'hidden' : undefined }}
-                isSubmitting={inviteModsSubmitting}
-                onClick={async () => {
-                  setInviteModsSubmitting(true);
-                  const d = await props.server.dispatchAdmin();
-                  const inviteModsRemaining = new Set(inviteMods);
-                  try {
-                    for (const mod of inviteMods) {
-                      d.userCreateAdmin({
-                        projectId: props.server.getProjectId(),
-                        userCreateAdmin: {
-                          email: mod,
-                        },
-                      });
-                      inviteModsRemaining.delete(mod);
+        </TourAnchor>
+      </UpgradeWrapper>
+      <TourAnchor anchorId='settings-onboard-methods' placement='top'>
+        {(next, isActive, anchorRef) => (
+          <div ref={anchorRef}>
+            <FormControlLabel
+              label={checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
+              className={classes.usersOnboardOption}
+              control={(
+                <Checkbox
+                  color='primary'
+                  checked={!!sso}
+                  onChange={e => {
+                    if (sso) {
+                      (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'sso']) as ConfigEditor.ObjectProperty).set(undefined);
+                    } else {
+                      history.push(`/dashboard/settings/project/onboard/sso`);
+                      props.onPageClicked?.();
                     }
-                  } catch (e) { }
-                  setInviteMods([...inviteModsRemaining]);
-                  setInviteModsSubmitting(false);
-                }}
-              >Send</SubmitButton>
-            )}
+                    next();
+                    tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                  }}
+                />
+              )}
+            />
+            <FormControlLabel
+              label={checkboxLabel('OAuth', visibility === Admin.OnboardingVisibilityEnum.Public
+                ? 'Authenticate from an external service such as Facebook, Google or GitHub'
+                : 'Authenticate from your OAuth-compatible service')}
+              className={classes.usersOnboardOption}
+              control={(
+                <Checkbox
+                  color='primary'
+                  checked={!!oauthNum}
+                  onChange={e => {
+                    if (oauthNum) {
+                      const oauthProp = props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'oauth']) as ConfigEditor.ArrayProperty;
+                      for (var i = 0; i < oauthNum; i++) {
+                        oauthProp.delete(0);
+                      }
+                    } else {
+                      history.push(`/dashboard/settings/project/onboard/oauth`);
+                      props.onPageClicked?.();
+                    }
+                    next();
+                    tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                  }}
+                />
+              )}
+            />
+            <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Private} classes={{ wrapperInner: classes.usersOnboardOptions }}>
+              <FormControlLabel
+                label={(
+                  <span className={classes.usersInlineTextField}>
+                    Email from&nbsp;
+                    <TextField
+                      style={{ width: 140 }}
+                      placeholder='company.com'
+                      required
+                      disabled={!email}
+                      error={!!email && !allowedDomain}
+                      value={allowedDomain}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position='start'>
+                            <EmailAtIcon fontSize='inherit' />
+                          </InputAdornment>
+                        ),
+                      }}
+                      onChange={e => {
+                        setAllowedDomain(e.target.value || '');
+                        next();
+                        tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                      }}
+                    />
+                  </span>
+                )}
+                className={classes.usersOnboardOption}
+                control={(
+                  <Checkbox
+                    color='primary'
+                    checked={!!email?.allowedDomains}
+                    indeterminate={!!email && !email.allowedDomains}
+                    onChange={e => {
+                      (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).setRaw(!email?.allowedDomains
+                        ? Admin.EmailSignupToJSON({
+                          mode: Admin.EmailSignupModeEnum.SignupAndLogin,
+                          password: Admin.EmailSignupPasswordEnum.None,
+                          verification: Admin.EmailSignupVerificationEnum.None,
+                          allowedDomains: [allowedDomain],
+                        }) : undefined);
+                      next();
+                      tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                    }}
+                  />
+                )}
+              />
+              <div className={classNames(classes.usersOnboardOption, classes.usersInlineTextField)}>
+                <Typography variant='body1' component='span'>Invite moderators by email</Typography>
+                <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                  <SelectionPicker
+                    style={{
+                      flexGrow: 1,
+                    }}
+                    TextFieldProps={{
+                      variant: 'outlined',
+                      size: 'small',
+                      fullWidth: true,
+                    }}
+                    disabled={inviteModsSubmitting}
+                    showTags
+                    limitTags={1}
+                    isMulti
+                    placeholder={`joe@${websiteWithoutProtocol || 'xyz.com'}`}
+                    value={inviteModsLabels}
+                    options={inviteModsLabels}
+                    onValueCreate={email => setInviteMods([...inviteMods, email])}
+                    onValueChange={labels => setInviteMods([...(labels.map(l => l.value))])}
+                  />
+                  {!inviteModsControlled && (
+                    <SubmitButton
+                      aria-label='Invite'
+                      color='primary'
+                      style={{ visibility: !inviteModsLabels.length ? 'hidden' : undefined }}
+                      isSubmitting={inviteModsSubmitting}
+                      onClick={async () => {
+                        setInviteModsSubmitting(true);
+                        const d = await props.server.dispatchAdmin();
+                        const inviteModsRemaining = new Set(inviteMods);
+                        try {
+                          for (const mod of inviteMods) {
+                            d.userCreateAdmin({
+                              projectId: props.server.getProjectId(),
+                              userCreateAdmin: {
+                                email: mod,
+                              },
+                            });
+                            inviteModsRemaining.delete(mod);
+                          }
+                        } catch (e) { }
+                        setInviteMods([...inviteModsRemaining]);
+                        setInviteModsSubmitting(false);
+                      }}
+                    >Send</SubmitButton>
+                  )}
+                </div>
+              </div>
+            </Collapse>
+            <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Public} classes={{ wrapperInner: classes.usersOnboardOptions }}>
+              <FormControlLabel
+                label={checkboxLabel('Guest', 'Allow users to sign up as a Guest. Hidden if Browser Push is available.')}
+                className={classes.usersOnboardOption}
+                control={(
+                  <Checkbox
+                    color='primary'
+                    checked={!!anonymous}
+                    onChange={e => {
+                      (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'anonymous']) as ConfigEditor.ObjectProperty).setRaw(!anonymous
+                        ? Admin.AnonymousSignupToJSON({ onlyShowIfPushNotAvailable: true }) : undefined);
+                      next();
+                      tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                    }}
+                  />
+                )}
+              />
+              <FormControlLabel
+                label={checkboxLabel('Browser Push', 'Allow users to sign up by receiving push messages directly in their browser')}
+                className={classes.usersOnboardOption}
+                control={(
+                  <Checkbox
+                    color='primary'
+                    checked={!!browserPush}
+                    onChange={e => {
+                      (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'browserPush']) as ConfigEditor.BooleanProperty).set(!browserPush);
+                      next();
+                      tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                    }}
+                  />
+                )}
+              />
+              <FormControlLabel
+                label={checkboxLabel('Email', 'Allow users to sign up with their email')}
+                className={classes.usersOnboardOption}
+                control={(
+                  <Checkbox
+                    color='primary'
+                    checked={!!email}
+                    indeterminate={!!email?.allowedDomains}
+                    onChange={e => {
+                      (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).setRaw(!email
+                        ? Admin.EmailSignupToJSON({
+                          mode: Admin.EmailSignupModeEnum.SignupAndLogin,
+                          password: Admin.EmailSignupPasswordEnum.None,
+                          verification: Admin.EmailSignupVerificationEnum.None,
+                        }) : undefined);
+                      next();
+                      tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                    }}
+                  />
+                )}
+              />
+            </Collapse>
           </div>
-        </div>
-      </Collapse>
-      <Collapse mountOnEnter in={visibility === Admin.OnboardingVisibilityEnum.Public} classes={{ wrapperInner: classes.usersOnboardOptions }}>
-        <FormControlLabel
-          label={checkboxLabel('Guest', 'Allow users to sign up as a Guest. Hidden if Browser Push is available.')}
-          className={classes.usersOnboardOption}
-          control={(
-            <Checkbox
-              color='primary'
-              checked={!!anonymous}
-              onChange={e => {
-                (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'anonymous']) as ConfigEditor.ObjectProperty).setRaw(!anonymous
-                  ? Admin.AnonymousSignupToJSON({ onlyShowIfPushNotAvailable: true }) : undefined);
-              }}
-            />
-          )}
-        />
-        <FormControlLabel
-          label={checkboxLabel('Browser Push', 'Allow users to sign up by receiving push messages directly in their browser')}
-          className={classes.usersOnboardOption}
-          control={(
-            <Checkbox
-              color='primary'
-              checked={!!browserPush}
-              onChange={e => {
-                (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'browserPush']) as ConfigEditor.BooleanProperty).set(!browserPush);
-              }}
-            />
-          )}
-        />
-        <FormControlLabel
-          label={checkboxLabel('Email', 'Allow users to sign up with their email')}
-          className={classes.usersOnboardOption}
-          control={(
-            <Checkbox
-              color='primary'
-              checked={!!email}
-              indeterminate={!!email?.allowedDomains}
-              onChange={e => {
-                (props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email']) as ConfigEditor.ObjectProperty).setRaw(!email
-                  ? Admin.EmailSignupToJSON({
-                    mode: Admin.EmailSignupModeEnum.SignupAndLogin,
-                    password: Admin.EmailSignupPasswordEnum.None,
-                    verification: Admin.EmailSignupVerificationEnum.None,
-                  }) : undefined);
-              }}
-            />
-          )}
-        />
-      </Collapse>
-    </>
+        )}
+      </TourAnchor>
+    </Provider>
   );
 }
 export const ProjectSettingsUsersSso = (props: {

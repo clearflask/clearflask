@@ -164,12 +164,12 @@ const DashboardQuickActions = (props: {
       {roadmapNextStatusActions?.length && (
         <Provider store={ServerAdmin.get().getStore()}>
           <TourAnchor anchorId='feedback-page-convert-to-task' placement='left'>
-            {(next, isActive) => (
+            {(next, isActive, anchorRef) => (
               <>
                 <FilterControlTitle name='Convert to task' className={classes.feedbackTitle} help={{
                   description: helperConvertToTask,
                 }} />
-                <div className={classes.postActionGroup}>
+                <div className={classes.postActionGroup} ref={anchorRef}>
                   {roadmapNextStatusActions.map(status => (
                     <QuickActionArea
                       key={status.statusId}

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { ClickAwayListener, Fade, IconButton, Paper, Popper, PopperPlacementType, PopperProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { ZIndex } from '@material-ui/core/styles/zIndex';
 import { TransitionProps } from '@material-ui/core/transitions';
 import CloseIcon from '@material-ui/icons/Close';
 import classNames from 'classnames';
@@ -54,7 +55,11 @@ const styles = (theme: Theme) => createStyles({
     },
   },
   popper: {
-    zIndex: (props: Props) => props.zIndex !== undefined ? props.zIndex : theme.zIndex.modal + 1,
+    zIndex: (props: Props) => props.zIndex === undefined
+      ? theme.zIndex.modal + 1
+      : (typeof props.zIndex === 'number'
+        ? props.zIndex
+        : props.zIndex(theme.zIndex)),
     '&[x-placement*="bottom"] $arrow': {
       top: 0,
       left: 0,
@@ -101,7 +106,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props extends PopperProps {
   paperClassName?: string;
-  zIndex?: number;
+  zIndex?: number | ((zIndexBreakpoints: ZIndex) => number);
   onClose: () => void;
   /** Convenience method instead of anchorEl */
   anchorElGetter?: () => undefined | {

@@ -1859,7 +1859,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
 export const PostTitle = (props: {
   variant: PostVariant;
-  editable?: (title: React.ReactNode) => React.ReactNode;
+  editable?: React.ReactNode | ((title: React.ReactNode) => React.ReactNode);
 } & Pick<Client.Idea, 'title'>
   & Partial<Pick<Client.PostDisplay, 'titleTruncateLines' | 'descriptionTruncateLines'>>
   & Pick<StateSettings, 'demoBlurryShadow'>
@@ -1872,7 +1872,7 @@ export const PostTitle = (props: {
     : props.title;
 
   if (props.editable) {
-    title = props.editable(title);
+    title = typeof props.editable === 'function' ? props.editable(title) : props.editable;
   }
 
   return (

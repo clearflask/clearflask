@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ClosablePopper from './ClosablePopper';
+import { TourAnchor } from './tour';
 import { SCROLL_TO_STATE_KEY } from './util/ScrollAnchor';
 
 export interface MenuDropdown {
@@ -21,6 +22,7 @@ export type MenuButton = {
   primary?: boolean;
   title: string;
   scrollState?: string;
+  tourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 } & ({
   link: string;
   linkIsExternal?: boolean;
@@ -242,7 +244,7 @@ export function MenuItemButton(props: {
 }) {
   const classes = useStyles();
   const Icon = props.item.icon
-  var linkProps: object | undefined;
+  var linkProps: any | undefined;
   if (props.item['linkIsExternal'] !== undefined) {
     linkProps = {
       component: 'a',
@@ -270,8 +272,9 @@ export function MenuItemButton(props: {
       underline: 'none',
     };
   }
-  return (
+  const genButton = (extraOnClick?: () => void, anchorRef?: React.Ref<any>) => (
     <Button
+      ref={anchorRef}
       size='large'
       key={props.item.title}
       color={props.item.primary ? 'primary' : 'inherit'}
@@ -283,6 +286,10 @@ export function MenuItemButton(props: {
         props.insideDropdown && classes.buttonInsideDropdown,
         props.insideDrawer && classes.buttonInsideDrawer)}
       {...linkProps}
+      onClick={e => {
+        linkProps?.onClick?.(e);
+        extraOnClick?.();
+      }}
     >
       {props.item.title}
       {Icon && (
@@ -292,6 +299,11 @@ export function MenuItemButton(props: {
         </>
       )}
     </Button>
+  );
+  return !props.item.tourAnchorProps ? genButton() : (
+    <TourAnchor {...props.item.tourAnchorProps}>
+      {(next, isActive, anchorRef) => genButton(next, anchorRef)}
+    </TourAnchor>
   );
 };
 

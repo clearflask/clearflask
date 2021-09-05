@@ -10,6 +10,7 @@ import Menu, { MenuHeading, MenuItem, MenuProject } from '../../common/config/se
 import Page from '../../common/config/settings/Page';
 import { Orientation } from '../../common/ContentScroll';
 import { SectionContent } from '../../common/Layout';
+import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
@@ -227,16 +228,22 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             Preview
           </Button>
         )}
-        <Button
-          variant='contained'
-          disableElevation
-          color='primary'
-          style={{ marginLeft: 8 }}
-          onClick={() => this.publishChanges(activeProject)
-            .then(versionedConfigAdmin => this.setState({ settingsPreviewChanges: undefined }))}
-        >
-          Publish
-        </Button>
+        <TourAnchor anchorId='settings-publish-changes' placement='top' disablePortal>
+          {(next, isActive, anchorRef) => (
+            <Button
+              ref={anchorRef}
+              variant='contained'
+              disableElevation
+              color='primary'
+              style={{ marginLeft: 8 }}
+              onClick={() => this.publishChanges(activeProject)
+                .then(versionedConfigAdmin => this.setState({ settingsPreviewChanges: undefined }))
+                .then(next)}
+            >
+              Publish
+            </Button>
+          )}
+        </TourAnchor>
       </div>
     ) : undefined;
   }

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Fade, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Divider, Fade, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -29,7 +29,7 @@ import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
-import ClearFlaskTourProvider from '../common/ClearFlaskTourProvider';
+import ClearFlaskTourProvider, { tourSetGuideState } from '../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
@@ -43,8 +43,7 @@ import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
-import SubmitButton from '../common/SubmitButton';
-import { TourChecklist } from '../common/tour';
+import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
@@ -65,7 +64,6 @@ import DashboardPost from './dashboard/DashboardPost';
 import { renderRoadmap } from './dashboard/dashboardRoadmap';
 import { renderSettings } from './dashboard/dashboardSettings';
 import { renderUsers } from './dashboard/dashboardUsers';
-import { ProjectSettingsInstallPortal, ProjectSettingsUsersOnboarding } from './dashboard/ProjectSettings';
 import DemoApp from './DemoApp';
 import Logo from './Logo';
 
@@ -289,10 +287,6 @@ interface State {
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
   previewShowOnPage?: string;
-  publishDialogShown?: boolean;
-  publishDialogStep?: number;
-  publishDialogSubmitting?: boolean;
-  publishDialogInviteMods?: string[];
   dragDropSensorApi?: SensorAPI;
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state
@@ -520,9 +514,16 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   changelog={this.state.changelog || undefined}
                 />
               </Provider>
-              <Provider store={ServerAdmin.get().getStore()}>
-                <TourChecklist />
-              </Provider>
+              { // On page load, before feedback/roadmap/changelog is loaded,
+                // checklist renders without these guides and the incorrect group is auto-expanded.
+                // So we wait for these to load before rendering checklist
+                (this.state.feedback !== undefined
+                  && this.state.roadmap !== undefined
+                  && this.state.changelog !== undefined) && (
+                  <Provider store={ServerAdmin.get().getStore()}>
+                    <TourChecklist />
+                  </Provider>
+                )}
               {/* <Hidden smDown>
                 <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                   <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>
@@ -638,7 +639,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
         break;
     }
 
-    const notYetPublished = !!activeProject?.editor.getConfig().notYetPublished;
     const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
     const projectLink = (!!activeProjectConf && !!context.showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
@@ -652,7 +652,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           toolbarShow={!context.isOnboarding}
           toolbarLeft={(
             <div className={this.props.classes.toolbarLeft}>
-              <Logo suppressMargins suppressName />
               <Tabs
                 className={this.props.classes.tabs}
                 variant='standard'
@@ -671,7 +670,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   to='/dashboard'
                   value='home'
                   disableRipple
-                  label='Home'
+                  label={(<Logo suppressMargins />)}
                   classes={{
                     root: this.props.classes.tabRoot,
                   }}
@@ -746,8 +745,14 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
             <>
               <MenuItems
                 items={[
-                  ...((!!projectLink && !notYetPublished) ? [{ type: 'button' as 'button', onClick: () => !windowIso.isSsr && windowIso.open(projectLink, '_blank'), title: 'Visit', icon: VisitIcon }] : []),
-                  ...((!!context.showProjectLink && !!notYetPublished) ? [{ type: 'button' as 'button', onClick: () => this.setState({ publishDialogShown: !this.state.publishDialogShown }), title: 'Publish', primary: true, icon: VisitIcon }] : []),
+                  ...(!!projectLink ? [{
+                    type: 'button' as 'button', tourAnchorProps: {
+                      anchorId: 'dashboard-visit-portal', placement: 'bottom' as 'bottom',
+                    }, onClick: () => {
+                      !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                      tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
+                    }, title: 'Visit', icon: VisitIcon
+                  }] : []),
                   {
                     type: 'dropdown', title: this.props.account.name, items: [
                       ...(projects.map(p => ({
@@ -788,98 +793,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           previewForceShowClose={!!context.previewOnClose}
           sections={context.sections}
         />
-        {!!activeProject && (notYetPublished || this.state.publishDialogShown) && (
-          <Dialog
-            maxWidth='md'
-            fullWidth={this.props.width === 'xs'}
-            open={!!this.state.publishDialogShown}
-            onClose={() => this.setState({ publishDialogShown: false })}
-            scroll='body'
-            PaperProps={{
-              style: { maxWidth: 730 },
-            }}
-          >
-            <Collapse unmountOnExit in={(this.state.publishDialogStep || 0) === 0}>
-              <DialogTitle>User onboarding</DialogTitle>
-              <DialogContent>
-                <DialogContentText>Choose how your users will access your portal</DialogContentText>
-                <ProjectSettingsUsersOnboarding
-                  server={activeProject.server}
-                  editor={activeProject.editor}
-                  onPageClicked={() => this.setState({ publishDialogShown: false })}
-                  inviteMods={this.state.publishDialogInviteMods || []}
-                  setInviteMods={mods => this.setState({ publishDialogInviteMods: mods })}
-                />
-              </DialogContent>
-            </Collapse>
-            <Collapse in={(this.state.publishDialogStep || 0) === 1}>
-              <DialogTitle>Installation</DialogTitle>
-              <DialogContent>
-                <DialogContentText>Link your product website or app with your ClearFlask portal</DialogContentText>
-                <ProjectSettingsInstallPortal server={activeProject.server} editor={activeProject.editor} />
-                <Link
-                  to='/dashboard/settings/project/install'
-                  onClick={() => this.setState({ publishDialogShown: false })}
-                >See more options</Link>
-              </DialogContent>
-            </Collapse>
-            <DialogActions>
-              <Button onClick={() => this.setState({ publishDialogShown: false })}>Cancel</Button>
-              {(this.state.publishDialogStep || 0) === 0 && (
-                <SubmitButton
-                  isSubmitting={this.state.publishDialogSubmitting}
-                  color='primary'
-                  variant='contained'
-                  disableElevation
-                  onClick={async e => {
-                    if (!activeProject) return;
-                    this.setState({ publishDialogSubmitting: true });
-                    (activeProject.editor.getProperty(['notYetPublished']) as ConfigEditor.BooleanProperty).set(false);
-                    try {
-                      await this.publishChanges(activeProject);
-                    } catch (e) {
-                      this.setState({ publishDialogSubmitting: false });
-                      return;
-                    }
-                    const d = await activeProject.server.dispatchAdmin();
-                    const inviteModsRemaining = new Set(this.state.publishDialogInviteMods);
-                    try {
-                      for (const mod of this.state.publishDialogInviteMods || []) {
-                        d.userCreateAdmin({
-                          projectId: activeProject.server.getProjectId(),
-                          userCreateAdmin: {
-                            email: mod,
-                          },
-                        });
-                        inviteModsRemaining.delete(mod);
-                      }
-                    } catch (e) {
-                      this.setState({ publishDialogSubmitting: false });
-                      return;
-                    } finally {
-                      this.setState({ publishDialogInviteMods: [...inviteModsRemaining] });
-                    }
-                    this.setState({
-                      publishDialogSubmitting: false,
-                      publishDialogStep: (this.state.publishDialogStep || 0) + 1,
-                    });
-                  }}>Publish</SubmitButton>
-              )}
-              {(this.state.publishDialogStep || 0) === 1 && (
-                <Button
-                  color='primary'
-                  variant='contained'
-                  disableElevation
-                  onClick={e => {
-                    !windowIso.isSsr && windowIso.open(projectLink, '_blank');
-                    this.setState({
-                      publishDialogShown: false,
-                    });
-                  }}>Visit Portal</Button>
-              )}
-            </DialogActions>
-          </Dialog>
-        )}
       </>
     );
 

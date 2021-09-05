@@ -5,6 +5,9 @@ import DragmeIcon from '@material-ui/icons/DragIndicator';
 import classNames from 'classnames';
 import React from 'react';
 import { Draggable, DraggableProvided, DropAnimation, Droppable, DroppableId, DroppableProvidedProps } from 'react-beautiful-dnd';
+import { Provider, useStore } from 'react-redux';
+import ServerAdmin from '../../api/serverAdmin';
+import { TourAnchor } from '../../common/tour';
 import { customReactMemoEquals } from '../../common/util/reactUtil';
 import { droppableDataDeserialize } from './dashboardDndActionHandler';
 import PostList, { DashboardListPostSpacing } from './PostList';
@@ -47,6 +50,7 @@ const useStyles = makeStyles(styles);
 const DragndropPostList = React.memo((props: {
   droppable?: boolean;
   droppableId: string;
+  dragSelectedTourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 } & React.ComponentProps<typeof PostList>) => {
   const { droppable, droppableId, ...PostListProps } = props;
   return (
@@ -57,13 +61,14 @@ const DragndropPostList = React.memo((props: {
             providedDroppableInnerRef={providedDroppable.innerRef}
             PostListProps={PostListProps}
             DroppableProvidedProps={providedDroppable.droppableProps}
+            dragSelectedTourAnchorProps={props.dragSelectedTourAnchorProps}
           />
           {providedDroppable.placeholder && (<div style={{ display: 'none' }}>{providedDroppable.placeholder}</div>)}
         </>
       )}
     </Droppable>
   );
-}, customReactMemoEquals({ nested: new Set(['PostListProps', 'DroppableProvidedProps']) }));
+}, customReactMemoEquals({ nested: new Set(['dragSelectedTourAnchorProps', 'PostListProps', 'DroppableProvidedProps']) }));
 DragndropPostList.displayName = 'DragndropPostList';
 export default DragndropPostList;
 
@@ -72,6 +77,7 @@ const DragndropPostListDroppableInner = React.memo((props: {
   providedDroppableInnerRef;
   PostListProps: React.ComponentProps<typeof PostList>;
   DroppableProvidedProps: DroppableProvidedProps;
+  dragSelectedTourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 }) => {
   const classes = useStyles();
   return (
@@ -82,17 +88,23 @@ const DragndropPostListDroppableInner = React.memo((props: {
       ref={props.providedDroppableInnerRef}
       {...props.DroppableProvidedProps}
     >
-      <DragndropPostListPostListInner PostListProps={props.PostListProps} />
+      <DragndropPostListPostListInner
+        PostListProps={props.PostListProps}
+        dragSelectedTourAnchorProps={props.dragSelectedTourAnchorProps}
+      />
     </div>
   );
-}, customReactMemoEquals({ nested: new Set(['PostListProps', 'DroppableProvidedProps']) }));
+}, customReactMemoEquals({ nested: new Set(['dragSelectedTourAnchorProps', 'PostListProps', 'DroppableProvidedProps']) }));
 DragndropPostListDroppableInner.displayName = 'DragndropPostListDroppableInner';
 
+var lastSelectedId: string | undefined;
 // Optimization to not re-render children during dragging
 const DragndropPostListPostListInner = React.memo((props: {
   PostListProps: React.ComponentProps<typeof PostList>;
+  dragSelectedTourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 }) => {
   const theme = useTheme();
+  const store = useStore();
   return (
     <PostList
       {...props.PostListProps}
@@ -104,21 +116,41 @@ const DragndropPostListPostListInner = React.memo((props: {
             draggableId={post.ideaId}
             index={index}
           >
-            {(providedDraggable, snapshotDraggable) => (
-              <DragndropPostListDraggableInner
-                providedDraggable={providedDraggable}
-                isDragging={snapshotDraggable.isDragging}
-                draggingOver={snapshotDraggable.draggingOver}
-                dropAnimation={snapshotDraggable.dropAnimation}
-                content={content}
-              />
-            )}
+            {(providedDraggable, snapshotDraggable) => {
+              var inner = content;
+              if (props.dragSelectedTourAnchorProps) {
+                if (!!props.PostListProps.selected && lastSelectedId !== props.PostListProps.selected) {
+                  lastSelectedId = props.PostListProps.selected;
+                }
+                if (lastSelectedId === post.ideaId) {
+                  inner = (
+                    <Provider store={ServerAdmin.get().getStore()}>
+                      <TourAnchor placement='top' {...props.dragSelectedTourAnchorProps} zIndex={zb => zb.modal - 1}>
+                        <Provider store={store}>
+                          {inner}
+                        </Provider>
+                      </TourAnchor>
+                    </Provider>
+                  );
+                }
+              }
+              inner = (
+                <DragndropPostListDraggableInner
+                  providedDraggable={providedDraggable}
+                  isDragging={snapshotDraggable.isDragging}
+                  draggingOver={snapshotDraggable.draggingOver}
+                  dropAnimation={snapshotDraggable.dropAnimation}
+                  content={inner}
+                />
+              );
+              return inner as any;
+            }}
           </Draggable>
         ),
       }}
     />
   );
-}, customReactMemoEquals({ nested: new Set(['PostListProps']) }));
+}, customReactMemoEquals({ nested: new Set(['dragSelectedTourAnchorProps', 'PostListProps']) }));
 DragndropPostListPostListInner.displayName = 'DragndropPostListPostListInner';
 
 // Optimization to not re-render children during dragging

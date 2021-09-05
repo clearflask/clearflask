@@ -20,10 +20,12 @@ import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
+import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import CreditCard from '../../common/CreditCard';
 import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
+import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { isTracking } from '../../common/util/detectEnv';
 import { initialWidth } from '../../common/util/screenUtil';
 import windowIso from '../../common/windowIso';
@@ -334,13 +336,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         break;
     }
     const creditCard = (
-      <CreditCard
-        className={this.props.classes.creditCard}
-        brand={cardStateIcon}
-        numberInput={cardNumber}
-        expiryInput={cardExpiry}
-        cvcInput={(<span className={this.props.classes.blurry}>642</span>)}
-      />
+      <TourAnchor anchorId='settings-credit-card' placement='bottom'>
+        <CreditCard
+          className={this.props.classes.creditCard}
+          brand={cardStateIcon}
+          numberInput={cardNumber}
+          expiryInput={cardExpiry}
+          cvcInput={(<span className={this.props.classes.blurry}>642</span>)}
+        />
+      </TourAnchor>
     );
 
     const paymentStripeAction: PaymentStripeAction | undefined = this.props.accountBilling?.paymentActionRequired?.actionType === 'stripe-next-action'
@@ -456,22 +460,28 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 >Contact support</Button>
               )}
               {showSetPayment && (
-                <SubmitButton
-                  isSubmitting={this.state.isSubmitting}
-                  disabled={this.state.showAddPayment}
-                  onClick={() => {
-                    if (isTracking()) {
-                      ReactGA.event({
-                        category: 'billing',
-                        action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
-                        label: this.props.accountBilling?.plan.basePlanId,
-                      });
-                    }
-                    this.setState({ showAddPayment: true })
-                  }}
-                >
-                  {setPaymentTitle}
-                </SubmitButton>
+                <TourAnchor anchorId='settings-add-payment-open' placement='bottom'>
+                  {(next, isActive, anchorRef) => (
+                    <SubmitButton
+                      buttonRef={anchorRef}
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.showAddPayment}
+                      onClick={() => {
+                        if (isTracking()) {
+                          ReactGA.event({
+                            category: 'billing',
+                            action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
+                            label: this.props.accountBilling?.plan.basePlanId,
+                          });
+                        }
+                        this.setState({ showAddPayment: true });
+                        next();
+                      }}
+                    >
+                      {setPaymentTitle}
+                    </SubmitButton>
+                  )}
+                </TourAnchor>
               )}
               {showCancelSubscription && (
                 <SubmitButton
@@ -501,26 +511,36 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             >
               <ElementsConsumer>
                 {({ elements, stripe }) => (
-                  <>
-                    <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
-                    <DialogContent className={this.props.classes.center}>
-                      <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
-                      <Collapse in={!!this.state.stripePaymentError}>
-                        <Message message={this.state.stripePaymentError} severity='error' />
-                      </Collapse>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={() => this.setState({ showAddPayment: undefined })}>
-                        Cancel
-                      </Button>
-                      <SubmitButton
-                        isSubmitting={this.state.isSubmitting}
-                        disabled={!this.state.stripePaymentFilled || !elements || !stripe}
-                        color='primary'
-                        onClick={() => this.onPaymentSubmit(elements!, stripe!)}
-                      >{setPaymentAction || 'Add'}</SubmitButton>
-                    </DialogActions>
-                  </>
+                  <TourAnchor anchorId='settings-add-payment-popup' placement='top'>
+                    {(next, isActive, anchorRef) => (
+                      <div ref={anchorRef}>
+                        <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
+                        <DialogContent className={this.props.classes.center}>
+                          <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
+                          <Collapse in={!!this.state.stripePaymentError}>
+                            <Message message={this.state.stripePaymentError} severity='error' />
+                          </Collapse>
+                        </DialogContent>
+                        <DialogActions>
+                          <Button onClick={() => this.setState({ showAddPayment: undefined })}>
+                            Cancel
+                          </Button>
+                          <SubmitButton
+                            isSubmitting={this.state.isSubmitting}
+                            disabled={!this.state.stripePaymentFilled || !elements || !stripe}
+                            color='primary'
+                            onClick={async () => {
+                              const success = await this.onPaymentSubmit(elements!, stripe!);
+                              if (success) {
+                                next();
+                                tourSetGuideState('add-payment', TourDefinitionGuideState.Completed);
+                              }
+                            }}
+                          >{setPaymentAction || 'Add'}</SubmitButton>
+                        </DialogActions>
+                      </div>
+                    )}
+                  </TourAnchor>
                 )}
               </ElementsConsumer>
             </Dialog>
@@ -647,11 +667,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         title='Plan'
         preview={(
           <div className={this.props.classes.planContainer}>
-            <PricingPlan
-              selected
-              className={this.props.classes.plan}
-              plan={this.props.accountBilling.plan}
-            />
+            <TourAnchor anchorId='settings-billing-plan' placement='bottom' disablePortal>
+              <PricingPlan
+                selected
+                className={this.props.classes.plan}
+                plan={this.props.accountBilling.plan}
+              />
+            </TourAnchor>
             {(this.props.accountBilling?.trackedUsers !== undefined) && (
               <Box display='grid' gridTemplateAreas='"mauLbl mauAmt"' alignItems='baseline' gridGap='10px 10px'>
                 <Box gridArea='mauLbl'><Typography component='div'>Tracked users:</Typography></Box>
@@ -782,7 +804,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     !windowIso.isSsr && windowIso.open(`${windowIso.location.origin}/invoice/${invoiceId}`, '_blank')
   }
 
-  async onPaymentSubmit(elements: StripeElements, stripe: Stripe) {
+  async onPaymentSubmit(elements: StripeElements, stripe: Stripe): Promise<boolean> {
     if (isTracking()) {
       ReactGA.event({
         category: 'billing',
@@ -800,7 +822,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         stripePaymentError: 'Payment processor not initialized yet',
         isSubmitting: false,
       });
-      return;
+      return false;
     }
 
     const tokenResult = await stripe.createToken(cardNumberElement);
@@ -811,7 +833,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           : 'Payment processor failed for unknown reason',
         isSubmitting: false,
       });
-      return;
+      return false;
     }
 
     const dispatcher = await ServerAdmin.get().dispatchAdmin();
@@ -830,7 +852,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         isSubmitting: false,
         stripePaymentError: 'Failed to add payment',
       });
-      return;
+      return false;
     }
 
     try {
@@ -840,10 +862,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         isSubmitting: false,
         stripePaymentError: 'Failed to add payment',
       });
-      return;
+      return false;
     }
 
     this.setState({ isSubmitting: false, showAddPayment: undefined });
+    return true;
   }
 
   getFrameActionWidth(): number {
