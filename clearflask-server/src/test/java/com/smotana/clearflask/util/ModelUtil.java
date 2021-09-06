@@ -78,7 +78,6 @@ public class ModelUtil {
                 new Integrations(null, null, null),
                 null,
                 null,
-                null,
                 null
         ), IdUtil.randomAscId());
     }
