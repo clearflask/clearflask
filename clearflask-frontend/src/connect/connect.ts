@@ -82,9 +82,12 @@ function createApp(serverHttpp) {
   }));
 
   serverApp.get('/api', function (req, res) {
-    res.header(`Cache-Control', 'public, max-age=${7 * 24 * 60 * 60}`);
-    replaceAndSend(res, '/api/index.html')
-    res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'index.html'));
+    res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
+    if (connectConfig.parentDomain !== 'clearflask.com') {
+      replaceAndSend(res, '/api/index.html');
+    } else {
+      res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'index.html'));
+    }
   });
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
