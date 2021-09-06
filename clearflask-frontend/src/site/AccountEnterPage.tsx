@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Collapse, Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
-import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme, WithStyles } from '@material-ui/core/styles';
 import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { withStyles } from '@material-ui/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -18,6 +19,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
+import Loading from '../app/utils/Loading';
 import AcceptTerms from '../common/AcceptTerms';
 import Hr from '../common/Hr';
 import GoogleIcon from '../common/icon/GoogleIcon';
@@ -27,7 +29,6 @@ import { saltHashPassword } from '../common/util/auth';
 import { detectEnv, Environment, isProd, isTracking } from '../common/util/detectEnv';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
-import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
 
@@ -40,6 +41,11 @@ export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string =
   return !!account
     ? `${url}?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}`
     : url;
+}
+
+interface OauthExtraData {
+  selectedPlanId?: string;
+  invitationId?: string;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -56,7 +62,8 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     padding: theme.spacing(2),
-    minHeight: '100vh',
+    minHeight: 800,
+    height: '100vh',
     overflow: 'hidden',
   },
   titleClearFlask: {
@@ -64,15 +71,23 @@ const styles = (theme: Theme) => createStyles({
   },
   paperContainerContainer: {
     width: '100%',
-    display: 'flex',
     margin: theme.spacing(1),
+    position: 'relative',
   },
   paperContainer: {
-    flex: 1,
-    transition: theme.transitions.create(['flex', 'margin']),
+    width: 'max-content',
+    position: 'absolute',
+    transition: theme.transitions.create(['left', 'transform']),
+    left: 0,
+    transform: 'translate(0, -50%)',
   },
-  paperContainerAlternateLayout: {
-    flex: 'none',
+  paperContainerCenter: {
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+  paperContainerRight: {
+    left: '100%',
+    transform: 'translate(-100%, -50%)',
   },
   paper: {
     display: 'flex',
@@ -108,24 +123,37 @@ const styles = (theme: Theme) => createStyles({
     textTransform: 'none',
   },
   enterTemplate: {
-    minHeight: vh(100),
+    height: '100%',
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
   },
+  expired: {
+    color: theme.palette.error.dark,
+  },
+  inviteeName: {
+    fontWeight: 'bold',
+  },
+  projectName: {
+    fontWeight: 'bold',
+  },
 });
 const useStyles = makeStyles(styles);
 interface Props {
-  type: 'login' | 'signup';
+  type: 'login' | 'signup' | 'invitation';
+  invitationId?: string;
 }
 interface ConnectProps {
-  callOnMount?: () => void,
   accountStatus?: Status;
   account?: Admin.AccountAdmin;
-  cfJwt?: string;
+  plansStatus?: Status;
   plans?: Admin.Plan[];
+  cfJwt?: string;
+  invitationStatus?: Status;
+  invitation?: Admin.InvitationResult;
 }
 interface State {
+  invitationType?: 'login' | 'signup';
   isSubmitting?: boolean;
   useEmail?: boolean; // login & signup
   email?: string; // login & signup
@@ -155,12 +183,21 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
     const oauthToken = this.oauthFlow.checkResult();
 
     if (this.props.accountStatus === undefined) {
+      var basePlanId: string | undefined, invitationId: string | undefined;
+      if (oauthToken?.extraData) {
+        try {
+          const oauthExtraData = JSON.parse(oauthToken?.extraData) as OauthExtraData;
+          invitationId = oauthExtraData?.invitationId;
+          basePlanId = oauthExtraData?.selectedPlanId;
+        } catch (e) { }
+      }
       ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({
         accountBindAdmin: {
           oauthToken: !oauthToken ? undefined : {
             id: oauthToken.id,
             code: oauthToken.code,
-            basePlanId: oauthToken?.extraData,
+            basePlanId,
+            invitationId,
           },
         },
       })).then(result => {
@@ -168,18 +205,31 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         !!result.account && this.oauthFlow.broadcastSuccess();
       });
     }
-
-    this.props.callOnMount?.();
   }
 
   render() {
+    if (this.props.plansStatus === undefined) {
+      ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true }).then(d => d
+        .plansGet());
+    }
+    if (this.props.invitationId && !this.props.invitation) {
+      const invitationId = this.props.invitationId;
+      ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true, ssrStatusPassthrough: true }).then(dispatcher => dispatcher
+        .accountViewInvitationAdmin({ invitationId }));
+    }
+
+    if (this.props.type === 'invitation') {
+      return this.renderInvitation();
+    }
+
     if (this.props.accountStatus === Status.FULFILLED && !!this.props.account) {
       if (this.props.cfJwt && this.cfReturnUrl) {
         windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
       }
       return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] ||
-        (this.bindCausedAccountCreation ? '/welcome' : '/dashboard')} />);
+        (this.props.invitationId ? `/invitation/${this.props.invitationId}`
+          : (this.bindCausedAccountCreation ? '/welcome' : '/dashboard'))} />);
     }
 
     const selectedPlanId = ((this.props.location.state as any)?.[PRE_SELECTED_BASE_PLAN_ID] as string | undefined)
@@ -224,7 +274,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
                 >
                   <GoogleIcon />
-                  &nbsp;&nbsp;{signUpOrLogIn}with Google
+                  &nbsp;&nbsp;{signUpOrLogIn}Google
                 </Button>
                 <Button
                   className={this.props.classes.oauthEnter}
@@ -234,7 +284,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
                 >
                   <GithubIcon />
-                  &nbsp;&nbsp;{signUpOrLogIn}with GitHub
+                  &nbsp;&nbsp;{signUpOrLogIn}GitHub
                 </Button>
               </>
             )}
@@ -247,7 +297,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                 onClick={e => this.setState({ useEmail: true })}
               >
                 <EmailIcon />
-                &nbsp;&nbsp;{signUpOrLogIn}with Email
+                &nbsp;&nbsp;{signUpOrLogIn}Email
               </Button>
             </Collapse>
             <Collapse in={this.state.useEmail}>
@@ -332,10 +382,85 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
             || !!this.state.emailIsFreeOrDisposable)}
         isSubmitting={this.state.isSubmitting}
         onSubmit={this.props.type === 'signup' ? this.signUp.bind(this, selectedPlanId!) : this.onLogin.bind(this)}
-        footerText={this.props.type === 'signup' ? 'Have an account?' : 'No account?'}
-        footerActionText={this.props.type === 'signup' ? 'Log in Here!' : 'Sign up Here!'}
-        footerLinkTo={this.props.type === 'signup' ? '/login' : 'signup'}
-        alternateLayout={this.props.type === 'signup'}
+        footer={this.props.type === 'signup' ? {
+          text: 'Have an account?',
+          actionText: 'Log in Here!',
+          linkTo: `/login${this.props.invitationId ? `/${this.props.invitationId}` : ''}`,
+        } : {
+          text: 'No account?',
+          actionText: 'Sign up Here!',
+          linkTo: `/signup${this.props.invitationId ? `/${this.props.invitationId}` : ''}`,
+        }}
+        layout={this.props.type}
+      />
+    );
+  }
+
+  renderInvitation() {
+    const isLoggedIn = this.props.accountStatus === Status.FULFILLED && !!this.props.account;
+    const expired = !this.props.invitationId || this.props.invitationStatus === Status.REJECTED || (this.props.invitationStatus === Status.FULFILLED && !this.props.invitation);
+    const loading = !this.props.invitation && !expired;
+    const accepted = this.props.invitation?.isAcceptedByYou;
+    return (
+      <EnterTemplate
+        title={!!this.props.invitation ? (
+          <>
+            {'Invitation from '}
+            <span className={this.props.classes.titleClearFlask}>{this.props.invitation?.inviteeName}</span>
+          </>
+        ) : (expired ? (
+          <span className={this.props.classes.expired}>Invitation expired</span>
+        ) : 'Invitation loading...')}
+        renderContent={submitButton => (
+          <>
+            {!!this.props.invitation ? (
+              <div>
+                {!!accepted && (
+                  <p>You have successfully joined the project&nbsp;<span className={this.props.classes.projectName}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
+                )}
+                {!accepted && (
+                  <p>You have been invited to join the project&nbsp;<span className={this.props.classes.projectName}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
+                )}
+                {!isLoggedIn && (
+                  <p>Please sign up or log in to accept this invitation.</p>
+                )}
+              </div>
+            ) : (expired ? (
+              'Please let your friend know to send you another invitation by email.'
+            ) : (
+              <Loading />
+            ))}
+            {submitButton}
+          </>
+        )}
+        submitTitle={expired ? undefined : (!isLoggedIn ? 'Sign up' : (!accepted ? 'Accept' : 'Open'))}
+        submitDisabled={!this.props.invitation}
+        isSubmitting={this.state.isSubmitting}
+        onSubmit={async () => {
+          if (!isLoggedIn) {
+            this.props.history.push(`/signup/${this.props.invitationId}`)
+          } else if (!!this.props.invitationId && !!this.props.invitation?.isAcceptedByYou) {
+            this.props.history.push('/dashboard');
+          } else if (!!this.props.invitationId) {
+            this.setState({ isSubmitting: true });
+            try {
+              const acceptedInvitation = await (await ServerAdmin.get().dispatchAdmin()).accountAcceptInvitationAdmin({
+                invitationId: this.props.invitationId,
+              });
+              // Refresh projects
+              await (await ServerAdmin.get().dispatchAdmin()).configGetAllAndUserBindAllAdmin();
+              this.props.history.push(`/dashboard?projectId=${acceptedInvitation.projectId}`)
+            } finally {
+              this.setState({ isSubmitting: false });
+            }
+          }
+        }}
+        footer={!isLoggedIn && !expired ? {
+          text: 'Have an account?',
+          actionText: 'Log in Here!',
+          linkTo: `/login/${this.props.invitationId}`,
+        } : undefined}
+        layout={this.props.type}
       />
     );
   }
@@ -344,7 +469,11 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
     this.oauthFlow.listenForSuccess(() => {
       ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     });
-    this.oauthFlow.openForAccount(type, selectedPlanId);
+    const extraData: OauthExtraData = {
+      selectedPlanId,
+      invitationId: this.props.invitationId,
+    };
+    this.oauthFlow.openForAccount(type, JSON.stringify(extraData));
   }
 
   onLogin() {
@@ -383,48 +512,53 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
           email: this.state.email!,
           password: saltHashPassword(this.state.pass!),
           basePlanId: selectedPlanId,
+          invitationId: this.props.invitation ? this.props.invitationId : undefined,
         }
       });
-    } catch (err) {
+    } finally {
       this.setState({ isSubmitting: false });
-      return;
     }
-    this.props.history.push('/dashboard/welcome');
+    this.props.history.push(this.props.invitationId
+      ? `/invitation/${this.props.invitationId}`
+      : '/dashboard/welcome');
   }
 }
 
 const EnterTemplate = (props: {
   title: React.ReactNode;
   renderContent: (submitButton: React.ReactNode) => React.ReactNode;
-  submitTitle: React.ReactNode;
+  submitTitle?: React.ReactNode;
   submitDisabled?: boolean;
   isSubmitting?: boolean;
   onSubmit: () => void;
-  footerText: string;
-  footerActionText: string;
-  footerLinkTo: string;
-  alternateLayout?: boolean;
+  footer?: {
+    text: string;
+    actionText: string;
+    linkTo: string;
+  };
+  layout?: Props['type'];
 }) => {
   const classes = useStyles();
-  const a = !!props.alternateLayout;
+  const a = props.layout === 'signup';
   return (
     <div className={classes.page}>
       <Container maxWidth='md' className={classes.enterTemplate}>
-        <AnimBubble delay='0ms' duration='400ms' size={a ? 350 : 100} x={a ? 420 : 50} y={a ? 70 : 210} />
-        <AnimBubble delay='20ms' duration='200ms' size={a ? 100 : 300} x={a ? 800 : 400} y={a ? 130 : 50} />
-        <AnimBubble delay='40ms' duration='300ms' size={a ? 150 : 500} x={a ? 520 : -200} y={a ? 470 : 700} />
-        <AnimBubble delay='100ms' duration='500ms' size={a ? 300 : 150} x={a ? 900 : 350} y={a ? 700 : 500} />
-        <AnimBubble delay='100ms' duration='500ms' size={a ? 500 : 300} x={a ? 1300 : 900} y={a ? 450 : 700} />
+        <AnimBubble delay='0ms' duration='400ms' size={props.layout === 'signup' ? 350 : (props.layout === 'login' ? 100 : 400)} x={props.layout === 'signup' ? 420 : (props.layout === 'login' ? 50 : 100)} y={props.layout === 'signup' ? 70 : (props.layout === 'login' ? 210 : 0)} />
+        <AnimBubble delay='20ms' duration='200ms' size={props.layout === 'signup' ? 100 : (props.layout === 'login' ? 300 : 200)} x={props.layout === 'signup' ? 800 : (props.layout === 'login' ? 400 : 650)} y={props.layout === 'signup' ? 130 : (props.layout === 'login' ? 50 : 250)} />
+        <AnimBubble delay='40ms' duration='300ms' size={props.layout === 'signup' ? 150 : (props.layout === 'login' ? 500 : 100)} x={props.layout === 'signup' ? 520 : (props.layout === 'login' ? -200 : 100)} y={props.layout === 'signup' ? 470 : (props.layout === 'login' ? 700 : 500)} />
+        <AnimBubble delay='100ms' duration='500ms' size={props.layout === 'signup' ? 300 : (props.layout === 'login' ? 150 : 700)} x={props.layout === 'signup' ? 900 : (props.layout === 'login' ? 350 : 800)} y={props.layout === 'signup' ? 700 : (props.layout === 'login' ? 500 : 950)} />
+        <AnimBubble delay='100ms' duration='500ms' size={props.layout === 'signup' ? 500 : (props.layout === 'login' ? 300 : 400)} x={props.layout === 'signup' ? 1300 : (props.layout === 'login' ? 900 : 1100)} y={props.layout === 'signup' ? 450 : (props.layout === 'login' ? 700 : 150)} />
         <div className={classes.paperContainerContainer}>
           <div className={classNames(
             classes.paperContainer,
-            !!props.alternateLayout && classes.paperContainerAlternateLayout,
+            props.layout === 'login' && classes.paperContainerRight,
+            props.layout === 'invitation' && classes.paperContainerCenter,
           )}>
             <Paper className={classes.paper}>
               <Typography component='h1' variant='h4' color='textPrimary' className={classes.welcomeBack}>
                 {props.title}
               </Typography>
-              {props.renderContent((
+              {props.renderContent(!props.submitTitle ? null : (
                 <SubmitButton
                   className={classes.submitButton}
                   color='primary'
@@ -437,16 +571,18 @@ const EnterTemplate = (props: {
                   onClick={props.onSubmit}
                 >{props.submitTitle}</SubmitButton>
               ))}
-              <div>
-                <Typography component="span" variant="caption" color="textPrimary">
-                  {props.footerText}&nbsp;
-                </Typography>
-                <Link to={props.footerLinkTo} className={classes.signUpHere}>
-                  <Typography component="span" variant="caption" color="primary">
-                    {props.footerActionText}
+              {props.footer && (
+                <div>
+                  <Typography component='span' variant='caption' color='textPrimary'>
+                    {props.footer.text}&nbsp;
                   </Typography>
-                </Link>
-              </div>
+                  <Link to={props.footer.linkTo} className={classes.signUpHere}>
+                    <Typography component='span' variant='caption' color='primary'>
+                      {props.footer.actionText}
+                    </Typography>
+                  </Link>
+                </div>
+              )}
             </Paper>
           </div>
         </div>
@@ -460,13 +596,11 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
+    plansStatus: state.plans.plans.status,
     plans: state.plans.plans.plans,
     cfJwt: state.account.account.account?.cfJwt,
+    invitationStatus: ownProps.invitationId ? state.invitations.byId[ownProps.invitationId]?.status : undefined,
+    invitation: ownProps.invitationId ? state.invitations.byId[ownProps.invitationId]?.invitation : undefined,
   };
-  if (state.plans.plans.status === undefined) {
-    connectProps.callOnMount = () => {
-      ServerAdmin.get().dispatchAdmin({ ssr: true }).then(d => d.plansGet());
-    };
-  }
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(AccountEnterPage)));

@@ -1056,6 +1056,19 @@ components:
           $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
         version:
           type: string
+    ProjectAdmin:
+      allOf:
+        - $ref: 'api-account.yaml#/components/schemas/Account'
+        - type: object
+          required:
+            - role
+          properties:
+            role:
+              type: string
+              enum:
+                - Owner
+                - Admin
+                - Invited
 
 /slug/{slug}/bind/configAndUser:
   post:
@@ -1358,3 +1371,61 @@ components:
             schema:
               type: string
               format: binary
+/project/{projectId}/admin/admins:
+  get:
+    operationId: projectAdminsListAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsListResult
+              type: object
+              required:
+              - admins
+              properties:
+                admins:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/ProjectAdmin'
+  post:
+    operationId: projectAdminsInviteAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: email
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: projectAdminsRemoveAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: accountId
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

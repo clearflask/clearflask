@@ -89,7 +89,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   superLoggedIn: boolean = false;
   // Mock account login (server-side cookie data)
   loggedIn: boolean = false;
-  account?: Admin.AccountAdmin & { planId: string } = undefined;
+  account?: Admin.AccountAdmin & {
+    planId: string;
+    acceptedInvitations: Set<string>;
+  } = undefined;
   accountPass?: string = undefined;
   // Mock project database
   readonly db: {
@@ -105,6 +108,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       transactions: Admin.Transaction[];
       balances: { [userId: string]: number };
       notifications: Client.Notification[];
+      admins: Array<Admin.ProjectAdmin>;
     }
   } = {};
   nextCommentId = 10000;
@@ -153,6 +157,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
           basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-monthly',
+          invitationId: request.accountBindAdmin.oauthToken.invitationId,
         }
       }).then(account => ({
         account,
@@ -219,6 +224,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.accountPass = request.accountSignupAdmin.password;
     this.account = {
       planId: account.basePlanId,
+      acceptedInvitations: new Set(request.accountSignupAdmin.invitationId ? [request.accountSignupAdmin.invitationId] : []),
       ...account
     };
     this.loggedIn = true;
@@ -286,6 +292,47 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.account.basePlanId = basePlanId;
     };
     return this.returnLater(this.account);
+  }
+  accountViewInvitationAdmin(request: Admin.AccountViewInvitationAdminRequest): Promise<Admin.InvitationResult> {
+    return this.returnLater({
+      inviteeName: 'John Doe',
+      projectName: 'My project',
+      role: Admin.InvitationResultRoleEnum.Admin,
+      isAcceptedByYou: this.account?.acceptedInvitations.has(request.invitationId),
+    });
+  }
+  accountAcceptInvitationAdmin(request: Admin.AccountAcceptInvitationAdminRequest): Promise<Admin.AccountAcceptInvitationResponse> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    this.account.acceptedInvitations.add(request.invitationId);
+    this.getProject(request.invitationId); // Create project
+    return this.returnLater({ projectId: request.invitationId });
+  }
+  projectAdminsInviteAdmin(request: Admin.ProjectAdminsInviteAdminRequest): Promise<void> {
+    const admin = {
+      accountId: randomUuid(),
+      email: request.email,
+      name: '',
+      role: Admin.ProjectAdminRoleEnum.Invited,
+    };
+    this.getProject(request.projectId).admins.push(admin);
+
+    // Accept invite later
+    setTimeout(() => {
+      admin.name = 'John Doe';
+      admin.role = Admin.ProjectAdminRoleEnum.Admin;
+    }, 3000);
+
+    return this.returnLater(undefined);
+  }
+  projectAdminsListAdmin(request: Admin.ProjectAdminsListAdminRequest): Promise<Admin.ProjectAdminsListResult> {
+    return this.returnLater({
+      admins: this.getProject(request.projectId).admins
+    });
+  }
+  projectAdminsRemoveAdmin(request: Admin.ProjectAdminsRemoveAdminRequest): Promise<void> {
+    this.getProject(request.projectId).admins = this.getProject(request.projectId).admins
+      .filter(admin => admin.accountId !== request.accountId);
+    return this.returnLater(undefined);
   }
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
@@ -1452,6 +1499,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         commentVotes: [],
         balances: {},
         notifications: [],
+        admins: this.account ? [{
+          accountId: this.account.accountId,
+          email: this.account.email,
+          name: this.account.name,
+          role: Admin.ProjectAdminRoleEnum.Owner,
+        }] : [],
       };
       this.db[projectId] = project;
     }

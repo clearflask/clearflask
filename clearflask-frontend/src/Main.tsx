@@ -182,10 +182,17 @@ class Main extends Component<Props> {
                           </Provider>
                         )} />
                       ), (
-                        <Route key='enter' exact path='/:type(login|signup)' render={props => (
+                        <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
-                            <SetTitle title={props.match.params['type'] === 'login' ? 'Login' : 'Sign up'} />
-                            <AccountEnterPage type={props.match.params['type'] === 'login' ? 'login' : 'signup'} />
+                            <SetTitle title={props.match.params['type'] === 'login'
+                              ? 'Login'
+                              : (props.match.params['type'] === 'signup'
+                                ? 'Sign up'
+                                : 'Invitation')} />
+                            <AccountEnterPage
+                              type={props.match.params['type']}
+                              invitationId={props.match.params['invitationId']}
+                            />
                           </Provider>
                         )} />
                       )] : []),

@@ -181,6 +181,7 @@ public interface AccountStore {
 
         public com.smotana.clearflask.api.model.Account toAccount() {
             return new com.smotana.clearflask.api.model.Account(
+                    getAccountId(),
                     getName(),
                     getEmail());
         }

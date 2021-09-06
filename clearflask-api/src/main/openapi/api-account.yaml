@@ -125,6 +125,8 @@ components:
             # Used if creating a new account
             basePlanId:
               type: string
+            invitationId:
+              type: string
     AccountSignupAdmin:
       type: object
       required:
@@ -141,12 +143,17 @@ components:
           type: string
         basePlanId:
           type: string
+        invitationId:
+          type: string
     Account:
       type: object
       required:
+      - accountId
       - name
       - email
       properties:
+        accountId:
+          type: string
         name:
           type: string
         email:
@@ -456,6 +463,63 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '403':
         $ref: 'api-client.yaml#/components/responses/Forbidden'
+/admin/account/invitation:
+  get:
+    operationId: accountViewInvitationAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: invitationId
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: InvitationResult
+              type: object
+              required:
+              - inviteeName
+              - projectName
+              - role
+              properties:
+                inviteeName:
+                  type: string
+                projectName:
+                  type: string
+                role:
+                  type: string
+                  enum:
+                  - Admin
+                isAcceptedByYou:
+                  type: boolean
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  post:
+    operationId: accountAcceptInvitationAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: invitationId
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: AccountAcceptInvitationResponse
+              type: object
+              required:
+                - projectId
+              properties:
+                projectId:
+                  type: string
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /superadmin/account/loginas:
   post:
     operationId: accountLoginAsSuperAdmin
