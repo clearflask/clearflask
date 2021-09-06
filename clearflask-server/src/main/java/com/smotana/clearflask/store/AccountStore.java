@@ -3,6 +3,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountAdmin;
@@ -23,6 +24,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.support.WriteResponse;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
@@ -63,6 +65,8 @@ public interface AccountStore {
     Account updateApiKey(String accountId, String apiKey);
 
     AccountAndIndexingFuture updateStatus(String accountId, SubscriptionStatus status);
+
+    Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap);
 
     ListenableFuture<DeleteResponse> deleteAccount(String accountId);
 
@@ -166,6 +170,8 @@ public interface AccountStore {
 
         String oauthGuid;
 
+        ImmutableMap<String, String> attrs;
+
         /**
          * ClearFlask Feedback page guid
          */
@@ -189,7 +195,8 @@ public interface AccountStore {
                     cfSso.generateToken(this),
                     intercomUtil.getIdentity(getEmail()).orElse(null),
                     getApiKey(),
-                    superAdminPredicate.isEmailSuperAdmin(getEmail()));
+                    superAdminPredicate.isEmailSuperAdmin(getEmail()),
+                    getAttrs());
         }
     }
 }

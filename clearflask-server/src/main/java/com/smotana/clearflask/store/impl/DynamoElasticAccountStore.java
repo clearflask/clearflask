@@ -23,6 +23,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.Update;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -47,6 +48,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.ExpressionBuilder;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -519,6 +521,45 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId)));
 
         return new AccountAndIndexingFuture(account, indexingFuture);
+    }
+
+    @Override
+    public Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap) {
+        if (overwriteMap) {
+            return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                    .withConditionExpression("attribute_exists(#partitionKey)")
+                    .withUpdateExpression("SET #attrs = :attrs")
+                    .withNameMap(new NameMap()
+                            .with("#partitionKey", accountSchema.partitionKeyName())
+                            .with("#attrs", "attrs"))
+                    .withValueMap(new ValueMap().with(":attrs", accountSchema.toDynamoValue("attrs", attrs)))
+                    .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+        } else {
+            if (attrs == null || attrs.isEmpty()) {
+                return getAccountByAccountId(accountId).get();
+            }
+
+            ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
+            attrs.forEach((key, val) -> {
+                if (!Strings.isNullOrEmpty(val)) {
+                    expressionBuilder.add(ImmutableList.of("attrs", key), val);
+                } else {
+                    expressionBuilder.remove(ImmutableList.of("attrs", key));
+                }
+            });
+            Expression expression = expressionBuilder.build();
+            return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                    .withConditionExpression("attribute_exists(#partitionKey)")
+                    .withUpdateExpression(expression.updateExpression())
+                    .withConditionExpression(expression.conditionExpression())
+                    .withNameMap(expression.nameMap())
+                    .withValueMap(expression.valMap())
+                    .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+        }
     }
 
     @Extern

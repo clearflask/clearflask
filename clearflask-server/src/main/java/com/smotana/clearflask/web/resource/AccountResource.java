@@ -3,6 +3,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
@@ -227,7 +228,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                                         "OAuth provider did not give us your name, please sign up using an email directly.")),
                                 null,
                                 ImmutableSet.of(),
-                                oauthResult.get().getGuid())).getAccount());
+                                oauthResult.get().getGuid(),
+                                ImmutableMap.of())).getAccount());
                         created = true;
                     } catch (ApiException ex) {
                         if (Response.Status.CONFLICT.equals(ex.getStatus())) {
@@ -348,7 +350,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getName(),
                 passwordHashed,
                 ImmutableSet.of(),
-                null);
+                null,
+                ImmutableMap.of());
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -379,6 +382,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
             sanitizer.accountName(accountUpdateAdmin.getName());
             account = accountStore.updateName(account.getAccountId(), accountUpdateAdmin.getName()).getAccount();
+        }
+        if (accountUpdateAdmin.getAttrs() != null && !accountUpdateAdmin.getAttrs().isEmpty()) {
+            account = accountStore.updateAttrs(account.getAccountId(), accountUpdateAdmin.getAttrs(), account.getAttrs() == null || account.getAttrs().isEmpty());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
             // Check if it already exists

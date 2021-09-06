@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -111,7 +112,11 @@ public interface DynamoMapper {
 
         ExpressionBuilder add(String fieldName, Object object);
 
+        ExpressionBuilder add(ImmutableList<String> fieldPath, Object object);
+
         ExpressionBuilder remove(String fieldName);
+
+        ExpressionBuilder remove(ImmutableList<String> fieldPath);
 
         ExpressionBuilder delete(String fieldName, Object object);
 

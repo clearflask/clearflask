@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.store;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
@@ -32,6 +34,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Optional;
 
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
@@ -89,7 +92,8 @@ public class AccountStoreIT extends AbstractIT {
                 "name",
                 "password",
                 ImmutableSet.of(),
-                null);
+                null,
+                ImmutableMap.of());
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
@@ -149,7 +153,8 @@ public class AccountStoreIT extends AbstractIT {
                 "name",
                 "password",
                 ImmutableSet.of(),
-                null);
+                null,
+                ImmutableMap.of());
         store.createAccount(account).getIndexingFuture().get();
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -198,7 +203,8 @@ public class AccountStoreIT extends AbstractIT {
                 "name",
                 "password",
                 ImmutableSet.of(),
-                null);
+                null,
+                ImmutableMap.of());
         store.createAccount(account);
 
         String apiKey = "asdfgagasd";
@@ -206,5 +212,84 @@ public class AccountStoreIT extends AbstractIT {
         assertEquals(apiKey, account.getApiKey());
         assertEquals(Optional.of(apiKey), store.getAccountByAccountId(account.getAccountId()).map(Account::getApiKey));
         assertEquals(Optional.of(apiKey), store.getAccountByApiKey(apiKey).map(Account::getApiKey));
+    }
+
+    @Test(timeout = 30_000L)
+    public void testAccountAttrs() throws Exception {
+        Account account = new Account(
+                store.genAccountId(),
+                "my@email.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "name",
+                "password",
+                ImmutableSet.of(),
+                null,
+                // Prior to adding attrs, all accounts have this as null
+                // test the creation of this map
+                null);
+
+        HashMap<String, String> attrsExpected = null;
+        account = store.createAccount(account).getAccount();
+        assertEquals(attrsExpected, account.getAttrs());
+
+        attrsExpected = Maps.newHashMap();
+        attrsExpected.put("k1", "v1");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("k1", "v1"),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        attrsExpected = Maps.newHashMap();
+        attrsExpected.put("k2", "v2");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("k2", "v2"),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        attrsExpected.put("k1", "v3");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("k1", "v3"),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        // Removing by empty string
+        attrsExpected.remove("k2");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("k2", ""),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        // Removing by null value
+        attrsExpected.remove("k1");
+        HashMap<String, String> attrsUpdate = Maps.newHashMap(); // Hashmap supports null values
+        attrsUpdate.put("k1", null);
+        account = store.updateAttrs(account.getAccountId(),
+                attrsUpdate,
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        // Adding first value again (triggers overwrite)
+        attrsExpected.put("k3", "v4");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("k3", "v4"),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
+
+        // Key with weird characters
+        attrsExpected.put("3!@#$%^&*()-", "2!@#$%^&*()_+");
+        account = store.updateAttrs(account.getAccountId(),
+                ImmutableMap.of("3!@#$%^&*()-", "2!@#$%^&*()_+"),
+                // Same as in AccountRessource.accountUpdateAdmin
+                account.getAttrs() == null || account.getAttrs().isEmpty());
+        assertEquals(attrsExpected, account.getAttrs());
     }
 }
