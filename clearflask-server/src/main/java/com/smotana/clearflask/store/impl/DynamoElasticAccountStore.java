@@ -490,10 +490,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .build();
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                .withConditionExpression(expression.conditionExpression())
-                .withUpdateExpression(expression.updateExpression())
-                .withNameMap(expression.nameMap())
-                .withValueMap(expression.valMap())
+                .withConditionExpression(expression.conditionExpression().orElse(null))
+                .withUpdateExpression(expression.updateExpression().orElse(null))
+                .withNameMap(expression.nameMap().orElse(null))
+                .withValueMap(expression.valMap().orElse(null))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
@@ -553,10 +553,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                     .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                     .withConditionExpression("attribute_exists(#partitionKey)")
-                    .withUpdateExpression(expression.updateExpression())
-                    .withConditionExpression(expression.conditionExpression())
-                    .withNameMap(expression.nameMap())
-                    .withValueMap(expression.valMap())
+                    .withUpdateExpression(expression.updateExpression().orElse(null))
+                    .withConditionExpression(expression.conditionExpression().orElse(null))
+                    .withNameMap(expression.nameMap().orElse(null))
+                    .withValueMap(expression.valMap().orElse(null))
                     .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem());
         }

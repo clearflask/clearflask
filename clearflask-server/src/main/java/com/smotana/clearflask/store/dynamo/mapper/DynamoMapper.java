@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface DynamoMapper {
 
@@ -151,12 +152,12 @@ public interface DynamoMapper {
     }
 
     interface Expression {
-        String updateExpression();
+        Optional<String> updateExpression();
 
-        String conditionExpression();
+        Optional<String> conditionExpression();
 
-        ImmutableMap<String, String> nameMap();
+        Optional<ImmutableMap<String, String>> nameMap();
 
-        ImmutableMap<String, Object> valMap();
+        Optional<ImmutableMap<String, Object>> valMap();
     }
 }

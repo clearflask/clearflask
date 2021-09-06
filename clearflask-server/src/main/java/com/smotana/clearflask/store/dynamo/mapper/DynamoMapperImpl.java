@@ -641,31 +641,31 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 if (!deleteUpdates.isEmpty()) {
                     updates.add("DELETE " + String.join(", ", deleteUpdates.values()));
                 }
-                final String update = String.join(" ", updates);
+                final Optional<String> updateOpt = Optional.ofNullable(Strings.emptyToNull(String.join(" ", updates)));
                 final Optional<String> conditionOpt = Optional.ofNullable(Strings.emptyToNull(String.join(" AND ", conditionExpressions)));
-                final ImmutableMap<String, String> nameImmutableMap = ImmutableMap.copyOf(nameMap);
-                final ImmutableMap<String, Object> valImmutableMap = ImmutableMap.copyOf(valMap);
+                final Optional<ImmutableMap<String, String>> nameImmutableMapOpt = nameMap.isEmpty() ? Optional.empty() : Optional.of(ImmutableMap.copyOf(nameMap));
+                final Optional<ImmutableMap<String, Object>> valImmutableMapOpt = valMap.isEmpty() ? Optional.empty() : Optional.of(ImmutableMap.copyOf(valMap));
                 log.trace("Built dynamo expression: update {} condition {} nameMap {} valKeys {}",
-                        update, conditionOpt, nameImmutableMap, valImmutableMap.keySet());
+                        updateOpt, conditionOpt, nameImmutableMapOpt, valImmutableMapOpt.map(ImmutableMap::keySet));
                 return new Expression() {
                     @Override
-                    public String updateExpression() {
-                        return update;
+                    public Optional<String> updateExpression() {
+                        return updateOpt;
                     }
 
                     @Override
-                    public String conditionExpression() {
-                        return conditionOpt.orElse(null);
+                    public Optional<String> conditionExpression() {
+                        return conditionOpt;
                     }
 
                     @Override
-                    public ImmutableMap<String, String> nameMap() {
-                        return nameImmutableMap;
+                    public Optional<ImmutableMap<String, String>> nameMap() {
+                        return nameImmutableMapOpt;
                     }
 
                     @Override
-                    public ImmutableMap<String, Object> valMap() {
-                        return valImmutableMap;
+                    public Optional<ImmutableMap<String, Object>> valMap() {
+                        return valImmutableMapOpt;
                     }
                 };
             }

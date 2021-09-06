@@ -588,10 +588,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId)))
-                .withUpdateExpression(ideaExpression.updateExpression())
-                .withConditionExpression(ideaExpression.conditionExpression())
-                .withNameMap(ideaExpression.nameMap())
-                .withValueMap(ideaExpression.valMap())
+                .withUpdateExpression(ideaExpression.updateExpression().orElse(null))
+                .withConditionExpression(ideaExpression.conditionExpression().orElse(null))
+                .withNameMap(ideaExpression.nameMap().orElse(null))
+                .withValueMap(ideaExpression.valMap().orElse(null))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         Expression parentIdeaExpression = parentIdeaExpressionBuilder.build();
@@ -599,10 +599,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", parentIdeaId)))
-                .withUpdateExpression(parentIdeaExpression.updateExpression())
-                .withConditionExpression(parentIdeaExpression.conditionExpression())
-                .withNameMap(parentIdeaExpression.nameMap())
-                .withValueMap(parentIdeaExpression.valMap())
+                .withUpdateExpression(parentIdeaExpression.updateExpression().orElse(null))
+                .withConditionExpression(parentIdeaExpression.conditionExpression().orElse(null))
+                .withNameMap(parentIdeaExpression.nameMap().orElse(null))
+                .withValueMap(parentIdeaExpression.valMap().orElse(null))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
 
