@@ -67,11 +67,11 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.*;
 
 @Slf4j
@@ -487,10 +487,31 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             }
 
             @Override
+            public ExpressionBuilder add(ImmutableList<String> fieldPath, Object object) {
+                checkState(!built);
+                checkArgument(!fieldPath.isEmpty());
+                String fieldMapping = fieldMapping(fieldPath);
+                checkState(!addUpdates.containsKey(fieldMapping));
+                addUpdates.put(fieldMapping,
+                        fieldMapping + " " + valueMapping(fieldPath, object));
+                return this;
+            }
+
+            @Override
             public ExpressionBuilder remove(String fieldName) {
                 checkState(!built);
                 checkState(!removeUpdates.containsKey(fieldName));
                 removeUpdates.put(fieldName, fieldMapping(fieldName));
+                return this;
+            }
+
+            @Override
+            public ExpressionBuilder remove(ImmutableList<String> fieldPath) {
+                checkState(!built);
+                checkArgument(!fieldPath.isEmpty());
+                String fieldMapping = fieldMapping(fieldPath);
+                checkState(!addUpdates.containsKey(fieldMapping));
+                removeUpdates.put(fieldMapping, fieldMapping);
                 return this;
             }
 
@@ -509,6 +530,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 String mappedName = "#" + fieldName;
                 nameMap.put(mappedName, fieldName);
                 return mappedName;
+            }
+
+            @Override
+            public String fieldMapping(ImmutableList<String> fieldPath) {
+                return fieldPath.stream()
+                        .map(this::fieldMapping)
+                        .collect(Collectors.joining("."));
             }
 
             @Override
@@ -535,6 +563,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 }
                 valMap.put(mappedName, val);
                 return mappedName;
+            }
+
+            @Override
+            public String valueMapping(ImmutableList<String> fieldPath, Object object) {
+                return valueMapping(fieldPath.stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.joining("DOT")), object);
             }
 
             @Override

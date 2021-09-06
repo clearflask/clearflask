@@ -123,9 +123,13 @@ public interface DynamoMapper {
 
         String fieldMapping(String fieldName);
 
+        String fieldMapping(ImmutableList<String> fieldPath);
+
         String fieldMapping(String fieldName, String fieldValue);
 
         String valueMapping(String fieldName, Object object);
+
+        String valueMapping(ImmutableList<String> fieldPath, Object object);
 
 
         ExpressionBuilder condition(String expression);

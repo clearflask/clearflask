@@ -92,7 +92,7 @@
     "lodash.clonedeep": "^4.5.0",
     "lorem-ipsum": "2.0.1",
     "marked": "0.8.0",
-    "material-ui-color-picker": "3.5.1",
+    "material-ui-color-picker": "3.5.0",
     "memoizee": "^0.4.15",
     "moment": "2.29.1",
     "moment-timezone": "0.5.31",
