@@ -239,21 +239,21 @@ public class AccountStoreIT extends AbstractIT {
         attrsExpected.put("k1", "v1");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k1", "v1"),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
         attrsExpected.put("k2", "v2");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k2", "v2"),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
         attrsExpected.put("k1", "v3");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k1", "v3"),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
@@ -261,7 +261,7 @@ public class AccountStoreIT extends AbstractIT {
         attrsExpected.remove("k2");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k2", ""),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
@@ -271,7 +271,7 @@ public class AccountStoreIT extends AbstractIT {
         attrsUpdate.put("k1", null);
         account = store.updateAttrs(account.getAccountId(),
                 attrsUpdate,
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
@@ -279,7 +279,7 @@ public class AccountStoreIT extends AbstractIT {
         attrsExpected.put("k3", "v4");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k3", "v4"),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
@@ -287,7 +287,7 @@ public class AccountStoreIT extends AbstractIT {
         attrsExpected.put("3!@#$%^&*()-", "2!@#$%^&*()_+");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("3!@#$%^&*()-", "2!@#$%^&*()_+"),
-                // Same as in AccountRessource.accountUpdateAdmin
+                // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
     }

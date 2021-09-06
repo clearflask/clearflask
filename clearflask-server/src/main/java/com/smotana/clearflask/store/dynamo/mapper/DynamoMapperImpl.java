@@ -538,7 +538,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             @Override
             public String fieldMapping(String fieldName) {
                 checkState(!built);
-                String mappedName = "#" + fieldName;
+                String mappedName = "#" + sanitizeFieldMapping(fieldName);
                 nameMap.put(mappedName, fieldName);
                 return mappedName;
             }
@@ -553,7 +553,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             @Override
             public String fieldMapping(String fieldName, String fieldValue) {
                 checkState(!built);
-                String mappedName = "#" + fieldName;
+                String mappedName = "#" + sanitizeFieldMapping(fieldName);
                 nameMap.put(mappedName, fieldValue);
                 return mappedName;
             }
@@ -561,7 +561,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             @Override
             public String valueMapping(String fieldName, Object object) {
                 checkState(!built);
-                String mappedName = ":" + fieldName;
+                String mappedName = ":" + sanitizeFieldMapping(fieldName);
                 Object val;
                 if (object instanceof String) {
                     // For partition range keys and strings in general, there is no marshaller
@@ -580,7 +580,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             public String valueMapping(ImmutableList<String> fieldPath, Object object) {
                 return valueMapping(fieldPath.stream()
                         .map(String::toLowerCase)
-                        .collect(Collectors.joining("0")), object);
+                        .collect(Collectors.joining("X")), object);
             }
 
             @Override
@@ -668,6 +668,10 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                         return valImmutableMapOpt;
                     }
                 };
+            }
+
+            private String sanitizeFieldMapping(String fieldName) {
+                return fieldName.replaceAll("(^[^a-z])|[^a-zA-Z0-9]", "x");
             }
         };
 
