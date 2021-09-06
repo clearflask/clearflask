@@ -104,6 +104,8 @@ public interface DynamoMapper {
     interface ExpressionBuilder {
         ExpressionBuilder set(String fieldName, Object object);
 
+        ExpressionBuilder set(ImmutableList<String> fieldPath, Object object);
+
         ExpressionBuilder setIncrement(String fieldName, Number increment);
 
         ExpressionBuilder setExpression(String fieldName, String valueExpression);

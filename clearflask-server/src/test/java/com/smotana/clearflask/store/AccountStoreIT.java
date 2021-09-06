@@ -243,7 +243,6 @@ public class AccountStoreIT extends AbstractIT {
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
 
-        attrsExpected = Maps.newHashMap();
         attrsExpected.put("k2", "v2");
         account = store.updateAttrs(account.getAccountId(),
                 ImmutableMap.of("k2", "v2"),

@@ -450,6 +450,17 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             }
 
             @Override
+            public ExpressionBuilder set(ImmutableList<String> fieldPath, Object object) {
+                checkState(!built);
+                checkArgument(!fieldPath.isEmpty());
+                String fieldMapping = fieldMapping(fieldPath);
+                checkState(!addUpdates.containsKey(fieldMapping));
+                setUpdates.put(fieldMapping,
+                        fieldMapping + " = " + valueMapping(fieldPath, object));
+                return this;
+            }
+
+            @Override
             public ExpressionBuilder setIncrement(String fieldName, Number increment) {
                 checkState(!built);
                 checkState(!setUpdates.containsKey(fieldName));
@@ -569,7 +580,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             public String valueMapping(ImmutableList<String> fieldPath, Object object) {
                 return valueMapping(fieldPath.stream()
                         .map(String::toLowerCase)
-                        .collect(Collectors.joining("DOT")), object);
+                        .collect(Collectors.joining("0")), object);
             }
 
             @Override
@@ -634,6 +645,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 final Optional<String> conditionOpt = Optional.ofNullable(Strings.emptyToNull(String.join(" AND ", conditionExpressions)));
                 final ImmutableMap<String, String> nameImmutableMap = ImmutableMap.copyOf(nameMap);
                 final ImmutableMap<String, Object> valImmutableMap = ImmutableMap.copyOf(valMap);
+                log.trace("Built dynamo expression: update {} condition {} nameMap {} valKeys {}",
+                        update, conditionOpt, nameImmutableMap, valImmutableMap.keySet());
                 return new Expression() {
                     @Override
                     public String updateExpression() {

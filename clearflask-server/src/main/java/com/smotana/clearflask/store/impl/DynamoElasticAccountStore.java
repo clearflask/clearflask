@@ -544,7 +544,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
             attrs.forEach((key, val) -> {
                 if (!Strings.isNullOrEmpty(val)) {
-                    expressionBuilder.add(ImmutableList.of("attrs", key), val);
+                    expressionBuilder.set(ImmutableList.of("attrs", key), val);
                 } else {
                     expressionBuilder.remove(ImmutableList.of("attrs", key));
                 }
