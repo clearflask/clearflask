@@ -25,16 +25,17 @@ import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnPostCreated;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
+import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
@@ -43,6 +44,7 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
+import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -127,7 +129,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     @Inject
     private OnForgotPassword onForgotPassword;
     @Inject
-    private OnAdminInvite onAdminInvite;
+    private OnModInvite onModInvite;
+    @Inject
+    private OnTeammateInvite onTeammateInvite;
     @Inject
     private OnEmailChanged onEmailChanged;
     @Inject
@@ -424,13 +428,13 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onAdminInvite(ConfigAdmin configAdmin, UserModel user) {
+    public void onModInvite(ConfigAdmin configAdmin, UserModel user) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
         }
         if (Strings.isNullOrEmpty(user.getEmail())) {
-            log.trace("On admin invite with user having no email {}", user);
+            log.trace("On mod invite with user having no email {}", user);
             return;
         }
         submit(() -> {
@@ -440,7 +444,23 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());
 
             try {
-                emailService.send(onAdminInvite.email(configAdmin, user, link, authToken));
+                emailService.send(onModInvite.email(configAdmin, user, link, authToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onTeammateInvite(ConfigAdmin configAdmin, InvitationModel invitation) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/invite/" + invitation.getInvitationId();
+            try {
+                emailService.send(onTeammateInvite.email(invitation, lin));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

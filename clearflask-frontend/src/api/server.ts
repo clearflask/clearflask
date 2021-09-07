@@ -118,9 +118,6 @@ export class Server {
         } else if (response.status && response.status === 403) {
           errorMsg = `Action not allowed, please refresh and try again`;
           isUserFacing = true;
-        } else if (response.status && response.status === 501) {
-          errorMsg = `This feature is not yet available`;
-          isUserFacing = true;
         } else if (response.status && response.status >= 100 && response.status < 300) {
           errorMsg = `${response.status} failed ${action}`;
         } else if (response.status && response.status >= 300 && response.status < 600) {
@@ -153,6 +150,7 @@ export class Server {
       commentVotes: stateCommentVotesDefault,
       credits: stateCreditsDefault,
       notifications: stateNotificationsDefault,
+      teammates: stateTeammatesDefault,
     };
     return state;
   }
@@ -2053,6 +2051,62 @@ function reducerNotifications(state: StateNotifications = stateNotificationsDefa
   }
 }
 
+export interface StateTeammates {
+  teammates?: {
+    status?: Status;
+    teammates?: Array<Admin.ProjectAdmin>;
+    invitations?: Array<Admin.InvitationAdmin>;
+  };
+}
+const stateTeammatesDefault = {};
+function reducerTeammates(state: StateTeammates = stateTeammatesDefault, action: AllActions): StateTeammates {
+  switch (action.type) {
+    case Admin.projectAdminsRemoveAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        teammates: {
+          ...state.teammates,
+          teammates: state.teammates?.teammates?.filter(account => account.accountId !== action.meta.request.accountId),
+          invitations: state.teammates?.invitations?.filter(invitation => invitation.invitationId !== action.meta.request.invitationId),
+        },
+      };
+    case Admin.projectAdminsInviteAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        teammates: {
+          ...state.teammates,
+          invitations: [...(state.teammates?.invitations || []), action.payload.invitation],
+        },
+      };
+    case Admin.projectAdminsListAdminActionStatus.Pending:
+      return {
+        ...state,
+        teammates: {
+          ...state.teammates,
+          status: Status.PENDING,
+        },
+      };
+    case Admin.projectAdminsListAdminActionStatus.Rejected:
+      return {
+        teammates: {
+          ...state.teammates,
+          status: Status.REJECTED,
+        },
+      };
+    case Admin.projectAdminsListAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        teammates: {
+          status: Status.FULFILLED,
+          teammates: action.payload.admins,
+          invitations: action.payload.invitations,
+        },
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxState {
   projectId: string | null;
   settings: StateSettings;
@@ -2065,6 +2119,7 @@ export interface ReduxState {
   commentVotes: StateCommentVotes;
   credits: StateCredits;
   notifications: StateNotifications;
+  teammates: StateTeammates;
 }
 export const reducers = combineReducers({
   projectId: reducerProjectId,
@@ -2078,4 +2133,5 @@ export const reducers = combineReducers({
   commentVotes: reducerCommentVotes,
   credits: reducerCredits,
   notifications: reducerNotifications,
+  teammates: reducerTeammates,
 });

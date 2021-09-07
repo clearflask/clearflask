@@ -24,6 +24,8 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Strings;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -76,6 +78,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import javax.ws.rs.core.Response;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -102,6 +105,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
         @DefaultValue("true")
         boolean createIndexOnStartup();
+
+        @DefaultValue("true")
+        boolean enableConfigCacheRead();
+
+        @DefaultValue("PT1M")
+        Duration configCacheExpireAfterWrite();
     }
 
     @Inject
@@ -132,9 +141,14 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private TableSchema<AccountEmail> accountIdByEmailSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
     private IndexSchema<AccountSession> sessionByAccountIdSchema;
+    private Cache<String, Optional<Account>> accountCache;
 
     @Override
     protected void serviceStart() throws Exception {
+        accountCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(config.configCacheExpireAfterWrite())
+                .build();
+
         accountSchema = dynamoMapper.parseTableSchema(Account.class);
         accountByApiKeySchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, Account.class);
         accountByOauthGuidSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, Account.class);
@@ -195,12 +209,21 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     @Override
-    public Optional<Account> getAccountByAccountId(String accountId) {
-        return Optional.ofNullable(accountSchema
+    public Optional<Account> getAccount(String accountId, boolean useCache) {
+        if (config.enableConfigCacheRead() && useCache) {
+            final Optional<Account> accountCachedOpt = accountCache.getIfPresent(accountId);
+            //noinspection OptionalAssignedToNull
+            if (accountCachedOpt != null) {
+                return accountCachedOpt;
+            }
+        }
+        Optional<Account> accountOpt = Optional.ofNullable(accountSchema
                 .fromItem(accountSchema
                         .table().getItem(accountSchema
                                 .primaryKey(Map.of(
                                         "accountId", accountId)))));
+        accountCache.put(accountId, accountOpt);
+        return accountOpt;
     }
 
     @Override
@@ -215,6 +238,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(accountByApiKeySchema::fromItem)
                 .collect(ImmutableList.toImmutableList());
+        accountsByApiKey.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
         if (accountsByApiKey.size() > 1) {
             if (LogUtil.rateLimitAllowLog("accountStore-multiple-accounts-same-apikey")) {
                 log.error("Multiple accounts found for same apiKey, account emails {}",
@@ -240,6 +264,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(accountByOauthGuidSchema::fromItem)
                 .collect(ImmutableList.toImmutableList());
+        accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
         if (accounts.size() > 1) {
             if (LogUtil.rateLimitAllowLog("accountStore-multiple-accounts-same-apikey")) {
                 log.error("Multiple accounts found for same oauthKey, account emails {}",
@@ -259,8 +284,15 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         return Optional.ofNullable(accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(new GetItemSpec()
                 .withPrimaryKey(accountIdByEmailSchema.primaryKey(Map.of(
                         "email", email))))))
-                .map(accountEmail -> getAccountByAccountId(accountEmail.getAccountId())
+                .map(accountEmail -> getAccount(accountEmail.getAccountId(), false)
                         .orElseThrow(() -> new IllegalStateException("AccountEmail entry exists but Account doesn't for email " + email)));
+    }
+
+    @Override
+    public boolean isEmailAvailable(String email) {
+        return Optional.ofNullable(accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(new GetItemSpec()
+                .withPrimaryKey(accountIdByEmailSchema.primaryKey(Map.of(
+                        "email", email)))))).isEmpty();
     }
 
     @Override
@@ -290,7 +322,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         .toArray(PrimaryKey[]::new))))
                 .map(i -> accountSchema.fromItem(i))
                 .collect(ImmutableList.toImmutableList());
-
+        accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
 
         return new SearchAccountsResponse(
                 accounts.stream().map(Account::getAccountId).collect(ImmutableList.toImmutableList()),
@@ -300,7 +332,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public long getUserCountForAccount(String accountId) {
-        return getAccountByAccountId(accountId).get()
+        return getAccount(accountId, false).get()
                 .getProjectIds()
                 .stream()
                 .mapToLong(userStore::getUserCountForProject)
@@ -321,6 +353,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         .withString(":planid", planid))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -347,6 +380,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -373,6 +407,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -384,6 +419,34 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId)));
 
         return new AccountAndIndexingFuture(account, indexingFuture);
+    }
+
+    @Override
+    public Account addExternalProject(String accountId, String projectId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("ADD #externalProjectIds :projectId")
+                .withNameMap(new NameMap()
+                        .with("#externalProjectIds", "externalProjectIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
+    public Account removeExternalProject(String accountId, String projectId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("DELETE #externalProjectIds :projectId")
+                .withNameMap(new NameMap()
+                        .with("#externalProjectIds", "externalProjectIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
     }
 
     @Extern
@@ -399,6 +462,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(new ValueMap().withString(":name", name))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -414,7 +478,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     @Override
-    public Account updatePassword(String accountId, String password, String sessionIdToLeave) {
+    public Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
@@ -425,14 +489,15 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(new ValueMap().withString(":password", password))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
-        revokeSessions(account.getAccountId(), sessionIdToLeave);
+        accountCache.put(accountId, Optional.of(account));
+        revokeSessions(account.getAccountId(), sessionToLeaveOpt);
         return account;
     }
 
     @Extern
     @Override
     public AccountAndIndexingFuture updateEmail(String accountId, String emailNew, String sessionIdToLeave) {
-        Account accountOld = getAccountByAccountId(accountId).get();
+        Account accountOld = getAccount(accountId, false).get();
         dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
                 .add(new TransactWriteItem().withPut(new Put()
                         .withTableName(accountIdByEmailSchema.tableName())
@@ -462,6 +527,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .build()));
         revokeSessions(accountId, sessionIdToLeave);
         Account account = accountOld.toBuilder().email(emailNew).build();
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -481,14 +547,14 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         Expression expression = accountSchema.expressionBuilder()
                 .conditionExists()
                 .set("apiKey", apiKey)
-                /**
+                /*
                  * This is a rare case where the attribute to update is also a partition key.
                  * Explicitly set it here to update GSI
                  */
                 .set(accountByApiKeySchema.partitionKeyName(), accountByApiKeySchema.partitionKey(Map.of("apiKey", apiKey)).getValue())
                 .set(accountByApiKeySchema.rangeKeyName(), accountByApiKeySchema.rangeKey(Map.of()).getValue())
                 .build();
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression(expression.conditionExpression().orElse(null))
                 .withUpdateExpression(expression.updateExpression().orElse(null))
@@ -496,6 +562,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(expression.valMap().orElse(null))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
     }
 
     @Override
@@ -510,6 +578,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .withValueMap(new ValueMap().with(":status", accountSchema.toDynamoValue("status", status)))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+        accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
@@ -526,7 +595,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Override
     public Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap) {
         if (overwriteMap) {
-            return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+            Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                     .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                     .withConditionExpression("attribute_exists(#partitionKey)")
                     .withUpdateExpression("SET #attrs = :attrs")
@@ -536,9 +605,11 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .withValueMap(new ValueMap().with(":attrs", accountSchema.toDynamoValue("attrs", attrs)))
                     .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem());
+            accountCache.put(accountId, Optional.of(account));
+            return account;
         } else {
             if (attrs == null || attrs.isEmpty()) {
-                return getAccountByAccountId(accountId).get();
+                return getAccount(accountId, true).get();
             }
 
             ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
@@ -550,7 +621,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 }
             });
             Expression expression = expressionBuilder.build();
-            return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+            Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                     .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                     .withConditionExpression("attribute_exists(#partitionKey)")
                     .withUpdateExpression(expression.updateExpression().orElse(null))
@@ -559,13 +630,15 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .withValueMap(expression.valMap().orElse(null))
                     .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem());
+            accountCache.put(accountId, Optional.of(account));
+            return account;
         }
     }
 
     @Extern
     @Override
     public ListenableFuture<DeleteResponse> deleteAccount(String accountId) {
-        String email = getAccountByAccountId(accountId).get().getEmail();
+        String email = getAccount(accountId, false).get().getEmail();
         accountIdByEmailSchema.table().deleteItem(new DeleteItemSpec()
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withNameMap(Map.of(
@@ -574,6 +647,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         "email", email))));
         accountSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId))));
+        accountCache.invalidate(accountId);
         revokeSessions(accountId);
 
         SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
@@ -667,7 +741,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     private void indexAccount(SettableFuture<WriteResponse> indexingFuture, String accountId) {
-        Optional<Account> accountOpt = getAccountByAccountId(accountId);
+        Optional<Account> accountOpt = getAccount(accountId, true);
         if (!accountOpt.isPresent()) {
             elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));

@@ -11,7 +11,6 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.web.Application;
@@ -22,7 +21,7 @@ import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKE
 
 @Slf4j
 @Singleton
-public class OnAdminInvite {
+public class OnModInvite {
 
     public interface Config {
         @DefaultValue("You are invited as a moderator of __project_name__")
@@ -51,8 +50,8 @@ public class OnAdminInvite {
         subject = subject.replace("__project_name__", projectName);
         content = content.replace("__project_name__", projectName);
 
-        String templateHtml = emailTemplates.getNotificationTemplateHtml();
-        String templateText = emailTemplates.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
+        String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
 
         templateHtml = templateHtml.replace("__CONTENT__", content);
         templateText = templateText.replace("__CONTENT__", content);
@@ -65,17 +64,13 @@ public class OnAdminInvite {
         templateHtml = templateHtml.replace("__BUTTON_URL__", link);
         templateText = templateText.replace("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + ProjectStore.Project.getHostname(configAdmin, configApp) + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
-        templateHtml = templateHtml.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
-        templateText = templateText.replace("__UNSUBSCRIBE_URL__", unsubscribeLink);
-
         return new Email(
                 user.getEmail(),
                 subject,
                 templateHtml,
                 templateText,
                 configAdmin.getProjectId(),
-                "FORGOT_PASSWORD"
+                "INVITE_MOD"
         );
     }
 
@@ -83,7 +78,7 @@ public class OnAdminInvite {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(OnAdminInvite.class).asEagerSingleton();
+                bind(OnModInvite.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

@@ -4,6 +4,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -25,8 +26,12 @@ import com.smotana.clearflask.api.model.ConfigAndUserBindSlugResult;
 import com.smotana.clearflask.api.model.ConfigBindSlugResult;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.ImportResponse;
+import com.smotana.clearflask.api.model.InvitationAdmin;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.ProjectAdmin;
+import com.smotana.clearflask.api.model.ProjectAdminsInviteResult;
+import com.smotana.clearflask.api.model.ProjectAdminsListResult;
 import com.smotana.clearflask.api.model.Tag;
 import com.smotana.clearflask.api.model.UserBind;
 import com.smotana.clearflask.api.model.UserBindResponse;
@@ -34,6 +39,7 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -42,6 +48,7 @@ import com.smotana.clearflask.store.DraftStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -82,7 +89,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -131,6 +140,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private UserBindUtil userBindUtil;
     @Inject
     private Billing billing;
+    @Inject
+    private NotificationService notificationService;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -210,7 +221,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         .orElse(null));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configGetAdmin(String projectId) {
@@ -225,7 +236,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public ConfigAndBindAllResult configGetAllAndUserBindAllAdmin() {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
         ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
                 ? ImmutableSet.of()
                 : projectStore.getProjects(account.getProjectIds(), false);
@@ -255,7 +269,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new ConfigAndBindAllResult(byProjectId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, ConfigAdmin configAdmin, String versionLast) {
@@ -265,7 +279,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         // Amount of times I've made this mistake and rolled it back:   2
         //
 
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
         try {
             planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
         } catch (RequiresUpgradeException ex) {
@@ -283,13 +300,77 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return versionedConfigAdmin;
     }
 
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public ProjectAdminsInviteResult projectAdminsInviteAdmin(String projectId, String email) {
+        Account account = accountStore.getAccount(getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt).get(), true).get();
+        Project project = projectStore.getProject(projectId, true).get();
+        try {
+            planStore.verifyTeammateInviteMeetsPlanRestrictions(account.getPlanid(), projectId, true);
+        } catch (RequiresUpgradeException ex) {
+            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+                throw ex;
+            }
+        }
+
+        InvitationModel invitation = projectStore.createInvitation(projectId, email, account.getName());
+        notificationService.onTeammateInvite(project.getVersionedConfigAdmin().getConfig(), invitation);
+
+        return new ProjectAdminsInviteResult(invitation.toInvitationAdmin());
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 1)
+    @Override
+    public ProjectAdminsListResult projectAdminsListAdmin(String projectId) {
+        Project project = projectStore.getProject(projectId, true).get();
+        ImmutableList<ProjectAdmin> admins = Stream.concat(Stream.of(project.getAccountId()), project.getModel().getAdminsAccountIds().stream())
+                .map(accountId -> accountStore.getAccount(accountId, true))
+                .map(Optional::get)
+                .map(account -> account.toProjectAdmin(account.getAccountId().equals(project.getAccountId())
+                        ? ProjectAdmin.RoleEnum.OWNER : ProjectAdmin.RoleEnum.ADMIN))
+                .collect(ImmutableList.toImmutableList());
+        ImmutableList<InvitationAdmin> invitations = projectStore.getInvitations(projectId).stream()
+                .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
+                .map(InvitationModel::toInvitationAdmin)
+                .collect(ImmutableList.toImmutableList());
+        return new ProjectAdminsListResult(admins, invitations);
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public void projectAdminsRemoveAdmin(String projectId, @Nullable String accountId, @Nullable String invitationId) {
+        if (!Strings.isNullOrEmpty(accountId)) {
+            projectStore.removeAdmin(projectId, accountId);
+            // This is a critical time, if something happens here, there will be inconsistent state in ownership
+            accountStore.removeExternalProject(accountId, projectId);
+        }
+        if (!Strings.isNullOrEmpty(invitationId)) {
+            projectStore.revokeInvitation(projectId, invitationId);
+        }
+    }
+
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
         sanitizer.subdomain(configAdmin.getSlug());
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(sanitizer::domain);
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
+
+        try {
+            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.CREATE_PROJECT);
+        } catch (RequiresUpgradeException ex) {
+            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+                throw ex;
+            }
+        }
+
         try {
             planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
         } catch (RequiresUpgradeException ex) {
@@ -324,11 +405,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 accountUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public void projectDeleteAdmin(String projectId) {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
         try {
             ListenableFuture<WriteResponse> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
@@ -343,7 +427,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 100, challengeAfter = 1)
     @Override
     public StreamingOutput projectExportAdmin(

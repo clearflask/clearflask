@@ -41,14 +41,14 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     @Override
     public ContentUploadResponse contentUpload(String projectId, InputStream body) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserStore.UserSession::getUserId)
                 .get();
 
         return new ContentUploadResponse(doUpload(projectId, userId, body));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 5, challengeAfter = 100)
     @Override
     public ContentUploadResponse contentUploadAsAdmin(String projectId, String authorId, InputStream body) {

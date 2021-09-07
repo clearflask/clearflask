@@ -60,12 +60,22 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
+    public void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException {
+        // No-op
+    }
+
+    @Override
     public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException {
         // No-op
     }
 
     @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException {
+        // No-op
+    }
+
+    @Override
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
         // No-op
     }
 

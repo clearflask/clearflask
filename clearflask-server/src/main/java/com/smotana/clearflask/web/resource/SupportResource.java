@@ -21,6 +21,7 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.ApiException;
@@ -78,12 +79,16 @@ public class SupportResource extends AbstractResource implements SupportApi {
     private Environment env;
     @Context
     private HttpServletRequest request;
+    @Inject
+    private AccountStore accountStore;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 10)
     @Override
     public void supportMessage(SupportMessage supportMessage) {
-        Optional<Account> accountOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountOpt);
+        Optional<Account> accountOpt = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true));
         String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
         String emailDisplayName = config.emailDisplayName();
         if (!Strings.isNullOrEmpty(emailDisplayName)) {

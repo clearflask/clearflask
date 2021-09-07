@@ -1068,7 +1068,16 @@ components:
               enum:
                 - Owner
                 - Admin
-                - Invited
+    InvitationAdmin:
+      type: object
+      required:
+        - invitationId
+        - email
+      properties:
+        invitationId:
+          type: string
+        email:
+          type: string
 
 /slug/{slug}/bind/configAndUser:
   post:
@@ -1390,11 +1399,16 @@ components:
               type: object
               required:
               - admins
+              - invitations
               properties:
                 admins:
                   type: array
                   items:
                     $ref: 'api-project.yaml#/components/schemas/ProjectAdmin'
+                invitations:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
   post:
     operationId: projectAdminsInviteAdmin
     tags: [ProjectAdmin]
@@ -1411,7 +1425,16 @@ components:
         type: string
     responses:
       '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsInviteResult
+              type: object
+              required:
+              - invitation
+              properties:
+                invitation:
+                  $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
   delete:
     operationId: projectAdminsRemoveAdmin
     tags: [ProjectAdmin]
@@ -1423,7 +1446,12 @@ components:
         type: string
     - name: accountId
       in: query
-      required: true
+      required: false
+      schema:
+        type: string
+    - name: invitationId
+      in: query
+      required: false
       schema:
         type: string
     responses:

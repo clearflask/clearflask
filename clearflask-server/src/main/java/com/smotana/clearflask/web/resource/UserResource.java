@@ -315,7 +315,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return new UserCreateResponse(null, null, user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
@@ -360,7 +360,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         userStore.createUser(user);
         if (user.getIsMod() == Boolean.TRUE) {
             ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
-            notificationService.onAdminInvite(configAdmin, user);
+            notificationService.onModInvite(configAdmin, user);
         }
         Project project = projectStore.getProject(projectId, true).get();
         return user.toUserAdmin(project.getIntercomEmailToIdentityFun());
@@ -382,14 +382,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUser();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
@@ -461,11 +461,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public void userLogout(String projectId) {
         Optional<ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
-        if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getUserSessionOpt().isPresent()) {
+        if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getAuthenticatedUserIdOpt().isPresent()) {
             log.trace("Cannot logout user, already not logged in");
             return;
         }
-        UserSession session = extendedPrincipal.get().getUserSessionOpt().get();
+        UserSession session = extendedPrincipal.get().getAuthenticatedUserIdOpt().get();
 
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);
@@ -508,7 +508,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserMe(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
@@ -533,7 +533,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {
@@ -543,14 +543,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse userHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {
         return userStore.histogram(projectId, histogramSearchAdmin);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {
@@ -583,7 +583,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                         searchUsersResponse.isTotalHitsGte() ? true : null));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 100)
     @Override
     public void userSubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
@@ -593,7 +593,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 subscriptionListener.getListenerUrl()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userUnsubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {

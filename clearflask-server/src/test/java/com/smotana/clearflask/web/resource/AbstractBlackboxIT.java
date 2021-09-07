@@ -45,11 +45,11 @@ import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
@@ -200,7 +200,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnForgotPassword.module(),
                 OnAccountSignup.module(),
                 IntercomUtil.module(),
-                OnAdminInvite.module(),
+                OnModInvite.module(),
                 OnEmailChanged.module(),
                 EmailVerify.module(),
                 EmailLogin.module(),
@@ -467,7 +467,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 accountIdKb,
                 accountIdKb,
                 null)));
-        log.info("Account status {}", accountStore.getAccountByAccountId(accountId).get().getStatus());
+        log.info("Account status {}", accountStore.getAccount(accountId, false).get().getStatus());
     }
 
     protected void waitForInvoice(AccountAndProject accountAndProject) throws Exception {

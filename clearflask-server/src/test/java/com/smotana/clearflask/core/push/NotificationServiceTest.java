@@ -17,11 +17,11 @@ import com.smotana.clearflask.core.push.message.EmailLogin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
@@ -107,7 +107,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnCreditChange.module());
         install(OnForgotPassword.module());
         install(OnAccountSignup.module());
-        install(OnAdminInvite.module());
+        install(OnModInvite.module());
         install(OnEmailChanged.module());
         install(EmailVerify.module());
         install(EmailLogin.module());
@@ -331,7 +331,7 @@ public class NotificationServiceTest extends AbstractTest {
         when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
         when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
 
-        service.onAdminInvite(
+        service.onModInvite(
                 versionedConfigAdmin.getConfig(),
                 user);
 

@@ -46,6 +46,16 @@ public class Role {
      * Applies to entity that owns the project specified in path parameter AND
      * account is in good active standing.
      */
+    public static final String PROJECT_ADMIN_ACTIVE = "PROJECT_ADMIN_ACTIVE";
+    /**
+     * Applies to entity that is an admin of the project specified in path parameter AND
+     * account may or may not be in good standing.
+     */
+    public static final String PROJECT_ADMIN = "PROJECT_ADMIN";
+    /**
+     * Applies to entity that is an admin of the project specified in path parameter AND
+     * account is in good active standing.
+     */
     public static final String PROJECT_OWNER_ACTIVE = "PROJECT_OWNER_ACTIVE";
     /**
      * Applies to entity that owns the project specified in path parameter AND

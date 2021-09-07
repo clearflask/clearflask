@@ -110,7 +110,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         project.areTagsAllowedByUser(ideaCreate.getTagIds(), ideaCreate.getCategoryId());
 
         UserModel user = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
@@ -163,14 +163,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 sanitizer);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public IdeaAggregateResponse ideaCategoryAggregateAdmin(String projectId, String categoryId) {
         return ideaStore.countIdeas(projectId, categoryId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin, @Nullable String deleteDraftId) {
@@ -226,7 +226,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         if (!Strings.isNullOrEmpty(deleteDraftId)) {
             getExtendedPrincipal()
-                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                     .map(UserSession::getUserId)
                     .ifPresent(userId -> draftStore.deleteDraft(projectId, userId, deleteDraftId));
         }
@@ -257,7 +257,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaWithVote ideaGet(String projectId, String ideaId) {
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
@@ -273,7 +273,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaGetAllResponse ideaGetAll(String projectId, IdeaGetAll ideaGetAll) {
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ImmutableList.copyOf(ideaGetAll.getPostIds())).values();
@@ -285,7 +285,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         .collect(ImmutableList.toImmutableList())));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaGetAdmin(String projectId, String ideaId) {
@@ -294,7 +294,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse ideaHistogramAdmin(String projectId, IdeaHistogramSearchAdmin ideaHistogramSearchAdmin) {
@@ -359,7 +359,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.searchText(ideaSearch.getSearchText());
 
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         SearchResponse searchResponse = ideaStore.searchIdeas(
@@ -394,7 +394,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         searchResponse.isTotalHitsGte() ? true : null));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
@@ -432,7 +432,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .toIdea(sanitizer);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
@@ -442,7 +442,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
         Optional<UserModel> authorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
                 .or(() -> getExtendedPrincipal()
-                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                         .map(UserSession::getUserId))
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, authorUserOpt).getIdea();
@@ -478,7 +478,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
@@ -486,7 +486,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteBulkAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin) {
@@ -512,7 +512,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftAdmin ideaDraftCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -528,7 +528,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDraftDeleteAdmin(String projectId, String draftId) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -540,7 +540,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftAdmin ideaDraftGetAdmin(String projectId, String draftId) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -554,7 +554,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftSearchResponse ideaDraftSearchAdmin(String projectId, IdeaDraftSearch ideaDraftSearch, @Nullable String cursor) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -572,7 +572,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDraftUpdateAdmin(String projectId, String draftId, IdeaCreateAdmin ideaCreateAdmin) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -583,7 +583,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ideaCreateAdmin).toIdeaDraftAdmin(sanitizer);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 100)
     @Override
     public void ideaSubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
@@ -593,7 +593,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 subscriptionListener.getListenerUrl()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaUnsubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {

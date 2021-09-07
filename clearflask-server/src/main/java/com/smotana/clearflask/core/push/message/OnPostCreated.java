@@ -56,7 +56,7 @@ public class OnPostCreated {
                 templateHtml,
                 templateText,
                 configAdmin.getProjectId(),
-                "CREDIT_CHANGE"
+                "POST_CREATED"
         );
     }
 

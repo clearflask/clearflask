@@ -33,6 +33,8 @@ public interface Billing {
 
     void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn);
 
+    void createAccountAsync(AccountStore.Account accountInDyn);
+
     Account getAccount(String accountId);
 
     Account getAccountByKbId(UUID accountIdKb);
@@ -64,7 +66,9 @@ public interface Billing {
      * verifyActionMeetsPlanRestrictions
      * and verifyConfigMeetsPlanRestrictions, try to auto-upgrade to required plan.
      *
-     * As of writing this, only possible when on trial period without payment method set.
+     * Possible at least in these circumstance:
+     * - When on trial period without payment method set.
+     * - When on Teammate Plan switching to a real plan.
      *
      * @return True if eligible for auto-upgrade and upgrade is kicked off in background
      */

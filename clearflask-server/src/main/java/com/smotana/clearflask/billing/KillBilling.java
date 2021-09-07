@@ -101,8 +101,6 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 public class KillBilling extends ManagedService implements Billing {
 
     /** If changed, also change in catalogXXX.xml */
-    private static final String ACTIVE_USER_UNIT_NAME = "active-user";
-    /** If changed, also change in catalogXXX.xml */
     private static final String TRACKED_USER_UNIT_NAME = "tracked-user";
 
     public interface Config {
@@ -196,6 +194,17 @@ public class KillBilling extends ManagedService implements Billing {
         });
     }
 
+    @Override
+    public void createAccountAsync(AccountStore.Account accountInDyn) {
+        accountCreationExecutor.submit(() -> {
+            try {
+                Account account = createAccount(accountInDyn);
+            } catch (Exception ex) {
+                log.warn("Failed to create account with subscription", ex);
+            }
+        });
+    }
+
     @Extern
     private Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
@@ -269,7 +278,7 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
             if (account == null) {
                 if (config.createAccountIfNotExists()) {
-                    Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccountByAccountId(accountId);
+                    Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccount(accountId, false);
                     if (accountInDynOpt.isPresent()) {
                         log.warn("Account doesn't exist in KB by account id {}, creating...", accountId);
                         return createAccount(accountInDynOpt.get());
@@ -329,7 +338,7 @@ public class KillBilling extends ManagedService implements Billing {
 
         if (!subscriptionOpt.isPresent() && config.createSubscriptionIfNotExists()) {
             Account account = getAccount(accountId);
-            Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccountByAccountId(accountId);
+            Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccount(accountId, false);
             if (accountInDynOpt.isPresent()) {
                 subscriptionOpt = Optional.of(createSubscription(accountInDynOpt.get(), account));
             } else {
@@ -513,7 +522,7 @@ public class KillBilling extends ManagedService implements Billing {
     public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
             Account accountInKb = getAccount(accountId);
-            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, getSubscription(accountId), "Update payment token");
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccount(accountId, false).get().getStatus(), accountInKb, getSubscription(accountId), "Update payment token");
             if (status == BLOCKED) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to update payment token");
             }
@@ -615,7 +624,7 @@ public class KillBilling extends ManagedService implements Billing {
             Account accountInKb = getAccount(accountId);
             Subscription subscriptionInKb = getSubscription(accountId);
 
-            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Cancel subscription");
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccount(accountId, false).get().getStatus(), accountInKb, subscriptionInKb, "Cancel subscription");
             if (status != ACTIVE) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to cancel, delete account instead");
             }
@@ -644,7 +653,7 @@ public class KillBilling extends ManagedService implements Billing {
             Account accountInKb = getAccount(accountId);
             Subscription subscriptionInKb = getSubscription(accountId);
 
-            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Resume subscription");
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccount(accountId, false).get().getStatus(), accountInKb, subscriptionInKb, "Resume subscription");
             if (status != ACTIVENORENEWAL && status != CANCELLED) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to resume subscription");
             }
@@ -687,7 +696,7 @@ public class KillBilling extends ManagedService implements Billing {
             Account accountInKb = getAccount(accountId);
             Subscription subscriptionInKb = getSubscription(accountId);
 
-            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccount(accountId, false).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
             if (status != ACTIVETRIAL && status != ACTIVE) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
             }
@@ -803,21 +812,28 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
-        if (!ACTIVETRIAL.equals(accountInDyn.getStatus())) {
-            return false;
+        boolean allowUpgrade = false;
+        if (ACTIVETRIAL.equals(accountInDyn.getStatus())
+                && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
+                && "standard2-monthly".equals(requiredPlanId)) {
+            allowUpgrade = true;
+        } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
+                && ImmutableSet.of("growth2-monthly", "standard2-monthly").equals(requiredPlanId)) {
+            allowUpgrade = true;
         }
-        if (getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()) {
-            return false;
+
+        if (allowUpgrade) {
+            usageExecutor.submit(() -> {
+                try {
+                    changePlan(accountInDyn.getAccountId(), requiredPlanId);
+                } catch (Throwable th) {
+                    log.error("Failed to auto upgrade accountId {} to plan {}",
+                            accountInDyn.getAccountId(), requiredPlanId, th);
+                }
+            });
         }
-        usageExecutor.submit(() -> {
-            try {
-                changePlan(accountInDyn.getAccountId(), requiredPlanId);
-            } catch (Throwable th) {
-                log.error("Failed to auto upgrade accountId {} to plan {}",
-                        accountInDyn.getAccountId(), requiredPlanId, th);
-            }
-        });
-        return true;
+
+        return allowUpgrade;
     }
 
     @Override

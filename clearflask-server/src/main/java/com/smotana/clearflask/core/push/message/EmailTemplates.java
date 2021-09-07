@@ -17,6 +17,8 @@ import java.io.IOException;
 @Getter
 public class EmailTemplates {
 
+    private final String notificationNoUnsubTemplateHtml;
+    private final String notificationNoUnsubTemplateText;
     private final String notificationTemplateHtml;
     private final String notificationTemplateText;
     private final String verificationTemplateHtml;
@@ -25,6 +27,8 @@ public class EmailTemplates {
     private final String loginTemplateText;
 
     public EmailTemplates() throws IOException {
+        this.notificationNoUnsubTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsub.html"), Charsets.UTF_8);
+        this.notificationNoUnsubTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsub.txt"), Charsets.UTF_8);
         this.notificationTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notification.html"), Charsets.UTF_8);
         this.notificationTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notification.txt"), Charsets.UTF_8);
         this.verificationTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailVerify.html"), Charsets.UTF_8);

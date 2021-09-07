@@ -3,10 +3,12 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.InvitationAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -51,10 +53,33 @@ public interface ProjectStore {
 
     void deleteProject(String projectId);
 
+
+    default String genInvitationId() {
+        return IdUtil.randomId();
+    }
+
+    InvitationModel createInvitation(String projectId, String invitedEmail, String inviteeName);
+
+    Optional<InvitationModel> getInvitation(String invitationId);
+
+    ImmutableList<InvitationModel> getInvitations(String projectId);
+
+    /** @return projectId */
+    String acceptInvitation(String invitationId, String accepteeAccountId);
+
+    void revokeInvitation(String projectId, String invitationId);
+
+    ProjectModel addAdmin(String projectId, String adminAccountId);
+
+    ProjectModel removeAdmin(String projectId, String adminAccountId);
+
+
     interface Project {
         ProjectModel getModel();
 
         String getAccountId();
+
+        boolean isAdmin(String accountId);
 
         String getProjectId();
 
@@ -102,6 +127,9 @@ public interface ProjectStore {
     class ProjectModel {
         @NonNull
         String accountId;
+
+        @NonNull
+        ImmutableSet<String> adminsAccountIds;
 
         @NonNull
         String projectId;
@@ -167,5 +195,42 @@ public interface ProjectStore {
          * Only set during migration to phase out an old slug
          */
         Long ttlInEpochSec;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "invitationId", rangePrefix = "invitation")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "projectId", rangePrefix = "invitationByProjectId")
+    class InvitationModel {
+        @NonNull
+        String invitationId;
+
+        @NonNull
+        String projectId;
+
+        @NonNull
+        String invitedEmail;
+
+        @NonNull
+        String inviteeName;
+
+        @NonNull
+        String projectName;
+
+        String isAcceptedByAccountId;
+
+        @NonNull
+        Long ttlInEpochSec;
+
+        public boolean isAccepted() {
+            return Strings.isNullOrEmpty(getIsAcceptedByAccountId());
+        }
+
+        public InvitationAdmin toInvitationAdmin() {
+            return new InvitationAdmin(
+                    getInvitationId(),
+                    getInvitedEmail());
+        }
     }
 }

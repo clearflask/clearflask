@@ -14,7 +14,7 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
@@ -59,6 +59,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
             ...(!activeProject ? [] : [
               { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
+              { type: 'item', slug: 'settings/project/teammates', name: 'Teammates', offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 } as MenuItem,
@@ -175,6 +176,9 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
   } else if (activeSubPath[0] === 'project') {
     if (!activeProject) { context.showCreateProjectWarning = true; return; }
     switch (activeSubPath[1]) {
+      case 'teammates':
+        mainContent = (<ProjectSettingsTeammates server={activeProject.server} />);
+        break;
       case 'install':
         mainContent = (<ProjectSettingsInstall server={activeProject.server} editor={activeProject.editor} />);
         break;

@@ -3,7 +3,6 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import lombok.Builder;
@@ -30,16 +29,23 @@ public class ExtendedSecurityContext implements SecurityContext {
         String name;
         @NonNull
         String remoteIp;
+
+        /** Present if request is authenticated */
+        @NonNull
+        Optional<String> authenticatedAccountIdOpt;
+        /** Present if request is super authenticated */
+        @NonNull
+        Optional<String> authenticatedSuperAccountIdOpt;
+        /** Present if request is user authenticated */
+        @NonNull
+        Optional<UserSession> authenticatedUserIdOpt;
+
+        /** Only present if session is used (not by API) */
         @NonNull
         Optional<AccountSession> accountSessionOpt;
+        /** Only present if session is used (not by API) */
         @NonNull
         Optional<AccountSession> superAccountSessionOpt;
-        @NonNull
-        Optional<Account> accountOpt;
-        @NonNull
-        Optional<Account> superAccountOpt;
-        @NonNull
-        Optional<UserSession> userSessionOpt;
     }
 
     ExtendedPrincipal userPrincipal;
@@ -57,31 +63,25 @@ public class ExtendedSecurityContext implements SecurityContext {
     }
 
     public static ExtendedSecurityContext create(
-            @NonNull String remoteIp,
-            @NonNull Optional<AccountSession> accountSession,
-            @NonNull Optional<AccountSession> superAccountSession,
-            @NonNull Optional<Account> account,
-            @NonNull Optional<Account> superAccount,
-            @NonNull Optional<UserSession> userSession,
-            @NonNull Predicate<String> userHasRolePredicate,
-            @NonNull ContainerRequestContext requestContext) {
-        String name;
-        if (account.isPresent()) {
-            name = account.get().getAccountId();
-        } else if (userSession.isPresent()) {
-            name = userSession.get().getUserId();
-        } else {
-            name = remoteIp;
-        }
+            String remoteIp,
+            Optional<String> authenticatedAccountIdOpt,
+            Optional<String> authenticatedSuperAccountIdOpt,
+            Optional<UserSession> authenticatedUserSessionOpt,
+            Optional<AccountSession> accountSessionOpt,
+            Optional<AccountSession> superAccountSessionOpt,
+            Predicate<String> userHasRolePredicate,
+            ContainerRequestContext requestContext) {
         return new ExtendedSecurityContext(
                 new ExtendedPrincipal(
-                        name,
+                        authenticatedAccountIdOpt
+                                .or(() -> authenticatedUserSessionOpt.map(UserSession::getUserId))
+                                .orElse(remoteIp),
                         remoteIp,
-                        accountSession,
-                        superAccountSession,
-                        account,
-                        superAccount,
-                        userSession),
+                        authenticatedAccountIdOpt,
+                        authenticatedSuperAccountIdOpt,
+                        authenticatedUserSessionOpt,
+                        accountSessionOpt,
+                        superAccountSessionOpt),
                 userHasRolePredicate,
                 requestContext);
     }

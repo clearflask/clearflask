@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EmailAtIcon from '@material-ui/icons/AlternateEmail';
+import CheckIcon from '@material-ui/icons/Check';
+import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import EditIcon from '@material-ui/icons/Edit';
 import FacebookIcon from '@material-ui/icons/Facebook';
 import GithubIcon from '@material-ui/icons/GitHub';
@@ -15,7 +17,7 @@ import React, { Component, useEffect, useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
-import { ReduxState, Server, StateConf } from '../../api/server';
+import { ReduxState, Server, StateConf, Status } from '../../api/server';
 import ServerAdmin, { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
@@ -26,6 +28,7 @@ import CustomPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescripti
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
+import Loading from '../../app/utils/Loading';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
@@ -33,7 +36,7 @@ import DataSettings from '../../common/config/settings/DataSettings';
 import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import Property from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
-import UpgradeWrapper, { RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
+import UpgradeWrapper, { Action, RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
@@ -235,6 +238,9 @@ const styles = (theme: Theme) => createStyles({
   domainFieldText: {
     marginBottom: 5,
   },
+  rolePending: {
+    color: theme.palette.text.hint,
+  },
 });
 const useStyles = makeStyles(styles);
 
@@ -254,6 +260,206 @@ export const ProjectSettingsBase = (props: {
       )}
       {props.children}
     </div>
+  );
+}
+
+export const ProjectSettingsTeammates = (props: {
+  server: Server;
+}) => {
+  const myAccountId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.accountId, shallowEqual);
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+  if (!accountBasePlanId || !accountSubscriptionStatus) return null;
+  return (
+    <ProjectSettingsBase title='Teammates'>
+      <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+        <ProjectSettingsTeammatesList
+          server={props.server}
+          myAccountId={myAccountId}
+          accountBasePlanId={accountBasePlanId}
+          accountSubscriptionStatus={accountSubscriptionStatus}
+        />
+      </Provider>
+      <br /><br /><br /><br />
+      <ProjectSettingsTeammatesPermissionsInfo />
+    </ProjectSettingsBase>
+  );
+}
+export const ProjectSettingsTeammatesList = (props: {
+  server: Server;
+  myAccountId?: string;
+  accountBasePlanId: string;
+  accountSubscriptionStatus: Admin.SubscriptionStatus;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+
+  const website = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.website, shallowEqual);
+  var domain = 'example.com';
+  if (website) {
+    try {
+      const { hostname } = new URL(website);
+      domain = hostname;
+    } catch (e) { }
+  }
+
+  const teammatesStatus = useSelector<ReduxState, Status | undefined>(state => state.teammates.teammates?.status, shallowEqual);
+  const teammates = useSelector<ReduxState, Admin.ProjectAdmin[] | undefined>(state => state.teammates.teammates?.teammates, shallowEqual);
+  const invitations = useSelector<ReduxState, Admin.InvitationAdmin[] | undefined>(state => state.teammates.teammates?.invitations, shallowEqual);
+  if (teammatesStatus === undefined) {
+    props.server.dispatchAdmin({ debounce: 100 }).then(d => d.projectAdminsListAdmin({
+      projectId: props.server.getProjectId(),
+    }));
+  }
+
+  const [confirmDeleteTeammate, setConfirmDeleteTeammate] = useState<Admin.ProjectAdmin | undefined>();
+  const [isSubmittingRemove, setIsSubmittingRemove] = useState<boolean>();
+
+  if (!teammates || !invitations) return (<Loading />);
+
+  const doRemove = async (request: Pick<Admin.ProjectAdminsRemoveAdminRequest, 'accountId' | 'invitationId'>) => {
+    setIsSubmittingRemove(true);
+    try {
+      await (await props.server.dispatchAdmin({ debounce: true })).projectAdminsRemoveAdmin({
+        projectId: props.server.getProjectId(),
+        ...request,
+      });
+      setConfirmDeleteTeammate(undefined);
+    } finally {
+      setIsSubmittingRemove(false);
+    }
+  };
+  return (
+    <>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell key='name'>Name</TableCell>
+            <TableCell key='email'>Email</TableCell>
+            <TableCell key='role'>Role</TableCell>
+            <TableCell key='action'></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {teammates.map(teammate => (
+            <TableRow key={teammate.accountId}>
+              <TableCell key='name'><Typography>{teammate.name}</Typography></TableCell>
+              <TableCell key='email'><Typography>{teammate.email}</Typography></TableCell>
+              <TableCell key='role'><Typography>{teammate.role}</Typography></TableCell>
+              <TableCell key='action'>
+                {teammate.role !== Admin.ProjectAdminRoleEnum.Owner && (
+                  <IconButton
+                    disabled={isSubmittingRemove}
+                    onClick={() => setConfirmDeleteTeammate(teammate)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+          {invitations.map(invitation => (
+            <TableRow key={invitation.invitationId}>
+              <TableCell key='name'><Typography></Typography></TableCell>
+              <TableCell key='email'><Typography>{invitation.email}</Typography></TableCell>
+              <TableCell key='role'><Typography className={classes.rolePending}>Pending</Typography></TableCell>
+              <TableCell key='action'>
+                {// Because reducer makes a mock invitation with empty invitationId, Only show remove button if not empty
+                  !!invitation.invitationId && (
+                    <IconButton
+                      disabled={isSubmittingRemove}
+                      onClick={() => doRemove({ invitationId: invitation.invitationId })}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <br /><br />
+      <UpgradeWrapper
+        overrideUpgradeMsg='Plan upgrade required to invite more'
+        accountBasePlanId={props.accountBasePlanId}
+        subscriptionStatus={props.accountSubscriptionStatus}
+        action={Action.TEAMMATE_INVITE}
+        teammatesCount={teammates.length + invitations.length}
+      >
+        <ProjectSettingsAddWithName
+          label='Invite teammate'
+          placeholder={`sandy@${domain}`}
+          withAccordion
+          onAdd={email => props.server.dispatchAdmin({ debounce: true }).then(d => d.projectAdminsInviteAdmin({
+            projectId: props.server.getProjectId(),
+            email,
+          }))}
+        />
+      </UpgradeWrapper>
+      <Dialog
+        open={!!confirmDeleteTeammate}
+        onClose={() => setConfirmDeleteTeammate(undefined)}
+      >
+        <DialogTitle>Remove teammate</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Are you sure you want to remove your teammate from this project? This will not remove their contributions nor any project users/mods they may have created and may still have access to.</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteTeammate(undefined)}
+          >Cancel</Button>
+          <SubmitButton
+            isSubmitting={isSubmittingRemove}
+            style={{ color: !isSubmittingRemove ? theme.palette.error.main : undefined }}
+            onClick={() => doRemove({ accountId: confirmDeleteTeammate?.accountId })}>
+            Remove
+          </SubmitButton>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
+const permissions: Array<[number, number, number, number, string]> = [
+  [1, 1, 1, 1, 'View portal'],
+  [1, 1, 1, 1, 'Submit feedback'],
+  [0, 1, 1, 1, "Submit feedback on-behalf"],
+  [0, 1, 1, 1, "Create/modify any post"],
+  [0, 1, 1, 1, "Create/modify users/mods"],
+  [0, 1, 1, 1, "Delete any comment"],
+  [0, 0, 1, 1, 'Dashboard access'],
+  [0, 0, 1, 1, 'Address feedback'],
+  [0, 0, 1, 1, 'Prioritize roadmap'],
+  [0, 0, 1, 1, 'Manage changelog'],
+  [0, 0, 1, 1, 'Project settings'],
+  [0, 0, 0, 1, 'Delete project'],
+  [0, 0, 0, 1, 'Account Billing'],
+];
+export const ProjectSettingsTeammatesPermissionsInfo = (props: {}) => {
+  return (
+    <>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell key='permission'>
+              <Typography variant='h5' component='div'>Permissions</Typography>
+            </TableCell>
+            <TableCell key='User'>User</TableCell>
+            <TableCell key='Mod'>Mod</TableCell>
+            <TableCell key='Admin'>Admin</TableCell>
+            <TableCell key='Owner'>Owner</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {permissions.map((permission, permisionIndex) => (
+            <TableRow key={permisionIndex}>
+              <TableCell key='permission'><Typography>{permission[permission.length - 1]}</Typography></TableCell>
+              {permission.map((item, itemIndex, itemArr) => (itemIndex < (itemArr.length - 1)) ? (
+                <TableCell key={itemIndex}>{!!item && (<CheckIcon color='primary' />)}</TableCell>
+              ) : null)}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   );
 }
 

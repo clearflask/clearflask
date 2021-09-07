@@ -35,7 +35,7 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     perks: [
       { desc: 'Private projects' },
       { desc: 'SSO and OAuth' },
-      { desc: 'Site template' },
+      { desc: 'Multi-teammate' },
     ],
   },
   'flat-yearly': {
@@ -51,6 +51,8 @@ const FeaturesTable: Admin.FeaturesTable | undefined = {
   plans: ['Growth', 'Standard', 'Flat'],
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Viewers', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Teammates', values: ['1', '8', 'No limit'] },
     { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Credit System', values: ['Yes', 'Yes', 'Yes'] },
@@ -109,6 +111,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       balances: { [userId: string]: number };
       notifications: Client.Notification[];
       admins: Array<Admin.ProjectAdmin>;
+      invitations: Array<Admin.InvitationAdmin>;
     }
   } = {};
   nextCommentId = 10000;
@@ -307,31 +310,27 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.invitationId); // Create project
     return this.returnLater({ projectId: request.invitationId });
   }
-  projectAdminsInviteAdmin(request: Admin.ProjectAdminsInviteAdminRequest): Promise<void> {
-    const admin = {
-      accountId: randomUuid(),
+  projectAdminsInviteAdmin(request: Admin.ProjectAdminsInviteAdminRequest): Promise<Admin.ProjectAdminsInviteResult> {
+    const invitation: Admin.InvitationAdmin = {
+      invitationId: randomUuid(),
       email: request.email,
-      name: '',
-      role: Admin.ProjectAdminRoleEnum.Invited,
     };
-    this.getProject(request.projectId).admins.push(admin);
-
-    // Accept invite later
-    setTimeout(() => {
-      admin.name = 'John Doe';
-      admin.role = Admin.ProjectAdminRoleEnum.Admin;
-    }, 3000);
-
-    return this.returnLater(undefined);
+    const project = this.getProject(request.projectId);
+    project.invitations.push(invitation);
+    return this.returnLater({ invitation: invitation });
   }
   projectAdminsListAdmin(request: Admin.ProjectAdminsListAdminRequest): Promise<Admin.ProjectAdminsListResult> {
     return this.returnLater({
-      admins: this.getProject(request.projectId).admins
+      admins: this.getProject(request.projectId).admins,
+      invitations: this.getProject(request.projectId).invitations,
     });
   }
   projectAdminsRemoveAdmin(request: Admin.ProjectAdminsRemoveAdminRequest): Promise<void> {
-    this.getProject(request.projectId).admins = this.getProject(request.projectId).admins
+    const project = this.getProject(request.projectId);
+    if (request.accountId) project.admins = project.admins
       .filter(admin => admin.accountId !== request.accountId);
+    if (request.invitationId) project.invitations = project.invitations
+      .filter(invitation => invitation.invitationId !== request.invitationId);
     return this.returnLater(undefined);
   }
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
@@ -1499,12 +1498,27 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         commentVotes: [],
         balances: {},
         notifications: [],
-        admins: this.account ? [{
-          accountId: this.account.accountId,
-          email: this.account.email,
-          name: this.account.name,
-          role: Admin.ProjectAdminRoleEnum.Owner,
-        }] : [],
+        admins: [
+          ...(this.account ? [{
+            accountId: this.account.accountId,
+            email: this.account.email,
+            name: this.account.name,
+            role: Admin.ProjectAdminRoleEnum.Owner,
+          }] : []),
+          {
+            accountId: randomUuid(),
+            email: 'johndoe@example.com',
+            name: 'John Doe',
+            role: Admin.ProjectAdminRoleEnum.Admin,
+          },
+          {
+            accountId: randomUuid(),
+            email: 'dohnjoe@example.com',
+            name: 'Dohn Joe',
+            role: Admin.ProjectAdminRoleEnum.Admin,
+          },
+        ],
+        invitations: [],
       };
       this.db[projectId] = project;
     }

@@ -94,7 +94,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public CommentWithVote commentCreate(String projectId, String ideaId, CommentCreate create) {
         sanitizer.content(create.getContent());
 
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt).map(UserStore.UserSession::getUserId).get();
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
@@ -193,7 +193,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 toCommentWithVotes(projectId, response.getComments()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Comment commentDeleteAdmin(String projectId, String ideaId, String commentId) {
@@ -201,14 +201,14 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .getCommentModel().toComment(sanitizer);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse commentHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {
         return commentStore.histogram(projectId, histogramSearchAdmin);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public CommentSearchResponse commentSearchAdmin(String projectId, @Valid CommentSearchAdmin commentSearchAdmin, String cursor) {
@@ -225,7 +225,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 toCommentWithVotes(projectId, response.getComments()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 100)
     @Override
     public void commentSubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
@@ -235,7 +235,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 subscriptionListener.getListenerUrl()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void commentUnsubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
@@ -250,7 +250,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     }
 
     private ImmutableList<CommentWithVote> toCommentWithVotesAndAddMergedPostsAsComments(String projectId, ImmutableCollection<CommentModel> comments, Optional<String> parentIdeaIdOpt, ImmutableSet<String> mergedPostIds, int fillUntilResultSize, List<String> excludeMergedPostIds) {
-        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         Map<String, VoteOption> voteResults = ImmutableMap.of();

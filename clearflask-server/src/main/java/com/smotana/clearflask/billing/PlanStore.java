@@ -20,6 +20,9 @@ public interface PlanStore {
     /** If changed, also update PricingPage.tsx */
     ImmutableSet<String> RECORD_TRACKED_USERS_FOR_PLANS = ImmutableSet.of("growth2-monthly", "standard2-monthly");
 
+    /** Plan used for accounts with only external accounts. */
+    String TEAMMATE_PLAN_ID = "teammate-unlimited";
+
     PlansGetResponse getPublicPlans();
 
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
@@ -32,11 +35,16 @@ public interface PlanStore {
 
     String prettifyPlanName(String planIdOrPrettyPlanName);
 
+    void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException;
+
     void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException;
 
     void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException;
 
+    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException;
+
     enum Action {
-        API_KEY
+        API_KEY,
+        CREATE_PROJECT
     }
 }
