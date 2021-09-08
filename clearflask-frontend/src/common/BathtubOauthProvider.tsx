@@ -7,12 +7,13 @@ import { OAUTH_CODE_PARAM_NAME, OAUTH_STATE_PARAM_NAME } from './util/oauthUtil'
 import windowIso from './windowIso';
 
 const MockOauthProvider = () => {
+  const [guid, setGuid] = useState<string>('9skwfp7x3kq');
   const [email, setEmail] = useState<string>('sandy@example.com');
   const [name, setName] = useState<string>('Sandy Beach');
 
   const params = new URL(windowIso.location.href).searchParams;
   const redirectLink = `${params.get('redirect_uri') || ''}`
-    + `?${OAUTH_CODE_PARAM_NAME}=${encodeURIComponent(JSON.stringify({ email, name }))}`
+    + `?${OAUTH_CODE_PARAM_NAME}=${encodeURIComponent(JSON.stringify({ guid, email, name }))}`
     + `&${OAUTH_STATE_PARAM_NAME}=${encodeURIComponent(params.get(OAUTH_STATE_PARAM_NAME) || '')}`;
 
   return (
@@ -34,6 +35,13 @@ const MockOauthProvider = () => {
           </p>
         ))}
       </div>
+      <TextField
+        size='small'
+        variant='outlined'
+        label='Guid'
+        value={guid || ''}
+        onChange={e => setGuid(e.target.value)}
+      />
       <TextField
         size='small'
         variant='outlined'

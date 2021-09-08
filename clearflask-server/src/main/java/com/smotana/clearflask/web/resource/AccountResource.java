@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
@@ -77,6 +78,7 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -186,41 +188,52 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (accountOpt.isEmpty()
                 && accountBindAdmin != null
                 && accountBindAdmin.getOauthToken() != null) {
-            String tokenUrl;
-            String userProfileUrl;
-            String clientSecret;
-            String guidJsonPath;
-            String nameJsonPath;
-            String emailJsonPath;
-            if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
-                tokenUrl = "https://github.com/login/oauth/access_token";
-                userProfileUrl = "https://api.github.com/user";
-                guidJsonPath = "id";
-                nameJsonPath = "name, login";
-                emailJsonPath = "email";
-                clientSecret = config.oauthGithubClientSecret();
-            } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
-                tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
-                userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
-                guidJsonPath = "id";
-                nameJsonPath = "name";
-                emailJsonPath = "email";
-                clientSecret = config.oauthGoogleClientSecret();
+            Optional<OAuthUtil.OAuthResult> oauthResult;
+            // Matches mock "bathtub" OAuth provider defined in oauthUtil.ts
+            if (!env.isProduction() && "bathtub".equals(accountBindAdmin.getOauthToken().getId())) {
+                Map<String, String> codeParsed = gson.fromJson(accountBindAdmin.getOauthToken().getCode(), new TypeToken<Map<String, String>>() {
+                }.getType());
+                oauthResult = Optional.of(new OAuthUtil.OAuthResult(
+                        codeParsed.get("guid"),
+                        Optional.ofNullable(codeParsed.get("name")),
+                        Optional.ofNullable(codeParsed.get("email"))));
             } else {
-                throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
+                String tokenUrl;
+                String userProfileUrl;
+                String clientSecret;
+                String guidJsonPath;
+                String nameJsonPath;
+                String emailJsonPath;
+                if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    tokenUrl = "https://github.com/login/oauth/access_token";
+                    userProfileUrl = "https://api.github.com/user";
+                    guidJsonPath = "id";
+                    nameJsonPath = "name, login";
+                    emailJsonPath = "email";
+                    clientSecret = config.oauthGithubClientSecret();
+                } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
+                    userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
+                    guidJsonPath = "id";
+                    nameJsonPath = "name";
+                    emailJsonPath = "email";
+                    clientSecret = config.oauthGoogleClientSecret();
+                } else {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
+                }
+                oauthResult = OAuthUtil.fetch(
+                        gson,
+                        "account",
+                        "https://" + configApp.domain() + "/login",
+                        tokenUrl,
+                        userProfileUrl,
+                        guidJsonPath,
+                        nameJsonPath,
+                        emailJsonPath,
+                        accountBindAdmin.getOauthToken().getId(),
+                        clientSecret,
+                        accountBindAdmin.getOauthToken().getCode());
             }
-            Optional<OAuthUtil.OAuthResult> oauthResult = OAuthUtil.fetch(
-                    gson,
-                    "account",
-                    "https://" + configApp.domain() + "/login",
-                    tokenUrl,
-                    userProfileUrl,
-                    guidJsonPath,
-                    nameJsonPath,
-                    emailJsonPath,
-                    accountBindAdmin.getOauthToken().getId(),
-                    clientSecret,
-                    accountBindAdmin.getOauthToken().getCode());
             if (oauthResult.isPresent()) {
                 accountOpt = accountStore.getAccountByOauthGuid(oauthResult.get().getGuid());
                 if (accountOpt.isEmpty()) {

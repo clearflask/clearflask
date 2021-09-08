@@ -32,7 +32,7 @@ jobs:
         languages: ${{ matrix.language }}
 
     - run: |
-      mvn install -DskipTests
+        mvn install -DskipTests
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
