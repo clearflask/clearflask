@@ -20,7 +20,11 @@ public interface PlanStore {
     /** If changed, also update PricingPage.tsx */
     ImmutableSet<String> RECORD_TRACKED_USERS_FOR_PLANS = ImmutableSet.of("growth2-monthly", "standard2-monthly");
 
-    /** Plan used for accounts with only external accounts. */
+    /**
+     * Plan used for accounts with only external accounts.
+     *
+     * If changed, also update UpgradeWrapper.tsx
+     */
     String TEAMMATE_PLAN_ID = "teammate-unlimited";
 
     PlansGetResponse getPublicPlans();

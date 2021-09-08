@@ -110,7 +110,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         project.areTagsAllowedByUser(ideaCreate.getTagIds(), ideaCreate.getCategoryId());
 
         UserModel user = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
@@ -226,7 +226,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         if (!Strings.isNullOrEmpty(deleteDraftId)) {
             getExtendedPrincipal()
-                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                     .map(UserSession::getUserId)
                     .ifPresent(userId -> draftStore.deleteDraft(projectId, userId, deleteDraftId));
         }
@@ -257,7 +257,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaWithVote ideaGet(String projectId, String ideaId) {
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
@@ -273,7 +273,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaGetAllResponse ideaGetAll(String projectId, IdeaGetAll ideaGetAll) {
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ImmutableList.copyOf(ideaGetAll.getPostIds())).values();
@@ -359,7 +359,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.searchText(ideaSearch.getSearchText());
 
         Optional<UserModel> userOpt = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         SearchResponse searchResponse = ideaStore.searchIdeas(
@@ -442,7 +442,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
         Optional<UserModel> authorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
                 .or(() -> getExtendedPrincipal()
-                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                         .map(UserSession::getUserId))
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, authorUserOpt).getIdea();
@@ -512,7 +512,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftAdmin ideaDraftCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -528,7 +528,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDraftDeleteAdmin(String projectId, String draftId) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -540,7 +540,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftAdmin ideaDraftGetAdmin(String projectId, String draftId) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -554,7 +554,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaDraftSearchResponse ideaDraftSearchAdmin(String projectId, IdeaDraftSearch ideaDraftSearch, @Nullable String cursor) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -572,7 +572,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDraftUpdateAdmin(String projectId, String draftId, IdeaCreateAdmin ideaCreateAdmin) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 

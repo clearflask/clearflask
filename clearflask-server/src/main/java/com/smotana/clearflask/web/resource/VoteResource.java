@@ -89,7 +89,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @Limit(requiredPermits = 1)
     @Override
     public UserMe categorySubscribe(String projectId, String categoryId, Boolean subscribe) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .get();
 
@@ -115,7 +115,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @Limit(requiredPermits = 5)
     @Override
     public CommentVoteGetOwnResponse commentVoteGetOwn(String projectId, List<String> commentIds, List<String> myOwnCommentIds) {
-        UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .get();
@@ -134,7 +134,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @Limit(requiredPermits = 10, challengeAfter = 50)
     @Override
     public CommentVoteUpdateResponse commentVoteUpdate(String projectId, String ideaId, String commentId, CommentVoteUpdate commentVoteUpdate) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
 
@@ -149,7 +149,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @Limit(requiredPermits = 5)
     @Override
     public IdeaVoteGetOwnResponse ideaVoteGetOwn(String projectId, List<String> ideaIds, List<String> myOwnIdeaIds) {
-        UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .get();
@@ -188,7 +188,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @Limit(requiredPermits = 10, challengeAfter = 50)
     @Override
     public IdeaVoteUpdateResponse ideaVoteUpdate(String projectId, String ideaId, IdeaVoteUpdate voteUpdate) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
         IdeaModel idea = ideaStore.getIdea(projectId, ideaId).orElseThrow(BadRequestException::new);

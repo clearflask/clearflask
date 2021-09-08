@@ -52,6 +52,7 @@ import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
@@ -199,6 +200,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnPaymentFailed.module(),
                 OnForgotPassword.module(),
                 OnAccountSignup.module(),
+                OnTeammateInvite.module(),
                 IntercomUtil.module(),
                 OnModInvite.module(),
                 OnEmailChanged.module(),
@@ -320,7 +322,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 "smotana",
                 IdUtil.randomId(5) + "unittest@clearflask.com",
                 "password",
-                planid));
+                planid,
+                null));
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("myproject").getConfig());
         AccountAndProject accountAndProject = new AccountAndProject(accountAdmin, newProjectResult);

@@ -51,7 +51,8 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 "smotana",
                 "unittest@clearflask.com",
                 "password",
-                "growth2-monthly"));
+                "growth2-monthly",
+                null));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("sermyproject").getConfig());

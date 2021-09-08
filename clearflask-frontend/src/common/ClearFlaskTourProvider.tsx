@@ -221,6 +221,19 @@ const ClearFlaskTourProvider = (props: {
             },
             onComplete: { openPath: '/dashboard' },
           },
+          'invite-teammates': {
+            state: getGuideState('invite-teammates', account),
+            title: 'Invite your teammates to explore together',
+            steps: {
+              'invite': {
+                title: 'Type their email', description: 'Send your teammate an invitation by email to join your project.',
+                openPath: '/dashboard/settings/project/teammates',
+                showButtonNext: "That's enough",
+                anchorId: 'settings-teammates-invite',
+              },
+            },
+            onComplete: { openPath: '/dashboard' },
+          },
           'install': {
             state: getGuideState('install', account),
             title: 'Install the portal on your website',
@@ -268,7 +281,7 @@ const ClearFlaskTourProvider = (props: {
         groups: [
           { title: 'See what you can do with ClearFlask', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page', 'visit-project'] },
           { title: 'Customize the look and feel', guideIds: ['visibility', 'onboarding', 'custom-domain'] },
-          { title: 'Release your portal to your users', guideIds: ['invite-teammates', 'install', 'add-payment'] },
+          { title: 'Publish your portal to the world', guideIds: ['invite-teammates', 'install', 'add-payment'] },
         ],
       }}
       onGuideCompleted={(guideId, guide) => setGuideState(guideId, TourDefinitionGuideState.Completed)}

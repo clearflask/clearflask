@@ -3,7 +3,7 @@
 import jsonwebtoken from 'jsonwebtoken';
 import cloneDeep from 'lodash.clonedeep';
 import * as ConfigEditor from '../common/config/configEditor';
-import { Action, RestrictedActions } from '../common/config/settings/UpgradeWrapper';
+import { Action, RestrictedActions, TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
 import { notEmpty } from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
@@ -19,6 +19,13 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
 const termsProjects = 'You can create separate projects each having their own set of users and content';
+const TeammatePlan: Admin.Plan = {
+  basePlanId: TeammatePlanId, title: 'Teammate',
+  perks: [
+    { desc: 'External projects' },
+    { desc: 'No billing' },
+  ],
+};
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
   'growth2-monthly': {
     basePlanId: 'growth2-monthly', title: 'Growth',
@@ -213,7 +220,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
       accountId: randomUuid(),
-      basePlanId: request.accountSignupAdmin.basePlanId,
+      basePlanId: (request.accountSignupAdmin.invitationId
+        ? TeammatePlanId
+        : request.accountSignupAdmin.basePlanId)
+        || 'standard2-monthly',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -340,7 +350,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
-      plan: AvailablePlans[this.account.planId]!,
+      plan: this.account.planId === TeammatePlanId ? TeammatePlan : AvailablePlans[this.account.planId]!,
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {

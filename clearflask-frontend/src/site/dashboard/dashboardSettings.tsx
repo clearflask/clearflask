@@ -14,7 +14,7 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import { ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
@@ -57,6 +57,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             { type: 'heading', text: 'Account' } as MenuHeading,
             { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
             { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
+            { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
             ...(!activeProject ? [] : [
               { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() } as MenuHeading,
               { type: 'item', slug: 'settings/project/teammates', name: 'Teammates', offset: 1 } as MenuItem,
@@ -171,6 +172,10 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
       case 'billing':
         setTitle('Billing - Dashboard');
         mainContent = (<BillingPage stripePromise={Dashboard.getStripePromise()} />);
+        break;
+      case 'api':
+        setTitle('API - Dashboard');
+        mainContent = (<ProjectSettingsApi />);
         break;
     }
   } else if (activeSubPath[0] === 'project') {

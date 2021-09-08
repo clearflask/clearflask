@@ -701,27 +701,34 @@ public class KillBilling extends ManagedService implements Billing {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
             }
 
-            // Even though we are using START_OF_SUBSCRIPTION changeAlignment
-            // we manually transition from TRIAL to EVERGREEN.
-            // So changing plans here, we need to override the correct phase,
-            // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
             PhaseType newPhase;
-            switch (subscriptionInKb.getPhaseType()) {
-                case TRIAL:
-                    newPhase = PhaseType.TRIAL;
-                    break;
-                default:
-                case DISCOUNT:
-                case FIXEDTERM:
-                    if (LogUtil.rateLimitAllowLog("killbilling-change-plan-unknown-phase-align")) {
-                        log.warn("Changing plan from {} phase, not sure how to align, account id {}",
-                                subscriptionInKb.getPhaseType(), subscriptionInKb.getAccountId());
-                    }
-                    newPhase = subscriptionInKb.getPhaseType();
-                    break;
-                case EVERGREEN:
-                    newPhase = PhaseType.EVERGREEN;
-                    break;
+            if (PlanStore.TEAMMATE_PLAN_ID.equals(subscriptionInKb.getPlanName())) {
+                // Teammate plan is essentially a non-plan plan,
+                // user had no trial yet, so let's give them a trial
+                // to prevent creating new accounts
+                newPhase = PhaseType.TRIAL;
+            } else {
+                // Even though we are using START_OF_SUBSCRIPTION changeAlignment
+                // we manually transition from TRIAL to EVERGREEN.
+                // So changing plans here, we need to override the correct phase,
+                // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
+                switch (subscriptionInKb.getPhaseType()) {
+                    case TRIAL:
+                        newPhase = PhaseType.TRIAL;
+                        break;
+                    default:
+                    case DISCOUNT:
+                    case FIXEDTERM:
+                        if (LogUtil.rateLimitAllowLog("killbilling-change-plan-unknown-phase-align")) {
+                            log.warn("Changing plan from {} phase, not sure how to align, account id {}",
+                                    subscriptionInKb.getPhaseType(), subscriptionInKb.getAccountId());
+                        }
+                        newPhase = subscriptionInKb.getPhaseType();
+                        break;
+                    case EVERGREEN:
+                        newPhase = PhaseType.EVERGREEN;
+                        break;
+                }
             }
 
             boolean oldPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName());

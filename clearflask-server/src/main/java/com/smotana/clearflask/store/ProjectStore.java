@@ -69,9 +69,9 @@ public interface ProjectStore {
 
     void revokeInvitation(String projectId, String invitationId);
 
-    ProjectModel addAdmin(String projectId, String adminAccountId);
+    Project addAdmin(String projectId, String adminAccountId);
 
-    ProjectModel removeAdmin(String projectId, String adminAccountId);
+    Project removeAdmin(String projectId, String adminAccountId);
 
 
     interface Project {
@@ -224,7 +224,7 @@ public interface ProjectStore {
         Long ttlInEpochSec;
 
         public boolean isAccepted() {
-            return Strings.isNullOrEmpty(getIsAcceptedByAccountId());
+            return !Strings.isNullOrEmpty(getIsAcceptedByAccountId());
         }
 
         public InvitationAdmin toInvitationAdmin() {

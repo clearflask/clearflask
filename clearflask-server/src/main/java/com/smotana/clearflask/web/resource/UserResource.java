@@ -461,11 +461,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public void userLogout(String projectId) {
         Optional<ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
-        if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getAuthenticatedUserIdOpt().isPresent()) {
+        if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getAuthenticatedUserSessionOpt().isPresent()) {
             log.trace("Cannot logout user, already not logged in");
             return;
         }
-        UserSession session = extendedPrincipal.get().getAuthenticatedUserIdOpt().get();
+        UserSession session = extendedPrincipal.get().getAuthenticatedUserSessionOpt().get();
 
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);

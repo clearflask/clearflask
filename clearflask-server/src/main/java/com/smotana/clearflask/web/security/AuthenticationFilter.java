@@ -171,6 +171,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<String> pathParamIdeaIdOpt;
         Optional<String> pathParamCommentIdOpt;
+        Optional<Project> projectOpt;
         Account authenticatedAccount;
         switch (role) {
             case Role.SUPER_ADMIN:
@@ -207,7 +208,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     log.trace("Role {} missing account", role);
                     return false;
                 }
-                Optional<Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
+                projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
                 if (!projectOpt.isPresent()) {
                     log.trace("Role {} missing project with id {}", role, pathParamProjectIdOpt.get());
                     return false;
@@ -269,7 +270,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (authenticatedUserSessionOpt.isPresent() && authenticatedUserSessionOpt.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
                     return true;
                 }
-                Optional<Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
+                projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
                 if (!projectOpt.isPresent()) {
                     log.trace("Role {} missing project", role);
                     return false;

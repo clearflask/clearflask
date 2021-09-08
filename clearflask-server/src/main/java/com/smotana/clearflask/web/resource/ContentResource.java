@@ -41,7 +41,7 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     @Override
     public ContentUploadResponse contentUpload(String projectId, InputStream body) {
         String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .get();
 

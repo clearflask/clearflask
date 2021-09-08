@@ -32,7 +32,7 @@ public interface NotificationService {
 
     void onModInvite(ConfigAdmin configAdmin, UserModel user);
 
-    void onTeammateInvite(ConfigAdmin configAdmin, InvitationModel invitation);
+    void onTeammateInvite(InvitationModel invitation);
 
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);
 

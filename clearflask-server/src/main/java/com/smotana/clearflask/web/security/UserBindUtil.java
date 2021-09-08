@@ -52,7 +52,7 @@ public class UserBindUtil {
             Optional<UserBindOauthToken> oauthTokenOpt,
             Optional<String> browserPushTokenOpt) {
 
-        Optional<UserSession> userSessionOpt = extendedPrincipalOpt.flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt);
+        Optional<UserSession> userSessionOpt = extendedPrincipalOpt.flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt);
         Optional<UserModel> userOpt = userSessionOpt
                 .flatMap(userSession -> userStore.getUser(userSession.getProjectId(), userSession.getUserId()));
         boolean createSession = false;

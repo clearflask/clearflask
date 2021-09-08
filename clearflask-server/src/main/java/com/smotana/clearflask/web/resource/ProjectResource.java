@@ -279,14 +279,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         // Amount of times I've made this mistake and rolled it back:   2
         //
 
-        Account account = getExtendedPrincipal()
-                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+        Account projectAccount = projectStore.getProject(projectId, true)
+                .map(Project::getAccountId)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
                 .get();
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+            planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), configAdmin);
         } catch (RequiresUpgradeException ex) {
-            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+            if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
@@ -304,18 +304,22 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
     public ProjectAdminsInviteResult projectAdminsInviteAdmin(String projectId, String email) {
-        Account account = accountStore.getAccount(getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt).get(), true).get();
-        Project project = projectStore.getProject(projectId, true).get();
+        Account projectAccount = projectStore.getProject(projectId, true)
+                .map(Project::getAccountId)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
         try {
-            planStore.verifyTeammateInviteMeetsPlanRestrictions(account.getPlanid(), projectId, true);
+            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectId, true);
         } catch (RequiresUpgradeException ex) {
-            if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
+            if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
 
+        Account account = accountStore.getAccount(getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt).get(), true).get();
         InvitationModel invitation = projectStore.createInvitation(projectId, email, account.getName());
-        notificationService.onTeammateInvite(project.getVersionedConfigAdmin().getConfig(), invitation);
+
+        notificationService.onTeammateInvite(invitation);
 
         return new ProjectAdminsInviteResult(invitation.toInvitationAdmin());
     }

@@ -94,7 +94,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public CommentWithVote commentCreate(String projectId, String ideaId, CommentCreate create) {
         sanitizer.content(create.getContent());
 
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt).map(UserStore.UserSession::getUserId).get();
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
@@ -250,7 +250,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     }
 
     private ImmutableList<CommentWithVote> toCommentWithVotesAndAddMergedPostsAsComments(String projectId, ImmutableCollection<CommentModel> comments, Optional<String> parentIdeaIdOpt, ImmutableSet<String> mergedPostIds, int fillUntilResultSize, List<String> excludeMergedPostIds) {
-        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserIdOpt)
+        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         Map<String, VoteOption> voteResults = ImmutableMap.of();

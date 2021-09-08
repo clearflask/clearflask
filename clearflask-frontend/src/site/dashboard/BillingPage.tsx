@@ -21,6 +21,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
+import { TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import CreditCard from '../../common/CreditCard';
 import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
@@ -197,20 +198,34 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
-    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, setPaymentAction, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, setPaymentAction, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc, switchPlanTitle;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
-        paymentTitle = 'Automatic renewal is active';
-        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
-        cardState = 'active';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        showCancelSubscription = true;
-        planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
-        if (hasAvailablePlansToSwitch) {
-          planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
-          showPlanChange = true;
+        if (this.props.accountBilling?.plan.basePlanId === TeammatePlanId) {
+          paymentTitle = 'No payment required';
+          paymentDesc = 'While you only access external projects, payments are made by the project owner. No payment is required from you at this time.';
+          cardState = 'active';
+          showSetPayment = false;
+          showCancelSubscription = false;
+          planTitle = 'You are not on a plan';
+          planDesc = 'While you only access external projects, you are not required to be on a plan. If you decide to create a project under your account, you will be able to choose a plan and your trial will begin.';
+          if (hasAvailablePlansToSwitch) {
+            showPlanChange = true;
+            switchPlanTitle = 'Choose plan'
+          }
+        } else {
+          paymentTitle = 'Automatic renewal is active';
+          paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
+          cardState = 'active';
+          showSetPayment = true;
+          setPaymentTitle = 'Update payment method';
+          showCancelSubscription = true;
+          planTitle = 'Your plan is active';
+          planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
+          if (hasAvailablePlansToSwitch) {
+            planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
+            showPlanChange = true;
+          }
         }
         break;
       case Admin.SubscriptionStatus.ActiveTrial:
@@ -712,7 +727,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     this.setState({ showPlanChange: true });
                   }}
                 >
-                  Switch plan
+                  {switchPlanTitle || 'Switch plan'}
                 </Button>
               </div>
             )}

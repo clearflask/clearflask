@@ -81,9 +81,11 @@ public class MockAuthCookie implements AuthCookie {
                 principal = new ExtendedPrincipal(
                         accountSessionOpt.map(AccountSession::getAccountId).orElseGet(() -> userSession.map(UserSession::getUserId).orElse("127.0.0.1")),
                         "127.0.0.1",
+                        accountSessionOpt.map(AccountSession::getAccountId),
+                        superAccountSessionOpt.map(AccountSession::getAccountId),
+                        userSession,
                         accountSessionOpt,
-                        superAccountSessionOpt,
-                        userSession);
+                        superAccountSessionOpt);
                 userHasRolePredicate = role -> {
                     switch (role) {
                         case Role.SUPER_ADMIN:

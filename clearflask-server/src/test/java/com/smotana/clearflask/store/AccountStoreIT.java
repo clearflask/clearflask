@@ -115,13 +115,37 @@ public class AccountStoreIT extends AbstractIT {
         assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
 
         String projectId = IdUtil.randomId();
+        ImmutableSet<String> initialProjectIds = account.getProjectIds();
         account = account.toBuilder()
                 .projectIds(ImmutableSet.<String>builder()
                         .add(projectId)
-                        .addAll(account.getProjectIds())
+                        .addAll(initialProjectIds)
                         .build())
                 .build();
         store.addProject(account.getAccountId(), projectId).getIndexingFuture().get();
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        account = account.toBuilder()
+                .projectIds(initialProjectIds)
+                .build();
+        store.removeProject(account.getAccountId(), projectId).getIndexingFuture().get();
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        String projectId2 = IdUtil.randomId();
+        ImmutableSet<String> initialExternalProjectIds = account.getExternalProjectIds();
+        account = account.toBuilder()
+                .externalProjectIds(ImmutableSet.<String>builder()
+                        .add(projectId2)
+                        .addAll(initialExternalProjectIds)
+                        .build())
+                .build();
+        store.addExternalProject(account.getAccountId(), projectId);
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        account = account.toBuilder()
+                .externalProjectIds(initialExternalProjectIds)
+                .build();
+        store.removeExternalProject(account.getAccountId(), projectId2);
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
         AccountStore.AccountSession accountSession = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());

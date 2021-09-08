@@ -17,7 +17,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
@@ -531,20 +530,20 @@ public class DynamoProjectStore implements ProjectStore {
                         .withTableName(projectSchema.tableName())
                         .withKey(ItemUtils.toAttributeValueMap(projectSchema.primaryKey(Map.of(
                                 "projectId", invitation.getProjectId()))))
-                        .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withUpdateExpression("ADD #adminsAccountIds :accountId")
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
+                        .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
                         .withExpressionAttributeNames(Map.of(
                                 "#partitionKey", projectSchema.partitionKeyName(),
+                                "#accountId", "accountId",
                                 "#adminsAccountIds", "adminsAccountIds"))
                         .withExpressionAttributeValues(Map.of(
-                                // Can't use toAttrValue since we're adding to a set
-                                ":accountId", new AttributeValue(accepteeAccountId)))))
+                                ":adminAccountId", projectSchema.toAttrValue("adminsAccountIds", ImmutableSet.of(accepteeAccountId))))))
                 .add(new TransactWriteItem().withUpdate(new Update()
                         .withTableName(invitationSchema.tableName())
                         .withKey(ItemUtils.toAttributeValueMap(invitationSchema.primaryKey(Map.of(
                                 "invitationId", invitationId))))
                         .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withUpdateExpression("SET #isAcceptedByAccountId = :accountId, #ttlInEpochSec = :ttlInEpochSec")
+                        .withUpdateExpression("SET #isAcceptedByAccountId = :isAcceptedByAccountId, #ttlInEpochSec = :ttlInEpochSec")
                         .withExpressionAttributeNames(Map.of(
                                 "#partitionKey", invitationSchema.partitionKeyName(),
                                 "#isAcceptedByAccountId", "isAcceptedByAccountId",
@@ -554,6 +553,7 @@ public class DynamoProjectStore implements ProjectStore {
                                 ":ttlInEpochSec", invitationSchema.toAttrValue("ttlInEpochSec",
                                         Instant.now().plus(config.invitationExpireAfterAccepted()).getEpochSecond())))))
                 .build()));
+        projectCache.invalidate(invitation.getProjectId());
         return invitation.getProjectId();
     }
 
@@ -569,33 +569,38 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public ProjectModel addAdmin(String projectId, String adminAccountId) {
-        return projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+    public Project addAdmin(String projectId, String adminAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("ADD #adminsAccountIds :accountId")
+                .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
+                .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
                 .withNameMap(Map.of(
                         "#partitionKey", projectSchema.partitionKeyName(),
+                        "#accountId", "accountId",
                         "#adminsAccountIds", "adminsAccountIds"))
                 .withValueMap(Map.of(
-                        ":accountId", adminAccountId))
+                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
                 .withReturnValues(ReturnValue.ALL_NEW))
-                .getItem());
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
     }
 
     @Override
-    public ProjectModel removeAdmin(String projectId, String adminAccountId) {
-        return projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+    public Project removeAdmin(String projectId, String adminAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("REMOVE #adminsAccountIds :accountId")
+                .withUpdateExpression("DELETE #adminsAccountIds :adminAccountId")
                 .withNameMap(Map.of(
                         "#partitionKey", projectSchema.partitionKeyName(),
                         "#adminsAccountIds", "adminsAccountIds"))
                 .withValueMap(Map.of(
-                        ":accountId", adminAccountId))
+                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
                 .withReturnValues(ReturnValue.ALL_NEW))
-                .getItem());
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
     }
 
     private String packWebhookListener(WebhookListener listener) {

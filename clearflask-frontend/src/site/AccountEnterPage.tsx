@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Collapse, Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles } from '@material-ui/core/styles';
+import BathtubIcon from '@material-ui/icons/Bathtub';
 import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -252,7 +253,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
 
     const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
     const isOauthEnabled = !isSingleCustomer;
-    const signUpOrLogIn = this.props.type === 'signup' ? 'Sign up ' : 'Log in ';
+    const signUpOrLogIn = this.props.type === 'signup' ? 'Sign up with' : 'Log in with';
 
     return (
       <EnterTemplate
@@ -274,7 +275,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
                 >
                   <GoogleIcon />
-                  &nbsp;&nbsp;{signUpOrLogIn}Google
+                  &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Google
                 </Button>
                 <Button
                   className={this.props.classes.oauthEnter}
@@ -284,8 +285,20 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
                 >
                   <GithubIcon />
-                  &nbsp;&nbsp;{signUpOrLogIn}GitHub
+                  &nbsp;&nbsp;{signUpOrLogIn}&nbsp;GitHub
                 </Button>
+                {!isProd() && (
+                  <Button
+                    className={this.props.classes.oauthEnter}
+                    variant='outlined'
+                    fullWidth
+                    size='large'
+                    onClick={e => !!selectedPlanId && this.onOauth('bathtub', selectedPlanId)}
+                  >
+                    <BathtubIcon />
+                    &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Bathtub
+                  </Button>
+                )}
               </>
             )}
             <Collapse in={!this.state.useEmail}>
@@ -297,7 +310,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                 onClick={e => this.setState({ useEmail: true })}
               >
                 <EmailIcon />
-                &nbsp;&nbsp;{signUpOrLogIn}Email
+                &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Email
               </Button>
             </Collapse>
             <Collapse in={this.state.useEmail}>
@@ -465,7 +478,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
     );
   }
 
-  onOauth(type: 'google' | 'github', selectedPlanId: string) {
+  onOauth(type: 'google' | 'github' | 'bathtub', selectedPlanId: string) {
     this.oauthFlow.listenForSuccess(() => {
       ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
     });

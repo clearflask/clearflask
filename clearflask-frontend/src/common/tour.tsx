@@ -394,9 +394,7 @@ export const TourAnchor = React.forwardRef((props: {
       <ClosablePopper
         open
         onClose={() => dispatch({ type: 'tourSetStep', payload: { activeStep: undefined } })}
-        // // Do not use ref anchorEl, anchor in Dashboard save changes button doesn't render properly
-        // anchorElGetter={() => anchorRef.current?.getBoundingClientRect()}
-        anchorEl={anchorRef.current}
+        anchorEl={() => anchorRef.current}
         arrow
         closeButtonPosition='disable'
         paperClassName={classes.anchorPaper}
@@ -454,9 +452,9 @@ export const TourAnchor = React.forwardRef((props: {
 
   if (typeof props.children !== 'function') {
     content = (
-      <div ref={anchorRef} className={props.className} {...props.DivProps}>
+      <span ref={anchorRef} className={props.className} {...props.DivProps}>
         {content}
-      </div>
+      </span>
     );
   }
 

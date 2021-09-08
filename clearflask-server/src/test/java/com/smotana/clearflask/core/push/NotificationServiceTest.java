@@ -24,6 +24,7 @@ import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
@@ -36,6 +37,7 @@ import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.MockModelUtil;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -60,6 +62,7 @@ import org.junit.Test;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
+import java.time.Instant;
 import java.util.Optional;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
@@ -107,6 +110,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnCreditChange.module());
         install(OnForgotPassword.module());
         install(OnAccountSignup.module());
+        install(OnTeammateInvite.module());
         install(OnModInvite.module());
         install(OnEmailChanged.module());
         install(EmailVerify.module());
@@ -318,7 +322,7 @@ public class NotificationServiceTest extends AbstractTest {
     }
 
     @Test(timeout = 10_000L)
-    public void testOnAdminInvite() throws Exception {
+    public void testOnModInvite() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
         UserModel user = MockModelUtil.getRandomUser().toBuilder()
@@ -334,6 +338,37 @@ public class NotificationServiceTest extends AbstractTest {
         service.onModInvite(
                 versionedConfigAdmin.getConfig(),
                 user);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTeammateInvite() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .isMod(true)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .build();
+        when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onTeammateInvite(new ProjectStore.InvitationModel(
+                IdUtil.randomId(),
+                projectId,
+                "sandy@example.com",
+                "Sanders",
+                "Sand Project",
+                null,
+                Instant.now().plusSeconds(1000L).getEpochSecond()));
 
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);

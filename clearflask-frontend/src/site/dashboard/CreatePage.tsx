@@ -1,20 +1,26 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../../@types/transform-media-imports.d.ts"/>
-import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControlLabel, Hidden, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, Hidden, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
 import FeaturesImg from '../../../public/img/landing/hero.svg';
+import UpgradeImg from '../../../public/img/landing/notify.svg';
 import DetailsImg from '../../../public/img/landing/understand.svg';
 import * as Admin from '../../api/admin';
-import ServerAdmin from '../../api/serverAdmin';
+import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { HeaderLogoLogo } from '../../app/Header';
+import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
+import { TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
+import { TourDefinitionGuideState } from '../../common/tour';
 import { detectEnv, Environment } from '../../common/util/detectEnv';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
@@ -145,25 +151,55 @@ interface Props {
   isOnboarding: boolean;
   projectCreated: (projectId: string) => void;
 }
-interface State extends CreateTemplateV2Options {
-  step: 'feature-select' | 'project-details' | 'complete';
-  isSubmitting?: boolean;
-  createdProject?: Admin.NewProjectResult;
-  createdTemplates?: CreateTemplateV2Result;
+interface ConnectProps {
+  isPlanTeammate?: boolean;
 }
-class CreatePage extends Component<Props & WithStyles<typeof styles, true>, State> {
+interface State extends CreateTemplateV2Options {
+  step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite';
+  isSubmitting?: boolean;
+  invites: Array<string>;
+  createdProjectId?: string;
+}
+class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
 
     this.state = {
       ...createTemplateV2OptionsDefault,
-      step: 'feature-select',
+      step: !!this.props.isPlanTeammate ? 'upgrade-plan' : 'feature-select',
+      invites: [],
     };
   }
 
   render() {
     switch (this.state.step) {
+      case 'upgrade-plan':
+        return (
+          <CreateLayout
+            key='upgrade-plan'
+            isOnboarding={this.props.isOnboarding}
+            title='Upgrade plan'
+            description={(
+              <>
+                To create a new project on your account, we will go ahead and start your trial period now.
+                <p>If you wish to create a project on another account and get accesss, contact the owner of that account.</p>
+              </>
+            )}
+            stretchContent
+            img={UpgradeImg}
+            actions={[(
+              <Button
+                variant='contained'
+                disableElevation
+                color='primary'
+                onClick={() => this.setState({ step: 'feature-select' })}
+              >
+                Got it
+              </Button>
+            )]}
+          />
+        );
       default:
       case 'feature-select':
         return (
@@ -334,14 +370,60 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
             )]}
           />
         );
-      case 'complete':
+      case 'invite':
+        var domain = 'example.com';
+        if (this.state.infoWebsite) {
+          try {
+            const { hostname } = new URL(this.state.infoWebsite);
+            domain = hostname;
+          } catch (e) { }
+        }
         return (
           <CreateLayout
             key='complete'
+            img={CreatedImg}
             isOnboarding={this.props.isOnboarding}
             title='Success!'
-            description={`You've created ${this.state.infoName || 'your project'}.`}
-            img={CreatedImg}
+            description={`You've created ${this.state.infoName || 'your project'}. Invite your teammates to explore together.`}
+            content={(
+              <>
+                {[...Array(this.state.invites.length + (this.state.invites.length < 8 ? 1 : 0)).keys()].map(inviteIndex => (
+                  <Collapse in appear>
+                    <TextField
+                      key={`invite-${inviteIndex}`}
+                      className={this.props.classes.field}
+                      variant='outlined'
+                      size='small'
+                      placeholder={`sandy@${domain}`}
+                      disabled={!!this.state.isSubmitting}
+                      value={this.state.invites[inviteIndex] || ''}
+                      onChange={e => this.setState({
+                        invites: Object.assign([], this.state.invites, { [inviteIndex]: e.target.value })
+                      })}
+                    />
+                  </Collapse>
+                ))}
+              </>
+            )}
+            actions={[(
+              <Button
+                variant='text'
+                onClick={() => this.goHome()}
+              >
+                skip
+              </Button>
+            ), (
+              <SubmitButton
+                variant='contained'
+                disableElevation
+                color='primary'
+                isSubmitting={this.state.isSubmitting}
+                disabled={!this.state.infoName || !this.state.infoSlug}
+                onClick={() => this.onInvite()}
+              >
+                Invite
+              </SubmitButton>
+            )]}
           />
         );
     }
@@ -360,6 +442,25 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
     return { config, templates };
   }
 
+  async goHome() {
+    this.props.history.push('/dashboard');
+  }
+
+  async onInvite() {
+    this.goHome();
+
+    if (!this.state.createdProjectId) return;
+    const d = await ServerAdmin.get().dispatchAdmin();
+    for (const email of this.state.invites) {
+      if (!email) continue;
+      tourSetGuideState('invite-teammates', TourDefinitionGuideState.Completed);
+      await d.projectAdminsInviteAdmin({
+        projectId: this.state.createdProjectId,
+        email,
+      })
+    }
+  }
+
   async onCreate() {
     this.setState({ isSubmitting: true });
     try {
@@ -370,9 +471,8 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       });
       this.setState({
         isSubmitting: false,
-        step: 'complete',
-        createdProject: newProject,
-        createdTemplates: configAndTemplates.templates,
+        step: 'invite',
+        createdProjectId: newProject.projectId,
       });
       this.props.projectCreated(newProject.projectId);
     } catch (e) {
@@ -390,7 +490,12 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       .replace(/ +/g, '-');
   }
 }
-export default withStyles(styles, { withTheme: true })(CreatePage);
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
+  const connectProps: ConnectProps = {
+    isPlanTeammate: state.account.account.account?.basePlanId === TeammatePlanId,
+  };
+  return connectProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(CreatePage)));
 
 export const TemplateCard = (props: {
   className?: string;
@@ -434,7 +539,7 @@ export const TemplateCard = (props: {
 const CreateLayout = (props: {
   title: string;
   isOnboarding?: boolean;
-  description: string;
+  description: React.ReactNode;
   stretchContent?: boolean;
   content?: React.ReactNode;
   actions?: React.ReactNode[];

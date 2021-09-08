@@ -33,6 +33,7 @@ import ClearFlaskTourProvider, { tourSetGuideState } from '../common/ClearFlaskT
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
+import { TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../common/config/template/changelog';
 import { FeedbackInstance } from '../common/config/template/feedback';
 import { LandingInstance } from '../common/config/template/landing';
@@ -587,7 +588,9 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       case 'welcome':
       case 'create':
         context.showProjectLink = true;
-        const isOnboarding = activePath === 'welcome' && !projects.length;
+        const isOnboarding = activePath === 'welcome'
+          && !projects.length
+          && this.props.account?.basePlanId !== TeammatePlanId;
         if (isOnboarding) {
           context.isOnboarding = true;
           setTitle('Welcome');

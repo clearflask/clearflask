@@ -452,15 +452,15 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onTeammateInvite(ConfigAdmin configAdmin, InvitationModel invitation) {
+    public void onTeammateInvite(InvitationModel invitation) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
         }
         submit(() -> {
-            String link = "https://" + Project.getHostname(configAdmin, configApp) + "/invite/" + invitation.getInvitationId();
+            String link = "https://" + configApp.domain() + "/invitation/" + invitation.getInvitationId();
             try {
-                emailService.send(onTeammateInvite.email(invitation, lin));
+                emailService.send(onTeammateInvite.email(invitation, link));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

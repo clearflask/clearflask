@@ -5,8 +5,8 @@ import { isProd } from "./detectEnv";
 import randomUuid from "./uuid";
 
 const SUCCESS_LOCALSTORAGE_EVENT_KEY_PREFIX = 'login-success';
-const OAUTH_CODE_PARAM_NAME = 'code';
-const OAUTH_STATE_PARAM_NAME = 'state';
+export const OAUTH_CODE_PARAM_NAME = 'code';
+export const OAUTH_STATE_PARAM_NAME = 'state';
 const OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
 export type Unsubscribe = () => void;
@@ -39,7 +39,7 @@ export class OAuthFlow {
     this.props = props;
   }
 
-  openForAccount(providerType: 'google' | 'github', extraData?: string) {
+  openForAccount(providerType: 'google' | 'github' | 'bathtub', extraData?: string) {
     var provider: OAuthProvider;
     switch (providerType) {
       case 'google':
@@ -54,6 +54,13 @@ export class OAuthFlow {
           clientId: isProd() ? '2c6e8437eaa489e69c38' : 'github-client-id',
           authorizeUrl: 'https://github.com/login/oauth/authorize',
           scope: 'user:email',
+        };
+        break;
+      case 'bathtub':
+        provider = {
+          clientId: 'bathtub',
+          authorizeUrl: `${windowIso.location.protocol}//${windowIso.location.host}/bathtub/authorize`,
+          scope: 'name email',
         };
         break;
       default:

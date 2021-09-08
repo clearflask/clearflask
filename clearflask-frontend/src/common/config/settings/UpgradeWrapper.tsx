@@ -11,6 +11,9 @@ import * as Admin from '../../../api/admin';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import { Path, pathEquals } from '../configEditor';
 
+/** If changed, also change in PlanStore.java */
+export const TeammatePlanId = 'teammate-unlimited';
+
 /** If changed, also change in KillBillPlanStore.java */
 const GrowthRestrictedProperties: Path[] = [
   ['users', 'onboarding', 'notificationMethods', 'sso'],
@@ -102,14 +105,14 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   isActionRestricted(): boolean {
     return this.props.action !== undefined
       && this.props.accountBasePlanId !== undefined
-      && this.props.subscriptionStatus !== Admin.SubscriptionStatus.ActiveTrial
+      && !this.canAutoUpgrade()
       && RestrictedActions[this.props.accountBasePlanId]?.has(this.props.action);
   }
 
   isPropertyRestricted(): boolean {
     return this.props.propertyPath !== undefined
       && this.props.accountBasePlanId !== undefined
-      && this.props.subscriptionStatus !== Admin.SubscriptionStatus.ActiveTrial
+      && !this.canAutoUpgrade()
       && RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
         pathEquals(restrictedPath, this.props.propertyPath!))
   }
@@ -117,9 +120,14 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   isTeammatesInviteRestricted(): boolean {
     return this.props.action === Action.TEAMMATE_INVITE
       && this.props.accountBasePlanId !== undefined
-      && this.props.subscriptionStatus !== Admin.SubscriptionStatus.ActiveTrial
+      && !this.canAutoUpgrade()
       && TeammatesMaxCount[this.props.accountBasePlanId] !== undefined
       && (this.props.teammatesCount || 1) >= TeammatesMaxCount[this.props.accountBasePlanId];
+  }
+
+  canAutoUpgrade(): boolean {
+    return this.props.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
+      && this.props.accountBasePlanId !== TeammatePlanId;
   }
 }
 

@@ -95,12 +95,17 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))
             .build();
-    private static final ImmutableList<Plan> AVAILABLE_PLANS_STATIC_BUILDER = ImmutableList.of(
+    private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
                     new PlanPerk("Flat annual price", null),
                     new PlanPerk("Tailored plan", null),
                     new PlanPerk("Support & SLA", null)),
+                    null, null),
+            new Plan(TEAMMATE_PLAN_ID, "Teammate",
+                    null, ImmutableList.of(
+                    new PlanPerk("External projects", null),
+                    new PlanPerk("No billing", null)),
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
@@ -179,7 +184,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     .build();
             return e.getValue().apply(planPricing);
         }).collect(ImmutableList.toImmutableList());
-        allPlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
+        allPlans = Stream.concat(plans.stream(), PLANS_STATIC.stream())
                 .collect(ImmutableMap.toImmutableMap(
                         Plan::getBasePlanId,
                         p -> p));
@@ -216,6 +221,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 return ImmutableSet.of(
                         availablePlans.get("growth2-monthly"),
                         availablePlans.get("standard-monthly"));
+            case TEAMMATE_PLAN_ID:
             case "growth2-monthly":
             case "standard2-monthly":
                 return ImmutableSet.of(
@@ -311,7 +317,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case TEAMMATE_PLAN_ID:
                 switch (action) {
                     case CREATE_PROJECT:
-                        throw new RequiresUpgradeException("growth2-monthly", "Not allowed to create projects");
+                        throw new RequiresUpgradeException("growth2-monthly", "Not allowed to create projects without a plan");
+                    case API_KEY:
+                        throw new RequiresUpgradeException("growth2-monthly", "Not allowed to use API without a plan");
                 }
                 return;
             case "growth-monthly":
@@ -331,6 +339,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws RequiresUpgradeException {
         switch (getBasePlanId(planId)) {
+            case TEAMMATE_PLAN_ID:
+                throw new RequiresUpgradeException("growth2-monthly", "Not allowed to have projects without a plan");
             case "growth-monthly":
             case "growth2-monthly":
                 // Restrict OAuth

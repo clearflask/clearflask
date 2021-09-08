@@ -38,7 +38,7 @@ public class ExtendedSecurityContext implements SecurityContext {
         Optional<String> authenticatedSuperAccountIdOpt;
         /** Present if request is user authenticated */
         @NonNull
-        Optional<UserSession> authenticatedUserIdOpt;
+        Optional<UserSession> authenticatedUserSessionOpt;
 
         /** Only present if session is used (not by API) */
         @NonNull

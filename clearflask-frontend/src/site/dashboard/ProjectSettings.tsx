@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
@@ -57,6 +57,7 @@ import { FilterControlSelect } from '../../common/search/FilterControls';
 import SubmitButton from '../../common/SubmitButton';
 import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
+import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
 import randomUuid from '../../common/util/uuid';
@@ -127,7 +128,7 @@ const styles = (theme: Theme) => createStyles({
   feedbackAccordionContainer: {
     margin: theme.spacing(4, 0),
   },
-  feedbackAddWithAccordion: {
+  feedbackAddNoMargin: {
     margin: theme.spacing(0),
   },
   feedbackTagGroupProperty: {
@@ -241,13 +242,22 @@ const styles = (theme: Theme) => createStyles({
   rolePending: {
     color: theme.palette.text.hint,
   },
+  item: {
+    margin: theme.spacing(4),
+  },
+  teammatesInviteMargins: {
+    margin: theme.spacing(4, 0, 6),
+  },
+  teammatesInviteNeedHelp: {
+    marginBottom: theme.spacing(1),
+  },
 });
 const useStyles = makeStyles(styles);
 
 export const ProjectSettingsBase = (props: {
   children?: any,
   title?: string,
-  description?: string,
+  description?: React.ReactNode,
 }) => {
   const classes = useStyles();
   return (
@@ -271,7 +281,8 @@ export const ProjectSettingsTeammates = (props: {
   const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
   if (!accountBasePlanId || !accountSubscriptionStatus) return null;
   return (
-    <ProjectSettingsBase title='Teammates'>
+    <ProjectSettingsBase title='Teammates'
+      description='Invite your teammates to this project only.'>
       <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
         <ProjectSettingsTeammatesList
           server={props.server}
@@ -280,7 +291,6 @@ export const ProjectSettingsTeammates = (props: {
           accountSubscriptionStatus={accountSubscriptionStatus}
         />
       </Provider>
-      <br /><br /><br /><br />
       <ProjectSettingsTeammatesPermissionsInfo />
     </ProjectSettingsBase>
   );
@@ -293,15 +303,6 @@ export const ProjectSettingsTeammatesList = (props: {
 }) => {
   const classes = useStyles();
   const theme = useTheme();
-
-  const website = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.website, shallowEqual);
-  var domain = 'example.com';
-  if (website) {
-    try {
-      const { hostname } = new URL(website);
-      domain = hostname;
-    } catch (e) { }
-  }
 
   const teammatesStatus = useSelector<ReduxState, Status | undefined>(state => state.teammates.teammates?.status, shallowEqual);
   const teammates = useSelector<ReduxState, Admin.ProjectAdmin[] | undefined>(state => state.teammates.teammates?.teammates, shallowEqual);
@@ -378,7 +379,6 @@ export const ProjectSettingsTeammatesList = (props: {
           ))}
         </TableBody>
       </Table>
-      <br /><br />
       <UpgradeWrapper
         overrideUpgradeMsg='Plan upgrade required to invite more'
         accountBasePlanId={props.accountBasePlanId}
@@ -386,15 +386,18 @@ export const ProjectSettingsTeammatesList = (props: {
         action={Action.TEAMMATE_INVITE}
         teammatesCount={teammates.length + invitations.length}
       >
-        <ProjectSettingsAddWithName
-          label='Invite teammate'
-          placeholder={`sandy@${domain}`}
-          withAccordion
-          onAdd={email => props.server.dispatchAdmin({ debounce: true }).then(d => d.projectAdminsInviteAdmin({
-            projectId: props.server.getProjectId(),
-            email,
-          }))}
-        />
+        <Provider store={ServerAdmin.get().getStore()}>
+          <TourAnchor anchorId='settings-teammates-invite' placement='bottom'>
+            {(next, isActive, anchorRef) => (
+              <Provider store={props.server.getStore()}>
+                <ProjectSettingsInviteTeammate
+                  server={props.server}
+                  AddWithNameProps={{ TextFieldProps: { ref: anchorRef } }}
+                />
+              </Provider>
+            )}
+          </TourAnchor>
+        </Provider>
       </UpgradeWrapper>
       <Dialog
         open={!!confirmDeleteTeammate}
@@ -418,6 +421,49 @@ export const ProjectSettingsTeammatesList = (props: {
     </>
   );
 }
+export const NeedHelpInviteTeammate = (props: {
+  server: Server;
+}) => {
+  const classes = useStyles();
+  return (
+    <div className={classes.teammatesInviteMargins}>
+      <Typography variant='h6' className={classes.teammatesInviteNeedHelp}>Need help?</Typography>
+      <Provider store={props.server.getStore()}>
+        <ProjectSettingsInviteTeammate server={props.server} noMargin />
+      </Provider>
+    </div>
+  );
+}
+export const ProjectSettingsInviteTeammate = (props: {
+  server: Server;
+  noMargin?: boolean;
+  AddWithNameProps?: Partial<React.ComponentProps<typeof ProjectSettingsAddWithName>>;
+}) => {
+  const classes = useStyles();
+  const website = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.website, shallowEqual);
+  var domain = 'example.com';
+  if (website) {
+    try {
+      const { hostname } = new URL(website);
+      domain = hostname;
+    } catch (e) { }
+  }
+  return (
+    <ProjectSettingsAddWithName
+      className={classNames(
+        !props.noMargin && classes.teammatesInviteMargins,
+      )}
+      label='Invite a teammate'
+      placeholder={`sandy@${domain}`}
+      noMargin
+      onAdd={email => props.server.dispatchAdmin({ debounce: true }).then(d => d.projectAdminsInviteAdmin({
+        projectId: props.server.getProjectId(),
+        email,
+      })).then(() => tourSetGuideState('invite-teammates', TourDefinitionGuideState.Completed))}
+      {...props.AddWithNameProps}
+    />
+  );
+}
 const permissions: Array<[number, number, number, number, string]> = [
   [1, 1, 1, 1, 'View portal'],
   [1, 1, 1, 1, 'Submit feedback'],
@@ -430,6 +476,7 @@ const permissions: Array<[number, number, number, number, string]> = [
   [0, 0, 1, 1, 'Prioritize roadmap'],
   [0, 0, 1, 1, 'Manage changelog'],
   [0, 0, 1, 1, 'Project settings'],
+  [0, 0, 0, 1, 'API access'],
   [0, 0, 0, 1, 'Delete project'],
   [0, 0, 0, 1, 'Account Billing'],
 ];
@@ -470,6 +517,7 @@ export const ProjectSettingsInstall = (props: {
   return (
     <ProjectSettingsBase title='Install'>
       <ProjectSettingsInstallPortal server={props.server} editor={props.editor} />
+      <NeedHelpInviteTeammate server={props.server} />
       <ProjectSettingsInstallWidget server={props.server} editor={props.editor} />
       <ProjectSettingsInstallStatus server={props.server} editor={props.editor} />
     </ProjectSettingsBase>
@@ -1013,6 +1061,7 @@ export const ProjectSettingsDomain = (props: {
         <Typography variant='body1' component='div'>Ensure your DNS settings are configured with your domain set to CNAME sni.clearflask.com</Typography>
         <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
       </TourAnchor>
+      <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
 }
@@ -1399,6 +1448,7 @@ export const ProjectSettingsUsersSso = (props: {
           />
         )}
       />
+      <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
 }
@@ -1648,6 +1698,7 @@ export const ProjectSettingsUsersOauth = (props: {
           </UpgradeWrapper>
         )}
       />
+      <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
 }
@@ -1854,7 +1905,7 @@ export const ProjectSettingsLanding = (props: {
                       <ProjectSettingsAddWithName
                         label='New link'
                         placeholder='Title'
-                        withAccordion
+                        noMargin
                         onAdd={newLink => {
                           setExpandedType('link');
                           setExpandedIndex(landing.pageAndIndex.page.landing?.links.length || 0);
@@ -2174,7 +2225,7 @@ export const ProjectSettingsFeedback = (props: {
                     <ProjectSettingsAddWithName
                       label='New status'
                       placeholder='Title'
-                      withAccordion
+                      noMargin
                       onAdd={name => {
                         setExpandedType('status');
                         setExpandedIndex(feedback.categoryAndIndex.category.workflow.statuses.length)
@@ -2344,7 +2395,7 @@ export const ProjectSettingsSectionTagging = (props: {
           <ProjectSettingsAddWithName
             label='New tag group'
             placeholder='Platform'
-            withAccordion
+            noMargin
             onAdd={newTagGroup => {
               props.onExpandedChange(props.categoryAndIndex.category.tagging.tagGroups.length);
               props.editor.getPageGroup(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tagGroups'])
@@ -2512,22 +2563,30 @@ export const ProjectSettingsFeedbackTag = (props: {
 }
 
 export const ProjectSettingsAddWithName = (props: {
+  className?: string;
   label: string;
   placeholder?: string;
   onAdd: (value: string) => void;
-  withAccordion?: boolean;
+  noMargin?: boolean;
+  TextFieldProps?: Partial<React.ComponentPropsWithRef<typeof TextField>>;
 }) => {
   const classes = useStyles();
-  const [value, setValue] = useState<string | undefined>();
+  const [value, setValue] = useState<string>();
+  const [added, setAdded] = useState<boolean>(false);
   return (
     <TextField
       label={props.label}
-      className={classNames(props.withAccordion && classes.feedbackAddWithAccordion)}
       size='small'
       variant='outlined'
       placeholder={props.placeholder}
       value={value || ''}
       onChange={e => setValue(e.target.value)}
+      {...props.TextFieldProps}
+      className={classNames(
+        props.TextFieldProps?.className,
+        props.className,
+        props.noMargin && classes.feedbackAddNoMargin,
+      )}
       InputProps={{
         style: {
           minWidth: Property.inputMinWidth,
@@ -2541,12 +2600,18 @@ export const ProjectSettingsAddWithName = (props: {
                 if (!value) return;
                 props.onAdd(value);
                 setValue(undefined);
+                !added && setAdded(true);
               }}
             >
-              <AddIcon />
+              {(!value && !!added) ? (
+                <CheckIcon color='primary' />
+              ) : (
+                <AddIcon />
+              )}
             </IconButton>
           </InputAdornment>
         ),
+        ...props.TextFieldProps?.InputProps,
       }}
     />
   );
@@ -2810,6 +2875,47 @@ export const ProjectSettingsData = (props: {
       <DataSettings
         server={props.server}
       />
+    </ProjectSettingsBase>
+  );
+}
+
+export const ProjectSettingsApi = () => {
+  const classes = useStyles();
+  const account = useSelector<ReduxStateAdmin, Admin.AccountAdmin | undefined>(state => state.account.account.account, shallowEqual);
+  return (
+    <ProjectSettingsBase title='Developer API'
+      description={(
+        <>
+          Programmatically access and make changes or use Zapier to integrate with your workflow.
+          <p>
+            Check out the&nbsp;
+            <MuiLink
+              underline='none'
+              color='primary'
+              target="_blank"
+              href={`${windowIso.location.protocol}//${windowIso.location.host}/api`}
+            >API documentation</MuiLink>
+            &nbsp;to get familiar.
+          </p>
+        </>
+      )}>
+      <UpgradeWrapper action={Action.API_KEY}>
+        <Grid container alignItems='baseline' className={classes.item}>
+          <Grid item xs={12} sm={4}><Typography>API Token</Typography></Grid>
+          <Grid item xs={12} sm={8}><UpdatableField
+            isToken
+            value={account?.apiKey}
+            onSave={newApiKey => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+              accountUpdateAdmin: { apiKey: newApiKey }
+            }))}
+            helperText='Resetting a token invalidates previous token'
+          /></Grid>
+        </Grid>
+        <Grid container alignItems='baseline' className={classes.item}>
+          <Grid item xs={12} sm={4}><Typography>Account ID</Typography></Grid>
+          <Grid item xs={12} sm={8}>{account?.accountId}</Grid>
+        </Grid>
+      </UpgradeWrapper>
     </ProjectSettingsBase>
   );
 }

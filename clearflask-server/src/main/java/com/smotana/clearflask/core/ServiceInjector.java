@@ -41,6 +41,7 @@ import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnPostCreated;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
 import com.smotana.clearflask.core.push.provider.EmailServiceImpl;
@@ -200,6 +201,7 @@ public enum ServiceInjector {
                 install(OnForgotPassword.module());
                 install(OnAccountSignup.module());
                 install(OnModInvite.module());
+                install(OnTeammateInvite.module());
                 install(OnEmailChanged.module());
                 install(OnTrialEnded.module());
                 install(OnPaymentFailed.module());

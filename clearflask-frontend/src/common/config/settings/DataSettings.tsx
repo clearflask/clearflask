@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import UploadIcon from '@material-ui/icons/CloudUpload';
 import FileIcon from '@material-ui/icons/InsertDriveFile';
@@ -15,13 +15,11 @@ import { Server } from '../../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../../api/serverAdmin';
 import { CategorySelectWithConnect } from '../../../app/comps/CategorySelect';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
-import { Section } from '../../../site/dashboard/ProjectSettings';
+import { NeedHelpInviteTeammate, Section } from '../../../site/dashboard/ProjectSettings';
 import UserSelection from '../../../site/dashboard/UserSelection';
 import { contentScrollApplyStyles, Orientation } from '../../ContentScroll';
 import SubmitButton from '../../SubmitButton';
-import UpdatableField from '../../UpdatableField';
 import { csvPreviewLines } from '../../util/csvUtil';
-import UpgradeWrapper, { Action as FeatureAction } from './UpgradeWrapper';
 
 const PreviewLines = 6;
 
@@ -80,9 +78,6 @@ const styles = (theme: Theme) => createStyles({
   indexSelection: {
     marginBottom: -7,
   },
-  item: {
-    margin: theme.spacing(4),
-  },
 });
 
 interface Props {
@@ -131,30 +126,6 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
     const DropzoneIcon = this.state.importFile ? FileIcon : UploadIcon;
     return (
       <div>
-        <Section title='Developer API'
-          description='Programmatically access and make changes or use Zapier to integrate with your workflow.'
-          content={(
-            <>
-              <UpgradeWrapper action={FeatureAction.API_KEY}>
-                <Grid container alignItems='baseline' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={4}><Typography>API Token</Typography></Grid>
-                  <Grid item xs={12} sm={8}><UpdatableField
-                    isToken
-                    value={this.props.account?.apiKey}
-                    onSave={newApiKey => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                      accountUpdateAdmin: { apiKey: newApiKey }
-                    }))}
-                    helperText='Resetting a token invalidates previous token'
-                  /></Grid>
-                </Grid>
-                <Grid container alignItems='baseline' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={4}><Typography>Account ID</Typography></Grid>
-                  <Grid item xs={12} sm={8}>{this.props.account?.accountId}</Grid>
-                </Grid>
-              </UpgradeWrapper>
-            </>
-          )}
-        />
         <Section title='Import data'
           description={(
             <>
@@ -378,6 +349,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
             </>
           )}
         />
+        <NeedHelpInviteTeammate server={this.props.server} />
         <Section title='Export data'
           description="Export this project's data in a CSV format. Useful if you'd like to analyze your data yourself or move to another provider."
           preview={(
