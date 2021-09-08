@@ -92,7 +92,7 @@ const styles = (theme: Theme) => createStyles({
     }
   },
   pricingSlider: {
-    height: 300,
+    height: 250,
     maxWidth: 250,
     margin: 'auto',
   },
