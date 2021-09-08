@@ -55,7 +55,7 @@ services:
       - ./killbill-engine/logging-dev.properties:/var/lib/tomcat/conf/logging.properties
       - ./killbill-engine/logback-killbill-engine.xml:/var/lib/killbill/logback.xml
       - ./killbill-engine/killbill.sh:/var/lib/killbill/killbill.sh
-      - ./killbill-engine/kb-plugins:/var/lib/killbill/bundles/autoload
+      - ./killbill-engine/autoload:/var/lib/killbill/bundles/autoload
   killbill-kaui:
     image: killbill/kaui:2.0.5
     depends_on:
@@ -67,7 +67,7 @@ services:
       - KAUI_CONFIG_DAO_URL=jdbc:mysql://killbill-db:3306/kaui
       - KAUI_CONFIG_DAO_USER=root
       - KAUI_CONFIG_DAO_PASSWORD=killbill
-      - KAUI_KILLBILL_URL=http://killbill-engine:8082
+      - KAUI_KILLBILL_URL=http://killbill-engine:8080
   killbill-db:
     image: killbill/mariadb:0.22
     volumes:

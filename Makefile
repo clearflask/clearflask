@@ -14,10 +14,11 @@ build-no-it:
 build-server-no-test:
 	cd clearflask-server && mvn install -DskipTests
 
-clearflask-release/target/run-docker-compose-local/docker-compose.yml: clearflask-release/target/clearflask-release-0.1-docker-compose-local.tar.gz
+clearflask-release/target/run-docker-compose-local/docker-compose.yml: get-project-version
+	test -f clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-local.tar.gz
 	rm -fr clearflask-release/target/run-docker-compose-local
 	mkdir clearflask-release/target/run-docker-compose-local
-	tar -xzf clearflask-release/target/clearflask-release-0.1-docker-compose-local.tar.gz -C clearflask-release/target/run-docker-compose-local
+	tar -xzf clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-local.tar.gz -C clearflask-release/target/run-docker-compose-local
 	cp -n clearflask-release/target/run-docker-compose-local/server/config-local-template.cfg ./config-local.cfg \
 		&& echo IMPORTANT: Created config-local.cfg please adjust settings for local deployment || true
 	cp ./config-local.cfg clearflask-release/target/run-docker-compose-local/server/config-local.cfg

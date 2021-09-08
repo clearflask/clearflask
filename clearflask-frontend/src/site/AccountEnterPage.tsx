@@ -213,7 +213,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
       ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true }).then(d => d
         .plansGet());
     }
-    if (this.props.invitationId && !this.props.invitation) {
+    if (this.props.invitationId && this.props.invitationStatus === undefined) {
       const invitationId = this.props.invitationId;
       ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true, ssrStatusPassthrough: true }).then(dispatcher => dispatcher
         .accountViewInvitationAdmin({ invitationId }));

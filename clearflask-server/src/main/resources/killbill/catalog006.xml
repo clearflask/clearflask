@@ -261,7 +261,7 @@
             </finalPhase>
         </plan>
         <plan name="teammate-unlimited" prettyName="Teammate Plan">
-            <product>flat</product>
+            <product>teammate</product>
             <finalPhase type="EVERGREEN">
                 <duration>
                     <unit>UNLIMITED</unit>

@@ -65,7 +65,7 @@ builds/
 
 ### Release
 /config-local.cfg
-/connect.config.json
+/connect.config-local.json
 
 ### Connect
 greenlock.d/

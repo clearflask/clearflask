@@ -10,10 +10,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Tests take a long time, ignore until a change happens.
- */
-//@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
@@ -295,7 +291,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 200.0, 200.0, 100.0, -72.58, 100.0, 50.0, 300.0, 50.0, 450.0, 50.0, 600.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 100.0, 100.0, 100.0, -43.55, 100.0, 10.0, 400.0, 10.0, 600.0, 10.0, 800.0));
     }
 
     @Test(timeout = 300_000L)
@@ -319,7 +315,7 @@ public class BillingIT extends AbstractBlackboxIT {
 
         addTrackedUsers(accountAndProject, 1000);
         kbClockSleepAndRefresh(31, accountAndProject);
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 10.0, 200.0, 43.55, 200.0, 100.0, 800.0, 100.0, 1300.0, 100.0, 1800.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 10.0, 200.0, 43.55, 200.0, 100.0, 200.0, 100.0, 300.0, 100.0, 400.0));
     }
 
     @Test(timeout = 300_000L)
@@ -334,6 +330,6 @@ public class BillingIT extends AbstractBlackboxIT {
         addTrackedUsers(accountAndProject, 300);
         kbClockSleepAndRefresh(31, accountAndProject);
 
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 1425.81, 60.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 49.09, 60.0, 1500.0));
     }
 }
