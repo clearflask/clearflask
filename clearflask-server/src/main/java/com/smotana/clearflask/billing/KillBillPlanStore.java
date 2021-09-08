@@ -91,8 +91,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
-                    new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
+                    new PlanPerk("Teammates", TERMS_ADMINS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
@@ -112,7 +112,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             ImmutableList.of("Growth", "Standard", "Flat"),
             ImmutableList.of(
                     new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Viewers", ImmutableList.of("No limit", "No limit", "No limit"), null),
+                    new FeaturesTableFeatures("Tracked users", ImmutableList.of("No limit", "No limit", "No limit"), null),
                     new FeaturesTableFeatures("Teammates", ImmutableList.of("1", "8", "No limit"), TERMS_ADMINS),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
                     new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),

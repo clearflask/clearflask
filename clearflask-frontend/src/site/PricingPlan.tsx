@@ -81,6 +81,7 @@ interface Props {
   actionOnClick?: () => void;
   hidePerks?: boolean;
   remark?: React.ReactNode;
+  overrideMauTerms?: Array<string>;
 }
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
@@ -214,7 +215,15 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     // );
 
     var extraMau: any = null;
-    if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
+    if (this.props.overrideMauTerms) {
+      extraMau = (
+        <>
+          {this.props.overrideMauTerms.map(overrideMauTerm => (
+            <Typography key={overrideMauTerm} component='div' variant='subtitle2' color='textSecondary'>{overrideMauTerm}</Typography>
+          ))}
+        </>
+      );
+    } else if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
       extraMau = (
         <>
           <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>

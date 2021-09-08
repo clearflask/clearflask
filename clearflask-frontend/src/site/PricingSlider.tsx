@@ -63,6 +63,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className: string;
   plans: Admin.Plan[];
   onSelectedPlanChange: (basePlanId: string, callForQuote: boolean) => void;
 }
@@ -109,7 +110,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
     const bottom = `${mauIndex / (max - min) * 100}%`;
     return (
-      <div className={this.props.classes.container}>
+      <div className={classNames(this.props.className, this.props.classes.container)}>
         <div className={this.props.classes.sliderContainer}>
           <div className={classNames(this.props.classes.floating, this.props.classes.info)} style={{ bottom }}>
             <div className={this.props.classes.valueHorizontal}>

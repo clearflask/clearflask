@@ -41,8 +41,8 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Private projects' },
+      { desc: 'Teammates' },
       { desc: 'SSO and OAuth' },
-      { desc: 'Multi-teammate' },
     ],
   },
   'flat-yearly': {
@@ -58,7 +58,7 @@ const FeaturesTable: Admin.FeaturesTable | undefined = {
   plans: ['Growth', 'Standard', 'Flat'],
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
-    { feature: 'Viewers', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Tracked users', values: ['No limit', 'No limit', 'No limit'] },
     { feature: 'Teammates', values: ['1', '8', 'No limit'] },
     { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
