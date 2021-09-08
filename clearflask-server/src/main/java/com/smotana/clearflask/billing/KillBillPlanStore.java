@@ -382,12 +382,19 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
-                throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
+                // Only allow 1
+                if (addOne) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
+                } else if (getCurrentTeammateCount(projectId) > 1L) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
+                }
+                break;
             case "standard-monthly":
             case "standard2-monthly":
                 if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > 8L) {
                     throw new RequiresUpgradeException("flat-yearly", "Your plan has reached the teammate limit");
                 }
+                break;
             case "flat-yearly":
         }
     }

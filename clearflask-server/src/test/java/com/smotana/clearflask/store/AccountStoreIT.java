@@ -139,7 +139,7 @@ public class AccountStoreIT extends AbstractIT {
                         .addAll(initialExternalProjectIds)
                         .build())
                 .build();
-        store.addExternalProject(account.getAccountId(), projectId);
+        store.addExternalProject(account.getAccountId(), projectId2);
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
         account = account.toBuilder()
