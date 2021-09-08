@@ -1,4 +1,4 @@
-name: "CodeQL"
+name: CodeQL
 
 on:
   push:
@@ -31,6 +31,10 @@ jobs:
       with:
         languages: ${{ matrix.language }}
 
+    - name: Setup FFmpeg
+      uses: FedericoCarboni/setup-ffmpeg@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     - run: |
         mvn install -DskipTests
 

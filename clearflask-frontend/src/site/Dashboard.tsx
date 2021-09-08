@@ -589,7 +589,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       case 'create':
         context.showProjectLink = true;
         const isOnboarding = activePath === 'welcome'
-          && !projects.length
           && this.props.account?.basePlanId !== TeammatePlanId;
         if (isOnboarding) {
           context.isOnboarding = true;
