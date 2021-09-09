@@ -1179,11 +1179,14 @@ components:
                     required:
                     - config
                     - user
+                    - isExternal
                     properties:
                       config:
                         $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
                       user:
                         $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+                      isExternal:
+                        type: string
 /project/admin:
   post:
     operationId: projectCreateAdmin

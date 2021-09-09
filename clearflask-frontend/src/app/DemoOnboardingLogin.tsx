@@ -50,7 +50,7 @@ class DemoOnboardingLogin extends Component<Props & RouteComponentProps & WithSt
               oauthFlow.broadcastSuccess();
 
               // Close window
-              !windowIso.isSsr && setTimeout(() => !windowIso.isSsr && windowIso.self.close(), 500);
+              !windowIso.isSsr && windowIso.self.close();
             }}
           >LOGIN</Button>
         </div>

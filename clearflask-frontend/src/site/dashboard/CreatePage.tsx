@@ -418,7 +418,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 disableElevation
                 color='primary'
                 isSubmitting={this.state.isSubmitting}
-                disabled={!this.state.infoName || !this.state.infoSlug}
+                disabled={!this.state.invites.some(invite => !!invite)}
                 onClick={() => this.onInvite()}
               >
                 Invite

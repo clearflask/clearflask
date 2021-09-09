@@ -27,7 +27,7 @@ class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof 
     } else if (!this.props.userMe) {
       return (<ErrorPage msg='Failed to log in' variant='error' />);
     } else {
-      !windowIso.isSsr && setTimeout(() => !windowIso.isSsr && windowIso.self.close(), 500);
+      !windowIso.isSsr && windowIso.self.close();
       return (<ErrorPage msg='Successfully logged in' variant='success' />);
     }
   }

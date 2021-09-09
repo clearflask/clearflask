@@ -238,7 +238,7 @@ class App extends Component<Props> {
                     <AccountPage server={this.server} />
                   </BasePage>
                 )} />
-                <Route key='sso' path='/:type(sso|oauth)' render={props => (
+                <Route key='sso-oauth' path='/:type(sso|oauth)' render={props => (
                   <BasePage
                     pageTitle={props.match.params['type'] === 'sso' ? 'Single Sign-On' : 'OAuth'}
                     showFooter={!props.match.params['embed']}>

@@ -12,7 +12,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router';
+import { RouteComponentProps, StaticContext, withRouter } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
@@ -33,10 +33,17 @@ import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
 
-export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = true;
+
 export const PRE_SELECTED_BASE_PLAN_ID = 'preSelectedPlanId';
+export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
+export const ADMIN_ENTER_INVITATION_ID = 'ADMIN_ENTER_INVITATION_ID';
+interface LocationState {
+  [ADMIN_LOGIN_REDIRECT_TO]?: string;
+  [PRE_SELECTED_BASE_PLAN_ID]?: string;
+  [ADMIN_ENTER_INVITATION_ID]?: string;
+}
 
 export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string => {
   return !!account
@@ -47,6 +54,7 @@ export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string =
 interface OauthExtraData {
   selectedPlanId?: string;
   invitationId?: string;
+  redirectTo?: string;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -135,7 +143,7 @@ const styles = (theme: Theme) => createStyles({
   inviteeName: {
     fontWeight: 'bold',
   },
-  projectName: {
+  bold: {
     fontWeight: 'bold',
   },
 });
@@ -154,6 +162,8 @@ interface ConnectProps {
   invitation?: Admin.InvitationResult;
 }
 interface State {
+  redirectTo?: string; // Used when redirecting back from OAuth provider
+  accountWasCreated?: boolean; // Used for determining redirection page
   invitationType?: 'login' | 'signup';
   isSubmitting?: boolean;
   useEmail?: boolean; // login & signup
@@ -163,11 +173,10 @@ interface State {
   emailIsFreeOrDisposable?: boolean; // signup only
   revealPassword?: boolean; // login & signup
 }
-class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectProps & WithStyles<typeof styles, true>, State> {
+class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   readonly cfReturnUrl?: string;
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
-  bindCausedAccountCreation: boolean = false;
 
   constructor(props) {
     super(props);
@@ -180,31 +189,43 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
     } catch (er) { }
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const oauthToken = this.oauthFlow.checkResult();
-
-    if (this.props.accountStatus === undefined) {
-      var basePlanId: string | undefined, invitationId: string | undefined;
+    if (!!oauthToken) {
+      this.setState({ isSubmitting: true });
+      var basePlanId: string | undefined;
+      var invitationId: string | undefined;
+      var redirectTo: string | undefined;
       if (oauthToken?.extraData) {
         try {
           const oauthExtraData = JSON.parse(oauthToken?.extraData) as OauthExtraData;
           invitationId = oauthExtraData?.invitationId;
           basePlanId = oauthExtraData?.selectedPlanId;
+          redirectTo = oauthExtraData?.redirectTo;
         } catch (e) { }
       }
-      ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({
-        accountBindAdmin: {
-          oauthToken: !oauthToken ? undefined : {
-            id: oauthToken.id,
-            code: oauthToken.code,
-            basePlanId,
-            invitationId,
+      try {
+        const result = await (await ServerAdmin.get().dispatchAdmin()).accountBindAdmin({
+          accountBindAdmin: {
+            oauthToken: !oauthToken ? undefined : {
+              id: oauthToken.id,
+              code: oauthToken.code,
+              basePlanId,
+              invitationId,
+            },
           },
-        },
-      })).then(result => {
-        this.bindCausedAccountCreation = !!result.created;
-        !!result.account && this.oauthFlow.broadcastSuccess();
-      });
+        });
+        if (result.account) {
+          this.setState({
+            accountWasCreated: !!result.created,
+            redirectTo,
+            isSubmitting: false,
+          });
+        }
+      } catch (e) {
+        this.setState({ isSubmitting: false });
+        throw e;
+      }
     }
   }
 
@@ -213,27 +234,25 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
       ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true }).then(d => d
         .plansGet());
     }
-    if (this.props.invitationId && this.props.invitationStatus === undefined) {
-      const invitationId = this.props.invitationId;
-      ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true, ssrStatusPassthrough: true }).then(dispatcher => dispatcher
-        .accountViewInvitationAdmin({ invitationId }));
-    }
-
     if (this.props.type === 'invitation') {
       return this.renderInvitation();
     }
 
-    if (this.props.accountStatus === Status.FULFILLED && !!this.props.account) {
+    if (this.props.accountStatus === Status.FULFILLED && !!this.props.account
+      // Only redirect once submission is over (and redirectTo and accountWasCreated is set appropriately)
+      && !this.state.isSubmitting) {
       if (this.props.cfJwt && this.cfReturnUrl) {
         windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
       }
-      return (<RedirectIso to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] ||
-        (this.props.invitationId ? `/invitation/${this.props.invitationId}`
-          : (this.bindCausedAccountCreation ? '/welcome' : '/dashboard'))} />);
+      return (<RedirectIso to={this.state.redirectTo
+        || this.props.location.state?.[ADMIN_LOGIN_REDIRECT_TO]
+        || (this.state.accountWasCreated
+          ? '/dashboard/welcome' :
+          '/dashboard')} />);
     }
 
-    const selectedPlanId = ((this.props.location.state as any)?.[PRE_SELECTED_BASE_PLAN_ID] as string | undefined)
+    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_BASE_PLAN_ID]
       || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
 
     if (this.props.type === 'signup') {
@@ -273,6 +292,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   fullWidth
                   size='large'
                   onClick={e => !!selectedPlanId && this.onOauth('google', selectedPlanId)}
+                  disabled={this.state.isSubmitting}
                 >
                   <GoogleIcon />
                   &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Google
@@ -283,6 +303,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                   fullWidth
                   size='large'
                   onClick={e => !!selectedPlanId && this.onOauth('github', selectedPlanId)}
+                  disabled={this.state.isSubmitting}
                 >
                   <GithubIcon />
                   &nbsp;&nbsp;{signUpOrLogIn}&nbsp;GitHub
@@ -294,6 +315,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                     fullWidth
                     size='large'
                     onClick={e => !!selectedPlanId && this.onOauth('bathtub', selectedPlanId)}
+                    disabled={this.state.isSubmitting}
                   >
                     <BathtubIcon />
                     &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Bathtub
@@ -308,6 +330,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                 fullWidth
                 size='large'
                 onClick={e => this.setState({ useEmail: true })}
+                disabled={this.state.isSubmitting}
               >
                 <EmailIcon />
                 &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Email
@@ -325,6 +348,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
                     required
                     value={this.state.name || ''}
                     onChange={e => this.setState({ name: e.target.value })}
+                    disabled={this.state.isSubmitting}
                   />
                 </Collapse>
                 <TextField
@@ -398,11 +422,17 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         footer={this.props.type === 'signup' ? {
           text: 'Have an account?',
           actionText: 'Log in Here!',
-          linkTo: `/login${this.props.invitationId ? `/${this.props.invitationId}` : ''}`,
+          linkTo: {
+            pathname: '/login',
+            state: this.props.location.state,
+          },
         } : {
           text: 'No account?',
           actionText: 'Sign up Here!',
-          linkTo: `/signup${this.props.invitationId ? `/${this.props.invitationId}` : ''}`,
+          linkTo: {
+            pathname: '/signup',
+            state: this.props.location.state,
+          },
         }}
         layout={this.props.type}
       />
@@ -410,18 +440,28 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
   }
 
   renderInvitation() {
+    // Only load invitation if we are on /invitation/...
+    // We want to make sure a user is not tricked into accepting an invitation
+    if (this.props.invitationId && this.props.invitationStatus === undefined) {
+      const invitationId = this.props.invitationId;
+      ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true, ssrStatusPassthrough: true }).then(dispatcher => dispatcher
+        .accountViewInvitationAdmin({ invitationId }));
+    }
+
     const isLoggedIn = this.props.accountStatus === Status.FULFILLED && !!this.props.account;
     const expired = !this.props.invitationId || this.props.invitationStatus === Status.REJECTED || (this.props.invitationStatus === Status.FULFILLED && !this.props.invitation);
     const loading = !this.props.invitation && !expired;
     const accepted = this.props.invitation?.isAcceptedByYou;
     return (
       <EnterTemplate
-        title={!!this.props.invitation ? (
+        title={!!this.props.invitation ? (accepted ? (
+          'Invitation accepted'
+        ) : (
           <>
             {'Invitation from '}
             <span className={this.props.classes.titleClearFlask}>{this.props.invitation?.inviteeName}</span>
           </>
-        ) : (expired ? (
+        )) : (expired ? (
           <span className={this.props.classes.expired}>Invitation expired</span>
         ) : 'Invitation loading...')}
         renderContent={submitButton => (
@@ -429,10 +469,10 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
             {!!this.props.invitation ? (
               <div>
                 {!!accepted && (
-                  <p>You have successfully joined the project&nbsp;<span className={this.props.classes.projectName}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
+                  <p>You have successfully joined <span className={this.props.classes.bold}>{this.props.invitation?.inviteeName || 'friend'}</span>'s project&nbsp;<span className={this.props.classes.bold}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
                 )}
                 {!accepted && (
-                  <p>You have been invited to join the project&nbsp;<span className={this.props.classes.projectName}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
+                  <p>You have been invited to join the project&nbsp;<span className={this.props.classes.bold}>{this.props.invitation.projectName}</span> on&nbsp;{windowIso.parentDomain}.</p>
                 )}
                 {!isLoggedIn && (
                   <p>Please sign up or log in to accept this invitation.</p>
@@ -451,7 +491,10 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         isSubmitting={this.state.isSubmitting}
         onSubmit={async () => {
           if (!isLoggedIn) {
-            this.props.history.push(`/signup/${this.props.invitationId}`)
+            this.props.history.push('/signup/', {
+              [ADMIN_ENTER_INVITATION_ID]: this.props.invitationId,
+              [ADMIN_LOGIN_REDIRECT_TO]: `/invitation/${this.props.invitationId}`,
+            })
           } else if (!!this.props.invitationId && !!this.props.invitation?.isAcceptedByYou) {
             this.props.history.push('/dashboard');
           } else if (!!this.props.invitationId) {
@@ -471,7 +514,13 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         footer={!isLoggedIn && !expired ? {
           text: 'Have an account?',
           actionText: 'Log in Here!',
-          linkTo: `/login/${this.props.invitationId}`,
+          linkTo: {
+            pathname: '/login',
+            state: {
+              [ADMIN_ENTER_INVITATION_ID]: this.props.invitationId,
+              [ADMIN_LOGIN_REDIRECT_TO]: `/invitation/${this.props.invitationId}`,
+            },
+          },
         } : undefined}
         layout={this.props.type}
       />
@@ -479,14 +528,12 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
   }
 
   onOauth(type: 'google' | 'github' | 'bathtub', selectedPlanId: string) {
-    this.oauthFlow.listenForSuccess(() => {
-      ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
-    });
     const extraData: OauthExtraData = {
       selectedPlanId,
-      invitationId: this.props.invitationId,
+      invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
+      redirectTo: this.props.location.state?.[ADMIN_LOGIN_REDIRECT_TO],
     };
-    this.oauthFlow.openForAccount(type, JSON.stringify(extraData));
+    this.oauthFlow.openForAccount(type, 'self', JSON.stringify(extraData));
   }
 
   onLogin() {
@@ -497,7 +544,10 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
         password: saltHashPassword(this.state.pass || ''),
       }
     })).then((result) => {
-      this.setState({ isSubmitting: false });
+      this.setState({
+        accountWasCreated: false,
+        isSubmitting: false,
+      });
     }).catch((e) => {
       if (e && e.status && e.status === 403) {
         this.setState({ isSubmitting: false });
@@ -519,21 +569,23 @@ class AccountEnterPage extends Component<Props & RouteComponentProps & ConnectPr
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
-      await dispatchAdmin.accountSignupAdmin({
+      const result = await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           name: this.state.name!,
           email: this.state.email!,
           password: saltHashPassword(this.state.pass!),
           basePlanId: selectedPlanId,
-          invitationId: this.props.invitation ? this.props.invitationId : undefined,
+          invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
         }
       });
-    } finally {
+      this.setState({
+        isSubmitting: false,
+        accountWasCreated: true,
+      });
+    } catch (e) {
       this.setState({ isSubmitting: false });
+      throw e;
     }
-    this.props.history.push(this.props.invitationId
-      ? `/invitation/${this.props.invitationId}`
-      : '/dashboard/welcome');
   }
 }
 
@@ -547,7 +599,7 @@ const EnterTemplate = (props: {
   footer?: {
     text: string;
     actionText: string;
-    linkTo: string;
+    linkTo: React.ComponentProps<typeof Link>['to'];
   };
   layout?: Props['type'];
 }) => {

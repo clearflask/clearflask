@@ -199,7 +199,7 @@ class Main extends Component<Props> {
                                 : 'Invitation')} />
                             <AccountEnterPage
                               type={props.match.params['type']}
-                              invitationId={props.match.params['invitationId']}
+                              invitationId={props.match.params['type'] === 'invitation' ? props.match.params['invitationId'] : undefined}
                             />
                           </Provider>
                         )} />

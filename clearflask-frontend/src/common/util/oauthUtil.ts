@@ -39,7 +39,7 @@ export class OAuthFlow {
     this.props = props;
   }
 
-  openForAccount(providerType: 'google' | 'github' | 'bathtub', extraData?: string) {
+  openForAccount(providerType: 'google' | 'github' | 'bathtub', openTarget: 'window' | 'self', extraData?: string) {
     var provider: OAuthProvider;
     switch (providerType) {
       case 'google':
@@ -66,10 +66,10 @@ export class OAuthFlow {
       default:
         return;
     }
-    this.open(provider, extraData);
+    this.open(provider, openTarget, extraData);
   }
 
-  open(provider: OAuthProvider, extraData?: string) {
+  open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {
     if (windowIso.isSsr) return;
 
     const oauthCsrfToken = randomUuid();
@@ -82,13 +82,20 @@ export class OAuthFlow {
     const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
     sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
 
-    windowIso.open(`${provider.authorizeUrl}?`
+    const link = `${provider.authorizeUrl}?`
       + `response_type=code`
       + `&client_id=${provider.clientId}`
       + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}${this.props.redirectPath}`
       + `&scope=${provider.scope}`
-      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`,
-      `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`);
+      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
+
+    if (openTarget === 'window') {
+      windowIso.open(link,
+        `width=${windowIso.document.documentElement.clientWidth * 0.9}`
+        + `,height=${windowIso.document.documentElement.clientHeight * 0.9}`);
+    } else {
+      windowIso.location.href = link;
+    }
   }
 
   checkResult(): OAuthToken | undefined {

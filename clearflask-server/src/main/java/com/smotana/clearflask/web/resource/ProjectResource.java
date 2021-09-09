@@ -240,9 +240,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, false))
                 .get();
-        ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
+        ImmutableSet<String> allProjectIds = Sets.union(account.getProjectIds(), account.getExternalProjectIds()).immutableCopy();
+        ImmutableSet<Project> projects = allProjectIds.isEmpty()
                 ? ImmutableSet.of()
-                : projectStore.getProjects(account.getProjectIds(), false);
+                : projectStore.getProjects(allProjectIds, false);
         if (account.getProjectIds().size() != projects.size()) {
             log.warn("ProjectIds on account not found in project table, email {} missing projects {}",
                     account.getEmail(), Sets.difference(account.getProjectIds(), projects.stream()
@@ -264,7 +265,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                     authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + project.getProjectId(), session.getSessionId(), session.getTtlInEpochSec());
                                     return user;
                                 })
-                                .toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))));
+                                .toUserMeWithBalance(project.getIntercomEmailToIdentityFun()),
+                        account.getExternalProjectIds().contains(project.getProjectId()))));
 
         return new ConfigAndBindAllResult(byProjectId);
     }

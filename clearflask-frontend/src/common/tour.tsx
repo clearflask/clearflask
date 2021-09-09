@@ -15,6 +15,7 @@ import { useHistory, useLocation } from 'react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import ClosablePopper from './ClosablePopper';
 import HoverArea from './HoverArea';
+import ExpandIcon from './icon/ExpandIcon';
 import { notEmpty } from './util/arrayUtil';
 import ScrollAnchor from './util/ScrollAnchor';
 
@@ -318,6 +319,8 @@ const TourChecklistGroup = (props: {
       )}>
         <ListItem button onClick={() => setExpand(!expand)}>
           <Typography variant='h6'>{props.title}</Typography>
+          <div className={classes.flexGrow} />
+          <ExpandIcon expanded={expand} />
         </ListItem>
         <LinearProgress
           variant='determinate'

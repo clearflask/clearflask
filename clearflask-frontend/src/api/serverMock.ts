@@ -119,6 +119,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       notifications: Client.Notification[];
       admins: Array<Admin.ProjectAdmin>;
       invitations: Array<Admin.InvitationAdmin>;
+      isExternal: boolean;
     }
   } = {};
   nextCommentId = 10000;
@@ -232,7 +233,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
-      subscriptionStatus: Admin.SubscriptionStatus.ActiveTrial,
+      subscriptionStatus: request.accountSignupAdmin.invitationId
+        ? Admin.SubscriptionStatus.Active
+        : Admin.SubscriptionStatus.ActiveTrial,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = {
@@ -240,6 +243,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       acceptedInvitations: new Set(request.accountSignupAdmin.invitationId ? [request.accountSignupAdmin.invitationId] : []),
       ...account
     };
+    if (request.accountSignupAdmin.invitationId) {
+      // Create external project
+      this.getProject(request.accountSignupAdmin.invitationId).isExternal = true;
+    }
     this.loggedIn = true;
     if (this.account.isSuperAdmin) {
       this.superLoggedIn = true;
@@ -1127,6 +1134,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       byProjectId[projectId] = {
         config: this.db[projectId].config,
         user: await this.getOrCreateAdminUser(projectId),
+        isExternal: this.db[projectId].isExternal,
       };
     }
     return this.returnLater({
@@ -1529,6 +1537,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           },
         ],
         invitations: [],
+        isExternal: false,
       };
       this.db[projectId] = project;
     }

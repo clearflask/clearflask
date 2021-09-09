@@ -54,6 +54,7 @@ import { initialWidth } from '../common/util/screenUtil';
 import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
+import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
@@ -405,7 +406,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     if (this.props.accountStatus === Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
         pathname: '/login',
-        state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
+        state: { [ADMIN_LOGIN_REDIRECT_TO]: this.props.location.pathname }
       }} />);
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.bindByProjectId || !this.props.account) {
       return (<LoadingPage />);

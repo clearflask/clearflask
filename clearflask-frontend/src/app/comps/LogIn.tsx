@@ -711,7 +711,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   onClickOauthNotif(oauthConfig: Client.NotificationMethodsOauth) {
     this.setState({ awaitExternalBind: 'oauth' });
     this.listenForExternalBind();
-    this.oauthFlow.open(oauthConfig);
+    this.oauthFlow.open(oauthConfig, 'window');
   }
 
   onClickSsoNotif() {
