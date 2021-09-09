@@ -406,11 +406,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         // Create customer in KillBill asynchronously because:
         // - It takes too long
         // - Had spurious errors that prevented users from signing up
-        if (isTeammate) {
-            billing.createAccountAsync(account);
-        } else {
-            billing.createAccountWithSubscriptionAsync(account);
-        }
+        billing.createAccountWithSubscriptionAsync(account);
 
         // Create auth session
         AccountStore.AccountSession accountSession = accountStore.createSession(

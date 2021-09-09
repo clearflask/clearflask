@@ -1186,7 +1186,7 @@ components:
                       user:
                         $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
                       isExternal:
-                        type: string
+                        type: boolean
 /project/admin:
   post:
     operationId: projectCreateAdmin

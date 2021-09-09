@@ -409,6 +409,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: AllAc
             [action.payload.projectId]: {
               config: action.payload.config,
               user: action.payload.user,
+              isExternal: false,
             },
           },
         },

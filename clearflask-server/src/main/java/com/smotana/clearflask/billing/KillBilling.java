@@ -194,17 +194,6 @@ public class KillBilling extends ManagedService implements Billing {
         });
     }
 
-    @Override
-    public void createAccountAsync(AccountStore.Account accountInDyn) {
-        accountCreationExecutor.submit(() -> {
-            try {
-                Account account = createAccount(accountInDyn);
-            } catch (Exception ex) {
-                log.warn("Failed to create account with subscription", ex);
-            }
-        });
-    }
-
     @Extern
     private Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
@@ -244,7 +233,9 @@ public class KillBilling extends ManagedService implements Billing {
             subscription = kbSubscription.createSubscription(new Subscription()
                             .setBundleExternalKey(accountInDyn.getAccountId())
                             .setAccountId(account.getAccountId())
-                            .setPhaseType(PhaseType.TRIAL)
+                            .setPhaseType(PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
+                                    ? PhaseType.EVERGREEN
+                                    : PhaseType.TRIAL)
                             .setPlanName(accountInDyn.getPlanid()),
                     null,
                     null,

@@ -33,8 +33,6 @@ public interface Billing {
 
     void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn);
 
-    void createAccountAsync(AccountStore.Account accountInDyn);
-
     Account getAccount(String accountId);
 
     Account getAccountByKbId(UUID accountIdKb);

@@ -55,11 +55,6 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public void createAccountAsync(AccountStore.Account accountInDyn) {
-        // No-op
-    }
-
-    @Override
     public Account getAccount(String accountId) {
         if (!ACCOUNT_ID.toString().equals(accountId)) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Account not found");
