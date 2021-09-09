@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
@@ -67,17 +68,40 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
 
 const styles = (theme: Theme) => createStyles({
   section: {
-    width: theme.breakpoints.values.md,
+    maxWidth: theme.breakpoints.values.md,
     margin: 'auto',
     padding: theme.spacing(2, 6),
     [theme.breakpoints.down('sm')]: {
       padding: theme.spacing(1),
     },
   },
+  sectionPlans: {
+    maxWidth: '100%',
+    width: '100%',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  subSectionPlans: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    '& > *': {
+      margin: theme.spacing(4),
+      minWidth: 250,
+    }
+  },
+  pricingSlider: {
+    height: 250,
+    maxWidth: 250,
+    margin: 'auto',
+  },
   header: {
+    maxWidth: '100vw',
     display: 'flex',
     [theme.breakpoints.down('sm')]: {
-      flexWrap: 'wrap-reverse',
+      flexDirection: 'column-reverse',
+      alignItems: 'center',
     },
     alignItems: 'flex-end',
   },
@@ -89,6 +113,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(3),
   },
   image: {
+    maxWidth: theme.breakpoints.values.md,
     padding: theme.spacing(0, 8),
     [theme.breakpoints.down('sm')]: {
       padding: theme.spacing(2),
@@ -122,6 +147,79 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
   }
 
   render() {
+
+    const plans = [
+      (
+        <PricingPlan
+          key='community'
+          plan={{
+            basePlanId: 'community',
+            title: 'Community',
+            pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+            perks: [
+              { desc: 'Quick-start Docker deploy' },
+              { desc: 'All features, no limits' },
+              { desc: 'Community supported' },
+            ],
+          }}
+          overrideMauTerms={[
+            'Open source',
+            'AGPLv3 License',
+          ]}
+          actionTitle='Check it out'
+          remark='Join our community'
+          actionOnClick={() => {
+            if (isTracking()) {
+              ReactGA.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: 'community',
+              });
+            }
+          }}
+          actionTo='/open-source'
+        />
+      ),
+      ...(this.props.plans || []).map((plan, index) => (
+        <PricingPlan
+          key={plan.basePlanId}
+          customPrice='1000+'
+          plan={plan}
+          selected={this.state.highlightedBasePlanid === plan.basePlanId
+            || this.state.callForQuote && !plan.pricing}
+          actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+          remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
+          actionOnClick={() => {
+            if (isTracking()) {
+              ReactGA.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: plan.basePlanId,
+              });
+            }
+          }}
+          actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
+            ? {
+              pathname: '/signup',
+              state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
+            }
+            : '/contact/sales'}
+        />
+      )),
+    ];
+
+    const plansGrouped: React.ReactNode[] = [];
+    for (var i = 0; i < plans.length; i += 2) {
+      const left = plans[i];
+      const right = plans[i + 1];
+      plansGrouped.push((
+        <div key={`${left?.key}-${right?.key}`} className={classNames(this.props.classes.subSectionPlans)}>
+          {left}
+          {right}
+        </div>
+      ));
+    }
+
     return (
       <>
         <Background svg={{
@@ -135,62 +233,31 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
                 <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
               </div>
-              <Container maxWidth='md'>
-                <ImgIso
-                  alt=''
-                  className={this.props.classes.image}
-                  src={PricingImg.pathname}
-                  aspectRatio={PricingImg.aspectRatio}
-                  maxWidth={PricingImg.width}
-                  maxHeight={PricingImg.height}
-                />
-              </Container>
+              <ImgIso
+                alt=''
+                className={this.props.classes.image}
+                src={PricingImg.pathname}
+                aspectRatio={PricingImg.aspectRatio}
+                maxWidth={PricingImg.width}
+                maxHeight={PricingImg.height}
+              />
             </div>
           </div>
           <br />
           <br />
-          <div className={this.props.classes.section}>
-            <Loader loaded={!!this.props.plans} skipFade>
-              <Grid container spacing={5} alignItems='stretch' justify='center'>
-                {this.props.plans && this.props.plans.map((plan, index) => (
-                  <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
-                    <PricingPlan
-                      customPrice='1000+'
-                      plan={plan}
-                      selected={this.state.highlightedBasePlanid === plan.basePlanId
-                        || this.state.callForQuote && !plan.pricing}
-                      actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                      remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
-                      actionOnClick={() => {
-                        if (isTracking()) {
-                          ReactGA.event({
-                            category: 'pricing',
-                            action: 'click-plan',
-                            label: plan.basePlanId,
-                          });
-                        }
-                      }}
-                      actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
-                        ? {
-                          pathname: '/signup',
-                          state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
-                        }
-                        : '/contact/sales'}
-                    />
-                  </Grid>
-                ))}
-                <Grid item key='slider' xs={12} sm={6} md={4}>
-                  <PricingSlider
-                    plans={this.props.plans || []}
-                    onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
-                      highlightedBasePlanid: callForQuote ? undefined : basePlanId,
-                      callForQuote,
-                    })}
-                  />
-                </Grid>
-              </Grid>
-            </Loader>
-          </div>
+          <Loader loaded={!!this.props.plans} skipFade>
+            <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
+              {plansGrouped}
+            </div>
+            <PricingSlider
+              className={this.props.classes.pricingSlider}
+              plans={this.props.plans || []}
+              onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
+                highlightedBasePlanid: callForQuote ? undefined : basePlanId,
+                callForQuote,
+              })}
+            />
+          </Loader>
           <br />
           <br />
           <br />

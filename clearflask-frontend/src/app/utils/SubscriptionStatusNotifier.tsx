@@ -1,17 +1,21 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import { Button } from '@material-ui/core';
 import { useSnackbar, VariantType } from 'notistack';
+import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
 
 var wasShown = false;
 const SubscriptionStatusNotifier = (props: {
   account: Admin.AccountAdmin
 }) => {
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const history = useHistory();
 
   if (wasShown) return null;
   wasShown = true;
 
+  var persist: boolean = true;
   var variant: VariantType = 'info';
   var content: string | undefined;
   switch (props.account.subscriptionStatus) {
@@ -25,6 +29,7 @@ const SubscriptionStatusNotifier = (props: {
     case Admin.SubscriptionStatus.ActiveNoRenewal:
       variant = 'warning';
       content = 'Your account will soon expire';
+      persist = false;
       break;
     case Admin.SubscriptionStatus.NoPaymentMethod:
       variant = 'warning';
@@ -44,7 +49,16 @@ const SubscriptionStatusNotifier = (props: {
     enqueueSnackbar(content, {
       variant,
       preventDuplicate: true,
-      persist: true,
+      persist,
+      action: (key) => (
+        <Button
+          color='inherit'
+          onClick={() => {
+            history.push('/dashboard/settings/account/billing');
+            closeSnackbar(key);
+          }}
+        >Billing</Button>
+      ),
     });
   }
 

@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
@@ -14,6 +15,7 @@ import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanApi;
+import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
@@ -27,6 +29,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
+import com.smotana.clearflask.api.model.InvitationResult;
 import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.LegalResponse;
@@ -47,6 +50,7 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
@@ -59,6 +63,7 @@ import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrinc
 import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
@@ -73,8 +78,11 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @Singleton
@@ -149,12 +157,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public AccountBindAdminResponse accountBindAdmin(AccountBindAdmin accountBindAdmin) {
-        Optional<Account> accountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt);
-        Optional<Account> superAccountOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountOpt);
-        Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
-        Optional<AccountSession> superAccountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt);
+        Optional<Account> accountOpt = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false));
+        Optional<Account> superAccountOpt = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false));
 
         // Token refresh
+        Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
         if (accountSessionOpt.isPresent() && accountSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
             accountSessionOpt = Optional.of(accountStore.refreshSession(
                     accountSessionOpt.get(),
@@ -162,6 +173,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
             authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSessionOpt.get().getSessionId(), accountSessionOpt.get().getTtlInEpochSec());
         }
+        Optional<AccountSession> superAccountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt);
         if (superAccountSessionOpt.isPresent()) {
             if (superAccountSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
                 superAccountSessionOpt = Optional.of(accountStore.refreshSession(
@@ -176,67 +188,70 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (accountOpt.isEmpty()
                 && accountBindAdmin != null
                 && accountBindAdmin.getOauthToken() != null) {
-            String tokenUrl;
-            String userProfileUrl;
-            String clientSecret;
-            String guidJsonPath;
-            String nameJsonPath;
-            String emailJsonPath;
-            if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
-                tokenUrl = "https://github.com/login/oauth/access_token";
-                userProfileUrl = "https://api.github.com/user";
-                guidJsonPath = "id";
-                nameJsonPath = "name, login";
-                emailJsonPath = "email";
-                clientSecret = config.oauthGithubClientSecret();
-            } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
-                tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
-                userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
-                guidJsonPath = "id";
-                nameJsonPath = "name";
-                emailJsonPath = "email";
-                clientSecret = config.oauthGoogleClientSecret();
+            Optional<OAuthUtil.OAuthResult> oauthResult;
+            // Matches mock "bathtub" OAuth provider defined in oauthUtil.ts
+            if (!env.isProduction() && "bathtub".equals(accountBindAdmin.getOauthToken().getId())) {
+                Map<String, String> codeParsed = gson.fromJson(accountBindAdmin.getOauthToken().getCode(), new TypeToken<Map<String, String>>() {
+                }.getType());
+                oauthResult = Optional.of(new OAuthUtil.OAuthResult(
+                        codeParsed.get("guid"),
+                        Optional.ofNullable(codeParsed.get("name")),
+                        Optional.ofNullable(codeParsed.get("email"))));
             } else {
-                throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
+                String tokenUrl;
+                String userProfileUrl;
+                String clientSecret;
+                String guidJsonPath;
+                String nameJsonPath;
+                String emailJsonPath;
+                if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    tokenUrl = "https://github.com/login/oauth/access_token";
+                    userProfileUrl = "https://api.github.com/user";
+                    guidJsonPath = "id";
+                    nameJsonPath = "name, login";
+                    emailJsonPath = "email";
+                    clientSecret = config.oauthGithubClientSecret();
+                } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
+                    userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
+                    guidJsonPath = "id";
+                    nameJsonPath = "name";
+                    emailJsonPath = "email";
+                    clientSecret = config.oauthGoogleClientSecret();
+                } else {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
+                }
+                oauthResult = OAuthUtil.fetch(
+                        gson,
+                        "account",
+                        "https://" + configApp.domain() + "/login",
+                        tokenUrl,
+                        userProfileUrl,
+                        guidJsonPath,
+                        nameJsonPath,
+                        emailJsonPath,
+                        accountBindAdmin.getOauthToken().getId(),
+                        clientSecret,
+                        accountBindAdmin.getOauthToken().getCode());
             }
-            Optional<OAuthUtil.OAuthResult> oauthResult = OAuthUtil.fetch(
-                    gson,
-                    "account",
-                    "https://" + configApp.domain() + "/login",
-                    tokenUrl,
-                    userProfileUrl,
-                    guidJsonPath,
-                    nameJsonPath,
-                    emailJsonPath,
-                    accountBindAdmin.getOauthToken().getId(),
-                    clientSecret,
-                    accountBindAdmin.getOauthToken().getCode());
             if (oauthResult.isPresent()) {
                 accountOpt = accountStore.getAccountByOauthGuid(oauthResult.get().getGuid());
                 if (accountOpt.isEmpty()) {
-                    try {
-                        accountOpt = Optional.of(accountStore.createAccount(new Account(
-                                accountStore.genAccountId(),
-                                oauthResult.get().getEmailOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
-                                        "OAuth provider did not give us your email, please sign up using an email directly.")),
-                                SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
-                                null,
-                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))
-                                        .orElseGet(() -> planStore.getPublicPlans().getPlans().get(0).getBasePlanId()),
-                                Instant.now(),
-                                oauthResult.get().getNameOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
-                                        "OAuth provider did not give us your name, please sign up using an email directly.")),
-                                null,
-                                ImmutableSet.of(),
-                                oauthResult.get().getGuid(),
-                                ImmutableMap.of())).getAccount());
-                        created = true;
-                    } catch (ApiException ex) {
-                        if (Response.Status.CONFLICT.equals(ex.getStatus())) {
-                            throw new ApiException(Response.Status.CONFLICT, "You must login with your password.", ex);
-                        }
-                        throw ex;
+                    String email = oauthResult.get().getEmailOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
+                            "OAuth provider did not give us your email, please sign up using an email directly."));
+                    if (!accountStore.isEmailAvailable(email)) {
+                        throw new ApiException(Response.Status.CONFLICT, "Your account does not use this OAuth provider.");
                     }
+                    accountOpt = Optional.of(createAccount(
+                            email,
+                            oauthResult.get().getNameOpt()
+                                    .or(() -> Optional.ofNullable(Strings.emptyToNull(StringUtils.capitalize(email.replaceFirst("^[^a-zA-Z]*?([a-zA-Z]+).*?$", "$1")))))
+                                    .orElse("No name"),
+                            Optional.empty(),
+                            Optional.of(oauthResult.get().getGuid()),
+                            Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
+                            Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
+                    created = true;
                 }
             }
         }
@@ -318,39 +333,73 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
+        Account account = createAccount(
+                signup.getEmail(),
+                signup.getName(),
+                Optional.of(signup.getPassword()),
+                Optional.empty(),
+                Optional.ofNullable(Strings.emptyToNull(signup.getInvitationId())),
+                Optional.of(signup.getBasePlanId())
+        );
+
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+    }
+
+    private Account createAccount(
+            String email,
+            String name,
+            Optional<String> passwordOpt,
+            Optional<String> guidOpt,
+            Optional<String> invitationIdOpt,
+            Optional<String> preferredPlanIdOpt) {
         if (!config.signupEnabled()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
         }
 
-        sanitizer.email(signup.getEmail());
-        sanitizer.accountName(signup.getName());
-        if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(signup.getEmail())) {
+        checkState(guidOpt.isPresent() || passwordOpt.isPresent());
+        sanitizer.email(email);
+        sanitizer.accountName(name);
+
+        if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(email)) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Only super admins are allowed to sign up");
         }
 
+        // Pre-accept any invitation
         String accountId = accountStore.genAccountId();
-        Plan plan = planStore.getPublicPlans().getPlans().stream()
-                .filter(p -> p.getBasePlanId().equals(signup.getBasePlanId()))
-                .findAny()
-                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Plan no longer available, please refressh"));
-        if (plan.getComingSoon() == Boolean.TRUE) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Plan is not available");
-        }
+        ImmutableSet<String> externalProjectIds = invitationIdOpt
+                .map(invitationId -> projectStore.acceptInvitation(invitationId, accountId))
+                .stream()
+                .collect(ImmutableSet.toImmutableSet());
+        boolean isTeammate = !externalProjectIds.isEmpty();
 
+        // Find preferred plan, otherwise find a first plan we find
+        String planId = isTeammate
+                ? PlanStore.TEAMMATE_PLAN_ID
+                : preferredPlanIdOpt.flatMap(pId -> planStore.getPublicPlans().getPlans().stream()
+                .filter(p -> p.getBasePlanId().equals(pId))
+                .filter(p -> p.getComingSoon() != Boolean.TRUE)
+                .findAny())
+                .orElseGet(() -> planStore.getPublicPlans().getPlans().stream()
+                        .filter(p -> p.getComingSoon() != Boolean.TRUE)
+                        .findFirst()
+                        .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled")))
+                .getBasePlanId();
 
         // Create account locally
-        String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
         Account account = new Account(
                 accountId,
-                signup.getEmail(),
-                SubscriptionStatus.ACTIVETRIAL, // Assume it's trial
+                email,
+                isTeammate
+                        ? SubscriptionStatus.ACTIVE // Teammate plan is trialless and unlimited
+                        : SubscriptionStatus.ACTIVETRIAL, // Assume it's a trial
                 null,
-                plan.getBasePlanId(),
+                planId,
                 Instant.now(),
-                signup.getName(),
-                passwordHashed,
+                name,
+                passwordOpt.map(password -> passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, password, email)).orElse(null),
                 ImmutableSet.of(),
-                null,
+                externalProjectIds,
+                guidOpt.orElse(null),
                 ImmutableMap.of());
         account = accountStore.createAccount(account).getAccount();
 
@@ -370,15 +419,17 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         notificationService.onAccountSignup(account);
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account;
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountUpdateAdmin(AccountUpdateAdmin accountUpdateAdmin) {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
             sanitizer.accountName(accountUpdateAdmin.getName());
             account = accountStore.updateName(account.getAccountId(), accountUpdateAdmin.getName()).getAccount();
@@ -408,7 +459,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
             String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, accountUpdateAdmin.getPassword(), account.getEmail());
-            account = accountStore.updatePassword(account.getAccountId(), passwordHashed, accountSession.getSessionId());
+            account = accountStore.updatePassword(account.getAccountId(), passwordHashed, getExtendedPrincipal()
+                    .flatMap(ExtendedPrincipal::getAccountSessionOpt)
+                    .map(AccountSession::getSessionId));
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Email cannot be changed, please contact support");
@@ -460,11 +513,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            account.getProjectIds().stream()
-                    .map(projectId -> projectStore.getProject(projectId, true))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .forEach(project -> planStore.verifyConfigMeetsPlanRestrictions(newPlanid, project.getVersionedConfigAdmin().getConfig()));
+            planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
 
             Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
             // Only update account if plan was changed immediately, as oppose to end of term
@@ -480,10 +529,34 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
+    @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public InvitationResult accountViewInvitationAdmin(String invitationId) {
+        Optional<String> accountIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt);
+        InvitationModel invitation = projectStore.getInvitation(invitationId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Invitation expired"));
+
+        // If accepted by someone else, pretend it's expired
+        if (invitation.getIsAcceptedByAccountId() != null
+                && (accountIdOpt.isEmpty() || invitation.getIsAcceptedByAccountId().equals(accountIdOpt.get()))) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Invitation expired");
+        }
+
+        return new InvitationResult(
+                invitation.getInviteeName(),
+                invitation.getProjectName(),
+                InvitationResult.RoleEnum.ADMIN,
+                invitation.getIsAcceptedByAccountId() != null);
+    }
+
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AccountAdmin accountUpdateSuperAdmin(AccountUpdateSuperAdmin accountUpdateAdmin) {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
 
         if (accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice() != null) {
             Subscription subscription = billing.changePlanToFlatYearly(account.getAccountId(), accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice());
@@ -496,7 +569,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     "Change to flat plan");
         }
 
-        return accountStore.getAccountByAccountId(account.getAccountId()).get()
+        return accountStore.getAccount(account.getAccountId(), false).get()
                 .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
@@ -513,7 +586,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         } catch (IllegalArgumentException ex) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number", ex);
         }
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
         String invoiceHtml = billing.getInvoiceHtml(account.getAccountId(), invoiceId);
         return new InvoiceHtmlResponse(invoiceHtml);
     }
@@ -522,7 +598,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public Invoices invoicesSearchAdmin(String cursor) {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                .get();
         return billing.getInvoices(
                 account.getAccountId(),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
@@ -532,23 +611,44 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 1)
     @Override
     public void accountDeleteAdmin() {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
         account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
+        account.getExternalProjectIds().forEach(projectId -> projectStore.removeAdmin(projectId, account.getAccountId()));
         accountStore.deleteAccount(account.getAccountId());
         billing.closeAccount(account.getAccountId());
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public AccountAcceptInvitationResponse accountAcceptInvitationAdmin(String invitationId) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        String projectId = projectStore.acceptInvitation(invitationId, accountId);
+        // This is a critical time, if something happens here, admin may be partially added
+        accountStore.addExternalProject(accountId, projectId);
+
+        return new AccountAcceptInvitationResponse(projectId);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
     public AccountBilling accountBillingAdmin(Boolean refreshPayments) {
-        Account account = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountOpt).get();
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
 
         if (refreshPayments == Boolean.TRUE) {
-            billing.syncActions(account.getAccountId());
+            billing.syncActions(accountId);
         }
 
-        account = accountStore.getAccountByAccountId(account.getAccountId()).get();
+        Account account = accountStore.getAccount(accountId, false).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(account.getAccountId());
         Subscription subscription = billing.getSubscription(account.getAccountId());
 
@@ -559,7 +659,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 subscription,
                 "Get account billing");
         if (!account.getStatus().equals(status)) {
-            account = accountStore.getAccountByAccountId(account.getAccountId()).get();
+            account = accountStore.getAccount(account.getAccountId(), false).get();
         }
 
         // Sync plan id

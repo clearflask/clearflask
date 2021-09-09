@@ -31,21 +31,21 @@ public class NotificationResource extends AbstractResource implements Notificati
     @Override
     @RolesAllowed({Role.PROJECT_USER})
     public void notificationClear(String projectId, String notificationId) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserSession::getUserId).get();
         notificationStore.notificationClear(projectId, userId, notificationId);
     }
 
     @Override
     @RolesAllowed({Role.PROJECT_USER})
     public void notificationClearAll(String projectId) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserSession::getUserId).get();
         notificationStore.notificationClearAll(projectId, userId);
     }
 
     @Override
     @RolesAllowed({Role.PROJECT_USER})
     public NotificationSearchResponse notificationSearch(String projectId, String cursor) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserSession::getUserId).get();
         NotificationStore.NotificationListResponse response = notificationStore.notificationList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
         return new NotificationSearchResponse(
                 response.getCursorOpt().orElse(null),

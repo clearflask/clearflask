@@ -7,6 +7,7 @@ import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
@@ -29,7 +30,9 @@ public interface NotificationService {
 
     void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod);
 
-    void onAdminInvite(ConfigAdmin configAdmin, UserModel user);
+    void onModInvite(ConfigAdmin configAdmin, UserModel user);
+
+    void onTeammateInvite(InvitationModel invitation);
 
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);
 

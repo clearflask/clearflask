@@ -1144,7 +1144,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     projectId,
                     genUserId(nameOpt),
                     guid,
-                    null,
+                    isMod ? Boolean.TRUE : null,
                     nameOpt.orElse(null),
                     emailOpt.orElse(null),
                     null,

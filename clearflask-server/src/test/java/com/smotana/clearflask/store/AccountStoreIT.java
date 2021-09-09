@@ -92,6 +92,7 @@ public class AccountStoreIT extends AbstractIT {
                 "name",
                 "password",
                 ImmutableSet.of(),
+                ImmutableSet.of(),
                 null,
                 ImmutableMap.of());
         store.createAccount(account).getIndexingFuture().get();
@@ -108,19 +109,43 @@ public class AccountStoreIT extends AbstractIT {
         account = account.toBuilder()
                 .password("password2")
                 .build();
-        store.updatePassword(account.getAccountId(), account.getPassword(), accountSession1.getSessionId());
+        store.updatePassword(account.getAccountId(), account.getPassword(), Optional.of(accountSession1.getSessionId()));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         assertEquals(Optional.of(accountSession1), store.getSession(accountSession1.getSessionId()));
         assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
 
         String projectId = IdUtil.randomId();
+        ImmutableSet<String> initialProjectIds = account.getProjectIds();
         account = account.toBuilder()
                 .projectIds(ImmutableSet.<String>builder()
                         .add(projectId)
-                        .addAll(account.getProjectIds())
+                        .addAll(initialProjectIds)
                         .build())
                 .build();
         store.addProject(account.getAccountId(), projectId).getIndexingFuture().get();
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        account = account.toBuilder()
+                .projectIds(initialProjectIds)
+                .build();
+        store.removeProject(account.getAccountId(), projectId).getIndexingFuture().get();
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        String projectId2 = IdUtil.randomId();
+        ImmutableSet<String> initialExternalProjectIds = account.getExternalProjectIds();
+        account = account.toBuilder()
+                .externalProjectIds(ImmutableSet.<String>builder()
+                        .add(projectId2)
+                        .addAll(initialExternalProjectIds)
+                        .build())
+                .build();
+        store.addExternalProject(account.getAccountId(), projectId2);
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+
+        account = account.toBuilder()
+                .externalProjectIds(initialExternalProjectIds)
+                .build();
+        store.removeExternalProject(account.getAccountId(), projectId2);
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
         AccountStore.AccountSession accountSession = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -137,7 +162,7 @@ public class AccountStoreIT extends AbstractIT {
         assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
 
         store.deleteAccount(account.getAccountId()).get();
-        assertFalse(store.getAccountByAccountId(account.getAccountId()).isPresent());
+        assertFalse(store.getAccount(account.getAccountId(), false).isPresent());
         assertFalse(store.getAccountByEmail(account.getEmail()).isPresent());
     }
 
@@ -152,6 +177,7 @@ public class AccountStoreIT extends AbstractIT {
                 Instant.now(),
                 "name",
                 "password",
+                ImmutableSet.of(),
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of());
@@ -203,6 +229,7 @@ public class AccountStoreIT extends AbstractIT {
                 "name",
                 "password",
                 ImmutableSet.of(),
+                ImmutableSet.of(),
                 null,
                 ImmutableMap.of());
         store.createAccount(account);
@@ -210,7 +237,7 @@ public class AccountStoreIT extends AbstractIT {
         String apiKey = "asdfgagasd";
         account = store.updateApiKey(account.getAccountId(), apiKey);
         assertEquals(apiKey, account.getApiKey());
-        assertEquals(Optional.of(apiKey), store.getAccountByAccountId(account.getAccountId()).map(Account::getApiKey));
+        assertEquals(Optional.of(apiKey), store.getAccount(account.getAccountId(), false).map(Account::getApiKey));
         assertEquals(Optional.of(apiKey), store.getAccountByApiKey(apiKey).map(Account::getApiKey));
     }
 
@@ -225,6 +252,7 @@ public class AccountStoreIT extends AbstractIT {
                 Instant.now(),
                 "name",
                 "password",
+                ImmutableSet.of(),
                 ImmutableSet.of(),
                 null,
                 // Prior to adding attrs, all accounts have this as null

@@ -3,7 +3,7 @@
 import jsonwebtoken from 'jsonwebtoken';
 import cloneDeep from 'lodash.clonedeep';
 import * as ConfigEditor from '../common/config/configEditor';
-import { Action, RestrictedActions } from '../common/config/settings/UpgradeWrapper';
+import { Action, RestrictedActions, TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
 import { notEmpty } from '../common/util/arrayUtil';
 import { isProd } from '../common/util/detectEnv';
@@ -19,6 +19,13 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
 const termsProjects = 'You can create separate projects each having their own set of users and content';
+const TeammatePlan: Admin.Plan = {
+  basePlanId: TeammatePlanId, title: 'Teammate',
+  perks: [
+    { desc: 'External projects' },
+    { desc: 'No billing' },
+  ],
+};
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
   'growth2-monthly': {
     basePlanId: 'growth2-monthly', title: 'Growth',
@@ -34,8 +41,8 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Private projects' },
+      { desc: 'Teammates' },
       { desc: 'SSO and OAuth' },
-      { desc: 'Site template' },
     ],
   },
   'flat-yearly': {
@@ -51,6 +58,8 @@ const FeaturesTable: Admin.FeaturesTable | undefined = {
   plans: ['Growth', 'Standard', 'Flat'],
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Tracked users', values: ['No limit', 'No limit', 'No limit'] },
+    { feature: 'Teammates', values: ['1', '8', 'No limit'] },
     { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Credit System', values: ['Yes', 'Yes', 'Yes'] },
@@ -89,7 +98,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   superLoggedIn: boolean = false;
   // Mock account login (server-side cookie data)
   loggedIn: boolean = false;
-  account?: Admin.AccountAdmin & { planId: string } = undefined;
+  account?: Admin.AccountAdmin & {
+    planId: string;
+    acceptedInvitations: Set<string>;
+  } = undefined;
   accountPass?: string = undefined;
   // Mock project database
   readonly db: {
@@ -105,6 +117,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       transactions: Admin.Transaction[];
       balances: { [userId: string]: number };
       notifications: Client.Notification[];
+      admins: Array<Admin.ProjectAdmin>;
+      invitations: Array<Admin.InvitationAdmin>;
+      isExternal: boolean;
     }
   } = {};
   nextCommentId = 10000;
@@ -153,6 +168,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
           basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-monthly',
+          invitationId: request.accountBindAdmin.oauthToken.invitationId,
         }
       }).then(account => ({
         account,
@@ -205,7 +221,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
       accountId: randomUuid(),
-      basePlanId: request.accountSignupAdmin.basePlanId,
+      basePlanId: (request.accountSignupAdmin.invitationId
+        ? TeammatePlanId
+        : request.accountSignupAdmin.basePlanId)
+        || 'standard2-monthly',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -214,13 +233,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
-      subscriptionStatus: Admin.SubscriptionStatus.ActiveTrial,
+      subscriptionStatus: request.accountSignupAdmin.invitationId
+        ? Admin.SubscriptionStatus.Active
+        : Admin.SubscriptionStatus.ActiveTrial,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = {
       planId: account.basePlanId,
+      acceptedInvitations: new Set(request.accountSignupAdmin.invitationId ? [request.accountSignupAdmin.invitationId] : []),
       ...account
     };
+    if (request.accountSignupAdmin.invitationId) {
+      // Create external project
+      this.getProject(request.accountSignupAdmin.invitationId).isExternal = true;
+    }
     this.loggedIn = true;
     if (this.account.isSuperAdmin) {
       this.superLoggedIn = true;
@@ -287,6 +313,43 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     };
     return this.returnLater(this.account);
   }
+  accountViewInvitationAdmin(request: Admin.AccountViewInvitationAdminRequest): Promise<Admin.InvitationResult> {
+    return this.returnLater({
+      inviteeName: 'John Doe',
+      projectName: 'My project',
+      role: Admin.InvitationResultRoleEnum.Admin,
+      isAcceptedByYou: this.account?.acceptedInvitations.has(request.invitationId),
+    });
+  }
+  accountAcceptInvitationAdmin(request: Admin.AccountAcceptInvitationAdminRequest): Promise<Admin.AccountAcceptInvitationResponse> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    this.account.acceptedInvitations.add(request.invitationId);
+    this.getProject(request.invitationId); // Create project
+    return this.returnLater({ projectId: request.invitationId });
+  }
+  projectAdminsInviteAdmin(request: Admin.ProjectAdminsInviteAdminRequest): Promise<Admin.ProjectAdminsInviteResult> {
+    const invitation: Admin.InvitationAdmin = {
+      invitationId: randomUuid(),
+      email: request.email,
+    };
+    const project = this.getProject(request.projectId);
+    project.invitations.push(invitation);
+    return this.returnLater({ invitation: invitation });
+  }
+  projectAdminsListAdmin(request: Admin.ProjectAdminsListAdminRequest): Promise<Admin.ProjectAdminsListResult> {
+    return this.returnLater({
+      admins: this.getProject(request.projectId).admins,
+      invitations: this.getProject(request.projectId).invitations,
+    });
+  }
+  projectAdminsRemoveAdmin(request: Admin.ProjectAdminsRemoveAdminRequest): Promise<void> {
+    const project = this.getProject(request.projectId);
+    if (request.accountId) project.admins = project.admins
+      .filter(admin => admin.accountId !== request.accountId);
+    if (request.invitationId) project.invitations = project.invitations
+      .filter(invitation => invitation.invitationId !== request.invitationId);
+    return this.returnLater(undefined);
+  }
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     const billingPeriodEnd = new Date();
@@ -294,7 +357,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
-      plan: AvailablePlans[this.account.planId]!,
+      plan: this.account.planId === TeammatePlanId ? TeammatePlan : AvailablePlans[this.account.planId]!,
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {
@@ -1071,6 +1134,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       byProjectId[projectId] = {
         config: this.db[projectId].config,
         user: await this.getOrCreateAdminUser(projectId),
+        isExternal: this.db[projectId].isExternal,
       };
     }
     return this.returnLater({
@@ -1452,6 +1516,28 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         commentVotes: [],
         balances: {},
         notifications: [],
+        admins: [
+          ...(this.account ? [{
+            accountId: this.account.accountId,
+            email: this.account.email,
+            name: this.account.name,
+            role: Admin.ProjectAdminRoleEnum.Owner,
+          }] : []),
+          {
+            accountId: randomUuid(),
+            email: 'johndoe@example.com',
+            name: 'John Doe',
+            role: Admin.ProjectAdminRoleEnum.Admin,
+          },
+          {
+            accountId: randomUuid(),
+            email: 'dohnjoe@example.com',
+            name: 'Dohn Joe',
+            role: Admin.ProjectAdminRoleEnum.Admin,
+          },
+        ],
+        invitations: [],
+        isExternal: false,
       };
       this.db[projectId] = project;
     }

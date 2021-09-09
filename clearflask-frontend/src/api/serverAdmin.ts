@@ -175,6 +175,7 @@ export default class ServerAdmin {
       configs: stateConfigsDefault,
       legal: stateLegalDefault,
       tour: stateTourDefault,
+      invitations: stateInvitationsDefault,
     };
     return state;
   }
@@ -408,6 +409,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: AllAc
             [action.payload.projectId]: {
               config: action.payload.config,
               user: action.payload.user,
+              isExternal: false,
             },
           },
         },
@@ -459,11 +461,97 @@ function reducerLegal(state: StateLegal = stateLegalDefault, action: AllActionsA
   }
 }
 
+export interface StateInvitations {
+  byId: {
+    [invitationId: string]: {
+      status?: Status;
+      invitation?: Admin.InvitationResult;
+    }
+  };
+}
+const stateInvitationsDefault = {
+  byId: {},
+};
+function reducerInvitations(state: StateInvitations = stateInvitationsDefault, action: AllActionsAdmin): StateInvitations {
+  switch (action.type) {
+    case Admin.accountViewInvitationAdminActionStatus.Pending:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.invitationId]: {
+            ...state.byId[action.meta.request.invitationId],
+            status: Status.PENDING,
+          },
+        }
+      };
+    case Admin.accountViewInvitationAdminActionStatus.Rejected:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.invitationId]: {
+            status: Status.REJECTED,
+          },
+        }
+      };
+    case Admin.accountViewInvitationAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.invitationId]: {
+            status: Status.FULFILLED,
+            invitation: action.payload,
+          },
+        }
+      };
+    case Admin.accountAcceptInvitationAdminActionStatus.Fulfilled:
+      if (!state.byId[action.meta.request.invitationId].invitation) return state;
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.invitationId]: {
+            ...state.byId[action.meta.request.invitationId],
+            invitation: {
+              ...state.byId[action.meta.request.invitationId].invitation!,
+              isAcceptedByYou: true,
+            },
+          },
+        }
+      };
+    case Admin.accountSignupAdminActionStatus.Fulfilled:
+    case Admin.accountBindAdminActionStatus.Fulfilled:
+      const invitationIdAcceptedAsPartOfSignup = action.type === Admin.accountBindAdminActionStatus.Fulfilled
+        ? (!!action.payload.created && action.meta.request.accountBindAdmin.oauthToken?.invitationId)
+        : (action.meta.request.accountSignupAdmin.invitationId)
+      if (!invitationIdAcceptedAsPartOfSignup) return state;
+      if (!state.byId[invitationIdAcceptedAsPartOfSignup].invitation) return state;
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [invitationIdAcceptedAsPartOfSignup]: {
+            ...state.byId[invitationIdAcceptedAsPartOfSignup],
+            invitation: {
+              ...state.byId[invitationIdAcceptedAsPartOfSignup].invitation!,
+              isAcceptedByYou: true,
+            },
+          },
+        }
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxStateAdmin extends ReduxStateTour {
   account: StateAccount;
   plans: StatePlans;
   configs: StateConfigs;
   legal: StateLegal;
+  invitations: StateInvitations;
 }
 export const reducersAdmin = combineReducers({
   account: reducerAccount,
@@ -471,4 +559,5 @@ export const reducersAdmin = combineReducers({
   configs: reducerConfigs,
   legal: reducerLegal,
   tour: reducerTour,
+  invitations: reducerInvitations,
 });

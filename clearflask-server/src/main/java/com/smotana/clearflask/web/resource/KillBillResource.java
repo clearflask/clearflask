@@ -187,7 +187,7 @@ public class KillBillResource extends ManagedService {
             log.warn("Received event for non-existent KillBill subscription, KillBill account exists, with account id {} kb id {}", accountId, kbAccount.getAccountId());
             return;
         }
-        Optional<AccountStore.Account> accountOpt = accountStore.getAccountByAccountId(accountId);
+        Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountId, false);
         if (!accountOpt.isPresent()) {
             log.warn("Received event for non-existent account, KillBill account and subscription exist, with account id {}", accountId);
             return;

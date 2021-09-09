@@ -3,6 +3,7 @@
 package com.smotana.clearflask.billing;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,6 +22,9 @@ import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -36,18 +40,21 @@ import org.killbill.billing.client.model.gen.Usage;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
+import java.util.AbstractCollection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
+    private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
     private static final String TERMS_SSO_AND_OAUTH = "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook";
@@ -84,22 +91,29 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
-                    new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
+                    new PlanPerk("Teammates", TERMS_ADMINS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH)),
                     null, null))
             .build();
-    private static final ImmutableList<Plan> AVAILABLE_PLANS_STATIC_BUILDER = ImmutableList.of(
+    private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
                     new PlanPerk("Flat annual price", null),
                     new PlanPerk("Tailored plan", null),
                     new PlanPerk("Support & SLA", null)),
+                    null, null),
+            new Plan(TEAMMATE_PLAN_ID, "Teammate",
+                    null, ImmutableList.of(
+                    new PlanPerk("External projects", null),
+                    new PlanPerk("No billing", null)),
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
             ImmutableList.of("Growth", "Standard", "Flat"),
             ImmutableList.of(
                     new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
+                    new FeaturesTableFeatures("Tracked users", ImmutableList.of("No limit", "No limit", "No limit"), null),
+                    new FeaturesTableFeatures("Teammates", ImmutableList.of("1", "8", "No limit"), TERMS_ADMINS),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
                     new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
@@ -118,6 +132,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private Billing billing;
     @Inject
     private CatalogApi catalogApi;
+    @Inject
+    private ProjectStore projectStore;
+    @Inject
+    private AccountStore accountStore;
 
     private ImmutableMap<String, Plan> allPlans;
     private ImmutableMap<String, Plan> availablePlans;
@@ -166,7 +184,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     .build();
             return e.getValue().apply(planPricing);
         }).collect(ImmutableList.toImmutableList());
-        allPlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
+        allPlans = Stream.concat(plans.stream(), PLANS_STATIC.stream())
                 .collect(ImmutableMap.toImmutableMap(
                         Plan::getBasePlanId,
                         p -> p));
@@ -203,6 +221,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 return ImmutableSet.of(
                         availablePlans.get("growth2-monthly"),
                         availablePlans.get("standard-monthly"));
+            case TEAMMATE_PLAN_ID:
             case "growth2-monthly":
             case "standard2-monthly":
                 return ImmutableSet.of(
@@ -274,10 +293,35 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         return planIdOrPrettyPlanName;
     }
 
+    @Override
+    public void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException {
+        Account account = accountStore.getAccount(accountId, true).get();
+        account.getProjectIds().stream()
+                .map(projectId -> projectStore.getProject(projectId, true))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(project -> {
+                    verifyConfigMeetsPlanRestrictions(planId, project.getVersionedConfigAdmin().getConfig());
+                    verifyTeammateInviteMeetsPlanRestrictions(planId, project.getProjectId(), false);
+                });
+
+        if (!Strings.isNullOrEmpty(account.getApiKey())) {
+            verifyActionMeetsPlanRestrictions(planId, Action.API_KEY);
+        }
+    }
+
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws RequiresUpgradeException {
         switch (getBasePlanId(planId)) {
+            case TEAMMATE_PLAN_ID:
+                switch (action) {
+                    case CREATE_PROJECT:
+                        throw new RequiresUpgradeException("growth2-monthly", "Not allowed to create projects without a plan");
+                    case API_KEY:
+                        throw new RequiresUpgradeException("growth2-monthly", "Not allowed to use API without a plan");
+                }
+                return;
             case "growth-monthly":
             case "growth2-monthly":
                 switch (action) {
@@ -295,6 +339,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws RequiresUpgradeException {
         switch (getBasePlanId(planId)) {
+            case TEAMMATE_PLAN_ID:
+                throw new RequiresUpgradeException("growth2-monthly", "Not allowed to have projects without a plan");
             case "growth-monthly":
             case "growth2-monthly":
                 // Restrict OAuth
@@ -328,6 +374,41 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "standard2-monthly":
             case "flat-yearly":
         }
+    }
+
+    /** If changed, also change in UpgradeWrapper.tsx */
+    @Override
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
+        switch (getBasePlanId(planId)) {
+            case "growth-monthly":
+            case "growth2-monthly":
+                // Only allow 1
+                if (addOne) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
+                } else if (getCurrentTeammateCount(projectId) > 1L) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
+                }
+                break;
+            case "standard-monthly":
+            case "standard2-monthly":
+                if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > 8L) {
+                    throw new RequiresUpgradeException("flat-yearly", "Your plan has reached the teammate limit");
+                }
+                break;
+            case "flat-yearly":
+        }
+    }
+
+    private long getCurrentTeammateCount(String projectId) {
+        long invitationCount = projectStore.getProject(projectId, true).map(ProjectStore.Project::getModel)
+                .map(ProjectStore.ProjectModel::getAdminsAccountIds)
+                .map(AbstractCollection::size)
+                .orElse(0);
+        long adminCount = projectStore.getInvitations(projectId)
+                .stream()
+                .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
+                .count();
+        return invitationCount = adminCount;
     }
 
     private PeriodEnum billingPeriodToPeriodEnum(BillingPeriod billingPeriod) {

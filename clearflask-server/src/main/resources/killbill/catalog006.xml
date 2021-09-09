@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="CatalogSchema.xsd">
+
+    <effectiveDate>2021-09-01T00:00:00+00:00</effectiveDate>
+    <catalogName>ClearFlask</catalogName>
+    <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
+
+    <currencies>
+        <currency>USD</currency>
+    </currencies>
+
+    <units>
+        <!-- If changed, also change unit name in KillBilling.java -->
+        <unit prettyName="Tracked Users" name="tracked-user"/>
+    </units>
+
+    <products>
+        <product prettyName="Growth" name="growth">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Standard" name="standard">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Flat" name="flat">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Teammate" name="teammate">
+            <category>BASE</category>
+        </product>
+    </products>
+
+    <rules>
+        <changePolicy>
+            <changePolicyCase>
+                <phaseType>TRIAL</phaseType>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <fromProduct>growth</fromProduct>
+                <toProduct>standard</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>flat</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <policy>END_OF_TERM</policy>
+            </changePolicyCase>
+        </changePolicy>
+        <changeAlignment>
+            <changeAlignmentCase>
+                <toProductCategory>ADD_ON</toProductCategory>
+                <alignment>START_OF_BUNDLE</alignment>
+            </changeAlignmentCase>
+            <changeAlignmentCase>
+                <alignment>START_OF_SUBSCRIPTION</alignment>
+            </changeAlignmentCase>
+        </changeAlignment>
+        <cancelPolicy>
+            <cancelPolicyCase>
+                <policy>END_OF_TERM</policy>
+            </cancelPolicyCase>
+        </cancelPolicy>
+        <createAlignment>
+            <createAlignmentCase>
+                <alignment>START_OF_BUNDLE</alignment>
+            </createAlignmentCase>
+        </createAlignment>
+        <billingAlignment>
+            <billingAlignmentCase>
+                <alignment>SUBSCRIPTION</alignment>
+            </billingAlignmentCase>
+        </billingAlignment>
+        <priceList>
+            <priceListCase>
+                <toPriceList>DEFAULT</toPriceList>
+            </priceListCase>
+        </priceList>
+    </rules>
+
+    <plans>
+        <plan name="growth2-monthly" prettyName="Growth Plan">
+            <product>growth</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>10.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+                <usages>
+                    <usage prettyName="Tracked Users" name="growth2-tracked-users" billingMode="IN_ARREAR"
+                           usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
+                        <billingPeriod>MONTHLY</billingPeriod>
+                        <tiers>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>50</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>0</value>
+                                            </price>
+                                        </prices>
+                                        <max>1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>50</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>10</value>
+                                            </price>
+                                        </prices>
+                                        <max>-1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                        </tiers>
+                    </usage>
+                </usages>
+            </finalPhase>
+        </plan>
+        <plan name="standard2-monthly" prettyName="Standard Plan">
+            <product>standard</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>100.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+                <usages>
+                    <usage prettyName="Tracked Users" name="standard2-tracked-users" billingMode="IN_ARREAR"
+                           usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
+                        <billingPeriod>MONTHLY</billingPeriod>
+                        <tiers>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>500</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>0</value>
+                                            </price>
+                                        </prices>
+                                        <max>1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <!-- If Changed, also change in KillBilling.java -->
+                                        <unit>tracked-user</unit>
+                                        <size>500</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>50</value>
+                                            </price>
+                                        </prices>
+                                        <max>-1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                        </tiers>
+                    </usage>
+                </usages>
+            </finalPhase>
+        </plan>
+        <plan name="flat-yearly" prettyName="Flat Plan">
+            <product>flat</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Annual Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>ANNUAL</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>2000.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="teammate-unlimited" prettyName="Teammate Plan">
+            <product>teammate</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+    </plans>
+
+    <priceLists>
+        <defaultPriceList name="DEFAULT" prettyName="Default">
+            <plans>
+                <plan>growth2-monthly</plan>
+                <plan>standard2-monthly</plan>
+                <plan>flat-yearly</plan>
+                <plan>teammate-unlimited</plan>
+            </plans>
+        </defaultPriceList>
+    </priceLists>
+
+</catalog>

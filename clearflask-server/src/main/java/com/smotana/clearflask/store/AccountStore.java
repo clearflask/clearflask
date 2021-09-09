@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
+import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -38,13 +39,15 @@ public interface AccountStore {
 
     AccountAndIndexingFuture createAccount(Account account);
 
-    Optional<Account> getAccountByAccountId(String accountId);
+    Optional<Account> getAccount(String accountId, boolean useCache);
 
     Optional<Account> getAccountByApiKey(String apiKey);
 
     Optional<Account> getAccountByOauthGuid(String oauthGuid);
 
     Optional<Account> getAccountByEmail(String email);
+
+    boolean isEmailAvailable(String email);
 
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
@@ -56,9 +59,13 @@ public interface AccountStore {
 
     AccountAndIndexingFuture removeProject(String accountId, String projectId);
 
+    Account addExternalProject(String accountId, String projectId);
+
+    Account removeExternalProject(String accountId, String projectId);
+
     AccountAndIndexingFuture updateName(String accountId, String name);
 
-    Account updatePassword(String accountId, String password, String sessionIdToLeave);
+    Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt);
 
     AccountAndIndexingFuture updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
@@ -168,6 +175,9 @@ public interface AccountStore {
         @NonNull
         ImmutableSet<String> projectIds;
 
+        @NonNull
+        ImmutableSet<String> externalProjectIds;
+
         String oauthGuid;
 
         ImmutableMap<String, String> attrs;
@@ -181,6 +191,7 @@ public interface AccountStore {
 
         public com.smotana.clearflask.api.model.Account toAccount() {
             return new com.smotana.clearflask.api.model.Account(
+                    getAccountId(),
                     getName(),
                     getEmail());
         }
@@ -197,6 +208,14 @@ public interface AccountStore {
                     getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
                     getAttrs());
+        }
+
+        public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {
+            return new ProjectAdmin(
+                    getAccountId(),
+                    getName(),
+                    getEmail(),
+                    role);
         }
     }
 }

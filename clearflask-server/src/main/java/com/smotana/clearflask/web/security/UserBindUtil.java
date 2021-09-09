@@ -52,7 +52,7 @@ public class UserBindUtil {
             Optional<UserBindOauthToken> oauthTokenOpt,
             Optional<String> browserPushTokenOpt) {
 
-        Optional<UserSession> userSessionOpt = extendedPrincipalOpt.flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt);
+        Optional<UserSession> userSessionOpt = extendedPrincipalOpt.flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt);
         Optional<UserModel> userOpt = userSessionOpt
                 .flatMap(userSession -> userStore.getUser(userSession.getProjectId(), userSession.getUserId()));
         boolean createSession = false;
@@ -151,8 +151,8 @@ public class UserBindUtil {
         // Auto login to auto-generated user tied to account holder
         if (!userOpt.isPresent()) {
             Optional<AccountStore.Account> accountOpt = extendedPrincipalOpt
-                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt)
-                    .flatMap(accountSession -> accountStore.getAccountByAccountId(accountSession.getAccountId()));
+                    .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                    .flatMap(accountId -> accountStore.getAccount(accountId, true));
             if (accountOpt.isPresent()) {
                 userOpt = Optional.of(userStore.accountCreateOrGet(projectId, accountOpt.get()));
                 createSession = true;

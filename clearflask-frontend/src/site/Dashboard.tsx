@@ -33,6 +33,7 @@ import ClearFlaskTourProvider, { tourSetGuideState } from '../common/ClearFlaskT
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
+import { TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../common/config/template/changelog';
 import { FeedbackInstance } from '../common/config/template/feedback';
 import { LandingInstance } from '../common/config/template/landing';
@@ -53,6 +54,7 @@ import { initialWidth } from '../common/util/screenUtil';
 import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
+import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
@@ -404,7 +406,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     if (this.props.accountStatus === Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
         pathname: '/login',
-        state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
+        state: { [ADMIN_LOGIN_REDIRECT_TO]: this.props.location.pathname }
       }} />);
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.bindByProjectId || !this.props.account) {
       return (<LoadingPage />);
@@ -587,7 +589,8 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       case 'welcome':
       case 'create':
         context.showProjectLink = true;
-        const isOnboarding = activePath === 'welcome' && !projects.length;
+        const isOnboarding = activePath === 'welcome'
+          && this.props.account?.basePlanId !== TeammatePlanId;
         if (isOnboarding) {
           context.isOnboarding = true;
           setTitle('Welcome');

@@ -51,7 +51,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Inject
     private NotificationService notificationService;
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public void creditIncome(String projectId, @Valid CreditIncome creditIncome) {
@@ -75,7 +75,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
         notificationService.onCreditChanged(configAdmin, user, transaction);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public TransactionSearchAdminResponse transactionSearchAdmin(String projectId, TransactionSearchAdmin transactionSearchAdmin, String cursor) {

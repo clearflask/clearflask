@@ -4,6 +4,7 @@ package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
@@ -23,6 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -75,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -105,6 +108,12 @@ public class DynamoProjectStore implements ProjectStore {
 
         @DefaultValue("PT1M")
         Duration configCacheExpireAfterWrite();
+
+        @DefaultValue("P30D")
+        Duration invitationExpireAfterCreation();
+
+        @DefaultValue("P1D")
+        Duration invitationExpireAfterAccepted();
     }
 
     @Inject
@@ -133,6 +142,8 @@ public class DynamoProjectStore implements ProjectStore {
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
     private IndexSchema<SlugModel> slugByProjectSchema;
+    private TableSchema<InvitationModel> invitationSchema;
+    private IndexSchema<InvitationModel> invitationByProjectSchema;
     private Cache<String, String> slugCache;
     private Cache<String, Optional<Project>> projectCache;
 
@@ -148,6 +159,8 @@ public class DynamoProjectStore implements ProjectStore {
         projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
         slugSchema = dynamoMapper.parseTableSchema(SlugModel.class);
         slugByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, SlugModel.class);
+        invitationSchema = dynamoMapper.parseTableSchema(InvitationModel.class);
+        invitationByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, InvitationModel.class);
     }
 
     @Extern
@@ -229,6 +242,7 @@ public class DynamoProjectStore implements ProjectStore {
         Optional<String> domainOpt = Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
         ProjectModel projectModel = new ProjectModel(
                 accountId,
+                ImmutableSet.of(),
                 projectId,
                 versionedConfigAdmin.getVersion(),
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
@@ -451,6 +465,144 @@ public class DynamoProjectStore implements ProjectStore {
                 });
     }
 
+    @Override
+    public InvitationModel createInvitation(String projectId, String invitedEmail, String inviteeName) {
+        Project project = getProject(projectId, true).get();
+        InvitationModel invitation = new InvitationModel(
+                genInvitationId(),
+                projectId,
+                invitedEmail,
+                inviteeName,
+                project.getVersionedConfigAdmin().getConfig().getName(),
+                null,
+                Instant.now().plus(config.invitationExpireAfterCreation()).getEpochSecond());
+        invitationSchema.table().putItem(new PutItemSpec()
+                .withItem(invitationSchema.toItem(invitation))
+                .withConditionExpression("attribute_not_exists(#partitionKey)")
+                .withNameMap(new NameMap().with("#partitionKey", invitationSchema.partitionKeyName())));
+        return invitation;
+    }
+
+    @Override
+    public Optional<InvitationModel> getInvitation(String invitationId) {
+        return Optional.ofNullable(invitationSchema
+                .fromItem(invitationSchema
+                        .table().getItem(invitationSchema
+                                .primaryKey(Map.of(
+                                        "invitationId", invitationId)))))
+                .filter(invitation -> {
+                    if (invitation.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
+                        log.debug("DynamoDB has an expired invitation with expiry {}", invitation.getTtlInEpochSec());
+                        return false;
+                    }
+                    return true;
+                });
+    }
+
+    @Override
+    public ImmutableList<InvitationModel> getInvitations(String projectId) {
+        return StreamSupport.stream(invitationByProjectSchema.index().query(new QuerySpec()
+                .withHashKey(invitationByProjectSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(invitationByProjectSchema.rangeKeyName())
+                        .beginsWith(invitationByProjectSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(invitationByProjectSchema::fromItem)
+                .filter(invitation -> {
+                    if (invitation.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
+                        log.debug("DynamoDB has an expired invitation with expiry {}", invitation.getTtlInEpochSec());
+                        return false;
+                    }
+                    return true;
+                })
+                .collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public String acceptInvitation(String invitationId, String accepteeAccountId) {
+        InvitationModel invitation = getInvitation(invitationId)
+                .filter(Predicate.not(InvitationModel::isAccepted))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Invitation expired"));
+        dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+                .add(new TransactWriteItem().withUpdate(new Update()
+                        .withTableName(projectSchema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(projectSchema.primaryKey(Map.of(
+                                "projectId", invitation.getProjectId()))))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
+                        .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
+                        .withExpressionAttributeNames(Map.of(
+                                "#partitionKey", projectSchema.partitionKeyName(),
+                                "#accountId", "accountId",
+                                "#adminsAccountIds", "adminsAccountIds"))
+                        .withExpressionAttributeValues(Map.of(
+                                ":adminAccountId", projectSchema.toAttrValue("adminsAccountIds", ImmutableSet.of(accepteeAccountId))))))
+                .add(new TransactWriteItem().withUpdate(new Update()
+                        .withTableName(invitationSchema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(invitationSchema.primaryKey(Map.of(
+                                "invitationId", invitationId))))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withUpdateExpression("SET #isAcceptedByAccountId = :isAcceptedByAccountId, #ttlInEpochSec = :ttlInEpochSec")
+                        .withExpressionAttributeNames(Map.of(
+                                "#partitionKey", invitationSchema.partitionKeyName(),
+                                "#isAcceptedByAccountId", "isAcceptedByAccountId",
+                                "#ttlInEpochSec", "ttlInEpochSec"))
+                        .withExpressionAttributeValues(Map.of(
+                                ":isAcceptedByAccountId", invitationSchema.toAttrValue("isAcceptedByAccountId", accepteeAccountId),
+                                ":ttlInEpochSec", invitationSchema.toAttrValue("ttlInEpochSec",
+                                        Instant.now().plus(config.invitationExpireAfterAccepted()).getEpochSecond())))))
+                .build()));
+        projectCache.invalidate(invitation.getProjectId());
+        return invitation.getProjectId();
+    }
+
+    @Override
+    public void revokeInvitation(String projectId, String invitationId) {
+        invitationSchema.table().deleteItem(new DeleteItemSpec()
+                .withConditionExpression("attribute_exists(#partitionKey) AND #projectId = :projectId")
+                .withNameMap(Map.of(
+                        "#partitionKey", invitationSchema.partitionKeyName(),
+                        "#projectId", "projectId"))
+                .withValueMap(Map.of(":projectId", projectId))
+                .withPrimaryKey(invitationSchema.primaryKey(Map.of("invitationId", invitationId))));
+    }
+
+    @Override
+    public Project addAdmin(String projectId, String adminAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
+                .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
+                .withNameMap(Map.of(
+                        "#partitionKey", projectSchema.partitionKeyName(),
+                        "#accountId", "accountId",
+                        "#adminsAccountIds", "adminsAccountIds"))
+                .withValueMap(Map.of(
+                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
+    }
+
+    @Override
+    public Project removeAdmin(String projectId, String adminAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("DELETE #adminsAccountIds :adminAccountId")
+                .withNameMap(Map.of(
+                        "#partitionKey", projectSchema.partitionKeyName(),
+                        "#adminsAccountIds", "adminsAccountIds"))
+                .withValueMap(Map.of(
+                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
+    }
+
     private String packWebhookListener(WebhookListener listener) {
         return StringSerdeUtil.mergeStrings(listener.getResourceType().name(), listener.getEventType(), listener.getUrl());
     }
@@ -569,6 +721,12 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public String getAccountId() {
             return accountId;
+        }
+
+        @Override
+        public boolean isAdmin(String accountId) {
+            return model.getAccountId().equals(accountId)
+                    || model.getAdminsAccountIds().contains(accountId);
         }
 
         @Override

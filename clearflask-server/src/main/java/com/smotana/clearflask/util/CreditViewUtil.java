@@ -50,7 +50,7 @@ public class CreditViewUtil {
         resultLong = Math.abs(resultLong);
 
         if (format.getMultiplier() != null) {
-            resultLong *= format.getMultiplier();
+            resultLong = (long) (resultLong * format.getMultiplier());
         }
 
         if (format.getMaximumFractionDigits() != null) {

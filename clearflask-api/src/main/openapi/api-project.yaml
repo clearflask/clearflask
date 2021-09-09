@@ -1056,6 +1056,28 @@ components:
           $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
         version:
           type: string
+    ProjectAdmin:
+      allOf:
+        - $ref: 'api-account.yaml#/components/schemas/Account'
+        - type: object
+          required:
+            - role
+          properties:
+            role:
+              type: string
+              enum:
+                - Owner
+                - Admin
+    InvitationAdmin:
+      type: object
+      required:
+        - invitationId
+        - email
+      properties:
+        invitationId:
+          type: string
+        email:
+          type: string
 
 /slug/{slug}/bind/configAndUser:
   post:
@@ -1157,11 +1179,14 @@ components:
                     required:
                     - config
                     - user
+                    - isExternal
                     properties:
                       config:
                         $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
                       user:
                         $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+                      isExternal:
+                        type: boolean
 /project/admin:
   post:
     operationId: projectCreateAdmin
@@ -1358,3 +1383,80 @@ components:
             schema:
               type: string
               format: binary
+/project/{projectId}/admin/admins:
+  get:
+    operationId: projectAdminsListAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsListResult
+              type: object
+              required:
+              - admins
+              - invitations
+              properties:
+                admins:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/ProjectAdmin'
+                invitations:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
+  post:
+    operationId: projectAdminsInviteAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: email
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsInviteResult
+              type: object
+              required:
+              - invitation
+              properties:
+                invitation:
+                  $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
+  delete:
+    operationId: projectAdminsRemoveAdmin
+    tags: [ProjectAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: accountId
+      in: query
+      required: false
+      schema:
+        type: string
+    - name: invitationId
+      in: query
+      required: false
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

@@ -6,6 +6,7 @@ import { isProd } from "../util/detectEnv";
 import { textToHtml } from "../util/richEditorUtil";
 import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
+import windowIso from "../windowIso";
 import * as ConfigEditor from "./configEditor";
 import { changelogGet, ChangelogInstance, changelogOff, changelogOn } from "./template/changelog";
 import { feedbackGet, FeedbackInstance, feedbackOn, feedbackUpdateWithRoadmap } from "./template/feedback";
@@ -1111,6 +1112,22 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'scope']).set(oauth.scope || '');
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'userProfileUrl']).set(oauth.userProfileUrl || '');
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'guidJsonPath']).set(oauth.guidJsonPath || '');
+  }
+
+  usersOnboardingOAuthAddBathtub() {
+    this.usersOnboardingOAuthAdd({
+      oauthId: randomUuid(),
+      buttonTitle: 'Bathtub',
+      icon: 'Bathtub',
+      clientId: 'bathtub',
+      authorizeUrl: `${windowIso.location.protocol}//${windowIso.location.host}/bathtub/authorize`,
+      tokenUrl: 'blah',
+      scope: 'name email',
+      userProfileUrl: 'blah',
+      guidJsonPath: 'blah',
+      nameJsonPath: 'blah',
+      emailJsonPath: 'blah',
+    });
   }
 
   // usersOnboardingMobilePush(enable: boolean) {

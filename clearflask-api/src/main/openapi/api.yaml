@@ -85,6 +85,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
   /admin/account/noop:
     $ref: 'api-account.yaml#/~1admin~1account~1noop'
+  /admin/account/invitation:
+    $ref: 'api-account.yaml#/~1admin~1account~1invitation'
   /superadmin/account/loginas:
     $ref: 'api-account.yaml#/~1superadmin~1account~1loginas'
   /superadmin/accountsearch:
@@ -163,6 +165,8 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1import~1post'
   /project/{projectId}/admin/export:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
+  /project/{projectId}/admin/admins:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
   # api-connect.yaml
   /connect/account/keypair:
     $ref: 'api-sni.yaml#/~1connect~1account~1keypair'

@@ -48,6 +48,7 @@ const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').
 const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPrefetch: true */'./site/AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const BathtubOauthProvider = loadable(() => import(/* webpackChunkName: "BathtubOauthProvider" */'./common/BathtubOauthProvider').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 interface Props {
   ssrLocation?: string;
@@ -161,6 +162,13 @@ class Main extends Component<Props> {
                   )} />
                   <Switch>
                     {[
+                      ...(!isProd() ? [(
+                        <Route key='mock-oauth-provider-bathtub' path='/bathtub/authorize' render={props => (
+                          <Provider store={ServerAdmin.get().getStore()}>
+                            <BathtubOauthProvider />
+                          </Provider>
+                        )} />
+                      )] : []),
                       ...(showDashboard ? [(
                         <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
@@ -182,10 +190,17 @@ class Main extends Component<Props> {
                           </Provider>
                         )} />
                       ), (
-                        <Route key='enter' exact path='/:type(login|signup)' render={props => (
+                        <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
                           <Provider store={ServerAdmin.get().getStore()}>
-                            <SetTitle title={props.match.params['type'] === 'login' ? 'Login' : 'Sign up'} />
-                            <AccountEnterPage type={props.match.params['type'] === 'login' ? 'login' : 'signup'} />
+                            <SetTitle title={props.match.params['type'] === 'login'
+                              ? 'Login'
+                              : (props.match.params['type'] === 'signup'
+                                ? 'Sign up'
+                                : 'Invitation')} />
+                            <AccountEnterPage
+                              type={props.match.params['type']}
+                              invitationId={props.match.params['type'] === 'invitation' ? props.match.params['invitationId'] : undefined}
+                            />
                           </Provider>
                         )} />
                       )] : []),

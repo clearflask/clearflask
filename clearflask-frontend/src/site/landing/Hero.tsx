@@ -223,7 +223,7 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
         redirectIso('/dashboard');
       }
     });
-    this.oauthFlow.openForAccount(type);
+    this.oauthFlow.openForAccount(type, 'window');
   }
 }
 
