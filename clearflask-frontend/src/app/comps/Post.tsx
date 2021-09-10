@@ -75,6 +75,15 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
+  postContentSingleLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  postContentSingleLineDivider: {
+    flexGrow: 1,
+    minWidth: theme.spacing(2),
+  },
   postFunding: {
   },
   postContentBeforeComments: {
@@ -121,9 +130,6 @@ const styles = (theme: Theme) => createStyles({
   pre: {
     whiteSpace: 'pre-wrap',
   },
-  linkedPosts: {
-    marginTop: theme.spacing(2),
-  },
   responseHeader: {
     display: 'flex',
     alignItems: 'baseline',
@@ -133,7 +139,7 @@ const styles = (theme: Theme) => createStyles({
     paddingLeft: theme.spacing(3),
   },
   responseContainerPage: {
-    marginTop: theme.spacing(6),
+    marginTop: theme.spacing(3),
   },
   responseContainer: {
     display: 'flex',
@@ -155,7 +161,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
   },
   links: {
-    marginTop: theme.spacing(6),
+    marginTop: theme.spacing(3),
   },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -378,6 +384,7 @@ type Props = {
   isSubmittingDisconnect?: boolean;
   onDisconnect?: () => void;
   disconnectType?: ConnectType;
+  postContentSingleLine?: boolean;
 };
 interface ConnectProps {
   configver?: string;
@@ -502,7 +509,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             <div className={this.props.classes.postFunding}>
               {this.renderFunding()}
             </div>
-            <div className={this.props.classes.postContent}>
+            <div className={classNames(
+              this.props.classes.postContent,
+              this.props.postContentSingleLine && this.props.classes.postContentSingleLine,
+            )}>
               {this.renderTitleAndDescription((
                 <>
                   {this.renderHeader()}
@@ -510,6 +520,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                   {this.renderDescription()}
                 </>
               ), isOnlyPostOnClick)}
+              {this.props.postContentSingleLine && (<div className={this.props.classes.postContentSingleLineDivider} />)}
               {this.renderBottomBar()}
               {this.renderIWantThisCommentAdd()}
               {this.renderResponseAndStatus()}
@@ -1148,6 +1159,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <div style={{ display: 'flex' }}>
         {fundingAllowed && (
           <ClosablePopper
+            anchorType='in-place'
             clickAway
             open={!!this.state.fundingExpanded}
             onClose={() => this.setState({ fundingExpanded: false })}
@@ -1333,6 +1345,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div key='renderExpression' style={{ display: 'flex' }}>
         <ClosablePopper
+          anchorType='in-place'
           clickAway
           style={{
             width: limitEmojiSet ? 'max-content' : 'min-content',
@@ -1464,7 +1477,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div className={this.props.classes.links}>
         <ConnectedPostsContainer
-          className={this.props.classes.linkedPosts}
           type='merge'
           direction='to'
           hasMultiple={false}
@@ -1495,7 +1507,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           if (!posts?.length) return null;
           return (
             <ConnectedPostsContainer
-              className={this.props.classes.linkedPosts}
               type='link'
               direction={direction}
               hasMultiple={posts.length > 1}

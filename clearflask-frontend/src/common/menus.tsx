@@ -128,6 +128,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
           {this.props.dropdown.title}
         </Button>
         <ClosablePopper
+          anchorType='in-place'
           paperClassName={this.props.classes.menuPopperPaper}
           className={this.props.classes.menuPopper}
           clickAway

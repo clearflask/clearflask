@@ -143,10 +143,14 @@ export const postSearchToLabels = (
     });
   } else {
     var hasAny = false;
+    const multipleCategoriesWithStatuses = searchableCategories.filter(c => !!c.workflow.statuses.length).length > 1;
     searchableCategories.forEach(category => {
       category.workflow.statuses.forEach(status => {
         hasAny = true;
         const label: Label = getLabel(PostFilterType.Status, status.statusId, status.name, status.color);
+        if (multipleCategoriesWithStatuses) {
+          label.groupBy = category.name;
+        }
         controls.options.push(label);
         if (searchModified && searchModified.filterStatusIds && searchModified.filterStatusIds.includes(status.statusId)) {
           controls.values.push(label);
@@ -245,7 +249,12 @@ export const isFilterControllable = (explorer: Client.PageExplorer, type: PostFi
       return true;
   }
 }
-const getLabel = (type: PostFilterType | string, data: string, name: string, color?: string): Label => {
+const getLabel = (
+  type: PostFilterType | string,
+  data: string,
+  name: string,
+  color?: string,
+): Label => {
   return {
     label: name,
     filterString: name,

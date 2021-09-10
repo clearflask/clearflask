@@ -47,6 +47,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-block',
   },
   marginsSupplied: {
+
     padding: (props: Props) => props.margins,
   },
   marginsDefault: {

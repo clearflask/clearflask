@@ -59,6 +59,7 @@ export interface Props {
     icon: OverridableComponent<SvgIconTypeMap> | Array<OverridableComponent<SvgIconTypeMap>>;
   }>;
   postStatusId?: string;
+  buttonIcon?: React.ReactNode;
   buttonTitle?: string;
   buttonVariant?: ButtonProps['variant'];
   buttonLinkExt?: string;
@@ -169,8 +170,14 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
               href: this.props.buttonLinkExt,
             } : {})}
           >
+            {this.props.buttonIcon && (
+              <>
+                {this.props.buttonIcon}
+                &nbsp;&nbsp;&nbsp;
+              </>
+            )}
             {this.props.buttonTitle}
-            {!this.props.buttonSuppressIcon && (
+            {!this.props.buttonSuppressIcon && !this.props.buttonIcon && (
               <>
                 &nbsp;
                 <GoIcon />

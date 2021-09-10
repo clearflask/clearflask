@@ -2224,7 +2224,7 @@ export const ProjectSettingsFeedback = (props: {
                     </div>
                     <ProjectSettingsAddWithName
                       label='New status'
-                      placeholder='Title'
+                      placeholder='ex: In progress'
                       noMargin
                       onAdd={name => {
                         setExpandedType('status');
@@ -2394,7 +2394,7 @@ export const ProjectSettingsSectionTagging = (props: {
           </div>
           <ProjectSettingsAddWithName
             label='New tag group'
-            placeholder='Platform'
+            placeholder='ex: Platform'
             noMargin
             onAdd={newTagGroup => {
               props.onExpandedChange(props.categoryAndIndex.category.tagging.tagGroups.length);
@@ -2508,7 +2508,7 @@ export const ProjectSettingsTagGroup = (props: {
       <ProjectSettingsAddWithName
         key='New tag'
         label='New tag'
-        placeholder='Windows'
+        placeholder='ex: Windows'
         onAdd={newTag => {
           const tagId = randomUuid();
           ((props.editor.getProperty(['content', 'categories', props.categoryAndIndex.index, 'tagging', 'tags']) as ConfigEditor.ArrayProperty)

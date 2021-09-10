@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { AppBar, Button, Divider, Drawer, IconButton, Portal, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
+import { AppBar, Button, Divider, Drawer, IconButton, Portal, SvgIconTypeMap, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
+import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import CloseIcon from '@material-ui/icons/Close';
@@ -22,6 +23,7 @@ export interface LayoutState {
 }
 export interface HeaderTitle {
   title?: string;
+  icon?: OverridableComponent<SvgIconTypeMap>;
   help?: string;
 }
 export interface HeaderAction {
@@ -106,16 +108,19 @@ const styles = (theme: Theme) => createStyles({
   },
   bar: {
   },
+  previewMobileModal: {
+    zIndex: (theme.zIndex.drawer + '!important') as any,
+  },
   previewMobilePaper: {
     overflowY: 'scroll' as 'scroll',
     maxWidth: '100%',
     background: theme.palette.background.default,
   },
   previewCloseButton: {
-    aligSelf: 'center',
+    alignSelf: 'center',
   },
   appBar: {
-    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
+    zIndex: Math.max(theme.zIndex.appBar, theme.zIndex.drawer) + 1,
     ...BoxLayoutBoxApplyStyles(theme),
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
   },
@@ -284,21 +289,18 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         )}
       </TourAnchor>
     );
+    const HeaderIcon = header?.title?.icon;
     return (
       <>
         {header?.left}
-        {breakAction === 'drawer' && (
-          <IconButton
-            color='inherit'
-            aria-label=''
-            onClick={this.handlePreviewClose.bind(this)}
-            className={this.props.classes.previewCloseButton}
-          >
-            <CloseIcon />
-          </IconButton>
-        )}
         {!!header?.title && (
           <Typography variant='h4' component='h1' className={this.props.classes.headerTitle}>
+            {HeaderIcon && (
+              <>
+                <HeaderIcon fontSize='inherit' color='primary' />
+                &nbsp;&nbsp;
+              </>
+            )}
             {header.title.title}
             {header.title.help && (
               <>
@@ -316,6 +318,16 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
           </>
         )}
         {headerAction}
+        {breakAction === 'drawer' && (
+          <IconButton
+            color='inherit'
+            aria-label=''
+            onClick={this.handlePreviewClose.bind(this)}
+            className={this.props.classes.previewCloseButton}
+          >
+            <CloseIcon />
+          </IconButton>
+        )}
         {header?.right}
       </>
     );
@@ -521,6 +533,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             open={!!this.props.previewShow}
             onClose={this.handlePreviewClose.bind(this)}
             classes={{
+              modal: this.props.classes.previewMobileModal,
               paper: this.props.classes.previewMobilePaper,
             }}
             style={{

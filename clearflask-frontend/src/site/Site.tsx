@@ -156,11 +156,11 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
+          { type: 'button', link: '/product/demo', title: 'Demo', icon: DemoIcon },
+          { type: 'divider' },
           { type: 'button', link: '/product/ask', title: 'Ask', icon: CollectIcon },
           { type: 'button', link: '/product/analyze', title: 'Analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/act', title: 'Act', icon: ActIcon },
-          { type: 'divider' },
-          { type: 'button', link: '/product/demo', title: 'Demo', icon: DemoIcon },
           { type: 'divider' },
           { type: 'button', link: '/product/customize', title: 'Customize' },
           { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },

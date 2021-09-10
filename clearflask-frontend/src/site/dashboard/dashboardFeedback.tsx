@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Fade, IconButton } from '@material-ui/core';
+import CheckIcon from '@material-ui/icons/Check';
 import PrevIcon from '@material-ui/icons/NavigateBefore';
 import NextIcon from '@material-ui/icons/NavigateNext';
 import classNames from 'classnames';
@@ -45,19 +46,9 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
   context.onDndHandled = async (to, post, createdId) => {
     // Show snackbar for certain actions
     if (to.type === 'quick-action-create-task-from-feedback-with-status' && createdId) {
-      this.showSnackbar({
-        key: to.type + post.ideaId,
-        message: 'Converted to task',
-        actions: [{
-          title: 'Open task',
-          onClick: close => {
-            close();
-            this.setState({
-              feedbackPreviewRight: { type: 'post', id: createdId, headerTitle: 'Created task' },
-              previewShowOnPage: 'feedback',
-            });
-          },
-        }]
+      this.setState({
+        feedbackPreviewRight: { type: 'post', id: createdId, headerTitle: 'Created task', headerIcon: CheckIcon },
+        previewShowOnPage: 'feedback',
       });
     } else if (to.type === 'quick-action-feedback-merge-duplicate') {
       this.showSnackbar({
@@ -68,7 +59,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: close => {
             close();
             this.setState({
-              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Merged feedback' },
+              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Merged feedback', headerIcon: CheckIcon },
               previewShowOnPage: 'feedback',
             });
           },
@@ -83,7 +74,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           onClick: close => {
             close();
             this.setState({
-              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Linked task' },
+              feedbackPreviewRight: { type: 'post', id: to.postId, headerTitle: 'Linked task', headerIcon: CheckIcon },
               previewShowOnPage: 'feedback',
             });
           },

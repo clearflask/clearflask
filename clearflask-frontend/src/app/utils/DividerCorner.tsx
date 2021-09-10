@@ -44,6 +44,9 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
     flexDirection: 'row',
   },
+  margins: {
+    padding: (props: Props) => props.margins,
+  },
 });
 
 interface Props {
@@ -75,11 +78,6 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={classNames(this.props.className, this.props.classes.container)}>
         <div className={this.props.classes.titles}>
-          {!!this.props.margins && (
-            <div style={{ minWidth: this.props.margins }}>
-              {!this.props.suppressDivider && (<Divider />)}
-            </div>
-          )}
           {leftPresent && (
             <div className={this.props.classes.titleContainer} style={{
               width: this.props.width !== undefined
@@ -117,11 +115,6 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
               {!this.props.suppressDivider && (<Divider />)}
             </div>
           )}
-          {!!this.props.margins && (
-            <div style={{ minWidth: this.props.margins }}>
-              {!this.props.suppressDivider && (<Divider />)}
-            </div>
-          )}
         </div>
         <div className={this.props.classes.contentContainer}>
           {leftPresent && (
@@ -137,7 +130,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
               )}
             </div>
           )}
-          <div className={classNames(this.props.innerClassName, this.props.classes.flexGrow)}>
+          <div className={classNames(this.props.innerClassName, this.props.classes.flexGrow, this.props.classes.margins)}>
             {this.props.children}
           </div>
           {rightPresent && (

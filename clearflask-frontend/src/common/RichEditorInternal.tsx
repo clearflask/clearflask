@@ -22,7 +22,7 @@ import ImageResize from 'quill-image-resize';
 import React from 'react';
 import Dropzone, { DropzoneRef } from 'react-dropzone';
 import ReactQuill, { UnprivilegedEditor } from 'react-quill';
-import ClosablePopper from './ClosablePopper';
+import ClosablePopper, { AnchorBoundsGetter } from './ClosablePopper';
 import Heading2Icon from './icon/Heading2Icon';
 import Heading3Icon from './icon/Heading3Icon';
 import Heading4Icon from './icon/Heading4Icon';
@@ -523,7 +523,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
 
   renderEditLinkPopper() {
     const editor = this.editorRef.current?.getEditor();
-    var anchorElGetter;
+    var anchorElGetter: AnchorBoundsGetter | undefined;
     if (this.state.editLinkShow && editor) {
       anchorElGetter = () => {
         const editorRect = this.editorContainerRef.current!.getBoundingClientRect();
@@ -544,8 +544,9 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
     }
     return (
       <ClosablePopper
+        anchorType='virtual'
+        anchor={anchorElGetter}
         zIndex={this.props.theme.zIndex.modal + 1}
-        anchorElGetter={anchorElGetter}
         closeButtonPosition='disable'
         arrow
         clickAway

@@ -20,10 +20,11 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
     return (
       <>
         <ClosablePopper
+          anchorType='element'
+          anchor={this.props.anchorEl}
           open={!!this.props.anchorEl}
           onClose={this.props.onClose.bind(this)}
           placement='bottom-end'
-          anchorEl={this.props.anchorEl}
           arrow
           clickAway
           closeButtonPosition='disable'

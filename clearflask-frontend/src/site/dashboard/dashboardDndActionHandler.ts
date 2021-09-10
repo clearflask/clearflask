@@ -5,6 +5,7 @@ import { ignoreSearchKeys } from "../../api/server";
 import { Project } from "../../api/serverAdmin";
 import { FeedbackInstance } from "../../common/config/template/feedback";
 import { RoadmapInstance } from "../../common/config/template/roadmap";
+import { quillQuote } from "../../common/util/richEditorUtil";
 
 export const DroppableWithDataPrefix = 'data-';
 export type DroppableData = {
@@ -114,7 +115,7 @@ const feedbackToTask = async (
       categoryId: roadmap.categoryAndIndex.category.categoryId,
       statusId: taskStatusId,
       title: srcPost.title,
-      description: srcPost.description,
+      description: !srcPost.description ? undefined : quillQuote(srcPost.description, srcPost.authorName || 'Anonymous', author => `Feedback from ${author}:`),
       tagIds: [],
       order: (dstSearchKey && dstIndex !== undefined) ? indexToOrder(activeProject, dstSearchKey, dstIndex) : undefined,
     },

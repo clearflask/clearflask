@@ -181,9 +181,9 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
           )}
           headerRight={!!expandDirectionHorizontal ? undefined : search}
           grow={this.props.isDashboard ? 'left' : 'center'}
-          margins={this.props.isDashboard ? `${this.props.theme.spacing(2)}px` : undefined}
+          margins={this.props.theme.spacing(4)}
         >
-          { results}
+          {results}
         </DividerCorner >
       );
     }

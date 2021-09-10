@@ -866,10 +866,11 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
         {props.children}
       </IconButton>
       <ClosablePopper
+        anchorType='ref'
+        anchor={anchorRef}
         open={!!demoOpen}
         onClose={() => setDemoOpen(false)}
         placement='top'
-        anchorEl={anchorRef.current}
         arrow
         clickAway
         paperClassName={classes.demoEmbedPopper}
@@ -1265,6 +1266,10 @@ export function LandingOpenSource() {
         description='Build software with us for the whole community or host an instance on your own infrastructure.'
         icon={<OpenSourceIcon />}
         image={VersionControlImg}
+        buttonTitle='Source code'
+        buttonLinkExt='https://github.com/clearflask/clearflask'
+        buttonVariant='contained'
+        buttonIcon={(<GithubIcon />)}
       />
       <Block
         title='Why open source?'
@@ -1294,28 +1299,6 @@ export function LandingOpenSource() {
         title='Where can I get started?'
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-        <Block
-          type='column'
-          icon={(<GithubIcon />)}
-          title='Contribute'
-          description='If you want to contribute a fix or a new feature, check out our project on GitHub.'
-          buttonTitle='Check it out'
-          buttonLinkExt='https://github.com/clearflask/clearflask'
-          buttonVariant='contained'
-          buttonSuppressIcon
-        />
-        <Block
-          type='column'
-          icon={(<StorageIcon />)}
-          title='Self-host'
-          description='If you are looking to host an instance on your own infrastructure, check out our installation intructions.'
-          buttonTitle='Installation'
-          buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
-          buttonVariant='contained'
-          buttonSuppressIcon
-        />
-      </HorizontalPanels>
     </>
   );
 }
@@ -1919,14 +1902,9 @@ export function LandingDemo() {
         flexible: true,
       }} height={500} align='top'>
         <Hero
-          title='Check out our demo'
+          title='Sandbox demo'
           description='Pre-packaged with Feedback, Roadmap and Changelog.'
           image={ProudImg}
-          buttonTitle='Or try it out'
-          buttonLink='/signup'
-          buttonRemark={(
-            <TrialInfoText />
-          )}
         />
         <ButtonGroup disableElevation variant='outlined' className={classes.demoCustomizeControl}>
           <Button disabled={!customized} onClick={() => setCustomize(false)}>Out of the box</Button>
@@ -1982,18 +1960,15 @@ export function LandingDemo() {
         demoImage={DemoDashboardRoadmapVid}
         demoWrap='browser'
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
-        <Block
-          type='column'
-          title='Love it?'
-          description='Try it out for free and customize further.'
-          buttonTitle='Get started'
-          buttonLink='/signup'
-          buttonVariant='contained'
-          buttonSuppressIcon
-          image={Server2Img}
-        />
-      </HorizontalPanels>
+      <Block
+        mirror
+        title='Love it?'
+        description='Try it out yourself for free and customize it even further.'
+        buttonTitle='Try it'
+        buttonLink='/signup'
+        buttonVariant='contained'
+        buttonSuppressIcon
+      />
     </>
   );
 }

@@ -353,7 +353,7 @@ export const TourAnchor = React.forwardRef((props: {
   disablePortal?: React.ComponentProps<typeof ClosablePopper>['disablePortal'];
   zIndex?: React.ComponentProps<typeof ClosablePopper>['zIndex'];
   placement?: React.ComponentProps<typeof ClosablePopper>['placement'];
-  ClosablePopperProps?: Partial<React.ComponentProps<typeof ClosablePopper>>;
+  ClosablePopperProps?: Partial<Omit<React.ComponentProps<typeof ClosablePopper>, 'anchor' | 'anchorType'>>;
   DivProps?: Partial<React.HTMLAttributes<HTMLDivElement>>;
 }, ref: React.Ref<TourAnchorHandle>) => {
   const { tour, onGuideCompleted } = useContext(TourContext) || {};
@@ -396,9 +396,10 @@ export const TourAnchor = React.forwardRef((props: {
     const stepIndex = Object.keys(activeGuide.steps).findIndex(stepId => stepId === activeStepId);
     popper = (
       <ClosablePopper
+        anchorType='ref'
+        anchor={anchorRef}
         open
         onClose={() => dispatch({ type: 'tourSetStep', payload: { activeStep: undefined } })}
-        anchorEl={() => anchorRef.current}
         arrow
         closeButtonPosition='disable'
         paperClassName={classes.anchorPaper}

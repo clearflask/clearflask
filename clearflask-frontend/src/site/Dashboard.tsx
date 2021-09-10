@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Divider, Fade, IconButton, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Divider, Fade, IconButton, SvgIconTypeMap, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
@@ -94,10 +95,11 @@ type PreviewState = {
 } | {
   type: 'post',
   id: string,
-  headerTitle?: string
+  headerIcon?: OverridableComponent<SvgIconTypeMap>,
+  headerTitle?: string,
 } | {
   type: 'create-user',
-  draftId?: string
+  draftId?: string,
 } | {
   type: 'user',
   id: string,
@@ -885,7 +887,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     } else if (previewState.type === 'create-post') {
       section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts, previewState.defaultStatusId);
     } else if (previewState.type === 'post') {
-      section = this.renderPreviewPost(previewState.id, preview.stateKey, preview.project, previewState.headerTitle);
+      section = this.renderPreviewPost(previewState.id, preview.stateKey, preview.project, previewState.headerTitle, previewState.headerIcon);
     } else if (previewState.type === 'create-user') {
       section = this.renderPreviewUserCreate(preview.stateKey, preview.project);
     } else if (previewState.type === 'user') {
@@ -900,13 +902,13 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     return section;
   }
 
-  renderPreviewPost(postId: string, stateKey: keyof State, project: AdminProject, headerTitle?: string): Section {
+  renderPreviewPost(postId: string, stateKey: keyof State, project: AdminProject, headerTitle?: string, headerIcon?: OverridableComponent<SvgIconTypeMap>): Section {
     return {
       name: 'preview',
       breakAction: 'drawer',
       size: PostPreviewSize,
       ...(headerTitle ? {
-        header: { title: { title: headerTitle } },
+        header: { title: { title: headerTitle, icon: headerIcon } },
       } : {}),
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>

@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
-import ArrowLeftIcon from '@material-ui/icons/ArrowLeftRounded';
-import ArrowRightIcon from '@material-ui/icons/ArrowRightRounded';
 import MergeIcon from '@material-ui/icons/MergeType';
 import classNames from 'classnames';
 import React, { useState } from 'react';
@@ -41,14 +39,14 @@ export const OutlineParentMergeNeighboursApplyStyles: Record<string, string | CS
 const styles = (theme: Theme) => createStyles({
   postAsLinksContainer: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   postAsLinks: {
     minWidth: 0,
     ...OutlineParentMergeNeighboursApplyStyles,
   },
   isLinkLabel: {
-    margin: theme.spacing(5, 1),
+    margin: theme.spacing(0, 1),
     fontSize: '1.4em',
     display: 'flex',
     alignItems: 'center',
@@ -115,6 +113,7 @@ const ConnectedPost = (props: {
   return (
     <OutlinePostContent hideOutline={props.hideOutline}>
       <Post
+        postContentSingleLine
         server={props.server}
         idea={props.post}
         onClickPost={props.onClickPost}
@@ -123,7 +122,7 @@ const ConnectedPost = (props: {
         expandable
         isSubmittingDisconnect={isSubmitting}
         disconnectType={props.type}
-        onDisconnect={(!props.onDisconnect && !props.containerPost?.ideaId) ? undefined : async () => {
+        onDisconnect={((!props.onDisconnect && !props.containerPost?.ideaId) || !props.server.isModOrAdminLoggedIn()) ? undefined : async () => {
           if (props.onDisconnect) {
             props.onDisconnect();
             return;
@@ -153,7 +152,7 @@ const ConnectedPost = (props: {
         variant='list'
         display={{
           titleTruncateLines: 1,
-          descriptionTruncateLines: 1,
+          descriptionTruncateLines: 0,
           responseTruncateLines: 0,
           showCommentCount: false,
           showCategoryName: props.containerPost?.categoryId !== props.post.categoryId,
@@ -202,7 +201,8 @@ export const ConnectedPostsContainer = (props: {
   return (
     <div className={classes.postAsLinksContainer}>
       <div className={classes.isLinkLabel}>
-        <ArrowLeftIcon color='inherit' fontSize='inherit' className={classes.isLinkArrowIcon} style={{ visibility: props.direction === 'to' ? 'hidden' : undefined }} />
+        {/* import ArrowLeftIcon from '@material-ui/icons/ArrowLeftRounded'; */}
+        {/* <ArrowLeftIcon color='inherit' fontSize='inherit' className={classes.isLinkArrowIcon} style={{ visibility: props.direction === 'to' ? 'hidden' : undefined }} /> */}
         <HelpPopper description={props.type === 'link'
           ? (props.direction === 'to'
             ? (props.hasMultiple ? 'Linked to these posts' : 'Linked to this post')
@@ -212,7 +212,8 @@ export const ConnectedPostsContainer = (props: {
             : (props.hasMultiple ? 'These posts are merged into this one' : 'This post is merged into this one'))}>
           <TypeIcon color='inherit' fontSize='inherit' className={classes.isLinkIcon} />
         </HelpPopper>
-        <ArrowRightIcon color='inherit' fontSize='inherit' className={classes.isLinkArrowIcon} style={{ visibility: props.direction === 'from' ? 'hidden' : undefined }} />
+        {/* import ArrowRightIcon from '@material-ui/icons/ArrowRightRounded'; */}
+        {/* <ArrowRightIcon color='inherit' fontSize='inherit' className={classes.isLinkArrowIcon} style={{ visibility: props.direction === 'from' ? 'hidden' : undefined }} /> */}
       </div>
       <div className={classNames(
         props.className,

@@ -63,11 +63,12 @@ export const ClearFlaskEmbedHoverFeedback = (props: {
         </Fab>
       </div>
       <ClosablePopper
+        anchorType='ref'
+        anchor={anchorRef}
         closeButtonPosition='top-left'
         open={!!demoOpen}
         onClose={() => setDemoOpen(false)}
         placement='top'
-        anchorEl={anchorRef.current}
         arrow
         clickAway
         paperClassName={classes.popper}
