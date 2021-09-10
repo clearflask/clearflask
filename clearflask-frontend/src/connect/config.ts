@@ -16,6 +16,9 @@ export interface ConnectConfig {
   publicPath: string;
   isInsideWebpack?: boolean;
   disableAutoFetchCertificate?: boolean;
+  // Only if disableAutoFetchCertificate is true,
+  // whether to still redirect and assume https
+  forceRedirectHttpToHttps?: boolean;
 }
 
 var connectConfig: ConnectConfig = {
@@ -26,6 +29,7 @@ var connectConfig: ConnectConfig = {
   connectToken: 'EMPTY',
   publicPath: path.resolve(__dirname, 'public'),
   disableAutoFetchCertificate: process.env.ENV === 'development',
+  forceRedirectHttpToHttps: process.env.ENV !== 'development',
 };
 
 if (process.env.ENV === 'production'

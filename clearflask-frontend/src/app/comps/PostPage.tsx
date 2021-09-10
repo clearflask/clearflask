@@ -195,7 +195,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
             direction={Direction.Vertical}
             PostProps={this.props.PostProps}
             widthExpand
-            widthExpandMargin={0}
+            margins={0}
             panel={{
               hideIfEmpty: true,
               title: 'Similar',

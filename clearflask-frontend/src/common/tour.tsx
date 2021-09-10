@@ -310,17 +310,18 @@ const TourChecklistGroup = (props: {
   defaultExpanded?: boolean;
 }) => {
   const classes = useStyles();
-  const [expand, setExpand] = useState<boolean>(!!props.defaultExpanded);
+  const [expand, setExpand] = useState<boolean | undefined>(undefined);
+  const expandWithDefault = expand === undefined ? !!props.defaultExpanded : expand;
   return (
     <>
       <div className={classNames(
         classes.checklistGroup,
         props.completePerc >= 100 && classes.areaCompleted,
       )}>
-        <ListItem button onClick={() => setExpand(!expand)}>
+        <ListItem button onClick={() => setExpand(!expandWithDefault)}>
           <Typography variant='h6'>{props.title}</Typography>
           <div className={classes.flexGrow} />
-          <ExpandIcon expanded={expand} />
+          <ExpandIcon expanded={expandWithDefault} />
         </ListItem>
         <LinearProgress
           variant='determinate'
@@ -330,7 +331,7 @@ const TourChecklistGroup = (props: {
           }}
         />
       </div>
-      <Collapse in={expand}>
+      <Collapse in={expandWithDefault}>
         {props.guides}
       </Collapse>
     </>

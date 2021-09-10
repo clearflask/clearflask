@@ -46,24 +46,13 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
   },
-  widthExpandMarginSupplied: {
-    padding: (props: Props) => props.widthExpandMargin,
+  marginsSupplied: {
+    padding: (props: Props) => props.margins,
   },
-  widthExpandMargin: {
-    [theme.breakpoints.only('xs')]: {
-      padding: theme.spacing(2, 2),
-      '&:first-child': { paddingTop: theme.spacing(4) },
-      '&:last-child': { paddingBottom: theme.spacing(4) },
-    },
-    [theme.breakpoints.only('sm')]: {
-      padding: theme.spacing(2, 2),
-      '&:first-child': { paddingTop: theme.spacing(4) },
-      '&:last-child': { paddingBottom: theme.spacing(4) },
-    },
+  marginsDefault: {
+    padding: (props: Props) => props.direction === Direction.Horizontal ? theme.spacing(0, 1) : theme.spacing(1, 0),
     [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(3, 4),
-      '&:first-child': { paddingTop: theme.spacing(6) },
-      '&:last-child': { paddingBottom: theme.spacing(6) },
+      padding: (props: Props) => props.direction === Direction.Horizontal ? theme.spacing(1, 2) : theme.spacing(2, 1),
     },
   },
   item: {
@@ -82,7 +71,7 @@ export interface Props {
   overrideTitle?: React.ReactNode;
   preContent?: React.ReactNode;
   widthExpand?: boolean;
-  widthExpandMargin?: MarginProperty<string | number>;
+  margins?: MarginProperty<string | number>;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
   searchOverrideAdmin?: Partial<Admin.IdeaSearchAdmin>;
@@ -201,8 +190,8 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       if (!!windowIso.isSsr) windowIso.awaitPromises.push(loadMorePromise);
     }
 
-    const widthExpandMarginClassName = this.props.widthExpandMargin === undefined
-      ? this.props.classes.widthExpandMargin : this.props.classes.widthExpandMarginSupplied;
+    const marginsClassName = this.props.margins === undefined
+      ? this.props.classes.marginsDefault : this.props.classes.marginsSupplied;
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
     const searchIdeas = !this.props.filterPosts ? this.props.searchIdeas
       : this.props.searchIdeas.filter(this.props.filterPosts);
@@ -210,7 +199,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     var content;
     if (!this.props.searchStatus || this.props.searchStatus === Status.REJECTED) {
       content = (
-        <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
+        <div className={classNames(marginsClassName, this.props.classes.placeholder)}>
           <ErrorMsg msg='Failed to load' />
         </div>
       );
@@ -218,7 +207,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       return null;
     } else if (this.props.searchStatus === Status.PENDING && !hasAny) {
       content = (
-        <div className={classNames(this.props.widthExpand && widthExpandMarginClassName, this.props.classes.placeholder)}>
+        <div className={classNames(marginsClassName, this.props.classes.placeholder)}>
           <Loading />
         </div>
       );
@@ -260,9 +249,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
                 this.props.searchStatus !== Status.FULFILLED && this.props.classes.itemLoading,
                 this.props.postClassName,
               )}
-              classNamePadding={classNames(
-                this.props.widthExpand && widthExpandMarginClassName,
-              )}
+              classNamePadding={classNames(marginsClassName)}
               server={this.props.server}
               idea={idea}
               widthExpand={this.props.widthExpand}
@@ -290,7 +277,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         return content;
       });
-      var drafts = this.renderDrafts(widthExpandMarginClassName);
+      var drafts = this.renderDrafts(marginsClassName);
       if (drafts?.length) {
         content = [...drafts, ...content];
       }
@@ -305,7 +292,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
             {this.props.renderEmpty ? this.props.renderEmpty() : (
               <div
                 className={classNames(
-                  this.props.widthExpand && widthExpandMarginClassName,
+                  marginsClassName,
                   this.props.classes.placeholder,
                 )}
               >
@@ -352,7 +339,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return content;
   }
 
-  renderDrafts(widthExpandMarginClassName?: string): React.ReactNode[] | undefined {
+  renderDrafts(marginsClassName?: string): React.ReactNode[] | undefined {
     if (!this.props.showDrafts) return undefined;
 
     const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
@@ -372,7 +359,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
             className={classNames(
               this.props.classes.item,
               this.props.searchStatus !== Status.FULFILLED && this.props.classes.itemLoading,
-              widthExpandMarginClassName,
+              marginsClassName,
             )}
             server={this.props.server}
             draft={draft}

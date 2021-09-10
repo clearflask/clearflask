@@ -153,7 +153,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
 
     const TransitionCmpt = transitionCmpt || Fade;
 
-    const anchorElGetterWrapped = anchorElGetter ? () => {
+    const anchorElGetterWrapped = this.props.anchorElGetter ? () => {
       const bounds = anchorElGetter && anchorElGetter();
       if (!!bounds) {
         this.boundsLast = bounds;
@@ -169,32 +169,44 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
         <div ref={this.anchorRef} />
         <Popper
           placement={placement || 'right-start'}
-          anchorEl={this.props.anchorEl !== undefined
-            ? this.props.anchorEl
-            : () => {
-              if (anchorElGetterWrapped) {
-                const bounds = anchorElGetterWrapped();
-                return {
-                  clientHeight: bounds.height,
-                  clientWidth: bounds.width,
-                  getBoundingClientRect: () => {
-                    const boundsInner = anchorElGetterWrapped();
-                    return {
-                      height: boundsInner.height,
-                      width: boundsInner.width,
-                      top: boundsInner.top,
-                      bottom: boundsInner.bottom,
-                      left: boundsInner.left,
-                      right: boundsInner.right,
-                    };
-                  }
-                }
-              } else {
-                return this.anchorRef.current!;
-              }
-            }}
           transition
           {...popperProps}
+          anchorEl={() => {
+            // Overly complicated way to ensure popper.js
+            // always gets some kind of coordinates
+
+            const el = (typeof this.props.anchorEl === 'function')
+              ? this.props.anchorEl()
+              : this.props.anchorEl;
+            if (!!el) {
+              return el;
+            }
+            const bounds = anchorElGetterWrapped?.();
+            const popperReferenceObject = {
+              clientHeight: bounds === undefined ? 0 : bounds.height,
+              clientWidth: bounds === undefined ? 0 : bounds.width,
+              getBoundingClientRect: () => {
+                const elBoundingClientRect = ((typeof this.props.anchorEl === 'function')
+                  ? this.props.anchorEl()
+                  : this.props.anchorEl)
+                  ?.getBoundingClientRect();
+                if (!!elBoundingClientRect) {
+                  return elBoundingClientRect;
+                }
+                const boundsInner = anchorElGetterWrapped?.();
+                const popperBoundinngClientRect = {
+                  height: boundsInner === undefined ? 0 : boundsInner.height,
+                  width: boundsInner === undefined ? 0 : boundsInner.width,
+                  top: boundsInner === undefined ? 0 : boundsInner.top,
+                  bottom: boundsInner === undefined ? 0 : boundsInner.bottom,
+                  left: boundsInner === undefined ? 0 : boundsInner.left,
+                  right: boundsInner === undefined ? 0 : boundsInner.right,
+                };
+                return popperBoundinngClientRect;
+              }
+            }
+            return popperReferenceObject;
+          }}
           className={classNames(
             classes.popper,
             popperProps.className,

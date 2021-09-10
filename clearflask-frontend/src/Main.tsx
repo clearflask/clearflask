@@ -4,6 +4,7 @@ import loadable from '@loadable/component';
 import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
+import { ErrorBoundary } from '@sentry/react';
 import { SnackbarProvider } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -129,118 +130,120 @@ class Main extends Component<Props> {
     const showDashboard = isParentDomain || isSelfHost;
 
     return (
-      <React.StrictMode>
-        <StylesProvider injectFirst>
-          <MuiThemeProvider theme={this.theme}>
-            <MuiSnackbarProvider notistackRef={notistackRef}>
-              <CssBaseline />
-              <ServerErrorNotifier />
-              <CaptchaChallenger />
-              <RemoveSsrCss />
-              <div style={{
-                minHeight: windowIso.isSsr ? undefined : this.theme.vh(100),
-                display: 'flex',
-                flexDirection: 'column',
-                background: this.theme.palette.background.default,
-              }}>
-                <Router
-                  {...(windowIso.isSsr ? {
-                    location: this.props.ssrLocation,
-                    context: this.props.ssrStaticRouterContext,
-                  } : {})}
-                >
-                  <ScrollAnchor scrollOnNavigate />
-                  {isTracking() && (
-                    <Route path='/' render={routeProps => {
-                      ReactGA.set({ page: routeProps.location.pathname + routeProps.location.search });
-                      ReactGA.pageview(routeProps.location.pathname + routeProps.location.search);
-                      return null;
-                    }} />
-                  )}
-                  <Route render={routeProps => routeProps.location.pathname.startsWith('/embed-status') ? null : (
-                    <EnvironmentNotifier key='env-notifier' />
-                  )} />
-                  <Switch>
-                    {[
-                      ...(!isProd() ? [(
-                        <Route key='mock-oauth-provider-bathtub' path='/bathtub/authorize' render={props => (
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <BathtubOauthProvider />
-                          </Provider>
-                        )} />
-                      )] : []),
-                      ...(showDashboard ? [(
-                        <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <SentryIdentifyAccount />
-                            <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
-                            <NoSsr>
-                              <Dashboard {...props} />
-                            </NoSsr>
-                            <IntercomWrapperMain suppressBind />
-                            <HotjarWrapperMain />
-                          </Provider>
-                        )} />
-                      ), (
-                        <Route key='invoice' path="/invoice/:invoiceId" render={props => (
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <SentryIdentifyAccount />
-                            <SetMaxAge val={0} />
-                            <Invoice invoiceId={props.match.params['invoiceId']} />
-                          </Provider>
-                        )} />
-                      ), (
-                        <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <SetTitle title={props.match.params['type'] === 'login'
-                              ? 'Login'
-                              : (props.match.params['type'] === 'signup'
-                                ? 'Sign up'
-                                : 'Invitation')} />
-                            <AccountEnterPage
-                              type={props.match.params['type']}
-                              invitationId={props.match.params['type'] === 'invitation' ? props.match.params['invitationId'] : undefined}
-                            />
-                          </Provider>
-                        )} />
-                      )] : []),
-                      ...(showProject ? [(
-                        <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
-                          <>
-                            <SetMaxAge val={24 * 60 * 60} />
-                            <PostStatus
-                              {...props}
-                              postId={props.match.params['postId'] || ''}
-                            />
-                          </>
-                        )} />
-                      ), (
-                        <Route key='app' path='/' render={props => (
-                          <>
-                            <SetMaxAge val={60} />
-                            <App slug={windowIso.location.hostname} {...props} />
-                          </>
-                        )} />
-                      )] : []),
-                      ...(showSite ? [(
-                        <Route key='site' path='/' render={props => (
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <SentryIdentifyAccount />
-                            <SetMaxAge val={24 * 60 * 60} />
-                            <Site {...props} />
-                            <IntercomWrapperMain />
-                            <HotjarWrapperMain />
-                          </Provider>
-                        )} />
-                      )] : []),
-                    ]}
-                  </Switch>
-                </Router>
-              </div>
-            </MuiSnackbarProvider>
-          </MuiThemeProvider>
-        </StylesProvider>
-      </React.StrictMode>
+      <ErrorBoundary showDialog>
+        <React.StrictMode>
+          <StylesProvider injectFirst>
+            <MuiThemeProvider theme={this.theme}>
+              <MuiSnackbarProvider notistackRef={notistackRef}>
+                <CssBaseline />
+                <ServerErrorNotifier />
+                <CaptchaChallenger />
+                <RemoveSsrCss />
+                <div style={{
+                  minHeight: windowIso.isSsr ? undefined : this.theme.vh(100),
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: this.theme.palette.background.default,
+                }}>
+                  <Router
+                    {...(windowIso.isSsr ? {
+                      location: this.props.ssrLocation,
+                      context: this.props.ssrStaticRouterContext,
+                    } : {})}
+                  >
+                    <ScrollAnchor scrollOnNavigate />
+                    {isTracking() && (
+                      <Route path='/' render={routeProps => {
+                        ReactGA.set({ page: routeProps.location.pathname + routeProps.location.search });
+                        ReactGA.pageview(routeProps.location.pathname + routeProps.location.search);
+                        return null;
+                      }} />
+                    )}
+                    <Route render={routeProps => routeProps.location.pathname.startsWith('/embed-status') ? null : (
+                      <EnvironmentNotifier key='env-notifier' />
+                    )} />
+                    <Switch>
+                      {[
+                        ...(!isProd() ? [(
+                          <Route key='mock-oauth-provider-bathtub' path='/bathtub/authorize' render={props => (
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <BathtubOauthProvider />
+                            </Provider>
+                          )} />
+                        )] : []),
+                        ...(showDashboard ? [(
+                          <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <SentryIdentifyAccount />
+                              <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
+                              <NoSsr>
+                                <Dashboard {...props} />
+                              </NoSsr>
+                              <IntercomWrapperMain suppressBind />
+                              <HotjarWrapperMain />
+                            </Provider>
+                          )} />
+                        ), (
+                          <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <SentryIdentifyAccount />
+                              <SetMaxAge val={0} />
+                              <Invoice invoiceId={props.match.params['invoiceId']} />
+                            </Provider>
+                          )} />
+                        ), (
+                          <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <SetTitle title={props.match.params['type'] === 'login'
+                                ? 'Login'
+                                : (props.match.params['type'] === 'signup'
+                                  ? 'Sign up'
+                                  : 'Invitation')} />
+                              <AccountEnterPage
+                                type={props.match.params['type']}
+                                invitationId={props.match.params['type'] === 'invitation' ? props.match.params['invitationId'] : undefined}
+                              />
+                            </Provider>
+                          )} />
+                        )] : []),
+                        ...(showProject ? [(
+                          <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                            <>
+                              <SetMaxAge val={24 * 60 * 60} />
+                              <PostStatus
+                                {...props}
+                                postId={props.match.params['postId'] || ''}
+                              />
+                            </>
+                          )} />
+                        ), (
+                          <Route key='app' path='/' render={props => (
+                            <>
+                              <SetMaxAge val={60} />
+                              <App slug={windowIso.location.hostname} {...props} />
+                            </>
+                          )} />
+                        )] : []),
+                        ...(showSite ? [(
+                          <Route key='site' path='/' render={props => (
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <SentryIdentifyAccount />
+                              <SetMaxAge val={24 * 60 * 60} />
+                              <Site {...props} />
+                              <IntercomWrapperMain />
+                              <HotjarWrapperMain />
+                            </Provider>
+                          )} />
+                        )] : []),
+                      ]}
+                    </Switch>
+                  </Router>
+                </div>
+              </MuiSnackbarProvider>
+            </MuiThemeProvider>
+          </StylesProvider>
+        </React.StrictMode>
+      </ErrorBoundary>
     );
   }
 }

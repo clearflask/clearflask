@@ -5,9 +5,9 @@ import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
 import { getSearchKey, Server } from '../api/server';
+import { BoardContainer, BoardPanel } from '../app/AppDynamicPage';
 import { Direction } from '../app/comps/Panel';
 import PanelComment from '../app/comps/PanelComment';
-import { BoardContainer, BoardPanel } from '../app/CustomPage';
 
 const styles = (theme: Theme) => createStyles({
   panelComment: {

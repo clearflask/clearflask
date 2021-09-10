@@ -25,7 +25,7 @@ interface Props {
 interface ConnectProps {
   accountBasePlanId?: string;
 }
-class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   unsubscribe?: () => void;
 
   componentDidMount() {
@@ -81,4 +81,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   return {
     accountBasePlanId: state.account.account.account?.basePlanId,
   };
-})(withStyles(styles, { withTheme: true })(Page));
+})(withStyles(styles, { withTheme: true })(SettingsDynamicPage));

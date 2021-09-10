@@ -7,7 +7,7 @@ import ServerAdmin from '../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Menu, { MenuHeading, MenuItem, MenuProject } from '../../common/config/settings/Menu';
-import Page from '../../common/config/settings/Page';
+import SettingsDynamicPage from '../../common/config/settings/SettingsDynamicPage';
 import { Orientation } from '../../common/ContentScroll';
 import { SectionContent } from '../../common/Layout';
 import { TourAnchor } from '../../common/tour';
@@ -154,7 +154,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
 
     mainContent = (
       <ProjectSettingsBase>
-        <Page
+        <SettingsDynamicPage
           key={currentPage.key}
           page={currentPage}
           server={activeProject.server}

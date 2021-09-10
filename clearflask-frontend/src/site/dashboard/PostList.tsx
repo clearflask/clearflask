@@ -113,7 +113,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         suppressPanel
         panel={panel}
         widthExpand
-        widthExpandMargin={this.props.theme.spacing(DashboardListPostSpacing)}
+        margins={this.props.theme.spacing(DashboardListPostSpacing)}
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}

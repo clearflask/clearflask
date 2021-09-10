@@ -75,6 +75,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Singleton
@@ -218,10 +221,16 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 ideaCreateAdmin.getOrder());
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
-        if (votingAllowed) {
-            ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
-        } else {
-            ideaStore.createIdea(ideaModel);
+        try {
+            if (votingAllowed) {
+                IdeaStore.IdeaAndIndexingFuture ideaAndUpvote = ideaStore.createIdeaAndUpvote(ideaModel);
+                ideaModel = ideaAndUpvote.getIdea();
+                ideaAndUpvote.getIndexingFuture().get(10, TimeUnit.SECONDS);
+            } else {
+                ideaStore.createIdea(ideaModel).get(10, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            // Let it slide
         }
 
         if (!Strings.isNullOrEmpty(deleteDraftId)) {

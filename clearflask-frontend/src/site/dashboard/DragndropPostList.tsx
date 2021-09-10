@@ -109,7 +109,7 @@ const DragndropPostListPostListInner = React.memo((props: {
     <PostList
       {...props.PostListProps}
       PanelPostProps={{
-        widthExpandMargin: theme.spacing(DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing + 1),
+        margins: theme.spacing(DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing, DashboardListPostSpacing + 1),
         ...props.PostListProps.PanelPostProps,
         wrapPost: (post, content, index) => (
           <Draggable

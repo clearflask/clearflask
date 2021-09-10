@@ -166,7 +166,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
             'Open source',
             'AGPLv3 License',
           ]}
-          actionTitle='Check it out'
+          actionTitle='Self host'
           remark='Join our community'
           actionOnClick={() => {
             if (isTracking()) {

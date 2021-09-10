@@ -516,16 +516,9 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   changelog={this.state.changelog || undefined}
                 />
               </Provider>
-              { // On page load, before feedback/roadmap/changelog is loaded,
-                // checklist renders without these guides and the incorrect group is auto-expanded.
-                // So we wait for these to load before rendering checklist
-                (this.state.feedback !== undefined
-                  && this.state.roadmap !== undefined
-                  && this.state.changelog !== undefined) && (
-                  <Provider store={ServerAdmin.get().getStore()}>
-                    <TourChecklist />
-                  </Provider>
-                )}
+              <Provider store={ServerAdmin.get().getStore()}>
+                <TourChecklist />
+              </Provider>
               {/* <Hidden smDown>
                 <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                   <TemplateWrapper<[RoadmapInstance | undefined, ChangelogInstance | undefined]>

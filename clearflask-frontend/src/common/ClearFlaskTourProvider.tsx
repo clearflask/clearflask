@@ -133,21 +133,20 @@ const ClearFlaskTourProvider = (props: {
                 },
                 'link-to-task': {
                   title: 'Link with tasks', description: 'Optionally you can link to your completed tasks or feedback here',
+                  showButtonNext: true,
                   anchorId: 'post-create-form-link-to-task',
                 },
                 'save-draft': {
                   title: 'Save as a draft', description: 'Useful if you are not quite ready to publish yet. Drafts are private to you only. I keep a draft open at all times and add any completed tasks on the go.',
                   anchorId: 'post-create-form-save-draft',
+                  showButtonNext: true,
                   zIndex: zb => zb.modal - 1,
                 },
                 'submit-feedback': {
                   title: 'Submit feedback', description: 'Save the newly created feedback',
+                  showButtonNext: 'Got it',
                   anchorId: 'post-create-form-submit-btn',
                 },
-                // 'public-view': {
-                //   title: 'Success!', description: 'Check out your changelog in a public view',
-                //   anchorId: 'changelog-page-public-view',
-                // },
               },
               onComplete: { openPath: '/dashboard' },
             },

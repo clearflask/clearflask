@@ -63,6 +63,13 @@ function createApp(serverHttpp) {
 
   serverApp.use(compression());
 
+  if (connectConfig.forceRedirectHttpToHttps) {
+    serverApp.set('trust proxy', true);
+    serverApp.use((req, res, next) => {
+      req.secure ? next() : res.redirect('https://' + req.headers.host + req.url);
+    });
+  }
+
   if (connectConfig.parentDomain !== 'clearflask.com') {
     ['asset-manifest.json', 'index.html'].forEach(file => {
       serverApp.get(`/${file}`, function (req, res) {

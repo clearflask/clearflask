@@ -37,7 +37,7 @@ export const replaceParentDomain = (html) => {
   if (connectConfig.parentDomain === 'clearflask.com') return html;
   return html.replace(
     /https:\/\/clearflask\.com/g,
-    `${connectConfig.disableAutoFetchCertificate ? 'http' : 'https'}://${connectConfig.parentDomain}`)
+    `${connectConfig.forceRedirectHttpToHttps ? 'https' : 'http'}://${connectConfig.parentDomain}`)
 }
 
 // Cache index.html in memory

@@ -2855,9 +2855,9 @@ export function LandingPricingOptions() {
           <Block
             type='column'
             icon={(<OpenSourceIcon />)}
-            title='Open-source self-hosted solution'
+            title='Open-source solution'
             description='Install and manage on your own infrastructure.'
-            buttonTitle='Get started'
+            buttonTitle='Self host'
             buttonLink='/open-source'
             buttonVariant='contained'
             buttonSuppressIcon

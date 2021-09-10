@@ -142,7 +142,7 @@ interface ConnectProps {
   pageNotFound: boolean;
   page?: Client.Page;
 }
-class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class AppDynamicPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
     if (this.props.pageNotFound) {
@@ -482,4 +482,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(CustomPage));
+})(withStyles(styles, { withTheme: true })(AppDynamicPage));

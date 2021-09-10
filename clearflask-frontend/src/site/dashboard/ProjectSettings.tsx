@@ -19,12 +19,12 @@ import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf, Status } from '../../api/server';
 import ServerAdmin, { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
+import AppDynamicPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescription } from '../../app/AppDynamicPage';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import TagSelect from '../../app/comps/TagSelect';
-import CustomPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescription } from '../../app/CustomPage';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
@@ -1803,7 +1803,7 @@ export const ProjectSettingsLanding = (props: {
                     fixedWidth: 650,
                   }}
                 >
-                  <CustomPage
+                  <AppDynamicPage
                     key={props.server.getProjectId()}
                     server={props.server}
                     pageSlug={landing.pageAndIndex.page.slug}
@@ -2139,7 +2139,7 @@ export const ProjectSettingsFeedback = (props: {
                           fixedHeight: 700,
                         }}
                       >
-                        <CustomPage
+                        <AppDynamicPage
                           key={props.server.getProjectId()}
                           server={props.server}
                           pageSlug={feedback.pageAndIndex.page.slug}

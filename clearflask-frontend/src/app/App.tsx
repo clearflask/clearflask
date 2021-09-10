@@ -17,11 +17,11 @@ import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import { SentryIdentifyUser } from '../site/SentryIdentify';
 import AccountPage from './AccountPage';
+import AppDynamicPage from './AppDynamicPage';
 import AppThemeProvider from './AppThemeProvider';
 import BasePage from './BasePage';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
-import CustomPage from './CustomPage';
 import ErrorPage from './ErrorPage';
 import Header from './Header';
 import SsoSuccessPage from './SsoSuccessPage';
@@ -210,7 +210,7 @@ class App extends Component<Props> {
                 render={(pageSlug: string) => (
                   <Route exact key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
                     <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
-                      <CustomPage
+                      <AppDynamicPage
                         pageSlug={pageSlug}
                         server={this.server}
                       />

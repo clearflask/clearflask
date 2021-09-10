@@ -58,7 +58,9 @@ For production workload, you will want to spin up these dependencies yourself an
 
 ##### IAM access
 
-For AWS services, `clearflask-server` autodetects Access Keys using either a configuration property or the default locations. If you are running in EC2 or ECS, keys detection is automated, you just need to create the appropriate IAM role.
+For AWS services, `clearflask-server` autodetects Access Keys using either a configuration property or the default
+locations. If you are running in EC2 or ECS, keys detection is automated, you just need to create the appropriate IAM
+role.
 
 ##### AWS DynamoDB
 
@@ -139,6 +141,8 @@ After you sign-up, disable further signups using:
 
 #### DNS and certificates
 
+##### Auto-magic certificate management
+
 By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com`, ensure your
 DNS is correctly pointing to this server, and set these config parameters:
 
@@ -147,7 +151,15 @@ DNS is correctly pointing to this server, and set these config parameters:
 - `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
 - `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
 
-Once you load the site for the first time, a Certificate is automagically fetched for you and auto-renewed as needed.
+Once you load your site for the first time, a Certificate is auto-magically fetched for you and auto-renewed as needed.
+
+##### Self-managed reverse-proxy
+
+If instead you wish to manage certificates yourself using a reverse proxy, set the following properties to redirect to
+https and trust the last reverse proxy in the list:
+
+- `connect.config.json:disableAutoFetchCertificate`: `true`
+- `connect.config.json:forceRedirectHttpToHttps`: `true`
 
 ### Run
 
