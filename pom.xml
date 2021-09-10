@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -34,8 +35,9 @@
         <projectlombok.version>1.18.4</projectlombok.version>
         <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
         <batik.version>1.14</batik.version>
-        <skipTests />
-        <skipITs />
+        <githubReleaseVersion>${project.version}</githubReleaseVersion>
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>
@@ -157,6 +159,17 @@
                     <signTag>true</signTag>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <scmCommentPrefix>[release]</scmCommentPrefix>
+                </configuration>
+            </plugin>
+            <plugin>
+                <inherited>false</inherited>
+                <groupId>de.jutzig</groupId>
+                <artifactId>github-release-plugin</artifactId>
+                <version>1.1.1</version>
+                <configuration>
+                    <releaseName>${githubReleaseVersion}</releaseName>
+                    <tag>${githubReleaseVersion}</tag>
+                    <artifact><!-- Do not include default artifact --></artifact>
                 </configuration>
             </plugin>
         </plugins>
