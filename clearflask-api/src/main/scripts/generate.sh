@@ -14,7 +14,7 @@ NPM="${NODE} node/node_modules/npm/bin/npm-cli.js"
 NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
 
 OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
-REDOC_CLI="${NPX} -p redoc-cli@0.10.2 redoc-cli"
+REDOC_CLI="${NPX} -p redoc-cli@0.12.3 redoc-cli"
 
 # Frontend Client API
 ${OPENAPI_GENERATOR} generate \

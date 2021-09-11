@@ -698,7 +698,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         variant='outlined'
         size={this.props.type === 'large' ? 'medium' : 'small'}
         disabled={this.state.isSubmitting}
-        label='Linked posts'
+        label='Link to'
         isMulti
         initialPostIds={draft.linkedFromPostIds}
         onChange={postIds => this.setState({ draftFieldLinkedFromPostIds: postIds })}
