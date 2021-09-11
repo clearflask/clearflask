@@ -289,7 +289,7 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin) {
+    public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin, boolean isSuperAdmin) {
         Project project = getProject(projectId, false).get();
 
         ImmutableMap.Builder<String, String> slugsToChangeBuilder = ImmutableMap.builder();
@@ -297,14 +297,14 @@ public class DynamoProjectStore implements ProjectStore {
         Optional<String> domainPreviousOpt = Optional.ofNullable(Strings.emptyToNull(project.getVersionedConfigAdmin().getConfig().getDomain()));
         Optional<String> domainOpt = Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
         if (!domainOpt.equals(domainPreviousOpt)) {
-            domainOpt.ifPresent(s -> sanitizer.domain(s));
+            domainOpt.ifPresent(domain -> sanitizer.domain(domain, isSuperAdmin));
             slugsToChangeBuilder.put(domainPreviousOpt.orElse(""), domainOpt.orElse(""));
         }
 
         String subdomainPrevious = project.getVersionedConfigAdmin().getConfig().getSlug();
         String subdomain = versionedConfigAdmin.getConfig().getSlug();
         if (!subdomain.equals(subdomainPrevious)) {
-            sanitizer.subdomain(subdomain);
+            sanitizer.subdomain(subdomain, isSuperAdmin);
             slugsToChangeBuilder.put(subdomainPrevious, subdomain);
         }
 

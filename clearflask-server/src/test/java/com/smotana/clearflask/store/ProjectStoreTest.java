@@ -77,7 +77,7 @@ public class ProjectStoreTest extends AbstractTest {
                 .config(ca.getConfig().toBuilder()
                         .name("New name")
                         .build()).build();
-        store.updateConfig(newProject, Optional.of(ca.getVersion()), ca1);
+        store.updateConfig(newProject, Optional.of(ca.getVersion()), ca1, false);
         assertEquals(Optional.of(ca1), store.getProject(newProject, false).map(Project::getVersionedConfigAdmin));
 
         VersionedConfigAdmin ca2 = ca.toBuilder()
@@ -86,7 +86,7 @@ public class ProjectStoreTest extends AbstractTest {
                         .name("New name again")
                         .build()).build();
         try {
-            store.updateConfig(newProject, Optional.of(ca.getVersion()), ca2);
+            store.updateConfig(newProject, Optional.of(ca.getVersion()), ca2, false);
             fail();
         } catch (Exception ex) {
             log.info("Expected updating conflict", ex);

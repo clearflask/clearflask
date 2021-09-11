@@ -172,7 +172,7 @@ public class SanitizerTest extends AbstractTest {
 
     void assertSanitizeDomain(String domain, boolean expectFailure) {
         try {
-            sanitizer.domain(domain);
+            sanitizer.domain(domain, false);
             if (expectFailure) {
                 fail("Expected failure");
             }

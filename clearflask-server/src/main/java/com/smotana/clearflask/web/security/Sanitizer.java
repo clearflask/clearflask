@@ -161,18 +161,23 @@ public class Sanitizer {
         }
     }
 
-    public void domain(String domain) {
+    public void domain(String domain, boolean isSuperAdmin) {
         if (Strings.isNullOrEmpty(domain)) {
             throw new ApiException(BAD_REQUEST, "Custom domain is empty");
         }
 
+        if (isSuperAdmin) {
+            log.debug("Skipping custom domain validation for {}, isSuperAdmin", domain);
+            return;
+        }
+
         if (config.skipCheckForAllDomains()) {
-            log.debug("Skipping custom domain validation for {}", domain);
+            log.debug("Skipping custom domain validation for {}, skipCheckForAllDomains true", domain);
             return;
         }
 
         if (Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {
-            log.info("Skipping custom domain validation for {}", domain);
+            log.info("Skipping custom domain validation for {}, skipCheckForDomains match", domain);
             return;
         }
 
@@ -210,9 +215,13 @@ public class Sanitizer {
         }
     }
 
-    public void subdomain(String subdomain) {
+    public void subdomain(String subdomain, boolean isSuperAdmin) {
         if (subdomain.length() < SUBDOMAIN_MIN_LENGTH) {
             throw new ApiException(BAD_REQUEST, "Subdomain is too short, must be at least " + SUBDOMAIN_MIN_LENGTH + " character(s)");
+        }
+        if (isSuperAdmin) {
+            log.debug("Skipping subdomain validation for {}, isSuperAdmin", subdomain);
+            return;
         }
         if (subdomain.length() > SUBDOMAIN_MAX_LENGTH) {
             throw new ApiException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");

@@ -78,7 +78,7 @@ export const ClearFlaskEmbedHoverFeedback = (props: {
           title='Demo: ClearFlask Feedback'
           src={(demoOpen !== undefined // After it's open, keep it open
             || isHovering !== undefined // After hovered once, keep it preloaded
-            || preload) ? `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${path || ''}` : 'about:blank'}
+            || preload) ? `${windowIso.location.protocol}//product.${windowIso.location.host}/${path || ''}` : 'about:blank'}
           width='100%'
           height='100%'
           frameBorder={0}

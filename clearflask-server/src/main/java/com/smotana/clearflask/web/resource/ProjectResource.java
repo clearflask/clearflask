@@ -293,11 +293,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             }
         }
 
+        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
                 projectId,
                 Optional.ofNullable(Strings.emptyToNull(versionLast)),
-                versionedConfigAdmin);
+                versionedConfigAdmin,
+                isSuperAdmin);
 
         return versionedConfigAdmin;
     }
@@ -362,8 +364,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
-        sanitizer.subdomain(configAdmin.getSlug());
-        Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(sanitizer::domain);
+        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
+        sanitizer.subdomain(configAdmin.getSlug(), isSuperAdmin);
+        Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(domain -> sanitizer.domain(domain, isSuperAdmin));
         Account account = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))

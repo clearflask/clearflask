@@ -1099,7 +1099,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   }
 
   openFeedbackUrl(page?: string) {
-    var url = `${windowIso.location.protocol}//feedback.${windowIso.location.host}/${page || ''}`;
+    var url = `${windowIso.location.protocol}//product.${windowIso.location.host}/${page || ''}`;
     if (this.props.account) {
       url += `?${SSO_TOKEN_PARAM_NAME}=${this.props.account.cfJwt}`;
     }

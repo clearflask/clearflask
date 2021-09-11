@@ -1429,7 +1429,7 @@ export const ProjectSettingsUsersSso = (props: {
               underline='none'
               color='primary'
               target="_blank"
-              href='https://feedback.clearflask.com/post/how-to-setup-single-signon-uv5'
+              href='https://product.clearflask.com/post/how-to-setup-single-signon-uv5'
             >documentation</MuiLink>
             {' before you continue.'}
           </>

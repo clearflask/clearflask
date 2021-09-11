@@ -27,8 +27,8 @@ Listen to your users during product development with [ClearFlask](https://clearf
 
 ## Get involved
 
-Submit an [issue here](https://feedback.clearflask.com/issue) or
-a [suggestion here](https://feedback.clearflask.com/feedback).
+Submit an [issue here](https://product.clearflask.com/issue) or
+a [suggestion here](https://product.clearflask.com/feedback).
 
 You can also open a merge request. Please [see here](CONTRIBUTING.md) on how to contribute.
 

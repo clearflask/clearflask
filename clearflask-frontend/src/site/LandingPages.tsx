@@ -844,7 +844,7 @@ export function LandingClearFlaskDemo(props: {
     >
       <iframe
         title='Demo: ClearFlask Feedback'
-        src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}${props.path || ''}`}
+        src={`${windowIso.location.protocol}//product.${windowIso.location.host}${props.path || ''}`}
         width='100%'
         height='100%'
         frameBorder={0}
@@ -877,7 +877,7 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
       >
         <iframe
           title='Demo: ClearFlask Feedback'
-          src={`${windowIso.location.protocol}//feedback.${windowIso.location.host}/${props.path || ''}`}
+          src={`${windowIso.location.protocol}//product.${windowIso.location.host}/${props.path || ''}`}
           width='100%'
           height='100%'
           frameBorder={0}
@@ -2878,7 +2878,7 @@ export function LandingEmbedFeedbackPage() {
     <IframeWithUrlSync
       redirectOnDirectAccess='/'
       browserPathPrefix='/e'
-      srcWithoutPathname={`${windowIso.location.protocol}//feedback.${windowIso.location.host}`}
+      srcWithoutPathname={`${windowIso.location.protocol}//product.${windowIso.location.host}`}
       pathnamePrefix='/embed'
       initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
       frameBorder='0'

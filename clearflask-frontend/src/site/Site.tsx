@@ -187,7 +187,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       // },
       {
         type: 'dropdown', title: 'Resources', items: [
-          { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//feedback.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
+          { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
           { type: 'divider' },
           // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
