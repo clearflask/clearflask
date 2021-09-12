@@ -389,10 +389,15 @@
                         <groupId>com.fasterxml.jackson.core</groupId>
                         <artifactId>jackson-annotations</artifactId>
                     </exclusion>
+                    <!--
+                    Not sure why this was excluded in the first place,
+                    but right now it causes:
+                    javax.servlet.ServletException: org.glassfish.jersey.server.ContainerException: java.lang.NoClassDefFoundError: com/fasterxml/jackson/module/jaxb/JaxbAnnotationIntrospector
                     <exclusion>
                         <groupId>com.fasterxml.jackson.module</groupId>
                         <artifactId>jackson-module-jaxb-annotations</artifactId>
                     </exclusion>
+                    -->
                 </exclusions>
             </dependency>
             <dependency>

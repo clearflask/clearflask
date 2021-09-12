@@ -11,6 +11,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
+import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.hk2.api.ServiceLocator;
@@ -54,12 +55,11 @@ public class Application extends ResourceConfig {
         }
 
         log.info("Initializing Application");
-        Set<Object> resources = injector.getInstance(new Key<Set<Object>>(Names.named(RESOURCE_NAME)) {
-        });
-        packages(resources.stream()
-                .map(o -> o.getClass().getPackage().getName())
-                .toArray(String[]::new));
-
+        // Register specific resources that are enabled via Guice bindings
+        injector.getInstance(new Key<Set<Object>>(Names.named(RESOURCE_NAME)) {
+        }).forEach(this::register);
+        register(GsonMessageBody.class);
+        register(AuthenticationFilter.class);
         register(RolesAllowedDynamicFeature.class);
         register(LimiterDynamicFeature.class);
 
