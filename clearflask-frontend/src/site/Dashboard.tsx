@@ -69,6 +69,7 @@ import { renderRoadmap } from './dashboard/dashboardRoadmap';
 import { renderSettings } from './dashboard/dashboardSettings';
 import { renderUsers } from './dashboard/dashboardUsers';
 import DemoApp from './DemoApp';
+import { LandingEmbedFeedbackPage } from './LandingPages';
 import Logo from './Logo';
 
 export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
@@ -610,6 +611,15 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       case 'settings':
         this.renderSettings(context);
         break;
+      case 'e':
+        context.sections.push({
+          name: 'main',
+          noPaper: true,
+          collapseTopBottom: true, collapseLeft: true, collapseRight: true,
+          size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
+          content: (<LandingEmbedFeedbackPage browserPathPrefix='/dashboard/e' embed />)
+        });
+        break;
       default:
         setTitle('Page not found');
         context.showWarning = 'Oops, cannot find page';
@@ -755,21 +765,17 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   {
                     type: 'dropdown', title: this.props.account.name, items: [
                       ...(projects.map(p => ({
-                        type: 'button' as 'button', onClick: () => {
-                          const selectedProjectId = p.projectId;
-                          if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
-                            this.setSelectedProjectId(selectedProjectId);
-                          }
-                        }, title: p.editor.getConfig().name,
+                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: p.editor.getConfig().name,
 
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined
                       }))),
+                      { type: 'divider' },
                       { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
                       { type: 'button', link: '/dashboard/settings/project/branding', title: 'Settings', icon: SettingsIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                      { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
-                      { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
+                      { type: 'button', link: '/dashboard/e/feedback', title: 'Give Feedback' },
+                      { type: 'button', link: '/dashboard/e/roadmap', title: 'Our Roadmap' },
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings/account/profile', title: 'Account', icon: AccountIcon },
                       {
@@ -994,9 +1000,9 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                 onDraftCreated={allowDrafts ? draft => {
                   this.setState({ [stateKey]: { type: 'create-post', draftId: draft.draftId } as PreviewState } as any);
                 } : undefined}
-                onDiscarded={(allowDrafts || !!draftId) ? () => {
+                onDiscarded={() => {
                   this.setState({ [stateKey]: undefined } as any);
-                } : undefined}
+                }}
               />
               <LogIn
                 actionTitle='Get notified of replies'
@@ -1181,6 +1187,8 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   }
 
   setSelectedProjectId(selectedProjectId: string) {
+    if (this.state.selectedProjectId === selectedProjectId) return;
+
     localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
     this.setState({
       selectedProjectId,
@@ -1190,6 +1198,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       changelog: undefined,
       hasUncategorizedCategories: undefined,
     });
+    this.props.history.push('/dashboard');
   }
 }
 

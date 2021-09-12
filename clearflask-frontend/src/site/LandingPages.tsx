@@ -2867,15 +2867,18 @@ export function GetStartedColumn() {
   );
 }
 
-export function LandingEmbedFeedbackPage() {
+export function LandingEmbedFeedbackPage(props: {
+  browserPathPrefix: string;
+  embed?: boolean;
+}) {
   const account = useSelector<ReduxStateAdmin, Admin.AccountAdmin | undefined>(state => state.account.account.account, shallowEqual);
 
   return (
     <IframeWithUrlSync
       redirectOnDirectAccess='/'
-      browserPathPrefix='/e'
+      browserPathPrefix={props.browserPathPrefix}
       srcWithoutPathname={`${windowIso.location.protocol}//product.${windowIso.location.host}`}
-      pathnamePrefix='/embed'
+      pathnamePrefix={props.embed ? '/embed' : undefined}
       initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
       frameBorder='0'
       height={vh(100)}

@@ -57,7 +57,7 @@ const LandingInternalFeedback = loadable(() => import(/* webpackChunkName: "Land
 const LandingPrioritization = loadable(() => import(/* webpackChunkName: "LandingPrioritization" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPrioritization, fallback: (<Loading />) });
 const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "LandingPublicRoadmap" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPublicRoadmap, fallback: (<Loading />) });
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
-const LandingEmbedFeedbackPage = loadable(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
+const LandingEmbedFeedbackPage = loadable<any, any>(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
 const LandingOpenSource = loadable(() => import(/* webpackChunkName: "LandingOpenSource" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingOpenSource, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
@@ -376,7 +376,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Route>
 
             <Route path='/e'>
-              <LandingEmbedFeedbackPage />
+              <LandingEmbedFeedbackPage browserPathPrefix='/e' embed />
             </Route>
 
             <RouteWithStatus httpCode={404} >

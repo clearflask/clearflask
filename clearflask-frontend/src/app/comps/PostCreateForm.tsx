@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -92,7 +93,7 @@ const styles = (theme: Theme) => createStyles({
   grow: {
     flexGrow: 1,
   },
-  buttonDiscard: {
+  buttonDiscardRed: {
     color: theme.palette.error.dark,
   },
 });
@@ -779,19 +780,26 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   renderButtonDiscard(
     SubmitButtonProps?: Partial<React.ComponentProps<typeof SubmitButton>>,
   ): React.ReactNode | null {
-    if (!this.props.onDiscarded || !this.props.draftId) return null;
+    if (!this.props.onDiscarded) return null;
 
     return (
       <>
         <Button
           variant='text'
           color='inherit'
-          className={this.props.classes.buttonDiscard}
+          className={classNames(!!this.props.draftId && this.props.classes.buttonDiscardRed)}
           disabled={this.state.isSubmitting}
-          onClick={e => this.setState({ discardDraftDialogOpen: true })}
+          onClick={e => {
+            if (!this.props.draftId) {
+              // If not a draft, discard without prompt
+              this.discard();
+            } else {
+              this.setState({ discardDraftDialogOpen: true });
+            }
+          }}
           {...SubmitButtonProps}
         >
-          Discard
+          {!!this.props.draftId ? 'Discard' : 'Cancel'}
         </Button>
         <Dialog
           open={!!this.state.discardDraftDialogOpen}
@@ -807,7 +815,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             <SubmitButton
               variant='text'
               color='inherit'
-              className={this.props.classes.buttonDiscard}
+              className={this.props.classes.buttonDiscardRed}
               isSubmitting={this.state.isSubmitting}
               onClick={e => {
                 this.discard(this.props.draftId);
