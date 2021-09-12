@@ -4,6 +4,8 @@ package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -19,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.lang.reflect.Method;
-import java.util.StringJoiner;
+import java.util.Map;
 
 
 @Slf4j
@@ -37,6 +39,8 @@ public class ExternController extends ManagedService {
     private Injector injector;
     @Inject
     private MBeanServer mBeanServer;
+    @Inject
+    private Gson gson;
 
     private ImmutableList<ObjectName> registeredObjectNames = ImmutableList.of();
 
@@ -47,7 +51,7 @@ public class ExternController extends ManagedService {
         }
         ImmutableList.Builder<ObjectName> registeredObjectNamesBuilder = ImmutableList.builder();
         for (Key<?> objKey : this.injector.getAllBindings().keySet()) {
-            ImmutableMap.Builder<String, Method> methodsByNameBuilder = ImmutableMap.builder();
+            Map<String, Method> methodsByName = Maps.newHashMap();
             Class cls = objKey.getTypeLiteral().getRawType();
             while (cls != null) {
                 for (Method method : cls.getDeclaredMethods()) {
@@ -55,17 +59,20 @@ public class ExternController extends ManagedService {
                         if (!method.isAccessible()) {
                             method.setAccessible(true);
                         }
-                        methodsByNameBuilder.put(getMethodName(method), method);
+                        Method previous = methodsByName.put(method.getName(), method);
+                        if (previous != null) {
+                            log.warn("@Extern annotation applied to two methods with the same name: {}",
+                                    method.getName());
+                        }
                     }
                 }
                 cls = cls.getSuperclass();
             }
-            ImmutableMap<String, Method> methodsByName = methodsByNameBuilder.build();
             if (methodsByName.size() == 0) {
                 continue;
             }
 
-            ExternBean bean = new ExternBean(this.injector, objKey, methodsByName);
+            ExternBean bean = new ExternBean(this.injector, gson, objKey, ImmutableMap.copyOf(methodsByName));
 
             ObjectName objectName = new ObjectName(bean.getMBeanName());
             mBeanServer.registerMBean(bean, objectName);
@@ -80,21 +87,6 @@ public class ExternController extends ManagedService {
         for (ObjectName objectName : registeredObjectNames) {
             mBeanServer.unregisterMBean(objectName);
         }
-    }
-
-    String getMethodName(Method m) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(m.getName());
-        sb.append('(');
-        StringJoiner sj = new StringJoiner(",");
-        for (Class<?> parameterType : m.getParameterTypes()) {
-            sj.add(parameterType.getTypeName());
-        }
-        sb.append(sj.toString());
-        sb.append(')');
-
-        return sb.toString();
     }
 
     public static Module module() {

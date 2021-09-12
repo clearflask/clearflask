@@ -3,6 +3,7 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Named;
@@ -28,13 +29,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ExternBean implements DynamicMBean {
 
     private final Injector injector;
+    private final Gson gson;
     private final Key<?> objKey;
     private final Map<String, Method> methodsByName;
     private final MBeanInfo mBeanInfo;
     private final String mBeanName;
 
-    public ExternBean(Injector injector, Key<?> objKey, ImmutableMap<String, Method> methodsByName) {
+    public ExternBean(Injector injector, Gson gson, Key<?> objKey, ImmutableMap<String, Method> methodsByName) {
         this.injector = injector;
+        this.gson = gson;
 
         this.objKey = objKey;
         checkNotNull(injector.getExistingBinding(this.objKey));
@@ -47,11 +50,9 @@ public class ExternBean implements DynamicMBean {
                 null,
                 null,
                 this.methodsByName.values().stream()
-                        /* TODO Here is the issue, mbeanoperationinfo name must match map's key */
                         .map(method -> new MBeanOperationInfo(null, method))
                         .toArray(MBeanOperationInfo[]::new),
                 null);
-
 
         Class<?> declaringClass = objKey.getTypeLiteral().getRawType();
         String jmxDomain = declaringClass.getPackage().getName() + ":";
@@ -71,8 +72,9 @@ public class ExternBean implements DynamicMBean {
     public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
         try {
             log.info("Invoking method {}", actionName);
-            return methodsByName.get(actionName)
+            Object result = methodsByName.get(actionName)
                     .invoke(injector.getInstance(objKey), params);
+            return gson.toJson(result);
         } catch (Exception ex) {
             log.error("Failed method invoke {}", actionName, ex);
             throw new MBeanException(ex);
