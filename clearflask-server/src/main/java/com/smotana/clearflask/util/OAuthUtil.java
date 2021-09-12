@@ -52,6 +52,7 @@ public class OAuthUtil {
             String code) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost reqAuthorize = new HttpPost(tokenUrl);
+            reqAuthorize.setHeader("Accept", "application/json");
             reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
                     new BasicNameValuePair("grant_type", "authorization_code"),
                     new BasicNameValuePair("client_id", clientId),
@@ -70,18 +71,19 @@ public class OAuthUtil {
                 try {
                     oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
                 } catch (JsonSyntaxException | JsonIOException ex) {
-                    log.debug("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
-                            projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
+                    log.warn("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
+                            projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);
                     return Optional.empty();
                 }
             } catch (IOException ex) {
-                log.debug("OAuth provider failed authorization, projectId {} url {}",
+                log.warn("OAuth provider failed authorizing, projectId {} url {}",
                         projectId, reqAuthorize.getURI(), ex);
                 return Optional.empty();
             }
 
             HttpGet reqProfile = new HttpGet(userProfileUrl);
             reqProfile.addHeader("Authorization", "Bearer " + oAuthAuthorizationResponse.getAccessToken());
+            reqProfile.setHeader("Accept", "application/json");
             String profileResponse;
             try (CloseableHttpResponse res = client.execute(reqProfile)) {
                 if (res.getStatusLine().getStatusCode() < 200
@@ -117,7 +119,7 @@ public class OAuthUtil {
                 return Optional.empty();
             }
         } catch (IOException ex) {
-            log.debug("OAuth provider failed, projectId {}",
+            log.warn("OAuth provider failed, projectId {}",
                     projectId, ex);
             return Optional.empty();
         }

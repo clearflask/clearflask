@@ -142,7 +142,7 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 public class DynamoElasticUserStore extends ManagedService implements UserStore {
 
     @Value
-    public class OAuthAuthorizationResponse {
+    public static class OAuthAuthorizationResponse {
         @NonNull
         @GsonNonNull
         @SerializedName("access_token")

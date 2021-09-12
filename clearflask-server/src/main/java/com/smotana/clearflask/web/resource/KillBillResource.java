@@ -98,7 +98,7 @@ public class KillBillResource extends ManagedService {
         @DefaultValue("")
         String overrideWebhookDomain();
 
-        @DefaultValue("")
+        @DefaultValue("0")
         long overrideWebhookPort();
 
         @DefaultValue("true")

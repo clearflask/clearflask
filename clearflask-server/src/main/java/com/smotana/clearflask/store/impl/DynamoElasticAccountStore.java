@@ -711,7 +711,6 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         revokeSessions(accountId, Optional.empty());
     }
 
-    @Extern
     @Override
     public void revokeSessions(String accountId, String sessionToLeave) {
         revokeSessions(accountId, Optional.of(sessionToLeave));

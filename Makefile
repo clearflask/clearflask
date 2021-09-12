@@ -98,6 +98,7 @@ deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deplo
 
 deploy-rotate-instances:
 	tools/instance-refresh-and-wait.sh clearflask-server
+	aws autoscaling describe-auto-scaling-instances --no-paginate --output table --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server']"
 
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
@@ -116,6 +117,11 @@ autoscale-killbill-suspend:
 
 autoscale-killbill-resume:
 	aws autoscaling resume-processes --auto-scaling-group-name killbill-webserver --scaling-processes Launch Terminate
+
+list-instances-clearflask:
+	aws ec2 describe-instances --no-paginate --output table \
+		--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server'].InstanceId") \
+		--query "Reservations[].Instances[].{Host:PublicDnsName,Id:InstanceId,AZ:Placement.AvailabilityZone,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name']|[0].Value}"
 
 .PHONY: \
 	build \
