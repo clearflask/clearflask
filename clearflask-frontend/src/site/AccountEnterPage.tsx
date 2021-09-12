@@ -221,6 +221,8 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
             redirectTo,
             isSubmitting: false,
           });
+        } else {
+          this.setState({ isSubmitting: false });
         }
       } catch (e) {
         this.setState({ isSubmitting: false });

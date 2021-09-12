@@ -1485,7 +1485,7 @@ const OauthPrefilled: {
     scope: 'user:email',
     userProfileUrl: 'https://api.github.com/user',
     guidJsonPath: 'id',
-    nameJsonPath: 'name, login',
+    nameJsonPath: 'name,login',
     emailJsonPath: 'email',
     icon: 'GitHub',
   },
