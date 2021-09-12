@@ -79,13 +79,17 @@ import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
+import com.smotana.clearflask.web.resource.CommentResource;
 import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
+import com.smotana.clearflask.web.resource.CreditResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
+import com.smotana.clearflask.web.resource.NotificationResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
 import com.smotana.clearflask.web.resource.SupportResource;
+import com.smotana.clearflask.web.resource.TestResource;
 import com.smotana.clearflask.web.resource.UserResource;
 import com.smotana.clearflask.web.resource.VoteResource;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
@@ -131,6 +135,7 @@ public enum ServiceInjector {
                 if (injector == null) {
                     Environment env = detectEnvironment();
                     log.info("Detected environment {}", env.name());
+                    log.info("Creating injector");
                     Injector newInjector = create(env, Stage.DEVELOPMENT);
                     injector = newInjector;
                 }
@@ -235,10 +240,13 @@ public enum ServiceInjector {
                 // API endpoints
                 install(Application.module());
                 bind(HealthResource.class);
-                install(UserResource.module());
+                if (!env.isProduction()) {
+                    bind(TestResource.class);
+                }
                 if (env != Environment.PRODUCTION_SELF_HOST) {
                     install(KillBillResource.module());
                 }
+                install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());
                 install(VoteResource.module());
@@ -246,6 +254,9 @@ public enum ServiceInjector {
                 install(SupportResource.module());
                 install(ConnectResource.module());
                 install(ContentResource.module());
+                install(CommentResource.module());
+                install(CreditResource.module());
+                install(NotificationResource.module());
 
                 // Billing
                 if (env == Environment.PRODUCTION_SELF_HOST) {
@@ -293,7 +304,7 @@ public enum ServiceInjector {
         };
     }
 
-    public static Environment detectEnvironment() {
+    private static Environment detectEnvironment() {
         String envEnvironment = System.getenv("CLEARFLASK_ENVIRONMENT");
         if (envEnvironment != null) {
             return Environment.valueOf(envEnvironment);

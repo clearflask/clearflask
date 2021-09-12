@@ -11,6 +11,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
 import com.smotana.clearflask.api.model.Category;
@@ -705,6 +707,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             @Override
             protected void configure() {
                 bind(IdeaResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(IdeaResource.class);
             }
         };
     }

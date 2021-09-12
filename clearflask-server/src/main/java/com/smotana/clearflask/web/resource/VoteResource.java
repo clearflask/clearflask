@@ -12,6 +12,8 @@ import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.VoteApi;
 import com.smotana.clearflask.api.model.Balance;
 import com.smotana.clearflask.api.model.Category;
@@ -300,6 +302,8 @@ public class VoteResource extends AbstractResource implements VoteApi {
             @Override
             protected void configure() {
                 bind(VoteResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(VoteResource.class);
             }
         };
     }

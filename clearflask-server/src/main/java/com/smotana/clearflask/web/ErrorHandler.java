@@ -27,8 +27,16 @@ public class ErrorHandler extends HttpServlet {
         ServiceInjector.INSTANCE.get().injectMembers(this);
     }
 
+    /**
+     * Since PATCH (and doPatch method) is missing in HttpServlet,
+     * we are overriding all the service calls here.
+     */
     @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        process(request, response);
+    }
+
+    private void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Throwable throwable = (Throwable) request.getAttribute("javax.servlet.error.exception");
         int statusCode = Optional.ofNullable((Integer) request.getAttribute("javax.servlet.error.status_code"))
                 .orElse(-1);
@@ -70,12 +78,5 @@ public class ErrorHandler extends HttpServlet {
                     .getRequestDispatcher("/")
                     .forward(request, response);
         }
-    }
-
-    // Method to handle POST method request.
-    public void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        doGet(request, response);
     }
 }

@@ -4,6 +4,8 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.ContentAdminApi;
 import com.smotana.clearflask.api.ContentApi;
 import com.smotana.clearflask.api.model.ContentUploadResponse;
@@ -71,6 +73,8 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
             @Override
             protected void configure() {
                 bind(ContentResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(ContentResource.class);
             }
         };
     }

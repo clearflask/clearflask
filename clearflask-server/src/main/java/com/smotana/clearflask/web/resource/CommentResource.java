@@ -12,6 +12,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
 import com.smotana.clearflask.api.model.Comment;
@@ -319,5 +323,16 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 idea.getDescriptionSanitized(sanitizer),
                 idea.getVoteValue() == null ? 0L : idea.getVoteValue(),
                 null);
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(CommentResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(CommentResource.class);
+            }
+        };
     }
 }

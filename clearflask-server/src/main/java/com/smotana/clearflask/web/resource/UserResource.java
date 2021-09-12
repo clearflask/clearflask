@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
@@ -609,6 +611,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             protected void configure() {
                 bind(UserResource.class);
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(UserResource.class);
             }
         };
     }

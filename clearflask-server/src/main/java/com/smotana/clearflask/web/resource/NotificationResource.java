@@ -4,6 +4,10 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.NotificationApi;
 import com.smotana.clearflask.api.model.NotificationSearchResponse;
 import com.smotana.clearflask.store.NotificationStore;
@@ -52,5 +56,16 @@ public class NotificationResource extends AbstractResource implements Notificati
                 response.getNotifications().stream()
                         .map(NotificationModel::toNotification)
                         .collect(ImmutableList.toImmutableList()));
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(NotificationResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(NotificationResource.class);
+            }
+        };
     }
 }

@@ -3,7 +3,10 @@
 package com.smotana.clearflask.web;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
@@ -18,11 +21,13 @@ import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 
 import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
+import java.util.Set;
 
 @Slf4j
 @ApplicationPath("/")
 public class Application extends ResourceConfig {
     public static final String RESOURCE_VERSION = "/v1";
+    public static final String RESOURCE_NAME = "resource";
 
     public interface Config {
         @DefaultValue("clearflask.com")
@@ -35,8 +40,11 @@ public class Application extends ResourceConfig {
     @Inject
     public Application(ServiceLocator serviceLocator) {
         super();
+
+        Injector injector = ServiceInjector.INSTANCE.get();
+
         log.info("Initializing Sentry");
-        ServiceInjector.Environment env = ServiceInjector.detectEnvironment();
+        ServiceInjector.Environment env = injector.getInstance(ServiceInjector.Environment.class);
         if (!ServiceInjector.Environment.PRODUCTION_SELF_HOST.equals(env)) {
             Sentry.init(options -> {
                 options.setEnvironment(env.name());
@@ -46,7 +54,11 @@ public class Application extends ResourceConfig {
         }
 
         log.info("Initializing Application");
-        packages(getClass().getPackage().getName());
+        Set<Object> resources = injector.getInstance(new Key<Set<Object>>(Names.named(RESOURCE_NAME)) {
+        });
+        packages(resources.stream()
+                .map(o -> o.getClass().getPackage().getName())
+                .toArray(String[]::new));
 
         register(RolesAllowedDynamicFeature.class);
         register(LimiterDynamicFeature.class);
@@ -54,7 +66,7 @@ public class Application extends ResourceConfig {
         log.info("Initializing HK2-Guice bridge");
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
         serviceLocator.getService(GuiceIntoHK2Bridge.class)
-                .bridgeGuiceInjector(ServiceInjector.INSTANCE.get());
+                .bridgeGuiceInjector(injector);
     }
 
     public static Module module() {

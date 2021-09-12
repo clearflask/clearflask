@@ -14,6 +14,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
@@ -720,6 +722,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             protected void configure() {
                 bind(ProjectResource.class);
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(ProjectResource.class);
             }
         };
     }

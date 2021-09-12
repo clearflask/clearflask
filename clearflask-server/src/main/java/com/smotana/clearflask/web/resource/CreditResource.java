@@ -4,6 +4,10 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.smotana.clearflask.api.CreditAdminApi;
 import com.smotana.clearflask.api.CreditApi;
 import com.smotana.clearflask.api.model.Balance;
@@ -92,5 +96,16 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
                 transactionModelListResponse.getCursorOpt().orElse(null),
                 transactionModelListResponse.getItems().stream().map(TransactionModel::toTransaction).collect(ImmutableList.toImmutableList()),
                 new Balance(user.getBalance()));
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(CreditResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(CreditResource.class);
+            }
+        };
     }
 }

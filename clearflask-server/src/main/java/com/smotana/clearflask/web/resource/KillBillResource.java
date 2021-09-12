@@ -9,6 +9,7 @@ import com.google.gson.GsonNonNull;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
@@ -348,7 +349,10 @@ public class KillBillResource extends ManagedService {
             protected void configure() {
                 bind(KillBillResource.class);
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillResource.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding()
+                        .to(KillBillResource.class);
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(KillBillResource.class);
             }
         };
     }

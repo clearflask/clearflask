@@ -15,6 +15,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.SupportApi;
@@ -153,6 +155,8 @@ public class SupportResource extends AbstractResource implements SupportApi {
             protected void configure() {
                 bind(SupportResource.class);
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
+                        .to(SupportResource.class);
             }
         };
     }
