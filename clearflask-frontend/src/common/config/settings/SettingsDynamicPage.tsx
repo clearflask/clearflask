@@ -26,14 +26,20 @@ interface ConnectProps {
   accountBasePlanId?: string;
 }
 class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
-  unsubscribe?: () => void;
+  unsubscribePage?: () => void;
+  unsubscribeUsedSettings?: () => void;
+  cachedUsedAdvancedSettings?: boolean;
 
   componentDidMount() {
-    this.unsubscribe = this.props.page.subscribe(this.forceUpdate.bind(this));
+    this.unsubscribePage = this.props.page.subscribe(this.onChangedPage.bind(this));
+    if (!this.props.editor.getProperty<ConfigEditor.BooleanProperty>(['usedAdvancedSettings']).value) {
+      this.unsubscribeUsedSettings = this.props.editor.subscribe(this.usedSettings.bind(this));
+    }
   }
 
   componentWillUnmount() {
-    this.unsubscribe && this.unsubscribe();
+    this.unsubscribePage?.();
+    this.unsubscribeUsedSettings?.();
   }
 
   render() {
@@ -74,6 +80,16 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<ty
           ))}
       </div>
     );
+  }
+
+  onChangedPage() {
+    this.forceUpdate();
+  }
+
+  usedSettings() {
+    this.unsubscribeUsedSettings?.();
+    this.props.editor.getProperty<ConfigEditor.BooleanProperty>(['usedAdvancedSettings'])
+      .set(true);
   }
 }
 

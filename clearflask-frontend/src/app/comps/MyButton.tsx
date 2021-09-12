@@ -5,6 +5,7 @@ import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import CollapseV5 from '../../common/CollapseV5';
 import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
@@ -39,8 +40,13 @@ interface Props {
   colorHide?: boolean;
   Icon?: OverridableComponent<SvgIconTypeMap>,
   iconClassName?: string;
+  expandOnHover?: boolean;
 }
-class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithoutRef<typeof SubmitButton>, 'color'>> & WithStyles<typeof styles, true>> {
+interface State {
+  isHovering?: boolean;
+}
+class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithoutRef<typeof SubmitButton>, 'color'>> & WithStyles<typeof styles, true>, State> {
+  state: State = {};
   render() {
     const { classes, buttonVariant, color, Icon, iconClassName, ...buttonProps } = this.props;
     var variantClassName: string | undefined;
@@ -55,6 +61,27 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
         };
         break;
     }
+
+    var title = (
+      <>
+        {!!Icon && React.Children.count(this.props.children) > 0 && (
+          <>&nbsp;</>
+        )}
+        {React.Children.count(this.props.children) > 0 ? (
+          this.props.children
+        ) : (
+          <>&#8203;</>
+        )}
+      </>
+    );
+    if (this.props.expandOnHover) {
+      title = (
+        <CollapseV5 in={!!this.state.isHovering} orientation='horizontal'>
+          {title}
+        </CollapseV5>
+      );
+    }
+
     return (
       <SubmitButton
         disableElevation
@@ -67,27 +94,28 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
           variantClassName,
           buttonProps.className,
         )}
+        {...(!!this.props.expandOnHover ? {
+          onMouseOver: e => {
+            buttonProps?.onMouseOver?.(e);
+            this.setState({ isHovering: true });
+          },
+          onMouseOut: e => {
+            buttonProps?.onMouseOut?.(e);
+            this.setState({ isHovering: false });
+          },
+        } : {})}
       >
         {!!Icon && (
-          <>
-            <Icon
-              fontSize='inherit'
-              className={classNames(
-                this.props.classes.icon,
-                variantIconClassName,
-                iconClassName,
-              )}
-            />
-            {React.Children.count(this.props.children) > 0 && (
-              <>&nbsp;</>
+          <Icon
+            fontSize='inherit'
+            className={classNames(
+              this.props.classes.icon,
+              variantIconClassName,
+              iconClassName,
             )}
-          </>
+          />
         )}
-        {React.Children.count(this.props.children) > 0 ? (
-          this.props.children
-        ) : (
-          <>&#8203;</>
-        )}
+        {title}
       </SubmitButton>
     );
   }

@@ -27,19 +27,22 @@ export default class ConfigView extends Component<Props> {
     this.forceUpdateDebounced = debounce(() => this.forceUpdate(), 100);
   }
 
-  componentDidMount() {
-    this.unsubscribe = this.props.editor && this.props.editor.subscribe(() => this.forceUpdateDebounced());
-  }
-
   componentWillUnmount() {
     this.unsubscribe && this.unsubscribe();
   }
 
   render() {
+    if (!this.unsubscribe) {
+      this.unsubscribe = this.props.editor && this.props.editor.subscribe(() => this.forceUpdateDebounced());
+    }
+
+    const oldValue = JSON.stringify(ServerAdmin.get().getStore().getState().configs.configs.byProjectId?.[this.props.server.getProjectId()]?.config.config, null, 2);
+    const newValue = JSON.stringify(this.props.editor?.getConfig(), null, 2);
+    console.log('debug', oldValue === newValue, oldValue, newValue);
     return (
       <ReactDiffViewer
-        oldValue={JSON.stringify(ServerAdmin.get().getStore().getState().configs.configs.byProjectId?.[this.props.server.getProjectId()]?.config.config, null, 2)}
-        newValue={JSON.stringify(this.props.editor?.getConfig(), null, 2)}
+        oldValue={oldValue}
+        newValue={newValue}
         splitView={false}
         hideLineNumbers
         renderContent={str => (

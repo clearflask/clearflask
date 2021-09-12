@@ -35,7 +35,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
       return 'Need to login to see this page';
     }
     return (
-      <ProjectSettingsBase title='Account'>
+      <ProjectSettingsBase title='Profile'>
         <Section
           contentWidth={500}
           content={(

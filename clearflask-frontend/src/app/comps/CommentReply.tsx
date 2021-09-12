@@ -15,14 +15,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     margin: theme.spacing(1, 0),
     alignItems: 'flex-end',
-    /**
-     * Width is complicated here:
-     * - Should not be less than 300 unless parent is shorter: minWidth: min(100%, 300px)
-     * - Should be default 300 and expand with text content: width: max-content
-     * - Should be max 600 unless parent is shorter: maxWidth 100% AND 600px spread out in addCommentFormOuter
-     */
-    minWidth: 'min(100%, 300px)',
-    width: 'max-content',
+    width: '100%',
     maxWidth: '100%',
   },
   addCommentFormOuter: {

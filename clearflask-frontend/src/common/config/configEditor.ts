@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import { cloneDeep } from 'lodash';
 import { ConfigAdmin } from '../../api/admin/models/ConfigAdmin';
 import Schema from '../../api/schema/schema.json';
 import stringToSlug from '../util/slugger';
@@ -377,7 +378,7 @@ export interface Editor {
   get(path: Path, depth?: ResolveDepth): Page | PageGroup | Property;
   getPage(path: Path, depth?: ResolveDepth): Page;
   getPageGroup(path: Path, depth?: ResolveDepth): PageGroup;
-  getProperty(path: Path): Property;
+  getProperty<T extends Property>(path: Path): T;
 
   getValue(path: Path): any;
   getOrDefaultValue(path: Path, defaultValue: any): any;
@@ -394,7 +395,7 @@ export class EditorImpl implements Editor {
 
   constructor(config?: ConfigAdmin) {
     if (config !== undefined) {
-      this.config = config;
+      this.config = cloneDeep(config);
     } else {
       this.config = {} as ConfigAdmin;
       this.getPage([]).setDefault();

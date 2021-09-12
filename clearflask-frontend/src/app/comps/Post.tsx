@@ -692,6 +692,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <MyButton
         key='addComment'
         buttonVariant='post'
+        expandOnHover
         Icon={SpeechIcon}
         disabled={!!this.state.commentExpanded}
         onClick={e => this.setState({ commentExpanded: true })}
@@ -789,6 +790,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='edit-response'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           disabled={!!this.state.showEditingStatusAndResponse}
           Icon={RespondIcon}
           onClick={e => this.setState({ showEditingStatusAndResponse: 'response' })}
@@ -811,6 +813,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='edit-connect'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           disabled={!!this.state.showEditingConnect}
           Icon={LinkAltIcon}
           onClick={e => this.setState({ showEditingConnect: true })}
@@ -840,6 +843,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <MyButton
           key='delete'
           buttonVariant='post'
+          expandOnHover
           Icon={DeleteIcon}
           onClick={e => this.setState({ deleteDialogOpen: true })}
         >
@@ -1459,6 +1463,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='disconnect'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           Icon={this.props.disconnectType === 'merge' ? UnmergeIcon : UnLinkAltIcon}
           isSubmitting={this.props.isSubmittingDisconnect}
           onClick={e => this.props.onDisconnect?.()}

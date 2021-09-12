@@ -3,6 +3,7 @@
 import { Button, Divider, Fade, IconButton, SvgIconTypeMap, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import AccountIcon from '@material-ui/icons/AccountCircle';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
 import CheckIcon from '@material-ui/icons/Check';
@@ -764,13 +765,13 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined
                       }))),
                       { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
-                      { type: 'divider' },
-                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Settings', icon: SettingsIcon },
+                      { type: 'button', link: '/dashboard/settings/project/branding', title: 'Settings', icon: SettingsIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
                       { type: 'button', link: this.openFeedbackUrl('feedback'), linkIsExternal: true, title: 'Give Feedback' },
                       { type: 'button', link: this.openFeedbackUrl('roadmap'), linkIsExternal: true, title: 'Our Roadmap' },
                       { type: 'divider' },
+                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Account', icon: AccountIcon },
                       {
                         type: 'button', onClick: () => {
                           ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
@@ -1040,7 +1041,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     };
   }
 
-  renderPreviewChangesDemo(project?: AdminProject, allowCode?: boolean, showCodeForProject?: AdminProject): Section {
+  renderPreviewChangesDemo(project?: AdminProject, showCodeForProject?: boolean): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
     }
@@ -1050,16 +1051,13 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       size: ProjectPreviewSize,
       content: (
         <>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            Preview changes live
-            <div style={{ flexGrow: 1 }} />
-            {(!!allowCode || !!showCodeForProject) && (
-              <IconButton onClick={() => this.setState({
-                settingsPreviewChanges: !!showCodeForProject ? 'live' : 'code',
-              })}>
-                {!!showCodeForProject ? <VisibilityIcon /> : <CodeIcon />}
-              </IconButton>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', margin: 4, }}>
+            <IconButton onClick={() => this.setState({
+              settingsPreviewChanges: !!showCodeForProject ? 'live' : 'code',
+            })}>
+              {!!showCodeForProject ? <CodeIcon /> : <VisibilityIcon />}
+            </IconButton>
+            {!!showCodeForProject ? 'Previewing configuration details' : 'Previewing changes with live data'}
           </div>
           <Divider />
           {!showCodeForProject ? (
@@ -1070,7 +1068,11 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
               forcePathSubscribe={listener => this.forcePathListener = listener}
             />
           ) : (
-            <ConfigView server={showCodeForProject.server} editor={showCodeForProject.editor} />
+            <ConfigView
+              key={project.projectId}
+              server={project.server}
+              editor={project.editor}
+            />
           )}
         </>
       ),

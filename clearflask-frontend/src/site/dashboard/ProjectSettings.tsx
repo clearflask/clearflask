@@ -251,6 +251,11 @@ const styles = (theme: Theme) => createStyles({
   teammatesInviteNeedHelp: {
     marginBottom: theme.spacing(1),
   },
+  advancedEnterAlert: {
+    maxWidth: 450,
+    margin: theme.spacing(2),
+    padding: theme.spacing(2),
+  },
 });
 const useStyles = makeStyles(styles);
 
@@ -2875,6 +2880,26 @@ export const ProjectSettingsData = (props: {
       <DataSettings
         server={props.server}
       />
+    </ProjectSettingsBase>
+  );
+}
+
+export const ProjectSettingsAdvancedEnter = (props: {}) => {
+  const history = useHistory();
+  const classes = useStyles();
+  return (
+    <ProjectSettingsBase title='Advanced'>
+      <Alert
+        severity='warning'
+        className={classes.advancedEnterAlert}
+      >
+        <AlertTitle>Warning</AlertTitle>
+        <p>Advanced settings are powerful and can potentially break your portal or cause data loss.</p>
+        <p>If you are unsure what a particular setting does, feel free to reach out to our support team.</p>
+        <Button color='inherit' style={{ float: 'right' }} onClick={() => history.push(`/dashboard/settings/project/advanced`)}>
+          I understand
+        </Button>
+      </Alert>
     </ProjectSettingsBase>
   );
 }

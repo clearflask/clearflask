@@ -329,6 +329,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <MyButton
         key='reply'
         buttonVariant='post'
+        expandOnHover
         Icon={SpeechIcon}
         disabled={!!this.props.replyOpen}
         onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}
@@ -350,6 +351,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='adminDelete'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           Icon={DeleteIcon}
           onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}
         >
@@ -383,6 +385,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='edit'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           Icon={EditIcon}
           disabled={this.state.editing}
           onClick={e => this.setState({ editing: true })}
@@ -403,6 +406,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='unmerge'>
         <MyButton
           buttonVariant='post'
+          expandOnHover
           Icon={UnmergeIcon}
           disabled={this.state.editing}
           isSubmitting={this.state.isSubmittingUnmerge}

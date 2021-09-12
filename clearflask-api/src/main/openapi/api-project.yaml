@@ -845,6 +845,9 @@ components:
               x-clearflask-hide: true
               x-clearflask-prop: { order: 3, name: 'Identity Verification Secret (Optional)', description: 'Verification prevents third parties from impersonating your logged-in users and seeing their conversations. Paste in your identity verification secret here. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
               type: string
+            usedAdvancedSettings:
+              x-clearflask-hide: true
+              type: boolean
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object

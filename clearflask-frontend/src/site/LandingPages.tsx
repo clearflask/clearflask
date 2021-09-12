@@ -1295,10 +1295,6 @@ export function LandingOpenSource() {
           description='Open-source ensures your feet are not swept under you by a vendor if they raise their prices unreasonably, stop maintenance, or keep your data hostage.'
         />
       </HorizontalPanels>
-      <Block
-        title='Where can I get started?'
-        spacingBottom={0}
-      />
     </>
   );
 }
