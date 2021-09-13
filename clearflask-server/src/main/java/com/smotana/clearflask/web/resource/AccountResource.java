@@ -192,7 +192,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 && accountBindAdmin.getOauthToken() != null) {
             Optional<OAuthUtil.OAuthResult> oauthResult;
             // Matches mock "bathtub" OAuth provider defined in oauthUtil.ts
+            boolean trustEmailVerified = false;
+            String providerName = "OAuth provider";
             if (!env.isProduction() && "bathtub".equals(accountBindAdmin.getOauthToken().getId())) {
+                providerName = "Bathtub";
                 Map<String, String> codeParsed = gson.fromJson(accountBindAdmin.getOauthToken().getCode(), new TypeToken<Map<String, String>>() {
                 }.getType());
                 oauthResult = Optional.of(new OAuthUtil.OAuthResult(
@@ -205,24 +208,28 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 String clientSecret;
                 String guidJsonPath;
                 String nameJsonPath;
-                String emailUrl;
+                Optional<String> emailUrlOpt = Optional.empty();
                 String emailJsonPath;
                 if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    providerName = "GitHub";
                     tokenUrl = "https://github.com/login/oauth/access_token";
                     userProfileUrl = "https://api.github.com/user";
                     guidJsonPath = "id";
                     nameJsonPath = "['name','login']";
-                    emailUrl = "https://api.github.com/user/emails";
+                    emailUrlOpt = Optional.of("https://api.github.com/user/emails");
+                    // IMPORTANT: If you remove the 'verified == true' predicate, set trustEmailVerified to false
                     emailJsonPath = "[?(@.verified == true)][?(@.primary == true)].email";
                     clientSecret = config.oauthGithubClientSecret();
+                    trustEmailVerified = true; // Verified as only verified emails are considered
                 } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
+                    providerName = "Google";
                     tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
                     userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
                     guidJsonPath = "id";
                     nameJsonPath = "name";
-                    emailUrl = "";
                     emailJsonPath = "email";
                     clientSecret = config.oauthGoogleClientSecret();
+                    trustEmailVerified = true; // Verified due to being email provider itself
                 } else {
                     throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
                 }
@@ -233,9 +240,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         tokenUrl,
                         userProfileUrl,
                         guidJsonPath,
-                        nameJsonPath,
-                        emailUrl,
-                        emailJsonPath,
+                        Optional.of(nameJsonPath),
+                        emailUrlOpt,
+                        Optional.of(emailJsonPath),
                         accountBindAdmin.getOauthToken().getId(),
                         clientSecret,
                         accountBindAdmin.getOauthToken().getCode());
@@ -245,19 +252,31 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 if (accountOpt.isEmpty()) {
                     String email = oauthResult.get().getEmailOpt().orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST,
                             "OAuth provider did not give us your email, please sign up using an email directly."));
-                    if (!accountStore.isEmailAvailable(email)) {
-                        throw new ApiException(Response.Status.CONFLICT, "Your account does not use this OAuth provider.");
+                    if (trustEmailVerified) {
+                        accountOpt = accountStore.getAccountByEmail(email);
+                        if (accountOpt.isPresent()) {
+                            log.debug("Associating OAuth login with verified email {} with an existing account {}",
+                                    email, accountOpt.get().getAccountId());
+                            accountOpt = Optional.of(accountStore.updateOauthGuid(accountOpt.get().getAccountId(), Optional.of(oauthResult.get().getGuid())));
+                        }
+                    } else {
+                        if (!accountStore.isEmailAvailable(email)) {
+                            throw new ApiException(Response.Status.CONFLICT,
+                                    "You need to login using your email and password, because " + providerName + " has not verified your email.");
+                        }
                     }
-                    accountOpt = Optional.of(createAccount(
-                            email,
-                            oauthResult.get().getNameOpt()
-                                    .or(() -> Optional.ofNullable(Strings.emptyToNull(StringUtils.capitalize(email.replaceFirst("^[^a-zA-Z]*?([a-zA-Z]+).*?$", "$1")))))
-                                    .orElse("No name"),
-                            Optional.empty(),
-                            Optional.of(oauthResult.get().getGuid()),
-                            Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
-                            Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
-                    created = true;
+                    if (accountOpt.isEmpty()) {
+                        accountOpt = Optional.of(createAccount(
+                                email,
+                                oauthResult.get().getNameOpt()
+                                        .or(() -> Optional.ofNullable(Strings.emptyToNull(StringUtils.capitalize(email.replaceFirst("^[^a-zA-Z]*?([a-zA-Z]+).*?$", "$1")))))
+                                        .orElse("No name"),
+                                Optional.empty(),
+                                Optional.of(oauthResult.get().getGuid()),
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
+                        created = true;
+                    }
                 }
             }
         }

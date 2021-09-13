@@ -63,6 +63,8 @@ public interface AccountStore {
 
     Account removeExternalProject(String accountId, String projectId);
 
+    Account updateOauthGuid(String accountId, Optional<String> oauthGuidOpt);
+
     AccountAndIndexingFuture updateName(String accountId, String name);
 
     Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt);

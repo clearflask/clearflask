@@ -451,6 +451,27 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     @Override
+    public Account updateOauthGuid(String accountId, Optional<String> oauthGuidOpt) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression(oauthGuidOpt.isPresent()
+                        ? "SET #oauthGuid = :oauthGuid"
+                        : "REMOVE #oauthGuid")
+                .withNameMap(new NameMap()
+                        .with("#oauthGuid", "oauthGuid")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(oauthGuidOpt.isPresent()
+                        ? new ValueMap().withString(":oauthGuid", oauthGuidOpt.get())
+                        : null)
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
+    @Extern
+    @Override
     public AccountAndIndexingFuture updateName(String accountId, String name) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))

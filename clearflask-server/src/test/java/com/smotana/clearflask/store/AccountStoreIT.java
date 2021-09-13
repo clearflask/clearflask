@@ -104,6 +104,20 @@ public class AccountStoreIT extends AbstractIT {
         store.updateName(account.getAccountId(), account.getName()).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
+        account = account.toBuilder()
+                .oauthGuid("myoauthguid")
+                .build();
+        store.updateOauthGuid(account.getAccountId(), Optional.of(account.getOauthGuid()));
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        assertEquals(Optional.of(account), store.getAccountByOauthGuid(account.getOauthGuid()));
+
+        account = account.toBuilder()
+                .oauthGuid(null)
+                .build();
+        store.updateOauthGuid(account.getAccountId(), Optional.empty());
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        assertEquals(Optional.empty(), store.getAccountByOauthGuid(account.getOauthGuid()));
+
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         AccountStore.AccountSession accountSession2 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         account = account.toBuilder()

@@ -3,7 +3,6 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
@@ -43,9 +42,9 @@ public class OAuthUtil {
             String tokenUrl,
             String userProfileUrl,
             String guidJsonPath,
-            String nameJsonPath,
-            String emailUrl,
-            String emailJsonPath,
+            Optional<String> nameJsonPathOpt,
+            Optional<String> emailUrlOpt,
+            Optional<String> emailJsonPathOpt,
             String clientId,
             String clientSecret,
             String code) {
@@ -102,8 +101,8 @@ public class OAuthUtil {
             }
 
             String emailResponse;
-            if (!Strings.isNullOrEmpty(emailUrl) && !emailUrl.equals(userProfileUrl)) {
-                HttpGet reqEmail = new HttpGet(emailUrl);
+            if (emailUrlOpt.isPresent() && !emailUrlOpt.get().equals(userProfileUrl)) {
+                HttpGet reqEmail = new HttpGet(emailUrlOpt.get());
                 reqEmail.addHeader("Authorization", "Bearer " + oAuthAuthorizationResponse.getAccessToken());
                 reqEmail.setHeader("Accept", "application/json");
                 try (CloseableHttpResponse res = client.execute(reqEmail)) {
@@ -116,7 +115,7 @@ public class OAuthUtil {
                     emailResponse = CharStreams.toString(new InputStreamReader(
                             res.getEntity().getContent(), Charsets.UTF_8));
                     log.trace("OAuth email url {} returned {} for projectId {}",
-                            emailUrl, emailResponse, projectId);
+                            emailUrlOpt.get(), emailResponse, projectId);
                 } catch (IOException ex) {
                     log.debug("OAuth provider failed fetching email, projectId {} url {}",
                             projectId, reqEmail.getURI(), ex);
@@ -133,10 +132,8 @@ public class OAuthUtil {
                             projectId, reqProfile.getURI(), guidJsonPath);
                     return Optional.empty();
                 }
-                Optional<String> nameOpt = Optional.ofNullable(Strings.emptyToNull(nameJsonPath))
-                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
-                Optional<String> emailOpt = Optional.ofNullable(Strings.emptyToNull(emailJsonPath))
-                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, emailResponse));
+                Optional<String> nameOpt = nameJsonPathOpt.flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
+                Optional<String> emailOpt = emailJsonPathOpt.flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, emailResponse));
                 return Optional.of(new OAuthResult(guidOpt.get(), nameOpt, emailOpt));
             } catch (JsonPathException ex) {
                 log.debug("OAuth provider failed parsing profile, projectId {} url {}",
