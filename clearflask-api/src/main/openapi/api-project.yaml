@@ -279,7 +279,7 @@ components:
                     x-clearflask-prop: { order: 7, name: 'User Profile URL', description: 'This url will be fetched after authorization and the result will be used to extract user profile.', placeholder: 'https://.../user' }
                     type: string
                   guidJsonPath:
-                    x-clearflask-prop: { order: 8, name: 'GUID path', description: 'JsonPath to retrieve user ID (GUID).', placeholder: 'user.id' }
+                    x-clearflask-prop: { order: 8, name: 'GUID path', description: 'Jayway JsonPath to retrieve user ID (GUID). Test it out at https://jsonpath.herokuapp.com/', placeholder: 'user.id' }
                     type: string
                   nameJsonPath:
                     x-clearflask-prop: { order: 9, name: 'Name path', description: 'Optional JsonPath to retrieve name otherwise shown as Anonymous.', placeholder: 'user.name' }

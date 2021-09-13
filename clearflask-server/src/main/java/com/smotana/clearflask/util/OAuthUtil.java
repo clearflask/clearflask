@@ -94,7 +94,7 @@ public class OAuthUtil {
                 profileResponse = CharStreams.toString(new InputStreamReader(
                         res.getEntity().getContent(), Charsets.UTF_8));
                 log.trace("OAuth profile url {} returned {} for projectId {}",
-                        profileResponse, profileResponse, projectId);
+                        reqProfile, profileResponse, projectId);
             } catch (IOException ex) {
                 log.debug("OAuth provider failed fetching profile, projectId {} url {}",
                         projectId, reqProfile.getURI(), ex);

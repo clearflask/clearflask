@@ -1126,7 +1126,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                             "userId", userOpt.get().getUserId(),
                                             "projectId", projectId))))
                                     .withUpdateExpression("SET #ssoGuid = :ssoGuid")
-                                    .withConditionExpression("attribute_exists(#partitionKey) AND attribute_not_exists(#ssoGuid)")
+                                    .withConditionExpression("attribute_exists(#partitionKey)")
                                     .withExpressionAttributeNames(Map.of(
                                             "#partitionKey", userSchema.partitionKeyName(),
                                             "#ssoGuid", "ssoGuid"))
