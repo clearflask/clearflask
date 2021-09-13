@@ -544,8 +544,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Invitation expired"));
 
         // If accepted by someone else, pretend it's expired
-        if (invitation.getIsAcceptedByAccountId() != null
-                && (accountIdOpt.isEmpty() || invitation.getIsAcceptedByAccountId().equals(accountIdOpt.get()))) {
+        if (!Strings.isNullOrEmpty(invitation.getIsAcceptedByAccountId())
+                && (accountIdOpt.isEmpty() || !invitation.getIsAcceptedByAccountId().equals(accountIdOpt.get()))) {
             throw new ApiException(Response.Status.NOT_FOUND, "Invitation expired");
         }
 
