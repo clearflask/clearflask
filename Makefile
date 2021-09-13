@@ -134,6 +134,11 @@ list-instances-clearflask:
 		--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server'].InstanceId") \
 		--query "Reservations[].Instances[].{Host:PublicDnsName,Id:InstanceId,AZ:Placement.AvailabilityZone,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name']|[0].Value}"
 
+list-instances-killbill:
+	aws ec2 describe-instances --no-paginate --output table \
+		--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='killbill-webserver'].InstanceId") \
+		--query "Reservations[].Instances[].{Host:PublicDnsName,Id:InstanceId,AZ:Placement.AvailabilityZone,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name']|[0].Value}"
+
 .PHONY: \
 	build \
 	build-no-test \
