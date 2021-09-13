@@ -210,7 +210,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     tokenUrl = "https://github.com/login/oauth/access_token";
                     userProfileUrl = "https://api.github.com/user";
                     guidJsonPath = "id";
-                    nameJsonPath = "name,login";
+                    nameJsonPath = "['name','login']";
                     emailJsonPath = "email";
                     clientSecret = config.oauthGithubClientSecret();
                 } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {

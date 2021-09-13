@@ -9,8 +9,6 @@ import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import lombok.Value;
@@ -100,19 +98,18 @@ public class OAuthUtil {
                 return Optional.empty();
             }
 
-            String guid;
-            Optional<String> nameOpt = Optional.empty();
-            Optional<String> emailOpt = Optional.empty();
             try {
-                Object profileResponseObj = Configuration.defaultConfiguration().jsonProvider().parse(profileResponse);
-                guid = JsonPath.read(profileResponseObj, guidJsonPath).toString();
-                if (!Strings.isNullOrEmpty(nameJsonPath)) {
-                    nameOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, nameJsonPath).toString()));
+                Optional<String> guidOpt = JsonPathUtil.findFirstAsString(guidJsonPath, profileResponse);
+                if (guidOpt.isEmpty()) {
+                    log.debug("OAuth provider failed parsing guid from profile, projectId {} url {} jsonPath {}",
+                            projectId, reqProfile.getURI(), guidJsonPath);
+                    return Optional.empty();
                 }
-                if (!Strings.isNullOrEmpty(emailJsonPath)) {
-                    emailOpt = Optional.ofNullable(Strings.emptyToNull(JsonPath.read(profileResponseObj, emailJsonPath).toString()));
-                }
-                return Optional.of(new OAuthResult(guid, nameOpt, emailOpt));
+                Optional<String> nameOpt = Optional.ofNullable(Strings.emptyToNull(nameJsonPath))
+                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
+                Optional<String> emailOpt = Optional.ofNullable(Strings.emptyToNull(emailJsonPath))
+                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
+                return Optional.of(new OAuthResult(guidOpt.get(), nameOpt, emailOpt));
             } catch (JsonPathException ex) {
                 log.debug("OAuth provider failed parsing profile, projectId {} url {}",
                         projectId, reqProfile.getURI(), ex);
