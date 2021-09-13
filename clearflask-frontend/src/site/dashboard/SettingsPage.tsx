@@ -5,6 +5,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import SubmitButton from '../../common/SubmitButton';
@@ -27,7 +28,7 @@ interface State {
   isSubmitting?: boolean;
   showDeleteDialog?: boolean;
 }
-class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = {};
 
   render() {
@@ -96,10 +97,14 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                         onClick={() => {
                           this.setState({ isSubmitting: true });
                           ServerAdmin.get().dispatchAdmin().then(d => d.accountDeleteAdmin())
-                            .then(() => this.setState({
-                              isSubmitting: false,
-                              showDeleteDialog: false,
-                            }))
+                            .then(() => {
+                              this.setState({
+                                isSubmitting: false,
+                                showDeleteDialog: false,
+                              });
+
+                              this.props.history.push('/login');
+                            })
                             .catch(e => this.setState({ isSubmitting: false }));
                         }}>Delete</SubmitButton>
                     </DialogActions>
@@ -119,4 +124,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     account: state.account.account.account,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(SettingsPage));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(SettingsPage)));

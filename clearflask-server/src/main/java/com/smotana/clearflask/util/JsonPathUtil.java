@@ -29,7 +29,9 @@ public class JsonPathUtil {
 
     public static Stream<String> extractStrings(Stream<?> result) {
         return result.flatMap(o -> {
-            if (o instanceof List<?>) {
+            if (o == null) {
+                return Stream.of();
+            } else if (o instanceof List<?>) {
                 return extractStrings(((List<?>) o).stream());
             } else if (o instanceof Map<?, ?>) {
                 return extractStrings(((Map<?, ?>) o).values().stream());

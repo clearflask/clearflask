@@ -194,6 +194,7 @@ class Main extends Component<Props> {
                         ), (
                           <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
                             <Provider store={ServerAdmin.get().getStore()}>
+                              <SetMaxAge val={0} />
                               <SetTitle title={props.match.params['type'] === 'login'
                                 ? 'Login'
                                 : (props.match.params['type'] === 'signup'

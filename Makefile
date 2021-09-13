@@ -25,14 +25,25 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: get-proje
 	cp -n clearflask-release/target/run-docker-compose-local/connect/connect.config.local-template.json ./connect.config-local.json \
 		&& echo IMPORTANT: Created connect.config.json please adjust settings for local deployment || true
 	cp ./connect.config-local.json clearflask-release/target/run-docker-compose-local/connect/connect.config.json
-
 local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
 	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml up -d
 	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml logs -f
-
 local-down: clearflask-release/target/run-docker-compose-local/docker-compose.yml
 	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml down -t 0
 	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml rm
+
+clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml: get-project-version
+	test -f clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-self-host.tar.gz
+	rm -fr clearflask-release/target/run-docker-compose-selfhost
+	mkdir clearflask-release/target/run-docker-compose-selfhost
+	tar -xzf clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-self-host.tar.gz -C clearflask-release/target/run-docker-compose-selfhost
+	sed -i'.original' 's,ghcr.io/clearflask,clearflask,g' clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
+selfhost-up: clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
+	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps up -d
+	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps logs -f
+selfhost-down: clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
+	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps down -t 0
+	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps rm
 
 killbill-sleep-%:
 	curl -v \

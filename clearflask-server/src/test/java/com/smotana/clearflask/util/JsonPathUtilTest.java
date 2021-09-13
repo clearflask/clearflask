@@ -65,5 +65,30 @@ public class JsonPathUtilTest {
         assertEquals(Optional.of("octocat"), findFirstAsString("['login','name']", input));
         assertEquals(Optional.of("monalisa octocat"), findFirstAsString("['missing','name']", input));
         assertEquals(Optional.of("monalisa octocat"), findFirstAsString("['name','missing']", input));
+
+        String input2 = "[\n" +
+                "  {\n" +
+                "    \"email\": \"octocat4@github.com\",\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"email\": \"octocat3@github.com\",\n" +
+                "    \"verified\": false,\n" +
+                "    \"primary\": true,\n" +
+                "    \"visibility\": \"public\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"email\": \"octocat2@github.com\",\n" +
+                "    \"verified\": true,\n" +
+                "    \"primary\": false,\n" +
+                "    \"visibility\": \"public\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"email\": \"octocat@github.com\",\n" +
+                "    \"verified\": true,\n" +
+                "    \"primary\": true,\n" +
+                "    \"visibility\": \"public\"\n" +
+                "  }\n" +
+                "]\n";
+        assertEquals(Optional.of("octocat@github.com"), findFirstAsString("[?(@.verified == true)][?(@.primary == true)].email", input2));
     }
 }

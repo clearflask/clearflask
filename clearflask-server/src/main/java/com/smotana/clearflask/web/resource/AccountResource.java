@@ -205,19 +205,22 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 String clientSecret;
                 String guidJsonPath;
                 String nameJsonPath;
+                String emailUrl;
                 String emailJsonPath;
                 if (config.oauthGithubClientId().equals(accountBindAdmin.getOauthToken().getId())) {
                     tokenUrl = "https://github.com/login/oauth/access_token";
                     userProfileUrl = "https://api.github.com/user";
                     guidJsonPath = "id";
                     nameJsonPath = "['name','login']";
-                    emailJsonPath = "email";
+                    emailUrl = "https://api.github.com/user/emails";
+                    emailJsonPath = "[?(@.verified == true)][?(@.primary == true)].email";
                     clientSecret = config.oauthGithubClientSecret();
                 } else if (config.oauthGoogleClientId().equals(accountBindAdmin.getOauthToken().getId())) {
                     tokenUrl = "https://www.googleapis.com/oauth2/v4/token";
                     userProfileUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
                     guidJsonPath = "id";
                     nameJsonPath = "name";
+                    emailUrl = "";
                     emailJsonPath = "email";
                     clientSecret = config.oauthGoogleClientSecret();
                 } else {
@@ -231,6 +234,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         userProfileUrl,
                         guidJsonPath,
                         nameJsonPath,
+                        emailUrl,
                         emailJsonPath,
                         accountBindAdmin.getOauthToken().getId(),
                         clientSecret,

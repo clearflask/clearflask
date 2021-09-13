@@ -1465,6 +1465,7 @@ const OauthPrefilled: {
     userProfileUrl?: string;
     guidJsonPath?: string;
     nameJsonPath?: string;
+    emailUrl?: string;
     emailJsonPath?: string;
     icon?: string;
   }
@@ -1486,7 +1487,8 @@ const OauthPrefilled: {
     userProfileUrl: 'https://api.github.com/user',
     guidJsonPath: 'id',
     nameJsonPath: "['name','login']",
-    emailJsonPath: 'email',
+    emailUrl: 'https://api.github.com/user/emails',
+    emailJsonPath: '[?(@.verified == true)][?(@.primary == true)].email',
     icon: 'GitHub',
   },
   Facebook: {
@@ -1671,7 +1673,7 @@ export const ProjectSettingsUsersOauth = (props: {
                   const oauthId = randomUuid();
                   ((props.editor.getProperty(['oauthClientSecrets']) as ConfigEditor.DictProperty)
                     .put(oauthId) as ConfigEditor.StringProperty).set(clientSecret);
-                  var { authorizeUrl, tokenUrl, scope, userProfileUrl, guidJsonPath, nameJsonPath, emailJsonPath, icon } = OauthPrefilled[newOauthType] || {};
+                  var { authorizeUrl, tokenUrl, scope, userProfileUrl, guidJsonPath, nameJsonPath, emailUrl, emailJsonPath, icon } = OauthPrefilled[newOauthType] || {};
                   if (newOauthType === 'Azure') {
                     if (azureTenantId) authorizeUrl = authorizeUrl?.replace('<tenant-id>', azureTenantId);
                     if (azureTenantId) tokenUrl = tokenUrl?.replace('<tenant-id>', azureTenantId);
@@ -1687,6 +1689,7 @@ export const ProjectSettingsUsersOauth = (props: {
                       userProfileUrl: userProfileUrl || '',
                       guidJsonPath: guidJsonPath || '',
                       nameJsonPath,
+                      emailUrl: emailUrl || '',
                       emailJsonPath,
                       icon,
                     }));
@@ -1755,6 +1758,7 @@ export const ProjectSettingsUsersOauthItem = (props: {
       <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'userProfileUrl']} />
       <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'guidJsonPath']} />
       <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'nameJsonPath']} />
+      <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'emailUrl']} />
       <PropertyByPath server={props.server} editor={props.editor} path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'emailJsonPath']} />
       <Button
         color='inherit'

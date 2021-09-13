@@ -527,7 +527,7 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
         ? (!!action.payload.created && action.meta.request.accountBindAdmin.oauthToken?.invitationId)
         : (action.meta.request.accountSignupAdmin.invitationId)
       if (!invitationIdAcceptedAsPartOfSignup) return state;
-      if (!state.byId[invitationIdAcceptedAsPartOfSignup].invitation) return state;
+      if (!state.byId[invitationIdAcceptedAsPartOfSignup]?.invitation) return state;
       return {
         ...state,
         byId: {

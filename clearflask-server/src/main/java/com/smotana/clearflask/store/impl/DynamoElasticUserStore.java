@@ -1085,6 +1085,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         oauthProvider.getUserProfileUrl(),
                         oauthProvider.getGuidJsonPath(),
                         oauthProvider.getNameJsonPath(),
+                        oauthProvider.getEmailUrl(),
                         oauthProvider.getEmailJsonPath(),
                         oauthProvider.getClientId(),
                         clientSecret,

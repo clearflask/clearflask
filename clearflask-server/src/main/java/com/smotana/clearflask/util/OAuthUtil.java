@@ -44,6 +44,7 @@ public class OAuthUtil {
             String userProfileUrl,
             String guidJsonPath,
             String nameJsonPath,
+            String emailUrl,
             String emailJsonPath,
             String clientId,
             String clientSecret,
@@ -92,10 +93,37 @@ public class OAuthUtil {
                 }
                 profileResponse = CharStreams.toString(new InputStreamReader(
                         res.getEntity().getContent(), Charsets.UTF_8));
+                log.trace("OAuth profile url {} returned {} for projectId {}",
+                        profileResponse, profileResponse, projectId);
             } catch (IOException ex) {
                 log.debug("OAuth provider failed fetching profile, projectId {} url {}",
                         projectId, reqProfile.getURI(), ex);
                 return Optional.empty();
+            }
+
+            String emailResponse;
+            if (!Strings.isNullOrEmpty(emailUrl) && !emailUrl.equals(userProfileUrl)) {
+                HttpGet reqEmail = new HttpGet(emailUrl);
+                reqEmail.addHeader("Authorization", "Bearer " + oAuthAuthorizationResponse.getAccessToken());
+                reqEmail.setHeader("Accept", "application/json");
+                try (CloseableHttpResponse res = client.execute(reqEmail)) {
+                    if (res.getStatusLine().getStatusCode() < 200
+                            || res.getStatusLine().getStatusCode() > 299) {
+                        log.debug("OAuth provider failed email fetch, projectId {} url {} response status {}",
+                                projectId, reqEmail.getURI(), res.getStatusLine().getStatusCode());
+                        return Optional.empty();
+                    }
+                    emailResponse = CharStreams.toString(new InputStreamReader(
+                            res.getEntity().getContent(), Charsets.UTF_8));
+                    log.trace("OAuth email url {} returned {} for projectId {}",
+                            emailUrl, emailResponse, projectId);
+                } catch (IOException ex) {
+                    log.debug("OAuth provider failed fetching email, projectId {} url {}",
+                            projectId, reqEmail.getURI(), ex);
+                    return Optional.empty();
+                }
+            } else {
+                emailResponse = profileResponse;
             }
 
             try {
@@ -108,7 +136,7 @@ public class OAuthUtil {
                 Optional<String> nameOpt = Optional.ofNullable(Strings.emptyToNull(nameJsonPath))
                         .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
                 Optional<String> emailOpt = Optional.ofNullable(Strings.emptyToNull(emailJsonPath))
-                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, profileResponse));
+                        .flatMap(jsonPath -> JsonPathUtil.findFirstAsString(jsonPath, emailResponse));
                 return Optional.of(new OAuthResult(guidOpt.get(), nameOpt, emailOpt));
             } catch (JsonPathException ex) {
                 log.debug("OAuth provider failed parsing profile, projectId {} url {}",

@@ -1103,15 +1103,9 @@ export default class Templater {
 
   usersOnboardingOAuthAdd(oauth: Partial<Admin.NotificationMethodsOauth>) {
     const index = this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'oauth']).insert().path.slice(-1).pop() as number;
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'icon']).set(oauth.icon || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'buttonTitle']).set(oauth.buttonTitle || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'oauthId']).set(oauth.oauthId || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'clientId']).set(oauth.clientId || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'authorizeUrl']).set(oauth.authorizeUrl || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'tokenUrl']).set(oauth.tokenUrl || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'scope']).set(oauth.scope || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'userProfileUrl']).set(oauth.userProfileUrl || '');
-    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, 'guidJsonPath']).set(oauth.guidJsonPath || '');
+    Object.entries(oauth).forEach(([key, val]) => {
+      this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'oauth', index, key]).set(val || '');
+    });
   }
 
   usersOnboardingOAuthAddBathtub() {

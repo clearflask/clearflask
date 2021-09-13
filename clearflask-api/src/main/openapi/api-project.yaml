@@ -276,7 +276,7 @@ components:
                     x-clearflask-prop: { order: 6, name: 'Request Scope', description: 'Minimal scope to retrieve ID, name and email.' }
                     type: string
                   userProfileUrl:
-                    x-clearflask-prop: { order: 7, name: 'User Profile URL', description: 'This url will be fetched after authorization and the result will be used to extract user profile. If not set, we assume the access token is a JWT and the user profile will be extracted from there.', placeholder: 'https://.../user' }
+                    x-clearflask-prop: { order: 7, name: 'User Profile URL', description: 'This url will be fetched after authorization and the result will be used to extract user profile.', placeholder: 'https://.../user' }
                     type: string
                   guidJsonPath:
                     x-clearflask-prop: { order: 8, name: 'GUID path', description: 'JsonPath to retrieve user ID (GUID).', placeholder: 'user.id' }
@@ -284,8 +284,11 @@ components:
                   nameJsonPath:
                     x-clearflask-prop: { order: 9, name: 'Name path', description: 'Optional JsonPath to retrieve name otherwise shown as Anonymous.', placeholder: 'user.name' }
                     type: string
+                  emailUrl:
+                    x-clearflask-prop: { order: 10, name: 'Alternate Email URL', description: 'This url will be used for fetching email if different from the Profile URL.', placeholder: 'https://.../email' }
+                    type: string
                   emailJsonPath:
-                    x-clearflask-prop: { order: 10, name: 'Email path', description: 'Optional JsonPath to retrieve email for notifications.', placeholder: 'user.email' }
+                    x-clearflask-prop: { order: 11, name: 'Email path', description: 'Optional JsonPath to retrieve email for notifications.', placeholder: 'user.email' }
                     type: string
         terms:
           x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
