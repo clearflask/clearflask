@@ -60,6 +60,7 @@ function replaceAndSend(res, filePath) {
 
 function createApp(serverHttpp) {
   const serverApp = express();
+  const reactRender = reactRenderer();
 
   serverApp.use(compression());
 
@@ -88,12 +89,13 @@ function createApp(serverHttpp) {
     },
   }));
 
-  serverApp.get('/api', function (req, res) {
+  serverApp.all('/api', reactRender);
+  serverApp.get('/api/openapi.yaml', function (req, res) {
     res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
     if (connectConfig.parentDomain !== 'clearflask.com') {
-      replaceAndSend(res, '/api/index.html');
+      replaceAndSend(res, '/api/openapi.yaml');
     } else {
-      res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'index.html'));
+      res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'openapi.yaml'));
     }
   });
   serverApp.all('/api/*', function (req, res) {
@@ -102,7 +104,7 @@ function createApp(serverHttpp) {
     });
   });
 
-  serverApp.all('/*', reactRenderer());
+  serverApp.all('/*', reactRender);
 
   serverApp.on('error', function (err) {
     console.error('Failed with', err);

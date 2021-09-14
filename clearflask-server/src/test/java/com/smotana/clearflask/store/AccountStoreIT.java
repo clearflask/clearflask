@@ -109,7 +109,7 @@ public class AccountStoreIT extends AbstractIT {
         account = account.toBuilder()
                 .oauthGuid(oauthGuid)
                 .build();
-        store.updateOauthGuid(account.getAccountId(), Optional.of(account.getOauthGuid()));
+        assertEquals(account, store.updateOauthGuid(account.getAccountId(), Optional.of(account.getOauthGuid())));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         Optional<Account> accountExpected = Optional.of(account);
         RetryUtil.retry(() -> assertEquals(accountExpected, store.getAccountByOauthGuid(oauthGuid)));
@@ -117,7 +117,7 @@ public class AccountStoreIT extends AbstractIT {
         account = account.toBuilder()
                 .oauthGuid(null)
                 .build();
-        store.updateOauthGuid(account.getAccountId(), Optional.empty());
+        assertEquals(account, store.updateOauthGuid(account.getAccountId(), Optional.empty()));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         RetryUtil.retry(() -> assertEquals(Optional.empty(), store.getAccountByOauthGuid(oauthGuid)));
 

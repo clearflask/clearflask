@@ -2,15 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { Component } from 'react';
 import ReactDiffViewer from 'react-diff-viewer';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import highlightLanguageYaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
-import highlightStyleLight from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-light';
 import { Server } from '../../../api/server';
 import ServerAdmin from '../../../api/serverAdmin';
+import SyntaxHighlighter, { highlightStyleLight } from '../../syntaxHighlighter';
 import debounce from '../../util/debounce';
 import * as ConfigEditor from '../configEditor';
-
-SyntaxHighlighter.registerLanguage('yaml', highlightLanguageYaml);
 
 interface Props {
   server: Server;

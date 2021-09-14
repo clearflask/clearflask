@@ -14,7 +14,6 @@ NPM="${NODE} node/node_modules/npm/bin/npm-cli.js"
 NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
 
 OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
-REDOC_CLI="${NPX} -p redoc-cli@0.12.3 redoc-cli"
 
 # Frontend Client API
 ${OPENAPI_GENERATOR} generate \
@@ -84,9 +83,3 @@ PIDS[${#PIDS[@]}]=$!
 for PID in ${PIDS[*]}; do
     wait $PID
 done
-
-${REDOC_CLI} bundle \
-    ${OPENAPI_TARGET_DIR}/docs/openapi/openapi.yaml \
-    --disableGoogleFont \
-    --title "API | ClearFlask" \
-    --output ${OPENAPI_TARGET_DIR}/docs/index.html

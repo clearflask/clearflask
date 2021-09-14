@@ -170,7 +170,7 @@ public interface AccountStore {
         @NonNull
         String name;
 
-        /** Empty if using OAuth guid */
+        /** Empty if only using OAuth guid */
         @ToString.Exclude
         String password;
 

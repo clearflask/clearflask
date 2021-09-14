@@ -3,14 +3,9 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React from 'react';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import highlightLanguageHtml from 'react-syntax-highlighter/dist/esm/languages/hljs/htmlbars';
-import highlightStyleDark from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-dark';
-import highlightStyleLight from 'react-syntax-highlighter/dist/esm/styles/hljs/stackoverflow-light';
 import { contentScrollApplyStyles, ContentScrollProps, Orientation } from './ContentScroll';
 import LockSimpleIcon from './icon/LockSimpleIcon';
-
-SyntaxHighlighter.registerLanguage('html', highlightLanguageHtml);
+import SyntaxHighlighter, { highlightStyleDark, highlightStyleLight } from './syntaxHighlighter';
 
 const styles = (theme: Theme) => createStyles({
   container: {

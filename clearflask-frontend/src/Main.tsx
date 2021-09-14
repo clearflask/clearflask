@@ -50,6 +50,7 @@ const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/I
 const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPrefetch: true */'./site/AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const BathtubOauthProvider = loadable(() => import(/* webpackChunkName: "BathtubOauthProvider" */'./common/BathtubOauthProvider').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const ApiDocs = loadable(() => import(/* webpackChunkName: "ApiDocs" */'./ApiDocs').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 interface Props {
   ssrLocation?: string;
@@ -164,6 +165,13 @@ class Main extends Component<Props> {
                     )} />
                     <Switch>
                       {[
+                        (
+                          <Route key='api-docs' path='/api' render={props => (
+                            <NoSsr>
+                              <ApiDocs />
+                            </NoSsr>
+                          )} />
+                        ),
                         ...(!isProd() ? [(
                           <Route key='mock-oauth-provider-bathtub' path='/bathtub/authorize' render={props => (
                             <Provider store={ServerAdmin.get().getStore()}>

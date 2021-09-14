@@ -7,6 +7,7 @@ const webpack = require('webpack');
 const PermissionsOutputPlugin = require('webpack-permissions-plugin');
 
 module.exports = {
+  mode: 'production',
   entry: path.resolve(__dirname, 'src', 'connect', 'connect.ts'),
   output: {
     path: path.resolve(__dirname, 'target', 'dist'),
