@@ -18,7 +18,6 @@ import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.testutil.RetryUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -105,6 +104,23 @@ public class AccountStoreIT extends AbstractIT {
         store.updateName(account.getAccountId(), account.getName()).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
+        String apiKey = "asdfgagasd";
+        account = account.toBuilder()
+                .apiKey(apiKey)
+                .build();
+        assertEquals(account, store.updateApiKey(account.getAccountId(), apiKey));
+        assertEquals(Optional.of(account), store.getAccount(account.getAccountId(), false));
+        assertEquals(Optional.of(account), store.getAccountByApiKey(apiKey));
+
+        String apiKey2 = "asdfgagasd2";
+        account = account.toBuilder()
+                .apiKey(apiKey2)
+                .build();
+        assertEquals(account, store.updateApiKey(account.getAccountId(), apiKey2));
+        assertEquals(Optional.of(account), store.getAccount(account.getAccountId(), false));
+        assertEquals(Optional.of(account), store.getAccountByApiKey(apiKey2));
+        assertEquals(Optional.empty(), store.getAccountByApiKey(apiKey));
+
         String oauthGuid = "myoauthguid";
         account = account.toBuilder()
                 .oauthGuid(oauthGuid)
@@ -112,14 +128,14 @@ public class AccountStoreIT extends AbstractIT {
         assertEquals(account, store.updateOauthGuid(account.getAccountId(), Optional.of(account.getOauthGuid())));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         Optional<Account> accountExpected = Optional.of(account);
-        RetryUtil.retry(() -> assertEquals(accountExpected, store.getAccountByOauthGuid(oauthGuid)));
+        assertEquals(accountExpected, store.getAccountByOauthGuid(oauthGuid));
 
         account = account.toBuilder()
                 .oauthGuid(null)
                 .build();
         assertEquals(account, store.updateOauthGuid(account.getAccountId(), Optional.empty()));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
-        RetryUtil.retry(() -> assertEquals(Optional.empty(), store.getAccountByOauthGuid(oauthGuid)));
+        assertEquals(Optional.empty(), store.getAccountByOauthGuid(oauthGuid));
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         AccountStore.AccountSession accountSession2 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -232,30 +248,6 @@ public class AccountStoreIT extends AbstractIT {
 
         store.revokeSessions(account.getAccountId());
         assertFalse(store.getSession(accountSession3.getSessionId()).isPresent());
-    }
-
-    @Test(timeout = 30_000L)
-    public void testAccountByApiKey() throws Exception {
-        Account account = new Account(
-                store.genAccountId(),
-                "my@email.com",
-                SubscriptionStatus.ACTIVETRIAL,
-                null,
-                "planId1",
-                Instant.now(),
-                "name",
-                "password",
-                ImmutableSet.of(),
-                ImmutableSet.of(),
-                null,
-                ImmutableMap.of());
-        store.createAccount(account);
-
-        String apiKey = "asdfgagasd";
-        account = store.updateApiKey(account.getAccountId(), apiKey);
-        assertEquals(apiKey, account.getApiKey());
-        assertEquals(Optional.of(apiKey), store.getAccount(account.getAccountId(), false).map(Account::getApiKey));
-        assertEquals(Optional.of(apiKey), store.getAccountByApiKey(apiKey).map(Account::getApiKey));
     }
 
     @Test(timeout = 30_000L)

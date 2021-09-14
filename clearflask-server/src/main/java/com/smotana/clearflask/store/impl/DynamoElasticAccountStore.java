@@ -452,18 +452,26 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     @Override
     public Account updateOauthGuid(String accountId, Optional<String> oauthGuidOpt) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder()
+                .conditionExists();
+        // This is "yet another" rare case where the attribute to update is also a partition key.
+        // Explicitly set it here to update GSI
+        if (oauthGuidOpt.isPresent()) {
+            expressionBuilder.set("oauthGuid", oauthGuidOpt.get())
+                    .set(accountByOauthGuidSchema.partitionKeyName(), accountByOauthGuidSchema.partitionKey(Map.of("oauthGuid", oauthGuidOpt.get())).getValue())
+                    .set(accountByOauthGuidSchema.rangeKeyName(), accountByOauthGuidSchema.rangeKey(Map.of()).getValue());
+        } else {
+            expressionBuilder.remove("oauthGuid")
+                    .remove(accountByOauthGuidSchema.partitionKeyName())
+                    .remove(accountByOauthGuidSchema.rangeKeyName());
+        }
+        Expression expression = expressionBuilder.build();
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression(oauthGuidOpt.isPresent()
-                        ? "SET #oauthGuid = :oauthGuid"
-                        : "REMOVE #oauthGuid")
-                .withNameMap(new NameMap()
-                        .with("#oauthGuid", "oauthGuid")
-                        .with("#partitionKey", accountSchema.partitionKeyName()))
-                .withValueMap(oauthGuidOpt.isPresent()
-                        ? new ValueMap().withString(":oauthGuid", oauthGuidOpt.get())
-                        : null)
+                .withConditionExpression(expression.conditionExpression().orElse(null))
+                .withUpdateExpression(expression.updateExpression().orElse(null))
+                .withNameMap(expression.nameMap().orElse(null))
+                .withValueMap(expression.valMap().orElse(null))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         accountCache.put(accountId, Optional.of(account));
