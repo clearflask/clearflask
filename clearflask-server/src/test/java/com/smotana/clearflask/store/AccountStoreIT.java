@@ -18,6 +18,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.testutil.RetryUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -104,19 +105,21 @@ public class AccountStoreIT extends AbstractIT {
         store.updateName(account.getAccountId(), account.getName()).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
+        String oauthGuid = "myoauthguid";
         account = account.toBuilder()
-                .oauthGuid("myoauthguid")
+                .oauthGuid(oauthGuid)
                 .build();
         store.updateOauthGuid(account.getAccountId(), Optional.of(account.getOauthGuid()));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
-        assertEquals(Optional.of(account), store.getAccountByOauthGuid(account.getOauthGuid()));
+        Optional<Account> accountExpected = Optional.of(account);
+        RetryUtil.retry(() -> assertEquals(accountExpected, store.getAccountByOauthGuid(oauthGuid)));
 
         account = account.toBuilder()
                 .oauthGuid(null)
                 .build();
         store.updateOauthGuid(account.getAccountId(), Optional.empty());
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
-        assertEquals(Optional.empty(), store.getAccountByOauthGuid(account.getOauthGuid()));
+        RetryUtil.retry(() -> assertEquals(Optional.empty(), store.getAccountByOauthGuid(oauthGuid)));
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         AccountStore.AccountSession accountSession2 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
