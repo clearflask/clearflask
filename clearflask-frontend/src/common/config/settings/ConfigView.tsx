@@ -4,7 +4,6 @@ import React, { Component } from 'react';
 import ReactDiffViewer from 'react-diff-viewer';
 import { Server } from '../../../api/server';
 import ServerAdmin from '../../../api/serverAdmin';
-import SyntaxHighlighter, { highlightStyleLight } from '../../syntaxHighlighter';
 import debounce from '../../util/debounce';
 import * as ConfigEditor from '../configEditor';
 
@@ -41,19 +40,6 @@ export default class ConfigView extends Component<Props> {
         newValue={newValue}
         splitView={false}
         hideLineNumbers
-        renderContent={str => (
-          <SyntaxHighlighter
-            // Yaml is better for highlighting line-by-line than actual JSON parser
-            language='yaml'
-            customStyle={{
-              backgroundColor: 'inherit',
-              padding: 0,
-            }}
-            style={highlightStyleLight}
-          >
-            {str}
-          </SyntaxHighlighter>
-        )}
         styles={{
           diffContainer: {
             'font-size': '0.8em',

@@ -5,7 +5,6 @@ import classNames from 'classnames';
 import React from 'react';
 import { contentScrollApplyStyles, ContentScrollProps, Orientation } from './ContentScroll';
 import LockSimpleIcon from './icon/LockSimpleIcon';
-import SyntaxHighlighter, { highlightStyleDark, highlightStyleLight } from './syntaxHighlighter';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -77,12 +76,11 @@ class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true
 
     var code;
     if (this.props.codeContent) {
-      const backgroundColor = (this.props.darkMode ? highlightStyleDark : highlightStyleLight)?.hljs?.background;
+      const backgroundColor = (this.props.darkMode ? 'rgb(28, 27, 27)' : 'rgb(246, 246, 246)');
       code = (
-        <SyntaxHighlighter
+        <div
           className={this.props.classes.codeContainer}
-          language={this.props.codeLanguage || 'html'}
-          customStyle={{
+          style={{
             ...contentScrollApplyStyles({
               theme: this.props.theme,
               backgroundColor,
@@ -90,10 +88,9 @@ class FakeBrowser extends React.Component<Props & WithStyles<typeof styles, true
             }),
             backgroundColor,
           }}
-          style={this.props.darkMode ? highlightStyleDark : highlightStyleLight}
         >
           {this.props.codeContent}
-        </SyntaxHighlighter>
+        </div>
       );
     }
 
