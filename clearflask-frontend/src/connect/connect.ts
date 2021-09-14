@@ -72,11 +72,16 @@ function createApp(serverHttpp) {
   }
 
   if (connectConfig.parentDomain !== 'clearflask.com') {
-    ['asset-manifest.json', 'index.html'].forEach(file => {
+    ['asset-manifest.json', 'index.html', 'api/openapi.yaml'].forEach(file => {
       serverApp.get(`/${file}`, function (req, res) {
         replaceAndSend(res, file);
       });
     })
+  } else {
+    serverApp.get('/api/openapi.yaml', function (req, res) {
+      res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
+      res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'openapi.yaml'));
+    });
   }
 
   serverApp.use(serveStatic(connectConfig.publicPath, {
@@ -90,14 +95,6 @@ function createApp(serverHttpp) {
   }));
 
   serverApp.all('/api', reactRender);
-  serverApp.get('/api/openapi.yaml', function (req, res) {
-    res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
-    if (connectConfig.parentDomain !== 'clearflask.com') {
-      replaceAndSend(res, '/api/openapi.yaml');
-    } else {
-      res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'openapi.yaml'));
-    }
-  });
   serverApp.all('/api/*', function (req, res) {
     serverHttpp.web(req, res, {
       target: connectConfig.apiBasePath,
