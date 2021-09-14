@@ -340,7 +340,9 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
             </Collapse>
             <Collapse in={this.state.useEmail}>
               <div>
-                <Hr isInsidePaper length={120} margins={15}>OR</Hr>
+                {isOauthEnabled && (
+                  <Hr isInsidePaper length={120} margins={15}>OR</Hr>
+                )}
                 <Collapse in={this.props.type === 'signup'}>
                   <TextField
                     variant='outlined'

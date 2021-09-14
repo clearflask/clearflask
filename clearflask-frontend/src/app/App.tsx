@@ -11,7 +11,7 @@ import WebNotification, { Status as WebNotificationStatus } from '../common/noti
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
 import { OAuthFlow } from '../common/util/oauthUtil';
-import { RouteWithStatus } from '../common/util/routerUtil';
+import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
@@ -154,6 +154,11 @@ class App extends Component<Props> {
     if (!confStatus || confStatus === Status.PENDING) {
       return (<Loading />);
     } else if (confStatus === Status.REJECTED) {
+      if (detectEnv() === Environment.PRODUCTION_SELF_HOST) {
+        return (
+          <RedirectIso to='/dashboard' />
+        );
+      }
       return (
         <ErrorPage msg={this.server.getStore().getState().conf.rejectionMessage || 'Failed to load'} />
       );
