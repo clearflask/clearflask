@@ -467,7 +467,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 setUpdates.put(fieldName, String.format("%s = if_not_exists(%s, %s) + %s",
                         fieldMapping(fieldName),
                         fieldMapping(fieldName),
-                        valueMapping("zero", 0L),
+                        constantMapping("zero", 0L),
                         valueMapping(fieldName, increment)));
                 return this;
             }
@@ -561,7 +561,6 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             @Override
             public String valueMapping(String fieldName, Object object) {
                 checkState(!built);
-                String mappedName = ":" + sanitizeFieldMapping(fieldName);
                 Object val;
                 if (object instanceof String) {
                     // For partition range keys and strings in general, there is no marshaller
@@ -572,13 +571,20 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                             .marshall(object, "tempAttr", tempItem);
                     val = tempItem.get("tempAttr");
                 }
-                valMap.put(mappedName, val);
+                return constantMapping(fieldName, val);
+            }
+
+            @Override
+            public String constantMapping(String fieldName, Object object) {
+                checkState(!built);
+                String mappedName = ":" + sanitizeFieldMapping(fieldName);
+                valMap.put(mappedName, object);
                 return mappedName;
             }
 
             @Override
             public String valueMapping(ImmutableList<String> fieldPath, Object object) {
-                return valueMapping(fieldPath.stream()
+                return constantMapping(fieldPath.stream()
                         .map(String::toLowerCase)
                         .collect(Collectors.joining("X")), object);
             }

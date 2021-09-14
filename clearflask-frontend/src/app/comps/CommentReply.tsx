@@ -37,6 +37,7 @@ interface Props {
   server: Server;
   ideaId: string;
   parentCommentId?: string;
+  mergedPostId?: string;
   inputLabel?: string;
   logIn: () => Promise<void>;
   onSubmitted?: () => void;
@@ -115,7 +116,8 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
                   ideaId: this.props.ideaId,
                   commentCreate: {
                     content: this.state.newCommentInput!,
-                    parentCommentId: this.props.parentCommentId,
+                    parentCommentId: this.props.mergedPostId === this.props.parentCommentId ? undefined : this.props.parentCommentId,
+                    mergedPostId: this.props.mergedPostId,
                   },
                 }))).then(comment => {
                   this.setState({ newCommentInput: undefined })

@@ -132,6 +132,8 @@ public interface DynamoMapper {
 
         String valueMapping(String fieldName, Object object);
 
+        String constantMapping(String fieldName, Object object);
+
         String valueMapping(ImmutableList<String> fieldPath, Object object);
 
 

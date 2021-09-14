@@ -79,6 +79,8 @@ components:
           type: string
         content:
           type: string
+        mergedPostId:
+          type: string
       required:
       - content
     CommentUpdate:

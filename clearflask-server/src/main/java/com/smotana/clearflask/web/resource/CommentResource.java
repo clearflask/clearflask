@@ -98,14 +98,16 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public CommentWithVote commentCreate(String projectId, String ideaId, CommentCreate create) {
         sanitizer.content(create.getContent());
 
+        String ideaIdOrMergedIdeaId = Strings.isNullOrEmpty(create.getMergedPostId()) ? ideaId : create.getMergedPostId();
+
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
-        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)
+        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaIdOrMergedIdeaId)
                 .orElseThrow(() -> new BadRequestException("Cannot create comment, containing idea doesn't exist"));
         Optional<CommentModel> parentCommentOpt = Optional.ofNullable(Strings.emptyToNull(create.getParentCommentId()))
-                .map(parentCommentId -> commentStore.getComment(projectId, ideaId, parentCommentId)
+                .map(parentCommentId -> commentStore.getComment(projectId, ideaIdOrMergedIdeaId, parentCommentId)
                         .orElseThrow(() -> new BadRequestException("Cannot create comment, parent comment doesn't exist")));
         ImmutableList<String> parentCommentIds = parentCommentOpt.map(parentComment -> ImmutableList.<String>builder()
                 .addAll(parentComment.getParentCommentIds())
@@ -114,7 +116,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .orElse(ImmutableList.of());
         CommentModel commentModel = commentStore.createComment(new CommentModel(
                 projectId,
-                ideaId,
+                ideaIdOrMergedIdeaId,
                 commentStore.genCommentId(sanitizer.richHtmlToPlaintext(create.getContent())),
                 parentCommentIds,
                 parentCommentIds.size(),

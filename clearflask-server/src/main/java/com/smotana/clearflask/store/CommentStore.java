@@ -39,7 +39,8 @@ import java.util.function.Consumer;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
-public interface CommentStore {
+public interface
+CommentStore {
 
     default String genCommentId(String content) {
         return IdUtil.contentUnique(content);

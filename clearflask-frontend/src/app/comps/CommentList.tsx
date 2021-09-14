@@ -25,7 +25,7 @@ interface Props {
   ideaId: string;
   expectedCommentCount: number;
   parentCommentId?: string;
-  parentCommentIsMergedPost?: boolean;
+  mergedPostId?: string;
   newCommentsAllowed?: boolean; // TODO add comment replies
   loggedInUser?: Client.User;
   logIn: () => Promise<void>;
@@ -59,49 +59,54 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
   }
 
   render() {
+    const parentIsMergedPost = this.props.mergedPostId === this.props.parentCommentId;
     return (
       <div key={this.props.parentCommentId || this.props.ideaId} className={classNames(
-        this.props.parentCommentId && (this.props.parentCommentIsMergedPost
+        this.props.parentCommentId && (parentIsMergedPost
           ? this.props.classes.commentIndentMergedPost
           : this.props.classes.commentIndent),
       )}>
-        {this.props.comments.map(comment => (
-          <React.Fragment key={comment.commentId}>
-            <Comment
-              key={comment.commentId}
-              server={this.props.server}
-              comment={comment}
-              isBlurry={this.props.settings.demoBlurryShadow}
-              loggedInUser={this.props.loggedInUser}
-              replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
-              onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
-              logIn={this.props.logIn}
-              disableOnClick={this.props.disableOnClick}
-              onAuthorClick={(this.props.onAuthorClick && !this.props.disableOnClick)
-                ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
-                : undefined}
-            />
-            <CommentReply
-              className={this.props.classes.commentIndent}
-              server={this.props.server}
-              collapseIn={!!this.state[`replyOpen${comment.commentId}`]}
-              focusOnIn
-              ideaId={this.props.ideaId}
-              parentCommentId={comment.commentId}
-              logIn={this.props.logIn}
-              onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-              onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-            />
-            {comment.childCommentCount > 0 && (
-              <CommentList
-                {...this.props}
-                parentCommentIsMergedPost={!!comment.mergedPostId}
-                expectedCommentCount={comment.childCommentCount}
-                parentCommentId={comment.commentId}
+        {this.props.comments.map(comment => {
+          const mergedPostId = comment.mergedPostId || this.props.mergedPostId;
+          return (
+            <React.Fragment key={comment.commentId}>
+              <Comment
+                key={comment.commentId}
+                server={this.props.server}
+                comment={comment}
+                isBlurry={this.props.settings.demoBlurryShadow}
+                loggedInUser={this.props.loggedInUser}
+                replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
+                onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
+                logIn={this.props.logIn}
+                disableOnClick={this.props.disableOnClick}
+                onAuthorClick={(this.props.onAuthorClick && !this.props.disableOnClick)
+                  ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
+                  : undefined}
               />
-            )}
-          </React.Fragment>
-        ))}
+              <CommentReply
+                className={this.props.classes.commentIndent}
+                server={this.props.server}
+                collapseIn={!!this.state[`replyOpen${comment.commentId}`]}
+                focusOnIn
+                ideaId={this.props.ideaId}
+                parentCommentId={comment.commentId}
+                mergedPostId={mergedPostId}
+                logIn={this.props.logIn}
+                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+                onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+              />
+              {comment.childCommentCount > 0 && (
+                <CommentList
+                  {...this.props}
+                  mergedPostId={mergedPostId}
+                  expectedCommentCount={comment.childCommentCount}
+                  parentCommentId={comment.commentId}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
         <Loader loaded={this.props.commentsStatus !== Status.PENDING} error={this.props.commentsStatus === Status.REJECTED ? "Failed to load" : undefined}>
           {((this.props.commentsStatus !== Status.PENDING && this.props.comments.length >= this.props.expectedCommentCount) || this.state.loadedWithNoResults)
             ? undefined : <LoadMoreButton onClick={this.loadMore.bind(this)} />}

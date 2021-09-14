@@ -513,8 +513,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         long expressionCounter = 0L;
         if (parentIdeaExpressionDiff.size() > 0) {
             String expressionsValueField = parentIdeaExpressionBuilder.fieldMapping("expressionsValue");
-            String zeroValue = parentIdeaExpressionBuilder.valueMapping("zero", 0L);
-            String oneValue = parentIdeaExpressionBuilder.valueMapping("one", 1L);
+            String zeroValue = parentIdeaExpressionBuilder.constantMapping("zero", 0L);
+            String oneValue = parentIdeaExpressionBuilder.constantMapping("one", 1L);
 
             for (Map.Entry<String, Long> entry : parentIdeaExpressionDiff.entrySet()) {
                 String expression = entry.getKey();
@@ -523,7 +523,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     continue;
                 }
                 String valueSign = value > 0 ? "+" : "-";
-                String valueValue = parentIdeaExpressionBuilder.valueMapping("val" + expressionCounter, Math.abs(value));
+                String valueValue = parentIdeaExpressionBuilder.constantMapping("val" + expressionCounter, Math.abs(value));
                 String expressionField = parentIdeaExpressionBuilder.fieldMapping("expr" + expressionCounter, expression);
                 parentIdeaExpressionBuilder.setExpression(String.format(
                         "expressions.%s = if_not_exists(expressions.%s, %s) + %s, expressionsValue = if_not_exists(%s, %s) %s %s",
