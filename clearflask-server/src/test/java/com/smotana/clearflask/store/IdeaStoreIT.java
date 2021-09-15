@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramResponsePoints;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
@@ -41,6 +42,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
@@ -143,29 +145,183 @@ public class IdeaStoreIT extends AbstractIT {
         String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
         String userId3 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
         IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea1")
                 .projectId(projectId)
                 .authorUserId(userId1)
-                .title("aaaaaaaaaaaaaa")
+                .title("aaa aaaa aaaaa aa")
+                .description("aaaa aaa aa aaaaa")
+                .categoryId("cat1")
+                .statusId("status1")
                 .created(Instant.now().minus(3, ChronoUnit.DAYS))
-                .funded(10L)
+                .voteValue(10L)
                 .build();
         IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea2")
                 .projectId(projectId)
                 .authorUserId(userId2)
-                .title("bbbbbbbbbbbbbb")
+                .title("aaa aaaa aa aaaaaaa")
+                .description("aaa aa aaaa aaaa aaa")
+                .categoryId("cat1")
+                .statusId("status2")
                 .created(Instant.now().minus(2, ChronoUnit.DAYS))
-                .funded(30L)
+                .voteValue(30L)
                 .build();
         IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea3")
                 .projectId(projectId)
                 .authorUserId(userId3)
-                .title("cccccccccccccc")
+                .title("ccccc cccccc cccccc cc ccc")
+                .description("cccc ccccc cccc cccc ccc")
+                .categoryId("cat2")
+                .statusId("status3")
                 .created(Instant.now().minus(1, ChronoUnit.DAYS))
-                .funded(20L)
+                .voteValue(-20L)
                 .build();
         store.createIdea(idea1).get();
         store.createIdea(idea2).get();
         store.createIdea(idea3).get();
+
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().build(),
+                ImmutableSet.of(idea1.getIdeaId(), idea2.getIdeaId(), idea3.getIdeaId()));
+
+        // Test sort
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .sortBy(IdeaSearchAdmin.SortByEnum.NEW).build(),
+                ImmutableList.of(idea3.getIdeaId(), idea2.getIdeaId(), idea1.getIdeaId()));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .sortBy(IdeaSearchAdmin.SortByEnum.TOP).build(),
+                ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId(), idea3.getIdeaId()));
+
+        // Test limit
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .sortBy(IdeaSearchAdmin.SortByEnum.NEW)
+                        .limit(1L).build(),
+                ImmutableSet.of(idea3.getIdeaId()));
+
+        // Test similar
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .similarToIdeaId(idea1.getIdeaId()).build(),
+                ImmutableSet.of(idea2.getIdeaId()));
+
+        // Test category
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .filterCategoryIds(ImmutableList.of("cat1")).build(),
+                ImmutableSet.of(idea1.getIdeaId(), idea2.getIdeaId()));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .filterCategoryIds(ImmutableList.of("cat1"))
+                        .invertCategory(true).build(),
+                ImmutableSet.of(idea3.getIdeaId()));
+
+        // Test status
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .filterStatusIds(ImmutableList.of("status1")).build(),
+                ImmutableSet.of(idea1.getIdeaId()));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder()
+                        .filterStatusIds(ImmutableList.of("status1"))
+                        .invertStatus(true).build(),
+                ImmutableSet.of(idea2.getIdeaId(), idea3.getIdeaId()));
+    }
+
+    @Test(timeout = 30_000L)
+    public void testDragNDrop() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId3 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea1")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .created(Instant.now().minus(3, ChronoUnit.DAYS))
+                .build();
+        IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea2")
+                .projectId(projectId)
+                .authorUserId(userId2)
+                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .build();
+        IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("idea3")
+                .projectId(projectId)
+                .authorUserId(userId3)
+                .created(Instant.now().minus(1, ChronoUnit.DAYS))
+                .build();
+        store.createIdea(idea1).get();
+        store.createIdea(idea2).get();
+        store.createIdea(idea3).get();
+
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea1.getIdeaId(),
+                idea2.getIdeaId(),
+                idea3.getIdeaId()));
+
+        idea1 = dropIdea(projectId, idea1.getIdeaId(),
+                Optional.of(idea3),
+                Optional.empty());
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea2.getIdeaId(),
+                idea3.getIdeaId(),
+                idea1.getIdeaId()));
+
+        idea2 = dropIdea(projectId, idea2.getIdeaId(),
+                Optional.of(idea3),
+                Optional.of(idea1));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea3.getIdeaId(),
+                idea2.getIdeaId(),
+                idea1.getIdeaId()));
+
+        idea1 = dropIdea(projectId, idea1.getIdeaId(),
+                Optional.empty(),
+                Optional.of(idea3));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea1.getIdeaId(),
+                idea3.getIdeaId(),
+                idea2.getIdeaId()));
+
+        idea3 = dropIdea(projectId, idea3.getIdeaId(),
+                Optional.of(idea1),
+                Optional.of(idea2));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea1.getIdeaId(),
+                idea3.getIdeaId(),
+                idea2.getIdeaId()));
+    }
+
+    IdeaModel dropIdea(String projectId, String postId, Optional<IdeaModel> afterPostOpt, Optional<IdeaModel> beforePostOpt) throws ExecutionException, InterruptedException {
+        // This logic determines what the order should be based on other posts in the same list
+        // This is implemented in dashboardDndActionHandler.ts, if changed there, change here too
+        double order;
+        if (afterPostOpt.isPresent() && beforePostOpt.isPresent()) {
+            order = (afterPostOpt.get().getOrderOrDefault() + beforePostOpt.get().getOrderOrDefault()) / 2d;
+        } else if (afterPostOpt.isPresent()) {
+            order = afterPostOpt.get().getOrderOrDefault() + 1;
+        } else if (beforePostOpt.isPresent()) {
+            order = beforePostOpt.get().getOrderOrDefault() - 1;
+        } else {
+            // Nothing to do, just return the post
+            return store.getIdea(projectId, postId).get();
+        }
+        IdeaStore.IdeaAndIndexingFuture ideaAndIndexingFuture = store.updateIdea(projectId, postId, IdeaUpdateAdmin.builder()
+                .order(order).build(), Optional.empty());
+        ideaAndIndexingFuture.getIndexingFuture().get();
+        return ideaAndIndexingFuture.getIdea();
+    }
+
+    /** Assert presence with specific order */
+    void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableList<String> expectedPostIds) {
+        assertEquals(expectedPostIds, store.searchIdeas(
+                projectId, search, false, Optional.empty())
+                .getIdeaIds());
+    }
+
+    /** Assert presence without ordering */
+    void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableSet<String> expectedPostIds) {
+        assertEquals(expectedPostIds, ImmutableSet.copyOf(store.searchIdeas(
+                projectId, search, false, Optional.empty())
+                .getIdeaIds()));
     }
 
     @Test(timeout = 30_000L)

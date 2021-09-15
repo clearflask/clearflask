@@ -335,5 +335,9 @@ public interface IdeaStore {
                     getOrder(),
                     vote);
         }
+
+        public double getOrderOrDefault() {
+            return getOrder() != null ? getOrder() : getCreated().toEpochMilli();
+        }
     }
 }

@@ -319,7 +319,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         // In ES it is always populated for sorting as it is
                         // not easy to fallback to a value of created unless
                         // script sorting is used.
-                        .put("order", idea.getOrder() != null ? idea.getOrder() : idea.getCreated().toEpochMilli())
+                        .put("order", idea.getOrderOrDefault())
                         .build()), XContentType.JSON);
         if (setRefreshPolicy) {
             req.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL);
@@ -693,6 +693,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
+            query.mustNot(QueryBuilders.termsQuery("ideaId", ideaSearchAdmin.getSimilarToIdeaId()));
             query.must(QueryBuilders.moreLikeThisQuery(
                     new String[]{"title", "description"},
                     null,
@@ -806,7 +807,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             .setField("created"));
                     break;
                 case DRAGANDDROP:
-                    sortFields = ImmutableList.of("order");
+                    sortFields = ImmutableList.of("order", "created");
                     sortOrderOpt = Optional.of(SortOrder.ASC);
                     break;
                 default:
