@@ -63,10 +63,10 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       entryStatus: statusIdBacklog,
       statuses: [
         // Alternative names: Gathering Feedback, Maturing, Listening, Ideation, Growing, Finalizing, Seeking
-        { name: 'Ideas', nextStatusIds: [statusIdLater, statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Later', nextStatusIds: [statusIdNext, statusIdNow, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Next', nextStatusIds: [statusIdLater, statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Now', nextStatusIds: [statusIdLater, statusIdNext, statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Ideas', nextStatusIds: [statusIdLater, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Later', nextStatusIds: [statusIdNext, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Next', nextStatusIds: [statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: 'Now', nextStatusIds: [statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdCompleted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
         { name: 'Cancelled', nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdCancelled, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
       ],
@@ -105,6 +105,7 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
           .filter(s => !s.statusId.startsWith(RoadmapStatusClosedPrefix)
             && !s.statusId.startsWith(RoadmapStatusCompletedPrefix)
             && !s.statusId.startsWith(RoadmapStatusBacklogPrefix))
+          .reverse()
           .map(status => Admin.PagePanelWithHideIfEmptyToJSON({
             title: status.name,
             color: status.color,

@@ -209,7 +209,35 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
   };
   const renderRoadmapSection = (): Section | undefined => {
     if (!this.state.roadmap?.pageAndIndex) return undefined;
-    const roadmapSections = this.state.roadmap.pageAndIndex.page.board.panels
+
+    // Roadmap may be displayed in reverse order of completion, ie "Now, Next, Later",
+    // But the dashboard goes left to right from ideas to completed.
+    // So let's sort the roadmap panels based on the Workflow here
+    const panels = [...this.state.roadmap.pageAndIndex.page.board.panels];
+    if (this.state.roadmap.categoryAndIndex.category.workflow.entryStatus) {
+      const statusWeight: { [statusId: string]: number } = {};
+      const workflowSeenStatusIds: Set<string> = new Set([this.state.roadmap.categoryAndIndex.category.workflow.entryStatus]);
+      const bfsQ = [this.state.roadmap.categoryAndIndex.category.workflow.entryStatus];
+      var currWeight = 0;
+      while (!!bfsQ.length) {
+        const nextStatusId = bfsQ.shift();
+        if (!nextStatusId) break;
+        currWeight++;
+        statusWeight[nextStatusId] = currWeight;
+        this.state.roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === nextStatusId)
+          ?.nextStatusIds
+          ?.forEach(childStatusId => {
+            if (!workflowSeenStatusIds.has(childStatusId)) {
+              workflowSeenStatusIds.add(childStatusId);
+              bfsQ.push(childStatusId);
+            }
+          });
+      }
+      panels.sort((l, r) => (l.search.filterStatusIds?.reduce((prev, curr) => Math.max(prev, statusWeight[curr] || 0), 0) || 0)
+        - (r.search.filterStatusIds?.reduce((prev, curr) => Math.max(prev, statusWeight[curr] || 0), 0) || 0));
+    }
+
+    const roadmapSections = panels
       .map((panel, index) => renderTaskSection(panel, undefined, index === 0 ? {
         props: { anchorId: 'roadmap-page-section-roadmap-create-btn', placement: 'bottom' },
         location: 'add',
