@@ -186,14 +186,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
         }
 
+        // TODO OAuth login/signup should be refactored outside of bind into is own separate API
         boolean created = false;
         if (accountOpt.isEmpty()
                 && accountBindAdmin != null
                 && accountBindAdmin.getOauthToken() != null) {
             Optional<OAuthUtil.OAuthResult> oauthResult;
-            // Matches mock "bathtub" OAuth provider defined in oauthUtil.ts
             boolean trustEmailVerified = false;
             String providerName = "OAuth provider";
+            // Matches mock "bathtub" OAuth provider defined in oauthUtil.ts
             if (!env.isProduction() && "bathtub".equals(accountBindAdmin.getOauthToken().getId())) {
                 providerName = "Bathtub";
                 Map<String, String> codeParsed = gson.fromJson(accountBindAdmin.getOauthToken().getCode(), new TypeToken<Map<String, String>>() {
@@ -276,6 +277,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
                         created = true;
+                    }
+                }
+                if (accountOpt.isPresent()) {
+                    AccountStore.AccountSession accountSession = accountStore.createSession(
+                            accountOpt.get(),
+                            Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+                    authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+                    if (superAdminPredicate.isEmailSuperAdmin(accountOpt.get().getEmail())) {
+                        authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
                     }
                 }
             }
