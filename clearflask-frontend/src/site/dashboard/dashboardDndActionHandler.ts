@@ -80,20 +80,24 @@ const addToSearch = (
 const indexToOrder = (
   activeProject: Project,
   searchKey: string,
-  index: number,
+  index: number, // This should be the index of the post already put in place
 ): number | undefined => {
   const state = activeProject.server.getStore().getState();
   const searchIdeaIds = state.ideas.bySearch[searchKey]?.ideaIds;
   if (!searchIdeaIds?.length) return undefined;
   const postIdBefore = searchIdeaIds[index - 1];
-  const postIdAfter = searchIdeaIds[index];
+  const postIdAfter = searchIdeaIds[index + 1]; // Here we assume that the search has already been updated
   const postBefore = postIdBefore !== undefined ? state.ideas.byId[postIdBefore]?.idea : undefined;
   const postAfter = postIdAfter !== undefined ? state.ideas.byId[postIdAfter]?.idea : undefined;
   const valBefore = postBefore?.order !== undefined ? postBefore.order : postBefore?.created.getTime();
   const valAfter = postAfter?.order !== undefined ? postAfter.order : postAfter?.created.getTime();
-  if (valBefore !== undefined && valAfter !== undefined) return valBefore + ((valAfter - valBefore) / 2);
+
+  // This logic determines what the order should be based on other posts in the same list
+  // This is tested in IdeaStoreIT.java, if changed, change there too
+  if (valBefore !== undefined && valAfter !== undefined) return (valAfter + valBefore) / 2.0;
   if (valAfter !== undefined) return valAfter - 1; // At the beginning of the list
   if (valBefore !== undefined) return valBefore + 1; // At the end of the list
+
   return undefined;
 };
 
