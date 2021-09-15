@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { CSSProperties } from '@material-ui/styles';
+import { loadingBarReducer } from 'react-redux-loading-bar';
 import { combineReducers, createStore, Store } from 'redux';
 import * as ConfigEditor from '../common/config/configEditor';
 import Cache from '../common/util/cache';
@@ -51,7 +52,7 @@ export class Server {
   // and is conside
   constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     const projectStoreId = projectId || windowIso.location.hostname;
-    const storeMiddleware = ServerAdmin.createStoreMiddleware(projectStoreId);
+    const storeMiddleware = ServerAdmin.createStoreMiddleware(true, projectStoreId);
     if (windowIso.isSsr) {
       windowIso.storesState.serverStores = windowIso.storesState.serverStores || {};
       windowIso.storesState.serverStores[projectStoreId] = windowIso.storesState.serverStores[projectStoreId]
@@ -2134,4 +2135,7 @@ export const reducers = combineReducers({
   credits: reducerCredits,
   notifications: reducerNotifications,
   teammates: reducerTeammates,
+  ...({
+    loadingBar: loadingBarReducer,
+  } as {}),
 });

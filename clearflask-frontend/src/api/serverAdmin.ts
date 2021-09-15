@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import { loadingBarMiddleware } from 'react-redux-loading-bar';
 import { applyMiddleware, combineReducers, compose, createStore, Store, StoreEnhancer } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import thunk from 'redux-thunk';
@@ -52,7 +53,7 @@ export default class ServerAdmin {
       msg => Server._dispatch(msg, this.store),
       new Admin.Api(new Admin.Configuration(apiConf), apiOverride));
 
-    const storeMiddleware = ServerAdmin.createStoreMiddleware('main');
+    const storeMiddleware = ServerAdmin.createStoreMiddleware(false, 'main');
     if (windowIso.isSsr) {
       windowIso.storesState.serverAdminStore = windowIso.storesState.serverAdminStore
         || createStore(reducersAdmin, ServerAdmin._initialState(), storeMiddleware);
@@ -75,8 +76,10 @@ export default class ServerAdmin {
     return this.store;
   }
 
-  static createStoreMiddleware(name: string): StoreEnhancer {
-    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
+  static createStoreMiddleware(isProject: boolean, name: string): StoreEnhancer {
+    var storeMiddleware = isProject
+      ? applyMiddleware(thunk, reduxPromiseMiddleware, loadingBarMiddleware())
+      : applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!windowIso.isSsr) {
       const composeEnhancers =
         windowIso['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']

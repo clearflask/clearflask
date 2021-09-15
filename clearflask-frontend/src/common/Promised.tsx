@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React from 'react';
 import ErrorMsg from '../app/ErrorMsg';
-import Loading, { Props as LoadingProps } from '../app/utils/Loading';
+import Loading from '../app/utils/Loading';
 import windowIso from './windowIso';
 
-interface Props<T> extends LoadingProps {
+interface Props<T> extends React.ComponentProps<typeof Loading> {
   // Use if you want to completely re-render content on promise change
   key?: string,
   promise: Promise<T>,

@@ -7,6 +7,7 @@ import { match } from 'react-router';
 import { Route } from 'react-router-dom';
 import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
+import MyLoadingBar from '../common/MyLoadingBar';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
@@ -201,6 +202,7 @@ class App extends Component<Props> {
             }}
           >
             <PrivateProjectLogin server={this.server}>
+              <MyLoadingBar />
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
               <Route key='header' path='/:page?' render={props => ['embed', 'sso', 'oauth'].includes(props.match.params['page']) ? null : (

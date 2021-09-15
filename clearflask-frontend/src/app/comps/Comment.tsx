@@ -31,7 +31,7 @@ import VotingControl from './VotingControl';
 const styles = (theme: Theme) => createStyles({
   comment: {
     width: MaxContentWidth,
-    maxWidth: 'max-content',
+    maxWidth: MaxContentWidth,
     display: 'flex',
     flexDirection: 'column',
     marginTop: theme.spacing(2),
