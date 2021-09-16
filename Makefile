@@ -14,6 +14,12 @@ build-no-it:
 build-server-no-test:
 	cd clearflask-server && mvn install -DskipTests
 
+frontend-start:
+	cd clearflask-frontend && node/npm start
+
+connect-start:
+	cd clearflask-frontend && node/npm run start:connect
+
 clearflask-release/target/run-docker-compose-local/docker-compose.yml: get-project-version
 	test -f clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-local.tar.gz
 	rm -fr clearflask-release/target/run-docker-compose-local
