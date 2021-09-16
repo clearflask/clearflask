@@ -151,7 +151,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   actionSwapType: {
-    fontSize: '2em',
+    fontSize: '3em',
   },
   center: {
     display: 'flex',
@@ -398,6 +398,7 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
           this.props.classes.evenItem,
         )}>
           <IconButton
+            color='primary'
             className={classNames(
               this.props.classes.actionSwapDirection,
             )}
@@ -410,6 +411,7 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
           {this.renderAction(this.state.action, true)}
         </div>
         <IconButton
+          color='primary'
           className={classNames(
             this.props.classes.actionSwapType,
           )}
@@ -453,6 +455,10 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
         search={this.state.search}
         onClickPost={postId => this.setState({ selectedPostId: this.state.selectedPostId === postId ? undefined : postId })}
         displayOverride={display}
+        PanelPostProps={{
+          // Prevent linking/merging into itself
+          hideSearchResultPostId: this.props.post?.ideaId,
+        }}
       />
     );
   }
