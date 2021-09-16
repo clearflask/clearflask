@@ -288,13 +288,14 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .collect(ImmutableList.toImmutableList());
 
         for (String mergedPostId : mergedPostIds) {
+            if (excludeMergedPostIds.contains(mergedPostId)) {
+                continue;
+            }
             if (fillUntilResultSize <= (commentsWithVote.size() + additionalMergedPostIds.size())) {
                 break;
             }
             additionalMergedPostIds.add(mergedPostId);
         }
-
-        excludeMergedPostIds.forEach(additionalMergedPostIds::remove);
 
         if (additionalMergedPostIds.isEmpty() || !parentIdeaIdOpt.isPresent()) {
             return commentsWithVote;

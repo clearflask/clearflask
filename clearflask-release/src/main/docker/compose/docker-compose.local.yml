@@ -16,6 +16,7 @@ services:
     image: 'clearflask/clearflask-server:latest'
     environment:
       - CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL
+      - JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999"
     depends_on:
       - killbill-engine
       - localstack
@@ -29,6 +30,8 @@ services:
       # JMX
       - 9950:9950
       - 9951:9951
+      # Remote debugging
+      - 9999:9999
   nginx:
     image: nginx
     depends_on:

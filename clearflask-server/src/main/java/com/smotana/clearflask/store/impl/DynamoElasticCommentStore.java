@@ -18,13 +18,12 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -91,10 +90,12 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -115,7 +116,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         @DefaultValue("false")
         boolean elasticForceRefresh();
 
-        @DefaultValue("5")
+        @DefaultValue("3")
         int searchInitialDepthLimit();
 
         @DefaultValue("20")
@@ -285,7 +286,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, ImmutableCollection<String> commentIds) {
+    public ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, Collection<String> commentIds) {
         if (commentIds.isEmpty()) {
             return ImmutableMap.of();
         }
@@ -429,15 +430,25 @@ public class DynamoElasticCommentStore implements CommentStore {
                 ? config.searchInitialFetchMax()
                 : config.searchSubsequentFetchMax();
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        if (mergedPostIds.isEmpty()) {
-            queryBuilder.must(QueryBuilders.termQuery("ideaId", ideaId));
+        if (parentCommentIdOpt.isPresent() && mergedPostIds.contains(parentCommentIdOpt.get())) {
+            // parent comment id is actually a merged post
+            queryBuilder.must(QueryBuilders.termQuery("ideaId", parentCommentIdOpt.get()));
         } else {
-            queryBuilder.must(QueryBuilders.termsQuery("ideaId", Stream.concat(Stream.of(ideaId), mergedPostIds.stream()).toArray()));
+            if (mergedPostIds.isEmpty()) {
+                queryBuilder.must(QueryBuilders.termQuery("ideaId", ideaId));
+            } else {
+                queryBuilder.must(QueryBuilders.termsQuery("ideaId", Stream.concat(Stream.of(ideaId), mergedPostIds.stream()).toArray()));
+            }
+            parentCommentIdOpt.ifPresent(parentCommentId -> queryBuilder.must(QueryBuilders
+                    .termQuery("parentCommentIds", parentCommentId)));
         }
-        parentCommentIdOpt.ifPresent(parentCommentId -> queryBuilder.must(QueryBuilders
-                .termQuery("parentCommentIds", parentCommentId)));
-        excludeChildrenCommentIds.forEach(excludeChildrenCommentId -> queryBuilder.mustNot(QueryBuilders
-                .termQuery("commentId", excludeChildrenCommentId)));
+        excludeChildrenCommentIds.forEach(excludeChildrenCommentId -> {
+            if (mergedPostIds.contains(excludeChildrenCommentId)) {
+                return; // comment id is actually a merged post id
+            }
+            queryBuilder.mustNot(QueryBuilders
+                    .termQuery("commentId", excludeChildrenCommentId));
+        });
         int searchInitialDepthLimit = config.searchInitialDepthLimit();
         if (isInitial && searchInitialDepthLimit >= 0) {
             queryBuilder.must(QueryBuilders
@@ -446,8 +457,9 @@ public class DynamoElasticCommentStore implements CommentStore {
         log.trace("Comment search query: {}", queryBuilder);
         SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
                 .source(new SearchSourceBuilder()
-                        // TODO verify fetchSource is actually working
-                        .fetchSource(new String[]{"parentCommentIds"}, null)
+                        .fetchSource(false)
+                        .fetchField("parentCommentIds")
+                        .fetchField("ideaId")
                         .size(fetchMax)
                         .sort("score", SortOrder.DESC)
                         .sort("upvotes", SortOrder.DESC)
@@ -461,24 +473,29 @@ public class DynamoElasticCommentStore implements CommentStore {
             throw new RuntimeException(ex);
         }
 
-        ImmutableSet<String> commentIdsToFetch = Arrays.stream(searchResponse.getHits().getHits())
-                .flatMap(hit -> {
-                    DocumentField parentCommentIds = hit.field("parentCommentIds");
-                    if (parentCommentIds != null && !parentCommentIds.getValues().isEmpty()) {
-                        // parentCommentIds must be a list of Strings
-                        List<String> values = (List<String>) (Object) parentCommentIds.getValues();
-                        // Include all parent comments as well
-                        return Streams.concat(Stream.of(hit.getId()), values.stream());
-                    } else {
-                        return Stream.of(hit.getId());
-                    }
-                })
-                .collect(ImmutableSet.toImmutableSet());
+        // If we have a post with merged posts, we need to query them individually
+        Map<String, Set<String>> postIdToCommentIds = Maps.newHashMap();
 
-        if (commentIdsToFetch.isEmpty()) {
-            return ImmutableSet.of();
+        for (SearchHit hit : searchResponse.getHits().getHits()) {
+            String postId = hit.field("ideaId").getValue();
+
+            Set<String> commentIds = postIdToCommentIds.computeIfAbsent(postId, k -> Sets.newHashSet());
+
+            // Add our comment to the corresponding post
+            commentIds.add(hit.getId());
+
+            // Include all parent comments as well
+            DocumentField parentCommentIds = hit.field("parentCommentIds");
+            if (parentCommentIds != null && !parentCommentIds.getValues().isEmpty()) {
+                // parentCommentIds must be a list of Strings
+                List<String> values = (List<String>) (Object) parentCommentIds.getValues();
+                commentIds.addAll(values);
+            }
         }
-        return ImmutableSet.copyOf(getComments(projectId, ideaId, commentIdsToFetch).values());
+
+        return postIdToCommentIds.entrySet().stream()
+                .flatMap(e -> getComments(projectId, e.getKey(), e.getValue()).values().stream())
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.store;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -32,6 +31,7 @@ import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
 import javax.annotation.Nullable;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -54,7 +54,7 @@ CommentStore {
 
     Optional<CommentModel> getComment(String projectId, String ideaId, String commentId);
 
-    ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, ImmutableCollection<String> commentIds);
+    ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, Collection<String> commentIds);
 
     HistogramResponse histogram(String projectId, HistogramSearchAdmin searchAdmin);
 

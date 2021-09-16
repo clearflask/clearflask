@@ -10,7 +10,7 @@ ENV CATALINA_OPTS="-Dcom.sun.management.jmxremote \
  -Dcom.sun.management.jmxremote.rmi.port=9951 \
  -Djava.rmi.server.hostname=0.0.0.0"
 RUN apt-get update && \
-    apt-get install -y iputils-ping telnet less curl vim mc
+    apt-get install -y procps iputils-ping telnet less curl vim mc
 HEALTHCHECK --start-period=30s --interval=5s --timeout=1m --retries=3 \
     CMD wget --spider http://localhost:8080/api/health || exit 1
 RUN rm -fr /usr/local/tomcat/webapps/*
