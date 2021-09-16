@@ -14,6 +14,7 @@ import { contentScrollApplyStyles, Orientation } from '../../common/ContentScrol
 import HelpPopper from '../../common/HelpPopper';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import SubmitButton from '../../common/SubmitButton';
+import { notEmpty } from '../../common/util/arrayUtil';
 import { initialWidth } from '../../common/util/screenUtil';
 import DashboardPostFilterControls from '../../site/dashboard/DashboardPostFilterControls';
 import DashboardSearchControls from '../../site/dashboard/DashboardSearchControls';
@@ -457,7 +458,13 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
         displayOverride={display}
         PanelPostProps={{
           // Prevent linking/merging into itself
-          hideSearchResultPostId: this.props.post?.ideaId,
+          hideSearchResultPostIds: new Set([
+            this.props.post?.ideaId,
+            ...(this.props.post?.mergedPostIds || []),
+            this.props.post?.mergedToPostId,
+            ...(this.props.post?.linkedToPostIds || []),
+            ...(this.props.post?.linkedFromPostIds || []),
+          ].filter(notEmpty)),
         }}
       />
     );

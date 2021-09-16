@@ -98,7 +98,7 @@ export interface Props {
     onClickDraft?: (draftId: string) => void,
     selectedDraftId?: string;
   };
-  hideSearchResultPostId?: string;
+  hideSearchResultPostIds?: Set<string>;
 }
 interface ConnectProps {
   configver?: string;
@@ -564,12 +564,12 @@ export default keyMapper(
       }
     ));
 
-    const selectHideSearchResultPostId = (_, ownProps: Props): string | undefined => ownProps.hideSearchResultPostId;
+    const selectHideSearchResultPostIds = (_, ownProps: Props): Set<string> | undefined => ownProps.hideSearchResultPostIds;
     const selectIdeas = selectorContentWrap(createSelector(
-      [selectSearch, selectIdeasById, selectHideSearchResultPostId],
-      (search, byId, hideSearchResultPostId) => {
+      [selectSearch, selectIdeasById, selectHideSearchResultPostIds],
+      (search, byId, hideSearchResultPostIds) => {
         const ideas = (search?.ideaIds || [])
-          .filter(ideaId => ideaId !== hideSearchResultPostId)
+          .filter(ideaId => !hideSearchResultPostIds?.has(ideaId))
           .map(ideaId => byId[ideaId]?.idea)
           .filter(notEmpty);
         return ideas.length ? ideas : undefined;
