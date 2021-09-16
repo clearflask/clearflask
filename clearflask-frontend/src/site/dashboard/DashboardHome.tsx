@@ -13,7 +13,6 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import Loading from '../../app/utils/Loading';
 import * as ConfigEditor from '../../common/config/configEditor';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
@@ -156,7 +155,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
       <div className={this.props.classes.page}>
         <div className={this.props.classes.stats}>
           <div className={this.props.classes.stats}>
-            <Loading />
             {!!this.props.feedback && !!feedbackAggregate && (
               <Histogram
                 icon={OpenIdeasIcon}

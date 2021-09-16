@@ -288,7 +288,6 @@ interface ConnectProps {
   bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
 interface State {
-  currentPagePath: ConfigEditor.Path;
   selectedProjectId?: string;
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
@@ -331,13 +330,10 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
   };
   draggingPostIdSubscription = new Subscription<string | undefined>(undefined);
   readonly feedbackListRef = createMutableRef<PanelPostNavigator>();
+  state: State = {};
 
   constructor(props) {
     super(props);
-
-    this.state = {
-      currentPagePath: [],
-    };
 
     Dashboard.getStripePromise();
 
@@ -1190,14 +1186,10 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
     if (this.state.selectedProjectId === selectedProjectId) return;
 
     localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
-    this.setState({
+    this.setState(prevState => ({
+      ...(Object.keys(prevState).reduce((s, key) => ({ ...s, [key]: undefined }), {})),
       selectedProjectId,
-      feedback: undefined,
-      landing: undefined,
-      roadmap: undefined,
-      changelog: undefined,
-      hasUncategorizedCategories: undefined,
-    });
+    }));
     this.props.history.push('/dashboard');
   }
 }
