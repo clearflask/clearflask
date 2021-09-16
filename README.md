@@ -25,19 +25,29 @@ Listen to your users during product development with [ClearFlask](https://clearf
 
 </div>
 
-## Get involved
+## Contribute
 
 Submit an [issue here](https://product.clearflask.com/issue) or
 a [suggestion here](https://product.clearflask.com/feedback).
 
 You can also open a merge request. Please [see here](CONTRIBUTING.md) on how to contribute.
 
-## Hosting
+## Managed Hosting
 
-#### Cloud
+For managed hosting with scalable pricing, [get started here](https://clearflask.com/signup).
 
-For managed hosting, [sign up here](https://clearflask.com/signup) to get started.
+## Self Hosting
 
-#### Self-hosting
+For a stable installation, check out the detailed [instructions here](INSTALLATION.md).
 
-If you want to host it on your own infrastructure, [launch it here](INSTALLATION.md).
+For a quick start using [Docker](https://www.docker.com/products/docker-desktop), download
+the [latest release](https://github.com/clearflask/clearflask/packages/955621)
+of `clearflask-release-*-docker-compose-self-host.tar.gz`, unpack it all, and run the following:
+
+```shell
+docker-compose --profile with-deps up
+```
+
+Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
+
+That's it!

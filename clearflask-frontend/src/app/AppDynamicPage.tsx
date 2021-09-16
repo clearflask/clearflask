@@ -301,6 +301,7 @@ export const BoardContainer = (props: {
 }
 
 export const BoardPanel = (props: {
+  className?: string,
   server: Server,
   panel: Client.PagePanelWithHideIfEmpty,
   PanelPostProps?: Partial<React.ComponentProps<typeof PanelPost>>;
@@ -310,7 +311,7 @@ export const BoardPanel = (props: {
   return (
     <PanelPost
       key={getSearchKey(props.panel.search)}
-      className={classes.boardPanel}
+      className={classNames(props.className, classes.boardPanel)}
       maxHeight={theme.vh(80)}
       direction={Direction.Vertical}
       panel={props.panel}

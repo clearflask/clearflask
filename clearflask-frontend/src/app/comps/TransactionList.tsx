@@ -13,6 +13,7 @@ import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import ErrorMsg from '../ErrorMsg';
+import { PanelTitle } from './Panel';
 
 const styles = (theme: Theme) => createStyles({
   transactionsTable: {
@@ -53,9 +54,13 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
     if (!this.props.isLoggedIn) {
       return (<ErrorMsg msg='You need to log in to see your balance' variant='info' />);
     }
+
+    if (!this.props.transactions?.length) return null;
+
     var cumulativeBalance = this.props.balance || 0;
     return (
       <div className={this.props.className}>
+        <PanelTitle text='Transaction history' />
         <div className={this.props.classes.transactionsTable}>
           <Table>
             <TableHead>

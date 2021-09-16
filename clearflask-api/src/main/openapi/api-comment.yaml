@@ -11,13 +11,28 @@ components:
           type: array
           items:
             type: string
-    CommentSearch:
+    CommentSearchBase:
       type: object
-      required:
-      - filterAuthorId
       properties:
-        filterAuthorId:
-          type: string
+        limit:
+          minimum: 1
+          maximum: 50
+          type: integer
+          format: int64
+    CommentSearch:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentSearchBase'
+        - type: object
+          required:
+          - filterAuthorId
+          properties:
+            filterAuthorId:
+              type: string
+            limit:
+              minimum: 1
+              maximum: 50
+              type: integer
+              format: int64
     Comment:
       type: object
       required:
@@ -89,23 +104,25 @@ components:
         content:
           type: string
     CommentSearchAdmin:
-      type: object
-      properties:
-        filterAuthorId:
-          type: string
-        searchText:
-          type: string
-        sortBy:
-          type: string
-          enum:
-            - Created
-            - Edited
-            - Top
-        sortOrder:
-          type: string
-          enum:
-            - Asc
-            - Desc
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentSearchBase'
+        - type: object
+          properties:
+            filterAuthorId:
+              type: string
+            searchText:
+              type: string
+            sortBy:
+              type: string
+              enum:
+                - Created
+                - Edited
+                - Top
+            sortOrder:
+              type: string
+              enum:
+                - Asc
+                - Desc
     SubscriptionListenerComment:
       type: object
       required:

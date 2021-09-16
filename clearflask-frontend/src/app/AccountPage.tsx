@@ -8,7 +8,6 @@ import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import UserContributions from '../common/UserContributions';
 import FundingControl from './comps/FundingControl';
-import { PanelTitle } from './comps/Panel';
 import TransactionList from './comps/TransactionList';
 import UserEdit from './comps/UserEdit';
 import ErrorPage from './ErrorPage';
@@ -40,20 +39,21 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       <div className={this.props.classes.page}>
         <UserEdit server={this.props.server} userId={this.props.userMe.userId} />
         {this.props.credits && (
-          <div className={this.props.classes.section}>
-            <PanelTitle text='Funded' />
-            <FundingControl server={this.props.server} />
-          </div>
+          <FundingControl
+            server={this.props.server}
+            className={this.props.classes.section}
+            title='Funded'
+            hideIfEmpty
+          />
         )}
         {this.props.credits && (
-          <div className={this.props.classes.section}>
-            <PanelTitle text='Transaction history' />
-            <TransactionList server={this.props.server} />
-          </div>
+          <TransactionList server={this.props.server} className={this.props.classes.section} />
         )}
-        <div className={this.props.classes.section}>
-          <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
-        </div>
+        <UserContributions
+          sectionClassName={this.props.classes.section}
+          server={this.props.server}
+          userId={this.props.userMe.userId}
+        />
       </div>
     );
   }

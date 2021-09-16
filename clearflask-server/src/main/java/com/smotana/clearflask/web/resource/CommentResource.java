@@ -190,10 +190,10 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 projectId,
                 CommentSearchAdmin.builder()
                         .filterAuthorId(commentSearch.getFilterAuthorId())
+                        .limit(commentSearch.getLimit())
                         .build(),
                 false,
-                Optional.ofNullable(Strings.emptyToNull(cursor)),
-                Optional.empty());
+                Optional.ofNullable(Strings.emptyToNull(cursor)));
         return new CommentSearchResponse(
                 response.getCursorOpt().orElse(null),
                 toCommentWithVotes(projectId, response.getComments()));
@@ -224,8 +224,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 projectId,
                 commentSearchAdmin,
                 false,
-                Optional.ofNullable(Strings.emptyToNull(cursor)),
-                Optional.empty());
+                Optional.ofNullable(Strings.emptyToNull(cursor)));
         return new CommentSearchResponse(
                 response.getCursorOpt().orElse(null),
                 toCommentWithVotes(projectId, response.getComments()));

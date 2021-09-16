@@ -527,7 +527,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.authorUserId === request.commentSearch.filterAuthorId)
       , [(l, r) => l.created.getTime() - r.created.getTime()])
-      , this.DEFAULT_LIMIT, request.cursor));
+      , request.commentSearch.limit || this.DEFAULT_LIMIT, request.cursor));
   }
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.CommentWithVote> {
     const comment: CommentWithAuthorWithParentPath = this.getImmutable(
@@ -541,7 +541,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).comments
       .filter(comment => !request.commentSearchAdmin.searchText
         || comment.authorName && comment.authorName.indexOf(request.commentSearchAdmin.searchText) >= 0
-        || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0), this.DEFAULT_LIMIT, request.cursor));
+        || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0)
+      , request.commentSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor));
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;

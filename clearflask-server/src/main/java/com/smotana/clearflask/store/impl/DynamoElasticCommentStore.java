@@ -318,7 +318,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+    public SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
         Optional<SortOrder> sortOrderOpt;
         if (commentSearchAdmin.getSortBy() != null) {
             switch (commentSearchAdmin.getSortOrder()) {
@@ -356,7 +356,7 @@ public class DynamoElasticCommentStore implements CommentStore {
             sortFields = ImmutableList.of();
         }
 
-        int pageSize = Math.min(pageSizeOpt.orElse(10), DYNAMO_READ_BATCH_MAX_SIZE);
+        int pageSize = Math.max(1, Math.min(Math.min(Optional.ofNullable(commentSearchAdmin.getLimit()).orElse(10L).intValue(), DYNAMO_READ_BATCH_MAX_SIZE), 50));
         if (Strings.isNullOrEmpty(commentSearchAdmin.getSearchText())
                 && Strings.isNullOrEmpty(commentSearchAdmin.getFilterAuthorId())
                 && sortFields.isEmpty()) {

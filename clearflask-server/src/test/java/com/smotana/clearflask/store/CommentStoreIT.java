@@ -106,14 +106,14 @@ public class CommentStoreIT extends AbstractIT {
 
         // Search by DynamoDB
         ImmutableList<CommentModel> comments = store.searchComments(projectId, CommentSearchAdmin.builder()
-                .build(), false, Optional.empty(), Optional.empty())
+                .build(), false, Optional.empty())
                 .getComments();
         assertEquals(2, comments.size());
 
         // Search by ElasticSearch
         comments = store.searchComments(projectId, CommentSearchAdmin.builder()
                 .filterAuthorId(c0.getAuthorUserId())
-                .build(), false, Optional.empty(), Optional.empty())
+                .build(), false, Optional.empty())
                 .getComments();
         assertEquals(1, comments.size());
         assertEquals(c0.getCommentId(), comments.get(0).getCommentId());

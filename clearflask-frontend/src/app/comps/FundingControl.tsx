@@ -19,6 +19,7 @@ import { MutableRef } from '../../common/util/refUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import FundingBar, { FundingMaxWidth } from './FundingBar';
 import LoadMoreButton from './LoadMoreButton';
+import { PanelTitle } from './Panel';
 
 interface SearchResult {
   status: Status;
@@ -88,8 +89,9 @@ interface Props {
   onOtherFundedIdeasLoaded?: () => void;
   maxOther?: number;
   isInsidePaper?: boolean;
+  title?: string;
+  hideIfEmpty?: boolean;
 }
-
 interface ConnectProps {
   idea?: Client.Idea;
   fundAmount?: number;
@@ -103,7 +105,6 @@ interface ConnectProps {
   callOnMount?: () => void,
   loadMore?: () => void;
 }
-
 interface State {
   sliderCurrentIdeaId?: string;
   sliderFundAmountDiff?: number;
@@ -111,7 +112,6 @@ interface State {
   fixedTarget?: number;
   maxTarget: number;
 }
-
 class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = { maxTarget: 0 };
   _isMounted: boolean = false;
@@ -160,12 +160,16 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     if (!showFirstIdea
       && this.props.otherFundedIdeas.status === Status.FULFILLED
       && this.props.otherFundedIdeas.ideas.length === 0) {
+      if (this.props.hideIfEmpty) return null;
       msg = 'No items funded yet';
     }
 
     return (
       <InViewObserver ref={this.inViewObserverRef} disabled={!this.props.settings.demoFundingControlAnimate}>
         <div style={this.props.style} className={`${this.props.className || ''} ${this.props.classes.container}`}>
+          {!!this.props.title && (
+            <PanelTitle text='Funded' />
+          )}
           {showFirstIdea && this.props.idea && (<div>
             <FundingBar
               idea={this.props.idea}

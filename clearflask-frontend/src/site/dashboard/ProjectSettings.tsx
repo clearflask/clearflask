@@ -163,6 +163,9 @@ const styles = (theme: Theme) => createStyles({
   feedbackTag: {
     marginBottom: theme.spacing(3),
   },
+  statusEdit: {
+    margin: theme.spacing(2, 0),
+  },
   tagPreviewContainer: {
     padding: theme.spacing(4, 2),
   },
@@ -2639,98 +2642,153 @@ export const ProjectSettingsRoadmap = (props: {
         key='roadmap'
         editor={props.editor}
         mapper={templater => templater.roadmapGet()}
-        renderResolved={(templater, roadmap) => !roadmap ? (
-          <>
-            <Typography variant='body1' component='div'>Create a public Roadmap to show off your product plan</Typography>
-            <Button
-              className={classes.createTemplateButton}
-              variant='contained'
-              color='primary'
-              disableElevation
-              onClick={() => templater.roadmapOn()}
-            >
-              Create Roadmap
-            </Button>
-          </>
-        ) : (
-          <>
-            <Typography variant='body1' component='div'>Public roadmap page</Typography>
-            <FormControlLabel
-              label={!!roadmap ? 'Public' : 'Hidden'}
-              control={(
-                <Switch
-                  checked={!!roadmap.pageAndIndex}
-                  onChange={(e, checked) => !!roadmap.pageAndIndex
-                    ? templater.roadmapPageOff(roadmap)
-                    : templater.roadmapOn()}
-                  color='primary'
+        renderResolved={(templater, roadmap) => {
+          if (!roadmap) return (
+            <>
+              <Typography variant='body1' component='div'>Create a public Roadmap to show off your product plan</Typography>
+              <Button
+                className={classes.createTemplateButton}
+                variant='contained'
+                color='primary'
+                disableElevation
+                onClick={() => templater.roadmapOn()}
+              >
+                Create Roadmap
+              </Button>
+            </>
+          );
+
+          const specialStatuses: Admin.IdeaStatus[] = [
+            roadmap.statusIdBacklog || null,
+            roadmap.statusIdClosed || null,
+            roadmap.statusIdCompleted || null,]
+            .filter(notEmpty)
+            .map(statusId => roadmap.categoryAndIndex.category.workflow.statuses.find(s => s.statusId === statusId))
+            .filter(notEmpty);
+
+          return (
+            <>
+              <Typography variant='body1' component='div'>Manage portal roadmap page and statuses</Typography>
+              <FormControlLabel
+                label={!!roadmap ? 'Public' : 'Hidden'}
+                control={(
+                  <Switch
+                    checked={!!roadmap.pageAndIndex}
+                    onChange={(e, checked) => !!roadmap.pageAndIndex
+                      ? templater.roadmapPageOff(roadmap)
+                      : templater.roadmapOn()}
+                    color='primary'
+                  />
+                )}
+              />
+              {roadmap.pageAndIndex && (
+                <>
+                  <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+                    {!roadmap.pageAndIndex.page.board.title && (
+                      <Button
+                        className={classes.roadmapAddTitleButton}
+                        onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'title']) as ConfigEditor.StringProperty)
+                          .set('Roadmap')}
+                      >
+                        Add title
+                      </Button>
+                    )}
+                    <BoardContainer
+                      title={(
+                        <PropertyShowOrEdit
+                          allowEdit={true}
+                          show={(roadmap.pageAndIndex.page.board.title)}
+                          edit={(
+                            <Provider store={ServerAdmin.get().getStore()}>
+                              <PropertyByPath
+                                server={props.server}
+                                marginTop={0}
+                                width={200}
+                                overrideName='Title'
+                                editor={props.editor}
+                                path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']}
+                              />
+                            </Provider>
+                          )}
+                        />
+                      )}
+                      panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
+                        <ProjectSettingsRoadmapPanel
+                          server={props.server}
+                          editor={props.editor}
+                          roadmap={roadmap}
+                          panel={panel}
+                          panelIndex={panelIndex}
+                        />
+                      ))}
+                    />
+                  </Provider>
+                </>
+              )}
+              {!!specialStatuses.length && (
+                <Section
+                  title='Custom statuses'
+                  description='Customize other statuses not present in roadmap.'
+                  content={(
+                    <>
+                      {specialStatuses.map(specialStatus => (
+                        <PropertyShowOrEdit
+                          allowEdit={true}
+                          show={(<div className={classes.statusEdit} style={{ color: specialStatus.color }}>{specialStatus.name}</div>)}
+                          edit={(
+                            <DebouncedTextFieldWithColorPicker
+                              className={classes.statusEdit}
+                              label='Name'
+                              variant='outlined'
+                              size='small'
+                              textValue={specialStatus.name}
+                              onTextChange={text => {
+                                const statusIndex = roadmap.categoryAndIndex.category.workflow.statuses.findIndex(s => s.statusId === specialStatus.statusId);
+                                if (statusIndex === -1) return;
+                                (props.editor.getProperty(['content', 'categories', roadmap.categoryAndIndex.index, 'workflow', 'statuses', statusIndex, 'name']) as ConfigEditor.StringProperty).set(text);
+                              }}
+                              colorValue={specialStatus.color}
+                              onColorChange={color => {
+                                const statusIndex = roadmap.categoryAndIndex.category.workflow.statuses.findIndex(s => s.statusId === specialStatus.statusId);
+                                if (statusIndex === -1) return;
+                                (props.editor.getProperty(['content', 'categories', roadmap.categoryAndIndex.index, 'workflow', 'statuses', statusIndex, 'color']) as ConfigEditor.StringProperty).set(color);
+                              }}
+                              TextFieldProps={{
+                                InputProps: {
+                                  style: {
+                                    minWidth: Property.inputMinWidth,
+                                    width: propertyWidth,
+                                  },
+                                },
+                              }}
+                            />
+                          )}
+                        />
+                      ))}
+                    </>
+                  )}
                 />
               )}
-            />
-            {roadmap.pageAndIndex && (
-              <>
-                <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-                  {!roadmap.pageAndIndex.page.board.title && (
-                    <Button
-                      className={classes.roadmapAddTitleButton}
-                      onClick={() => (props.editor.getProperty(['layout', 'pages', roadmap.pageAndIndex!.index, 'board', 'title']) as ConfigEditor.StringProperty)
-                        .set('Roadmap')}
-                    >
-                      Add title
-                    </Button>
-                  )}
-                  <BoardContainer
-                    title={(
-                      <PropertyShowOrEdit
-                        allowEdit={true}
-                        show={(roadmap.pageAndIndex.page.board.title)}
-                        edit={(
-                          <Provider store={ServerAdmin.get().getStore()}>
-                            <PropertyByPath
-                              server={props.server}
-                              marginTop={0}
-                              width={200}
-                              overrideName='Title'
-                              editor={props.editor}
-                              path={['layout', 'pages', roadmap.pageAndIndex.index, 'board', 'title']}
-                            />
-                          </Provider>
-                        )}
-                      />
-                    )}
-                    panels={roadmap.pageAndIndex.page.board.panels.map((panel, panelIndex) => (
-                      <ProjectSettingsRoadmapPanel
-                        server={props.server}
-                        editor={props.editor}
-                        roadmap={roadmap}
-                        panel={panel}
-                        panelIndex={panelIndex}
-                      />
-                    ))}
-                  />
-                </Provider>
-              </>
-            )}
-            <ProjectSettingsSectionTagging
-              title='Tagging'
-              description='Use tags to finely organize tasks.'
-              server={props.server}
-              editor={props.editor}
-              categoryAndIndex={roadmap.categoryAndIndex}
-              userCreatable={false}
-              expandedIndex={expandedType === 'tag' ? expandedIndex : undefined}
-              onExpandedChange={(index) => {
-                if (expandedType === 'tag' && expandedIndex === index) {
-                  setExpandedIndex(undefined)
-                } else {
-                  setExpandedType('tag');
-                  setExpandedIndex(index)
-                }
-              }}
-            />
-          </>
-        )
-        }
+              <ProjectSettingsSectionTagging
+                title='Tagging'
+                description='Use tags to finely organize tasks.'
+                server={props.server}
+                editor={props.editor}
+                categoryAndIndex={roadmap.categoryAndIndex}
+                userCreatable={false}
+                expandedIndex={expandedType === 'tag' ? expandedIndex : undefined}
+                onExpandedChange={(index) => {
+                  if (expandedType === 'tag' && expandedIndex === index) {
+                    setExpandedIndex(undefined)
+                  } else {
+                    setExpandedType('tag');
+                    setExpandedIndex(index)
+                  }
+                }}
+              />
+            </>
+          );
+        }}
       />
     </ProjectSettingsBase>
   );

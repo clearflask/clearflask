@@ -12,20 +12,15 @@
 
 ## Quick start
 
-Ensure you have [Docker](https://www.docker.com/products/docker-desktop) installed and started.
-
-Download the [latest release](https://github.com/clearflask/clearflask/packages/955621)
-of `clearflask-release-*-docker-compose-self-host.tar.gz` containing Docker Compose definition and configuration files.
-Unpack it all, and run the following in the same directory:
+For a quick start using [Docker](https://www.docker.com/products/docker-desktop), download
+the [latest release](https://github.com/clearflask/clearflask/packages/955621)
+of `clearflask-release-*-docker-compose-self-host.tar.gz`, unpack it all, and run the following:
 
 ```shell
 docker-compose --profile with-deps up
 ```
 
-Point your browser at [http://localhost/signup](http://localhost/signup) and create an account using
-email `admin@localhost`.
-
-That's it!
+Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
 
 ## Deploy dependencies
 
@@ -41,8 +36,6 @@ And a few optional:
 
 - **Let's Encrypt** automagic certificate management
 - **CloudFront** as a CDN (Use in front of `clearflask-connect`)
-- **KillBill** for billing and payment processing. (Self-hosting is preconfigured for unlimited plans)
-- ~~**AWS Route53**~~ (Was and may be used in the future for automatic LetsEncrypt DNS challenges)
 
 ### Via Docker
 
@@ -58,7 +51,7 @@ For production workload, you will want to spin up these dependencies yourself an
 
 ##### IAM access
 
-For AWS services, `clearflask-server` autodetects Access Keys using either a configuration property or the default
+For AWS services, `clearflask-server` auto-detects Access Keys using either a configuration property or the default
 locations. If you are running in EC2 or ECS, keys detection is automated, you just need to create the appropriate IAM
 role.
 
@@ -164,5 +157,5 @@ https and trust the last reverse proxy in the list:
 ### Run
 
 1. Run `docker-compose up` or `docker-compose --profile with-deps up` to also start dependencies.
-2. Point your browser at `http://localhost/signup` or if you configured your DNS `https://yoursite.com/signup`.
+2. Point your browser at `http://localhost` or if you configured your DNS `https://yoursite.com`.
 3. Create an account using `admin@localhost` email or based on your configuration of `superAdminEmailRegex`.
