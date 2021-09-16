@@ -29,6 +29,7 @@ export interface HeaderTitle {
 export interface HeaderAction {
   label: string;
   onClick: () => void;
+  icon?: OverridableComponent<SvgIconTypeMap>;
   tourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 }
 export interface Header {
@@ -273,6 +274,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
   renderHeaderContent(header?: Header, breakAction: BreakAction = 'show'): React.ReactNode | null {
     if (!header && breakAction !== 'drawer') return null;
 
+    const HeaderActionIcon = header?.action?.icon;
     const headerAction = !header?.action ? undefined : (
       <TourAnchor {...header.action.tourAnchorProps}>
         {(next, isActive, anchorRef) => (
@@ -285,7 +287,15 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
               header.action?.onClick();
               next();
             }}
-          >{header.action?.label}</Button>
+          >
+            {header.action?.label}
+            {!!HeaderActionIcon && (
+              <>
+                &nbsp;
+                <HeaderActionIcon fontSize='inherit' color='inherit' />
+              </>
+            )}
+          </Button>
         )}
       </TourAnchor>
     );

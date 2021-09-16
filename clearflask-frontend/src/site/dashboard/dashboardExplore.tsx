@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import CreateIcon from '@material-ui/icons/Create';
 import React from 'react';
 import { Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -91,7 +92,11 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
       size: PostPreviewSize,
       header: {
         title: { title: 'Explore' },
-        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        action: {
+          label: 'Create',
+          icon: CreateIcon,
+          onClick: () => this.pageClicked('post'),
+        },
       },
     },
   });

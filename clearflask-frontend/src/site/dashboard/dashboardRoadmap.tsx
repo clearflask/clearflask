@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
+import CreateIcon from '@material-ui/icons/Create';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import React from 'react';
 import { Provider } from 'react-redux';
@@ -257,7 +258,11 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
           help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
             + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
         },
-        action: { label: 'Create', onClick: () => this.pageClicked('post') },
+        action: {
+          label: 'Create',
+          icon: CreateIcon,
+          onClick: () => this.pageClicked('post'),
+        },
         right: roadmapLink && (
           <TourAnchor anchorId='roadmap-page-public-view' placement='bottom' zIndex={zb => zb.appBar + 1}>
             {(next, isActive, anchorRef) => (

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Divider } from '@material-ui/core';
+import CreateIcon from '@material-ui/icons/Create';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import React from 'react';
 import { Provider } from 'react-redux';
@@ -113,6 +114,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
         title: { title: 'Changelog' },
         action: {
           label: 'Create',
+          icon: CreateIcon,
           onClick: () => this.pageClicked('post'),
           tourAnchorProps: {
             anchorId: 'changelog-page-create-btn',

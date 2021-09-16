@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Fade, IconButton } from '@material-ui/core';
 import CheckIcon from '@material-ui/icons/Check';
+import CreateIcon from '@material-ui/icons/Create';
 import PrevIcon from '@material-ui/icons/NavigateBefore';
 import NextIcon from '@material-ui/icons/NavigateNext';
 import classNames from 'classnames';
@@ -230,6 +231,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
         action: {
           label: 'Create',
           onClick: () => this.pageClicked('post'),
+          icon: CreateIcon,
           tourAnchorProps: {
             anchorId: 'feedback-page-create-btn',
           },

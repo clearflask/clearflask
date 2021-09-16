@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Divider } from '@material-ui/core';
+import CreateIcon from '@material-ui/icons/Create';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Orientation } from '../../common/ContentScroll';
@@ -71,7 +72,11 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
       size: UserPreviewSize,
       header: {
         title: { title: 'Users' },
-        action: { label: 'Add', onClick: () => this.pageClicked('user') },
+        action: {
+          label: 'Add',
+          icon: CreateIcon,
+          onClick: () => this.pageClicked('user'),
+        },
       },
     },
   });
