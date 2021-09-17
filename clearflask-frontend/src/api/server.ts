@@ -616,17 +616,18 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
       };
     case Client.commentCreateActionStatus.Fulfilled:
       // For comment creation, update idea comment counts
-      return !state.byId[action.meta.request.ideaId] ? state : {
+      const postIdWithNewComment = action.meta.request.commentCreate.mergedPostId || action.meta.request.ideaId;
+      return !state.byId[postIdWithNewComment] ? state : {
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.ideaId]: {
-            ...state.byId[action.meta.request.ideaId],
+          [postIdWithNewComment]: {
+            ...state.byId[postIdWithNewComment],
             idea: {
-              ...state.byId[action.meta.request.ideaId].idea!,
-              commentCount: (state.byId[action.meta.request.ideaId].idea?.commentCount || 0) + 1,
+              ...state.byId[postIdWithNewComment].idea!,
+              commentCount: (state.byId[postIdWithNewComment].idea?.commentCount || 0) + 1,
               ...(!!action.payload.parentCommentId ? {} : {
-                childCommentCount: (state.byId[action.meta.request.ideaId].idea?.childCommentCount || 0) + 1,
+                childCommentCount: (state.byId[postIdWithNewComment].idea?.childCommentCount || 0) + 1,
               }),
             },
           }
@@ -1161,6 +1162,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         },
       };
     case Client.commentCreateActionStatus.Fulfilled:
+      const parentCommentOrMergedPostId = action.payload.parentCommentId || action.meta.request.commentCreate.mergedPostId;
       return {
         ...state,
         byIdeaIdOrParentCommentId: {
@@ -1177,18 +1179,22 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         byId: {
           ...state.byId,
           [action.payload.commentId]: {
-            comment: action.payload,
+            comment: {
+              ...action.payload,
+              // If this is a comment directly underneath a merged post, the parentCommentId needs to be set
+              parentCommentId: parentCommentOrMergedPostId,
+            },
             status: Status.FULFILLED,
           },
           // Also increase the child comment count on the parent comment
-          ...(action.payload.parentCommentId
+          ...((!!parentCommentOrMergedPostId && !!state.byId[parentCommentOrMergedPostId])
             ? {
-              [action.payload.parentCommentId]: {
-                ...state.byId[action.payload.parentCommentId],
+              [parentCommentOrMergedPostId]: {
+                ...state.byId[parentCommentOrMergedPostId],
                 status: Status.FULFILLED,
                 comment: {
-                  ...state.byId[action.payload.parentCommentId].comment as any,
-                  childCommentCount: (state.byId[action.payload.parentCommentId].comment?.childCommentCount || 0) + 1,
+                  ...state.byId[parentCommentOrMergedPostId].comment as any,
+                  childCommentCount: (state.byId[parentCommentOrMergedPostId].comment?.childCommentCount || 0) + 1,
                 },
               }
             }

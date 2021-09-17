@@ -280,7 +280,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 // top level comments for the other merged posts should be
                 // repointed to a mocked up comment representing the merged post
                 parentIdeaIdOpt
-                        .filter(parentIdeaId -> !parentIdeaId.equals(comment.getIdeaId()))
+                        .filter(parentIdeaId -> comment.getLevel() == 0
+                                && !parentIdeaId.equals(comment.getIdeaId()))
                         .map(parentIdeaId -> {
                             additionalMergedPostIds.add(comment.getIdeaId());
                             return comment.getIdeaId();
