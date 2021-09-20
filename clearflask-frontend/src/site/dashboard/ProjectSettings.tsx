@@ -2134,8 +2134,8 @@ export const ProjectSettingsFeedback = (props: {
                 description={(
                   <>
                     Customize your public page for collecting feedback.
-                    <p>The <b>Feedback Form</b> is recommended as it focuses on capturing user feedback first and showing other feedback later.</p>
-                    <p>Whereas the <b>Classic Explorer</b> allows all users to search and filter others' feedback immediately.</p>
+                    <p>The <b>Feedback-first Form</b> is recommended as it focuses on capturing user feedback first and showing other feedback later.</p>
+                    <p>Whereas the <b>Community-first Explorer</b> allows all users to search and filter others' feedback immediately.</p>
                   </>
                 )}
                 preview={(
@@ -2166,8 +2166,8 @@ export const ProjectSettingsFeedback = (props: {
                     <FilterControlSelect
                       type='radio'
                       labels={[
-                        { label: 'Feedback Form', value: 'feedback' },
-                        { label: 'Classic Explorer', value: 'explorer' },
+                        { label: 'Feedback-first', value: 'feedback' },
+                        { label: 'Community-first', value: 'explorer' },
                         { label: 'Off', value: 'off' },
                       ]}
                       selected={(!feedback.pageAndIndex?.page.explorer && !feedback.pageAndIndex?.page.feedback)

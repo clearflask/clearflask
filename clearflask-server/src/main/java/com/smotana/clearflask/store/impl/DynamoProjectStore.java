@@ -277,7 +277,7 @@ public class DynamoProjectStore implements ProjectStore {
                     transactionsBuilder.build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
-                throw new ApiException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
+                throw new ApiException(Response.Status.CONFLICT, "Project name, slug or domain already taken, please choose another.", ex);
             }
             throw ex;
         }

@@ -55,7 +55,6 @@ import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
-import AnyRelatedImg from '../../public/img/landing/any-related.png';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CaptureFeedbackImg from '../../public/img/landing/capture-feedback.png';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
@@ -77,17 +76,18 @@ import DemoDashboardRoadmapImg from '../../public/img/landing/demo-dashboard-roa
 import DemoEmailNotificationImg from '../../public/img/landing/demo-email-notif.png';
 import DemoEmailNotification2Img from '../../public/img/landing/demo-email-notif2.png';
 import DemoExplorerImg from '../../public/img/landing/demo-explorer.png';
+import DemoExportedDataImg from '../../public/img/landing/demo-exported-data.png';
 import DemoFeedbackWhatElseImg from '../../public/img/landing/demo-feedback-whatelse.png';
 import DemoFeedbackImg from '../../public/img/landing/demo-feedback.png';
 import DemoFundingRoadmapImg from '../../public/img/landing/demo-funding-roadmap.png';
 import DemoNoBalanceImg from '../../public/img/landing/demo-no-balance.png';
+import DemoPageFeedbackClassigImg from '../../public/img/landing/demo-page-feedback-classic.png';
+import DemoPageFeedbackImg from '../../public/img/landing/demo-page-feedback.png';
 import DemoPinnedResponseImg from '../../public/img/landing/demo-pinned-response.png';
 import DemoPortalFeedbackVid from '../../public/img/landing/demo-portal-feedback.mp4';
 import DemoPostImg from '../../public/img/landing/demo-post.png';
 import DemoProjectPrivateImg from '../../public/img/landing/demo-project-private.png';
 import DemoRoadmapImg from '../../public/img/landing/demo-roadmap.png';
-import DemoSearchPostsImg from '../../public/img/landing/demo-search-posts.png';
-import DemoStatsIdeaImg from '../../public/img/landing/demo-stats-idea.png';
 import DemoTaggingImg from '../../public/img/landing/demo-tagging.png';
 import DemoTagging2Img from '../../public/img/landing/demo-tagging2.png';
 import FeatureRequestImg from '../../public/img/landing/featurerequest.svg';
@@ -102,7 +102,6 @@ import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
 import ProudImg from '../../public/img/landing/proud.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
-import SeeWhatElseImg from '../../public/img/landing/see-what-else.png';
 import Server2Img from '../../public/img/landing/server2.svg';
 import Server3Img from '../../public/img/landing/server3.svg';
 import SupportImg from '../../public/img/landing/support.svg';
@@ -330,6 +329,7 @@ export function Landing() {
         className={classes.textAlignCenter}
         type='headingOnly'
         title="Here's how our platform can help you"
+        spacingBottom={0}
       />
       <Block
         type='headingMain'
@@ -370,7 +370,7 @@ export function Landing() {
         mirror
         type='headingMain'
         title='Convert ideas into actionable tasks'
-        description='Find the most valuable features by the most important customers.'
+        description='Find the most valuable features from the most important customers.'
         points={[
           'Extract actionable feedback',
           'Kanban task management',
@@ -554,13 +554,13 @@ export function LandingGraveyard() {
           type='column'
           title='Spark discussions'
           description=''
-          icon={(<IdeasIcon />)}
+          icon={(<IdeasIcon fontSize='inherit' />)}
         />
         <Block
           type='column'
           title='show off future ideas'
           description='post status demom Maybe put this in Analyze -> validate'
-          icon={(<IdeasIcon />)}
+          icon={(<IdeasIcon fontSize='inherit' />)}
         />
       </HorizontalPanels>
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
@@ -572,13 +572,13 @@ export function LandingGraveyard() {
           variant='content'
           title='Capture feedback publicly, internally, or on-behalf'
           description='Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels.'
-          icon={(<IdeasIcon />)}
+          icon={(<IdeasIcon fontSize='inherit' />)}
         />
         <BlockContent
           variant='content'
           title='Customer segmentation and Analytics'
           description='Analyze your data with search, segment and filter to summarize feedback from target customers.'
-          icon={(<AnalyticsIcon />)}
+          icon={(<AnalyticsIcon fontSize='inherit' />)}
           postStatusId='customer-segmentation-and-analytics-pgi'
         />
         {/* <Demo
@@ -586,7 +586,7 @@ export function LandingGraveyard() {
             type='column'
             title='Powerful analytics'
             description={('Powered by ElasticSearch, perform user segmentations and gives you the answer you are looking for.')}
-            icon={(<AnalyticsIcon />)}
+            icon={(<AnalyticsIcon fontSize='inherit' />)}
             template={templater => {
               templater.demo();
               templater.demoExplorer({
@@ -611,7 +611,7 @@ export function LandingGraveyard() {
           variant='content'
           title='Integrate with your product or tools'
           description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
-          icon={(<WidgetIcon />)}
+          icon={(<WidgetIcon fontSize='inherit' />)}
           buttonTitle='See integrations'
           buttonLink='/product/integrations'
         />
@@ -687,7 +687,7 @@ export function LandingGraveyard() {
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
         <Block
           type='column'
-          icon={(<LinkIcon />)}
+          icon={(<LinkIcon fontSize='inherit' />)}
           title='Link your existing accounts'
           description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps.'
         />
@@ -707,13 +707,13 @@ export function LandingGraveyard() {
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
         <Block
           type='column'
-          icon={(<EmailIcon />)}
+          icon={(<EmailIcon fontSize='inherit' />)}
           title='Email sign-up'
           description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
         />
         <Block
           type='column'
-          icon={(<NotificationIcon />)}
+          icon={(<NotificationIcon fontSize='inherit' />)}
           title='Browser Notifications'
           description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
         />
@@ -721,7 +721,7 @@ export function LandingGraveyard() {
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
         <Block
           type='column'
-          icon={(<GuestIcon />)}
+          icon={(<GuestIcon fontSize='inherit' />)}
           title='Guest accounts'
           description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
         />
@@ -810,9 +810,8 @@ export function LandingHero() {
       viewBox: '0 0 1200 500',
     }} width={2400} height={1000}>
       <Hero
-        title={(
-          <>Build products<br />in the open.</>)}
-        description='Product ideation tool to gather community feedback and prioritize your roadmap.'
+        title='Community centric product feedback loop'
+        description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
           image: PromoThumb,
@@ -994,7 +993,55 @@ export function LandingCollectFeedback() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title='Simple feedback flow'
+        title='Choosing your strategy'
+        spacingBottom={0}
+      />
+      <HorizontalPanels wrapBelow='md' maxWidth='xl' staggerHeight={200}>
+        <Block
+          titleVariant='h3'
+          type='column'
+          title='Feedback-first'
+          description={(
+            <>
+              To extract unbiased and informative feedback, a simple feedback box is the ideal approach to capture customers' in their own words.
+              <p>Intended for detail-oriented product managers, feedback-first approach is the best way to understand your customers.</p>
+            </>
+          )}
+          demoWrap='browser'
+          demoImage={DemoPageFeedbackImg}
+          alignItems='center'
+          points={[
+            'Capture unbiased feedback',
+            'Simple and straightforward',
+          ]}
+        />
+        <Block
+          titleVariant='h3'
+          type='column'
+          title='Community-first'
+          description={(
+            <>
+              Feedback as a public forum is adopted by many organizations. This approach allows your customers to discuss features amongst themselves.
+              <p>Although managing feedback is more hands-off in this approach, the feedback you receive will mostly be in the form of votes on existing ideas that will amplify the loudest customers.</p>
+            </>
+          )}
+          // description='A publicly explorable feedback is adopted by many organizations. It is primarily suitable for open, trusted, or small communities as feedback tends to accumulate votes rather than expressing.'
+          demoWrap='browser'
+          demoImage={DemoPageFeedbackClassigImg}
+          alignItems='center'
+          points={[
+            'Ideal for small groups, open community or private feedback',
+            'More informative to end-user',
+          ]}
+          counterpoints={[
+            'Loudest feedback tends to amplify',
+          ]}
+        />
+      </HorizontalPanels>
+      {/* <Block
+        className={classes.textAlignCenter}
+        type='headingOnly'
+        title='Feedback-first experience'
         spacingBottom={0}
       />
       <Block
@@ -1039,81 +1086,7 @@ export function LandingCollectFeedback() {
           'Find volunteer BETA testers for an upcoming feature',
         ]}
         spacingTopBottom={0}
-      />
-      <Block
-        // type='headingMain'
-        alignItems='center'
-        title='Keep a two-way channel for incoming feedback'
-        description='Let your users choose the preferred communication how to get notified when their ideas a addressed.'
-        demoFixedWidth={420}
-        image={InternalFeedbackImg}
-        imageLocation='above'
-        demo={(
-          <>
-            <div className={classes.point}>
-              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Single Sign-On
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Link existing user accounts
-                </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  OAuth
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  External sign-in including
-                  &nbsp;
-                  <GoogleIcon fontSize='inherit' />
-                  &nbsp;
-                  <GithubIcon fontSize='inherit' />
-                  &nbsp;
-                  <FacebookIcon fontSize='inherit' />
-                </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <EmailIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Email
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Signup with email (magic link, domain-whitelist, password)
-                </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <NotificationIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Browser push
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Send a notification right to their browser
-                </Typography>
-              </div>
-            </div>
-            <div className={classes.point}>
-              <GuestIcon fontSize='inherit' className={classes.pointIcon} />
-              <div>
-                <Typography variant='h6' component='div'>
-                  Guest
-                </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
-                  Guests with in-app notifications
-                </Typography>
-              </div>
-            </div>
-          </>
-        )}
-      />
+      /> */}
       <Demo
         title='Build a community around your product'
         description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
@@ -1135,8 +1108,8 @@ export function LandingCollectFeedback() {
         demo={LandingCommentListDemo}
       />
       <Block
-        title='Integrate with your product'
-        description='Use a custom domain to host your ClearFlask portal or embed it directly on your site or app.'
+        title='Integrate with your website or app'
+        description='Use a custom domain to host your ClearFlask portal or embed it directly on your site or app. Use your own logo, branding, palette and typography.'
         image={LoopImg}
         imageLocation='above'
         demo={(
@@ -1150,18 +1123,24 @@ export function LandingCollectFeedback() {
           </>
         )}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-        <GetStartedColumn />
-        <Block
-          title='Analyze feedback'
-          type='column'
-          description='Organize all the data you collected to make the right decision'
-          image={AnalyzeImg}
-          mirror
-          buttonTitle='Continue'
-          buttonLink='/product/analyze'
-        />
-      </HorizontalPanels>
+      <Background svg={{
+        d: 'M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z',
+        viewBox: '0 0 500 150',
+        flexible: true,
+      }}>
+        <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+          <GetStartedColumn />
+          <Block
+            title='Analyze feedback'
+            type='column'
+            description='Organize all the data you collected to make the right decision'
+            image={AnalyzeImg}
+            mirror
+            buttonTitle='Continue'
+            buttonLink='/product/analyze'
+          />
+        </HorizontalPanels>
+      </Background>
     </>
   );
 }
@@ -1172,7 +1151,7 @@ export function LandingPrioritization() {
     <>
       <Demo
         type='hero'
-        title='Analyze feedback'
+        title='Analyze feedback effectively'
         description='Organize all the data you collected to make the right decision'
         demoImage={DemoDashboardFeedbackVid}
         demoWrap='browser'
@@ -1200,24 +1179,79 @@ export function LandingPrioritization() {
           </Provider>
         )}
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
-        <Block
-          type='column'
-          title='Identify opportunities'
-          description='Understand what your users want. Search and Filter by Categories, Tags and Statuses.'
-          image={DemoSearchPostsImg}
-        />
-        <Block
-          type='column'
-          title='Drill-down'
-          description='Idea popularity is not everything, explore based on user segments and filters. This is an area of improvement for us, give us feedback!'
-          image={DemoStatsIdeaImg}
-          postStatusId='customer-segmentation-and-analytics-pgi'
-        />
+      <Block
+        mirror
+        type='mediumDemo'
+        title='Manage incoming feedback'
+        description='Quickly address incoming feedback in your Feedback Dashboard page.'
+        points={[
+          'Convert to task',
+          'Quickly respond',
+          'Merge duplicates',
+          'Shelve it for later',
+        ]}
+        alignItems='center'
+        demoImage={DemoDashboardFeedbackVid}
+        demoWrap='browser'
+      />
+      <Block
+        type='mediumDemo'
+        title='Prioritize your roadmap'
+        description='Plan out your tasks in your Roadmap Dashboard page.'
+        points={[
+          'Drag & drop Kanban style',
+          'Customize status workflow',
+          'Automatically notify subscribers of updates',
+        ]}
+        alignItems='center'
+        demoImage={DemoDashboardRoadmapVid}
+        demoWrap='browser'
+      />
+      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
+        <Container maxWidth='xs'>
+          <Demo
+            type='column'
+            title='Match your product Workflow'
+            description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
+            template={templater => {
+              templater.workflowFeatures(templater.demoCategory(), false, false);
+              templater.styleWhite();
+            }}
+            demoFixedHeight={400}
+            demoPreventInteraction
+            demo={project => (
+              <WorkflowPreview
+                editor={project.editor}
+                categoryIndex={0}
+                isVertical
+                hideCorner
+                height='100%'
+              />
+            )}
+          />
+        </Container>
+        <Container maxWidth='xs'>
+          <Block
+            title='Tagging'
+            description='Organize content into defined set of tags. Create tag groups and define rules how tags can be used.'
+            imageStyleOuter={{ padding: 'unset' }}
+            image={DemoTaggingImg}
+            type='column'
+          />
+        </Container>
+        <Container maxWidth='xs'>
+          <Block
+            title='Export and analyze externally'
+            description='Export your data and feed it into your own analytics engine for insights.'
+            type='column'
+            imageStyleOuter={{ padding: 'unset' }}
+            image={DemoExportedDataImg}
+          />
+        </Container>
       </HorizontalPanels>
       <Block
         type='headingMain'
-        icon={(<LightbulbIcon />)}
+        icon={(<LightbulbIcon fontSize='inherit' />)}
         title='Idea Validation'
         description='Get a sense of how successful a feature will be prior to any development work'
         image={IdeasImg}
@@ -1227,20 +1261,20 @@ export function LandingPrioritization() {
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <Block
           type='column'
-          icon={(<ForumIcon />)}
+          icon={(<ForumIcon fontSize='inherit' />)}
           title='Market audience at your fingertips'
           description='Reach out to customers that are directly interested in your particular idea.'
         />
         <Block
           type='column'
-          icon={(<BuildIcon />)}
+          icon={(<BuildIcon fontSize='inherit' />)}
           title='Recruit BETA users'
           description='Partially roll-out your feature to customers that you know will use it and provide you feedback.'
         />
         <Block
           type='column'
-          icon={(<MoodBadIcon />)}
-          title="Gauge users' reactions"
+          icon={(<MoodBadIcon fontSize='inherit' />)}
+          title="Gauge customer reactions"
           description='Analyze feedback to shape your idea for success.'
         />
       </HorizontalPanels>
@@ -1264,7 +1298,8 @@ export function LandingOpenSource() {
         type='hero'
         title="We're Open-Source"
         description='Build software with us for the whole community or host an instance on your own infrastructure.'
-        icon={<OpenSourceIcon />}
+        iconAbove
+        icon={<OpenSourceIcon fontSize='inherit' />}
         image={VersionControlImg}
         buttonTitle='Source code'
         buttonLinkExt='https://github.com/clearflask/clearflask'
@@ -1278,19 +1313,19 @@ export function LandingOpenSource() {
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
         <Block
           type='column'
-          icon={(<IdeasIcon />)}
+          icon={(<IdeasIcon fontSize='inherit' />)}
           title='Open product development'
           description='We are targetting companies that are not afraid to open up their product development. It makes sense for us to follow the same path.'
         />
         <Block
           type='column'
-          icon={(<AccessibilityIcon />)}
+          icon={(<AccessibilityIcon fontSize='inherit' />)}
           title='Accessibility'
           description='Some individuals or organizations cannot afford a product financially, but they do have developers to host their own instance and even contribute fixes and features back to the project.'
         />
         <Block
           type='column'
-          icon={(<LockSimpleIcon />)}
+          icon={(<LockSimpleIcon fontSize='inherit' />)}
           title='Lock-in'
           description='Open-source ensures your feet are not swept under you by a vendor if they raise their prices unreasonably, stop maintenance, or keep your data hostage.'
         />
@@ -1384,6 +1419,7 @@ export function LandingEngagementRoadmap() {
 }
 
 export function LandingEngagement() {
+  const classes = useStyles();
   return (
     <>
       <Background svg={{
@@ -1394,13 +1430,91 @@ export function LandingEngagement() {
         <Demo
           type='hero'
           title='Take action based on feedback'
-          description='Switch to customer-driven product development.'
+          description='Finally close the feedback loop by informing your customers about your product decisions.'
           demoImage={DemoDashboardRoadmapVid}
           demoWrap='browser'
           image={NotifyImg}
           imageLocation='above'
         />
       </Background>
+      <Block
+        alignItems='flex-start'
+        title='Maintain a two-way communication'
+        description={(
+          <>
+            Feedback from a customer you can reach out to is important for addressing their needs.
+            <p>Allow them to be notified using their preferred least-disruptive communication channel.</p>
+          </>
+        )}
+        demoFixedWidth={420}
+        image={InternalFeedbackImg}
+        imageLocation='above'
+        demo={(
+          <>
+            <div className={classes.point}>
+              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Single Sign-On
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Link existing user accounts
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  OAuth
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  External sign-in including
+                  &nbsp;
+                  <GoogleIcon fontSize='inherit' />
+                  &nbsp;
+                  <GithubIcon fontSize='inherit' />
+                  &nbsp;
+                  <FacebookIcon fontSize='inherit' />
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <EmailIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Email
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Signup with email (magic link, domain-whitelist, password)
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <NotificationIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Browser push
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Send a notification right to their browser
+                </Typography>
+              </div>
+            </div>
+            <div className={classes.point}>
+              <GuestIcon fontSize='inherit' className={classes.pointIcon} />
+              <div>
+                <Typography variant='h6' component='div'>
+                  Guest
+                </Typography>
+                <Typography variant='body1' component='div' color='textSecondary'>
+                  Guests with in-app notifications
+                </Typography>
+              </div>
+            </div>
+          </>
+        )}
+      />
       <Block
         title='Keep everyone informed'
         description='Transparency between development and your stakeholders is an important part of your success.'
@@ -1413,7 +1527,7 @@ export function LandingEngagement() {
           type='column'
           title='Product roadmap'
           description='Show off a public roadmap to get your users excited for upcoming features'
-          icon={(<RoadmapIcon style={{ transform: 'rotate(180deg)' }} />)}
+          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
           demoImage={DemoRoadmapImg}
           demoWrap='browser'
         />
@@ -1421,7 +1535,7 @@ export function LandingEngagement() {
           type='column'
           title='Release Changelog'
           description='Let users view your recent product updates. Let them subscribe via email or web push notifications.'
-          icon={(<ChangeIcon />)}
+          icon={(<ChangeIcon fontSize='inherit' />)}
           demoImage={DemoChangelog2Img}
           demoWrap='browser'
         />
@@ -1431,7 +1545,7 @@ export function LandingEngagement() {
           type='column'
           title='Status updates'
           description='Let waiting customers know your feature is ready.'
-          icon={(<NotificationIcon />)}
+          icon={(<NotificationIcon fontSize='inherit' />)}
           image={DemoEmailNotificationImg}
           imageStyleOuter={{ padding: 'unset' }}
           imageScale={0.3}
@@ -1440,7 +1554,7 @@ export function LandingEngagement() {
           type='column'
           title='Respond to suggestions'
           description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
-          icon={(<RespondIcon />)}
+          icon={(<RespondIcon fontSize='inherit' />)}
           image={DemoPinnedResponseImg}
           imageStyleOuter={{ padding: 'unset' }}
         />
@@ -1456,19 +1570,19 @@ export function LandingEngagement() {
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm'>
         <Block
           type='column'
-          icon={(<TransparentIcon />)}
+          icon={(<TransparentIcon fontSize='inherit' />)}
           title='Embrace a transparent culture'
           description='Customers are loyal to brands they trust and understand.'
         />
         <Block
           type='column'
-          icon={(<CommunityIcon />)}
+          icon={(<CommunityIcon fontSize='inherit' />)}
           title='Get involved'
           description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
         />
         <Block
           type='column'
-          icon={(<FeedbackIcon />)}
+          icon={(<FeedbackIcon fontSize='inherit' />)}
           title='Understand potential and churned customers'
           description='Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving.'
         />
@@ -1826,17 +1940,17 @@ export function LandingFeatureRequestTracking() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          icon={(<LightbulbIcon />)}
+          icon={(<LightbulbIcon fontSize='inherit' />)}
           title='Idea validation'
           description='Get a sense of how successful a feature will be prior to any development work.'
         />
         <BlockContent
-          icon={(<BuildIcon />)}
+          icon={(<BuildIcon fontSize='inherit' />)}
           title='Recruit Beta users'
           description='Easily find users that are willing to test out your upcoming feature before you roll it out.'
         />
         <BlockContent
-          icon={(<ForumIcon />)}
+          icon={(<ForumIcon fontSize='inherit' />)}
           title='Just talk'
           description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind the product.'
         />
@@ -1850,12 +1964,12 @@ export function LandingFeatureRequestTracking() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
         <BlockContent
-          icon={(<EngageIcon />)}
+          icon={(<EngageIcon fontSize='inherit' />)}
           title='Keep users engaged'
           description="An update to customer's feedback shows good customer relations and may even bring back churned customers."
         />
         <BlockContent
-          icon={(<RoadmapIcon style={{ transform: 'rotate(180deg)' }} />)}
+          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
           title='Visualize with a Roadmap'
           description='High-level overview of the features currently in your pipeline for users to get an idea of what is going on.'
           buttonTitle='See a Roadmap'
@@ -1956,15 +2070,21 @@ export function LandingDemo() {
         demoImage={DemoDashboardRoadmapVid}
         demoWrap='browser'
       />
-      <Block
-        mirror
-        title='Love it?'
-        description='Try it out yourself for free and customize it even further.'
-        buttonTitle='Try it'
-        buttonLink='/signup'
-        buttonVariant='contained'
-        buttonSuppressIcon
-      />
+      <Background svg={{
+        d: 'M 0 49.98 C 366 -97 79 227 500 49.98 L 500 150 L 0 150 Z',
+        viewBox: '0 0 500 150',
+        flexible: true,
+      }}>
+        <Block
+          mirror
+          title='Love it?'
+          description='Try it out yourself for free and customize it even further.'
+          buttonTitle='Try it'
+          buttonLink='/signup'
+          buttonVariant='contained'
+          buttonSuppressIcon
+        />
+      </Background>
     </>
   );
 }
@@ -1999,19 +2119,19 @@ export function LandingPublicRoadmap() {
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <BlockContent
           variant='content'
-          icon={(<LightbulbIcon />)}
+          icon={(<LightbulbIcon fontSize='inherit' />)}
           title='Clear and concise'
           description="Simple view of your current progress and future plans. That's it!"
         />
         <BlockContent
           variant='content'
-          icon={(<TransparentIcon />)}
+          icon={(<TransparentIcon fontSize='inherit' />)}
           title='Transparency for customers and stakeholders'
           description='Commit to a customer-driven product development and keep your audience informed.'
         />
         <BlockContent
           variant='content'
-          icon={(<UpcomingFeaturesIcon />)}
+          icon={(<UpcomingFeaturesIcon fontSize='inherit' />)}
           title='Upcoming features'
           description='Let your community get excited about what you are working on. Keep them in-the-know of your hard work behind the scenes.'
         />
@@ -2113,17 +2233,17 @@ export function LandingCrowdFunding() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          icon={(<ApiIcon />)}
+          icon={(<ApiIcon fontSize='inherit' />)}
           title='SAAS Products'
           description='Most common use case is to give SAAS customers credits based on their subscription'
         />
         <BlockContent
-          icon={(<DonationIcon />)}
+          icon={(<DonationIcon fontSize='inherit' />)}
           title='Donation-based / Freemium'
           description='Let users with the highest contributions dictate where your product should go.'
         />
         <BlockContent
-          icon={(<ContentCreatorIcon />)}
+          icon={(<ContentCreatorIcon fontSize='inherit' />)}
           title='Content Creator'
           description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
           buttonTitle='Learn more'
@@ -2316,7 +2436,7 @@ export function LandingInternalFeedback() {
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
           type='column'
-          icon={(<NotificationIcon />)}
+          icon={(<NotificationIcon fontSize='inherit' />)}
           title='Keep your stakeholders informed'
           description='Keep your stakeholders up-to-date with notifications over email or web-push.'
           image={DemoEmailNotificationImg}
@@ -2326,7 +2446,7 @@ export function LandingInternalFeedback() {
         />
         <Block
           type='column'
-          icon={(<PrivacyIcon />)}
+          icon={(<PrivacyIcon fontSize='inherit' />)}
           title='Keep all your data private'
           description='Setup privacy settings so only your users can see and post feedback. Authenticate via Single Sign-On, OAuth or whitelist your email domain.'
           image={DemoProjectPrivateImg}
@@ -2407,7 +2527,7 @@ export function LandingIdeaManagement() {
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
         <Block
           type='column'
-          icon={(<CategoryIcon />)}
+          icon={(<CategoryIcon fontSize='inherit' />)}
           title='Organize ideas into buckets'
           description='With custom tags, organize ideas and assign to different teammates. You can also allow users to directly select the relevant tags themselves.'
           image={DemoTagging2Img}
@@ -2417,7 +2537,7 @@ export function LandingIdeaManagement() {
         />
         <Demo
           type='column'
-          icon={(<LifecycleIcon />)}
+          icon={(<LifecycleIcon fontSize='inherit' />)}
           title='Give your ideas a life cycle'
           description='Define custom stages for your ideas and transitions between them.'
           alignItems='center'
@@ -2439,7 +2559,7 @@ export function LandingIdeaManagement() {
         />
         <Block
           type='column'
-          icon={(<EditIcon />)}
+          icon={(<EditIcon fontSize='inherit' />)}
           title='Make it your own'
           description="our tool can be customized to your needs whether you are collecting students' opinions, employee suggestion box, or product feedback."
           buttonTitle='See more customizations'
@@ -2656,24 +2776,24 @@ export function LandingGrowWithUs() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          icon={(<OncallIcon />)}
+          icon={(<OncallIcon fontSize='inherit' />)}
           title='On-call'
           description='Our engineers are on-call 24/7 to resolve any elevated issues brought up by our automatic monitoring.'
         />
         <BlockContent
-          icon={(<ServerIcon />)}
+          icon={(<ServerIcon fontSize='inherit' />)}
           variant='content'
           title='Compute'
           description='All of our server infrastructure is auto-scaled to meet your traffic demand.'
         />
         <BlockContent
-          icon={(<StorageIcon />)}
+          icon={(<StorageIcon fontSize='inherit' />)}
           variant='content'
           title='Storage'
           description='Data is stored on a NoSQL Dynamo database and distributed Object Storage S3 that allows us to scale with ease.'
         />
         <BlockContent
-          icon={(<BackupIcon />)}
+          icon={(<BackupIcon fontSize='inherit' />)}
           variant='content'
           title='Backups'
           description='All of our data is continuously backed up in case of an incident to protect your data.'
@@ -2685,25 +2805,25 @@ export function LandingGrowWithUs() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          icon={(<ContentDeliveryIcon />)}
+          icon={(<ContentDeliveryIcon fontSize='inherit' />)}
           variant='content'
           title='Content Delivery Network'
           description='ClearFlask is hosted by CloudFront: a large network of globally distributed PoPs that deliver low-latency performance and high-availability.'
         />
         <BlockContent
-          icon={(<SearchIcon />)}
+          icon={(<SearchIcon fontSize='inherit' />)}
           variant='content'
           title='Search engine'
           description='We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets. It also ensures your users are not submitting duplicate ideas.'
         />
         <BlockContent
-          icon={(<ClientIcon />)}
+          icon={(<ClientIcon fontSize='inherit' />)}
           variant='content'
           title='Client-side Framework'
           description='Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use and keeps your users engaged.'
         />
         <BlockContent
-          icon={(<ServerIcon />)}
+          icon={(<ServerIcon fontSize='inherit' />)}
           variant='content'
           title='Server-Side Rendering'
           description='Web pages are pre-rendered server-side to minimize the first page load on the client and improve SEO.'
@@ -2715,18 +2835,18 @@ export function LandingGrowWithUs() {
       />
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
         <BlockContent
-          icon={(<EncryptionIcon />)}
+          icon={(<EncryptionIcon fontSize='inherit' />)}
           variant='content'
           title='Encryption'
           description='All pages are only accessible over encrypted channels. If you use a custom domain, we automatically generate a certificate for you via LetsEncrypt.'
         />
         <BlockContent
-          icon={(<AntiSpamIcon />)}
+          icon={(<AntiSpamIcon fontSize='inherit' />)}
           variant='content'
           title='Anti-Spam'
           description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.' />
         <BlockContent
-          icon={(<PrivacyIcon />)}
+          icon={(<PrivacyIcon fontSize='inherit' />)}
           variant='content'
           title='Do Not Track'
           description='We respect the Do Not Track (DNT) flag that respects your privacy.'
@@ -2734,7 +2854,7 @@ export function LandingGrowWithUs() {
           buttonLink='/privacy-policy'
         />
         <BlockContent
-          icon={(<BillingIcon />)}
+          icon={(<BillingIcon fontSize='inherit' />)}
           variant='content'
           title='Billing system'
           description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
@@ -2807,32 +2927,39 @@ export function LandingPricingOptions() {
         <Block
           className={classes.textAlignCenter}
           type='headingOnly'
-          title="How to get started"
+          title="Let's get started"
         />
       </Background>
       <Background backgroundColor={fade('#218774', 0.05)}>
         <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
           <Block
             type='column'
-            icon={(<ServerIcon />)}
-            title='Scalable cloud solution'
-            description='Hassle-free scalable solution with pay for what you use pricing.'
-            buttonTitle='Try it out'
+            icon={(<ServerIcon fontSize='inherit' />)}
+            titleVariant='h4'
+            title='Managed hosting'
+            description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
+            buttonTitle='Try for free'
             buttonLink='/signup'
-            buttonVariant='contained'
             buttonSuppressIcon
+            button2Title='Pricing'
+            button2Link='/pricing'
             image={Server2Img}
+            imageLocation='above'
+            imageStyleOuter={{ minHeight: 300 }}
           />
           <Block
             type='column'
-            icon={(<OpenSourceIcon />)}
-            title='Open-source solution'
-            description='Install and manage on your own infrastructure.'
-            buttonTitle='Self host'
-            buttonLink='/open-source'
+            icon={(<OpenSourceIcon fontSize='inherit' />)}
+            titleVariant='h4'
+            title='Self hosting'
+            description='Open-source with no limitations. Own your data and manage it on your own infrastructure.'
+            buttonTitle='Install it'
+            buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
             buttonVariant='contained'
             buttonSuppressIcon
             image={Server3Img}
+            imageLocation='above'
+            imageStyleOuter={{ minHeight: 300 }}
           />
         </HorizontalPanels>
         <br />

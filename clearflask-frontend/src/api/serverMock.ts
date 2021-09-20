@@ -1546,9 +1546,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async getProjectBySlug(slug: string) {
-    const last = slug.split('.')[0];
+    slug = slug.split('.')[0];
     const project = Object.values(this.db).find(p =>
-      p.config.config.slug === last
+      p.config.config.slug === slug
       || p.config.config.domain === slug);
 
     if (project) return project;

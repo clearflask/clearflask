@@ -12,11 +12,12 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
+  const isGreatProduct = slug === 'greatproduct';
   const templateResult = await templater.createTemplateV2({
     ...createTemplateV2OptionsDefault,
     // templateFeedbackIsClassic: true,
-    infoName: 'Sandbox',
-    infoLogo: 'https://clearflask.com/img/clearflask-logo.png',
+    infoName: isGreatProduct ? 'GreatProduct' : 'Sandbox',
+    infoLogo: isGreatProduct ? `${windowIso.location.origin}/img/landing/GreatProductLogo.png` : 'https://clearflask.com/img/clearflask-logo.png',
     infoWebsite: `https://${windowIso.parentDomain}`,
     infoSlug: 'mock',
   });

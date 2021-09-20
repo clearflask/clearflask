@@ -37,16 +37,5 @@ export function isProd(): boolean {
 }
 
 export function isTracking(): boolean {
-  return !isDoNotTrack() && isProd();
+  return isProd();
 }
-
-export function isDoNotTrack(): boolean {
-  return windowIso.isSsr
-    || windowIso.navigator.doNotTrack === "yes"
-    || windowIso.navigator.doNotTrack === "1"
-    || windowIso.navigator['msDoNotTrack'] === "1"
-    || windowIso.doNotTrack === "yes"
-    || windowIso.doNotTrack === "1"
-    || windowIso['msDoNotTrack'] === "1";
-}
-

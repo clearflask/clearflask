@@ -5,11 +5,17 @@ import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import CheckIcon from '@material-ui/icons/Check';
+import XIcon from '@material-ui/icons/Close';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import PostStatusIframe from '../../app/PostStatusIframe';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
+
+export type Point = string | {
+  text: string;
+  icon: OverridableComponent<SvgIconTypeMap> | Array<OverridableComponent<SvgIconTypeMap>>;
+}
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -19,11 +25,6 @@ const styles = (theme: Theme) => createStyles({
   description: {
     marginTop: theme.spacing(2),
     color: theme.palette.text.secondary,
-  },
-  icon: {
-    marginBottom: theme.spacing(2),
-    // marginLeft: 'auto',
-    marginRight: 'auto',
   },
   button: {
     alignSelf: 'flex-end',
@@ -47,6 +48,33 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.primary.main,
     marginRight: theme.spacing(1),
   },
+  counterpointIcon: {
+    color: theme.palette.error.dark,
+  },
+  iconTitleContainer: {
+    display: 'flex',
+    columnGap: theme.spacing(2),
+    rowGap: theme.spacing(2),
+  },
+  iconTitleContainerRow: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  iconTitleContainerColumn: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+  },
+  buttonsContainer: {
+    display: 'flex',
+    alignSelf: 'flex-end',
+    margin: theme.spacing(4, 8),
+    [theme.breakpoints.down('xs')]: {
+      margin: theme.spacing(4, 4),
+    },
+  },
+  button2: {
+    marginRight: theme.spacing(2),
+  },
 });
 
 export interface Props {
@@ -54,10 +82,8 @@ export interface Props {
   title?: string | React.ReactNode;
   marker?: string;
   description?: string | React.ReactNode;
-  points?: Array<string | {
-    text: string;
-    icon: OverridableComponent<SvgIconTypeMap> | Array<OverridableComponent<SvgIconTypeMap>>;
-  }>;
+  points?: Array<Point>;
+  counterpoints?: Array<string>;
   postStatusId?: string;
   buttonIcon?: React.ReactNode;
   buttonTitle?: string;
@@ -66,9 +92,14 @@ export interface Props {
   buttonLink?: string;
   buttonState?: any;
   buttonSuppressIcon?: boolean;
+  buttonOnClick?: () => void;
+  button2Title?: string;
+  button2Link?: string;
   variant?: 'hero' | 'headingMain' | 'heading' | 'content';
+  titleVariant?: React.ComponentProps<typeof Typography>['variant'];
   titleCmpt?: string;
   icon?: React.ReactNode;
+  iconAbove?: boolean;
   scrollAnchor?: ScrollAnchorProps;
 }
 class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
@@ -80,39 +111,52 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
     var bodyCmpt;
     switch (this.props.variant) {
       case 'hero':
-        titleVariant = 'h3';
+        titleVariant = this.props.titleVariant || 'h2';
         bodyVariant = 'h5';
         titleCmpt = this.props.titleCmpt || 'h1';
         bodyCmpt = 'div';
         break;
       case 'headingMain':
-        titleVariant = 'h4';
+        titleVariant = this.props.titleVariant || 'h3';
         bodyVariant = 'body1';
         titleCmpt = this.props.titleCmpt || 'h2';
         bodyCmpt = 'div';
         break;
       case 'heading':
-        titleVariant = 'h5';
+        titleVariant = this.props.titleVariant || 'h4';
         bodyVariant = 'body1';
         titleCmpt = this.props.titleCmpt || 'h3';
         bodyCmpt = 'div';
         break;
       default:
       case 'content':
-        titleVariant = 'h6';
+        titleVariant = this.props.titleVariant || 'h5';
         bodyVariant = 'body1';
         titleCmpt = this.props.titleCmpt || 'h4';
         bodyCmpt = 'div';
         break;
     }
+    const counterpoints = this.props.counterpoints?.map(text => {
+      return (
+        <Typography variant={bodyVariant} component='div' className={this.props.classes.point}>
+          <XIcon color='inherit' fontSize='inherit' className={classNames(this.props.classes.pointIcon, this.props.classes.counterpointIcon)} />
+          {text}
+        </Typography>
+      );
+    });
     return (
       <div className={classNames(this.props.classes.container, this.props.className)}>
-        {this.props.icon && (
-          <div className={this.props.classes.icon}>
-            {this.props.icon}
-          </div>
-        )}
-        <Typography variant={titleVariant} component={titleCmpt}>{this.props.title}</Typography>
+        <Typography variant={titleVariant} component={titleCmpt}>
+          {this.props.icon ? (
+            <div className={classNames(
+              this.props.classes.iconTitleContainer,
+              this.props.iconAbove ? this.props.classes.iconTitleContainerColumn : this.props.classes.iconTitleContainerRow,
+            )}>
+              {this.props.icon}
+              {this.props.title}
+            </div>
+          ) : this.props.title}
+        </Typography>
         {this.props.marker && (
           <Typography variant='caption' className={this.props.classes.marker}>{this.props.marker}</Typography>
         )}
@@ -136,6 +180,12 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
                 </Typography>
               );
             })}
+            {counterpoints}
+          </div>
+        )}
+        {(!this.props.points && counterpoints) && (
+          <div className={this.props.classes.points}>
+            {counterpoints}
           </div>
         )}
         {this.props.postStatusId && (
@@ -149,41 +199,60 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
             }}
           />
         )}
-        {this.props.buttonTitle && (
-          <Button
-            className={classNames(
-              this.props.classes.button,
-              ((this.props.buttonVariant || 'text') !== 'text') && this.props.classes.buttonFilled,
+        {(this.props.buttonTitle || this.props.button2Title) && (
+          <div className={this.props.classes.buttonsContainer}>
+            {!!this.props.button2Title && (
+              <Button
+                variant='outlined'
+                className={this.props.classes.button2}
+                {...(this.props.button2Link ? {
+                  component: Link,
+                  to: this.props.button2Link,
+                } : {})}
+              >
+                {this.props.button2Title}
+              </Button>
             )}
-            variant={this.props.buttonVariant || 'text'}
-            disableElevation
-            color='primary'
-            {...(this.props.buttonLink ? {
-              component: Link,
-              to: {
-                pathname: this.props.buttonLink,
-                state: this.props.buttonState,
-              },
-            } : {})}
-            {...(this.props.buttonLinkExt ? {
-              component: 'a',
-              href: this.props.buttonLinkExt,
-            } : {})}
-          >
-            {this.props.buttonIcon && (
-              <>
-                {this.props.buttonIcon}
-                &nbsp;&nbsp;&nbsp;
-              </>
+            {this.props.buttonTitle && (
+              <Button
+                className={classNames(
+                  this.props.classes.button,
+                  ((this.props.buttonVariant || 'text') !== 'text') && this.props.classes.buttonFilled,
+                )}
+                variant={this.props.buttonVariant || (this.props.button2Title ? 'contained' : 'text')}
+                disableElevation
+                color='primary'
+                onClick={this.props.buttonOnClick ? (() => {
+                  this.props.buttonOnClick?.();
+                }) : undefined}
+                {...(this.props.buttonLink ? {
+                  component: Link,
+                  to: {
+                    pathname: this.props.buttonLink,
+                    state: this.props.buttonState,
+                  },
+                } : {})}
+                {...(this.props.buttonLinkExt ? {
+                  component: 'a',
+                  href: this.props.buttonLinkExt,
+                } : {})}
+              >
+                {this.props.buttonIcon && (
+                  <>
+                    {this.props.buttonIcon}
+                    &nbsp;&nbsp;&nbsp;
+                  </>
+                )}
+                {this.props.buttonTitle}
+                {!this.props.buttonSuppressIcon && !this.props.buttonIcon && (
+                  <>
+                    &nbsp;
+                    <GoIcon />
+                  </>
+                )}
+              </Button>
             )}
-            {this.props.buttonTitle}
-            {!this.props.buttonSuppressIcon && !this.props.buttonIcon && (
-              <>
-                &nbsp;
-                <GoIcon />
-              </>
-            )}
-          </Button>
+          </div>
         )}
       </div>
     );

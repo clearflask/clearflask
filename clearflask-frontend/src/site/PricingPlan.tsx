@@ -78,6 +78,7 @@ interface Props {
   actionTitle?: string;
   actionType?: 'button' | 'radio';
   actionTo?: LocationDescriptor;
+  actionToExt?: string;
   actionOnClick?: () => void;
   hidePerks?: boolean;
   remark?: React.ReactNode;
@@ -143,6 +144,10 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   {...(this.props.actionTo ? {
                     component: Link,
                     to: this.props.actionTo,
+                  } : {})}
+                  {...(this.props.actionToExt ? {
+                    component: 'a',
+                    href: this.props.actionToExt,
                   } : {})}
                 >
                   {this.props.actionTitle}

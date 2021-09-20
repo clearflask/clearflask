@@ -1483,7 +1483,7 @@ const Language = (props: {}) => {
       <ComparisonTable
         headers={[
           { headingId: 'contribute', content: 'Contribute translation' },
-          { headingId: 'google', content: 'Translate content' },
+          { headingId: 'google', content: 'Google Translate' },
           { content: 'Languages' },
           { headingId: 'English', content: 'English' },
           { headingId: 'Arabic', content: 'Arabic' },
@@ -1814,7 +1814,7 @@ const Customize = (props: {}) => {
         ]}
         data={[
           { platformId: PlatformFider, headingIds: new Set(['open-source', 'custom-domain', 'color', 'tag', 'css', 'poweredby']) },
-          { platformId: PlatformClearFlask, headingIds: new Set(['custom-content', 'custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'custom-pages', 'custom-html', 'css', 'poweredby']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['open-source', 'custom-content', 'custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'custom-pages', 'custom-html', 'css', 'poweredby']) },
           { platformId: PlatformUserVoice, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'custom-pages', 'custom-html', 'css', 'poweredby']) },
           { platformId: PlatformFeatureUpvote, headingIds: new Set(['custom-domain', 'widget', 'color', 'tag', 'rename-status', 'custom-status', 'rename-pages', 'css', 'poweredby']) },
           { platformId: PlatformUpvoty, headingIds: new Set(['custom-domain', 'widget', 'color', 'rename-status', 'rename-pages', 'css', 'poweredby']) },

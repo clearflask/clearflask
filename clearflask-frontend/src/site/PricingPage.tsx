@@ -157,8 +157,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
             title: 'Community',
             pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
             perks: [
+              { desc: 'Self-hosted' },
               { desc: 'Quick-start Docker deploy' },
-              { desc: 'All features, no limits' },
               { desc: 'Community supported' },
             ],
           }}
@@ -166,7 +166,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
             'Open source',
             'AGPLv3 License',
           ]}
-          actionTitle='Self host'
+          actionTitle='Install it'
           remark='Join our community'
           actionOnClick={() => {
             if (isTracking()) {
@@ -177,7 +177,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               });
             }
           }}
-          actionTo='/open-source'
+          actionToExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
         />
       ),
       ...(this.props.plans || []).map((plan, index) => (

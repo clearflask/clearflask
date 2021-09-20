@@ -46,7 +46,6 @@ const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./Landin
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
 const LandingContentCreator = loadable(() => import(/* webpackChunkName: "LandingContentCreator" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingContentCreator, fallback: (<Loading />) });
 const LandingCrowdFunding = loadable(() => import(/* webpackChunkName: "LandingCrowdFunding" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCrowdFunding, fallback: (<Loading />) });
-const LandingCustomize = loadable(() => import(/* webpackChunkName: "LandingCustomize" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCustomize, fallback: (<Loading />) });
 const LandingEngagement = loadable(() => import(/* webpackChunkName: "LandingEngagement" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEngagement, fallback: (<Loading />) });
 const LandingFeatureRequestTracking = loadable(() => import(/* webpackChunkName: "LandingFeatureRequestTracking" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingFeatureRequestTracking, fallback: (<Loading />) });
 const LandingGrowWithUs = loadable(() => import(/* webpackChunkName: "LandingGrowWithUs" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingGrowWithUs, fallback: (<Loading />) });
@@ -159,14 +158,13 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/demo', title: 'Demo', icon: DemoIcon },
           { type: 'divider' },
           { type: 'button', link: '/product/ask', title: 'Collect feedback', icon: CollectIcon },
-          { type: 'button', link: '/product/analyze', title: 'Prioritize roadmap', icon: AnalyzeIcon },
-          { type: 'button', link: '/product/act', title: 'Share progress', icon: ActIcon },
+          { type: 'button', link: '/product/analyze', title: 'Manage and analyze', icon: AnalyzeIcon },
+          { type: 'button', link: '/product/act', title: 'Respond and inform', icon: ActIcon },
           { type: 'divider' },
-          { type: 'button', link: '/product/customize', title: 'Customize look & feel' },
           { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
           { type: 'button', link: '/product/integrations', title: 'Integrations' },
           { type: 'divider' },
-          { type: 'button', link: '/product/compare', title: 'Compare', icon: CompareIcon },
+          { type: 'button', link: '/product/compare', title: 'Competing products', icon: CompareIcon },
         ]
       },
       { type: 'button', link: '/pricing', title: 'Pricing' },
@@ -319,10 +317,6 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             <Route exact path='/product/act'>
               <SetTitle title='Take action' />
               <LandingEngagement />
-            </Route>
-            <Route exact path='/product/customize'>
-              <SetTitle title='Make it your own' />
-              <LandingCustomize />
             </Route>
             <Route exact path='/product/integrations'>
               <SetTitle title='Integrations' />

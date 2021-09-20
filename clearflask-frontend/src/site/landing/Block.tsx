@@ -90,7 +90,6 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   imageLocation?: 'demo' | 'above';
   imageStyle?: React.CSSProperties;
   imageStyleOuter?: React.CSSProperties;
-  icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
   noSpacing?: boolean;
@@ -220,6 +219,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       );
     } else {
       var blockVariant;
+      var titleVariant = this.props.titleVariant;
       switch (this.props.type) {
         case 'hero':
           blockVariant = 'hero';
@@ -231,8 +231,11 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         case 'column':
           blockVariant = 'content';
           break;
-        case 'headingMain':
         case 'headingOnly':
+          titleVariant = this.props.titleVariant || 'h4';
+          blockVariant = 'headingMain';
+          break;
+        case 'headingMain':
           blockVariant = 'headingMain';
           break;
       }
@@ -240,6 +243,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       content = (
         <BlockContent
           variant={blockVariant}
+          titleVariant={titleVariant}
           {...blockContentProps}
         />
       );
