@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../../@types/transform-media-imports.d.ts"/>
-import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, Hidden, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
+import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import InternalFeedbackIcon from '@material-ui/icons/AccountBoxRounded';
+import BlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
+import OpenCommunityIcon from '@material-ui/icons/Group';
+import CustomerFeedbackIcon from '@material-ui/icons/RecordVoiceOver';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
@@ -16,12 +22,13 @@ import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { HeaderLogoLogo } from '../../app/Header';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
-import Templater, { CreateTemplateV2Options, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
+import Templater, { CreateTemplateV2Options, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
 import { TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
 import { TourDefinitionGuideState } from '../../common/tour';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { detectEnv, Environment, isTracking } from '../../common/util/detectEnv';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
 
@@ -71,6 +78,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'stretch',
+    justifyContent: 'center',
   },
   templateCard: {
     margin: theme.spacing(4),
@@ -105,6 +113,16 @@ const styles = (theme: Theme) => createStyles({
   },
   boxSelected: {
     borderColor: theme.palette.primary.main,
+  },
+  cardIcon: {
+    marginTop: theme.spacing(2),
+    width: '100%',
+    alignSelf: 'center',
+    fontSize: '4em',
+    transition: theme.transitions.create(['color']),
+  },
+  cardIconSelected: {
+    color: theme.palette.primary.main,
   },
   disabled: {
     opacity: 0.5,
@@ -206,47 +224,114 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
           <CreateLayout
             key='feature-select'
             isOnboarding={this.props.isOnboarding}
-            title='Standard features'
-            description='Please choose the functions you want to include in your project. You can always change your mind later or customize your own.'
+            title='Choose your scenario'
+            description='You can always customize later for your needs. Please pick the most suitable function for you.'
             stretchContent
             img={FeaturesImg}
             content={(
               <>
                 <div className={this.props.classes.templateCards}>
-                  <TemplateCard
-                    className={this.props.classes.templateCard}
-                    title='Feedback'
-                    content='Collect feedback from customers.'
-                    checked={!!this.state.templateFeedback}
-                    onChange={() => this.setState({ templateFeedback: !this.state.templateFeedback })}
-                  />
-                  <TemplateCard
-                    className={this.props.classes.templateCard}
-                    title='Roadmap'
-                    content='Convert feedback into tasks and organize it in a public roadmap'
-                    checked={!!this.state.templateRoadmap}
-                    onChange={() => this.setState({ templateRoadmap: !this.state.templateRoadmap })}
-                  />
-                  <TemplateCard
-                    className={this.props.classes.templateCard}
-                    title='Changelog'
-                    content='Keep your users updated with new changes in your product.'
-                    checked={!!this.state.templateChangelog}
-                    onChange={() => this.setState({ templateChangelog: !this.state.templateChangelog })}
-                  />
+                  <div className={this.props.classes.templateCards}>
+                    <TemplateCard
+                      className={this.props.classes.templateCard}
+                      icon={CustomerFeedbackIcon}
+                      title='Customer feedback'
+                      content='Customer-first feedback experience for capturing unbiased feedback.'
+                      onClick={() => {
+                        this.setState({
+                          templateFeedbackIsClassic: false,
+                          templateLanding: true,
+                          templateFeedback: true,
+                          templateRoadmap: true,
+                          templateChangelog: true,
+                          isPrivate: false,
+                          step: 'project-details',
+                        });
+                        if (isTracking()) {
+                          ReactGA.event({
+                            category: 'new-project',
+                            action: 'choose-scenario',
+                            label: 'customer-feedback',
+                          });
+                        }
+                      }}
+                    />
+                    <TemplateCard
+                      className={this.props.classes.templateCard}
+                      icon={OpenCommunityIcon}
+                      title='Open community'
+                      content='Embrace community discussion around your product.'
+                      onClick={() => {
+                        this.setState({
+                          templateFeedbackIsClassic: true,
+                          templateLanding: true,
+                          templateFeedback: true,
+                          templateRoadmap: true,
+                          templateChangelog: true,
+                          isPrivate: false,
+                          step: 'project-details',
+                        });
+                        if (isTracking()) {
+                          ReactGA.event({
+                            category: 'new-project',
+                            action: 'choose-scenario',
+                            label: 'open-community',
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className={this.props.classes.templateCards}>
+                    <TemplateCard
+                      className={this.props.classes.templateCard}
+                      icon={InternalFeedbackIcon}
+                      title='Internal feedback'
+                      content='Feedback collected within a private group or organization.'
+                      onClick={() => {
+                        this.setState({
+                          templateFeedbackIsClassic: true,
+                          templateLanding: true,
+                          templateFeedback: true,
+                          templateRoadmap: true,
+                          templateChangelog: true,
+                          isPrivate: true,
+                          step: 'project-details',
+                        });
+                        if (isTracking()) {
+                          ReactGA.event({
+                            category: 'new-project',
+                            action: 'choose-scenario',
+                            label: 'internal-feedback',
+                          });
+                        }
+                      }}
+                    />
+                    {!this.props.isOnboarding && (
+                      <TemplateCard
+                        className={this.props.classes.templateCard}
+                        icon={BlankIcon}
+                        title='Blank project'
+                        content='For advanced use-cases, start without pre-defined templates.'
+                        onClick={() => {
+                          this.setState({
+                            ...createTemplateV2OptionsBlank,
+                            isPrivate: false,
+                            step: 'project-details',
+                          });
+                          if (isTracking()) {
+                            ReactGA.event({
+                              category: 'new-project',
+                              action: 'choose-scenario',
+                              label: 'blank',
+                            });
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </>
             )}
-            actions={[(
-              <Button
-                variant='contained'
-                disableElevation
-                color='primary'
-                onClick={() => this.setState({ step: 'project-details' })}
-              >
-                Next
-              </Button>
-            )]}
           />
         );
       case 'project-details':
@@ -497,42 +582,46 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(CreatePage)));
 
-export const TemplateCard = (props: {
+const TemplateCard = (props: {
+  icon?: OverridableComponent<SvgIconTypeMap>,
   className?: string;
   title: string;
   content: string;
-  checked: boolean;
   disabled?: boolean;
-  onChange: () => void;
+  onClick: () => void;
 }) => {
   const classes = useStyles();
+  const Icon = props.icon;
   return (
-    <Card elevation={0} className={classNames(
-      props.className,
-      classes.box,
-      props.checked && classes.boxSelected,
-      props.disabled && classes.disabled,
-    )}>
-      <CardHeader
-        title={props.title}
-        titleTypographyProps={{ align: 'center' }}
-        subheaderTypographyProps={{ align: 'center' }}
-      />
-      <CardContent>{props.content}</CardContent>
-      <div className={classes.flexGrow} />
-      <CardActions className={classes.action}>
-        <FormControlLabel
-          control={(
-            <Checkbox color="primary"
-              checked={props.checked}
-              onChange={props.onChange}
-              disabled={props.disabled}
+    <HoverArea>
+      {(hoverAreaProps, isHovering, isHoverDisabled) => (
+        <Card {...hoverAreaProps} elevation={0} className={classNames(
+          props.className,
+          classes.box,
+          isHovering && classes.boxSelected,
+          props.disabled && classes.disabled,
+        )}>
+          <CardActionArea
+            onClick={props.onClick}
+            disabled={props.disabled}
+            className={classNames(classes.flexGrow)}
+          >
+            {!!Icon && (
+              <Icon fontSize='inherit' color='inherit' className={classNames(
+                classes.cardIcon,
+                isHovering && classes.cardIconSelected,
+              )} />
+            )}
+            <CardHeader
+              title={props.title}
+              titleTypographyProps={{ align: 'center' }}
+              subheaderTypographyProps={{ align: 'center' }}
             />
-          )}
-          label={props.checked ? 'Selected' : 'Select'}
-        />
-      </CardActions>
-    </Card>
+            <CardContent>{props.content}</CardContent>
+          </CardActionArea>
+        </Card>
+      )}
+    </HoverArea>
   );
 };
 

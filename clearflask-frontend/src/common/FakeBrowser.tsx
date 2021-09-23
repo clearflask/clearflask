@@ -50,11 +50,14 @@ const styles = (theme: Theme) => createStyles({
   },
   codeContainer: {
     margin: 0,
+    padding: theme.spacing(1),
     borderTopWidth: 5,
     borderTopStyle: 'solid',
     overflowX: 'initial',
     borderTopColor: (props: Props) => theme.palette.grey[props.darkMode ? 500 : 100],
     maxHeight: (props: Props) => props.codeMaxHeight,
+    whiteSpace: 'pre',
+    fontFamily: 'monospace',
   },
 });
 interface Props {

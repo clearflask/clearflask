@@ -278,9 +278,9 @@ const ClearFlaskTourProvider = (props: {
           },
         },
         groups: [
-          { title: 'See what you can do with ClearFlask', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page', 'visit-project'] },
-          { title: 'Customize look and feel', guideIds: ['visibility', 'onboarding', 'custom-domain'] },
-          { title: 'Publish your portal to the world', guideIds: ['invite-teammates', 'install', 'add-payment'] },
+          { title: 'How to manage feedback, roadmap and changelog', guideIds: ['feedback-page', 'roadmap-page', 'changelog-page'] },
+          { title: 'Customize your portal', guideIds: ['visibility', 'onboarding', 'custom-domain', 'visit-project'] },
+          { title: 'Start collecting feedback', guideIds: ['invite-teammates', 'install', 'add-payment'] },
         ],
       }}
       onGuideCompleted={(guideId, guide) => setGuideState(guideId, TourDefinitionGuideState.Completed)}

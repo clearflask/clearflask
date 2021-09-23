@@ -27,6 +27,7 @@ import FeedbackIcon from '@material-ui/icons/Feedback';
 import BackupIcon from '@material-ui/icons/FileCopy';
 import ForumIcon from '@material-ui/icons/Forum';
 import GithubIcon from '@material-ui/icons/GitHub';
+import OpenCommunityIcon from '@material-ui/icons/Group';
 import EngageIcon from '@material-ui/icons/Hearing';
 import KnowledgeIcon from '@material-ui/icons/Help';
 import EncryptionIcon from '@material-ui/icons/Https';
@@ -36,10 +37,11 @@ import MoodBadIcon from '@material-ui/icons/MoodBad';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import UpcomingFeaturesIcon from '@material-ui/icons/NewReleasesOutlined';
 import NotificationIcon from '@material-ui/icons/Notifications';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import CommunityIcon from '@material-ui/icons/People';
 import QuestionIcon from '@material-ui/icons/QuestionAnswer';
 import BillingIcon from '@material-ui/icons/Receipt';
-import IdeasIcon from '@material-ui/icons/RecordVoiceOver';
+import CustomerFeedbackIcon from '@material-ui/icons/RecordVoiceOver';
 import RespondIcon from '@material-ui/icons/ReplyAll';
 import SearchIcon from '@material-ui/icons/Search';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
@@ -56,9 +58,7 @@ import React, { useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
-import CaptureFeedbackImg from '../../public/img/landing/capture-feedback.png';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
-import CommunityImg from '../../public/img/landing/community.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
@@ -100,6 +100,7 @@ import LoopImg from '../../public/img/landing/loop.svg';
 import NotifyImg from '../../public/img/landing/notify.svg';
 import PromoThumb from '../../public/img/landing/promo-video-thumb.jpg';
 import ProudImg from '../../public/img/landing/proud.svg';
+import PublicDiscussionImg from '../../public/img/landing/public-discussion.svg';
 import RoadmapImg from '../../public/img/landing/roadmap.svg';
 import Roadmap2Img from '../../public/img/landing/roadmap2.svg';
 import Server2Img from '../../public/img/landing/server2.svg';
@@ -121,9 +122,6 @@ import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import Templater, { createTemplateV2OptionsDefault } from '../common/config/configTemplater';
 import CreditView from '../common/config/CreditView';
-import { ChangelogInstance } from '../common/config/template/changelog';
-import { FeedbackInstance } from '../common/config/template/feedback';
-import { RoadmapInstance } from '../common/config/template/roadmap';
 import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
@@ -136,8 +134,6 @@ import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
 import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
-import DashboardHome from './dashboard/DashboardHome';
-import { TemplateWrapper } from './dashboard/ProjectSettings';
 import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
@@ -554,13 +550,13 @@ export function LandingGraveyard() {
           type='column'
           title='Spark discussions'
           description=''
-          icon={(<IdeasIcon fontSize='inherit' />)}
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
         />
         <Block
           type='column'
           title='show off future ideas'
           description='post status demom Maybe put this in Analyze -> validate'
-          icon={(<IdeasIcon fontSize='inherit' />)}
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
         />
       </HorizontalPanels>
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
@@ -572,7 +568,7 @@ export function LandingGraveyard() {
           variant='content'
           title='Capture feedback publicly, internally, or on-behalf'
           description='Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels.'
-          icon={(<IdeasIcon fontSize='inherit' />)}
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
         />
         <BlockContent
           variant='content'
@@ -664,7 +660,7 @@ export function LandingGraveyard() {
       <Demo
         type='mediumDemo'
         title='Stay on the same page'
-        description='Keep everyone on the same page with your product development'
+        description='Keep everyone on the same page with your product development roadmap'
         mirror
         image={Roadmap2Img}
         imageLocation='above'
@@ -993,35 +989,43 @@ export function LandingCollectFeedback() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title='Choosing your strategy'
+        title='Optimizing your strategy'
+        description='There are many ways to configure your portal for your particular needs'
         spacingBottom={0}
       />
       <HorizontalPanels wrapBelow='md' maxWidth='xl' staggerHeight={200}>
         <Block
+          iconAbove
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
           titleVariant='h3'
           type='column'
-          title='Feedback-first'
+          title='Customer-first'
+          subtitle='Hands-on and detail-oriented'
           description={(
             <>
-              To extract unbiased and informative feedback, a simple feedback box is the ideal approach to capture customers' in their own words.
-              <p>Intended for detail-oriented product managers, feedback-first approach is the best way to understand your customers.</p>
+              To extract unbiased and informative feedback, a simple feedback box is the ideal approach to capture customers' own words.
+              <p>Intended for detail-oriented product managers, customer-first approach is the best way to understand your customers.</p>
             </>
           )}
           demoWrap='browser'
           demoImage={DemoPageFeedbackImg}
           alignItems='center'
           points={[
-            'Capture unbiased feedback',
-            'Simple and straightforward',
+            'Customer-centric product',
+            'Large community',
+            'Simple feedback form',
           ]}
         />
         <Block
+          iconAbove
+          icon={(<OpenCommunityIcon fontSize='inherit' />)}
           titleVariant='h3'
           type='column'
           title='Community-first'
+          subtitle='Community-driven and transparent'
           description={(
             <>
-              Feedback as a public forum is adopted by many organizations. This approach allows your customers to discuss features amongst themselves.
+              Feedback as a public forum is adopted by many organizations. This approach focuses on your customers ability to discuss features amongst themselves.
               <p>Although managing feedback is more hands-off in this approach, the feedback you receive will mostly be in the form of votes on existing ideas that will amplify the loudest customers.</p>
             </>
           )}
@@ -1030,18 +1034,18 @@ export function LandingCollectFeedback() {
           demoImage={DemoPageFeedbackClassigImg}
           alignItems='center'
           points={[
-            'Ideal for small groups, open community or private feedback',
-            'More informative to end-user',
-          ]}
-          counterpoints={[
-            'Loudest feedback tends to amplify',
+            'Low-effort hands-off feedback',
+            'Open community',
+            'B2B feedback',
+            'Internal feedback tracking',
+            'Employee feedback',
           ]}
         />
       </HorizontalPanels>
       {/* <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title='Feedback-first experience'
+        title='Customer-first experience'
         spacingBottom={0}
       />
       <Block
@@ -1087,7 +1091,7 @@ export function LandingCollectFeedback() {
         ]}
         spacingTopBottom={0}
       /> */}
-      <Demo
+      {/* <Demo
         title='Build a community around your product'
         description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
         alignItems='center'
@@ -1106,21 +1110,30 @@ export function LandingCollectFeedback() {
         mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
           .then(() => mocker.mockLoggedIn())}
         demo={LandingCommentListDemo}
-      />
+      /> */}
       <Block
-        title='Integrate with your website or app'
+        title='Easily integrates with your website or app'
         description='Use a custom domain to host your ClearFlask portal or embed it directly on your site or app. Use your own logo, branding, palette and typography.'
         image={LoopImg}
         imageLocation='above'
+        points={[
+          { text: (<>Portal (<b>brand</b>.clearflask.com)</>) },
+          { text: (<>Custom domain (feedback.<b>yoursite</b>.com)</>) },
+          'Embed widget within your website',
+        ]}
+        alignItems='center'
         demo={(
-          <>
-            <FakeBrowser
-              fixedHeight='max-content'
-              addressBarContent='feedback.yoursite.com'
-            >
-              <ImgIso img={CaptureFeedbackImg} />
-            </FakeBrowser>
-          </>
+          <FakeBrowser
+            fixedWidth={200}
+            fixedHeight={200}
+            addressBarContent='yoursite.com'
+          >
+            <div className={classes.demoEmbedButtons}>
+              <LandingDemoEmbed path='embed/feedback'>
+                <FeedbackIcon />
+              </LandingDemoEmbed>
+            </div>
+          </FakeBrowser>
         )}
       />
       <Background svg={{
@@ -1149,14 +1162,14 @@ export function LandingCollectFeedback() {
 export function LandingPrioritization() {
   return (
     <>
-      <Demo
+      <Block
+        mirror
         type='hero'
         title='Analyze feedback effectively'
         description='Organize all the data you collected to make the right decision'
-        demoImage={DemoDashboardFeedbackVid}
-        demoWrap='browser'
+        image={AnalyzeImg}
       />
-      <Demo
+      {/* <Demo
         type='demoOnly'
         template={templater => templater.createTemplateV2()}
         spacingTop={0}
@@ -1178,7 +1191,7 @@ export function LandingPrioritization() {
             />
           </Provider>
         )}
-      />
+      /> */}
       <Block
         mirror
         type='mediumDemo'
@@ -1313,7 +1326,7 @@ export function LandingOpenSource() {
       <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
         <Block
           type='column'
-          icon={(<IdeasIcon fontSize='inherit' />)}
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
           title='Open product development'
           description='We are targetting companies that are not afraid to open up their product development. It makes sense for us to follow the same path.'
         />
@@ -1427,16 +1440,62 @@ export function LandingEngagement() {
         viewBox: '0 0 500 150',
         flexible: true,
       }}>
-        <Demo
+        <Block
           type='hero'
-          title='Take action based on feedback'
-          description='Finally close the feedback loop by informing your customers about your product decisions.'
-          demoImage={DemoDashboardRoadmapVid}
-          demoWrap='browser'
-          image={NotifyImg}
-          imageLocation='above'
+          title='Keep everyone informed'
+          description="Let your community and stakeholders know what you're up to."
+          image={PublicDiscussionImg}
         />
       </Background>
+      <Demo
+        icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
+        title='Stay on the same page'
+        description='Keep everyone on the same page with your product development'
+        image={RoadmapImg}
+        imageLocation='above'
+        points={[
+          'Publicly accessible or privately shared',
+          'Customize columns, titles and style',
+          'Gather insights along the way',
+        ]}
+        alignItems='center'
+        demoImage={DemoRoadmapImg}
+        demoWrap='browser'
+      />
+      <Demo
+        mirror
+        icon={(<ChangeIcon fontSize='inherit' />)}
+        title='Release an update'
+        description='Let everyone know when you release a new feature.'
+        image={SupportImg}
+        imageLocation='above'
+        points={[
+          'Discuss changes within your community',
+          'Subscribe to new updates',
+        ]}
+        alignItems='center'
+        demoImage={DemoChangelog2Img}
+        demoWrap='browser'
+      />
+      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
+        <Block
+          type='column'
+          title='Respond to suggestions'
+          description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
+          icon={(<RespondIcon fontSize='inherit' />)}
+          image={DemoPinnedResponseImg}
+          imageStyleOuter={{ padding: 'unset' }}
+        />
+        <Block
+          type='column'
+          title='Status updates'
+          description='Let customers subscribe to updates on specific feature requests.'
+          icon={(<NotificationIcon fontSize='inherit' />)}
+          image={DemoEmailNotificationImg}
+          imageStyleOuter={{ padding: 'unset' }}
+          imageScale={0.3}
+        />
+      </HorizontalPanels>
       <Block
         alignItems='flex-start'
         title='Maintain a two-way communication'
@@ -1463,7 +1522,7 @@ export function LandingEngagement() {
               </div>
             </div>
             <div className={classes.point}>
-              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <OpenInNewIcon fontSize='inherit' className={classes.pointIcon} />
               <div>
                 <Typography variant='h6' component='div'>
                   OAuth
@@ -1486,7 +1545,8 @@ export function LandingEngagement() {
                   Email
                 </Typography>
                 <Typography variant='body1' component='div' color='textSecondary'>
-                  Signup with email (magic link, domain-whitelist, password)
+                  Signup with email
+                  <br />(Magic link, Domain-whitelist)
                 </Typography>
               </div>
             </div>
@@ -1497,7 +1557,7 @@ export function LandingEngagement() {
                   Browser push
                 </Typography>
                 <Typography variant='body1' component='div' color='textSecondary'>
-                  Send a notification right to their browser
+                  Receive a notification right in your browser
                 </Typography>
               </div>
             </div>
@@ -1516,51 +1576,7 @@ export function LandingEngagement() {
         )}
       />
       <Block
-        title='Keep everyone informed'
-        description='Transparency between development and your stakeholders is an important part of your success.'
-        image={SupportImg}
-        imageStyleOuter={{ maxWidth: 400, padding: 0, }}
-        alignItems='flex-start'
-      />
-      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
-        <Block
-          type='column'
-          title='Product roadmap'
-          description='Show off a public roadmap to get your users excited for upcoming features'
-          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
-          demoImage={DemoRoadmapImg}
-          demoWrap='browser'
-        />
-        <Block
-          type='column'
-          title='Release Changelog'
-          description='Let users view your recent product updates. Let them subscribe via email or web push notifications.'
-          icon={(<ChangeIcon fontSize='inherit' />)}
-          demoImage={DemoChangelog2Img}
-          demoWrap='browser'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
-        <Block
-          type='column'
-          title='Status updates'
-          description='Let waiting customers know your feature is ready.'
-          icon={(<NotificationIcon fontSize='inherit' />)}
-          image={DemoEmailNotificationImg}
-          imageStyleOuter={{ padding: 'unset' }}
-          imageScale={0.3}
-        />
-        <Block
-          type='column'
-          title='Respond to suggestions'
-          description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
-          icon={(<RespondIcon fontSize='inherit' />)}
-          image={DemoPinnedResponseImg}
-          imageStyleOuter={{ padding: 'unset' }}
-        />
-      </HorizontalPanels>
-
-      <Block
+        mirror
         title='Create trust in your community'
         description=''
         image={TeamImg}
@@ -1576,15 +1592,15 @@ export function LandingEngagement() {
         />
         <Block
           type='column'
-          icon={(<CommunityIcon fontSize='inherit' />)}
-          title='Get involved'
-          description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
-        />
-        <Block
-          type='column'
           icon={(<FeedbackIcon fontSize='inherit' />)}
           title='Understand potential and churned customers'
           description='Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving.'
+        />
+        <Block
+          type='column'
+          icon={(<CommunityIcon fontSize='inherit' />)}
+          title='Get involved'
+          description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
         />
       </HorizontalPanels>
       <Block
@@ -2593,7 +2609,7 @@ export function LandingContentCreator() {
       <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md'>
         <Demo
           type='column'
-          icon={<IdeasIcon />}
+          icon={<CustomerFeedbackIcon />}
           title='Idea brainstorm'
           description="Understand your community's opinion to make the right next step."
           alignItems='flex-start'
@@ -2936,7 +2952,7 @@ export function LandingPricingOptions() {
             type='column'
             icon={(<ServerIcon fontSize='inherit' />)}
             titleVariant='h4'
-            title='Managed hosting'
+            title='Cloud offerring'
             description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
             buttonTitle='Try for free'
             buttonLink='/signup'

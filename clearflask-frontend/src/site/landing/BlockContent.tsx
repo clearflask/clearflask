@@ -13,8 +13,8 @@ import PostStatusIframe from '../../app/PostStatusIframe';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
 
 export type Point = string | {
-  text: string;
-  icon: OverridableComponent<SvgIconTypeMap> | Array<OverridableComponent<SvgIconTypeMap>>;
+  text: React.ReactNode;
+  icon?: OverridableComponent<SvgIconTypeMap> | Array<OverridableComponent<SvgIconTypeMap>>;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -80,6 +80,7 @@ const styles = (theme: Theme) => createStyles({
 export interface Props {
   className?: string;
   title?: string | React.ReactNode;
+  subtitle?: string | React.ReactNode;
   marker?: string;
   description?: string | React.ReactNode;
   points?: Array<Point>;
@@ -98,6 +99,7 @@ export interface Props {
   variant?: 'hero' | 'headingMain' | 'heading' | 'content';
   titleVariant?: React.ComponentProps<typeof Typography>['variant'];
   titleCmpt?: string;
+  subtitleVariant?: React.ComponentProps<typeof Typography>['variant'];
   icon?: React.ReactNode;
   iconAbove?: boolean;
   scrollAnchor?: ScrollAnchorProps;
@@ -157,6 +159,11 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
             </div>
           ) : this.props.title}
         </Typography>
+        {!!this.props.subtitle && (
+          <Typography variant={this.props.subtitleVariant || 'subtitle1'} component='div'>
+            {this.props.subtitle}
+          </Typography>
+        )}
         {this.props.marker && (
           <Typography variant='caption' className={this.props.classes.marker}>{this.props.marker}</Typography>
         )}
@@ -168,7 +175,7 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
           <div className={this.props.classes.points}>
             {this.props.points.map(point => {
               const text = typeof point === 'string' ? point : point.text;
-              const icons = typeof point === 'string' ? [CheckIcon] : (Array.isArray(point.icon)
+              const icons = (typeof point === 'string' || !point.icon) ? [CheckIcon] : (Array.isArray(point.icon)
                 ? point.icon : [point.icon]);
               const isIconCheck = typeof point === 'string';
               return (

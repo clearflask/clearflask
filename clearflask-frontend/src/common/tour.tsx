@@ -155,7 +155,7 @@ const styles = (theme: Theme) => createStyles({
   },
   checklist: {
     margin: theme.spacing(4),
-    width: 500,
+    width: 800,
   },
   checklistHeader: {
     color: theme.palette.text.hint,
@@ -319,7 +319,7 @@ const TourChecklistGroup = (props: {
         props.completePerc >= 100 && classes.areaCompleted,
       )}>
         <ListItem button onClick={() => setExpand(!expandWithDefault)}>
-          <Typography variant='h6'>{props.title}</Typography>
+          <Typography variant='h5'>{props.title}</Typography>
           <div className={classes.flexGrow} />
           <ExpandIcon expanded={expandWithDefault} />
         </ListItem>

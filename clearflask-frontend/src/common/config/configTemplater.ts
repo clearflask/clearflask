@@ -46,12 +46,20 @@ export interface CreateTemplateV2Options {
   infoSlug?: string;
   infoDomain?: string;
   infoLogo?: string;
+
+  isPrivate?: boolean;
 }
 export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
   templateLanding: true,
   templateFeedback: true,
   templateRoadmap: true,
   templateChangelog: true,
+};
+export const createTemplateV2OptionsBlank: CreateTemplateV2Options = {
+  templateLanding: false,
+  templateFeedback: false,
+  templateRoadmap: false,
+  templateChangelog: false,
 };
 export interface CreateTemplateV2Result {
   feedback?: FeedbackInstance;
@@ -187,6 +195,8 @@ export default class Templater {
     if (opts.templateRoadmap) result.roadmap = await this.roadmapOn();
     if (opts.templateChangelog) result.changelog = await this.changelogOn();
     if (opts.templateLanding) result.landing = await this.landingOn();
+
+    if (opts.isPrivate) this.privateProject();
 
     if (!isProd()) {
       this.styleWhite();

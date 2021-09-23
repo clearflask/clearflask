@@ -659,32 +659,44 @@ export const ProjectSettingsInstallWidgetPreview = (props: {
   const slug = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.slug, shallowEqual);
   if (slug === undefined) return null;
   const projectLink = `${getProjectLink({ domain, slug })}${props.widgetPath || ''}`;
-  const htmlPopup = `<a href="${projectLink}" target="_blank" style="position: relative;" onclick="
-  event.preventDefault();
-  var el = document.getElementById('cf-widget-content');
-  var isShown = el.style.display != 'none'
-  el.style.display = isShown ? 'none' : 'block';
-">
+  const htmlPopup = `<a href="${projectLink}" target="_blank" style="position: relative;"
+  onclick="
+    event.preventDefault();
+    var contentEl = document.getElementById('cf-widget-content');
+    var backdropEl = document.getElementById('cf-widget-backdrop');
+    var isShown = contentEl.style.display != 'none'
+    contentEl.style.display = isShown ? 'none' : 'block';
+    backdropEl.style.display = isShown ? 'none' : 'block';">
   Give feedback
-  <iframe src='${projectLink}' id="cf-widget-content" class="cf-widget-content" style="
+  <iframe src="${projectLink}" id="cf-widget-content" class="cf-widget-content"
+    style="
+      display: none;
+      height: 600px;
+      width: 450px;
+      border: 1px solid lightgrey;
+      border-radius: 15px;
+      box-shadow: -7px 4px 42px 8px rgba(0,0,0,.1);
+      position: absolute;
+      z-index: 1;
+      top: 125%;
+      left: 50%;
+      transform: translateX(-50%);">
+  </iframe>
+</a>
+<div id="cf-widget-backdrop" class="cf-widget-backdrop"
+  onclick="
+    document.getElementById('cf-widget-content').style.display = 'none';
+    document.getElementById('cf-widget-backdrop').style.display = 'none';"
+  style="
     display: none;
-    height: 600px;
-    width: 450px;
-    border: 1px solid lightgrey;
-    border-radius: 15px;
-    box-shadow: -7px 4px 42px 8px rgba(0,0,0,.1);
-    position: absolute;
-    z-index: 1;
-    top: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-  " />
-</a>`;
-  const htmlIframe = `<iframe src='${projectLink}'  style="
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;">
+</div>`;
+  const htmlIframe = `<iframe src='${projectLink}' style="
   width: 100%;
   height: 300px;
   border: 1px solid lightgrey;
-" />`;
+"></iframe>`;
   return (
     <BrowserPreview
       server={props.server}
@@ -788,7 +800,7 @@ export const ProjectSettingsInstallStatusPreview = (props: {
   allowTransparency="true"
   width="100%"
   height="80px"
-/>`;
+></iframe>`;
   return (
     <BrowserPreview
       server={props.server}
@@ -2134,7 +2146,7 @@ export const ProjectSettingsFeedback = (props: {
                 description={(
                   <>
                     Customize your public page for collecting feedback.
-                    <p>The <b>Feedback-first Form</b> is recommended as it focuses on capturing user feedback first and showing other feedback later.</p>
+                    <p>The <b>Customer-first Form</b> is recommended as it focuses on capturing user feedback first and showing other feedback later.</p>
                     <p>Whereas the <b>Community-first Explorer</b> allows all users to search and filter others' feedback immediately.</p>
                   </>
                 )}
@@ -2166,7 +2178,7 @@ export const ProjectSettingsFeedback = (props: {
                     <FilterControlSelect
                       type='radio'
                       labels={[
-                        { label: 'Feedback-first', value: 'feedback' },
+                        { label: 'Customer-first', value: 'feedback' },
                         { label: 'Community-first', value: 'explorer' },
                         { label: 'Off', value: 'off' },
                       ]}
