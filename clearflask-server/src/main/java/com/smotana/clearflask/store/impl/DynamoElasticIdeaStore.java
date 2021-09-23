@@ -41,7 +41,6 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -69,6 +68,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -241,6 +241,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "type", "keyword"))
                         .put("trendScore", ImmutableMap.of(
                                 "type", "double"))
+                        .put("mergedToPostId", ImmutableMap.of(
+                                "type", "keyword"))
                         .put("order", ImmutableMap.of(
                                 "type", "double"))
                         .build())), XContentType.JSON),
@@ -315,6 +317,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .put("expressionsValue", orNull(idea.getExpressionsValue()))
                         .put("expressions", idea.getExpressions() == null ? ExplicitNull.get() : idea.getExpressions().keySet())
                         .put("trendScore", orNull(idea.getTrendScore()))
+                        .put("mergedToPostId", orNull(idea.getMergedToPostId()))
                         // In dynamo this is empty unless explicitly set.
                         // In ES it is always populated for sorting as it is
                         // not easy to fallback to a value of created unless
@@ -374,7 +377,28 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
+    public LinkResponse linkIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
+        ConnectResponse connectResponse = connectIdeas(projectId, ideaId, parentIdeaId, false, undo, categoryExpressionToWeightMapper);
+        return new LinkResponse(connectResponse.idea, connectResponse.parentIdea);
+    }
+
+    @Override
+    public MergeResponse mergeIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
+        ConnectResponse connectResponse = connectIdeas(projectId, ideaId, parentIdeaId, true, undo, categoryExpressionToWeightMapper);
+
+        ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
+        updates.put("mergedToPostId", orNull(connectResponse.getIdea().getMergedToPostId()));
+        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
+                        .doc(gson.toJson(updates.build()), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT,
+                ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, ideaId)));
+
+        return new MergeResponse(connectResponse.idea, connectResponse.parentIdea, indexingFuture);
+    }
+
+    private ConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
         if (ideaId.equals(parentIdeaId)) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Cannot connect to itself");
         }
@@ -606,9 +630,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
 
-        return new IdeaConnectResponse(
-                idea.toIdea(sanitizer),
-                parentIdea.toIdea(sanitizer));
+        return new ConnectResponse(idea, parentIdea);
+    }
+
+    @Value
+    class ConnectResponse {
+        IdeaModel idea;
+        IdeaModel parentIdea;
     }
 
     @Override
@@ -761,6 +789,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             }
             query.filter(lastActivityRangeQuery);
         }
+
+        // Do not look up posts merged into other posts
+        query.mustNot(QueryBuilders.existsQuery("mergedToPostId"));
 
         return query;
     }

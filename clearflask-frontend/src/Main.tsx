@@ -20,7 +20,7 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isProd, isTracking } from './common/util/detectEnv';
-import { redirectIso } from './common/util/routerUtil';
+import { RedirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { SetTitle } from './common/util/titleUtil';
@@ -116,10 +116,10 @@ class Main extends Component<Props> {
 
   render() {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
+
+    // Redirect www to homepage
     if (windowIso.location.hostname.startsWith('www.')) {
-      // Redirect www to homepage
-      redirectIso(windowIso.location.origin.replace(`www.`, ''));
-      return null;
+      return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
     }
 
     const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;

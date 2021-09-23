@@ -10,7 +10,6 @@ import EditIcon from '@material-ui/icons/Edit';
 import MergeIcon from '@material-ui/icons/MergeType';
 import classNames from 'classnames';
 import React, { Component } from 'react';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
@@ -131,7 +130,7 @@ interface State {
   isSubmittingUnmerge?: boolean;
 }
 
-class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class Comment extends Component<Props & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
@@ -139,7 +138,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     content = this.props.linkToPost && this.props.comment ? (
       <Link
         className={classNames(this.props.classes.content, this.props.classes.clickable)}
-        to={preserveEmbed(`/post/${this.props.comment.ideaId}`, this.props.location)}
+        to={preserveEmbed(`/post/${this.props.comment.ideaId}`)}
       >
         {content}
       </Link>
@@ -329,7 +328,6 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <MyButton
         key='reply'
         buttonVariant='post'
-        expandOnHover
         Icon={SpeechIcon}
         disabled={!!this.props.replyOpen}
         onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}
@@ -351,7 +349,6 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='adminDelete'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           Icon={DeleteIcon}
           onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}
         >
@@ -385,7 +382,6 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='edit'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           Icon={EditIcon}
           disabled={this.state.editing}
           onClick={e => this.setState({ editing: true })}
@@ -406,7 +402,6 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
       <React.Fragment key='unmerge'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           Icon={UnmergeIcon}
           disabled={this.state.editing}
           isSubmitting={this.state.isSubmittingUnmerge}
@@ -494,4 +489,4 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(Comment));
+export default withStyles(styles, { withTheme: true })(Comment);

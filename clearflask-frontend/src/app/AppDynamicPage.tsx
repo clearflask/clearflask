@@ -6,7 +6,7 @@ import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import DynamicMuiIcon from '../common/icon/DynamicMuiIcon';
@@ -399,7 +399,6 @@ export const LandingLink = (props: {
   link?: Client.LandingLink;
   openInNew?: boolean;
 }) => {
-  const location = useLocation();
   const classes = useStyles();
 
   if (!props.link) return null;
@@ -415,7 +414,7 @@ export const LandingLink = (props: {
   if (linkToSlug) {
     linkProps = {
       component: Link,
-      to: preserveEmbed(`/${linkToSlug}`, location),
+      to: preserveEmbed(`/${linkToSlug}`),
     };
   } else if (linkUrl) {
     linkProps = {

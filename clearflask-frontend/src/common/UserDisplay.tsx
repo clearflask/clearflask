@@ -4,7 +4,6 @@ import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React from 'react';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import ModStar from './ModStar';
@@ -59,7 +58,7 @@ interface Props {
   suppressTypography?: boolean;
   suppressStar?: boolean;
 }
-class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
+class UserDisplay extends React.Component<Props & WithStyles<typeof styles, true>> {
   render() {
     var user = (
       <span style={this.props.style} className={classNames(
@@ -102,7 +101,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
         disabled={this.props.disabled}
         variant='text'
         component={Link}
-        to={preserveEmbed(`/user/${this.props.user.userId}`, this.props.location)}
+        to={preserveEmbed(`/user/${this.props.user.userId}`)}
       >
         {user}
       </Button>
@@ -110,4 +109,4 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(UserDisplay));
+export default withStyles(styles, { withTheme: true })(UserDisplay);

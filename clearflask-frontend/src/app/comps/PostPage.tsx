@@ -6,10 +6,13 @@ import NotifyIcon from '@material-ui/icons/NotificationsActiveRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import SubmitButton from '../../common/SubmitButton';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import { WithMediaQueries, withMediaQueries } from '../../common/util/MediaQuery';
+import { RedirectIso } from '../../common/util/routerUtil';
 import { initialWidth } from '../../common/util/screenUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
@@ -70,7 +73,6 @@ interface Props {
   suppressSimilar?: boolean;
 }
 interface ConnectProps {
-  callOnMount?: () => void,
   postStatus: Status;
   post?: Client.Idea;
   loggedInUser?: Client.UserMe;
@@ -82,16 +84,23 @@ interface State {
   isSubmitting?: boolean;
   logInOpen?: boolean;
 }
-class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMediaQueries<keyof MediaQueries> & WithStyles<typeof styles, true>, State> {
+class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMediaQueries<keyof MediaQueries> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
-  constructor(props) {
-    super(props);
-
-    props.callOnMount?.();
-  }
-
   render() {
+    if (!this.props.postStatus) {
+      this.props.server.dispatch({ ssr: true, ssrStatusPassthrough: true, debounce: true }).then(d => d.ideaGet({
+        projectId: this.props.server.getProjectId(),
+        ideaId: this.props.postId,
+      }));
+    }
+
+    if (this.props.post?.mergedToPostId) {
+      return (
+        <RedirectIso to={preserveEmbed(`/post/${this.props.post.mergedToPostId}`)} />
+      );
+    }
+
     if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
       setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));
     }
@@ -262,17 +271,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   };
 
   const byId = state.ideas.byId[ownProps.postId];
-  if (!byId) {
-    newProps.callOnMount = () => {
-      ownProps.server.dispatch({ ssr: true, ssrStatusPassthrough: true }).then(d => d.ideaGet({
-        projectId: state.projectId!,
-        ideaId: ownProps.postId,
-      }));
-    };
-  } else {
-    newProps.postStatus = byId.status;
-    newProps.post = byId.idea;
-  }
+  newProps.postStatus = byId?.status;
+  newProps.post = byId?.idea;
 
   if (newProps.post) {
     newProps.category = state.conf.conf?.content.categories.find(c => c.categoryId === newProps.post!.categoryId)
@@ -284,4 +284,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     spaceForOnePanel: `(min-width: ${600 + 250}px)`,
     spaceForTwoPanels: `(min-width: ${600 + 250 + 150}px)`,
   };
-})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(PostPage))));
+})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withRouter(PostPage)))));

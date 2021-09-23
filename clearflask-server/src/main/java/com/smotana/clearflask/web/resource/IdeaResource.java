@@ -244,11 +244,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         if (ideaCreateAdmin.getLinkedFromPostIds() != null) {
             ideaCreateAdmin.getLinkedFromPostIds()
-                    .forEach(linkedFromPostId -> ideaStore.connectIdeas(
+                    .forEach(linkedFromPostId -> ideaStore.linkIdeas(
                             projectId,
                             linkedFromPostId,
                             ideaId,
-                            false,
                             false,
                             project::getCategoryExpressionWeight));
         }
@@ -317,7 +316,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, false, project::getCategoryExpressionWeight);
+        IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -325,7 +325,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, false, true, project::getCategoryExpressionWeight);
+        IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
@@ -344,7 +345,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (userMergeableCategoryIdsOpt.map(cIds -> cIds.contains(parentIdea.getCategoryId())).orElse(false)) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to merge");
         }
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false, project::getCategoryExpressionWeight);
+        IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -352,7 +354,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, false, project::getCategoryExpressionWeight);
+        IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -360,7 +363,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
-        return ideaStore.connectIdeas(projectId, ideaId, parentIdeaId, true, true, project::getCategoryExpressionWeight);
+        IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_ANON})

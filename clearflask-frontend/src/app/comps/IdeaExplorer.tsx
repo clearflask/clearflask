@@ -265,7 +265,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             if (this.props.onClickPost) {
               this.props.onClickPost(postId);
             } else {
-              this.props.history.push(preserveEmbed(`/post/${postId}`, this.props.location));
+              this.props.history.push(preserveEmbed(`/post/${postId}`));
             }
           }}
           defaultTitle={this.state.animateTitle}

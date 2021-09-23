@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import React from 'react';
-import { Redirect, Route, StaticRouterContext } from "react-router";
+import { Redirect, Route, RouteComponentProps, StaticRouterContext } from "react-router";
 import windowIso from '../windowIso';
 
 // https://reactrouter.com/web/guides/server-rendering/404-401-or-any-other-status
@@ -32,11 +32,11 @@ export function RedirectIso(props: { to: string, httpCode?: number }) {
 }
 
 // Redirect now (supports cross domain)
-export function redirectIso(url: string, httpCode: number = 302) {
+export function redirectIso(url: string, history: RouteComponentProps['history'], httpCode: number = 302) {
   if (windowIso.isSsr) {
     windowIso.staticRouterContext.statusCode = httpCode;
     windowIso.staticRouterContext.url = url;
   } else {
-    windowIso.open(url, '_self');
+    history.push(url);
   }
 }

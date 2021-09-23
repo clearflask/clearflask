@@ -26,7 +26,7 @@ import java.util.Optional;
 @Singleton
 public class ProjectUpgraderImpl implements ProjectUpgrader {
 
-    public static final long PROJECT_VERSION_LATEST = 1L;
+    public static final long PROJECT_VERSION_LATEST = 2L;
 
     @Inject
     private Environment env;
@@ -54,6 +54,17 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
                 updatedVersion = Optional.of(1L);
             }
 
+            // Add post's mergedToPostId
+            if (projectVersion <= 1L) {
+                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
+                        "properties", ImmutableMap.builder()
+                                .put("mergedToPostId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .build())), XContentType.JSON),
+                        RequestOptions.DEFAULT);
+                updatedVersion = Optional.of(2L);
+            }
+
             // !! IMPORTANT !!:
             // When adding a new upgrade, do the following:
             // - Add the changes for new projects (ie update IdeaStore to create index field)
@@ -65,9 +76,9 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
 
             /* ******** TEMPLATE START ********
             // || list changes here ||
-            if (projectVersion <= || 1L match previous version ||){
+            if (projectVersion <= || 2L match previous version ||){
                 elastic.|| perform changes here ||;
-                updatedVersion = OptionalLong.of( || 2L increment version by one, should match PROJECT_VERSION_LATEST ||);
+                updatedVersion = Optional.of( || 3L increment version by one, should match PROJECT_VERSION_LATEST ||);
             }
             ******** TEMPLATE END ******** */
 
@@ -80,7 +91,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
         if (updatedVersion.orElse(project.getProjectVersion()) != PROJECT_VERSION_LATEST) {
             if (env.isProduction()) {
                 if (LogUtil.rateLimitAllowLog("elasticschemaupgrader-not-latest-after-upgrade")) {
-                    log.error("Not at latest version after upgrade, most likely a bug, projectId {} projectVersionn {} updatedVersion {}",
+                    log.error("Not at latest version after upgrade, most likely a bug, projectId {} projectVersion {} updatedVersion {}",
                             project.getProjectId(), project.getProjectVersion(), updatedVersion);
                 }
             } else {

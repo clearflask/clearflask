@@ -4,7 +4,6 @@ import { Button, Table, TableBody, TableCell, TableHead, TableRow, Typography } 
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
@@ -42,7 +41,7 @@ interface ConnectProps {
   getNextTransactions?: () => void;
 }
 
-class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
+class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   constructor(props) {
     super(props);
@@ -89,7 +88,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                       {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
                         <Button
                           component={Link}
-                          to={preserveEmbed(`/post/${transaction.targetId}`, this.props.location)}
+                          to={preserveEmbed(`/post/${transaction.targetId}`)}
                         >
                           View
                         </Button>
@@ -155,4 +154,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     getNextTransactions: getNextTransactions,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(TransactionList)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(TransactionList));

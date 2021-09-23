@@ -5,6 +5,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import GithubIcon from '@material-ui/icons/GitHub';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import ServerAdmin from '../../api/serverAdmin';
 import GoogleIcon from '../../common/icon/GoogleIcon';
@@ -102,7 +103,7 @@ interface Props {
   button2Title?: string;
   button2Link?: string;
 }
-class Hero extends Component<Props & WithStyles<typeof styles, true>> {
+class Hero extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
 
   render() {
@@ -218,13 +219,13 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
     this.oauthFlow.listenForSuccess(async () => {
       const bindResult = await (await ServerAdmin.get().dispatchAdmin()).accountBindAdmin({ accountBindAdmin: {} });
       if (!!bindResult.created) {
-        redirectIso('/dashboard/welcome');
+        redirectIso('/dashboard/welcome', this.props.history);
       } else if (!!bindResult.account) {
-        redirectIso('/dashboard');
+        redirectIso('/dashboard', this.props.history);
       }
     });
     this.oauthFlow.openForAccount(type, 'window');
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Hero);
+export default withStyles(styles, { withTheme: true })(withRouter(Hero));

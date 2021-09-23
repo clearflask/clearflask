@@ -12,7 +12,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaConnectResponse;
 import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -68,7 +67,9 @@ public interface IdeaStore {
 
     ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
-    IdeaConnectResponse connectIdeas(String projectId, String ideaId, String parentIdeaId, boolean merge, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper);
+    LinkResponse linkIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper);
+
+    MergeResponse mergeIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper);
 
     HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
@@ -116,6 +117,19 @@ public interface IdeaStore {
     @Value
     class IdeaAndIndexingFuture {
         IdeaModel idea;
+        ListenableFuture<? extends WriteResponse> indexingFuture;
+    }
+
+    @Value
+    class LinkResponse {
+        IdeaModel idea;
+        IdeaModel parentIdea;
+    }
+
+    @Value
+    class MergeResponse {
+        IdeaModel idea;
+        IdeaModel parentIdea;
         ListenableFuture<? extends WriteResponse> indexingFuture;
     }
 

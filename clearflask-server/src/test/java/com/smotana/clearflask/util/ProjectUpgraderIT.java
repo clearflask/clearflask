@@ -40,6 +40,13 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
 
         setProjectVersion(accountAndProject.getProject().getProjectId(), 0L);
 
+        // Undo version 2 -> 1
+        updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
+                "mergedToPostId", ImmutableMap.of(
+                        "type", "keyword",
+                        // This should be deleted as part of the upgrade
+                        "meta", ImmutableMap.of("expect_this", "to_be_deleted"))));
+
         // Undo version 1 -> 0
         updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "order", ImmutableMap.of(
@@ -55,11 +62,16 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
         assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "order", ImmutableMap.of(
                         "type", "double")));
+
+        // Assert version 1 -> 2
+        assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
+                "mergedToPostId", ImmutableMap.of(
+                        "type", "double")));
     }
 
     private void updateElasticSearchMapping(String projectId, String index, ImmutableMap<String, Object> properties) throws IOException {
         elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(index, projectId)).source(gson.toJson(ImmutableMap.of(
-                "properties", properties)), XContentType.JSON),
+                        "properties", properties)), XContentType.JSON),
                 RequestOptions.DEFAULT);
     }
 

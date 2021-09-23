@@ -777,7 +777,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                       {
                         type: 'button', onClick: () => {
                           ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
-                          redirectIso('/login');
+                          redirectIso('/login', this.props.history);
                         }, title: 'Sign out', icon: LogoutIcon
                       },
                     ]

@@ -60,7 +60,7 @@ export const IframeWithUrlSync = (props: {
   }
 
   if (redirectOnDirectAccess !== undefined && windowIso.isSsr) {
-    redirectIso(srcWithoutPathname + (redirectOnDirectAccess !== true ? redirectOnDirectAccess : (pathnamePrefix || '')) + (browserPathname || '') + (initialQuery || ''));
+    redirectIso(srcWithoutPathname + (redirectOnDirectAccess !== true ? redirectOnDirectAccess : (pathnamePrefix || '')) + (browserPathname || '') + (initialQuery || ''), history);
     return null;
   }
 

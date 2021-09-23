@@ -16,7 +16,6 @@ import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
@@ -422,7 +421,7 @@ interface State {
   iWantThisCommentExpanded?: boolean;
   demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
 }
-class Post extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
+class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   onLoggedIn?: () => void;
   _isMounted: boolean = false;
   readonly fundingControlRef = createMutableRef<any>();
@@ -501,7 +500,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             )}
             style={{
               minWidth: MinContentWidth,
-              width: this.props.widthExpand ? MaxContentWidth : (this.props.variant !== 'list' ? 'max-content' : MinContentWidth),
+              width: this.props.widthExpand ? MaxContentWidth : (this.props.variant !== 'list' ? MaxContentWidth : MinContentWidth),
               maxWidth: this.props.widthExpand ? '100%' : MaxContentWidth,
             }}
             onClick={(isOnlyPostOnClick && !this.props.disableOnClick) ? () => this.props.onClickPost && !!this.props.idea?.ideaId && this.props.onClickPost(this.props.idea.ideaId) : undefined}
@@ -692,7 +691,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <MyButton
         key='addComment'
         buttonVariant='post'
-        expandOnHover
         Icon={SpeechIcon}
         disabled={!!this.state.commentExpanded}
         onClick={e => this.setState({ commentExpanded: true })}
@@ -790,7 +788,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='edit-response'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           disabled={!!this.state.showEditingStatusAndResponse}
           Icon={RespondIcon}
           onClick={e => this.setState({ showEditingStatusAndResponse: 'response' })}
@@ -813,7 +810,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='edit-connect'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           disabled={!!this.state.showEditingConnect}
           Icon={LinkAltIcon}
           onClick={e => this.setState({ showEditingConnect: true })}
@@ -843,7 +839,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <MyButton
           key='delete'
           buttonVariant='post'
-          expandOnHover
           Icon={DeleteIcon}
           onClick={e => this.setState({ deleteDialogOpen: true })}
         >
@@ -1463,7 +1458,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <React.Fragment key='disconnect'>
         <MyButton
           buttonVariant='post'
-          expandOnHover
           Icon={this.props.disconnectType === 'merge' ? UnmergeIcon : UnLinkAltIcon}
           isSubmitting={this.props.isSubmittingDisconnect}
           onClick={e => this.props.onDisconnect?.()}
@@ -1732,7 +1726,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Link
         className={classNames(this.props.classes.titleAndDescription, this.props.classes.clickable)}
-        to={preserveEmbed(`/post/${this.props.idea.ideaId}`, this.props.location)}
+        to={preserveEmbed(`/post/${this.props.idea.ideaId}`)}
       >
         {children}
       </Link>
@@ -2025,4 +2019,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     linkedFromPosts,
     fetchPostIds,
   };
-})(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));
+})(withStyles(styles, { withTheme: true })(withSnackbar(Post)));

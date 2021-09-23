@@ -5,7 +5,6 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
@@ -112,15 +111,15 @@ interface State {
   fixedTarget?: number;
   maxTarget: number;
 }
-class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = { maxTarget: 0 };
   _isMounted: boolean = false;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
 
-  constructor(props: Readonly<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps>) {
+  constructor(props) {
     super(props);
 
-    props.callOnMount?.();
+    this.props.callOnMount?.();
 
     if (this.props.myRef) this.props.myRef.current = this;
   }
@@ -194,7 +193,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
               <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
                 <TruncateEllipsis ellipsis='…' lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></TruncateEllipsis>
                 {!showFirstIdea && (
-                  <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`, this.props.location)}>
+                  <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`)}>
                     View
                   </Button>
                 )}
@@ -486,4 +485,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(FundingControl)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(FundingControl));
