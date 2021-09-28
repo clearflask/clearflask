@@ -49,6 +49,7 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -186,38 +187,38 @@ public class DynamoElasticCommentStore implements CommentStore {
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
-                "dynamic", "false",
-                "properties", ImmutableMap.builder()
-                        .put("ideaId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("parentCommentIds", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("level", ImmutableMap.of(
-                                "type", "integer"))
-                        .put("childCommentCount", ImmutableMap.of(
-                                "type", "integer"))
-                        .put("authorUserId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("authorName", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("authorIsMod", ImmutableMap.of(
-                                "type", "boolean"))
-                        .put("created", ImmutableMap.of(
-                                "type", "date",
-                                "format", "epoch_second"))
-                        .put("edited", ImmutableMap.of(
-                                "type", "date",
-                                "format", "epoch_second"))
-                        .put("content", ImmutableMap.of(
-                                "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
-                        .put("upvotes", ImmutableMap.of(
-                                "type", "integer"))
-                        .put("downvotes", ImmutableMap.of(
-                                "type", "integer"))
-                        .put("score", ImmutableMap.of(
-                                "type", "double"))
-                        .build())), XContentType.JSON),
+                        "dynamic", "false",
+                        "properties", ImmutableMap.builder()
+                                .put("ideaId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("parentCommentIds", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("level", ImmutableMap.of(
+                                        "type", "integer"))
+                                .put("childCommentCount", ImmutableMap.of(
+                                        "type", "integer"))
+                                .put("authorUserId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("authorName", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("authorIsMod", ImmutableMap.of(
+                                        "type", "boolean"))
+                                .put("created", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("edited", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("content", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("upvotes", ImmutableMap.of(
+                                        "type", "integer"))
+                                .put("downvotes", ImmutableMap.of(
+                                        "type", "integer"))
+                                .put("score", ImmutableMap.of(
+                                        "type", "double"))
+                                .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
@@ -233,46 +234,50 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public CommentAndIndexingFuture<List<WriteResponse>> createComment(CommentModel comment) {
+    public CommentAndIndexingFuture<List<WriteResponse>> createCommentAndUpvote(CommentModel comment) {
         checkArgument(comment.getParentCommentIds().size() == comment.getLevel());
 
-        commentSchema.table().putItem(commentSchema.toItem(comment));
+        VoteValue votePrev = voteStore.vote(comment.getProjectId(), comment.getAuthorUserId(), comment.getCommentId(), VoteValue.Upvote);
+        CommentModel commentWithVote = comment.toBuilder()
+                .upvotes(comment.getUpvotes() + 1).build();
+
+        commentSchema.table().putItem(commentSchema.toItem(commentWithVote));
         Optional<SettableFuture<WriteResponse>> parentIndexingFutureOpt = Optional.empty();
-        if (comment.getLevel() > 0) {
-            String parentCommentId = comment.getParentCommentIds().get(comment.getParentCommentIds().size() - 1);
+        if (commentWithVote.getLevel() > 0) {
+            String parentCommentId = commentWithVote.getParentCommentIds().get(commentWithVote.getParentCommentIds().size() - 1);
             long parentChildCommentCount = commentSchema.table().updateItem(new UpdateItemSpec()
-                    .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
-                            "projectId", comment.getProjectId(),
-                            "ideaId", comment.getIdeaId(),
-                            "commentId", parentCommentId)))
-                    .addAttributeUpdate(new AttributeUpdate("childCommentCount")
-                            .addNumeric(1))
-                    .withReturnValues(ReturnValue.ALL_NEW))
+                            .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
+                                    "projectId", commentWithVote.getProjectId(),
+                                    "ideaId", commentWithVote.getIdeaId(),
+                                    "commentId", parentCommentId)))
+                            .addAttributeUpdate(new AttributeUpdate("childCommentCount")
+                                    .addNumeric(1))
+                            .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem()
                     .getLong("childCommentCount");
 
             SettableFuture<WriteResponse> parentIndexingFuture = SettableFuture.create();
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()), parentCommentId)
+            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, commentWithVote.getProjectId()), parentCommentId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "childCommentCount", parentChildCommentCount
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    ActionListeners.onFailureRetry(parentIndexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
+                    ActionListeners.onFailureRetry(parentIndexingFuture, f -> indexComment(f, commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getCommentId())));
 
             parentIndexingFutureOpt = Optional.of(parentIndexingFuture);
         }
 
-        IdeaAndIndexingFuture incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId(), comment.getLevel() == 0);
+        IdeaAndIndexingFuture incrementResponse = ideaStore.incrementIdeaCommentCount(commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getLevel() == 0);
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
-        indexComment(indexingFuture, comment);
+        indexComment(indexingFuture, commentWithVote);
 
         ImmutableList.Builder<ListenableFuture<? extends WriteResponse>> builder = ImmutableList.builder();
         builder.add(indexingFuture);
         builder.add(incrementResponse.getIndexingFuture());
         parentIndexingFutureOpt.ifPresent(builder::add);
-        return new CommentAndIndexingFuture(comment, Futures.allAsList(builder.build()));
+        return new CommentAndIndexingFuture(commentWithVote, Futures.allAsList(builder.build()));
     }
 
     @Extern
@@ -291,12 +296,12 @@ public class DynamoElasticCommentStore implements CommentStore {
             return ImmutableMap.of();
         }
         return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
-                .withPrimaryKeys(commentIds.stream()
-                        .map(commentId -> commentSchema.primaryKey(ImmutableMap.of(
-                                "projectId", projectId,
-                                "ideaId", ideaId,
-                                "commentId", commentId)))
-                        .toArray(PrimaryKey[]::new))))
+                        .withPrimaryKeys(commentIds.stream()
+                                .map(commentId -> commentSchema.primaryKey(ImmutableMap.of(
+                                        "projectId", projectId,
+                                        "ideaId", ideaId,
+                                        "commentId", commentId)))
+                                .toArray(PrimaryKey[]::new))))
                 .map(i -> commentSchema.fromItem(i))
                 .collect(ImmutableMap.toImmutableMap(
                         CommentModel::getCommentId,
@@ -363,16 +368,16 @@ public class DynamoElasticCommentStore implements CommentStore {
                 && sortFields.isEmpty()) {
             // If no search term, do a simple dynamo query
             Page<Item, QueryOutcome> page = commentByProjectIdSchema.index().query(new QuerySpec()
-                    .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
-                            "projectId", projectId)))
-                    .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
-                            .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of())))
-                    .withMaxPageSize(pageSize)
-                    .withScanIndexForward(SortOrder.DESC.equals(sortOrderOpt.orElse(SortOrder.DESC)))
-                    .withExclusiveStartKey(cursorOpt
-                            .map(serverSecretCursor::decryptString)
-                            .map(commentByProjectIdSchema::toExclusiveStartKey)
-                            .orElse(null)))
+                            .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                                    "projectId", projectId)))
+                            .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                                    .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of())))
+                            .withMaxPageSize(pageSize)
+                            .withScanIndexForward(SortOrder.DESC.equals(sortOrderOpt.orElse(SortOrder.DESC)))
+                            .withExclusiveStartKey(cursorOpt
+                                    .map(serverSecretCursor::decryptString)
+                                    .map(commentByProjectIdSchema::toExclusiveStartKey)
+                                    .orElse(null)))
                     .firstPage();
 
             return new SearchCommentsResponse(
@@ -382,8 +387,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                             .map(item -> commentByProjectIdSchema.fromItem(item))
                             .collect(ImmutableList.toImmutableList()),
                     Optional.ofNullable(page.getLowLevelResult()
-                            .getQueryResult()
-                            .getLastEvaluatedKey())
+                                    .getQueryResult()
+                                    .getLastEvaluatedKey())
                             .map(commentByProjectIdSchema::serializeLastEvaluatedKey)
                             .map(serverSecretCursor::encryptString));
         } else {
@@ -410,12 +415,12 @@ public class DynamoElasticCommentStore implements CommentStore {
             }
 
             ImmutableList<CommentModel> comments = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
-                    .withPrimaryKeys(Arrays.stream(hits)
-                            .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
-                                    "projectId", projectId,
-                                    "ideaId", hit.getSourceAsMap().get("ideaId"),
-                                    "commentId", hit.getId())))
-                            .toArray(PrimaryKey[]::new))))
+                            .withPrimaryKeys(Arrays.stream(hits)
+                                    .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
+                                            "projectId", projectId,
+                                            "ideaId", hit.getSourceAsMap().get("ideaId"),
+                                            "commentId", hit.getId())))
+                                    .toArray(PrimaryKey[]::new))))
                     .map(i -> commentSchema.fromItem(i))
                     .collect(ImmutableList.toImmutableList());
 
@@ -501,12 +506,12 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Override
     public void exportAllForProject(String projectId, Consumer<CommentModel> consumer) {
         StreamSupport.stream(commentByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
-                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
+                                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(commentByProjectIdSchema::fromItem)
                 .filter(comment -> projectId.equals(comment.getProjectId()))
@@ -516,13 +521,13 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Override
     public CommentAndIndexingFuture<WriteResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate) {
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(commentSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId,
-                        "commentId", commentId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .addAttributeUpdate(new AttributeUpdate("content")
-                        .put(commentSchema.toDynamoValue("content", commentUpdate.getContent()))))
+                        .withPrimaryKey(commentSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId,
+                                "commentId", commentId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .addAttributeUpdate(new AttributeUpdate("content")
+                                .put(commentSchema.toDynamoValue("content", commentUpdate.getContent()))))
                 .getItem());
 
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
@@ -577,12 +582,12 @@ public class DynamoElasticCommentStore implements CommentStore {
                 throw new RuntimeException("Unknown vote type: " + vote);
         }
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(commentSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId,
-                        "commentId", commentId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withAttributeUpdate(attrUpdatesBuilder.build()))
+                        .withPrimaryKey(commentSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId,
+                                "commentId", commentId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withAttributeUpdate(attrUpdatesBuilder.build()))
                 .getItem());
 
         if (!userId.equals(comment.getAuthorUserId())) {
@@ -605,17 +610,23 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Extern
     @Override
     public CommentAndIndexingFuture<WriteResponse> markAsDeletedComment(String projectId, String ideaId, String commentId) {
+        Expression expression = commentSchema.expressionBuilder()
+                .conditionExists()
+                .remove("authorUserId")
+                .remove("authorName")
+                .remove("content")
+                .set("edited", Instant.now())
+                .build();
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId,
-                        "commentId", commentId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .addAttributeUpdate(new AttributeUpdate("authorUserId").delete())
-                .addAttributeUpdate(new AttributeUpdate("authorName").delete())
-                .addAttributeUpdate(new AttributeUpdate("content").delete())
-                .addAttributeUpdate(new AttributeUpdate("edited")
-                        .put(commentSchema.toDynamoValue("edited", Instant.now()))))
+                        .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId,
+                                "commentId", commentId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null)))
                 .getItem());
 
         HashMap<String, Object> updates = Maps.newHashMap();
@@ -655,17 +666,17 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Override
     public ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId) {
         Iterables.partition(StreamSupport.stream(commentSchema.table().query(new QuerySpec()
-                .withHashKey(commentSchema.partitionKey(Map.of(
-                        "ideaId", ideaId,
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(commentSchema.rangeKeyName())
-                        .beginsWith(commentSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(commentSchema::fromItem)
-                .map(CommentModel::getCommentId)
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(commentSchema.partitionKey(Map.of(
+                                                "ideaId", ideaId,
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(commentSchema.rangeKeyName())
+                                                .beginsWith(commentSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(commentSchema::fromItem)
+                        .map(CommentModel::getCommentId)
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(commentIdsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(commentSchema.tableName());
                     commentIdsBatch.stream()
@@ -689,16 +700,16 @@ public class DynamoElasticCommentStore implements CommentStore {
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete comments
         Iterables.partition(StreamSupport.stream(commentByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
-                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(commentByProjectIdSchema::fromItem)
-                .filter(comment -> projectId.equals(comment.getProjectId()))
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                                                .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(commentByProjectIdSchema::fromItem)
+                        .filter(comment -> projectId.equals(comment.getProjectId()))
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(commentsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(commentSchema.tableName());
                     commentsBatch.stream()

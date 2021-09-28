@@ -658,6 +658,40 @@ components:
               properties:
                 invoiceHtml:
                   type: string
+/admin/account/github/repos:
+  post:
+    operationId: gitHubGetReposAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: code
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: AvailableRepos
+              type: object
+              required:
+              - repos
+              properties:
+                repos:
+                  type: array
+                  items:
+                    title: AvailableRepo
+                    type: object
+                    required:
+                    - repositoryId
+                    - name
+                    properties:
+                      repositoryId:
+                        type: integer
+                        format: int64
+                      name:
+                        type: string
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin

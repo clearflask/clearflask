@@ -641,6 +641,7 @@ class DataMock {
         statusId: status ? status.statusId : undefined,
         ...{ created: this.mockDate() },
         ...extra,
+        // ...{ linkedGitHubUrl: 'https://github.com/clearflask/clearflask/issues/1' },
       },
     });
     !suppressComments && category.support.comment && this.mockComments([user], item);

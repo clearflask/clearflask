@@ -25,9 +25,9 @@
              try downgrading to 2.22.2 if this gets resolved:
              https://github.com/oracle/oci-java-sdk/issues/78 -->
         <jersey.version>2.27</jersey.version>
-        <awssdk.version>1.11.700</awssdk.version>
+        <awssdk.version>1.12.75</awssdk.version>
         <hk2.version>2.5.0-b62</hk2.version>
-        <jjwt.version>0.10.5</jjwt.version>
+        <jjwt.version>0.11.2</jjwt.version>
         <sqlite4java>1.0.392</sqlite4java>
         <node.version>v14.15.1</node.version>
         <frontend-maven-plugin.version>1.10.4</frontend-maven-plugin.version>
@@ -519,6 +519,12 @@
                 <groupId>org.apache.xmlgraphics</groupId>
                 <artifactId>batik-extension</artifactId>
                 <version>${batik.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
@@ -729,6 +735,48 @@
                 <scope>test</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>github-api</artifactId>
+                <version>1.133</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.12.5</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.12.5</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.12.5</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-joda</artifactId>
+                <version>2.12.5</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.infradna.tool</groupId>
+                <artifactId>bridge-method-annotation</artifactId>
+                <version>1.21</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.8.0</version>
+            </dependency>
+
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
             <dependency>
                 <groupId>javax.xml.bind</groupId>
@@ -837,6 +885,11 @@
                 <artifactId>dnsjava</artifactId>
                 <version>3.3.1</version>
             </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>0.62.2</version>
+            </dependency>
 
             <!-- test-only deps -->
             <dependency>
@@ -878,8 +931,18 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>DynamoDBLocal</artifactId>
-                <version>1.11.477</version>
+                <version>1.12.0</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.plugin</groupId>

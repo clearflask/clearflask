@@ -253,6 +253,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(account);
   }
+  gitHubGetReposAdmin(request: Admin.GitHubGetReposAdminRequest): Promise<Admin.AvailableRepos> {
+    return this.returnLater({
+      repos: [
+        { name: 'clearflask/clearflask', repositoryId: 123 },
+      ],
+    });
+  }
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;

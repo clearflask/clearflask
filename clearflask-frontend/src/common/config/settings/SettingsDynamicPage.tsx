@@ -67,7 +67,7 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<ty
         {creditPreview}
         {workflowPreview}
         {this.props.page.getChildren().all
-          .filter(child => !(child as ConfigEditor.Property).hide)
+          .filter(child => !child.hide)
           .map(child => (
             <Property
               server={this.props.server}

@@ -46,11 +46,15 @@ CommentStore {
         return IdUtil.contentUnique(content);
     }
 
+    default String genDeterministicCommentIdForGithubIssueComment(long commentId) {
+        return "github-" + commentId;
+    }
+
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
     double computeCommentScore(int upvotes, int downvotes);
 
-    CommentAndIndexingFuture<List<WriteResponse>> createComment(CommentModel comment);
+    CommentAndIndexingFuture<List<WriteResponse>> createCommentAndUpvote(CommentModel comment);
 
     Optional<CommentModel> getComment(String projectId, String ideaId, String commentId);
 
@@ -158,7 +162,7 @@ CommentStore {
         }
 
         public String getContentSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId());
+            return sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId(), false);
         }
 
         public String getContentAsText(Sanitizer sanitizer) {
@@ -206,7 +210,7 @@ CommentStore {
                     null,
                     null,
                     null,
-                    sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId()),
+                    sanitizer.richHtml(getContent(), "comment", getCommentId(), getProjectId(), false),
                     (long) (getUpvotes() - getDownvotes()),
                     vote);
         }

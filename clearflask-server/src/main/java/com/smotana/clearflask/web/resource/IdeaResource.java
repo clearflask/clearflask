@@ -47,6 +47,7 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.DraftStore;
+import com.smotana.clearflask.store.GitHubStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
@@ -104,6 +105,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private Billing billing;
     @Inject
     private WebhookService webhookService;
+    @Inject
+    private GitHubStore gitHubStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -153,6 +156,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
@@ -221,7 +225,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 ImmutableSet.of(),
-                ideaCreateAdmin.getOrder());
+                ideaCreateAdmin.getOrder(),
+                null);
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         try {
             if (votingAllowed) {
@@ -409,7 +414,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         searchResponse.isTotalHitsGte() ? true : null));
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
@@ -454,7 +459,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaUpdateAdmin.getTitle());
         sanitizer.content(ideaUpdateAdmin.getDescription());
 
-        ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+        Project project = projectStore.getProject(projectId, true).get();
+        ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         Optional<UserModel> authorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
                 .or(() -> getExtendedPrincipal()
                         .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
@@ -472,6 +478,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         responseChanged,
                         authorUserOpt);
             }
+        }
+        if (statusChanged || responseChanged) {
+            gitHubStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             webhookService.eventPostTagsChanged(idea);
@@ -626,7 +635,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 && BloomFilters.fromByteArray(user.getVoteBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             voteOptionOpt = Optional.ofNullable(voteStore.voteSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
-                    .get(idea.getIdeaId()))
+                            .get(idea.getIdeaId()))
                     .map(voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption());
         }
         Optional<List<String>> expressionOpt = Optional.empty();
@@ -635,7 +644,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 && BloomFilters.fromByteArray(user.getExpressBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             expressionOpt = Optional.ofNullable(voteStore.expressSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
-                    .get(idea.getIdeaId()))
+                            .get(idea.getIdeaId()))
                     .map(expressModel -> expressModel.getExpressions().asList());
         }
         Optional<Long> fundAmountOpt = Optional.empty();
@@ -644,7 +653,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 && BloomFilters.fromByteArray(user.getFundBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             fundAmountOpt = Optional.ofNullable(voteStore.fundSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
-                    .get(idea.getIdeaId()))
+                            .get(idea.getIdeaId()))
                     .map(VoteStore.FundModel::getFundAmount);
         }
 

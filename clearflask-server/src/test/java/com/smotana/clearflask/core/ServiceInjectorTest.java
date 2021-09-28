@@ -15,6 +15,7 @@ import com.smotana.clearflask.web.resource.CommentResource;
 import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.CreditResource;
+import com.smotana.clearflask.web.resource.GitHubResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
@@ -68,7 +69,8 @@ public class ServiceInjectorTest {
                 CreditResource.class,
                 ContentResource.class,
                 HealthResource.class,
-                ServiceManager.class
+                ServiceManager.class,
+                GitHubResource.class
         ).forEach(injector::getBinding);
     }
 }

@@ -66,6 +66,8 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
+import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
@@ -84,6 +86,7 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
@@ -143,6 +146,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected KillBillResource killBillResource;
     @Inject
+    protected GitHubResource gitHubResource;
+    @Inject
     protected MockExtendedSecurityContext mockExtendedSecurityContext;
     @Inject
     protected AmazonDynamoDB dynamo;
@@ -193,6 +198,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 CreditResource.module(),
                 NotificationResource.module(),
                 KillBillResource.module(),
+                GitHubResource.module(),
+                GitHubStoreImpl.module(),
+                MarkdownAndQuillUtil.module(),
+                GitHubClientProviderImpl.module(),
                 AmazonSimpleEmailServiceProvider.module(),
                 ClearFlaskCreditSync.module(),
                 KillBillSync.module(),
@@ -393,9 +402,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected UserMeWithBalance addActiveUser(String projectId, ConfigAdmin configAdmin) throws Exception {
         long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
-                .name("john-" + newUserNumber)
-                .email("john-" + newUserNumber + "@example.com")
-                .build())
+                        .name("john-" + newUserNumber)
+                        .email("john-" + newUserNumber + "@example.com")
+                        .build())
                 .getUser();
         IdeaWithVote idea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
                 .authorUserId(user.getUserId())
@@ -528,7 +537,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         log.info("DynamoScan starting");
         String tableName = dynamoMapper.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
         dynamo.scan(new ScanRequest()
-                .withTableName(tableName))
+                        .withTableName(tableName))
                 .getItems()
                 .forEach(item -> log.info("DynamoScan: {}", item));
         log.info("DynamoScan finished");

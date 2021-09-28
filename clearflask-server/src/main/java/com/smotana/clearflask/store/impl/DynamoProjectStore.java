@@ -45,6 +45,7 @@ import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Expression;
+import com.smotana.clearflask.api.model.GitHub;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
@@ -183,16 +184,16 @@ public class DynamoProjectStore implements ProjectStore {
             }
         }
         Optional<String> projectIdOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
-                .getItem(new GetItemSpec()
-                        .withPrimaryKey(slugSchema
-                                .primaryKey(Map.of("slug", slug))))))
+                        .getItem(new GetItemSpec()
+                                .withPrimaryKey(slugSchema
+                                        .primaryKey(Map.of("slug", slug))))))
                 .map(SlugModel::getProjectId);
         projectIdOpt.ifPresent(projectId -> slugCache.put(slug, projectId));
         if (!projectIdOpt.isPresent() && slugAltOpt.isPresent()) {
             projectIdOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
-                    .getItem(new GetItemSpec()
-                            .withPrimaryKey(slugSchema
-                                    .primaryKey(Map.of("slug", slugAltOpt.get()))))))
+                            .getItem(new GetItemSpec()
+                                    .withPrimaryKey(slugSchema
+                                            .primaryKey(Map.of("slug", slugAltOpt.get()))))))
                     .map(SlugModel::getProjectId);
             projectIdOpt.ifPresent(projectId -> slugCache.put(slug, projectId));
         }
@@ -210,9 +211,9 @@ public class DynamoProjectStore implements ProjectStore {
             }
         }
         Optional<Project> projectOpt = Optional.ofNullable(projectSchema.fromItem(projectSchema.table()
-                .getItem(new GetItemSpec()
-                        .withPrimaryKey(projectSchema
-                                .primaryKey(Map.of("projectId", projectId))))))
+                        .getItem(new GetItemSpec()
+                                .withPrimaryKey(projectSchema
+                                        .primaryKey(Map.of("projectId", projectId))))))
                 .map(this::getProjectWithUpgrade);
         projectCache.put(projectId, projectOpt);
         return projectOpt;
@@ -224,11 +225,11 @@ public class DynamoProjectStore implements ProjectStore {
             return ImmutableSet.of();
         }
         ImmutableSet<Project> projects = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new BatchGetItemSpec()
-                .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
-                        .withConsistentRead(!useCache)
-                        .withPrimaryKeys(projectIds.stream()
-                                .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
-                                .toArray(PrimaryKey[]::new)))))
+                        .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
+                                .withConsistentRead(!useCache)
+                                .withPrimaryKeys(projectIds.stream()
+                                        .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
+                                        .toArray(PrimaryKey[]::new)))))
                 .map(projectSchema::fromItem)
                 .map(this::getProjectWithUpgrade)
                 .collect(ImmutableSet.toImmutableSet());
@@ -444,16 +445,16 @@ public class DynamoProjectStore implements ProjectStore {
 
         // Delete Slug
         Iterables.partition(StreamSupport.stream(slugByProjectSchema.index().query(new QuerySpec()
-                .withHashKey(slugByProjectSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(slugByProjectSchema.rangeKeyName())
-                        .beginsWith(slugByProjectSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(slugByProjectSchema::fromItem)
-                .filter(slug -> projectId.equals(slug.getProjectId()))
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(slugByProjectSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(slugByProjectSchema.rangeKeyName())
+                                                .beginsWith(slugByProjectSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(slugByProjectSchema::fromItem)
+                        .filter(slug -> projectId.equals(slug.getProjectId()))
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(slugsBatch -> {
                     slugCache.invalidateAll(slugsBatch);
                     TableWriteItems tableWriteItems = new TableWriteItems(slugSchema.tableName());
@@ -486,10 +487,10 @@ public class DynamoProjectStore implements ProjectStore {
     @Override
     public Optional<InvitationModel> getInvitation(String invitationId) {
         return Optional.ofNullable(invitationSchema
-                .fromItem(invitationSchema
-                        .table().getItem(invitationSchema
-                                .primaryKey(Map.of(
-                                        "invitationId", invitationId)))))
+                        .fromItem(invitationSchema
+                                .table().getItem(invitationSchema
+                                        .primaryKey(Map.of(
+                                                "invitationId", invitationId)))))
                 .filter(invitation -> {
                     if (invitation.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
                         log.debug("DynamoDB has an expired invitation with expiry {}", invitation.getTtlInEpochSec());
@@ -502,12 +503,12 @@ public class DynamoProjectStore implements ProjectStore {
     @Override
     public ImmutableList<InvitationModel> getInvitations(String projectId) {
         return StreamSupport.stream(invitationByProjectSchema.index().query(new QuerySpec()
-                .withHashKey(invitationByProjectSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(invitationByProjectSchema.rangeKeyName())
-                        .beginsWith(invitationByProjectSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
+                                .withHashKey(invitationByProjectSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(invitationByProjectSchema.rangeKeyName())
+                                        .beginsWith(invitationByProjectSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(invitationByProjectSchema::fromItem)
                 .filter(invitation -> {
@@ -571,16 +572,16 @@ public class DynamoProjectStore implements ProjectStore {
     @Override
     public Project addAdmin(String projectId, String adminAccountId) {
         Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
-                .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
-                .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
-                .withNameMap(Map.of(
-                        "#partitionKey", projectSchema.partitionKeyName(),
-                        "#accountId", "accountId",
-                        "#adminsAccountIds", "adminsAccountIds"))
-                .withValueMap(Map.of(
-                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :adminAccountId")
+                        .withUpdateExpression("ADD #adminsAccountIds :adminAccountId")
+                        .withNameMap(Map.of(
+                                "#partitionKey", projectSchema.partitionKeyName(),
+                                "#accountId", "accountId",
+                                "#adminsAccountIds", "adminsAccountIds"))
+                        .withValueMap(Map.of(
+                                ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem()));
         projectCache.put(projectId, Optional.of(project));
         return project;
@@ -589,15 +590,15 @@ public class DynamoProjectStore implements ProjectStore {
     @Override
     public Project removeAdmin(String projectId, String adminAccountId) {
         Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("DELETE #adminsAccountIds :adminAccountId")
-                .withNameMap(Map.of(
-                        "#partitionKey", projectSchema.partitionKeyName(),
-                        "#adminsAccountIds", "adminsAccountIds"))
-                .withValueMap(Map.of(
-                        ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withUpdateExpression("DELETE #adminsAccountIds :adminAccountId")
+                        .withNameMap(Map.of(
+                                "#partitionKey", projectSchema.partitionKeyName(),
+                                "#adminsAccountIds", "adminsAccountIds"))
+                        .withValueMap(Map.of(
+                                ":adminAccountId", projectSchema.toDynamoValue("adminsAccountIds", ImmutableSet.of(adminAccountId))))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem()));
         projectCache.put(projectId, Optional.of(project));
         return project;
@@ -891,6 +892,11 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public String getHostname() {
             return Project.getHostname(versionedConfigAdmin.getConfig(), configApp);
+        }
+
+        @Override
+        public Optional<GitHub> getGitHubIntegration() {
+            return Optional.ofNullable(versionedConfigAdmin.getConfig().getGithub());
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {

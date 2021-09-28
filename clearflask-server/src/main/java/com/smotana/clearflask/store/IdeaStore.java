@@ -55,6 +55,12 @@ public interface IdeaStore {
         return IdUtil.contentUnique(title);
     }
 
+    default String genDeterministicIdeaIdForGithubIssue(long issueNumber, long issueId, long repositoryId) {
+        return "github-" + issueNumber + "-" + issueId + "-" + repositoryId;
+    }
+
+    Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
+
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
     ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
@@ -105,6 +111,13 @@ public interface IdeaStore {
     ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
     ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+
+    @Value
+    class GitHubIssueMetadata {
+        long issueNumber;
+        long issueId;
+        long repositoryId;
+    }
 
     @Value
     class SearchResponse {
@@ -255,8 +268,10 @@ public interface IdeaStore {
          */
         Double order;
 
+        String linkedGitHubUrl;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId());
+            return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId(), false);
         }
 
         public String getDescriptionAsText(Sanitizer sanitizer) {
@@ -268,7 +283,7 @@ public interface IdeaStore {
         }
 
         public String getResponseSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getResponse(), "idea", getIdeaId(), getProjectId());
+            return sanitizer.richHtml(getResponse(), "idea", getIdeaId(), getProjectId(), false);
         }
 
         public String getResponseAsText(Sanitizer sanitizer) {
@@ -313,7 +328,8 @@ public interface IdeaStore {
                     getMergedToPostId(),
                     getMergedToPostTime(),
                     getMergedPostIds().asList(),
-                    getOrder());
+                    getOrder(),
+                    getLinkedGitHubUrl());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -347,6 +363,7 @@ public interface IdeaStore {
                     getMergedToPostTime(),
                     getMergedPostIds().asList(),
                     getOrder(),
+                    getLinkedGitHubUrl(),
                     vote);
         }
 

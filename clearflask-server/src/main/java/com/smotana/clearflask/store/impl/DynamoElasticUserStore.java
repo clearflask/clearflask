@@ -131,6 +131,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -347,10 +348,10 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return ImmutableMap.of();
         }
         return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(userIds.stream()
-                .map(userId -> userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .toArray(PrimaryKey[]::new))))
+                        .map(userId -> userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .toArray(PrimaryKey[]::new))))
                 .map(userSchema::fromItem)
                 .collect(ImmutableMap.toImmutableMap(
                         UserModel::getUserId,
@@ -360,10 +361,10 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public Optional<UserModel> getUserByIdentifier(String projectId, IdentifierType type, String identifier) {
         return Optional.ofNullable(identifierToUserIdSchema.fromItem(identifierToUserIdSchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(identifierToUserIdSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "type", type.getType(),
-                        "identifierHash", type.isHashed() ? hashIdentifier(identifier) : identifier))))))
+                        .withPrimaryKey(identifierToUserIdSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "type", type.getType(),
+                                "identifierHash", type.isHashed() ? hashIdentifier(identifier) : identifier))))))
                 .map(identifierUser -> getUser(projectId, identifierUser.getUserId())
                         .orElseThrow(() -> new IllegalStateException("IdentifierUser entry exists but User doesn't for type " + type.getType() + " identifier " + identifier)));
     }
@@ -462,12 +463,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public void exportAllForProject(String projectId, Consumer<UserModel> consumer) {
         StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
-                .withHashKey(userByProjectSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
-                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
+                                .withHashKey(userByProjectSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
+                                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(userByProjectSchema::fromItem)
                 .filter(user -> projectId.equals(user.getProjectId()))
@@ -477,12 +478,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public long getUserCountForProject(String projectId) {
         return StreamSupport.stream(userCounterSchema.table().query(new QuerySpec()
-                .withHashKey(userCounterSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
-                        .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
+                                .withHashKey(userCounterSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
+                                        .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(userCounterSchema::fromItem)
                 .mapToLong(UserCounter::getCount)
@@ -504,14 +505,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         UserModel userModel;
         try {
             userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                    .withPrimaryKey(userSchema.primaryKey(Map.of(
-                            "projectId", projectId,
-                            "userId", userId)))
-                    .withUpdateExpression(updateExpression)
-                    .withConditionExpression(conditionExpression)
-                    .withNameMap(nameMap)
-                    .withValueMap(valMap)
-                    .withReturnValues(ReturnValue.ALL_NEW))
+                            .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                    "projectId", projectId,
+                                    "userId", userId)))
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression(conditionExpression)
+                            .withNameMap(nameMap)
+                            .withValueMap(valMap)
+                            .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem());
         } catch (ConditionalCheckFailedException ex) {
             log.trace("User already tracked, projectId {} userId {}", projectId, userId, ex);
@@ -776,11 +777,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return user;
         }
         return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withAttributeUpdate(new AttributeUpdate("voteBloom").put(BloomFilters.toByteArray(bloomFilter)))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .withAttributeUpdate(new AttributeUpdate("voteBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
 
@@ -795,11 +796,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return user;
         }
         return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withAttributeUpdate(new AttributeUpdate("commentVoteBloom").put(BloomFilters.toByteArray(bloomFilter)))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .withAttributeUpdate(new AttributeUpdate("commentVoteBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
 
@@ -814,27 +815,27 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return user;
         }
         return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withAttributeUpdate(new AttributeUpdate("expressBloom").put(BloomFilters.toByteArray(bloomFilter)))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .withAttributeUpdate(new AttributeUpdate("expressBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
 
     @Override
     public UserModel updateSubscription(String projectId, String userId, String categoryId, boolean subscribe) {
         return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression((subscribe ? "ADD" : "DELETE") + " #subscribedCategoryIds :categoryId")
-                .withNameMap(new NameMap()
-                        .with("#subscribedCategoryIds", "subscribedCategoryIds")
-                        .with("#partitionKey", userSchema.partitionKeyName()))
-                .withValueMap(new ValueMap().withStringSet(":categoryId", categoryId))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withUpdateExpression((subscribe ? "ADD" : "DELETE") + " #subscribedCategoryIds :categoryId")
+                        .withNameMap(new NameMap()
+                                .with("#subscribedCategoryIds", "subscribedCategoryIds")
+                                .with("#partitionKey", userSchema.partitionKeyName()))
+                        .withValueMap(new ValueMap().withStringSet(":categoryId", categoryId))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
 
@@ -875,14 +876,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         UserModel userModel;
         try {
             userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
-                    .withPrimaryKey(userSchema.primaryKey(Map.of(
-                            "projectId", projectId,
-                            "userId", userId)))
-                    .withUpdateExpression(updateExpression)
-                    .withConditionExpression(conditionExpressionOpt.orElse(null))
-                    .withNameMap(nameMap)
-                    .withValueMap(valMap)
-                    .withReturnValues(ReturnValue.ALL_NEW))
+                            .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                    "projectId", projectId,
+                                    "userId", userId)))
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression(conditionExpressionOpt.orElse(null))
+                            .withNameMap(nameMap)
+                            .withValueMap(valMap)
+                            .withReturnValues(ReturnValue.ALL_NEW))
                     .getItem());
         } catch (ConditionalCheckFailedException ex) {
             if (LogUtil.rateLimitAllowLog("userStore-negativeBalanceWarn")) {
@@ -1101,7 +1102,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     @Override
     public UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt, boolean isMod) {
+        return createOrGet(projectId, guid, () -> emailOpt, () -> nameOpt, isMod);
+    }
+
+    @Override
+    public UserModel createOrGet(String projectId, String guid, Supplier<Optional<String>> emailOptSupplier, Supplier<Optional<String>> nameOptSupplier, boolean isMod) {
         Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.GUID, guid);
+        Optional<String> emailOpt = emailOptSupplier.get();
         if (!userOpt.isPresent() && emailOpt.isPresent()) {
             userOpt = getUserByIdentifier(projectId, IdentifierType.EMAIL, emailOpt.get());
 
@@ -1141,6 +1148,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             }
         }
         if (!userOpt.isPresent()) {
+            Optional<String> nameOpt = nameOptSupplier.get();
             userOpt = Optional.of(createUser(new UserModel(
                     projectId,
                     genUserId(nameOpt),
@@ -1192,9 +1200,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public Optional<UserSession> getSession(String sessionId) {
         return Optional.ofNullable(sessionByIdSchema
-                .fromItem(sessionByIdSchema
-                        .table().getItem(new GetItemSpec().withPrimaryKey(sessionByIdSchema
-                                .primaryKey(Map.of("sessionId", sessionId))))))
+                        .fromItem(sessionByIdSchema
+                                .table().getItem(new GetItemSpec().withPrimaryKey(sessionByIdSchema
+                                        .primaryKey(Map.of("sessionId", sessionId))))))
                 .filter(userSession -> {
                     if (userSession.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
                         log.debug("DynamoDB has an expired user session with expiry {}", userSession.getTtlInEpochSec());
@@ -1207,14 +1215,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public UserSession refreshSession(UserSession userSession, long ttlInEpochSec) {
         return sessionByIdSchema.fromItem(sessionByIdSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(sessionByIdSchema.primaryKey(userSession))
-                .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("SET #ttlInEpochSec = :ttlInEpochSec")
-                .withNameMap(new NameMap()
-                        .with("#ttlInEpochSec", "ttlInEpochSec")
-                        .with("#partitionKey", sessionByIdSchema.partitionKeyName()))
-                .withValueMap(new ValueMap().withLong(":ttlInEpochSec", ttlInEpochSec))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(sessionByIdSchema.primaryKey(userSession))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withUpdateExpression("SET #ttlInEpochSec = :ttlInEpochSec")
+                        .withNameMap(new NameMap()
+                                .with("#ttlInEpochSec", "ttlInEpochSec")
+                                .with("#partitionKey", sessionByIdSchema.partitionKeyName()))
+                        .withValueMap(new ValueMap().withLong(":ttlInEpochSec", ttlInEpochSec))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
 
@@ -1233,18 +1241,18 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt) {
         Iterables.partition(StreamSupport.stream(sessionByUserSchema.index().query(new QuerySpec()
-                .withHashKey(sessionByUserSchema.partitionKey(Map.of(
-                        "userId", userId)))
-                .withRangeKeyCondition(new RangeKeyCondition(sessionByUserSchema.rangeKeyName())
-                        .beginsWith(sessionByUserSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(sessionByUserSchema::fromItem)
-                .filter(session -> projectId.equals(session.getProjectId()))
-                .map(UserSession::getSessionId)
-                .filter(sessionId -> !sessionToLeaveOpt.isPresent() || !sessionToLeaveOpt.get().equals(sessionId))
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(sessionByUserSchema.partitionKey(Map.of(
+                                                "userId", userId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(sessionByUserSchema.rangeKeyName())
+                                                .beginsWith(sessionByUserSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(sessionByUserSchema::fromItem)
+                        .filter(session -> projectId.equals(session.getProjectId()))
+                        .map(UserSession::getSessionId)
+                        .filter(sessionId -> !sessionToLeaveOpt.isPresent() || !sessionToLeaveOpt.get().equals(sessionId))
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(sessionIdsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(sessionByIdSchema.tableName());
                     sessionIdsBatch.stream()
@@ -1260,17 +1268,17 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete users
         Iterables.partition(StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
-                .withHashKey(userByProjectSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
-                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(userByProjectSchema::fromItem)
-                .filter(user -> projectId.equals(user.getProjectId()))
-                .map(UserModel::getUserId)
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(userByProjectSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
+                                                .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(userByProjectSchema::fromItem)
+                        .filter(user -> projectId.equals(user.getProjectId()))
+                        .map(UserModel::getUserId)
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(userIdsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(userSchema.tableName());
                     userIdsBatch.stream()
@@ -1283,16 +1291,16 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         // Delete user identifiers
         Iterables.partition(StreamSupport.stream(identifierByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(identifierByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(identifierByProjectIdSchema.rangeKeyName())
-                        .beginsWith(identifierByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(identifierByProjectIdSchema::fromItem)
-                .filter(identifier -> projectId.equals(identifier.getProjectId()))
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(identifierByProjectIdSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(identifierByProjectIdSchema.rangeKeyName())
+                                                .beginsWith(identifierByProjectIdSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(identifierByProjectIdSchema::fromItem)
+                        .filter(identifier -> projectId.equals(identifier.getProjectId()))
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(identifiersBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(identifierToUserIdSchema.tableName());
                     identifiersBatch.stream()
@@ -1306,16 +1314,16 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         // Delete user counter
         Iterables.partition(StreamSupport.stream(userCounterSchema.table().query(new QuerySpec()
-                .withHashKey(userCounterSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
-                        .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(userCounterSchema::fromItem)
-                .map(userCounterSchema::primaryKey)
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(userCounterSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(userCounterSchema.rangeKeyName())
+                                                .beginsWith(userCounterSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(userCounterSchema::fromItem)
+                        .map(userCounterSchema::primaryKey)
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(userCounterShardPrimaryKeys -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(userSchema.tableName());
                     userCounterShardPrimaryKeys.forEach(tableWriteItems::addPrimaryKeyToDelete);

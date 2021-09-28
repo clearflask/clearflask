@@ -38,11 +38,8 @@ export interface MenuProject {
   offset?: number;
 }
 
-const paddingForLevel = (offset: number = 0, path: ConfigEditor.Path = []): React.CSSProperties | undefined => {
-  var pathLengthWithoutGroup = 0;
-  path.forEach(l => typeof l === 'string' && pathLengthWithoutGroup++);
-  const paddingLevel = pathLengthWithoutGroup + offset;
-  return paddingLevel === 0 ? undefined : { paddingLeft: paddingLevel * 10 };
+const paddingForLevel = (offset: number = 0): React.CSSProperties | undefined => {
+  return offset === 0 ? undefined : { paddingLeft: offset * 10 };
 };
 
 const styles = (theme: Theme) => createStyles({
@@ -204,15 +201,15 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
   }
 
   render() {
-    const hasChildren = this.props.page.getChildren().pages.some(p => !!p.value)
-      || this.props.page.getChildren().groups.some(p => !!p.value);
+    const hasChildren = this.props.page.getChildren().pages.filter(p => !p.hide).some(p => !!p.value)
+      || this.props.page.getChildren().groups.filter(p => !p.hide).some(p => !!p.value);
     const autoExpandLevel = 0; // Disabled for now
     const expandedDontShow = !hasChildren || this.props.page.path.length < autoExpandLevel;
     const expanded = expandedDontShow
       || (this.state.expanded !== undefined
         ? this.state.expanded
         : this.isSelectedOrParent(this.props.page.path));
-    const padding = paddingForLevel(this.props.offset || 0, this.props.page.path);
+    const padding = paddingForLevel(this.props.offset || 0);
     const color = this.props.page.getColor();
     const { classes, ...menuProps } = this.props;
     const isSelected = this.isSelected(this.props.page.path);
@@ -269,11 +266,24 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
         <Collapse in={expanded} timeout="auto" mountOnEnter unmountOnExit>
           {this.props.page.getChildren().all
             .map(child => {
+              if (child.hide) return null;
               switch (child.type) {
                 case ConfigEditor.PageType:
-                  return (<MenuPage {...menuProps} overrideName={undefined} hasUnsavedChanges={false} key={child.key} page={child} />);
+                  return (<MenuPage
+                    {...menuProps}
+                    key={child.key}
+                    offset={(this.props.offset || 0) + 1}
+                    overrideName={undefined}
+                    hasUnsavedChanges={false}
+                    page={child}
+                  />);
                 case ConfigEditor.PageGroupType:
-                  return (<MenuPageGroup {...menuProps} key={child.key} pageGroup={child} />);
+                  return (<MenuPageGroup
+                    {...menuProps}
+                    key={child.key}
+                    offset={(this.props.offset || 0) + 1}
+                    pageGroup={child}
+                  />);
                 default:
                   return null;
               }
@@ -313,6 +323,7 @@ interface PropsPageGroup {
   key: string;
   pageGroup: ConfigEditor.PageGroup;
   activePath?: ConfigEditor.Path;
+  offset?: number;
   slug: string;
   onAnyClick?: () => void;
 }
@@ -330,7 +341,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
 
   render() {
     const childPages = this.props.pageGroup.getChildPages();
-    const padding = paddingForLevel(1, this.props.pageGroup.path);
+    const padding = paddingForLevel(this.props.offset);
     const { classes, ...menuProps } = this.props;
     return (
       <Collapse in={childPages.length > 0} timeout="auto" mountOnEnter unmountOnExit>
@@ -344,7 +355,12 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
               primary={this.props.pageGroup.name} />
           </ListItem>
           {childPages.map(childPage =>
-            <MenuPage {...menuProps} key={childPage.key} offset={1} page={childPage} />
+            <MenuPage
+              {...menuProps}
+              key={childPage.key}
+              offset={this.props.offset}
+              page={childPage}
+            />
           )}
         </div>
       </Collapse>

@@ -20,6 +20,7 @@ const GrowthRestrictedProperties: Path[] = [
   ['users', 'onboarding', 'notificationMethods', 'oauth'],
   ['users', 'onboarding', 'visibility'],
   ['style', 'templates'],
+  ['integrations', 'github'],
   ['integrations', 'googleAnalytics'],
   ['integrations', 'hotjar'],
   ['integrations', 'intercom'],

@@ -54,6 +54,8 @@ import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
+import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
@@ -75,6 +77,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
@@ -83,6 +86,7 @@ import com.smotana.clearflask.web.resource.CommentResource;
 import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.CreditResource;
+import com.smotana.clearflask.web.resource.GitHubResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
@@ -188,6 +192,8 @@ public enum ServiceInjector {
                 if (env != Environment.PRODUCTION_SELF_HOST) {
                     install(DefaultRoute53Provider.module());
                 }
+                install(GitHubClientProviderImpl.module());
+                install(GitHubStoreImpl.module());
                 install(ResourceLegalStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());
@@ -246,6 +252,7 @@ public enum ServiceInjector {
                 if (env != Environment.PRODUCTION_SELF_HOST) {
                     install(KillBillResource.module());
                 }
+                install(GitHubResource.module());
                 install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());
@@ -280,6 +287,7 @@ public enum ServiceInjector {
                 install(ImageNormalizationImpl.module());
                 bind(ConfigSchemaUpgrader.class);
                 install(ProjectUpgraderImpl.module());
+                install(MarkdownAndQuillUtil.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

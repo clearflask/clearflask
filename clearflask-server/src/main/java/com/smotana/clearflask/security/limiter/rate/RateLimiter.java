@@ -7,14 +7,14 @@ public interface RateLimiter {
     boolean tryAcquire(
             String target,
             int permits,
-            double prechargedDuration,
+            double prechargedDurationInSeconds,
             double permitsPerSecond,
             double capacityInSeconds);
 
     boolean tryAcquire(
             String target,
             int permits,
-            double prechargedDuration,
+            double prechargedDurationInSeconds,
             double... alternatingPermitsPerSecondAndCapacityInSeconds);
 
     void clearAll();

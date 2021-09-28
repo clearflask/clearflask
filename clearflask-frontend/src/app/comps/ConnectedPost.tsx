@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
+import GitHubIcon from '@material-ui/icons/GitHub';
 import MergeIcon from '@material-ui/icons/MergeType';
 import classNames from 'classnames';
 import React, { useState } from 'react';
@@ -14,7 +15,7 @@ import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import { ThisOrThat } from '../../common/util/typeUtil';
 import Post from './Post';
 
-export type ConnectType = 'link' | 'merge';
+export type ConnectType = 'link' | 'merge' | 'github';
 export type LinkDirection = 'to' | 'from';
 
 export const OutlineParentMergeNeighboursApplyStyles: Record<string, string | CSSProperties> = {
@@ -197,7 +198,8 @@ export const ConnectedPostsContainer = (props: {
   hasMultiple: boolean;
 }) => {
   const classes = useStyles();
-  const TypeIcon = props.type === 'link' ? LinkAltIcon : MergeIcon;
+  const TypeIcon = props.type === 'link' ? LinkAltIcon
+    : (props.type === 'merge' ? MergeIcon : GitHubIcon);
   return (
     <div className={classes.postAsLinksContainer}>
       <div className={classes.isLinkLabel}>
@@ -207,9 +209,10 @@ export const ConnectedPostsContainer = (props: {
           ? (props.direction === 'to'
             ? (props.hasMultiple ? 'Linked to these posts' : 'Linked to this post')
             : (props.hasMultiple ? 'These posts link here' : 'This post links here'))
-          : (props.direction === 'to'
+          : (props.type === 'merge' ? (props.direction === 'to'
             ? (props.hasMultiple ? 'Merged into these posts' : 'Merged into this post')
-            : (props.hasMultiple ? 'These posts are merged into this one' : 'This post is merged into this one'))}>
+            : (props.hasMultiple ? 'These posts are merged into this one' : 'This post is merged into this one'))
+            : 'Linked with GitHub Issue')}>
           <TypeIcon color='inherit' fontSize='inherit' className={classes.isLinkIcon} />
         </HelpPopper>
         {/* import ArrowRightIcon from '@material-ui/icons/ArrowRightRounded'; */}

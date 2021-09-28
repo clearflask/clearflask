@@ -235,7 +235,7 @@ public class Sanitizer {
         }
     }
 
-    public String richHtml(String html, String identifierType, String identifierId, String projectId) {
+    public String richHtml(String html, String identifierType, String identifierId, String projectId, boolean silenceViolations) {
         if (!config.htmlSanitizerEnabled()) {
             return html;
         }
@@ -273,9 +273,9 @@ public class Sanitizer {
         }
 
         if (!discarded.isEmpty()) {
-            if (LogUtil.rateLimitAllowLog("sanitizer-html-violation")) {
-                log.warn("HTML Policy violation(s) for {} id {}, element-attribute violations(s): {}",
-                        identifierType, identifierId, discarded);
+            if (!silenceViolations && LogUtil.rateLimitAllowLog("sanitizer-html-violation")) {
+                log.warn("HTML Policy violation(s) for {} {} id {}, element-attribute violations(s): {}",
+                        projectId, identifierType, identifierId, discarded);
             }
         }
         return sanitizedHtmlBuilder.toString();

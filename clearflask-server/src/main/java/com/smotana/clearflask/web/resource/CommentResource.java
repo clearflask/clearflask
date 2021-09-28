@@ -37,6 +37,7 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.GitHubStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
@@ -91,6 +92,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     private Billing billing;
     @Inject
     private WebhookService webhookService;
+    @Inject
+    private GitHubStore gitHubStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
@@ -110,27 +113,26 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .map(parentCommentId -> commentStore.getComment(projectId, ideaIdOrMergedIdeaId, parentCommentId)
                         .orElseThrow(() -> new BadRequestException("Cannot create comment, parent comment doesn't exist")));
         ImmutableList<String> parentCommentIds = parentCommentOpt.map(parentComment -> ImmutableList.<String>builder()
-                .addAll(parentComment.getParentCommentIds())
-                .add(parentComment.getCommentId())
-                .build())
+                        .addAll(parentComment.getParentCommentIds())
+                        .add(parentComment.getCommentId())
+                        .build())
                 .orElse(ImmutableList.of());
-        CommentModel commentModel = commentStore.createComment(new CommentModel(
-                projectId,
-                ideaIdOrMergedIdeaId,
-                commentStore.genCommentId(sanitizer.richHtmlToPlaintext(create.getContent())),
-                parentCommentIds,
-                parentCommentIds.size(),
-                0,
-                user.getUserId(),
-                user.getName(),
-                user.getIsMod(),
-                Instant.now(),
-                null,
-                create.getContent(),
-                0,
-                0))
+        CommentModel commentModel = commentStore.createCommentAndUpvote(new CommentModel(
+                        projectId,
+                        ideaIdOrMergedIdeaId,
+                        commentStore.genCommentId(sanitizer.richHtmlToPlaintext(create.getContent())),
+                        parentCommentIds,
+                        parentCommentIds.size(),
+                        0,
+                        user.getUserId(),
+                        user.getName(),
+                        user.getIsMod(),
+                        Instant.now(),
+                        null,
+                        create.getContent(),
+                        0,
+                        0))
                 .getCommentModel();
-        commentModel = commentStore.voteComment(projectId, commentModel.getIdeaId(), commentModel.getCommentId(), commentModel.getAuthorUserId(), VoteValue.Upvote).getCommentModel();
         notificationService.onCommentReply(
                 configAdmin,
                 idea,
@@ -138,6 +140,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 commentModel,
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
+        gitHubStore.cfCommentCreatedAsync(project, idea, commentModel, user);
         webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }
@@ -274,18 +277,18 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         Set<String> additionalMergedPostIds = Sets.newHashSet();
         Map<String, VoteOption> finalVoteResults = voteResults;
         ImmutableList<CommentWithVote> commentsWithVote = comments.stream().map(comment -> comment.toCommentWithVote(
-                finalVoteResults.get(comment.getCommentId()),
-                sanitizer,
-                // When a post is merged into another one,
-                // top level comments for the other merged posts should be
-                // repointed to a mocked up comment representing the merged post
-                parentIdeaIdOpt
-                        .filter(parentIdeaId -> comment.getLevel() == 0
-                                && !parentIdeaId.equals(comment.getIdeaId()))
-                        .map(parentIdeaId -> {
-                            additionalMergedPostIds.add(comment.getIdeaId());
-                            return comment.getIdeaId();
-                        })))
+                        finalVoteResults.get(comment.getCommentId()),
+                        sanitizer,
+                        // When a post is merged into another one,
+                        // top level comments for the other merged posts should be
+                        // repointed to a mocked up comment representing the merged post
+                        parentIdeaIdOpt
+                                .filter(parentIdeaId -> comment.getLevel() == 0
+                                        && !parentIdeaId.equals(comment.getIdeaId()))
+                                .map(parentIdeaId -> {
+                                    additionalMergedPostIds.add(comment.getIdeaId());
+                                    return comment.getIdeaId();
+                                })))
                 .collect(ImmutableList.toImmutableList());
 
         for (String mergedPostId : mergedPostIds) {
@@ -302,9 +305,9 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
             return commentsWithVote;
         } else {
             return Stream.concat(
-                    commentsWithVote.stream(),
-                    ideaStore.getIdeas(projectId, ImmutableSet.copyOf(additionalMergedPostIds)).values().stream()
-                            .map(mergedIdea -> mergedPostAsComment(parentIdeaIdOpt.get(), mergedIdea)))
+                            commentsWithVote.stream(),
+                            ideaStore.getIdeas(projectId, ImmutableSet.copyOf(additionalMergedPostIds)).values().stream()
+                                    .map(mergedIdea -> mergedPostAsComment(parentIdeaIdOpt.get(), mergedIdea)))
                     .collect(ImmutableList.toImmutableList());
         }
     }

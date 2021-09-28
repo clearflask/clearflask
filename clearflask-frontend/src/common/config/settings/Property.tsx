@@ -44,6 +44,7 @@ interface Props {
   // If property uses a SelectionPicker, will inject these properties
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
   setImmediately?: boolean;
+  unhide?: boolean;
 }
 interface State {
   value?: any;
@@ -89,9 +90,7 @@ export default class Property extends Component<Props, State> {
     var propertySetter;
     var shrink = (this.state.value !== undefined && this.state.value !== '') ? true : undefined;
 
-    if (prop.type !== ConfigEditor.PageGroupType
-      && prop.type !== ConfigEditor.PageType
-      && prop.hide) {
+    if (prop.hide && !this.props.unhide) {
       return null;
     }
 
