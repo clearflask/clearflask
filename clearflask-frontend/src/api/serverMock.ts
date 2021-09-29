@@ -256,7 +256,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   gitHubGetReposAdmin(request: Admin.GitHubGetReposAdminRequest): Promise<Admin.AvailableRepos> {
     return this.returnLater({
       repos: [
-        { name: 'clearflask/clearflask', repositoryId: 123 },
+        { name: 'clearflask/clearflask', installationId: 321, repositoryId: 123 },
       ],
     });
   }

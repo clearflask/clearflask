@@ -595,7 +595,7 @@
                         </goals>
                         <configuration>
                             <dataFile>${project.build.directory}/jacoco-exec/all.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-report/all</outputDirectory>
+                            <outputDirectory>${project.build.directory}/jacoco-report/all</outputDirectory>
                         </configuration>
                     </execution>
                     <!-- Re-enable if you dare.

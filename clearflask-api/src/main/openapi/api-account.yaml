@@ -684,9 +684,13 @@ components:
                     title: AvailableRepo
                     type: object
                     required:
+                    - installationId
                     - repositoryId
                     - name
                     properties:
+                      installationId:
+                        type: integer
+                        format: int64
                       repositoryId:
                         type: integer
                         format: int64

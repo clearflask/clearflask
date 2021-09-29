@@ -62,7 +62,7 @@ import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
 import { isProd } from '../../common/util/detectEnv';
-import { OAuthFlow } from '../../common/util/oauthUtil';
+import { OAuthFlow, OAUTH_CODE_PARAM_NAME } from '../../common/util/oauthUtil';
 import randomUuid from '../../common/util/uuid';
 import windowIso from '../../common/windowIso';
 import { getProjectLink } from '../Dashboard';
@@ -2995,7 +2995,26 @@ export const ProjectSettingsGitHub = (props: {
     .then(result => setRepos(result.repos));
   const oauthFlow = new OAuthFlow({ accountType: 'github-integration', redirectPath: '/dashboard/settings/project/github' });
   const oauthResult = oauthFlow.checkResult();
-  oauthResult && getRepos(oauthResult.code);
+  if (oauthResult) {
+    getRepos(oauthResult.code);
+  }
+
+  /**
+   * GitHub doesn't always return "state" param,
+   * prompt the user to fetch repos (instead of automatically)
+   * to prevent xsrf.
+   * This happens when user clicks Install button, but the installation
+   * flow forgets the state. Weird...
+   */
+  const [checkWithoutStateComplete, setCheckWithoutStateComplete] = useState<boolean>(false);
+  var promptCheckWithCode: string | undefined;
+  if (!oauthResult && !checkWithoutStateComplete) {
+    const params = new URL(windowIso.location.href).searchParams;
+    if (!!params.get('installation_id')
+      && !params.get('state')) {
+      promptCheckWithCode = params.get(OAUTH_CODE_PARAM_NAME) || undefined;
+    }
+  }
 
   return (
     <ProjectSettingsBase title='GitHub Integration' description='Mirror GitHub Issues in ClearFlask. Resolve them right from within ClearFlask.'>
@@ -3036,6 +3055,18 @@ export const ProjectSettingsGitHub = (props: {
                 <Message message='You must publish unsaved changes before we can redirect you to GitHub' severity='warning' />
               </p>
             </Collapse>
+            <Collapse in={!repos && !!promptCheckWithCode && !checkWithoutStateComplete}>
+              <p>
+                <Message message='We detected you made changes to your installation' severity='info' action={(
+                  <Button
+                    onClick={() => {
+                      !!promptCheckWithCode && getRepos(promptCheckWithCode);
+                      setCheckWithoutStateComplete(true);
+                    }}
+                  >View</Button>
+                )} />
+              </p>
+            </Collapse>
             <Collapse in={!repos && !hasUnsavedChanges}>
               <p>
                 <Button
@@ -3070,7 +3101,8 @@ export const ProjectSettingsGitHub = (props: {
                     <Table className={classes.githubReposTable}>
                       <TableBody>
                         {repos.map(repo => {
-                          const selected = gitHub?.repositoryId === repo.repositoryId;
+                          const selected = gitHub?.repositoryId === repo.repositoryId
+                            && gitHub?.installationId === repo.installationId;
                           return (
                             <TableRow key={repo.name}>
                               <TableCell key='repo'>
@@ -3122,6 +3154,8 @@ export const ProjectSettingsGitHub = (props: {
                                         .set(repo.name);
                                       (props.editor.getProperty(['github', 'repositoryId']) as ConfigEditor.NumberProperty)
                                         .set(repo.repositoryId);
+                                      (props.editor.getProperty(['github', 'installationId']) as ConfigEditor.NumberProperty)
+                                        .set(repo.installationId);
                                     }}
                                   >
                                     {selected ? 'Linked' : 'Link'}

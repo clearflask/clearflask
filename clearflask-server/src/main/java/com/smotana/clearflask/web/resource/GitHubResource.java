@@ -112,29 +112,32 @@ public class GitHubResource {
             GitHubSignatureVerifier.verifySignature(payload, signature, config.webhookSecret(), eventGuid);
 
             String eventType = request.getHeader(GITHUB_EVENT_TYPE_HEADER);
-            if (!Strings.isNullOrEmpty(eventType)) {
+            if (Strings.isNullOrEmpty(eventType)) {
                 if (LogUtil.rateLimitAllowLog("github-resource-event-type-empty")) {
                     log.warn("GitHub event type not provided, guid {}", eventGuid);
                 }
                 return;
             }
 
+            // Common webhook properties
+            // https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#webhook-payload-object-common-properties
+            // BE CAREFUL: some data is null depending on the event, check documentation
             GHEventPayload event = parseEventPayload(GitHub.offline(), payload, GHEventPayload.class);
 
-            Optional<Project> projectOpt = Optional.empty();
             if (projectIdOpt.isPresent()) {
                 long repositoryId = event.getRepository().getId();
-                projectOpt = projectStore.getProject(projectIdOpt.get(), true);
+                Optional<Project> projectOpt = projectStore.getProject(projectIdOpt.get(), true);
+                Optional<com.smotana.clearflask.api.model.GitHub> integrationOpt = projectOpt.flatMap(Project::getGitHubIntegration);
                 // Ensure project is linked to repo
-                if (projectOpt.isEmpty() || !projectOpt.flatMap(Project::getGitHubIntegration)
-                        .map(com.smotana.clearflask.api.model.GitHub::getRepositoryId)
-                        .equals(Optional.of(repositoryId))) {
+                if (projectOpt.isEmpty() || integrationOpt.isEmpty()
+                        || !integrationOpt.get().getRepositoryId().equals(repositoryId)) {
                     // Try again with no cache
                     projectOpt = projectStore.getProject(projectIdOpt.get(), false);
-                    if (projectOpt.isEmpty() || !projectOpt.flatMap(Project::getGitHubIntegration)
-                            .map(com.smotana.clearflask.api.model.GitHub::getRepositoryId)
-                            .equals(Optional.of(repositoryId))) {
-                        // Unlink repository
+                    integrationOpt = projectOpt.flatMap(Project::getGitHubIntegration);
+                    if (projectOpt.isEmpty() || integrationOpt.isEmpty()
+                            || !integrationOpt.get().getRepositoryId().equals(repositoryId)) {
+                        log.info("Unlinking webhook with repository id {} for project with different integration {}",
+                                repositoryId, integrationOpt);
                         gitHubStore.unlinkRepository(projectIdOpt.get(), repositoryId, false, true);
                         // If customer uninstalls or removes a repository, but does not remove the webhook,
                         // we will continue to receive messages and there is nothing we can do about it
@@ -143,10 +146,8 @@ public class GitHubResource {
                         throw new ClientErrorException(Response.Status.GONE);
                     }
                 }
-            }
 
-            if (projectOpt.isPresent()) {
-                GitHubInstallation installation = gitHubClientProvider.getInstallationClient(event.getInstallation().getId());
+                GitHubInstallation installation = gitHubClientProvider.getInstallationClient(integrationOpt.get().getInstallationId());
 
                 if (!installation.getRateLimiter().tryAcquire()) {
                     return;

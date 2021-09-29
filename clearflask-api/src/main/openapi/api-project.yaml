@@ -858,10 +858,15 @@ components:
               title: GitHub
               type: object
               required:
+              - installationId
               - repositoryId
               - name
               - createWithCategoryId
               properties:
+                installationId:
+                  x-clearflask-prop: { order: 0, name: 'Installation ID', description: 'Linked GitHub installation ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
                 repositoryId:
                   x-clearflask-prop: { order: 0, name: 'Repository ID', description: 'Linked GitHub repository ID. Can only be changed by authenticating and proving ownership.' }
                   type: integer

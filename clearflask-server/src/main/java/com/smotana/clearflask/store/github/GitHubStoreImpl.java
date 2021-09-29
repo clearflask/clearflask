@@ -76,6 +76,7 @@ import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubClientUtil;
 import org.kohsuke.github.HttpException;
 
 import javax.ws.rs.core.Response;
@@ -206,8 +207,10 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             ImmutableList.Builder<AvailableRepo> availableReposBuilder = ImmutableList.builder();
             for (GHAppInstallation installation : userClient.getMyself().getAppInstallations()) {
                 GitHub installationClient = gitHubClientProvider.getInstallationClient(installation.getId()).getClient();
-                for (GHRepository repository : installationClient.getApp().getInstallationById(installation.getId()).listRepositories()) {
+                GitHubClientUtil.setRoot(installation, installationClient);
+                for (GHRepository repository : installation.listRepositories()) {
                     availableReposBuilder.add(new AvailableRepo(
+                            installation.getId(),
                             repository.getId(),
                             repository.getFullName()));
                     repositoryAndInstallationIdsBuilder.put(
@@ -241,10 +244,11 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
 
     @Override
     public void setupConfigGitHubIntegration(String accountId, Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
-        Optional<Long> repositoryIdOpt = Optional.ofNullable(configAdmin.getGithub()).map(com.smotana.clearflask.api.model.GitHub::getRepositoryId);
-        Optional<Long> repositoryIdPreviousOpt = configPrevious.flatMap(c -> Optional.ofNullable(c.getGithub())).map(com.smotana.clearflask.api.model.GitHub::getRepositoryId);
+        Optional<com.smotana.clearflask.api.model.GitHub> integrationOpt = Optional.ofNullable(configAdmin.getGithub());
+        Optional<com.smotana.clearflask.api.model.GitHub> integrationPreviousOpt = configPrevious.flatMap(c -> Optional.ofNullable(c.getGithub()));
 
-        if (repositoryIdOpt.equals(repositoryIdPreviousOpt)) {
+        if (integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId))
+                && integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId))) {
             return;
         }
 
@@ -253,26 +257,31 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "GitHub integration is disabled");
         }
 
-        // Install new
-        if (repositoryIdOpt.isPresent()) {
-            GitHubAuthorization authorization = getAccountAuthorizationForRepo(accountId, repositoryIdOpt.get())
-                    .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Your access to this repository is expired, please refresh."));
-            linkRepo(
-                    configAdmin.getProjectId(),
-                    authorization);
+        // Authorize new
+        Optional<GitHubAuthorization> authorizationOpt = Optional.empty();
+        if (integrationOpt.isPresent()) {
+            authorizationOpt = Optional.of(getAccountAuthorizationForRepo(accountId,
+                    integrationOpt.get().getRepositoryId(),
+                    integrationOpt.get().getInstallationId())
+                    .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Your access to this repository is expired, please refresh.")));
         }
 
         // Uninstall old
-        if (repositoryIdPreviousOpt.isPresent()) {
+        if (integrationPreviousOpt.isPresent()) {
             unlinkRepository(
                     configAdmin.getProjectId(),
-                    repositoryIdPreviousOpt.get(),
+                    integrationPreviousOpt.get().getRepositoryId(),
                     false,
                     true);
         }
+
+        // Install new
+        if (authorizationOpt.isPresent()) {
+            linkRepository(configAdmin.getProjectId(), authorizationOpt.get());
+        }
     }
 
-    private void linkRepo(String projectId, GitHubAuthorization authorization) {
+    private void linkRepository(String projectId, GitHubAuthorization authorization) {
         GitHub installationClient;
         try {
             installationClient = gitHubClientProvider.getInstallationClient(authorization.getInstallationId()).getClient();
@@ -349,14 +358,15 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     }
 
     private URL getWebhookUrl(String projectId) throws MalformedURLException {
-        return new URL("https://" + configApp.domain() + GitHubResource.REPO_WEBHOOK_PATH.replace("{projectId}", projectId));
+        return new URL("https://" + configApp.domain() + "/api" + Application.RESOURCE_VERSION + GitHubResource.REPO_WEBHOOK_PATH.replace("{projectId}", projectId));
     }
 
-    private Optional<GitHubAuthorization> getAccountAuthorizationForRepo(String accountId, long repositoryId) {
+    private Optional<GitHubAuthorization> getAccountAuthorizationForRepo(String accountId, long repositoryId, long installationId) {
         return Optional.ofNullable(gitHubAuthorizationSchema.fromItem(gitHubAuthorizationSchema.table().getItem(new GetItemSpec()
                         .withPrimaryKey(gitHubAuthorizationSchema.primaryKey(Map.of(
                                 "accountId", accountId,
                                 "repositoryId", repositoryId))))))
+                .filter(auth -> auth.getInstallationId() == installationId)
                 .filter(auth -> {
                     if (auth.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
                         log.debug("DynamoDB has an expired auth session with expiry {}", auth.getTtlInEpochSec());
