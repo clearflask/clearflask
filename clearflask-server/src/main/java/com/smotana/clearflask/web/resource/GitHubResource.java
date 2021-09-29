@@ -125,8 +125,8 @@ public class GitHubResource {
     @Produces(MediaType.TEXT_PLAIN)
     public void webhookRepo(
             @PathParam("projectId") @NotNull String projectId,
-            @PathParam("projectId") @NotNull long installationId,
-            @PathParam("projectId") @NotNull long repositoryId,
+            @PathParam("installationId") @NotNull long installationId,
+            @PathParam("repositoryId") @NotNull long repositoryId,
             @Valid String payload) throws IOException {
         String eventGuid = getEventGuid();
         checkUserAgent(eventGuid);
