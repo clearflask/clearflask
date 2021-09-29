@@ -268,16 +268,51 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
 
         // Uninstall old
         if (integrationPreviousOpt.isPresent()) {
-            unlinkRepository(
+            removeIntegrationWebhook(
                     configAdmin.getProjectId(),
-                    integrationPreviousOpt.get().getRepositoryId(),
-                    false,
-                    true);
+                    integrationPreviousOpt.get().getInstallationId(),
+                    integrationPreviousOpt.get().getRepositoryId());
         }
 
         // Install new
         if (authorizationOpt.isPresent()) {
             linkRepository(configAdmin.getProjectId(), authorizationOpt.get());
+        }
+    }
+
+    @Override
+    public void removeIntegrationConfig(String projectId) {
+        projectStore.getProject(projectId, false)
+                .map(Project::getVersionedConfigAdmin)
+                .map(versionedConfigAdmin -> versionedConfigAdmin.toBuilder()
+                        .config(versionedConfigAdmin.getConfig().toBuilder()
+                                .github(null)
+                                .build())
+                        .build())
+                .ifPresent(config -> projectStore.updateConfig(
+                        projectId,
+                        Optional.empty(),
+                        config,
+                        true));
+    }
+
+    @Override
+    public void removeIntegrationWebhook(String projectId, long installationId, long repositoryId) {
+        try {
+            GHRepository repository = gitHubClientProvider.getInstallationClient(installationId)
+                    .getClient()
+                    .getRepositoryById(repositoryId);
+            URL webhookUrl = getWebhookUrl(projectId, installationId, repositoryId);
+            ImmutableList<GHHook> hooksToDelete = repository.getHooks()
+                    .stream()
+                    .filter(GHHook::isActive)
+                    .filter(hook -> webhookUrl.equals(hook.getUrl()))
+                    .collect(ImmutableList.toImmutableList());
+            for (GHHook hook : hooksToDelete) {
+                hook.delete();
+            }
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to remove webhook", ex);
         }
     }
 
@@ -293,14 +328,18 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             repository = installationClient.getRepositoryById(authorization.getRepositoryId());
         } catch (IOException ex) {
             log.warn("Linking repo failed, could not get repository by id. projectId {}, authorization {}",
-                    projectId, authorization);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Could not access GitHub repository");
+                    projectId, authorization, ex);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Could not access GitHub repository", ex);
         }
         try {
             repository.createHook(
                     "web",
                     ImmutableMap.of(
-                            "url", getWebhookUrl(projectId).toExternalForm(),
+                            "url", getWebhookUrl(
+                                    projectId,
+                                    authorization.getInstallationId(),
+                                    authorization.getRepositoryId())
+                                    .toExternalForm(),
                             "content_type", "json",
                             // You cannot retrieve a secret after it is set,
                             // it is safe to use the same secret as App webhook
@@ -309,56 +348,18 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             GHEvent.ISSUES,
                             GHEvent.ISSUE_COMMENT),
                     true);
-            repository.createWebHook(getWebhookUrl(projectId),
-                    ImmutableSet.of(
-                            GHEvent.ISSUES,
-                            GHEvent.ISSUE_COMMENT));
         } catch (IOException ex) {
             log.warn("Linking repo failed, could not create webhook. projectId {}, authorization {}",
-                    projectId, authorization);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Could not create GitHub repository webhook");
+                    projectId, authorization, ex);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Could not create GitHub repository webhook", ex);
         }
     }
 
-    @Extern
-    @Override
-    public void unlinkRepository(String projectId, long repositoryId, boolean removeFromConfig, boolean removeWebhook) {
-        if (removeWebhook) {
-            try {
-                GHRepository repository = gitHubClientProvider.getAppClient()
-                        .getRepositoryById(repositoryId);
-                URL webhookUrl = getWebhookUrl(projectId);
-                ImmutableList<GHHook> hooksToDelete = repository.getHooks()
-                        .stream()
-                        .filter(GHHook::isActive)
-                        .filter(hook -> webhookUrl.equals(hook.getUrl()))
-                        .collect(ImmutableList.toImmutableList());
-                for (GHHook hook : hooksToDelete) {
-                    hook.delete();
-                }
-            } catch (IOException ex) {
-                log.warn("Unlinking repo failed, could not delete webhooks, ignoring. projectId {}, repositoryId {} removeFromConfig {}",
-                        projectId, repositoryId, removeFromConfig);
-            }
-        }
-        if (removeFromConfig) {
-            projectStore.getProject(projectId, false)
-                    .map(Project::getVersionedConfigAdmin)
-                    .map(versionedConfigAdmin -> versionedConfigAdmin.toBuilder()
-                            .config(versionedConfigAdmin.getConfig().toBuilder()
-                                    .github(null)
-                                    .build())
-                            .build())
-                    .ifPresent(config -> projectStore.updateConfig(
-                            projectId,
-                            Optional.empty(),
-                            config,
-                            true));
-        }
-    }
-
-    private URL getWebhookUrl(String projectId) throws MalformedURLException {
-        return new URL("https://" + configApp.domain() + "/api" + Application.RESOURCE_VERSION + GitHubResource.REPO_WEBHOOK_PATH.replace("{projectId}", projectId));
+    private URL getWebhookUrl(String projectId, long installationId, long repositoryId) throws MalformedURLException {
+        return new URL("https://" + configApp.domain() + "/api" + Application.RESOURCE_VERSION + GitHubResource.REPO_WEBHOOK_PATH
+                .replace("{projectId}", projectId)
+                .replace("{installationId}", String.valueOf(installationId))
+                .replace("{repositoryId}", String.valueOf(repositoryId)));
     }
 
     private Optional<GitHubAuthorization> getAccountAuthorizationForRepo(String accountId, long repositoryId, long installationId) {
@@ -540,7 +541,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
         }
 
         Optional<IdeaStore.GitHubIssueMetadata> gitHubIssueMetadataOpt = getMetadataFromLinkedIdea(project, idea);
-        if (gitHubIssueMetadataOpt.isEmpty()) {
+        if (gitHubIssueMetadataOpt.isEmpty() || gitHubIssueMetadataOpt.get().getRepositoryId() != integration.get().getRepositoryId()) {
             return Futures.immediateFuture(Optional.empty());
         }
 
@@ -549,14 +550,18 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     : commentStore.getComment(project.getProjectId(), idea.getIdeaId(),
                     comment.getParentCommentIds().get(comment.getParentCommentIds().size() - 1));
 
-            GitHub appClient = gitHubClientProvider.getAppClient();
+            GitHubClientProvider.GitHubInstallation installation = gitHubClientProvider.getInstallationClient(integration.get().getInstallationId());
+            if (!installation.getRateLimiter().tryAcquire()) {
+                return Optional.empty();
+            }
+
             GHRepository repository;
             try {
-                repository = appClient.getRepositoryById(gitHubIssueMetadataOpt.get().getRepositoryId());
+                repository = installation.getClient().getRepositoryById(integration.get().getRepositoryId());
             } catch (HttpException ex) {
                 if (ex.getResponseCode() == 403) {
                     // Turns out we don't have permission anymore, unlink this repo
-                    unlinkRepository(project.getProjectId(), gitHubIssueMetadataOpt.get().getRepositoryId(), true, false);
+                    removeIntegrationConfig(project.getProjectId());
                 }
                 throw ex;
             }
@@ -590,19 +595,23 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
         }
 
         Optional<IdeaStore.GitHubIssueMetadata> gitHubIssueMetadataOpt = getMetadataFromLinkedIdea(project, idea);
-        if (gitHubIssueMetadataOpt.isEmpty()) {
+        if (gitHubIssueMetadataOpt.isEmpty() || gitHubIssueMetadataOpt.get().getRepositoryId() != integration.get().getRepositoryId()) {
             return Futures.immediateFuture(Optional.empty());
         }
 
         return submit(() -> {
-            GitHub appClient = gitHubClientProvider.getAppClient();
+            GitHubClientProvider.GitHubInstallation installation = gitHubClientProvider.getInstallationClient(integration.get().getInstallationId());
+            if (!installation.getRateLimiter().tryAcquire()) {
+                return Optional.empty();
+            }
+
             GHRepository repository;
             try {
-                repository = appClient.getRepositoryById(gitHubIssueMetadataOpt.get().getRepositoryId());
+                repository = installation.getClient().getRepositoryById(gitHubIssueMetadataOpt.get().getRepositoryId());
             } catch (HttpException ex) {
                 if (ex.getResponseCode() == 403) {
                     // Turns out we don't have permission anymore, unlink this repo
-                    unlinkRepository(project.getProjectId(), gitHubIssueMetadataOpt.get().getRepositoryId(), true, false);
+                    removeIntegrationConfig(project.getProjectId());
                 }
                 throw ex;
             }

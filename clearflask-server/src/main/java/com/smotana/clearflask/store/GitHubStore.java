@@ -30,7 +30,9 @@ public interface GitHubStore {
 
     void setupConfigGitHubIntegration(String accountId, Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin);
 
-    void unlinkRepository(String projectId, long repositoryId, boolean updateConfig, boolean removeWebhook);
+    void removeIntegrationConfig(String projectId);
+
+    void removeIntegrationWebhook(String projectId, long installationId, long repositoryId);
 
     Optional<IdeaAndIndexingFuture> ghIssueEvent(Project project, GHEventPayload.Issue ghIssue) throws IOException;
 
