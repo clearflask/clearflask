@@ -280,6 +280,11 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
 
         // Install new
         if (authorizationOpt.isPresent()) {
+            // Remove first in case it was created previously
+            removeIntegrationWebhook(
+                    configAdmin.getProjectId(),
+                    integrationOpt.get().getInstallationId(),
+                    integrationOpt.get().getRepositoryId());
             linkRepository(configAdmin.getProjectId(), authorizationOpt.get());
         }
     }

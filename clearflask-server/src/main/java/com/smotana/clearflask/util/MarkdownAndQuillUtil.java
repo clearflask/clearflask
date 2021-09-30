@@ -41,7 +41,7 @@ public class MarkdownAndQuillUtil {
     }
 
     public String markdownSign(String name, String action, String markdown) {
-        return "**" + name + "** " + action + ":\n" + markdown;
+        return "**" + name + "** " + action + ":\n\n" + markdown;
     }
 
     public String markdownQuote(String markdown) {

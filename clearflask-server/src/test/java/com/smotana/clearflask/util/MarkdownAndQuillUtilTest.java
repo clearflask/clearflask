@@ -891,7 +891,7 @@ public class MarkdownAndQuillUtilTest extends AbstractTest {
         assertEquals("\n> asfd\n> fdsa\n",
                 markdownAndQuillUtil.markdownQuote(
                         "asfd\nfdsa"));
-        assertEquals("**Matus** wrote:\nasfd\nfdsa",
+        assertEquals("**Matus** wrote:\n\nasfd\nfdsa",
                 markdownAndQuillUtil.markdownSign(
                         "Matus",
                         "wrote",
