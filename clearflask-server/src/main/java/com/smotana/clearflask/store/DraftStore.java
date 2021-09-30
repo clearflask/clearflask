@@ -114,9 +114,9 @@ public interface DraftStore {
         ImmutableSet<String> linkedFromPostIds;
 
         Double order;
-        
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId());
+            return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId(), false);
         }
 
         public String getDescriptionAsText(Sanitizer sanitizer) {
@@ -128,7 +128,7 @@ public interface DraftStore {
         }
 
         public String getResponseSanitized(Sanitizer sanitizer) {
-            return sanitizer.richHtml(getResponse(), "draft", getDraftId(), getProjectId());
+            return sanitizer.richHtml(getResponse(), "draft", getDraftId(), getProjectId(), false);
         }
 
         public String getResponseAsText(Sanitizer sanitizer) {

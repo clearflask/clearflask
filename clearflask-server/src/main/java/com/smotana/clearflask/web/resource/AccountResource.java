@@ -31,6 +31,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
+import com.smotana.clearflask.api.model.AvailableRepos;
 import com.smotana.clearflask.api.model.InvitationResult;
 import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
 import com.smotana.clearflask.api.model.Invoices;
@@ -50,6 +51,7 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
+import com.smotana.clearflask.store.GitHubStore;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
@@ -142,6 +144,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private LegalStore legalStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private GitHubStore gitHubStore;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -411,9 +415,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         String planId = isTeammate
                 ? PlanStore.TEAMMATE_PLAN_ID
                 : preferredPlanIdOpt.flatMap(pId -> planStore.getPublicPlans().getPlans().stream()
-                .filter(p -> p.getBasePlanId().equals(pId))
-                .filter(p -> p.getComingSoon() != Boolean.TRUE)
-                .findAny())
+                        .filter(p -> p.getBasePlanId().equals(pId))
+                        .filter(p -> p.getComingSoon() != Boolean.TRUE)
+                        .findAny())
                 .orElseGet(() -> planStore.getPublicPlans().getPlans().stream()
                         .filter(p -> p.getComingSoon() != Boolean.TRUE)
                         .findFirst()
@@ -583,6 +587,17 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 invitation.getProjectName(),
                 InvitationResult.RoleEnum.ADMIN,
                 invitation.getIsAcceptedByAccountId() != null);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public AvailableRepos gitHubGetReposAdmin(String code) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        return gitHubStore.getReposForUser(accountId, code);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

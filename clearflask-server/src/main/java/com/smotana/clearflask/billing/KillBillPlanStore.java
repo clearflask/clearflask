@@ -61,6 +61,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
     private static final String TERMS_API = "Integrate with any external service via our API and webhooks";
+    private static final String TERMS_GITHUB = "Synchronize GitHub issues with ClearFlask";
     private static final String TERMS_INTERCOM = "Add Intercom widget on every page";
     private static final String TERMS_BILLING = "Custom billing and invoicing";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
@@ -121,8 +122,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
                     new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
                     new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
                     new FeaturesTableFeatures("Volume discount", ImmutableList.of("No", "No", "Yes"), null),
                     new FeaturesTableFeatures("Billing & Invoicing", ImmutableList.of("No", "No", "Yes"), TERMS_BILLING)
@@ -360,14 +362,17 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
+                if (config.getGithub() != null) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use GitHub integration on your plan");
+                }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Google Analytics on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Google Analytics on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Intercom on your plan");
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Intercom integration on your plan");
                 }
                 return;
             case "standard-monthly":

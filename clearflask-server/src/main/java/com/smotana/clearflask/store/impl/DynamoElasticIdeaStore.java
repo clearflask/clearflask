@@ -116,6 +116,8 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -142,6 +144,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     public static final String IDEA_INDEX = "idea";
     private static final long EXP_DECAY_PERIOD_MILLIS = Duration.ofDays(7).toMillis();
+    private static final Pattern EXTRACT_GITHUB_ISSUE_FROM_IDEA_ID_MATCHER = Pattern.compile("github-(?<issueNumber>[0-9]+)-(?<issueId>[0-9]+)-(?<repositoryId>[0-9]+)");
 
     @Inject
     private Config config;
@@ -183,69 +186,82 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Extern
     @Override
+    public Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId) {
+        Matcher matcher = EXTRACT_GITHUB_ISSUE_FROM_IDEA_ID_MATCHER.matcher(ideaId);
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+        return Optional.of(new GitHubIssueMetadata(
+                Long.parseLong(matcher.group("issueNumber")),
+                Long.parseLong(matcher.group("issueId")),
+                Long.parseLong(matcher.group("repositoryId"))));
+    }
+
+    @Extern
+    @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
-                "dynamic", "false",
-                "properties", ImmutableMap.builder()
-                        .put("authorUserId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("authorName", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("authorIsMod", ImmutableMap.of(
-                                "type", "boolean"))
-                        .put("created", ImmutableMap.of(
-                                "type", "date",
-                                "format", "epoch_second"))
-                        .put("lastActivity", ImmutableMap.of(
-                                "type", "date",
-                                "format", "epoch_second"))
-                        .put("title", ImmutableMap.of(
-                                "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
-                        .put("description", ImmutableMap.of(
-                                "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
-                        .put("response", ImmutableMap.of(
-                                "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
-                        .put("responseAuthorUserId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("responseAuthorName", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("categoryId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("statusId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("tagIds", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("commentCount", ImmutableMap.of(
-                                "type", "long"))
-                        .put("childCommentCount", ImmutableMap.of(
-                                "type", "long"))
-                        .put("funded", ImmutableMap.of(
-                                "type", "double"))
-                        .put("fundGoal", ImmutableMap.of(
-                                "type", "double"))
-                        .put("fundersCount", ImmutableMap.of(
-                                "type", "long"))
-                        .put("funderUserIds", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("voteValue", ImmutableMap.of(
-                                "type", "long"))
-                        .put("votersCount", ImmutableMap.of(
-                                "type", "long"))
-                        .put("expressionsValue", ImmutableMap.of(
-                                "type", "double"))
-                        .put("expressions", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("trendScore", ImmutableMap.of(
-                                "type", "double"))
-                        .put("mergedToPostId", ImmutableMap.of(
-                                "type", "keyword"))
-                        .put("order", ImmutableMap.of(
-                                "type", "double"))
-                        .build())), XContentType.JSON),
+                        "dynamic", "false",
+                        "properties", ImmutableMap.builder()
+                                .put("authorUserId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("authorName", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("authorIsMod", ImmutableMap.of(
+                                        "type", "boolean"))
+                                .put("created", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("lastActivity", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("title", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("description", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("response", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("responseAuthorUserId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("responseAuthorName", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("categoryId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("statusId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("tagIds", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("commentCount", ImmutableMap.of(
+                                        "type", "long"))
+                                .put("childCommentCount", ImmutableMap.of(
+                                        "type", "long"))
+                                .put("funded", ImmutableMap.of(
+                                        "type", "double"))
+                                .put("fundGoal", ImmutableMap.of(
+                                        "type", "double"))
+                                .put("fundersCount", ImmutableMap.of(
+                                        "type", "long"))
+                                .put("funderUserIds", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("voteValue", ImmutableMap.of(
+                                        "type", "long"))
+                                .put("votersCount", ImmutableMap.of(
+                                        "type", "long"))
+                                .put("expressionsValue", ImmutableMap.of(
+                                        "type", "double"))
+                                .put("expressions", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("trendScore", ImmutableMap.of(
+                                        "type", "double"))
+                                .put("mergedToPostId", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("order", ImmutableMap.of(
+                                        "type", "double"))
+                                .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
@@ -366,10 +382,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             return ImmutableMap.of();
         }
         return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
-                .map(ideaId -> ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .toArray(PrimaryKey[]::new))))
+                        .map(ideaId -> ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .toArray(PrimaryKey[]::new))))
                 .map(ideaSchema::fromItem)
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
@@ -609,25 +625,25 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         Expression ideaExpression = ideaExpressionBuilder.build();
         idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withUpdateExpression(ideaExpression.updateExpression().orElse(null))
-                .withConditionExpression(ideaExpression.conditionExpression().orElse(null))
-                .withNameMap(ideaExpression.nameMap().orElse(null))
-                .withValueMap(ideaExpression.valMap().orElse(null))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withUpdateExpression(ideaExpression.updateExpression().orElse(null))
+                        .withConditionExpression(ideaExpression.conditionExpression().orElse(null))
+                        .withNameMap(ideaExpression.nameMap().orElse(null))
+                        .withValueMap(ideaExpression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         Expression parentIdeaExpression = parentIdeaExpressionBuilder.build();
         parentIdea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", parentIdeaId)))
-                .withUpdateExpression(parentIdeaExpression.updateExpression().orElse(null))
-                .withConditionExpression(parentIdeaExpression.conditionExpression().orElse(null))
-                .withNameMap(parentIdeaExpression.nameMap().orElse(null))
-                .withValueMap(parentIdeaExpression.valMap().orElse(null))
-                .withReturnValues(ReturnValue.ALL_NEW))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", parentIdeaId)))
+                        .withUpdateExpression(parentIdeaExpression.updateExpression().orElse(null))
+                        .withConditionExpression(parentIdeaExpression.conditionExpression().orElse(null))
+                        .withNameMap(parentIdeaExpression.nameMap().orElse(null))
+                        .withValueMap(parentIdeaExpression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
 
         return new ConnectResponse(idea, parentIdea);
@@ -723,9 +739,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
             query.mustNot(QueryBuilders.termsQuery("ideaId", ideaSearchAdmin.getSimilarToIdeaId()));
             query.must(QueryBuilders.moreLikeThisQuery(
-                    new String[]{"title", "description"},
-                    null,
-                    new Item[]{new Item(null, ideaSearchAdmin.getSimilarToIdeaId())})
+                            new String[]{"title", "description"},
+                            null,
+                            new Item[]{new Item(null, ideaSearchAdmin.getSimilarToIdeaId())})
                     .minTermFreq(1)
                     .minDocFreq(1)
                     .maxQueryTerms(10));
@@ -733,7 +749,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
             query.should(QueryBuilders.multiMatchQuery(ideaSearchAdmin.getSearchText(),
-                    "title", "description", "response")
+                            "title", "description", "response")
                     .field("title", 6f)
                     .field("description", 2f)
                     .fuzziness("AUTO")
@@ -916,12 +932,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Override
     public void exportAllForProject(String projectId, Consumer<IdeaModel> consumer) {
         StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
-                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
+                                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(ideaByProjectIdSchema::fromItem)
                 .filter(idea -> projectId.equals(idea.getProjectId()))
@@ -1064,13 +1080,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         log.trace("VoteIdea expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withNameMap(nameMap)
-                .withValueMap(valMap)
-                .withUpdateExpression(updateExpression))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withNameMap(nameMap)
+                        .withValueMap(valMap)
+                        .withUpdateExpression(updateExpression))
                 .getItem());
 
         if (!userId.equals(idea.getAuthorUserId())) {
@@ -1152,13 +1168,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         log.trace("ExpressIdeaSet expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withNameMap(nameMap)
-                .withValueMap(valMap)
-                .withUpdateExpression(updateExpression))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withNameMap(nameMap)
+                        .withValueMap(valMap)
+                        .withUpdateExpression(updateExpression))
                 .getItem());
 
         if (!userId.equals(idea.getAuthorUserId())) {
@@ -1192,13 +1208,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         double expressionValueDiff = expressionToWeightMapper.apply(expression);
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withNameMap(Map.of("#exprAdd", expression))
-                .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
-                .withUpdateExpression("SET expressions.#exprAdd = if_not_exists(expressions.#exprAdd, :zero) + :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withNameMap(Map.of("#exprAdd", expression))
+                        .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
+                        .withUpdateExpression("SET expressions.#exprAdd = if_not_exists(expressions.#exprAdd, :zero) + :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
                 .getItem());
 
         if (!userId.equals(idea.getAuthorUserId())) {
@@ -1235,13 +1251,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         double expressionValueDiff = -expressionToWeightMapper.apply(expression);
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withNameMap(Map.of("#exprRem", expression))
-                .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
-                .withUpdateExpression("SET expressions.#exprRem = if_not_exists(expressions.#exprRem, :zero) - :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withNameMap(Map.of("#exprRem", expression))
+                        .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
+                        .withUpdateExpression("SET expressions.#exprRem = if_not_exists(expressions.#exprRem, :zero) - :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
                 .getItem());
 
         if (!userId.equals(idea.getAuthorUserId())) {
@@ -1298,13 +1314,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         log.trace("FundIdea expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withNameMap(nameMap)
-                .withValueMap(valMap)
-                .withUpdateExpression(updateExpression))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withNameMap(nameMap)
+                        .withValueMap(valMap)
+                        .withUpdateExpression(updateExpression))
                 .getItem());
 
         ImmutableMap.Builder<String, Object> scriptParamsBuilder = ImmutableMap.builder();
@@ -1345,11 +1361,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             attrUpdates.add(new AttributeUpdate("childCommentCount").addNumeric(1));
         }
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withReturnValues(ReturnValue.ALL_NEW)
-                .withAttributeUpdate(attrUpdates.build()))
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .withReturnValues(ReturnValue.ALL_NEW)
+                        .withAttributeUpdate(attrUpdates.build()))
                 .getItem());
 
         ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
@@ -1370,14 +1386,19 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Extern
     @Override
     public ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId, boolean deleteMerged) {
-        DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
+        ExpressionBuilder expressionBuilder = ideaSchema.expressionBuilder()
+                .conditionExists();
+        if (!deleteMerged) {
+            expressionBuilder.conditionFieldNotExists("mergedToPostId");
+        }
+        Expression expression = expressionBuilder.build();
+
+        ideaSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "ideaId", ideaId)));
-        if (!deleteMerged) {
-            deleteItemSpec.withConditionExpression("attribute_not_exists(mergedToPostId)");
-        }
-        ideaSchema.table().deleteItem(deleteItemSpec);
+                        "ideaId", ideaId)))
+                .withConditionExpression(expression.conditionExpression().orElse(null))
+                .withNameMap(expression.nameMap().orElse(null)));
 
         SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
         elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
@@ -1412,17 +1433,17 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete ideas
         Iterables.partition(StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
-                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(ideaByProjectIdSchema::fromItem)
-                .filter(idea -> projectId.equals(idea.getProjectId()))
-                .map(IdeaModel::getIdeaId)
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                                                .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(ideaByProjectIdSchema::fromItem)
+                        .filter(idea -> projectId.equals(idea.getProjectId()))
+                        .map(IdeaModel::getIdeaId)
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(ideaIdsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(ideaSchema.tableName());
                     ideaIdsBatch.stream()

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import loadable from '@loadable/component';
-import { Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from '@material-ui/core';
+import { Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Link as MuiLink, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
@@ -44,7 +44,7 @@ import Delimited from '../utils/Delimited';
 import Loading from '../utils/Loading';
 import CommentList from './CommentList';
 import CommentReply from './CommentReply';
-import ConnectedPost, { ConnectedPostsContainer, ConnectType, LinkDirection } from './ConnectedPost';
+import ConnectedPost, { ConnectedPostsContainer, ConnectType, LinkDirection, OutlinePostContent } from './ConnectedPost';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
@@ -524,6 +524,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
               {this.renderIWantThisCommentAdd()}
               {this.renderResponseAndStatus()}
               {this.renderMerged()}
+              {this.renderLinkedToGitHub()}
               {this.renderLinks()}
             </div>
             {this.props.contentBeforeComments && (
@@ -1489,6 +1490,53 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
             onClickPost={this.props.onClickPost}
             onUserClick={this.props.onUserClick}
           />
+        </ConnectedPostsContainer>
+      </div>
+    );
+  }
+
+  renderLinkedToGitHub() {
+    if (!this.props.idea
+      || this.props.variant === 'list'
+      || !this.props.idea.linkedGitHubUrl) return null;
+
+    var content: React.ReactNode = this.props.idea.linkedGitHubUrl;
+    // Expect form of "https://github.com/jenkinsci/jenkins/issues/100"
+    const match = (new RegExp(/https:\/\/github.com\/([^\/]+)\/([^\/]+)\/issues\/([0-9])/))
+      .exec(this.props.idea.linkedGitHubUrl);
+    if (match) {
+      const owner = match[1];
+      const repo = match[2];
+      const issueNumber = match[3];
+      content = (
+        <>
+          Issue&nbsp;#{issueNumber}
+        </>
+      );
+    }
+
+    content = (
+      <MuiLink
+        href={this.props.idea.linkedGitHubUrl}
+        target='_blank'
+        rel='noopener nofollow'
+        underline='none'
+        color='textPrimary'
+      >
+        {content}
+      </MuiLink>
+    );
+
+    return (
+      <div className={this.props.classes.links}>
+        <ConnectedPostsContainer
+          type='github'
+          direction='to'
+          hasMultiple={false}
+        >
+          <OutlinePostContent>
+            {content}
+          </OutlinePostContent>
         </ConnectedPostsContainer>
       </div>
     );

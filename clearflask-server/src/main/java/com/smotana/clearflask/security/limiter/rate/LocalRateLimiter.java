@@ -41,12 +41,12 @@ public class LocalRateLimiter implements RateLimiter {
     private GuavaRateLimiters guavaRateLimiters;
 
     @Override
-    public boolean tryAcquire(String target, int permits, double prechargedDuration, double permitsPerSecond, double capacityInSeconds) {
-        return getRateLimiter(target, permitsPerSecond, prechargedDuration, capacityInSeconds).tryAcquire(permits);
+    public boolean tryAcquire(String target, int permits, double prechargedDurationInSeconds, double permitsPerSecond, double capacityInSeconds) {
+        return getRateLimiter(target, permitsPerSecond, prechargedDurationInSeconds, capacityInSeconds).tryAcquire(permits);
     }
 
     @Override
-    public boolean tryAcquire(String target, int permits, double prechargedDuration, double... altPermCap) {
+    public boolean tryAcquire(String target, int permits, double prechargedDurationInSeconds, double... altPermCap) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return true;
@@ -54,7 +54,7 @@ public class LocalRateLimiter implements RateLimiter {
         checkArgument(altPermCap.length % 2 == 0);
 
         for (int i = 0; i < altPermCap.length; i += 2) {
-            if (!getRateLimiter(target, prechargedDuration, altPermCap[i], altPermCap[i + 1]).tryAcquire(permits)) {
+            if (!getRateLimiter(target, prechargedDurationInSeconds, altPermCap[i], altPermCap[i + 1]).tryAcquire(permits)) {
                 return false;
             }
         }

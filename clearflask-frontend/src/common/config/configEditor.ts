@@ -37,7 +37,7 @@ export enum OpenApiTags {
    * inject a property deeply nested in an object. If the property doesn't
    * exist, it's silently ignored.
    */
-  AdditionalProps = 'x-clearflask-additional-props',
+  AdditionalChildren = 'x-clearflask-additional-children',
 }
 export interface xCfPage {
   name?: string;
@@ -130,10 +130,10 @@ export interface xCfPropLink {
   /** Used with filterPath: if the destination property has no values, use all values */
   filterShowAllIfNone?: boolean;
 }
-export interface xCfAdditionalProps {
+export interface xCfAdditionalChildren {
   /** Path to the property */
-  props: Array<{
-    propPath: string[];
+  children: Array<{
+    path: string[];
     /**
      * If set, the special variable <&> will be replaced with value of this id prop
      * path and auto-created.
@@ -156,6 +156,7 @@ export interface Setting<T extends PageType | PageGroupType | PropertyType, R> {
   path: Path;
   pathStr: string;
   required: boolean;
+  hide: boolean;
   value?: R | undefined;
   set(val: R | undefined): void;
   setDefault(): void;
@@ -206,7 +207,6 @@ export interface PageGroup extends Setting<PageGroupType, true | undefined>, xCf
 
 interface PropertyBase<T extends PageType | PageGroupType | PropertyType, R> extends Setting<T, R>, xCfProp {
   name: string;
-  hide: boolean;
 }
 export enum PropertyType {
   String = 'string',
@@ -404,9 +404,7 @@ export class EditorImpl implements Editor {
 
   clone(): Editor {
     return new EditorImpl(
-      JSON.parse(
-        JSON.stringify(
-          this.config)));
+      cloneDeep(this.config));
   }
 
   subscribe(callback: () => void): Unsubscribe {
@@ -814,52 +812,61 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
-  parseAdditionalProps(objSchema: any, currPath: Path): Property[] {
-    const additionalProps: Property[] = [];
-    const xAdditionalProps = objSchema[OpenApiTags.AdditionalProps] as xCfAdditionalProps;
-    if (!xAdditionalProps) {
-      return additionalProps;
+  parseAdditionalChildren(objSchema: any, currPath: Path, depth: ResolveDepth): PageChildren {
+    const additionalChildren: PageChildren = {
+      all: [],
+      pages: [],
+      groups: [],
+      props: [],
+    };
+    const xAdditionalChildren = objSchema[OpenApiTags.AdditionalChildren] as xCfAdditionalChildren;
+    if (!xAdditionalChildren) {
+      return additionalChildren;
     }
-    xAdditionalProps.props.forEach(adtlProp => {
-      var path = [...adtlProp.propPath];
-      if (adtlProp.dynamicIdPropName) {
-        var dynamicValue = 'unknown';
-        const dynamicIdProp = this.getProperty([...currPath, adtlProp.dynamicIdPropName]);
-        if (dynamicIdProp
-          && dynamicIdProp.type === PropertyType.String
-          && dynamicIdProp.subType === PropSubType.Id) {
-          if (!dynamicIdProp.value) {
-            dynamicIdProp.setDefault();
-          }
-          dynamicValue = dynamicIdProp.value!;
+    const resolveDynamicIdPath = (inputPath: Path, dynamicIdPropName?: string): Path => {
+      var path = [...inputPath];
+      if (!dynamicIdPropName) return path;
+      var dynamicValue = 'unknown';
+      const dynamicIdProp = this.getProperty([...currPath, dynamicIdPropName]);
+      if (dynamicIdProp
+        && dynamicIdProp.type === PropertyType.String
+        && dynamicIdProp.subType === PropSubType.Id) {
+        if (!dynamicIdProp.value) {
+          dynamicIdProp.setDefault();
         }
-        const dynamicIdIndex = adtlProp.propPath.indexOf('<&>');
-        // Make sure the dict property is created
-        if (dynamicIdIndex >= 0) {
-          path[dynamicIdIndex] = dynamicValue;
-          const dynamicIdParentProp = this.get(path.slice(0, dynamicIdIndex));
-          if (dynamicIdParentProp.type !== PropertyType.Dict) {
-            throw Error(`Dynamic ID parent path must be a dict under ${dynamicIdParentProp.pathStr}, found ${dynamicIdParentProp.type}`);
-          }
-          if (!dynamicIdParentProp.value) {
-            dynamicIdParentProp.set(true);
-          }
-          if (dynamicIdParentProp.childProperties?.[dynamicValue] === undefined) {
-            dynamicIdParentProp.put(dynamicValue);
-          }
+        dynamicValue = dynamicIdProp.value!;
+      }
+      const dynamicIdIndex = inputPath.indexOf('<&>');
+      // Make sure the dict property is created
+      if (dynamicIdIndex >= 0) {
+        path[dynamicIdIndex] = dynamicValue;
+        const dynamicIdParentProp = this.get(path.slice(0, dynamicIdIndex));
+        if (dynamicIdParentProp.type !== PropertyType.Dict) {
+          throw Error(`Dynamic ID parent path must be a dict under ${dynamicIdParentProp.pathStr}, found ${dynamicIdParentProp.type}`);
+        }
+        if (!dynamicIdParentProp.value) {
+          dynamicIdParentProp.set(true);
+        }
+        if (dynamicIdParentProp.childProperties?.[dynamicValue] === undefined) {
+          dynamicIdParentProp.put(dynamicValue);
         }
       }
-      const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
-      if (!parentSchema) return;
-      const propName = path[path.length - 1];
-      const propSchema = this.getSubSchema(path);
-      if (!propSchema) return;
-      const isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
-      const prop = this.parseProperty(path, isRequired, propSchema);
-      prop.hide = false;
-      additionalProps.push(prop);
+      return path;
+    };
+    xAdditionalChildren.children.forEach(adtlChild => {
+      var path = resolveDynamicIdPath(adtlChild.path, adtlChild.dynamicIdPropName);
+      const child = this.parse(path, depth);
+      child.hide = false;
+      additionalChildren.all.push(child);
+      if (child.type === 'page') {
+        additionalChildren.pages.push(child);
+      } else if (child.type === 'pagegroup') {
+        additionalChildren.groups.push(child);
+      } else {
+        additionalChildren.props.push(child);
+      }
     });
-    return additionalProps;
+    return additionalChildren;
   }
 
   parsePage(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): Page {
@@ -921,9 +928,11 @@ export class EditorImpl implements Editor {
           children.props.push(childProp);
         }
       });
-      const additionalProps = this.parseAdditionalProps(objSchema, path);
-      children.all.push(...additionalProps);
-      children.props.push(...additionalProps);
+      const additionalChildren = this.parseAdditionalChildren(objSchema, path, depth);
+      children.all.push(...additionalChildren.all);
+      children.pages.push(...additionalChildren.pages);
+      children.groups.push(...additionalChildren.groups);
+      children.props.push(...additionalChildren.props);
       children.all.sort(this.sortPagesProps);
       children.pages.sort(this.sortPagesProps);
       children.groups.sort(this.sortPagesProps);
@@ -945,6 +954,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
+      hide: !!pageSchema[OpenApiTags.Hide],
       ...xPage,
       type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1078,6 +1088,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
+      hide: !!pageGroupSchema[OpenApiTags.Hide],
       ...xPageGroup,
       type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1109,7 +1120,7 @@ export class EditorImpl implements Editor {
       },
       duplicate: (sourceIndex: number): Page => {
         const arr = this.getOrDefaultValue(path, []);
-        const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
+        const duplicateData = cloneDeep(arr[sourceIndex]);
         const newPage = pageGroup.insert();
         newPage.setRaw(duplicateData);
         if (newPage.nameFromProp) {
@@ -1558,7 +1569,7 @@ export class EditorImpl implements Editor {
             for (let i = 0; i < arr.length; i++) {
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
             }
-            childProperties.push(...this.parseAdditionalProps(propSchema, path));
+            childProperties.push(...this.parseAdditionalChildren(propSchema, path, ResolveDepth.None).props);
             childProperties.sort(this.sortPagesProps);
           }
           return childProperties;
@@ -1629,7 +1640,7 @@ export class EditorImpl implements Editor {
           },
           duplicate: (sourceIndex: number): Property => {
             const arr = this.getValue(path);
-            const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
+            const duplicateData = cloneDeep(arr[sourceIndex]);
             const arrayProperty = property as ArrayProperty;
             const newProp = arrayProperty.insert();
             if (newProp.type === PropertyType.Object || newProp.type === PropertyType.Array) {
@@ -1787,7 +1798,7 @@ export class EditorImpl implements Editor {
                 requiredProps.includes(propName),
                 objectPropSchema));
             });
-            childProperties.push(...this.parseAdditionalProps(propSchema, path));
+            childProperties.push(...this.parseAdditionalChildren(propSchema, path, ResolveDepth.None).props);
             childProperties.sort(this.sortPagesProps);
           }
           return childProperties;

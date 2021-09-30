@@ -69,7 +69,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
     protected void serviceStart() throws Exception {
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
                 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-                new ThreadFactoryBuilder().setNameFormat("WebhookServiceImp-worker-%d").build()));
+                new ThreadFactoryBuilder().setNameFormat("WebhookServiceImpl-worker-%d").build()));
         client = HttpClientBuilder.create().build();
     }
 

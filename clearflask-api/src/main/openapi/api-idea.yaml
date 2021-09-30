@@ -236,6 +236,8 @@ components:
         order:
           type: number
           format: double
+        linkedGitHubUrl:
+          type: string
     IdeaConnectResponse:
       type: object
       required:

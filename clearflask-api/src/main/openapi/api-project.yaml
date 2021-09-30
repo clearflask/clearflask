@@ -221,7 +221,7 @@ components:
                   maxItems: 10
             sso:
               x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
-              x-clearflask-additional-props: { props: [{ propPath: ['ssoSecretKey'] }] }
+              x-clearflask-additional-children: { children: [{ path: ['ssoSecretKey'] }] }
               type: object
               title: SsoSignup
               required:
@@ -241,7 +241,7 @@ components:
               type: array
               title: OAuthSignup
               items:
-                x-clearflask-additional-props: { props: [{ propPath: ['oauthClientSecrets', '<&>'], dynamicIdPropName: 'oauthId' }] }
+                x-clearflask-additional-children: { children: [{ path: ['oauthClientSecrets', '<&>'], dynamicIdPropName: 'oauthId' }] }
                 type: object
                 required:
                 - oauthId
@@ -786,6 +786,7 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
     integrations:
       x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
+      x-clearflask-additional-children: { children: [{ path: ['github'] }] }
       title: Integrations
       type: object
       properties:
@@ -817,7 +818,7 @@ components:
           type: string
     intercom:
       x-clearflask-page: { order: 2, name: 'Intercom', description: 'Add Intercom messenger.' }
-      x-clearflask-additional-props: { props: [{ propPath: ['intercomIdentityVerificationSecret'] }] }
+      x-clearflask-additional-children: { children: [{ path: ['intercomIdentityVerificationSecret'] }] }
       title: Intercom
       type: object
       required:
@@ -846,11 +847,71 @@ components:
                 type: string
             intercomIdentityVerificationSecret:
               x-clearflask-hide: true
-              x-clearflask-prop: { order: 3, name: 'Identity Verification Secret (Optional)', description: 'Verification prevents third parties from impersonating your logged-in users and seeing their conversations. Paste in your identity verification secret here. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
+              x-clearflask-prop: { order: 3, name: 'Identity Verification Secret', description: 'Optional verification secret that prevents third parties from impersonating your logged-in users and seeing their conversations. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
               type: string
             usedAdvancedSettings:
               x-clearflask-hide: true
               type: boolean
+            github:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 5, name: 'GitHub Connect', description: 'Synchronize GitHub issues with ClearFlask.' }
+              title: GitHub
+              type: object
+              required:
+              - installationId
+              - repositoryId
+              - name
+              - createWithCategoryId
+              properties:
+                installationId:
+                  x-clearflask-prop: { order: 0, name: 'Installation ID', description: 'Linked GitHub installation ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                repositoryId:
+                  x-clearflask-prop: { order: 0, name: 'Repository ID', description: 'Linked GitHub repository ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                name:
+                  x-clearflask-prop: { order: 10, name: 'Repository Name', description: 'Name of the linked repository. For information only.' }
+                  type: string
+                createWithCategoryId:
+                  x-clearflask-prop: { order: 20, name: 'Create as', description: 'Pick which category should be used to create ClearFlask posts when a GitHub issue is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+                  type: string
+                initialStatusId:
+                  x-clearflask-prop: { order: 30, name: 'Status', description: 'Pick which status should be used when creating a new post in ClearFlask in response to a new GitHub issue. Otherwise default initial status is used.' }
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                  type: string
+                createWithTags:
+                  x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Optionally add these tags to post created from GitHub' }
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                  type: array
+                  items:
+                    type: string
+                statusSync:
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'If enabled, ClearFlask status will be set as a GitHub label.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    closedStatuses:
+                      x-clearflask-prop: { order: 20, name: 'CF -> GH Closed statuses', description: 'List which ClearFlask statuses should trigger GitHub issue to close. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      type: array
+                      items:
+                        type: string
+                    closedStatus:
+                      x-clearflask-prop: { order: 20, name: 'GH -> CF Closed status', description: 'List which ClearFlask status should be used when GitHub issue is closed. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      type: string
+                    openStatus:
+                      x-clearflask-prop: { order: 20, name: 'GH -> CF Open status', description: 'Which ClearFlask status should be used when GitHub issue is re-opened. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      type: string
+                responseSync:
+                  x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create a comment on GitHub Issue when Response changes in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+                commentSync:
+                  x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Creating a comment on GitHub or ClearFlask will mirror the comment in the other.', falseAsUndefined: true }
+                  type: boolean
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object

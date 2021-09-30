@@ -11,7 +11,6 @@ import static org.junit.Assert.assertEquals;
 @Slf4j
 public class JsonPathUtilTest {
 
-
     @Test(timeout = 10_000L)
     public void testFindFirstAsString() throws Exception {
         // https://docs.github.com/en/rest/reference/users

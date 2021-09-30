@@ -103,6 +103,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1billing~1invoices'
   /admin/account/billing/invoice/{invoiceId}:
     $ref: 'api-account.yaml#/~1admin~1account~1billing~1invoice~1{invoiceId}'
+  /admin/account/github/repos:
+    $ref: 'api-account.yaml#/~1admin~1account~1github~1repos'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
   /project/{projectId}/admin/subscription/idea:

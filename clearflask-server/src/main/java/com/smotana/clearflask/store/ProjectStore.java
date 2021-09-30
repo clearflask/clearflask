@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.GitHub;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.InvitationAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
@@ -118,6 +119,8 @@ public interface ProjectStore {
                     ? configAdmin.getSlug() + "." + configApp.domain()
                     : configAdmin.getDomain();
         }
+
+        Optional<GitHub> getGitHubIntegration();
     }
 
     @Value

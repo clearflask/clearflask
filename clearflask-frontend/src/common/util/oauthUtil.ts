@@ -9,6 +9,11 @@ export const OAUTH_CODE_PARAM_NAME = 'code';
 export const OAUTH_STATE_PARAM_NAME = 'state';
 const OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
+const GitHubAppProvider = {
+  clientId: isProd() ? 'Iv1.4c1c98e9e6c71cae' : 'github-client-id',
+  authorizeUrl: 'https://github.com/login/oauth/authorize',
+};
+
 export type Unsubscribe = () => void;
 export interface OAuthToken {
   id: string;
@@ -24,7 +29,7 @@ export interface OAuthState {
 export interface OAuthProvider {
   clientId: string;
   authorizeUrl: string;
-  scope: string;
+  scope?: string;
 }
 
 export interface OAuthFlowProps {
@@ -69,24 +74,29 @@ export class OAuthFlow {
     this.open(provider, openTarget, extraData);
   }
 
+  openForGitHubApp() {
+    this.open(GitHubAppProvider, 'self');
+  }
+
+  openForGitHubAppInstall() {
+    if (windowIso.isSsr) return;
+
+    const oauthStateStr = this.setState(GitHubAppProvider);
+
+    windowIso.location.href = `https://github.com/apps/clearflask?`
+      + `${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
+  }
+
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {
     if (windowIso.isSsr) return;
 
-    const oauthCsrfToken = randomUuid();
-    const oauthState: OAuthState = {
-      csrf: oauthCsrfToken,
-      cid: provider.clientId,
-      accountType: this.props.accountType,
-      extraData,
-    };
-    const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
-    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
+    const oauthStateStr = this.setState(provider, extraData);
 
     const link = `${provider.authorizeUrl}?`
       + `response_type=code`
       + `&client_id=${provider.clientId}`
       + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}${this.props.redirectPath}`
-      + `&scope=${provider.scope}`
+      + (provider.scope ? `&scope=${provider.scope}` : '')
       + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
 
     if (openTarget === 'window') {
@@ -96,6 +106,19 @@ export class OAuthFlow {
     } else {
       windowIso.location.href = link;
     }
+  }
+
+  setState(provider: OAuthProvider, extraData?: string): string {
+    const oauthCsrfToken = randomUuid();
+    const oauthState: OAuthState = {
+      csrf: oauthCsrfToken,
+      cid: provider.clientId,
+      accountType: this.props.accountType,
+      extraData,
+    };
+    const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
+    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
+    return oauthStateStr;
   }
 
   checkResult(): OAuthToken | undefined {

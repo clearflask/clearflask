@@ -66,7 +66,7 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
         // Assert version 1 -> 2
         assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "mergedToPostId", ImmutableMap.of(
-                        "type", "double")));
+                        "type", "keyword")));
     }
 
     private void updateElasticSearchMapping(String projectId, String index, ImmutableMap<String, Object> properties) throws IOException {

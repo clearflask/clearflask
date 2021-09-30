@@ -197,9 +197,9 @@ public class BlackboxIT extends AbstractBlackboxIT {
     private UserMeWithBalance addUserAndDoThings(String projectId, ConfigAdmin configAdmin) {
         long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
-                .name("john-" + newUserNumber)
-                .email("john-" + newUserNumber + "@example.com")
-                .build())
+                        .name("john-" + newUserNumber)
+                        .email("john-" + newUserNumber + "@example.com")
+                        .build())
                 .getUser();
         userResource.userUpdateAdmin(projectId, user.getUserId(), UserUpdateAdmin.builder()
                 .transactionCreate(TransactionCreateAdmin.builder()

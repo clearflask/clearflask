@@ -47,6 +47,7 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.DraftStore;
+import com.smotana.clearflask.store.GitHubStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore;
@@ -122,6 +123,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private UserResource.Config configUserResource;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private GitHubStore gitHubStore;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -283,10 +286,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         // Amount of times I've made this mistake and rolled it back:   2
         //
 
-        Account projectAccount = projectStore.getProject(projectId, true)
-                .map(Project::getAccountId)
-                .flatMap(accountId -> accountStore.getAccount(accountId, true))
+        if (!projectId.equals(configAdmin.getProjectId())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Mismatching project ID");
+        }
+
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
+
+        Project project = projectStore.getProject(projectId, false).get();
+
+        Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
             planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), configAdmin);
         } catch (RequiresUpgradeException ex) {
@@ -294,6 +304,11 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 throw ex;
             }
         }
+
+        gitHubStore.setupConfigGitHubIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
 
         boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
@@ -367,6 +382,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
         boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
+
+        String projectId = projectStore.genProjectId(configAdmin.getSlug());
+        configAdmin = configAdmin.toBuilder().projectId(projectId).build();
+
         sanitizer.subdomain(configAdmin.getSlug(), isSuperAdmin);
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(domain -> sanitizer.domain(domain, isSuperAdmin));
         Account account = getExtendedPrincipal()
@@ -390,8 +409,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             }
         }
 
-        String projectId = projectStore.genProjectId(configAdmin.getSlug());
-        configAdmin = configAdmin.toBuilder().projectId(projectId).build();
+        gitHubStore.setupConfigGitHubIntegration(
+                account.getAccountId(),
+                Optional.empty(),
+                configAdmin);
 
         Project project = projectStore.createProject(account.getAccountId(), projectId, new VersionedConfigAdmin(configAdmin, "new"));
         ListenableFuture<CreateIndexResponse> commentIndexFuture = commentStore.createIndex(projectId);
@@ -700,6 +721,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         null,
                         null,
                         ImmutableSet.of(),
+                        null,
                         null);
             })).get();
         } catch (ApiException ex) {

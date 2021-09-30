@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
@@ -110,6 +111,8 @@ public interface UserStore {
      * Create or return existing user.
      */
     UserModel createOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt, boolean isMod);
+
+    UserModel createOrGet(String projectId, String guid, Supplier<Optional<String>> emailOptSupplier, Supplier<Optional<String>> nameOptSupplier, boolean isMod);
 
     default String genUserSessionId() {
         return IdUtil.randomAscId();

@@ -32,9 +32,11 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.support.WriteResponse;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
@@ -106,14 +108,14 @@ public class CommentStoreIT extends AbstractIT {
 
         // Search by DynamoDB
         ImmutableList<CommentModel> comments = store.searchComments(projectId, CommentSearchAdmin.builder()
-                .build(), false, Optional.empty())
+                        .build(), false, Optional.empty())
                 .getComments();
         assertEquals(2, comments.size());
 
         // Search by ElasticSearch
         comments = store.searchComments(projectId, CommentSearchAdmin.builder()
-                .filterAuthorId(c0.getAuthorUserId())
-                .build(), false, Optional.empty())
+                        .filterAuthorId(c0.getAuthorUserId())
+                        .build(), false, Optional.empty())
                 .getComments();
         assertEquals(1, comments.size());
         assertEquals(c0.getCommentId(), comments.get(0).getCommentId());
@@ -130,7 +132,9 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().content(textToSimpleHtml("newContent")).build();
-        store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContentAsUnsafeHtml())).getIndexingFuture().get();
+        CommentStore.CommentAndIndexingFuture<WriteResponse> writeResponseCommentAndIndexingFuture = store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContentAsUnsafeHtml()));
+        writeResponseCommentAndIndexingFuture.getIndexingFuture().get();
+        c = c.toBuilder().edited(writeResponseCommentAndIndexingFuture.getCommentModel().getEdited()).build();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 
@@ -148,6 +152,9 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(1).build();
+        assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
+
+        c = c.toBuilder().upvotes(2).build();
         store.voteComment(projectId, ideaId, c.getCommentId(), userId1, VoteValue.Upvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
@@ -155,7 +162,7 @@ public class CommentStoreIT extends AbstractIT {
         store.voteComment(projectId, ideaId, c.getCommentId(), userId2, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
-        c = c.toBuilder().upvotes(0).downvotes(2).build();
+        c = c.toBuilder().upvotes(1).downvotes(2).build();
         store.voteComment(projectId, ideaId, c.getCommentId(), userId1, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
@@ -206,9 +213,9 @@ public class CommentStoreIT extends AbstractIT {
     }
 
     private CommentModel createRandomComment(String projectId, String ideaId, ImmutableList<String> parentCommentIds) throws Exception {
-        CommentModel comment = getRandomComment(projectId, ideaId, parentCommentIds);
-        store.createComment(comment).getIndexingFuture().get();
-        return comment;
+        CommentStore.CommentAndIndexingFuture<List<WriteResponse>> commentAndFuture = store.createCommentAndUpvote(getRandomComment(projectId, ideaId, parentCommentIds));
+        commentAndFuture.getIndexingFuture().get();
+        return commentAndFuture.getCommentModel();
     }
 
     private CommentModel getRandomComment(String projectId, String ideaId, ImmutableList<String> parentCommentIds) throws Exception {

@@ -188,6 +188,6 @@ public class SanitizerTest extends AbstractTest {
     }
 
     void assertSanitize(String message, String expHtml, String inpHtml) {
-        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID));
+        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID, false));
     }
 }

@@ -14,7 +14,7 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsInstall, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
@@ -74,6 +74,11 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 },
               { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 },
               { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 },
+              { type: 'heading', text: 'Integrations', offset: 1 },
+              { type: 'item', slug: 'settings/project/github', name: 'GitHub', offset: 2 },
+              { type: 'item', slug: 'settings/project/intercom', name: 'Intercom', offset: 2 },
+              { type: 'item', slug: 'settings/project/google-analytics', name: 'Google Analytics', offset: 2 },
+              { type: 'item', slug: 'settings/project/hotjar', name: 'Hotjar', offset: 2 },
               (showAdvancedWarning ? {
                 type: 'item', slug: 'settings/project/advanced-enter', name: 'Advanced', offset: 1,
               } : {
@@ -160,6 +165,18 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
           break;
         case 'data':
           mainContent = (<ProjectSettingsData server={activeProject.server} />);
+          break;
+        case 'github':
+          mainContent = (<ProjectSettingsGitHub project={activeProject} server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'google-analytics':
+          mainContent = (<ProjectSettingsGoogleAnalytics server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'hotjar':
+          mainContent = (<ProjectSettingsHotjar server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'intercom':
+          mainContent = (<ProjectSettingsIntercom server={activeProject.server} editor={activeProject.editor} />);
           break;
         case 'advanced-enter':
           mainContent = (<ProjectSettingsAdvancedEnter />);
