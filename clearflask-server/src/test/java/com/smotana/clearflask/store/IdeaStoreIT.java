@@ -313,14 +313,14 @@ public class IdeaStoreIT extends AbstractIT {
     /** Assert presence with specific order */
     void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableList<String> expectedPostIds) {
         assertEquals(expectedPostIds, store.searchIdeas(
-                projectId, search, false, Optional.empty())
+                        projectId, search, false, Optional.empty())
                 .getIdeaIds());
     }
 
     /** Assert presence without ordering */
     void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableSet<String> expectedPostIds) {
         assertEquals(expectedPostIds, ImmutableSet.copyOf(store.searchIdeas(
-                projectId, search, false, Optional.empty())
+                        projectId, search, false, Optional.empty())
                 .getIdeaIds()));
     }
 

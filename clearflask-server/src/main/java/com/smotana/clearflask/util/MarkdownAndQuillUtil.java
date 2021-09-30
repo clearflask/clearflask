@@ -12,9 +12,13 @@ import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import com.vladsch.flexmark.parser.Parser;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.regex.Matcher;
+
 @Slf4j
 @Singleton
 public class MarkdownAndQuillUtil {
+
+    private static final String MARKDOWN_BLOCKQUOTE_PREFIX = "> ";
 
     @Inject
     private Sanitizer sanitizer;
@@ -34,6 +38,16 @@ public class MarkdownAndQuillUtil {
 
     public String quillToMarkdown(String html) {
         return converter.convert(html);
+    }
+
+    public String markdownSign(String name, String action, String markdown) {
+        return "**" + name + "** " + action + ":\n" + markdown;
+    }
+
+    public String markdownQuote(String markdown) {
+        return "\n"
+                + MARKDOWN_BLOCKQUOTE_PREFIX + markdown.replaceAll("(?:\r\n?|\n)(?!\\z)", "$0" + Matcher.quoteReplacement(MARKDOWN_BLOCKQUOTE_PREFIX))
+                + "\n";
     }
 
     public static Module module() {

@@ -51,6 +51,7 @@ import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.web.ApiException;
@@ -80,6 +81,7 @@ import org.kohsuke.github.GitHubClientUtil;
 import org.kohsuke.github.HttpException;
 
 import javax.ws.rs.core.Response;
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -149,6 +151,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     private UserStore userStore;
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private ColorUtil colorUtil;
 
     private final JsonPath changesBodyJsonPath = JsonPath.compile("changes.body");
     private TableSchema<GitHubAuthorization> gitHubAuthorizationSchema;
@@ -566,8 +570,19 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 throw ex;
             }
 
-            GHIssueComment ghIssueComment = repository.getIssue((int) gitHubIssueMetadataOpt.get().getIssueId())
-                    .comment(markdownAndQuillUtil.quillToMarkdown(quoteComment(comment, parentCommentOpt)));
+            String commentContent = "";
+            if (parentCommentOpt.isPresent()) {
+                commentContent += markdownAndQuillUtil.markdownQuote(
+                        markdownAndQuillUtil.quillToMarkdown(
+                                parentCommentOpt.get().getContentSanitized(sanitizer)));
+            }
+            commentContent += markdownAndQuillUtil.markdownSign(
+                    comment.getAuthorName(),
+                    "wrote",
+                    markdownAndQuillUtil.quillToMarkdown(comment.getContentSanitized(sanitizer)));
+
+            GHIssueComment ghIssueComment = repository.getIssue((int) gitHubIssueMetadataOpt.get().getIssueNumber())
+                    .comment(commentContent);
             return Optional.of(ghIssueComment);
         });
     }
@@ -616,16 +631,17 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 throw ex;
             }
 
-            GHIssue ghIssue = repository.getIssue((int) gitHubIssueMetadataOpt.get().getIssueId());
+            GHIssue ghIssue = repository.getIssue((int) gitHubIssueMetadataOpt.get().getIssueNumber());
             Optional<GHIssueComment> responseCommentOpt = Optional.empty();
             if (responseChanged
                     && syncResponse
                     && !Strings.isNullOrEmpty(idea.getResponseAsUnsafeHtml())
                     && !Strings.isNullOrEmpty(idea.getResponseAuthorName())) {
-                GHIssueComment ghComment = ghIssue.comment(signComment(
-                        idea.getResponseSanitized(sanitizer),
-                        idea.getResponseAuthorName(),
-                        true));
+                GHIssueComment ghComment = ghIssue.comment(
+                        markdownAndQuillUtil.markdownSign(
+                                idea.getResponseAuthorName(),
+                                "wrote",
+                                markdownAndQuillUtil.quillToMarkdown(idea.getResponseSanitized(sanitizer))));
                 responseCommentOpt = Optional.of(ghComment);
             }
             if (statusChanged
@@ -639,9 +655,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 if (labelOpt.isEmpty()) {
                     labelToAdd = repository.createLabel(
                             statusToSet.getName(),
-                            statusToSet.getColor() != null && statusToSet.getColor().startsWith("#")
-                                    ? statusToSet.getColor().substring(1)
-                                    : "000000",
+                            colorUtil.colorToHex(colorUtil.parseColor(statusToSet.getColor())
+                                    .orElse(Color.BLACK)),
                             "Managed by ClearFlask");
                 } else {
                     labelToAdd = labelOpt.get();
@@ -671,25 +686,6 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             }
             return Optional.of(new StatusAndOrResponse(ghIssue, responseCommentOpt));
         });
-    }
-
-    private String quoteComment(CommentModel comment, Optional<CommentModel> parentCommentOpt) {
-        String html = signComment(comment.getContentSanitized(sanitizer), comment.getAuthorName(), comment.getAuthorIsMod());
-        if (parentCommentOpt.isPresent() && parentCommentOpt.get().getAuthorUserId() != null) {
-            html = signComment("<blockquote>" +
-                    parentCommentOpt.get().getContentSanitized(sanitizer) +
-                    "</blockquote>", parentCommentOpt.get().getAuthorName(), parentCommentOpt.get().getAuthorIsMod()) +
-                    html;
-        }
-        return html;
-    }
-
-    private String signComment(String html, String name, boolean isMod) {
-        name = "<b>" + name + "</b>";
-        return (isMod
-                ? "Moderator " + name + ":"
-                : name + ":")
-                + html;
     }
 
     private Optional<IdeaStore.GitHubIssueMetadata> getMetadataFromLinkedIdea(Project project, IdeaModel idea) {

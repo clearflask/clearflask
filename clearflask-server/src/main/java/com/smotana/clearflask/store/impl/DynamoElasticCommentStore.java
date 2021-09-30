@@ -526,6 +526,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 "ideaId", ideaId,
                                 "commentId", commentId)))
                         .withReturnValues(ReturnValue.ALL_NEW)
+                        .addAttributeUpdate(new AttributeUpdate("edited")
+                                .put(commentSchema.toDynamoValue("edited", updated)))
                         .addAttributeUpdate(new AttributeUpdate("content")
                                 .put(commentSchema.toDynamoValue("content", commentUpdate.getContent()))))
                 .getItem());
@@ -533,6 +535,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(ImmutableMap.of(
+                                "edited", comment.getEdited().getEpochSecond(),
                                 "content", sanitizer.richHtmlToPlaintext(comment.getContentAsText(sanitizer))
                         )), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),

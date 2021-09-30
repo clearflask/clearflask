@@ -878,11 +878,23 @@ public class MarkdownAndQuillUtilTest extends AbstractTest {
     }
 
     @Test(timeout = 10_000L)
-    public void test() throws Exception {
+    public void testConvert() throws Exception {
         String html = markdownAndQuillUtil.markdownToQuill("project-1", "test", "test", MARKDOWN_SAMPLE);
         String markdown = markdownAndQuillUtil.quillToMarkdown(html);
 
         assertEquals(html, sanitizer.richHtml(html, "test", "1", "project-1", false));
         assertEquals(MARKDOWN_SAMPLE_SANITIZED, markdown);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testMarkdown() throws Exception {
+        assertEquals("\n> asfd\n> fdsa\n",
+                markdownAndQuillUtil.markdownQuote(
+                        "asfd\nfdsa"));
+        assertEquals("**Matus** wrote:\nasfd\nfdsa",
+                markdownAndQuillUtil.markdownSign(
+                        "Matus",
+                        "wrote",
+                        "asfd\nfdsa"));
     }
 }
