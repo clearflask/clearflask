@@ -1,10 +1,10 @@
 <p align="center">
   <a href="https://clearflask.com/" rel="noopener" target="_blank">
-    <img width="100" src="./clearflask-resources/clearflask-logo.svg" alt="ClearFlask logo">
+    <img width="100" src="./clearflask-frontend/public/img/clearflask-logo.png" alt="Logo">
+    <br />
+    <img src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
   </a>
 </p>
-
-<h1 align="center">ClearFlask</h1>
 
 <div align="center">
   <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
@@ -25,18 +25,15 @@ Listen to your users during product development with [ClearFlask](https://clearf
 
 </div>
 
-## Contribute
+### Contribute
 
-Submit an [issue here](https://product.clearflask.com/issue) or
-a [suggestion here](https://product.clearflask.com/feedback).
+Your contributions are welcome. Please [see here](CONTRIBUTING.md) on how to contribute to our codebase.
 
-You can also open a merge request. Please [see here](CONTRIBUTING.md) on how to contribute.
-
-## Managed Hosting
+### Managed Hosting
 
 For managed hosting with scalable pricing, [get started here](https://clearflask.com/signup).
 
-## Self Hosting
+### Self Hosting
 
 For a stable installation, check out the detailed [instructions here](INSTALLATION.md).
 

@@ -84,6 +84,7 @@ export interface Props {
   marker?: string;
   description?: string | React.ReactNode;
   points?: Array<Point>;
+  largePoints?: boolean;
   counterpoints?: Array<string>;
   postStatusId?: string;
   buttonIcon?: React.ReactNode;
@@ -138,9 +139,10 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
         bodyCmpt = 'div';
         break;
     }
+    const pointVariant = this.props.largePoints ? 'h6' : bodyVariant;
     const counterpoints = this.props.counterpoints?.map(text => {
       return (
-        <Typography variant={bodyVariant} component='div' className={this.props.classes.point}>
+        <Typography variant={pointVariant} component='div' className={this.props.classes.point}>
           <XIcon color='inherit' fontSize='inherit' className={classNames(this.props.classes.pointIcon, this.props.classes.counterpointIcon)} />
           {text}
         </Typography>
@@ -179,7 +181,7 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
                 ? point.icon : [point.icon]);
               const isIconCheck = typeof point === 'string';
               return (
-                <Typography variant={bodyVariant} component='div' className={this.props.classes.point}>
+                <Typography variant={pointVariant} component='div' className={this.props.classes.point}>
                   {icons.map(Icon => (
                     <Icon color='inherit' fontSize='inherit' className={classNames(this.props.classes.pointIcon)} />
                   ))}

@@ -330,10 +330,12 @@ export function Landing() {
       <Block
         type='headingMain'
         title='Simple, yet powerful feedback experience'
-        description='Ask your customers for feedback on your product.'
+        description='Ask your customers for feedback on your product and extract valuable ideas.'
+        largePoints
         points={[
-          'Keep feedback out in the public',
-          'Let users discuss amongst themselves',
+          'Gauge customer interest',
+          'Community discussion',
+          'Website integration',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -367,11 +369,11 @@ export function Landing() {
         type='headingMain'
         title='Convert ideas into actionable tasks'
         description='Find the most valuable features from the most important customers.'
+        largePoints
         points={[
-          'Extract actionable feedback',
-          'Kanban task management',
-          'Validate new ideas',
-          'Identify opportunities',
+          'Analyze feedback',
+          'Validate ideas',
+          'Prioritize Roadmap',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -395,9 +397,11 @@ export function Landing() {
         type='headingMain'
         title='Share progress with your community'
         description='Become a customer-centric organization with transparent customer-driven product development.'
+        largePoints
         points={[
-          'Product Roadmap',
-          'Changelog of releases',
+          'Public Roadmap',
+          'Changelog',
+          'Subscribe to updates',
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -806,8 +810,9 @@ export function LandingHero() {
       viewBox: '0 0 1200 500',
     }} width={2400} height={1000}>
       <Hero
-        title='Community centric product feedback loop'
-        description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
+        title='Community centric product feedback'
+        description='Open-source ideation tool close the feedback loop between your product and customers.'
+        // description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
           image: PromoThumb,
@@ -1805,35 +1810,21 @@ export function LandingIntegrations() {
         />
         <BlockContent
           variant='content'
-          title='Zapier'
-          description='Easily connect with 2000+ apps without any coding.'
+          title='GitHub'
+          description='Mirror GitHub issues and comments with ClearFlask, respond to feedback all from a single place.'
           icon={(
             <img
               alt=''
               className={classes.integrationImage}
-              src='/img/landing/zapier.png'
-            />
-          )}
-          className={classes.smallBlock}
-          postStatusId='zapier-integration-rfs'
-        />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
-        <BlockContent
-          variant='content'
-          title='Hotjar'
-          description='Analyze how your users are providing feedback to you.'
-          icon={(
-            <img
-              alt=''
-              className={classes.integrationImage}
-              src='/img/landing/hotjar.png'
+              src='/img/landing/github.png'
             />
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/advanced/integrations'
+          buttonLink='/dashboard/settings/project/github'
         />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
         <BlockContent
           variant='content'
           title='Google Analytics'
@@ -1847,10 +1838,25 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/advanced/integrations'
+          buttonLink='/dashboard/settings/project/google-analytics'
+        />
+        <BlockContent
+          variant='content'
+          title='Hotjar'
+          description='Analyze how your users are providing feedback to you.'
+          icon={(
+            <img
+              alt=''
+              className={classes.integrationImage}
+              src='/img/landing/hotjar.png'
+            />
+          )}
+          className={classes.smallBlock}
+          buttonTitle='Setup'
+          buttonLink='/dashboard/settings/project/hotjar'
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md'>
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Intercom Messenger'
@@ -1864,7 +1870,23 @@ export function LandingIntegrations() {
           )}
           className={classes.smallBlock}
           buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/advanced/integrations'
+          buttonLink='/dashboard/settings/project/intercom'
+        />
+      </HorizontalPanels>
+      {/* <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
+        <BlockContent
+          variant='content'
+          title='Zapier'
+          description='Easily connect with 2000+ apps without any coding.'
+          icon={(
+            <img
+              alt=''
+              className={classes.integrationImage}
+              src='/img/landing/zapier.png'
+            />
+          )}
+          className={classes.smallBlock}
+          postStatusId='zapier-integration-ldt'
         />
         <BlockContent
           variant='content'
@@ -1880,8 +1902,6 @@ export function LandingIntegrations() {
           className={classes.smallBlock}
           postStatusId='intercom-integration-mbf'
         />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Slack'
@@ -1910,8 +1930,6 @@ export function LandingIntegrations() {
           className={classes.smallBlock}
           postStatusId='stripe-integration-fx9'
         />
-      </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
         <BlockContent
           variant='content'
           title='Patreon'
@@ -1927,7 +1945,7 @@ export function LandingIntegrations() {
           postStatusId='patreon-integration-pak'
         />
         <div />
-      </HorizontalPanels>
+      </HorizontalPanels> */}
     </>
   );
 }
