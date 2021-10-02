@@ -2,7 +2,7 @@
   <a href="https://clearflask.com/" rel="noopener" target="_blank">
     <img width="100" src="./clearflask-frontend/public/img/clearflask-logo.png" alt="Logo">
     <br />
-    <img src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
+    <img width="300" src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
   </a>
 </p>
 
