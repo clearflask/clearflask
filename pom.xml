@@ -4,7 +4,7 @@
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
@@ -52,7 +52,7 @@
         <url>git@github.com:clearflask/clearflask.git</url>
         <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
         <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
-        <tag>1.3.0</tag>
+        <tag>1.2.0</tag>
     </scm>
 
     <distributionManagement>
