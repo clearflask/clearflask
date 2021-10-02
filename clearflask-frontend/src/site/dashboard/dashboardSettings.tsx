@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Typography } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from '@material-ui/core';
 import React from 'react';
 import * as Admin from '../../api/admin';
 import ServerAdmin from '../../api/serverAdmin';
@@ -10,6 +10,7 @@ import Menu, { MenuHeading, MenuItem } from '../../common/config/settings/Menu';
 import SettingsDynamicPage from '../../common/config/settings/SettingsDynamicPage';
 import { Orientation } from '../../common/ContentScroll';
 import { SectionContent } from '../../common/Layout';
+import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
@@ -278,22 +279,71 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             Preview
           </Button>
         )}
+        <SubmitButton
+          variant='text'
+          color='inherit'
+          isSubmitting={this.state.saveIsSubmitting}
+          style={{ marginLeft: 8, color: !this.state.saveIsSubmitting ? this.props.theme.palette.error.main : undefined }}
+          onClick={() => this.setState({
+            saveDiscardDialogOpen: true,
+          })}
+        >
+          Discard
+        </SubmitButton>
         <TourAnchor anchorId='settings-publish-changes' placement='top' disablePortal>
           {(next, isActive, anchorRef) => (
-            <Button
-              ref={anchorRef}
+            <SubmitButton
+              buttonRef={anchorRef}
+              isSubmitting={this.state.saveIsSubmitting}
               variant='contained'
               disableElevation
               color='primary'
               style={{ marginLeft: 8 }}
-              onClick={() => this.publishChanges(activeProject)
-                .then(versionedConfigAdmin => this.setState({ settingsPreviewChanges: undefined }))
-                .then(next)}
+              onClick={async () => {
+                this.setState({ saveIsSubmitting: true });
+                try {
+                  const versionedConfigAdmin = await this.publishChanges(activeProject);
+                  this.setState({ settingsPreviewChanges: undefined });
+                  next();
+                } finally {
+                  this.setState({ saveIsSubmitting: false });
+                }
+              }}
             >
               Publish
-            </Button>
+            </SubmitButton>
           )}
         </TourAnchor>
+        <Dialog
+          open={!!this.state.saveDiscardDialogOpen}
+          onClose={() => this.setState({ saveDiscardDialogOpen: false })}
+        >
+          <DialogTitle>Discard changes</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Are you sure you want to discard all your configuration changes?</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ saveDiscardDialogOpen: false })}
+            >Cancel</Button>
+            <SubmitButton
+              isSubmitting={this.state.saveIsSubmitting}
+              style={{ color: !this.state.saveIsSubmitting ? this.props.theme.palette.error.main : undefined }}
+              onClick={async () => {
+                this.setState({ saveIsSubmitting: true });
+                try {
+                  const oldVersionedConfigAdmin = ServerAdmin.get().getStore().getState().configs.configs.byProjectId?.[activeProject.projectId]?.config;
+                  if (oldVersionedConfigAdmin) {
+                    activeProject.resetUnsavedChanges(oldVersionedConfigAdmin);
+                    this.setState({ saveDiscardDialogOpen: false });
+                  }
+                } finally {
+                  this.setState({ saveIsSubmitting: false });
+                }
+              }}>
+              Discard
+            </SubmitButton>
+          </DialogActions>
+        </Dialog>
       </div>
     ) : undefined;
   }

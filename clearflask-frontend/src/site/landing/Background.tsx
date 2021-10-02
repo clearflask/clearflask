@@ -47,6 +47,7 @@ export interface Props extends Omit<BlockContentProps, 'variant'> {
   offsetY?: string;
   width?: string | number;
   height?: string | number;
+  minHeight?: string | number;
   align?: 'center' | 'top';
 }
 class Background extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
@@ -86,6 +87,7 @@ class Background extends Component<Props & WithStyles<typeof styles, true> & Rou
             left: this.props.offsetX === undefined ? '50%' : `calc(50% + ${this.props.offsetX})`,
             width: this.props.width || '100%',
             height: this.props.height || '100%',
+            minHeight: this.props.minHeight,
           }}>
             {content}
           </div>

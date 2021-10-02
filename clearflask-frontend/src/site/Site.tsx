@@ -161,8 +161,8 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
           { type: 'button', link: '/product/analyze', title: 'Manage and analyze', icon: AnalyzeIcon },
           { type: 'button', link: '/product/act', title: 'Respond and inform', icon: ActIcon },
           { type: 'divider' },
-          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
           { type: 'button', link: '/product/integrations', title: 'Integrations' },
+          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
           { type: 'divider' },
           { type: 'button', link: '/product/compare', title: 'Competing products', icon: CompareIcon },
         ]

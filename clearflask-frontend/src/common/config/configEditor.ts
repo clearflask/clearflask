@@ -429,7 +429,7 @@ export class EditorImpl implements Editor {
   }
 
   setConfig(config: ConfigAdmin) {
-    this.config = config;
+    this.config = cloneDeep(config);
     this.cacheInvalidate([]);
     this.notify();
   }

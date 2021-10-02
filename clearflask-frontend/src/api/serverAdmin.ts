@@ -109,12 +109,12 @@ export default class ServerAdmin {
     if (!project) {
       const bind = this.getStore().getState().configs.configs.byProjectId?.[projectId];
       if (!bind) throw new Error('Cannot find project by ID: ' + projectId);
-      const versionedConfig: Client.VersionedConfig = bind.config;
+      const versionedConfigAdmin: Admin.VersionedConfigAdmin = bind.config;
       const loggedInUser: Client.UserMeWithBalance = bind.user;
       const server = new Server(
         projectId,
         { suppressSetTitle: true });
-      const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
+      const editor = new ConfigEditor.EditorImpl(versionedConfigAdmin.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, DemoUpdateDelay);
       const subscribers: (() => void)[] = [];
@@ -136,7 +136,7 @@ export default class ServerAdmin {
       });
       project = {
         projectId: projectId,
-        configVersion: versionedConfig.version,
+        configVersion: versionedConfigAdmin.version,
         user: loggedInUser,
         editor: editor,
         server: server,
@@ -150,6 +150,7 @@ export default class ServerAdmin {
         },
         resetUnsavedChanges: (newConfig) => {
           project.configVersion = newConfig.version;
+          project.editor.setConfig(newConfig.config);
           hasUnsavedChanges = false;
           subscribers.forEach(subscriber => subscriber());
         },
@@ -159,9 +160,9 @@ export default class ServerAdmin {
       // Simulate config get and bind
       const action: Client.configAndUserBindSlugActionFulfilled = {
         type: Client.configAndUserBindSlugActionStatus.Fulfilled,
-        meta: { action: Client.Action.configAndUserBindSlug, request: { slug: versionedConfig.config.slug, userBind: {} } },
+        meta: { action: Client.Action.configAndUserBindSlug, request: { slug: versionedConfigAdmin.config.slug, userBind: {} } },
         payload: {
-          config: versionedConfig,
+          config: versionedConfigAdmin,
           user: loggedInUser,
         },
       };

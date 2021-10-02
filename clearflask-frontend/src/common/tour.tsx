@@ -298,7 +298,7 @@ export const TourChecklist = (props: {
 
   return (
     <div className={classes.checklist}>
-      <Typography variant='h4' className={classes.checklistHeader}>Quick start</Typography>
+      <Typography variant='h4' className={classes.checklistHeader}>Quick start guide</Typography>
       {groups}
     </div>
   );

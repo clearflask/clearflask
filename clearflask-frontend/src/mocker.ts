@@ -8,7 +8,7 @@ import * as ConfigEditor from './common/config/configEditor';
 import Templater, { createTemplateV2OptionsDefault } from './common/config/configTemplater';
 import windowIso from './common/windowIso';
 
-export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin> {
+export async function mock(slug: string = 'product'): Promise<VersionedConfigAdmin> {
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
@@ -19,7 +19,7 @@ export async function mock(slug: string = 'mock'): Promise<VersionedConfigAdmin>
     infoName: isGreatProduct ? 'GreatProduct' : 'Sandbox',
     infoLogo: isGreatProduct ? `${windowIso.location.origin}/img/landing/GreatProductLogo.png` : 'https://clearflask.com/img/clearflask-logo.png',
     infoWebsite: `https://${windowIso.parentDomain}`,
-    infoSlug: 'mock',
+    infoSlug: 'product',
   });
   if (templateResult.roadmap) {
     templater.taggingIdeaBug(templateResult.roadmap.categoryAndIndex.index);

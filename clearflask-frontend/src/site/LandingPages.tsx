@@ -811,7 +811,7 @@ export function LandingHero() {
     }} width={2400} height={1000}>
       <Hero
         title='Community centric product feedback'
-        description='Open-source ideation tool close the feedback loop between your product and customers.'
+        description='Open-source ideation tool to close the feedback loop between your product and customers.'
         // description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
@@ -1141,24 +1141,21 @@ export function LandingCollectFeedback() {
           </FakeBrowser>
         )}
       />
-      <Background svg={{
-        d: 'M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z',
-        viewBox: '0 0 500 150',
-        flexible: true,
-      }}>
-        <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-          <GetStartedColumn />
-          <Block
-            title='Analyze feedback'
-            type='column'
-            description='Organize all the data you collected to make the right decision'
-            image={AnalyzeImg}
-            mirror
-            buttonTitle='Continue'
-            buttonLink='/product/analyze'
-          />
-        </HorizontalPanels>
-      </Background>
+      <FooterHorizontalPanels
+        svgD='M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z'
+      >
+        <GetStartedColumn />
+        <Block
+          title='Analyze feedback'
+          type='column'
+          description='Organize all the data you collected to make the right decision'
+          image={AnalyzeImg}
+          mirror
+          buttonTitle='Continue'
+          buttonLink='/product/analyze'
+          {...FooterHorizontalPanelsBlockProps}
+        />
+      </FooterHorizontalPanels>
     </>
   );
 }
@@ -1296,15 +1293,21 @@ export function LandingPrioritization() {
           description='Analyze feedback to shape your idea for success.'
         />
       </HorizontalPanels>
-      <Block
-        title='Act'
-        description='Take action on what your users are telling you.'
-        image={NotifyImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='See how'
-        buttonLink='/product/act'
-      />
+      <FooterHorizontalPanels
+        svgD='M 0 49.98 C 65 4 191 104 500 49.98 L 500 150 L 0 150 Z'
+      >
+        <GetStartedColumn />
+        <Block
+          title='Keep everyone informed'
+          description='Take action on what your users are telling you.'
+          image={NotifyImg}
+          imageLocation='above'
+          mirror
+          buttonTitle='Continue'
+          buttonLink='/product/act'
+          {...FooterHorizontalPanelsBlockProps}
+        />
+      </FooterHorizontalPanels>
     </>
   );
 }
@@ -1441,7 +1444,7 @@ export function LandingEngagement() {
   return (
     <>
       <Background svg={{
-        d: 'M0.00,49.98 C150.00,150.00 271.49,-50.00 500.00,49.98 L500.00,0.00 L0.00,0.00 Z',
+        d: 'M 0 49.98 C 186 275 271.49 -50 500 49.98 L 500 0 L 0 0 Z',
         viewBox: '0 0 500 150',
         flexible: true,
       }}>
@@ -1608,15 +1611,21 @@ export function LandingEngagement() {
           description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
         />
       </HorizontalPanels>
-      <Block
-        title='Customize'
-        description='Match your workflow and style. Customize our platform to your liking.'
-        image={CustomizeImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='See how'
-        buttonLink='/product/customize'
-      />
+      <FooterHorizontalPanels
+        svgD='M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z'
+      >
+        <GetStartedColumn />
+        <Block
+          title='Integrations'
+          type='column'
+          description='Bring in your own tools and connect with ClearFlask'
+          image={IntegrationImg}
+          mirror
+          buttonTitle='Continue'
+          buttonLink='/product/integrations'
+          {...FooterHorizontalPanelsBlockProps}
+        />
+      </FooterHorizontalPanels>
     </>
   );
 }
@@ -1856,7 +1865,7 @@ export function LandingIntegrations() {
           buttonLink='/dashboard/settings/project/hotjar'
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
+      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
         <BlockContent
           variant='content'
           title='Intercom Messenger'
@@ -1872,8 +1881,6 @@ export function LandingIntegrations() {
           buttonTitle='Setup'
           buttonLink='/dashboard/settings/project/intercom'
         />
-      </HorizontalPanels>
-      {/* <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Zapier'
@@ -1888,6 +1895,8 @@ export function LandingIntegrations() {
           className={classes.smallBlock}
           postStatusId='zapier-integration-ldt'
         />
+      </HorizontalPanels>
+      {/* <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
         <BlockContent
           variant='content'
           title='Intercom Feedback'
@@ -2848,13 +2857,13 @@ export function LandingGrowWithUs() {
           icon={(<SearchIcon fontSize='inherit' />)}
           variant='content'
           title='Search engine'
-          description='We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets. It also ensures your users are not submitting duplicate ideas.'
+          description='We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets.'
         />
         <BlockContent
           icon={(<ClientIcon fontSize='inherit' />)}
           variant='content'
           title='Client-side Framework'
-          description='Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use and keeps your users engaged.'
+          description='Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use.'
         />
         <BlockContent
           icon={(<ServerIcon fontSize='inherit' />)}
@@ -2880,29 +2889,12 @@ export function LandingGrowWithUs() {
           title='Anti-Spam'
           description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.' />
         <BlockContent
-          icon={(<PrivacyIcon fontSize='inherit' />)}
-          variant='content'
-          title='Do Not Track'
-          description='We respect the Do Not Track (DNT) flag that respects your privacy.'
-          buttonTitle='Privacy Policy'
-          buttonLink='/privacy-policy'
-        />
-        <BlockContent
           icon={(<BillingIcon fontSize='inherit' />)}
           variant='content'
           title='Billing system'
           description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
         />
       </HorizontalPanels>
-      <Block
-        title='Integrations'
-        description='Bring in your own tools and connect with ClearFlask'
-        image={IntegrationImg}
-        imageLocation='above'
-        mirror
-        buttonTitle='See all integrations'
-        buttonLink='/product/integrations'
-      />
     </>
   );
 }
@@ -2952,49 +2944,64 @@ export function LandingSales() {
 export function LandingPricingOptions() {
   const classes = useStyles();
   return (
+    <FooterHorizontalPanels
+      title="Let's get started"
+      svgD='M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z'
+    >
+      <Block
+        icon={(<ServerIcon fontSize='inherit' />)}
+        title='Cloud offerring'
+        description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
+        buttonTitle='Try for free'
+        buttonLink='/signup'
+        button2Title='Pricing'
+        button2Link='/pricing'
+        buttonSuppressIcon
+        image={Server2Img}
+        {...FooterHorizontalPanelsBlockProps}
+      />
+      <Block
+        icon={(<OpenSourceIcon fontSize='inherit' />)}
+        title='Self hosting'
+        description='Open-source with no limitations. Own your data and manage it on your own infrastructure.'
+        buttonTitle='Install it'
+        buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
+        buttonVariant='contained'
+        buttonSuppressIcon
+        image={Server3Img}
+        {...FooterHorizontalPanelsBlockProps}
+      />
+    </FooterHorizontalPanels>
+  );
+}
+const FooterHorizontalPanelsBlockProps: Partial<React.ComponentProps<typeof Block>> = {
+  type: 'column',
+  titleVariant: 'h4',
+  imageLocation: 'above',
+  imageStyleOuter: { minHeight: 300 },
+};
+export function FooterHorizontalPanels(props: {
+  title?: string;
+  svgD: string;
+  children?: any;
+}) {
+  const classes = useStyles();
+  return (
     <>
       <Background svg={{
-        d: 'M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z',
+        d: props.svgD,
         viewBox: '0 0 500 150',
         flexible: true,
       }}>
         <Block
           className={classes.textAlignCenter}
           type='headingOnly'
-          title="Let's get started"
+          title={props.title}
         />
       </Background>
       <Background backgroundColor={fade('#218774', 0.05)}>
         <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
-          <Block
-            type='column'
-            icon={(<ServerIcon fontSize='inherit' />)}
-            titleVariant='h4'
-            title='Cloud offerring'
-            description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
-            buttonTitle='Try for free'
-            buttonLink='/signup'
-            buttonSuppressIcon
-            button2Title='Pricing'
-            button2Link='/pricing'
-            image={Server2Img}
-            imageLocation='above'
-            imageStyleOuter={{ minHeight: 300 }}
-          />
-          <Block
-            type='column'
-            icon={(<OpenSourceIcon fontSize='inherit' />)}
-            titleVariant='h4'
-            title='Self hosting'
-            description='Open-source with no limitations. Own your data and manage it on your own infrastructure.'
-            buttonTitle='Install it'
-            buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
-            buttonVariant='contained'
-            buttonSuppressIcon
-            image={Server3Img}
-            imageLocation='above'
-            imageStyleOuter={{ minHeight: 300 }}
-          />
+          {props.children}
         </HorizontalPanels>
         <br />
         <br />
@@ -3016,13 +3023,15 @@ export function GetStartedColumn() {
     <>
       <Block
         type='column'
-        title='Try it out for free'
-        description='Getting started is easy. Try out all the features during a trial period.'
-        buttonTitle='Get started'
+        title='Get started'
+        description='Try out all the features during your trial period.'
+        buttonTitle='Try for free'
         buttonLink='/signup'
-        buttonVariant='contained'
+        button2Title='Pricing'
+        button2Link='/pricing'
         buttonSuppressIcon
-        image={ArchitectureImg}
+        image={TeamImg}
+        {...FooterHorizontalPanelsBlockProps}
       />
     </>
   );

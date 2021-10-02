@@ -292,6 +292,8 @@ interface State {
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
   previewShowOnPage?: string;
+  saveIsSubmitting?: boolean;
+  saveDiscardDialogOpen?: boolean;
   dragDropSensorApi?: SensorAPI;
   // Below is state for individual pages
   // It's not very nice to be here in one place, but it does allow for state

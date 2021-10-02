@@ -39,6 +39,7 @@ export default class ConfigView extends Component<Props> {
         oldValue={oldValue}
         newValue={newValue}
         splitView={false}
+        disableWordDiff
         hideLineNumbers
         styles={{
           diffContainer: {

@@ -157,6 +157,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
           <div className={this.props.classes.stats}>
             {!!this.props.feedback && !!feedbackAggregate && (
               <Histogram
+                key='Open feedback'
                 icon={OpenIdeasIcon}
                 title='Open feedback'
                 server={this.props.server}
@@ -186,6 +187,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             )}
             {!!this.props.roadmap?.statusIdCompleted && (
               <Histogram
+                key='Completed Tasks'
                 icon={AllIdeasIcon}
                 title='Completed Tasks'
                 server={this.props.server}
@@ -207,6 +209,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
           </div>
           <div className={this.props.classes.stats}>
             <Histogram
+              key='Identified Users'
               icon={UsersIcon}
               title='Identified Users'
               server={this.props.server}
@@ -223,6 +226,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
               })}
             />
             <Histogram
+              key='Comments'
               icon={DiscussionIcon}
               title='Comments'
               server={this.props.server}
