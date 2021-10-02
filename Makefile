@@ -68,7 +68,7 @@ release-patch:
 	mvn build-helper:parse-version \
 	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion} \
 	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.nextIncrementalVersion}-SNAPSHOT \
-	    --batch-mode release:prepare
+	    --batch-mode -Dresume=false release:prepare
 	make release-perform
 	make release-github-release
 
@@ -76,7 +76,7 @@ release-minor:
 	mvn build-helper:parse-version \
 	    -DreleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0 \
 	    -DdevelopmentVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.nextMinorVersion}.0-SNAPSHOT \
-	    --batch-mode release:prepare
+	    --batch-mode -Dresume=false release:prepare
 	make release-perform
 	make release-github-release
 
@@ -84,7 +84,7 @@ release-major:
 	mvn build-helper:parse-version \
 	    -DreleaseVersion=\$${parsedVersion.nextMajorVersion}.0.0 \
 	    -DdevelopmentVersion=\$${parsedVersion.nextMajorVersion}.0.0-SNAPSHOT \
-	    --batch-mode release:prepare
+	    --batch-mode -Dresume=false release:prepare
 	make release-perform
 	make release-github-release
 
