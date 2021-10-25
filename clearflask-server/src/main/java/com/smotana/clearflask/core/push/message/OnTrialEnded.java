@@ -27,7 +27,7 @@ public class OnTrialEnded {
         @DefaultValue("Your trial period has ended. Your billing will start now.")
         String contentNoActionTemplate();
 
-        @DefaultValue("If you enjoyed our service, please add a payment method to continue using it.")
+        @DefaultValue("If you enjoyed our service, please add a payment method.")
         String contentNoPaymentTemplate();
     }
 
