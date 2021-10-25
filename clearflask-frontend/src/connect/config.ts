@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import fs from 'fs';
 import path from 'path';
+import selfHostDeafaultConfigFile from '../connect.config.selfhost.json';
 
 const configFile = '/opt/clearflask/connect.config.json';
 
@@ -35,6 +36,24 @@ var connectConfig: ConnectConfig = {
 if (process.env.ENV === 'production'
   || process.env.ENV === 'selfhost'
   || process.env.ENV === 'local') {
+
+  // Create config if doesn't exist
+  if (!!process.env.CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING
+    && process.env.ENV === 'selfhost') {
+    try {
+      fs.statSync(configFile);
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') {
+        fs.writeFileSync(
+          configFile,
+          JSON.stringify(selfHostDeafaultConfigFile, null, 4));
+        console.log('Config file does not exist, creating it');
+      } else {
+        console.log('Failed reading config file', err.code);
+      }
+    }
+  }
+
   try {
     const configLoaded = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     connectConfig = {

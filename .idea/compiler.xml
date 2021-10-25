@@ -9,7 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <processor name="lombok.launch.AnnotationProcessorHider$AnnotationProcessor" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.4/lombok-1.18.4.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
         </processorPath>
         <module name="clearflask-logging" />
         <module name="clearflask-server" />

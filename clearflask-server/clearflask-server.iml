@@ -61,7 +61,7 @@
     <orderEntry type="library" name="Maven: org.checkerframework:checker-qual:3.8.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.errorprone:error_prone_annotations:2.5.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.j2objc:j2objc-annotations:1.3" level="project" />
-    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.4" level="project" />
+    <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.22" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.common:common-image:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.common:common-io:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.common:common-lang:3.6.4" level="project" />

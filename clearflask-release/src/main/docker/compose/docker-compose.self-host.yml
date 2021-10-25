@@ -13,8 +13,9 @@ services:
     environment:
       - NODE_ENV=production
       - ENV=selfhost
+      - CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING=1
     volumes:
-      - ./connect.config.json:/opt/clearflask/connect.config.json
+      - ./connect:/opt/clearflask/
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9080/asset-manifest.json" ]
       interval: 5s
@@ -26,8 +27,9 @@ services:
       - 8080:8080
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
+      - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
     volumes:
-      - ./config-selfhost.cfg:/opt/clearflask/config-selfhost.cfg
+      - ./server:/opt/clearflask/
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
       interval: 5s

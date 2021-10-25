@@ -9,11 +9,11 @@
     <files>
         <file>
             <source>${project.build.directory}/docker-compose-selfhost/config-selfhost.cfg</source>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>/server/</outputDirectory>
         </file>
         <file>
             <source>${project.build.directory}/docker-compose-selfhost/connect.config.selfhost.json</source>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>/connect/</outputDirectory>
             <destName>connect.config.json</destName>
         </file>
         <file>

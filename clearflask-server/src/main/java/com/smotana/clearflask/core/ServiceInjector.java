@@ -70,6 +70,7 @@ import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
+import com.smotana.clearflask.util.AutoCreateKikConfigFile;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -289,23 +290,23 @@ public enum ServiceInjector {
                 install(ProjectUpgraderImpl.module());
                 install(MarkdownAndQuillUtil.module());
 
+                String configFilePath;
                 switch (env) {
                     case DEVELOPMENT_LOCAL:
-                        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
-                                "/opt/clearflask/config-local.cfg");
+                        configFilePath = "/opt/clearflask/config-local.cfg";
                         break;
                     case PRODUCTION_SELF_HOST:
-                        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
-                                "/opt/clearflask/config-selfhost.cfg");
+                        configFilePath = "/opt/clearflask/config-selfhost.cfg";
                         break;
                     case PRODUCTION_AWS:
-                        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
-                                "/opt/clearflask/config-prod.cfg");
+                        configFilePath = "/opt/clearflask/config-prod.cfg";
                         break;
                     case TEST:
                     default:
                         throw new RuntimeException("Unsupported environment: " + env);
                 }
+                AutoCreateKikConfigFile.run(configFilePath, env);
+                bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(configFilePath);
 
                 install(ExternController.module());
             }

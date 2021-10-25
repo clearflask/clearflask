@@ -13,14 +13,16 @@
 ## Quick start
 
 For a quick start using [Docker](https://www.docker.com/products/docker-desktop), download
-the [latest release](https://github.com/clearflask/clearflask/packages/955621)
-of `clearflask-release-*-docker-compose-self-host.tar.gz`, unpack it all, and run the following:
+the [Docker Compose service file](clearflask-release/src/main/docker/compose/docker-compose.self-host.yml)
+as `docker-compose.yml`, and run the following:
 
 ```shell
 docker-compose --profile with-deps up
 ```
 
 Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
+
+Otherwise read on to deploy a long-term installation.
 
 ## Deploy dependencies
 
@@ -118,9 +120,10 @@ ClearFlask consists of two components:
 
 ### Setup
 
-1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz`
-2. Carefully read and modify `config-selfhost.cfg`.
-3. Carefully read and modify `connect.config.json`.
+1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz` from
+   the [latest release](https://github.com/clearflask/clearflask/packages/955621)
+2. Carefully read and modify `server/config-selfhost.cfg`.
+3. Carefully read and modify `connect/connect.config.json`.
 
 #### Dashboard account
 

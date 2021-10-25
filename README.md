@@ -35,11 +35,11 @@ For managed hosting with scalable pricing, [get started here](https://clearflask
 
 ### Self Hosting
 
-For a stable installation, check out the detailed [instructions here](INSTALLATION.md).
+For production, check out the [detailed instructions here](INSTALLATION.md).
 
 For a quick start using [Docker](https://www.docker.com/products/docker-desktop), download
-the [latest release](https://github.com/clearflask/clearflask/packages/955621)
-of `clearflask-release-*-docker-compose-self-host.tar.gz`, unpack it all, and run the following:
+the [Docker Compose service file](clearflask-release/src/main/docker/compose/docker-compose.self-host.yml)
+as `docker-compose.yml`, and run the following:
 
 ```shell
 docker-compose --profile with-deps up
