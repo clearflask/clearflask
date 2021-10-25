@@ -279,7 +279,7 @@
     <orderEntry type="library" name="Maven: org.bitbucket.b_c:jose4j:0.7.0" level="project" />
     <orderEntry type="library" name="Maven: net.bytebuddy:byte-buddy:1.10.8" level="project" />
     <orderEntry type="library" name="Maven: net.bytebuddy:byte-buddy-agent:1.10.8" level="project" />
-    <orderEntry type="library" name="Maven: com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20200713.1" level="project" />
+    <orderEntry type="library" name="Maven: com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.2" level="project" />
     <orderEntry type="library" name="Maven: dnsjava:dnsjava:3.3.1" level="project" />
     <orderEntry type="library" name="Maven: com.vladsch.flexmark:flexmark-all:0.62.2" level="project" />
     <orderEntry type="library" name="Maven: com.vladsch.flexmark:flexmark:0.62.2" level="project" />

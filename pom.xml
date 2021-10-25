@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -35,8 +36,8 @@
         <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
         <batik.version>1.14</batik.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>
@@ -877,7 +878,7 @@
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
-                <version>20200713.1</version>
+                <version>20211018.2</version>
             </dependency>
             <dependency>
                 <groupId>dnsjava</groupId>
