@@ -35,6 +35,8 @@
         <projectlombok.version>1.18.22</projectlombok.version>
         <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
         <batik.version>1.14</batik.version>
+        <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
+        <bytebuddy.version>1.10.22</bytebuddy.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
         <skipTests/>
         <skipITs/>
@@ -868,12 +870,12 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.10.8</version>
+                <version>${bytebuddy.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.10.8</version>
+                <version>${bytebuddy.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
@@ -920,7 +922,7 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <scope>test</scope>
-                <version>2.23.4</version>
+                <version>4.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.test</groupId>

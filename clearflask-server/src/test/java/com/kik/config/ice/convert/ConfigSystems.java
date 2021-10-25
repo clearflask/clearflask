@@ -41,10 +41,12 @@ public class ConfigSystems {
      */
     public static <T extends Collection<?>> T configSafeCollection(T collection) {
         T collectionProxied = Mockito.spy(collection);
-        Mockito.when(collectionProxied.toString()).then((i -> collection.stream()
-                .map(Object::toString)
-                .map(str -> "\"" + str.replaceAll("\"", "\\\"") + "\"")
-                .collect(Collectors.joining(","))));
+        Mockito.doReturn(collection.stream()
+                        .map(Object::toString)
+                        .map(str -> "\"" + str.replaceAll("\"", "\\\"") + "\"")
+                        .collect(Collectors.joining(",")))
+                .when(collectionProxied)
+                .toString();
         return collectionProxied;
     }
 }
