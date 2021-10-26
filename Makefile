@@ -89,7 +89,7 @@ release-major:
 	make release-github-release
 
 release-perform:
-	mvn -DskipTests --batch-mode release:perform
+	mvn -DskipTests -Darguments=-DskipTests --batch-mode release:perform
 
 release-github-release:
 	mvn build-helper:parse-version \
