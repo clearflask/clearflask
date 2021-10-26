@@ -2950,7 +2950,7 @@ export function LandingPricingOptions() {
     >
       <Block
         icon={(<ServerIcon fontSize='inherit' />)}
-        title='Cloud offerring'
+        title='Cloud offering'
         description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
         buttonTitle='Try for free'
         buttonLink='/signup'
