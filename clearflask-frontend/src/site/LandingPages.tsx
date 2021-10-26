@@ -129,6 +129,7 @@ import LockSimpleIcon from '../common/icon/LockSimpleIcon';
 import OpenSourceIcon from '../common/icon/OpenSourceIcon';
 import ImgIso from '../common/ImgIso';
 import Stack from '../common/Stack';
+import { isProd } from '../common/util/detectEnv';
 import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
 import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
@@ -3047,7 +3048,7 @@ export function LandingEmbedFeedbackPage(props: {
     <IframeWithUrlSync
       redirectOnDirectAccess='/'
       browserPathPrefix={props.browserPathPrefix}
-      srcWithoutPathname={`${windowIso.location.protocol}//product.${windowIso.location.host}`}
+      srcWithoutPathname={isProd() ? 'https://clearflask.com' : `${windowIso.location.protocol}//product.${windowIso.location.host}`}
       pathnamePrefix={props.embed ? '/embed' : undefined}
       initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
       frameBorder='0'

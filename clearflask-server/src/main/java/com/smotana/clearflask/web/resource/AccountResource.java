@@ -400,7 +400,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         sanitizer.accountName(name);
 
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(email)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Only super admins are allowed to sign up");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Email not allowed, check configuration of 'superAdminEmailRegex', by default only 'admin@localhost' can sign up.");
         }
 
         // Pre-accept any invitation
@@ -462,7 +462,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
-    @Limit(requiredPermits = 10, challengeAfter = 3)
+    @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public AccountAdmin accountUpdateAdmin(AccountUpdateAdmin accountUpdateAdmin) {
         Account account = getExtendedPrincipal()

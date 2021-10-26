@@ -24,8 +24,6 @@ import javax.ws.rs.core.MediaType;
 @Path("/")
 public class HealthResource {
 
-    private static final String API_SPEC_PATH = "/api/index.html";
-
     @Context
     private HttpServletRequest request;
     @Context

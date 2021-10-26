@@ -12,6 +12,7 @@ import { Orientation } from '../../common/ContentScroll';
 import { SectionContent } from '../../common/Layout';
 import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor } from '../../common/tour';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
@@ -201,7 +202,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             activePath={activePath}
             activeSubPath={activeSubPath}
           />
-          {!!this.props.isSuperAdmin && (
+          {!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
             <SelectionPicker
               className={this.props.classes.accountSwitcher}
               disableClearable

@@ -16,11 +16,6 @@ services:
       - CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING=1
     volumes:
       - ./connect:/opt/clearflask/
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9080/asset-manifest.json" ]
-      interval: 5s
-      timeout: 15s
-      retries: 2
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:

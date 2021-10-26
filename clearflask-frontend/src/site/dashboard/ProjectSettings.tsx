@@ -61,7 +61,7 @@ import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
 import debounce from '../../common/util/debounce';
-import { isProd } from '../../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
 import { OAuthFlow, OAUTH_CODE_PARAM_NAME } from '../../common/util/oauthUtil';
 import randomUuid from '../../common/util/uuid';
 import windowIso from '../../common/windowIso';
@@ -1088,7 +1088,9 @@ export const ProjectSettingsDomain = (props: {
       </TourAnchor>
       <TourAnchor anchorId='settings-domain-dns-info' placement='bottom'>
         <Typography variant='body1' component='div'>Ensure your DNS settings are configured with your domain set to CNAME sni.clearflask.com</Typography>
-        <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
+        {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+          <Typography variant='caption' component='div'>NOTE: First request to a custom domain always bypasses our global CDN, contact support if you need both.</Typography>
+        )}
       </TourAnchor>
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>

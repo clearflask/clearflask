@@ -12,7 +12,6 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.util.Extern;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -39,12 +38,20 @@ public class CaptchaChallenger implements Challenger {
         @DefaultValue("https://www.google.com/recaptcha/api/siteverify")
         String recaptchaV2Api();
 
-        @NoDefaultValue
+        /**
+         * Test no-op key that always passes
+         * https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
+         */
+        @DefaultValue("6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI")
         String siteKey();
 
         Observable<String> siteKeyObservable();
 
-        @NoDefaultValue
+        /**
+         * Test no-op key that always passes
+         * https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
+         */
+        @DefaultValue("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
         String secretKey();
     }
 

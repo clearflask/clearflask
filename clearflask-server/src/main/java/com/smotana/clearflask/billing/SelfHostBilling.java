@@ -56,9 +56,6 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public Account getAccount(String accountId) {
-        if (!ACCOUNT_ID.toString().equals(accountId)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Account not found");
-        }
         return new Account(
                 ACCOUNT_ID,
                 config.accountName(),
@@ -94,9 +91,6 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public Subscription getSubscription(String accountId) {
-        if (!ACCOUNT_ID.toString().equals(accountId)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Account not found");
-        }
         return new Subscription(
                 ACCOUNT_ID,
                 ACCOUNT_ID,
@@ -196,9 +190,6 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
-        if (!ACCOUNT_ID.toString().equals(accountId)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Account not found");
-        }
         return Optional.of(new PaymentMethodDetails(
                 Gateway.EXTERNAL,
                 new PaymentMethod(

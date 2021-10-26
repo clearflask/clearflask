@@ -246,7 +246,7 @@ public enum ServiceInjector {
 
                 // API endpoints
                 install(Application.module());
-                bind(HealthResource.class);
+                install(HealthResource.module());
                 if (!env.isProduction()) {
                     bind(TestResource.class);
                 }
