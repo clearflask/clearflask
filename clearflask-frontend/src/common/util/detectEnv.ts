@@ -37,5 +37,5 @@ export function isProd(): boolean {
 }
 
 export function isTracking(): boolean {
-  return isProd();
+  return isProd() && !windowIso.isSsr;
 }

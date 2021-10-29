@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@sentry/react';
 import { SnackbarProvider } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import LinkedInTag from 'react-linkedin-insight';
 import { Provider } from 'react-redux';
 import { StaticRouterContext } from 'react-router';
 import { BrowserRouter, Route, StaticRouter, Switch } from 'react-router-dom';
@@ -100,7 +101,7 @@ class Main extends Component<Props> {
       vh,
     });
 
-    if (isTracking() && !windowIso.isSsr) {
+    if (isTracking()) {
       try {
         ReactGA.initialize('UA-127162051-3', {
           gaOptions: {}
@@ -110,6 +111,7 @@ class Main extends Component<Props> {
           forceSSL: true
         });
         ReactGA.pageview(windowIso.location.pathname + windowIso.location.search);
+        LinkedInTag.init('3564876', 'dc', false);
       } catch (e) { }
     }
   }

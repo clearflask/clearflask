@@ -11,6 +11,7 @@ import { withStyles } from '@material-ui/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import LinkedInTag from 'react-linkedin-insight';
 import { connect } from 'react-redux';
 import { RouteComponentProps, StaticContext, withRouter } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
@@ -568,6 +569,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
         action: 'click-create',
         label: selectedPlanId,
       });
+      LinkedInTag.track('5353172');
     }
 
     this.setState({ isSubmitting: true });
