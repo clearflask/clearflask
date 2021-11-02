@@ -62,6 +62,11 @@ import CentralizeImg from '../../public/img/landing/centralize.svg';
 import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
+import CustomerCloudStaff from '../../public/img/landing/customer/cloudstaff.png';
+import CustomerErpca from '../../public/img/landing/customer/erpca.png';
+import CustomerGoodOnYou from '../../public/img/landing/customer/goodonyou.svg';
+import CustomerLeaseWeb from '../../public/img/landing/customer/leaseweb.png';
+import CustomerStudios from '../../public/img/landing/customer/studios.svg';
 import CustomizeImg from '../../public/img/landing/customize.svg';
 import DemoAdvertiseCreditsImg from '../../public/img/landing/demo-advertise-credits.png';
 import DemoAsUserImg from '../../public/img/landing/demo-as-user.png';
@@ -122,6 +127,7 @@ import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
 import Templater, { createTemplateV2OptionsDefault } from '../common/config/configTemplater';
 import CreditView from '../common/config/CreditView';
+import { contentScrollApplyStyles, Orientation, Side } from '../common/ContentScroll';
 import FakeBrowser from '../common/FakeBrowser';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
@@ -315,6 +321,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
+  customers: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 80,
+    '& > *': {
+      filter: 'grayscale(100%)',
+      opacity: 0.35,
+      minWidth: 150,
+      maxWidth: 150,
+      width: '100%',
+    },
+    ...contentScrollApplyStyles({ theme, side: Side.Center, orientation: Orientation.Horizontal }),
+  },
 }));
 
 export function Landing() {
@@ -325,8 +345,15 @@ export function Landing() {
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
-        title="Here's how our platform can help you"
-        spacingBottom={0}
+        title={(
+          <div className={classes.customers}>
+            <ImgIso img={CustomerLeaseWeb} />
+            <ImgIso img={CustomerCloudStaff} />
+            <ImgIso img={CustomerErpca} />
+            <ImgIso img={CustomerGoodOnYou} />
+            <ImgIso img={CustomerStudios} />
+          </div>
+        )}
       />
       <Block
         type='headingMain'
