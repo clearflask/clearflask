@@ -55,6 +55,16 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     ),
   },
   {
+    heading: 'Open-Source, Non-Profit or Non-Commercial?',
+    body: (
+      <>
+        <p>
+          We offer free plans for eligible organizations including open-source, non-profit or non-commercial projects. Contact us with your use case to see if you are eligible.
+        </p>
+      </>
+    ),
+  },
+  {
     heading: 'Can I import/export data?',
     body: (
       <>
