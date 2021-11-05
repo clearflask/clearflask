@@ -6,7 +6,7 @@ import { Integrations } from "@sentry/tracing";
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { detectEnv, Environment, isProd } from './common/util/detectEnv';
-import windowIso from './common/windowIso';
+import { getI18n } from './i18n-csr';
 import Main from './Main';
 
 if (detectEnv() !== Environment.PRODUCTION_SELF_HOST) {
@@ -18,16 +18,10 @@ if (detectEnv() !== Environment.PRODUCTION_SELF_HOST) {
   });
 }
 
-// CSR public path, for SSR see renderer.tsx
-declare var __webpack_public_path__: string;
-if (!windowIso.isSsr && windowIso.parentDomain !== 'clearflask.com') {
-  __webpack_public_path__ = '/';
-}
-
 if (detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
   loadableReady(() => {
-    ReactDOM.hydrate(<Main />, document.getElementById('mainScreen'));
+    ReactDOM.hydrate((<Main i18n={getI18n()} />), document.getElementById('mainScreen'));
   })
 } else {
-  ReactDOM.render(<Main />, document.getElementById('mainScreen'));
+  ReactDOM.render((<Main i18n={getI18n()} />), document.getElementById('mainScreen'));
 }

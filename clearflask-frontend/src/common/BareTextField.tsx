@@ -10,7 +10,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'block',
   },
   bareTextFieldInputRootPadding: {
-    padding: '0px' + '!important',
+    padding: '0px!important',
   },
   bareTextFieldInputRootFontInherit: {
     fontSize: 'inherit',
@@ -45,7 +45,7 @@ export default function BareTextField(props: {
       label={undefined}
       margin='none'
       onKeyDown={!props.singlelineWrap ? props.onKeyDown : e => {
-        if (props.singlelineWrap && !props.multiline && e.keyCode == 13) {
+        if (props.singlelineWrap && !props.multiline && e.keyCode === 13) {
           // Disable enter in non-multiline
           e.preventDefault();
         } else {

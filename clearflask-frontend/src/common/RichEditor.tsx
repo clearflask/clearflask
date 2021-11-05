@@ -7,7 +7,7 @@ import Loading from '../app/utils/Loading';
 import { importFailed, importSuccess } from '../Main';
 import windowIso from './windowIso';
 
-const RichEditorInternal = loadable(() => import(/* webpackChunkName: "RichEditorInternal", webpackPrefetch: true */'./RichEditorInternal').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const RichEditorInternal = loadable(() => import(/* webpackChunkName: "RichEditorInternal", webpackPreload: true */'./RichEditorInternal').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export default class RichEditor extends Component<React.ComponentProps<typeof RichEditorInternal>> {
   render() {

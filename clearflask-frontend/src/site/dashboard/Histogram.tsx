@@ -12,7 +12,7 @@ import Loading from '../../app/utils/Loading';
 import { importFailed, importSuccess } from '../../Main';
 import GraphBox from './GraphBox';
 
-const ReactApexChart = loadable(() => import(/* webpackChunkName: "ReactApexChart", webpackPrefetch: true */'react-apexcharts').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const ReactApexChart = loadable(() => import(/* webpackChunkName: "ReactApexChart", webpackPreload: true */'react-apexcharts').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   chart: {

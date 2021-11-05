@@ -16,6 +16,7 @@ import { loadStripe } from '@stripe/stripe-js/pure';
 import { VariantType, withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect, Provider } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -56,6 +57,7 @@ import { initialWidth } from '../common/util/screenUtil';
 import Subscription from '../common/util/subscriptionUtil';
 import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
+import { LanguageSelect } from '../LanguageSelect';
 import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
@@ -320,7 +322,7 @@ interface State {
   changelog?: ChangelogInstance | null;
   hasUncategorizedCategories?: boolean;
 }
-export class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
+export class Dashboard extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
   forcePathListener: ((forcePath: string) => void) | undefined;
@@ -631,21 +633,6 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
       context.showCreateProjectWarning && this.props.history.replace('/dashboard/welcome');
     }
 
-    var billingHasNotification: boolean = false;
-    switch (this.props.account.subscriptionStatus) {
-      case AdminClient.SubscriptionStatus.ActivePaymentRetry:
-      case AdminClient.SubscriptionStatus.ActiveNoRenewal:
-      case AdminClient.SubscriptionStatus.NoPaymentMethod:
-      case AdminClient.SubscriptionStatus.Blocked:
-      case AdminClient.SubscriptionStatus.Cancelled:
-        billingHasNotification = true;
-        break;
-      default:
-      case AdminClient.SubscriptionStatus.ActiveTrial:
-      case AdminClient.SubscriptionStatus.Active:
-        break;
-    }
-
     const activeProjectConf = activeProject?.server.getStore().getState().conf.conf;
     const projectLink = (!!activeProjectConf && !!context.showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
@@ -689,7 +676,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     to='/dashboard/explore'
                     value='explore'
                     disableRipple
-                    label='Explore'
+                    label={this.props.t('explore')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
@@ -702,7 +689,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     to='/dashboard/feedback'
                     value='feedback'
                     disableRipple
-                    label='Feedback'
+                    label={this.props.t('feedback')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
@@ -715,7 +702,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     to='/dashboard/roadmap'
                     value='roadmap'
                     disableRipple
-                    label='Roadmap'
+                    label={this.props.t('roadmap')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
@@ -728,7 +715,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     to='/dashboard/changelog'
                     value='changelog'
                     disableRipple
-                    label='Changelog'
+                    label={this.props.t('changelog')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
@@ -740,7 +727,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                   to='/dashboard/users'
                   value='users'
                   disableRipple
-                  label='Users'
+                  label={this.props.t('users')}
                   classes={{
                     root: this.props.classes.tabRoot,
                   }}
@@ -750,6 +737,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
           )}
           toolbarRight={
             <>
+              <LanguageSelect />
               <MenuItems
                 items={[
                   ...(!!projectLink ? [{
@@ -758,7 +746,7 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                     }, onClick: () => {
                       !windowIso.isSsr && windowIso.open(projectLink, '_blank');
                       tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
-                    }, title: 'Visit', icon: VisitIcon
+                    }, title: this.props.t('visit'), icon: VisitIcon
                   }] : []),
                   {
                     type: 'dropdown', title: this.props.account.name, items: [
@@ -768,19 +756,19 @@ export class Dashboard extends Component<Props & ConnectProps & RouteComponentPr
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined
                       }))),
                       { type: 'divider' },
-                      { type: 'button', link: '/dashboard/create', title: 'Add project', icon: AddIcon },
-                      { type: 'button', link: '/dashboard/settings/project/branding', title: 'Settings', icon: SettingsIcon },
+                      { type: 'button', link: '/dashboard/create', title: this.props.t('add-project'), icon: AddIcon },
+                      { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                      { type: 'button', link: '/dashboard/e/feedback', title: 'Give Feedback' },
-                      { type: 'button', link: '/dashboard/e/roadmap', title: 'Our Roadmap' },
+                      { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
+                      { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
                       { type: 'divider' },
-                      { type: 'button', link: '/dashboard/settings/account/profile', title: 'Account', icon: AccountIcon },
+                      { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
                       {
                         type: 'button', onClick: () => {
                           ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
                           redirectIso('/login', this.props.history);
-                        }, title: 'Sign out', icon: LogoutIcon
+                        }, title: this.props.t('sign-out'), icon: LogoutIcon
                       },
                     ]
                   }
@@ -1205,4 +1193,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withSnackbar(Dashboard))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withSnackbar(withTranslation('site', { withRef: true })(Dashboard)))));

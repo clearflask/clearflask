@@ -85,7 +85,7 @@ export const ConnectedPostById = (props: {
         ideaId: postId,
       }));
     }
-  }, [ideaAndStatus?.status]);
+  }, [ideaAndStatus?.status, postId, server]);
 
   if (!ideaAndStatus?.idea) return null;
 

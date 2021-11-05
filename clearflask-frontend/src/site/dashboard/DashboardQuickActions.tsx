@@ -99,7 +99,7 @@ const DashboardQuickActions = (props: {
   fallbackClickHandler: FallbackClickHandler;
 }) => {
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
-  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
+  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const classes = useStyles();
   const theme = useTheme();
@@ -268,7 +268,7 @@ const QuickActionPostList = React.memo((props: {
   const noticeRef = useRef<FirstTimeNoticeHandle>(null);
 
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
-  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []);
+  useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusIdToColor = useSelector<ReduxState, { [statusId: string]: string } | undefined>(state => {
     if (!props.statusColorGivenCategories?.length) return;

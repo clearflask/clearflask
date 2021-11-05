@@ -63,7 +63,6 @@ const styles = (theme: Theme) => createStyles({
     opacity: 0.5,
   },
 });
-const useStyles = makeStyles(styles);
 export interface Props {
   className?: string;
   postClassName?: string;
@@ -344,7 +343,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
   renderDrafts(marginsClassName?: string): React.ReactNode[] | undefined {
     if (!this.props.showDrafts) return undefined;
 
-    const hideIfEmpty = !!this.props.panel?.['hideIfEmpty'];
     const hasAny = !!this.props.draftSearchDrafts?.length;
     var content;
     if (!this.props.searchStatus || this.props.searchStatus === Status.REJECTED) {

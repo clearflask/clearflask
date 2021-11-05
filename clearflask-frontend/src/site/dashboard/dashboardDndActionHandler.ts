@@ -289,7 +289,7 @@ export const dashboardOnDragEnd = async (
         !!srcSearchKey && removeFromSearch(activeProject, srcSearchKey, srcPost.ideaId);
         !!dstSearchKey && !!dstIndex && addToSearch(activeProject, dstSearchKey, dstIndex, taskId);
         try {
-          const taskId = await feedbackToTask(
+          await feedbackToTask(
             activeProject,
             srcPost,
             dstDroppable.statusId,
