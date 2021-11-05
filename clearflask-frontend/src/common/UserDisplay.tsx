@@ -69,8 +69,8 @@ class UserDisplay extends React.Component<Props & WithStyles<typeof styles, true
         {DisplayUserName(this.props.user, this.props.maxChars)}
       </span>
     );
-    if (!this.props.suppressStar) {
-      var user = (
+    if (!this.props.suppressStar && this.props.user?.isMod) {
+      user = (
         <ModStar isMod={this.props.user?.isMod} name={user} />
       );
     }

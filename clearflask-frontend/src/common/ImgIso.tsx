@@ -33,6 +33,8 @@ export interface Props {
   className?: string;
   imgClassName?: string;
   src?: string;
+  minHeight?: number;
+  minWidth?: number;
   height?: number | string;
   width?: number | string;
   maxHeight?: number;
@@ -89,6 +91,8 @@ class ImgIso extends Component<Props & WithStyles<typeof styles, true>> {
             paddingBottom: !!maxHeight
               ? `min(${maxHeight * scale}px, ${100 / aspectRatio}%)`
               : `${100 / aspectRatio}%`,
+            minWidth: this.props.minWidth,
+            minHeight: this.props.minHeight,
             maxWidth: maxWidth ? maxWidth * scale : undefined,
             maxHeight: maxHeight ? maxHeight * scale : undefined,
           }}

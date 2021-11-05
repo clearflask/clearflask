@@ -18,5 +18,10 @@
   "prettier.requireConfig": true,
   "prettier.jsxSingleQuote": true,
   "prettier.singleQuote": true,
-  "prettier.trailingComma": "es5"
+  "prettier.trailingComma": "es5",
+  "i18n-ally.localesPaths": [
+    "clearflask-frontend/src/locales",
+    "clearflask-i18n/src/main/resources/i18n"
+  ],
+  "i18n-ally.keystyle": "flat"
 }

@@ -14,6 +14,7 @@ import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
 import DynamicMuiIcon from '../common/icon/DynamicMuiIcon';
 import InViewObserver from '../common/InViewObserver';
 import { notEmpty } from '../common/util/arrayUtil';
+import { LanguageSelect } from '../LanguageSelect';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';
@@ -299,6 +300,9 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         />
       );
     } else {
+      const languageSelect = (
+        <LanguageSelect noFade />
+      );
       var rightSide;
       if (this.props.config && this.props.loggedInUser) {
         rightSide = (
@@ -321,6 +325,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
                 <AccountIcon fontSize='inherit' />
               </Badge>
             </IconButton>
+            {languageSelect}
           </Collapse>
         );
       } else if (this.props.config && !this.props.loggedInUser) {
@@ -349,6 +354,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
                   <SettingsIcon fontSize='inherit' />
                 </IconButton>
               )} */}
+            {languageSelect}
           </div>
         );
       }

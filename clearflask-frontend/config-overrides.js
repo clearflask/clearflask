@@ -8,6 +8,7 @@ module.exports = override(
   useBabelRc(),
   removeModuleScopePlugin(),
   (config, env) => {
+
     config.plugins.push(new LoadablePlugin());
 
     // https://github.com/webpack/webpack/issues/6876#issuecomment-376417847

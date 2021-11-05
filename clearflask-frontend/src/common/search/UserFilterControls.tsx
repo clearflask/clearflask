@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState } from '../../api/server';
 import FilterControls, { FilterControlSelect } from './FilterControls';
-import { UserLabels, userSearchToLabels } from './searchUtil';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -19,8 +18,6 @@ interface ConnectProps {
 }
 class PostFilterControls extends React.Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    const labels: UserLabels = userSearchToLabels(this.props.search);
-
     return (
       <FilterControls>
         <FilterControlSelect
@@ -50,7 +47,6 @@ class PostFilterControls extends React.Component<Props & ConnectProps & WithStyl
           ]}
           selected={this.props.search?.isMod ? 'true' : 'false'}
           onToggle={value => {
-            const { sortBy, sortOrder } = sortByAndOrderDecode(value);
             return this.props.onSearchChanged({
               ...this.props.search,
               isMod: this.props.search?.isMod ? undefined : true,

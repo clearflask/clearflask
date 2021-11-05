@@ -53,7 +53,7 @@ import PostConnectDialog from './PostConnectDialog';
 import { ClickToEdit, PostEditDescriptionInline, PostEditResponse, PostEditStatus, PostEditTagsInline, PostEditTitleInline, postSave, PostSaveButton } from './PostEdit';
 import VotingControl from './VotingControl';
 
-const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPreload: true */'../../common/EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 export type PostVariant = 'list' | 'page';
 export const MinContentWidth = 300;
@@ -1502,11 +1502,9 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
 
     var content: React.ReactNode = this.props.idea.linkedGitHubUrl;
     // Expect form of "https://github.com/jenkinsci/jenkins/issues/100"
-    const match = (new RegExp(/https:\/\/github.com\/([^\/]+)\/([^\/]+)\/issues\/([0-9])/))
+    const match = (new RegExp(/https:\/\/github.com\/([^/]+)\/([^/]+)\/issues\/([0-9])/))
       .exec(this.props.idea.linkedGitHubUrl);
     if (match) {
-      const owner = match[1];
-      const repo = match[2];
       const issueNumber = match[3];
       content = (
         <>

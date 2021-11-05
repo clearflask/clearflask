@@ -8,6 +8,7 @@ import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
 import UsersIcon from '@material-ui/icons/PersonAdd';
 import moment from 'moment';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
@@ -115,7 +116,7 @@ interface ConnectProps {
 interface State {
   // State contains dynamic entries for aggregation
 }
-class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
+class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'site'> & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
   readonly dispatchedCategoryAggregateForIds = new Set<string>();
 
@@ -142,8 +143,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
   render() {
     const feedbackAggregate = !this.props.feedback ? undefined
       : this.getAggregate(this.props.feedback.categoryAndIndex.category.categoryId);
-    const roadmapAggregate = !this.props.roadmap ? undefined
-      : this.getAggregate(this.props.roadmap.categoryAndIndex.category.categoryId);
 
     const chartWidth = 100;
     const chartHeight = 50;
@@ -159,7 +158,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
               <Histogram
                 key='Open feedback'
                 icon={OpenIdeasIcon}
-                title='Open feedback'
+                title={this.props.t('open-feedback')}
                 server={this.props.server}
                 className={this.props.classes.stat}
                 chartWidth={chartWidth}
@@ -189,7 +188,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
               <Histogram
                 key='Completed Tasks'
                 icon={AllIdeasIcon}
-                title='Completed Tasks'
+                title={this.props.t('completed-tasks')}
                 server={this.props.server}
                 className={this.props.classes.stat}
                 chartWidth={chartWidth}
@@ -211,7 +210,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             <Histogram
               key='Identified Users'
               icon={UsersIcon}
-              title='Identified Users'
+              title={this.props.t('identified-users')}
               server={this.props.server}
               className={this.props.classes.stat}
               chartWidth={chartWidth}
@@ -228,7 +227,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithStyles<typeof s
             <Histogram
               key='Comments'
               icon={DiscussionIcon}
-              title='Comments'
+              title={this.props.t('comments')}
               server={this.props.server}
               className={this.props.classes.stat}
               chartWidth={chartWidth}
@@ -306,4 +305,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     };
   }
   return newProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(DashboardHome))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(withTranslation('site', { withRef: true })(withTranslation('site', { withRef: true })(DashboardHome))))));

@@ -1,21 +1,19 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server';
+import { ChunkExtractor } from '@loadable/server';
 import { ServerStyleSheets } from '@material-ui/core';
 import htmlparser from 'cheerio';
+import { Handler } from 'express';
 import fs from 'fs';
-import fetch from 'node-fetch';
 import path from 'path';
-import React from 'react';
 import { resetServerContext } from 'react-beautiful-dnd';
-import { renderToString } from 'react-dom/server';
 import { StaticRouterContext } from 'react-router';
 import { htmlDataCreate } from '../common/util/htmlData';
-import { StoresState, StoresStateSerializable, WindowIsoSsrProvider } from '../common/windowIso';
-import Main from '../Main';
+import { StoresState, StoresStateSerializable } from '../common/windowIso';
+import { renderIndexSsr } from '../index-ssr';
 import connectConfig from './config';
 
-interface RenderResult {
+export interface RenderResult {
   title: string;
   extractor: ChunkExtractor;
   muiSheets: ServerStyleSheets;
@@ -32,6 +30,7 @@ const PH_MUI_STYLE_TAGS = '%MUI_STYLE_TAGS%';
 const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
 const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
 const PH_STORE_CONTENT = '%STORE_CONTENT%';
+const PH_INIT_LNG = '%INIT_LNG%';
 
 export const replaceParentDomain = (html) => {
   if (connectConfig.parentDomain === 'clearflask.com') return html;
@@ -58,25 +57,32 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('#loadingScreen').remove();
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
+
+  $('head').append(PH_ENV);
+  $('head').append(PH_INIT_LNG);
+  $('head').append(PH_PARENT_DOMAIN);
+
   $('head').append(PH_STYLE_TAGS);
   $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
-  $('body').append(PH_ENV);
-  $('body').append(PH_PARENT_DOMAIN);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
   $('body').find('script').remove();
   return $.root().html() || '';
 });
 
-export default function render() {
+export default function render(): Handler {
   return async (req, res, next) => {
     try {
       const staticRouterContext: StaticRouterContext = {};
       const storesState: StoresState = {};
       const port = req.app.settings.port;
-      const requested_url = `${req.protocol}://${req.hostname}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
+      const requestedUrl = `${req.protocol}://${req.hostname}${(!port || port == 80 || port == 443) ? '' : (':' + port)}${req.path}`;
       const awaitPromises: Array<Promise<any>> = [];
+
+      // From i18next-http-middleware
+      const lng = req.language;
+      const i18n = req.i18n;
 
       var renderResult: RenderResult | undefined;
       var isFinished = false;
@@ -85,12 +91,12 @@ export default function render() {
         try {
           do {
             if (++renderCounter > 10) {
-              console.warn(`Render give up after too many passes ${renderCounter} on ${requested_url}`);
+              console.warn(`Render give up after too many passes ${renderCounter} on ${requestedUrl}`);
               resolve();
               return;
             }
-            // console.debug(`Rendering ${requested_url} pass #${renderCounter} with ${awaitPromises.length} promises`);
-            const rr: RenderResult = {
+            // console.debug(`Rendering ${requestedUrl} pass #${renderCounter} with ${awaitPromises.length} promises`);
+            const renderPassResult: RenderResult = {
               title: 'ClearFlask',
               extractor: renderResult?.extractor || new ChunkExtractor({
                 statsFile: path.resolve(connectConfig.publicPath, 'loadable-stats.json'),
@@ -111,38 +117,27 @@ export default function render() {
 
             resetServerContext(); // For react-beautiful-dnd library
 
-            rr.renderedScreen = renderToString(rr.muiSheets.collect(
-              <ChunkExtractorManager extractor={rr.extractor}>
-                <WindowIsoSsrProvider
-                  env={process.env.ENV || process.env.NODE_ENV as any}
-                  fetch={fetch}
-                  apiBasePath={connectConfig.apiBasePath}
-                  url={requested_url}
-                  setTitle={newTitle => rr.title = newTitle}
-                  setMaxAge={maxAge => rr.maxAge = maxAge}
-                  storesState={storesState}
-                  awaitPromises={awaitPromises}
-                  staticRouterContext={staticRouterContext}
-                  parentDomain={connectConfig.parentDomain}
-                >
-                  <Main
-                    ssrLocation={req.url}
-                    ssrStaticRouterContext={staticRouterContext}
-                  />
-                </WindowIsoSsrProvider>
-              </ChunkExtractorManager>
-            ));
+            renderPassResult.renderedScreen = renderIndexSsr({
+              i18n,
+              url: req.url,
+              staticRouterContext,
+              storesState,
+              awaitPromises,
+              renderResult: renderPassResult,
+              requestedUrl: requestedUrl,
+            });
+
             if (isFinished) return; // Request timed out
-            renderResult = rr;
+            renderResult = renderPassResult;
           } while (awaitPromises.length > 0);
-          console.info(`Rendered ${requested_url} in ${renderCounter} pass(es)`);
+          console.info(`Rendered ${requestedUrl} in ${renderCounter} pass(es)`);
           resolve();
         } catch (e) {
           reject(e);
         }
       });
       const timeoutPromise = new Promise<void>(resolve => setTimeout(() => {
-        !isFinished && console.warn(`Render timeout on ${requested_url} after ${renderCounter} pass(es)`);
+        !isFinished && console.warn(`Render timeout on ${requestedUrl} after ${renderCounter} pass(es)`);
         resolve();
       }, 10000));
       await Promise.race([timeoutPromise, renderPromise]);
@@ -164,7 +159,12 @@ export default function render() {
       }
 
       if (connectConfig.parentDomain !== 'clearflask.com') {
-        html = html.replace(PH_PARENT_DOMAIN, `<script>window.parentDomain='${connectConfig.parentDomain}'</script>`);
+        html = html.replace(PH_PARENT_DOMAIN, '<script>'
+          + `window.parentDomain='${connectConfig.parentDomain}';`
+          + "__webpack_public_path__='/';"
+          + "if(!__webpack_require__)__webpack_require__={};"
+          + "__webpack_require__.p = '/';"
+          + '</script>');
       } else {
         html = html.replace(PH_PARENT_DOMAIN, '');
       }
@@ -193,6 +193,8 @@ export default function render() {
       } else {
         html = html.replace(PH_STORE_CONTENT, '');
       }
+
+      html = html.replace(PH_INIT_LNG, htmlDataCreate('__SSR_INIT_LNG__', lng));
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',

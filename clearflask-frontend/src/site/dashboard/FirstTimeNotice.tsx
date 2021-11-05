@@ -54,7 +54,7 @@ const FirstTimeNotice = React.forwardRef((props: {
       }
       return dialogResult.confirmed;
     }
-  }), [isHidden]);
+  }), [isHidden, noticeStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isHiddenOnFirstRender.current) return null;
 

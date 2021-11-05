@@ -209,11 +209,11 @@ export class Server {
                     return Reflect.apply(target, thisArg, argumentsList);
                   }
                   var result;
-                  if (props.debounce) {
+                  if (props.debounce && target?.name) {
                     // Debounce same calls
                     debounceCache.cleanup();
                     const key = getSearchKey({
-                      fun: target?.name,
+                      fun: target.name,
                       req: argumentsList?.[0],
                     });
                     result = debounceCache.get(key);

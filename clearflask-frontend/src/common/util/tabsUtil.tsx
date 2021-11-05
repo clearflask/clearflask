@@ -51,7 +51,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     flexGrow: 1,
-    overflow: 'unset' + '!important',
+    overflow: 'unset!important',
   },
 });
 const useStyles = makeStyles(styles);

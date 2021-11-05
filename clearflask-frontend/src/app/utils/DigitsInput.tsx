@@ -85,7 +85,6 @@ class DigitsInput extends Component<Props> {
             while (newValue.length < this.props.digits) {
               newValue.push(undefined);
             }
-            const oldDigit = newValue[textFieldId];
             newValue[textFieldId] = newDigit;
             const isComplete = newValue.every(d => d !== undefined);
             this.props.onChange(newValue, isComplete);

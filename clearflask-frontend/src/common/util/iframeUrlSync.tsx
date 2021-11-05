@@ -41,7 +41,7 @@ export const IframeWithUrlSync = (props: {
   useEffect(() => {
     !windowIso.isSsr && windowIso.addEventListener('message', handleOnMessage);
     return () => { !windowIso.isSsr && windowIso.removeEventListener('message', handleOnMessage) };
-  }, [handleOnMessage]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const browserPathname = getBrowserPathname();
   const iframePathnameRef = useRef<string | undefined>(browserPathname || '');
@@ -65,7 +65,7 @@ export const IframeWithUrlSync = (props: {
   }
 
   return (
-    <iframe
+    <iframe // eslint-disable-line jsx-a11y/iframe-has-title
       {...iframeProps}
       id={iframeId.current}
       src={src}
@@ -81,7 +81,7 @@ export const IframeBroadcastPathname = (props: {
   const location = useLocation();
 
   if (!windowIso.isSsr) {
-    windowIso.top.postMessage({
+    windowIso.top?.postMessage({
       type: 'pathname-changed',
       pathname: location.pathname,
       title: windowIso.document.title,

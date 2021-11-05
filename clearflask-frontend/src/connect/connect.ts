@@ -7,8 +7,10 @@ import express from 'express';
 import fs from 'fs';
 import greenlockExpress, { glx } from 'greenlock-express';
 import httpp from 'http-proxy';
+import i18nextMiddleware from 'i18next-http-middleware';
 import path from 'path';
 import serveStatic from 'serve-static';
+import { getI18n } from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, { replaceParentDomain } from './renderer';
@@ -94,12 +96,15 @@ function createApp(serverHttpp) {
     },
   }));
 
-  serverApp.all('/api', reactRender);
-  serverApp.all('/api/*', function (req, res) {
+  serverApp.all(/^\/api\/./, function (req, res) {
     serverHttpp.web(req, res, {
       target: connectConfig.apiBasePath,
     });
   });
+
+  serverApp.use(
+    i18nextMiddleware.handle(getI18n())
+  );
 
   serverApp.all('/*', reactRender);
 
@@ -187,10 +192,10 @@ if (!connectConfig.disableAutoFetchCertificate) {
       });
     })
     .master(function () {
-      console.log('Master Started');
+      console.log(`Master Started (${process.env.ENV})`);
     });
 } else {
   createApp(createProxy()).listen(9080, "0.0.0.0", function () {
-    console.info("App on", 9080);
+    console.info(`App on 9080 (${process.env.ENV})`);
   });
 }

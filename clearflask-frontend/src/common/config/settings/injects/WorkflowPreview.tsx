@@ -11,7 +11,7 @@ import { contentScrollApplyStyles, Orientation } from '../../../ContentScroll';
 import windowIso from '../../../windowIso';
 import { WorkflowPreviewInternalProps } from './WorkflowPreviewInternal.d';
 
-const WorkflowPreviewInternal = loadable<WorkflowPreviewInternalProps>(() => import(/* webpackChunkName: "WorkflowPreviewInternal", webpackPrefetch: true */'./WorkflowPreviewInternal').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const WorkflowPreviewInternal = loadable<WorkflowPreviewInternalProps>(() => import(/* webpackChunkName: "WorkflowPreviewInternal", webpackPreload: true */'./WorkflowPreviewInternal').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 const styles = (theme: Theme) => createStyles({
   border: {

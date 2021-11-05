@@ -11,18 +11,20 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.22/lombok-1.18.22.jar" />
         </processorPath>
+        <module name="clearflask-i18n" />
         <module name="clearflask-logging" />
         <module name="clearflask-server" />
         <module name="clearflask-legal" />
-        <module name="clearflask-frontend" />
         <module name="clearflask-release" />
         <module name="clearflask-api" />
+        <module name="clearflask-frontend" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="clearflask-api" target="11" />
       <module name="clearflask-connect" target="10" />
       <module name="clearflask-frontend" target="11" />
+      <module name="clearflask-i18n" target="11" />
       <module name="clearflask-legal" target="11" />
       <module name="clearflask-logging" target="1.8" />
       <module name="clearflask-parent" target="11" />
