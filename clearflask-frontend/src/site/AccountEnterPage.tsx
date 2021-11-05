@@ -11,6 +11,7 @@ import { withStyles } from '@material-ui/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import LinkedInTag from 'react-linkedin-insight';
 import { connect } from 'react-redux';
 import { RouteComponentProps, StaticContext, withRouter } from 'react-router';
@@ -174,7 +175,7 @@ interface State {
   emailIsFreeOrDisposable?: boolean; // signup only
   revealPassword?: boolean; // login & signup
 }
-class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
+class AccountEnterPage extends Component<Props & WithTranslation<'site'> & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   readonly cfReturnUrl?: string;
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
@@ -246,7 +247,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
       && !this.state.isSubmitting) {
       if (this.props.cfJwt && this.cfReturnUrl) {
         windowIso.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
-        return (<ErrorPage msg='Redirecting you back...' variant='success' />);
+        return (<ErrorPage msg={this.props.t('redirecting-you-back')} variant='success' />);
       }
       return (<RedirectIso to={this.state.redirectTo
         || this.props.location.state?.[ADMIN_LOGIN_REDIRECT_TO]
@@ -273,15 +274,15 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
       }
     }
 
-    const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
+    const isSingleCustomer = detectEnv() === Environment.PRODUCTION_SELF_HOST;
     const isOauthEnabled = !isSingleCustomer;
-    const signUpOrLogIn = this.props.type === 'signup' ? 'Sign up with' : 'Log in with';
+    const signUpOrLogIn = this.props.type === 'signup' ? this.props.t('sign-up-with') : this.props.t('log-in-with');
 
     return (
       <EnterTemplate
         title={(
           <>
-            {this.props.type === 'signup' ? 'Get started with ' : 'Welcome back to '}
+            {(this.props.type === 'signup' ? this.props.t('get-started-with') : this.props.t('welcome-back-to')) + ' '}
             <span className={this.props.classes.titleClearFlask}>ClearFlask</span>
           </>
         )}
@@ -336,20 +337,20 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
                 disabled={this.state.isSubmitting}
               >
                 <EmailIcon />
-                &nbsp;&nbsp;{signUpOrLogIn}&nbsp;Email
+                &nbsp;&nbsp;{signUpOrLogIn}&nbsp;{this.props.t('email')}
               </Button>
             </Collapse>
             <Collapse in={this.state.useEmail}>
               <div>
                 {isOauthEnabled && (
-                  <Hr isInsidePaper length={120} margins={15}>OR</Hr>
+                  <Hr isInsidePaper length={120} margins={15}>{this.props.t('or')}</Hr>
                 )}
                 <Collapse in={this.props.type === 'signup'}>
                   <TextField
                     variant='outlined'
                     fullWidth
                     margin='normal'
-                    placeholder='Your name / organization'
+                    placeholder={this.props.t('your-name-organization')}
                     required
                     value={this.state.name || ''}
                     onChange={e => this.setState({ name: e.target.value })}
@@ -371,7 +372,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
                         }));
                     }
                   }}
-                  placeholder={this.props.type === 'login' ? 'Email' : 'Business email'}
+                  placeholder={this.props.type === 'login' ? this.props.t('email') : this.props.t('business-email')}
                   type='email'
                   margin='normal'
                   disabled={this.state.isSubmitting}
@@ -379,7 +380,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
                 <Collapse in={this.props.type === 'signup' && !!this.state.emailIsFreeOrDisposable}>
                   <Message severity='warning' message={(
                     <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
-                      Cannot use a disposable email. Is this a mistake?&nbsp;
+                      {this.props.t('cannot-use-a-disposable-email')} Is this a mistake?&nbsp;
                       <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>
                       &nbsp;with us.
                     </div>
@@ -391,7 +392,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
                   required
                   value={this.state.pass || ''}
                   onChange={e => this.setState({ pass: e.target.value })}
-                  placeholder='Password'
+                  placeholder={this.props.t('password')}
                   type={this.state.revealPassword ? 'text' : 'password'}
                   InputProps={{
                     endAdornment: (
@@ -416,7 +417,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
             </Collapse>
           </>
         )}
-        submitTitle={this.props.type === 'signup' ? 'Create account' : 'Continue'}
+        submitTitle={this.props.type === 'signup' ? this.props.t('create-account') : this.props.t('continue')}
         submitDisabled={
           !this.state.email || !this.state.pass
           || this.props.type === 'signup' && (
@@ -425,15 +426,15 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
         isSubmitting={this.state.isSubmitting}
         onSubmit={this.props.type === 'signup' ? this.signUp.bind(this, selectedPlanId!) : this.onLogin.bind(this)}
         footer={this.props.type === 'signup' ? {
-          text: 'Have an account?',
-          actionText: 'Log in Here!',
+          text: this.props.t('have-an-account'),
+          actionText: this.props.t('log-in-here'),
           linkTo: {
             pathname: '/login',
             state: this.props.location.state,
           },
         } : {
-          text: 'No account?',
-          actionText: 'Sign up Here!',
+          text: this.props.t('no-account'),
+          actionText: this.props.t('sign-up-here'),
           linkTo: {
             pathname: '/signup',
             state: this.props.location.state,
@@ -455,20 +456,19 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
 
     const isLoggedIn = this.props.accountStatus === Status.FULFILLED && !!this.props.account;
     const expired = !this.props.invitationId || this.props.invitationStatus === Status.REJECTED || (this.props.invitationStatus === Status.FULFILLED && !this.props.invitation);
-    const loading = !this.props.invitation && !expired;
     const accepted = this.props.invitation?.isAcceptedByYou;
     return (
       <EnterTemplate
         title={!!this.props.invitation ? (accepted ? (
-          'Invitation accepted'
+          this.props.t('invitation-accepted')
         ) : (
           <>
-            {'Invitation from '}
+            {this.props.t('invitation-from')}
             <span className={this.props.classes.titleClearFlask}>{this.props.invitation?.inviteeName}</span>
           </>
         )) : (expired ? (
           <span className={this.props.classes.expired}>Invitation expired</span>
-        ) : 'Invitation loading...')}
+        ) : this.props.t('invitation-loading'))}
         renderContent={submitButton => (
           <>
             {!!this.props.invitation ? (
@@ -491,7 +491,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
             {submitButton}
           </>
         )}
-        submitTitle={expired ? undefined : (!isLoggedIn ? 'Sign up' : (!accepted ? 'Accept' : 'Open'))}
+        submitTitle={expired ? undefined : (!isLoggedIn ? this.props.t('sign-up') : (!accepted ? this.props.t('accept') : this.props.t('open')))}
         submitDisabled={!this.props.invitation}
         isSubmitting={this.state.isSubmitting}
         onSubmit={async () => {
@@ -517,8 +517,8 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
           }
         }}
         footer={!isLoggedIn && !expired ? {
-          text: 'Have an account?',
-          actionText: 'Log in Here!',
+          text: this.props.t('have-an-account'),
+          actionText: this.props.t('log-in-here'),
           linkTo: {
             pathname: '/login',
             state: {
@@ -575,7 +575,7 @@ class AccountEnterPage extends Component<Props & RouteComponentProps<{}, StaticC
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
-      const result = await dispatchAdmin.accountSignupAdmin({
+      await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           name: this.state.name!,
           email: this.state.email!,
@@ -610,7 +610,6 @@ const EnterTemplate = (props: {
   layout?: Props['type'];
 }) => {
   const classes = useStyles();
-  const a = props.layout === 'signup';
   return (
     <div className={classes.page}>
       <Container maxWidth='md' className={classes.enterTemplate}>
@@ -674,4 +673,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     invitation: ownProps.invitationId ? state.invitations.byId[ownProps.invitationId]?.invitation : undefined,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(AccountEnterPage)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('site', { withRef: true })(AccountEnterPage))));

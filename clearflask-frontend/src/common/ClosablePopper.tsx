@@ -180,17 +180,6 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     if (this.props.anchorType === 'native') {
       anchorEl = this.props.anchor;
     } else {
-      var anchorVirtualCachedGetter: (() => Bounds | undefined) | undefined;
-      if (this.props.anchorType === 'virtual') {
-        const anchorVirtualGetter = this.props.anchor;
-        anchorVirtualCachedGetter = () => {
-          const bounds = anchorVirtualGetter?.();
-          if (!!bounds) {
-            this.boundsLast = bounds;
-          }
-          return this.boundsLast;
-        };
-      }
       // Overly complicated way to ensure popper.js
       // always gets some kind of coordinates
       anchorEl = () => {

@@ -21,7 +21,7 @@ import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
   if (!this.props.account) {
-    setTitle('Settings - Dashboard');
+    setTitle(this.props.t('settings') + ' - ' + this.props.t('dashboard'));
     context.showWarning = 'Not logged in';
     return;
   }
@@ -63,29 +63,29 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         <>
           <Menu key='project-settings'
             items={[
-              { type: 'heading', text: 'Project', hasUnsavedChanges: activeProject.hasUnsavedChanges() },
-              { type: 'item', slug: 'settings/project/branding', name: 'Branding', offset: 1 },
-              { type: 'item', slug: 'settings/project/domain', name: 'Domain', offset: 1 },
-              { type: 'item', slug: 'settings/project/teammates', name: 'Teammates', offset: 1 },
-              { type: 'item', slug: 'settings/project/landing', name: 'Landing', offset: 1 },
-              { type: 'item', slug: 'settings/project/feedback', name: 'Feedback', offset: 1 },
-              { type: 'item', slug: 'settings/project/roadmap', name: 'Roadmap', offset: 1 },
-              { type: 'item', slug: 'settings/project/changelog', name: 'Changelog', offset: 1 },
-              { type: 'item', slug: 'settings/project/onboard', name: 'Onboard', offset: 1 },
+              { type: 'heading', text: this.props.t('project'), hasUnsavedChanges: activeProject.hasUnsavedChanges() },
+              { type: 'item', slug: 'settings/project/branding', name: this.props.t('branding'), offset: 1 },
+              { type: 'item', slug: 'settings/project/domain', name: this.props.t('domain'), offset: 1 },
+              { type: 'item', slug: 'settings/project/teammates', name: this.props.t('teammates'), offset: 1 },
+              { type: 'item', slug: 'settings/project/landing', name: this.props.t('landing'), offset: 1 },
+              { type: 'item', slug: 'settings/project/feedback', name: this.props.t('feedback'), offset: 1 },
+              { type: 'item', slug: 'settings/project/roadmap', name: this.props.t('roadmap'), offset: 1 },
+              { type: 'item', slug: 'settings/project/changelog', name: this.props.t('changelog'), offset: 1 },
+              { type: 'item', slug: 'settings/project/onboard', name: this.props.t('onboard'), offset: 1 },
               { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 },
               { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 },
-              { type: 'item', slug: 'settings/project/install', name: 'Install', offset: 1 },
-              { type: 'item', slug: 'settings/project/data', name: 'Data', offset: 1 },
-              { type: 'heading', text: 'Integrations', offset: 1 },
+              { type: 'item', slug: 'settings/project/install', name: this.props.t('install'), offset: 1 },
+              { type: 'item', slug: 'settings/project/data', name: this.props.t('data'), offset: 1 },
+              { type: 'heading', text: this.props.t('integrations'), offset: 1 },
               { type: 'item', slug: 'settings/project/github', name: 'GitHub', offset: 2 },
               { type: 'item', slug: 'settings/project/intercom', name: 'Intercom', offset: 2 },
               { type: 'item', slug: 'settings/project/google-analytics', name: 'Google Analytics', offset: 2 },
               { type: 'item', slug: 'settings/project/hotjar', name: 'Hotjar', offset: 2 },
               (showAdvancedWarning ? {
-                type: 'item', slug: 'settings/project/advanced-enter', name: 'Advanced', offset: 1,
+                type: 'item', slug: 'settings/project/advanced-enter', name: this.props.t('advanced'), offset: 1,
               } : {
                 type: 'project',
-                name: 'Advanced',
+                name: this.props.t('advanced'),
                 slug: 'settings/project/advanced',
                 offset: 1,
                 projectId: activeProject.server.getProjectId(),
@@ -194,9 +194,9 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         <>
           <Menu key='account'
             items={[
-              { type: 'heading', text: 'Account' } as MenuHeading,
-              { type: 'item', slug: 'settings/account/profile', name: 'Profile', offset: 1 } as MenuItem,
-              { type: 'item', slug: 'settings/account/billing', name: 'Billing', offset: 1 } as MenuItem,
+              { type: 'heading', text: this.props.t('account') } as MenuHeading,
+              { type: 'item', slug: 'settings/account/profile', name: this.props.t('profile'), offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/account/billing', name: this.props.t('billing'), offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
             ]}
             activePath={activePath}
@@ -249,15 +249,15 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
 
     switch (activeSubPath[1]) {
       case 'profile':
-        setTitle('Account - Dashboard');
+        setTitle(this.props.t('account') + ' - ' + this.props.t('dashboard'));
         mainContent = (<SettingsPage />);
         break;
       case 'billing':
-        setTitle('Billing - Dashboard');
+        setTitle(this.props.t('billing') + ' - ' + this.props.t('dashboard'));
         mainContent = (<BillingPage stripePromise={Dashboard.getStripePromise()} />);
         break;
       case 'api':
-        setTitle('API - Dashboard');
+        setTitle('API - ' + this.props.t('dashboard'));
         mainContent = (<ProjectSettingsApi />);
         break;
     }
@@ -277,7 +277,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               settingsPreviewChanges: 'live',
             })}
           >
-            Preview
+            {this.props.t('preview')}
           </Button>
         )}
         <SubmitButton
@@ -289,7 +289,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             saveDiscardDialogOpen: true,
           })}
         >
-          Discard
+          {this.props.t('discard')}
         </SubmitButton>
         <TourAnchor anchorId='settings-publish-changes' placement='top' disablePortal>
           {(next, isActive, anchorRef) => (
@@ -303,7 +303,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               onClick={async () => {
                 this.setState({ saveIsSubmitting: true });
                 try {
-                  const versionedConfigAdmin = await this.publishChanges(activeProject);
+                  await this.publishChanges(activeProject);
                   this.setState({ settingsPreviewChanges: undefined });
                   next();
                 } finally {
@@ -311,7 +311,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
                 }
               }}
             >
-              Publish
+              {this.props.t('publish')}
             </SubmitButton>
           )}
         </TourAnchor>
@@ -319,13 +319,13 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
           open={!!this.state.saveDiscardDialogOpen}
           onClose={() => this.setState({ saveDiscardDialogOpen: false })}
         >
-          <DialogTitle>Discard changes</DialogTitle>
+          <DialogTitle>{this.props.t('discard-changes')}</DialogTitle>
           <DialogContent>
-            <DialogContentText>Are you sure you want to discard all your configuration changes?</DialogContentText>
+            <DialogContentText>{this.props.t('are-you-sure-you-want-to-discard-all-your-configuration-changes')}</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ saveDiscardDialogOpen: false })}
-            >Cancel</Button>
+            >{this.props.t('cancel')}</Button>
             <SubmitButton
               isSubmitting={this.state.saveIsSubmitting}
               style={{ color: !this.state.saveIsSubmitting ? this.props.theme.palette.error.main : undefined }}
@@ -341,7 +341,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
                   this.setState({ saveIsSubmitting: false });
                 }
               }}>
-              Discard
+              {this.props.t('discard')}
             </SubmitButton>
           </DialogActions>
         </Dialog>

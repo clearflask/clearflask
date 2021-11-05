@@ -28,7 +28,7 @@ export default function Loading(props: {
       clearTimeout(timeout);
       if (loadingShown) redux?.store?.dispatch?.(hideLoading());
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Fade appear in timeout={props.showImmediately ? 0 : delay}>
       <CircularProgress style={{

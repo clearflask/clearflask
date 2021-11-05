@@ -179,7 +179,6 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
               const text = typeof point === 'string' ? point : point.text;
               const icons = (typeof point === 'string' || !point.icon) ? [CheckIcon] : (Array.isArray(point.icon)
                 ? point.icon : [point.icon]);
-              const isIconCheck = typeof point === 'string';
               return (
                 <Typography variant={pointVariant} component='div' className={this.props.classes.point}>
                   {icons.map(Icon => (

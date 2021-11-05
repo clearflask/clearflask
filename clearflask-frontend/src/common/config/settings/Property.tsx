@@ -22,7 +22,7 @@ import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
 
-const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */'../../EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPreload: true */'../../EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
 interface Props {
   key: string;

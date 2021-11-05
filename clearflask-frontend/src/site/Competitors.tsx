@@ -886,7 +886,6 @@ const LinkScroll = (props: {
   anchorId: string;
   children: any;
 }) => {
-  const classes = useStyles();
   return (
     <MuiLink
       href={`#${props.anchorId}`}
@@ -970,7 +969,7 @@ const TableOfContents = (props: {}) => {
 
 const CompetitorSelect = (props: {}) => {
   const classes = useStyles();
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const rowMapper = isHidden => platform => (
     <HoverArea disableHoverBelow={dontHoverBelow}>
@@ -1129,7 +1128,7 @@ const PricingTable = (props: {
   totalUsers: number;
 }) => {
   const classes = useStyles();
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const data: Array<{
     platform: Platform,
@@ -1306,7 +1305,6 @@ const MajorFeatures = (props: {}) => {
 };
 
 const VotingMechanism = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h4'>
@@ -1470,7 +1468,6 @@ const ImportExport = (props: {}) => {
 };
 
 const Language = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h4'>
@@ -1504,6 +1501,7 @@ const Language = (props: {}) => {
           { headingId: 'Italian', content: 'Italian' },
           { headingId: 'Japanese', content: 'Japanese' },
           { headingId: 'Korean', content: 'Korean' },
+          { headingId: 'Mongolian', content: 'Mongolian' },
           { headingId: 'Norwegian', content: 'Norwegian' },
           { headingId: 'Persian', content: 'Persian' },
           { headingId: 'Polish', content: 'Polish' },
@@ -1519,6 +1517,7 @@ const Language = (props: {}) => {
         data={[
           { platformId: PlatformUserVoice, headingIds: new Set(['google', 'contribute', 'English', 'Bulgarian', 'Catalan', 'Dutch', 'French', 'German', 'Serbian', 'Spanish', 'Turkish', 'Vietnamese']) },
           { platformId: PlatformFeatureUpvote, headingIds: new Set(['contribute', 'English', 'Czechia', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hebrew', 'Icelandic', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Swedish', 'Turkish']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['contribute', 'English', 'Mongolian', 'Slovak']) },
           { platformId: PlatformUpvoty, headingIds: new Set(['English', 'Arabic', 'Chinese', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hungarian', 'Indonesian', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Slovak', 'Spanish', 'Swedish', 'Turkish']) },
           { platformId: PlatformNolt, headingIds: new Set(['English', 'Arabic', 'Danish', 'Dutch', 'Estonian', 'French', 'German', 'Hungarian', 'Italian', 'Norwegian', 'Persian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Turkish', 'Vietnamese']) },
           { platformId: PlatformHelloNext, headingIds: new Set(['English', 'Chinese', 'French', 'German', 'Korean', 'Portuguese', 'Russian', 'Spanish']) },
@@ -1530,7 +1529,6 @@ const Language = (props: {}) => {
 };
 
 const Integrations = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h4'>
@@ -1600,7 +1598,6 @@ const Integrations = (props: {}) => {
 };
 
 const PageLoad = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h4'>
@@ -1680,7 +1677,6 @@ const PageLoadLayoutShift = (props: { val: number }) => {
 };
 
 const Disclaimer = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h6'>Disclaimer</Typography>
@@ -1833,7 +1829,6 @@ const Customize = (props: {}) => {
 };
 
 const OtherAlternatives = (props: {}) => {
-  const classes = useStyles();
   return (
     <>
       <Typography component='h2' variant='h4'>
@@ -1898,28 +1893,6 @@ const OtherAlternatives = (props: {}) => {
   );
 };
 
-const TemplateDeleteMe = (props: {}) => {
-  const classes = useStyles();
-  return (
-    <>
-      <Typography component='h2' variant='h4'>
-        <FeaturesIcon fontSize='inherit' />&nbsp;
-        a
-      </Typography>
-      <p><Typography></Typography></p>
-
-      <ComparisonTable
-        headers={[
-          { headingId: '', content: '' },
-        ]}
-        data={[
-          { platformId: PlatformUserVoice, headingIds: new Set([]) },
-        ]}
-      />
-    </>
-  );
-};
-
 const ComparisonTable = (props: {
   tableStyle?: any;
   headers: Array<{
@@ -1934,7 +1907,7 @@ const ComparisonTable = (props: {
   }>;
 }) => {
   const classes = useStyles();
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   const rowMapper = isHidden => row => (
     <HoverArea disableHoverBelow={dontHoverBelow}>
@@ -2194,7 +2167,7 @@ const FilterButtonBase = (props: {
   invertSelection?: boolean;
   renderButton: (onClick, disabled) => any;
 }) => {
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
   if (props.platformIds.size === 0) return null;
 
   const platformIds = !!props.invertSelection
@@ -2221,7 +2194,7 @@ const BrandList = (props: {
   BrandProps?: Partial<React.ComponentProps<typeof Brand>>;
 }) => {
   const classes = useStyles();
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms } = useContext(HiddenPlatformsContext);
 
   var platformIds = hiddenPlatforms.size > 0
     ? [
@@ -2280,7 +2253,7 @@ const Brand = (props: ({ platformId: string; } | { platform: Platform | Alternat
   transparentControls?: boolean;
 }) => {
   const classes = useStyles();
-  const { hiddenPlatforms, toggleHiddenPlatform, setHiddenPlatforms } = useContext(HiddenPlatformsContext);
+  const { hiddenPlatforms, toggleHiddenPlatform } = useContext(HiddenPlatformsContext);
 
   const platform: AlternativePlatform | Platform | undefined = props['platform'] || Platforms[props['platformId']] || AlternativePlatforms[props['platformId']];
   if (!platform) {
@@ -2334,7 +2307,6 @@ const ExternalLink = (props: {
   url: string;
   children: React.ReactNode;
 }) => {
-  const classes = useStyles();
   return (
     <MuiLink
       href={props.url}

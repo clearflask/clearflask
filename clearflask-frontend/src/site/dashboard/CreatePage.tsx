@@ -11,6 +11,7 @@ import CustomerFeedbackIcon from '@material-ui/icons/RecordVoiceOver';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
@@ -178,7 +179,7 @@ interface State extends CreateTemplateV2Options {
   invites: Array<string>;
   createdProjectId?: string;
 }
-class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
@@ -224,8 +225,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
           <CreateLayout
             key='feature-select'
             isOnboarding={this.props.isOnboarding}
-            title='Choose your scenario'
-            description='You can always customize later for your needs. Please pick the most suitable function for you.'
+            title={this.props.t('choose-your-scenario')}
+            description={this.props.t('you-can-always-customize-later-for')}
             stretchContent
             img={FeaturesImg}
             content={(
@@ -235,8 +236,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                     <TemplateCard
                       className={this.props.classes.templateCard}
                       icon={CustomerFeedbackIcon}
-                      title='Customer feedback'
-                      content='Customer-first feedback experience for capturing unbiased feedback.'
+                      title={this.props.t('customer-feedback')}
+                      content={this.props.t('customer-first-feedback-experience-for')}
                       onClick={() => {
                         this.setState({
                           templateFeedbackIsClassic: false,
@@ -259,8 +260,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                     <TemplateCard
                       className={this.props.classes.templateCard}
                       icon={OpenCommunityIcon}
-                      title='Open community'
-                      content='Embrace community discussion around your product.'
+                      title={this.props.t('open-community')}
+                      content={this.props.t('embrace-community-discussion-around')}
                       onClick={() => {
                         this.setState({
                           templateFeedbackIsClassic: true,
@@ -285,8 +286,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                     <TemplateCard
                       className={this.props.classes.templateCard}
                       icon={InternalFeedbackIcon}
-                      title='Internal feedback'
-                      content='Feedback collected within a private group or organization.'
+                      title={this.props.t('internal-feedback')}
+                      content={this.props.t('feedback-collected-within-a-private')}
                       onClick={() => {
                         this.setState({
                           templateFeedbackIsClassic: true,
@@ -310,8 +311,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                       <TemplateCard
                         className={this.props.classes.templateCard}
                         icon={BlankIcon}
-                        title='Blank project'
-                        content='For advanced use-cases, start without pre-defined templates.'
+                        title={this.props.t('empty-project')}
+                        content={this.props.t('for-advanced-use-cases-start')}
                         onClick={() => {
                           this.setState({
                             ...createTemplateV2OptionsBlank,
@@ -339,8 +340,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
           <CreateLayout
             key='project-details'
             isOnboarding={this.props.isOnboarding}
-            title='Fill out details'
-            description='Give us a few more details about your project.'
+            title={this.props.t('fill-out-details')}
+            description={this.props.t('give-us-a-few-more-details-about-your-project')}
             img={DetailsImg}
             content={(
               <div className={this.props.classes.projectDetailsFields}>
@@ -348,7 +349,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                   className={this.props.classes.field}
                   variant='outlined'
                   autoFocus
-                  label='Your website (Optional)'
+                  label={this.props.t('your-website-optional')}
                   placeholder='example.com'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoWebsite || ''}
@@ -379,7 +380,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 <TextField
                   className={this.props.classes.field}
                   variant='outlined'
-                  label='Product name'
+                  label={this.props.t('product-name')}
                   placeholder='Vandelay Industries'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoName || ''}
@@ -395,7 +396,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                   <TextField
                     className={this.props.classes.field}
                     variant='outlined'
-                    label='Portal domain'
+                    label={this.props.t('portal-domain')}
                     disabled={!!this.state.isSubmitting}
                     value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
                     onChange={e => this.setState({ infoSlug: e.target.value })}
@@ -405,7 +406,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                     <TextField
                       className={this.props.classes.field}
                       variant='outlined'
-                      label='Portal subdomain'
+                      label={this.props.t('portal-subdomain')}
                       placeholder='vandelay-industries'
                       disabled={!!this.state.isSubmitting}
                       value={this.state.infoSlug || ''}
@@ -417,7 +418,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 <TextField
                   className={this.props.classes.field}
                   variant='outlined'
-                  label='Logo URL (Optional)'
+                  label={this.props.t('logo-url-optional')}
                   placeholder='example.com/favicon.ico'
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoLogo || ''}
@@ -439,7 +440,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 variant='text'
                 onClick={() => this.setState({ step: 'feature-select' })}
               >
-                Back
+                {this.props.t('back')}
               </Button>
             ), (
               <SubmitButton
@@ -450,7 +451,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 disabled={!this.state.infoName || !this.state.infoSlug}
                 onClick={() => this.onCreate()}
               >
-                Create
+                {this.props.t('create')}
               </SubmitButton>
             )]}
           />
@@ -468,8 +469,8 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
             key='complete'
             img={CreatedImg}
             isOnboarding={this.props.isOnboarding}
-            title='Success!'
-            description={`You've created ${this.state.infoName || 'your project'}. Invite your teammates to explore together.`}
+            title={this.props.t('success')}
+            description={this.props.t('youve-created-your-project-invite', { 'projectName': this.state.infoName || 'your project' })}
             content={(
               <>
                 {[...Array(this.state.invites.length + (this.state.invites.length < 8 ? 1 : 0)).keys()].map(inviteIndex => (
@@ -495,7 +496,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 variant='text'
                 onClick={() => this.goHome()}
               >
-                skip
+                {this.props.t('skip')}
               </Button>
             ), (
               <SubmitButton
@@ -506,7 +507,7 @@ class CreatePage extends Component<Props & ConnectProps & RouteComponentProps & 
                 disabled={!this.state.invites.some(invite => !!invite)}
                 onClick={() => this.onInvite()}
               >
-                Invite
+                {this.props.t('invite')}
               </SubmitButton>
             )]}
           />
@@ -580,7 +581,7 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     isPlanTeammate: state.account.account.account?.basePlanId === TeammatePlanId,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(CreatePage)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('site', { withRef: true })(CreatePage))));
 
 const TemplateCard = (props: {
   icon?: OverridableComponent<SvgIconTypeMap>,

@@ -51,6 +51,7 @@ interface TourDefinitionGuide {
   };
 }
 export interface TourDefinition {
+  title: string;
   guides: {
     [guideId: string]: TourDefinitionGuide,
   };
@@ -298,7 +299,7 @@ export const TourChecklist = (props: {
 
   return (
     <div className={classes.checklist}>
-      <Typography variant='h4' className={classes.checklistHeader}>Quick start guide</Typography>
+      <Typography variant='h4' className={classes.checklistHeader}>{tour.title}</Typography>
       {groups}
     </div>
   );
@@ -388,7 +389,7 @@ export const TourAnchor = React.forwardRef((props: {
     setStep(dispatch, history, location, activeGuideId, activeGuide, onGuideCompleted, undefined, undefined);
   };
   React.useImperativeHandle(ref, () => ({ next }),
-    [activeAnchorId, activeGuideId, activeStep, location.pathname, nextStepId]);
+    [activeAnchorId, activeGuideId, activeStep, location.pathname, nextStepId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   var popper;
   if (isActive && !!activeStep && !!activeGuide) {

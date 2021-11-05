@@ -999,7 +999,6 @@ export const ProjectSettingsBranding = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  const classes = useStyles();
   return (
     <ProjectSettingsBase title='Branding'>
       <Section
@@ -1135,7 +1134,7 @@ export const ProjectSettingsUsersOnboardingDemo = (props: {
       return project;
     });
     return () => unsubscribe?.();
-  }, []);
+  }, [props.editor]);
   return !projectRef.current ? null : (
     <Demo
       type='column'
@@ -2983,14 +2982,14 @@ export const ProjectSettingsGitHub = (props: {
     return props.project.subscribeToUnsavedChanges(() => {
       setHasUnsavedChanges(props.project.hasUnsavedChanges());
     });
-  }, []);
+  }, [props.project]);
 
   const [gitHub, setGitHub] = useState<Admin.GitHub | undefined>(props.editor.getConfig().github);
   useEffect(() => {
     return props.editor.subscribe(() => {
       setGitHub(props.editor.getConfig().github);
     });
-  }, []);
+  }, [props.editor]);
 
   const getRepos = (code: string) => ServerAdmin.get().dispatchAdmin()
     .then(d => d.gitHubGetReposAdmin({ code }))
@@ -3719,7 +3718,7 @@ export const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): 
   const setterDebouncedRef = useRef(setter);
   useEffect(() => {
     setterDebouncedRef.current = debounce(setter, DemoUpdateDelay);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return [val, val => {
     setVal(val);

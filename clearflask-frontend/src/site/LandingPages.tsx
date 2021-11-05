@@ -55,6 +55,7 @@ import WidgetIcon from '@material-ui/icons/Widgets';
 import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
@@ -148,7 +149,7 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
-import PricingPage, { TrialInfoText } from './PricingPage';
+import PricingPage from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
@@ -338,6 +339,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 }));
 
 export function Landing() {
+  const { t } = useTranslation('site');
   const classes = useStyles();
   return (
     <>
@@ -357,13 +359,13 @@ export function Landing() {
       />
       <Block
         type='headingMain'
-        title='Simple, yet powerful feedback experience'
-        description='Ask your customers for feedback on your product and extract valuable ideas.'
+        title={t('simple-yet-powerful-feedback-experience')}
+        description={t('ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas')}
         largePoints
         points={[
-          'Gauge customer interest',
-          'Community discussion',
-          'Website integration',
+          t('gauge-customer-interest'),
+          t('community-discussion'),
+          t('website-integration'),
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -395,13 +397,13 @@ export function Landing() {
       <Block
         mirror
         type='headingMain'
-        title='Convert ideas into actionable tasks'
-        description='Find the most valuable features from the most important customers.'
+        title={t('convert-ideas-into-actionable-tasks')}
+        description={t('find-the-most-valuable-features-from-the-most-important-customers')}
         largePoints
         points={[
-          'Analyze feedback',
-          'Validate ideas',
-          'Prioritize Roadmap',
+          t('analyze-feedback'),
+          t('validate-ideas'),
+          t('prioritize-roadmap'),
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -418,18 +420,18 @@ export function Landing() {
             }]}
           />
         )}
-        buttonTitle='Learn more'
+        buttonTitle={t('learn-more')}
         buttonLink='/product/analyze'
       />
       <Block
         type='headingMain'
-        title='Share progress with your community'
-        description='Become a customer-centric organization with transparent customer-driven product development.'
+        title={t('share-progress-with-your-community')}
+        description={t('become-a-customer-centric-organization-with')}
         largePoints
         points={[
-          'Public Roadmap',
-          'Changelog',
-          'Subscribe to updates',
+          t('public-roadmap'),
+          t('changelog'),
+          t('subscribe-to-updates'),
         ]}
         alignItems='center'
         demoFixedWidth='100%'
@@ -464,7 +466,7 @@ export function Landing() {
             }]}
           />
         )}
-        buttonTitle='Learn more'
+        buttonTitle={t('learn-more')}
         buttonLink='/product/act'
       />
       <LandingPricingOptions />
@@ -832,13 +834,14 @@ export function LandingGraveyard() {
 }
 
 export function LandingHero() {
+  const { t } = useTranslation('site');
   return (
     <Background svg={{
       d: 'm 172 63 c -170 -16 -71 162 -59 187 C 131 294 67 369 118 415 C 179 466 401 477 550 371 c 89 -59 226 139 379 -8 c 31 -36 196 -234 34 -287 c -309 -122 -184 87 -791 -13',
       viewBox: '0 0 1200 500',
     }} width={2400} height={1000}>
       <Hero
-        title='Community centric product feedback'
+        title={t('hero')}
         description='Open-source ideation tool to close the feedback loop between your product and customers.'
         // description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
@@ -847,13 +850,11 @@ export function LandingHero() {
           uuid: 'EZK7e1kRjWzamC3PMMNuUh',
         }}
         mirror
-        buttonTitle='Get started'
+        buttonTitle={t('get-started')}
         buttonLink='/signup'
-        buttonRemark={(
-          <TrialInfoText />
-        )}
+        buttonRemark={(<div>{t('free-14-day-trial')}</div>)}
         // buttonAddOauth
-        button2Title='See Demo'
+        button2Title={t('see-demo')}
         button2Link='/product/demo'
       />
     </Background>
@@ -864,14 +865,14 @@ export function LandingClearFlaskDemo(props: {
   path?: string,
   fakeBrowserProps?: Partial<React.ComponentProps<typeof FakeBrowser>>,
 }) {
-  const classes = useStyles();
+  const { t } = useTranslation('site');
   return (
     <FakeBrowser
       fixedHeight={500}
       {...props.fakeBrowserProps}
     >
       <iframe
-        title='Demo: ClearFlask Feedback'
+        title={t('demo-clearflask-feedback')}
         src={`${windowIso.location.protocol}//product.${windowIso.location.host}${props.path || ''}`}
         width='100%'
         height='100%'
@@ -1341,16 +1342,17 @@ export function LandingPrioritization() {
 }
 
 export function LandingOpenSource() {
+  const { t } = useTranslation('site');
   return (
     <>
       <Block
         type='hero'
-        title="We're Open-Source"
-        description='Build software with us for the whole community or host an instance on your own infrastructure.'
+        title={t('were-open-source')}
+        description={t('build-software-with-us-for')}
         iconAbove
         icon={<OpenSourceIcon fontSize='inherit' />}
         image={VersionControlImg}
-        buttonTitle='Source code'
+        buttonTitle={t('source-code')}
         buttonLinkExt='https://github.com/clearflask/clearflask'
         buttonVariant='contained'
         buttonIcon={(<GithubIcon />)}
@@ -2073,6 +2075,7 @@ export function LandingFeatureRequestTracking() {
 }
 
 export function LandingDemo() {
+  const { t } = useTranslation('site');
   const classes = useStyles();
   const [customized, setCustomize] = useState<boolean>(false);
   return (
@@ -2083,13 +2086,13 @@ export function LandingDemo() {
         flexible: true,
       }} height={500} align='top'>
         <Hero
-          title='Sandbox demo'
-          description='Pre-packaged with Feedback, Roadmap and Changelog.'
+          title={t('sandbox-demo')}
+          description={t('pre-packaged-with-feedback')}
           image={ProudImg}
         />
         <ButtonGroup disableElevation variant='outlined' className={classes.demoCustomizeControl}>
-          <Button disabled={!customized} onClick={() => setCustomize(false)}>Out of the box</Button>
-          <Button disabled={customized} onClick={() => setCustomize(true)}>Customized</Button>
+          <Button disabled={!customized} onClick={() => setCustomize(false)}>{t('out-of-the-box')}</Button>
+          <Button disabled={customized} onClick={() => setCustomize(true)}>{t('customized')}</Button>
         </ButtonGroup>
         <Demo
           key={customized ? 'custom' : 'not-custom'}
@@ -2127,16 +2130,16 @@ export function LandingDemo() {
       <Block
         mirror
         type='mediumDemo'
-        title='Feedback'
-        description='Quickly address incoming feedback: respond, shelve, merge it or convert it to a task.'
+        title={t('feedback')}
+        description={t('quickly-address-incoming-feedback-respond')}
         alignItems='center'
         demoImage={DemoDashboardFeedbackVid}
         demoWrap='browser'
       />
       <Block
         type='mediumDemo'
-        title='Roadmap'
-        description='Plan out your roadmap with a Kanban style drag-n-drop UI.'
+        title={t('roadmap')}
+        description={t('plan-out-your-roadmap-with-a-kanban')}
         alignItems='center'
         demoImage={DemoDashboardRoadmapVid}
         demoWrap='browser'
@@ -2148,9 +2151,9 @@ export function LandingDemo() {
       }}>
         <Block
           mirror
-          title='Love it?'
-          description='Try it out yourself for free and customize it even further.'
-          buttonTitle='Try it'
+          title={t('love-it')}
+          description={t('try-it-out-yourself-for-free-and')}
+          buttonTitle={t('try-it')}
           buttonLink='/signup'
           buttonVariant='contained'
           buttonSuppressIcon
@@ -2970,19 +2973,19 @@ export function LandingSales() {
   );
 }
 export function LandingPricingOptions() {
-  const classes = useStyles();
+  const { t } = useTranslation('site');
   return (
     <FooterHorizontalPanels
-      title="Let's get started"
+      title={t('lets-get-started')}
       svgD='M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z'
     >
       <Block
         icon={(<ServerIcon fontSize='inherit' />)}
-        title='Cloud offering'
-        description='Hassle-free scalable solution with pay for what you use pricing. Cheaper than hosting it yourself.'
-        buttonTitle='Try for free'
+        title={t('cloud-offering')}
+        description={t('hassle-free-scalable-solution-with')}
+        buttonTitle={t('try-for-free')}
         buttonLink='/signup'
-        button2Title='Pricing'
+        button2Title={t('pricing')}
         button2Link='/pricing'
         buttonSuppressIcon
         image={Server2Img}
@@ -2990,9 +2993,9 @@ export function LandingPricingOptions() {
       />
       <Block
         icon={(<OpenSourceIcon fontSize='inherit' />)}
-        title='Self hosting'
-        description='Open-source with no limitations. Own your data and manage it on your own infrastructure.'
-        buttonTitle='Install it'
+        title={t('self-hosting')}
+        description={t('open-source-with-no-limitations-own')}
+        buttonTitle={t('install-it')}
         buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
         buttonVariant='contained'
         buttonSuppressIcon
@@ -3047,11 +3050,12 @@ export function LandingPricing() {
   );
 }
 export function GetStartedColumn() {
+  const { t } = useTranslation('site');
   return (
     <>
       <Block
         type='column'
-        title='Get started'
+        title={t('get-started')}
         description='Try out all the features during your trial period.'
         buttonTitle='Try for free'
         buttonLink='/signup'
@@ -3073,9 +3077,9 @@ export function LandingEmbedFeedbackPage(props: {
 
   return (
     <IframeWithUrlSync
-      redirectOnDirectAccess='/'
+      redirectOnDirectAccess=''
       browserPathPrefix={props.browserPathPrefix}
-      srcWithoutPathname={isProd() ? 'https://clearflask.com' : `${windowIso.location.protocol}//product.${windowIso.location.host}`}
+      srcWithoutPathname={isProd() ? 'https://product.clearflask.com' : `${windowIso.location.protocol}//product.${windowIso.location.host}`}
       pathnamePrefix={props.embed ? '/embed' : undefined}
       initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
       frameBorder='0'

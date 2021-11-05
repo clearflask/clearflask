@@ -3,7 +3,7 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
-import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CodeIcon from "@material-ui/icons/Code";
 import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
@@ -16,6 +16,7 @@ import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
@@ -32,15 +33,16 @@ import { detectEnv, Environment } from '../common/util/detectEnv';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
+import { LanguageSelect } from '../LanguageSelect';
 import { importFailed, importSuccess } from '../Main';
 import { urlAddCfJwt } from './AccountEnterPage';
 import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
 
-const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPrefetch: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPreload: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPrefetch: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const PricingPage = loadable(() => import(/* webpackChunkName: "PricingPage", webpackPreload: true */'./PricingPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const Landing = loadable(() => import(/* webpackChunkName: "Landing" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.Landing, fallback: (<Loading />) });
 const LandingCollectFeedback = loadable(() => import(/* webpackChunkName: "LandingCollectFeedback" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCollectFeedback, fallback: (<Loading />) });
@@ -126,7 +128,6 @@ const styles = (theme: Theme) => createStyles({
     paddingBottom: theme.spacing(2),
   },
 });
-const useStyles = makeStyles(styles);
 interface ConnectProps {
   callOnMount?: () => void,
   accountStatus?: Status;
@@ -135,7 +136,7 @@ interface ConnectProps {
 interface State {
   menuOpen?: boolean;
 }
-class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   projectPromise: undefined | Promise<Project>;
 
@@ -146,7 +147,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
   }
 
   render() {
-    const isSingleCustomer = detectEnv() == Environment.PRODUCTION_SELF_HOST;
+    const isSingleCustomer = detectEnv() === Environment.PRODUCTION_SELF_HOST;
     if (isSingleCustomer) {
       return (
         <RedirectIso to='/login' />
@@ -154,20 +155,20 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
     }
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
-        type: 'dropdown', title: 'Product', items: [
-          { type: 'button', link: '/product/demo', title: 'Demo', icon: DemoIcon },
+        type: 'dropdown', title: this.props.t('product'), items: [
+          { type: 'button', link: '/product/demo', title: this.props.t('demo'), icon: DemoIcon },
           { type: 'divider' },
-          { type: 'button', link: '/product/ask', title: 'Collect feedback', icon: CollectIcon },
-          { type: 'button', link: '/product/analyze', title: 'Manage and analyze', icon: AnalyzeIcon },
-          { type: 'button', link: '/product/act', title: 'Respond and inform', icon: ActIcon },
+          { type: 'button', link: '/product/ask', title: this.props.t('collect-feedback'), icon: CollectIcon },
+          { type: 'button', link: '/product/analyze', title: this.props.t('manage-and-analyze'), icon: AnalyzeIcon },
+          { type: 'button', link: '/product/act', title: this.props.t('respond-and-inform'), icon: ActIcon },
           { type: 'divider' },
-          { type: 'button', link: '/product/integrations', title: 'Integrations' },
-          { type: 'button', link: '/product/scale-with-us', title: 'Scale with us' },
+          { type: 'button', link: '/product/integrations', title: this.props.t('integrations') },
+          { type: 'button', link: '/product/scale-with-us', title: this.props.t('scale-with-us') },
           { type: 'divider' },
-          { type: 'button', link: '/product/compare', title: 'Competing products', icon: CompareIcon },
+          { type: 'button', link: '/product/compare', title: this.props.t('competing-products'), icon: CompareIcon },
         ]
       },
-      { type: 'button', link: '/pricing', title: 'Pricing' },
+      { type: 'button', link: '/pricing', title: this.props.t('pricing') },
       // TODO Needs a complete SEO revamp
       // {
       //   type: 'dropdown', title: 'Solutions', items: [
@@ -184,35 +185,35 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
       //   ]
       // },
       {
-        type: 'dropdown', title: 'Resources', items: [
+        type: 'dropdown', title: this.props.t('resources'), items: [
           { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
           { type: 'divider' },
           // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
-          { type: 'button', link: `/open-source`, title: 'Open source', icon: OpenSourceIcon },
-          { type: 'button', link: '/e/roadmap', title: 'Our roadmap', icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/e/feedback', title: 'Feedback', icon: FeedbackIcon },
+          { type: 'button', link: `/open-source`, title: this.props.t('open-source'), icon: OpenSourceIcon },
+          { type: 'button', link: '/e/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/e/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
         ]
       },
     ];
     const menuItemsRight: Array<MenuButton> = [
       (!!this.props.account
-        ? { type: 'button', link: '/dashboard', title: 'Dashboard' }
-        : { type: 'button', link: '/login', title: 'Log in' }),
-      { type: 'button', link: '/signup', title: 'Get started', primary: true, },
+        ? { type: 'button', link: '/dashboard', title: this.props.t('dashboard') }
+        : { type: 'button', link: '/login', title: this.props.t('log-in') }),
+      { type: 'button', link: '/signup', title: this.props.t('get-started'), primary: true, },
     ];
     const bottomNavigation: Array<MenuButton | MenuDropdown> = [
       ...menuItemsLeft,
       {
-        type: 'dropdown', title: `© Smotana`, items: [
+        type: 'dropdown', title: `© ${this.props.t('smotana')}`, items: [
           { type: 'button', link: 'https://smotana.com', linkIsExternal: true, title: 'Smotana.com' },
-          { type: 'button', link: '/contact', title: 'Contact' },
+          { type: 'button', link: '/contact', title: this.props.t('contact') },
           { type: 'divider' },
-          { type: 'button', link: '/signup', title: 'Sign up' },
-          { type: 'button', link: '/dashboard', title: 'Dashboard' },
+          { type: 'button', link: '/signup', title: this.props.t('sign-up') },
+          { type: 'button', link: '/dashboard', title: this.props.t('dashboard') },
           { type: 'divider' },
-          { type: 'button', link: '/privacy-policy', title: 'Privacy Policy' },
-          { type: 'button', link: '/terms-of-service', title: 'Terms of Service' },
+          { type: 'button', link: '/privacy-policy', title: this.props.t('privacy-policy') },
+          { type: 'button', link: '/terms-of-service', title: this.props.t('terms-of-service') },
         ]
       }
     ];
@@ -268,6 +269,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
                   />
                 </div>
               </Hidden>
+              <LanguageSelect />
             </Toolbar>
           </Container>
         </AppBar>
@@ -275,11 +277,11 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
         <div className={classNames(this.props.classes.growAndFlex, this.props.classes.page)}>
           <MuiAnimatedSwitch>
             <Route path='/contact'>
-              <SetTitle title='Contact' />
+              <SetTitle title={this.props.t('contact')} />
               <ContactPage />
             </Route>
             <Route exact path='/sso'>
-              <SetTitle title='Single sign-on' />
+              <SetTitle title='Single Sign-On' />
               <DemoOnboardingLogin type='sso' />
             </Route>
             <Route path='/oauth'>
@@ -287,14 +289,14 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
               <DemoOnboardingLogin type='oauth' />
             </Route>
             <Route exact path='/terms-of-service'>
-              <SetTitle title='Terms of Service' />
+              <SetTitle title={this.props.t('terms-of-service')} />
               <LegalPage type='terms' />
             </Route>
             <Route exact path='/(tos|terms)'>
               <RedirectIso to='/terms-of-service' />
             </Route>
             <Route exact path='/privacy-policy'>
-              <SetTitle title='Terms of Service' />
+              <SetTitle title={this.props.t('terms-of-service')} />
               <LegalPage type='privacy' />
             </Route>
             <Route exact path='/(privacy|policy)'>
@@ -307,19 +309,19 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Route>
 
             <Route exact path='/product/ask'>
-              <SetTitle title='Ask your users' />
+              <SetTitle title={this.props.t('ask-your-users')} />
               <LandingCollectFeedback />
             </Route>
             <Route exact path='/product/analyze'>
-              <SetTitle title='Analyze feedback' />
+              <SetTitle title={this.props.t('analyze-feedback')} />
               <LandingPrioritization />
             </Route>
             <Route exact path='/product/act'>
-              <SetTitle title='Take action' />
+              <SetTitle title={this.props.t('take-action')} />
               <LandingEngagement />
             </Route>
             <Route exact path='/product/integrations'>
-              <SetTitle title='Integrations' />
+              <SetTitle title={this.props.t('integrations')} />
               <LandingIntegrations />
             </Route>
             <Route exact path='/product/compare'>
@@ -331,16 +333,16 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
               <LandingGrowWithUs />
             </Route>
             <Route exact path='/product/demo'>
-              <SetTitle title='Demo' />
+              <SetTitle title={this.props.t('demo')} />
               <LandingDemo />
             </Route>
 
             <Route exact path='/solutions/feature-request-tracking'>
-              <SetTitle title='Feature Request Tracking' />
+              <SetTitle title={this.props.t('feature-request-tracking')} />
               <LandingFeatureRequestTracking />
             </Route>
             <Route exact path='/solutions/product-roadmap'>
-              <SetTitle title='Product Roadmap' />
+              <SetTitle title={this.props.t('product-roadmap')} />
               <LandingPublicRoadmap />
             </Route>
             <Route exact path='/solutions/feature-crowdfunding'>
@@ -361,11 +363,11 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Route>
 
             <Route exact path='/open-source'>
-              <SetTitle title='Open source' />
+              <SetTitle title={this.props.t('open-source')} />
               <LandingOpenSource />
             </Route>
             <Route exact path='/pricing'>
-              <SetTitle title='Pricing' />
+              <SetTitle title={this.props.t('pricing')} />
               <PricingPage />
             </Route>
 
@@ -374,7 +376,7 @@ class Site extends Component<ConnectProps & RouteComponentProps & WithStyles<typ
             </Route>
 
             <RouteWithStatus httpCode={404} >
-              <SetTitle title='Page not found' />
+              <SetTitle title={this.props.t('page-not-found')} />
               <ErrorPage pageNotFound />
             </RouteWithStatus>
           </MuiAnimatedSwitch>
@@ -434,4 +436,4 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     };
   }
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Site));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withTranslation('site', { withRef: true })(Site)));

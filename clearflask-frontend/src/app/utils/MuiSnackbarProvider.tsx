@@ -1,16 +1,13 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { IconButton, Theme } from '@material-ui/core';
-import { createStyles, darken, lighten, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles } from '@material-ui/core/styles';
 import DismissIcon from '@material-ui/icons/CloseRounded';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 
 // Matches Mui Alert: https://github.com/mui-org/material-ui/blob/master/packages/material-ui-lab/src/Alert/Alert.js#L27
 const muiSnackbarStyles = makeStyles((theme: Theme) => {
-  const getColor = theme.palette.type === 'light' ? darken : lighten;
-  const getBackgroundColor = theme.palette.type === 'light' ? lighten : darken;
-
   return createStyles({
     snackbar: {
     },

@@ -98,19 +98,19 @@ export const postSearchToLabels = (
     if (!searchModified?.filterCategoryIds?.length) {
       searchableCategories = [...config.content.categories];
     }
-    var hasAny = false;
-    var hasAnyEnabled = false;
+    var hasAnyCategory = false;
+    var hasAnyCategoryEnabled = false;
     config.content.categories.forEach(category => {
-      hasAny = true;
+      hasAnyCategory = true;
       const label: Label = getLabel(PostFilterType.Category, category.categoryId, category.name, category.color);
       controls.options.push(label);
-      if ((!forceSingleCategory || !hasAnyEnabled) && searchModified?.filterCategoryIds?.includes(category.categoryId)) {
-        hasAnyEnabled = true;
+      if ((!forceSingleCategory || !hasAnyCategoryEnabled) && searchModified?.filterCategoryIds?.includes(category.categoryId)) {
+        hasAnyCategoryEnabled = true;
         controls.values.push(label);
         searchableCategories.push(category);
       }
     });
-    if (hasAny) controls.groups++;
+    if (hasAnyCategory) controls.groups++;
   }
 
   // sort
@@ -142,11 +142,11 @@ export const postSearchToLabels = (
       })
     });
   } else {
-    var hasAny = false;
+    var hasAnyStatus = false;
     const multipleCategoriesWithStatuses = searchableCategories.filter(c => !!c.workflow.statuses.length).length > 1;
     searchableCategories.forEach(category => {
       category.workflow.statuses.forEach(status => {
-        hasAny = true;
+        hasAnyStatus = true;
         const label: Label = getLabel(PostFilterType.Status, status.statusId, status.name, status.color);
         if (multipleCategoriesWithStatuses) {
           label.groupBy = category.name;
@@ -157,7 +157,7 @@ export const postSearchToLabels = (
         }
       })
     });
-    if (hasAny) controls.groups++;
+    if (hasAnyStatus) controls.groups++;
   }
 
   // tag
@@ -171,7 +171,7 @@ export const postSearchToLabels = (
       })
     });
   } else {
-    var hasAny = false;
+    var hasAnyTag = false;
     const filterTagIds = new Set(explorer.search.filterTagIds);
     searchableCategories.forEach(category => {
       category.tagging.tagGroups.forEach(tagGroup => {
@@ -186,7 +186,7 @@ export const postSearchToLabels = (
           if (permanent) {
             controls.permanent.push(label);
           } else {
-            hasAny = true;
+            hasAnyTag = true;
             controls.options.push(label);
             if (searchModified && searchModified.filterTagIds && searchModified.filterTagIds.includes(tag.tagId)) {
               controls.values.push(label);
@@ -195,7 +195,7 @@ export const postSearchToLabels = (
         })
       })
     });
-    if (hasAny) controls.groups++;
+    if (hasAnyTag) controls.groups++;
   }
 
   // search is not added here

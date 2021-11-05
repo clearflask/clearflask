@@ -8,6 +8,7 @@ import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import PricingImg from '../../public/img/landing/pricing.svg';
@@ -21,12 +22,6 @@ import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPa
 import Background from './landing/Background';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
-
-export const TrialInfoText = () => (
-  <div>
-    <div>Free 14-day trial</div>
-  </div>
-);
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
@@ -147,7 +142,7 @@ interface State {
   highlightedBasePlanid?: string;
   callForQuote?: boolean;
 }
-class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   constructor(props) {
@@ -198,7 +193,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           selected={this.state.highlightedBasePlanid === plan.basePlanId
             || this.state.callForQuote && !plan.pricing}
           actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you'}
+          remark={plan.pricing ? this.props.t('free-14-day-trial') : this.props.t('let-us-help-you')}
           actionOnClick={() => {
             if (isTracking()) {
               ReactGA.event({
@@ -240,8 +235,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.section}>
             <div className={this.props.classes.header}>
               <div>
-                <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-                <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
+                <Typography component="h2" variant="h2" color="textPrimary">{this.props.t('pricing')}</Typography>
+                <Typography component="div" variant="h6" color="textSecondary">{this.props.t('only-pay-for-users-that-provide-value')}</Typography>
               </div>
               <ImgIso
                 alt=''
@@ -392,4 +387,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     };
   }
   return newProps;
-})(withStyles(styles, { withTheme: true })(withRouter(PricingPage)));
+})(withStyles(styles, { withTheme: true })(withRouter(withTranslation('site', { withRef: true })(PricingPage))));
