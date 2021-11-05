@@ -6,9 +6,13 @@ import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import SelectionPicker, { Label } from './app/comps/SelectionPicker';
 import ImgIso from './common/ImgIso';
+import windowIso from './common/windowIso';
 import { defaultLanguage, supportedLanguages } from './i18n';
 
-type LangLabel = Label & { labelOption: React.ReactNode };
+type LangLabel = Label & {
+  labelOption: React.ReactNode;
+  isContribute?: boolean;
+};
 
 const styles = (theme: Theme) => createStyles({
   labelOptionContainer: {
@@ -72,6 +76,7 @@ export const LanguageSelect = (props: {
         <ImgIso className={classNames(classes.flag, !props.noFade && classes.flagFade)} img={lang.img} minWidth={20} minHeight={20} />
       ),
       value: lang.code,
+      isContribute: lang.isContribute,
     };
     if (lang.code === i18n.language) selected.push(label);
     options.push(label);
@@ -97,8 +102,18 @@ export const LanguageSelect = (props: {
       forceDropdownIcon={false}
       renderOption={(label, selected) => (label as LangLabel).labelOption}
       onValueChange={(labels) => {
-        var selectedLabel: Label | undefined = labels[0];
+        const selectedLabel = labels[0] as LangLabel | undefined;
+        if (!selectedLabel) return;
         i18n.changeLanguage(selectedLabel.value);
+        if (selectedLabel?.isContribute && !windowIso.isSsr) {
+          windowIso['_jipt'] = [['project', 'clearflask']];
+          const d = windowIso.document;
+          var s = d.createElement('script');
+          s.type = 'text/javascript';
+          s.src = '//cdn.crowdin.com/jipt/jipt.js';
+          const x = d.getElementsByTagName('script')[0];
+          x.parentNode?.insertBefore(s, x);
+        }
       }}
     />
   );

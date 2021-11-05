@@ -4,17 +4,20 @@
 import i18n, { InitOptions } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next } from 'react-i18next';
+import FlagAdd from '../public/img/flag/add.png';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { isProd } from './common/util/detectEnv';
 
 export const defaultLanguage = 'en';
-export const supportedLanguages: Array<{
+export type SupportedLanguage = {
   code: string;
   label: string;
   img: Img;
-}>
+  isContribute?: boolean;
+};
+export const supportedLanguages: Array<SupportedLanguage>
   /**
    * IMPORTANT:
    * Adding a new language checklist:
@@ -26,7 +29,8 @@ export const supportedLanguages: Array<{
   = [
     { code: 'en', img: FlagEn, label: 'English' },
     { code: 'mn', img: FlagMn, label: 'Монгол' },
-    { code: 'sk', img: FlagSk, label: 'Slovenščina' },
+    { code: 'sk', img: FlagSk, label: 'Slovenčina' },
+    { code: 'lol', img: FlagAdd, label: 'Help us translate', isContribute: true },
   ];
 export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code));
 

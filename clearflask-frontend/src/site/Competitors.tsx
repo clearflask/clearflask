@@ -1501,6 +1501,7 @@ const Language = (props: {}) => {
           { headingId: 'Italian', content: 'Italian' },
           { headingId: 'Japanese', content: 'Japanese' },
           { headingId: 'Korean', content: 'Korean' },
+          { headingId: 'Mongolian', content: 'Mongolian' },
           { headingId: 'Norwegian', content: 'Norwegian' },
           { headingId: 'Persian', content: 'Persian' },
           { headingId: 'Polish', content: 'Polish' },
@@ -1516,6 +1517,7 @@ const Language = (props: {}) => {
         data={[
           { platformId: PlatformUserVoice, headingIds: new Set(['google', 'contribute', 'English', 'Bulgarian', 'Catalan', 'Dutch', 'French', 'German', 'Serbian', 'Spanish', 'Turkish', 'Vietnamese']) },
           { platformId: PlatformFeatureUpvote, headingIds: new Set(['contribute', 'English', 'Czechia', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hebrew', 'Icelandic', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Swedish', 'Turkish']) },
+          { platformId: PlatformClearFlask, headingIds: new Set(['contribute', 'English', 'Mongolian', 'Slovak']) },
           { platformId: PlatformUpvoty, headingIds: new Set(['English', 'Arabic', 'Chinese', 'Danish', 'Dutch', 'Finnish', 'French', 'German', 'Hungarian', 'Indonesian', 'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Russian', 'Slovak', 'Spanish', 'Swedish', 'Turkish']) },
           { platformId: PlatformNolt, headingIds: new Set(['English', 'Arabic', 'Danish', 'Dutch', 'Estonian', 'French', 'German', 'Hungarian', 'Italian', 'Norwegian', 'Persian', 'Polish', 'Portuguese', 'Russian', 'Spanish', 'Turkish', 'Vietnamese']) },
           { platformId: PlatformHelloNext, headingIds: new Set(['English', 'Chinese', 'French', 'German', 'Korean', 'Portuguese', 'Russian', 'Spanish']) },
