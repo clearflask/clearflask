@@ -57,14 +57,12 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('#loadingScreen').remove();
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
-
-  $('head').append(PH_ENV);
-  $('head').append(PH_INIT_LNG);
-  $('head').append(PH_PARENT_DOMAIN);
-
   $('head').append(PH_STYLE_TAGS);
   $('head').append(`<style id="ssr-jss">${PH_MUI_STYLE_TAGS}</style>`);
   $('head').append(PH_LINK_TAGS);
+  $('body').append(PH_ENV);
+  $('body').append(PH_PARENT_DOMAIN);
+  $('body').append(PH_INIT_LNG);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
   $('body').find('script').remove();
@@ -159,12 +157,7 @@ export default function render(): Handler {
       }
 
       if (connectConfig.parentDomain !== 'clearflask.com') {
-        html = html.replace(PH_PARENT_DOMAIN, '<script>'
-          + `window.parentDomain='${connectConfig.parentDomain}';`
-          + "__webpack_public_path__='/';"
-          + "if(!__webpack_require__)__webpack_require__={};"
-          + "__webpack_require__.p = '/';"
-          + '</script>');
+        html = html.replace(PH_PARENT_DOMAIN, `<script>window.parentDomain='${connectConfig.parentDomain}'</script>`);
       } else {
         html = html.replace(PH_PARENT_DOMAIN, '');
       }
