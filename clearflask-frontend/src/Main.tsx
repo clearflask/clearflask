@@ -28,6 +28,7 @@ import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { SetTitle } from './common/util/titleUtil';
 import windowIso from './common/windowIso';
+import { CrowdInInlineEditing } from './LanguageSelect';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
 import { SentryIdentifyAccount } from './site/SentryIdentify';
@@ -146,6 +147,7 @@ class Main extends Component<Props> {
                   <ServerErrorNotifier />
                   <CaptchaChallenger />
                   <RemoveSsrCss />
+                  <CrowdInInlineEditing />
                   <div style={{
                     minHeight: windowIso.isSsr ? undefined : this.theme.vh(100),
                     display: 'flex',

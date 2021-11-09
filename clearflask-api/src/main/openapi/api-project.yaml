@@ -52,6 +52,9 @@ components:
         domain:
           x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
           type: string
+        hideLang:
+          x-clearflask-prop: { order: 6, name: 'Language', description: 'Determine whether to show or hide language selection', falseAsUndefined: true, trueLabel: 'Hidden', falseLabel: 'Shown'  }
+          type: boolean
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:

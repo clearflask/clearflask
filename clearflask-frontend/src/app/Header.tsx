@@ -300,7 +300,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         />
       );
     } else {
-      const languageSelect = (
+      const languageSelect = !!this.props.config?.hideLang ? undefined : (
         <LanguageSelect noFade />
       );
       var rightSide;
