@@ -18,9 +18,14 @@ export const getI18n = () => {
 
   return getI18nGeneric(
     undefined,
+    undefined,
     languageDetector,
     {
       preload: [...supportedLanguagesSet],
+      ns: [
+        'app',
+        'site',
+      ],
     },
   );
 };

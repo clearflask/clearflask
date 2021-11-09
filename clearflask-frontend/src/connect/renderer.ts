@@ -5,6 +5,7 @@ import { ServerStyleSheets } from '@material-ui/core';
 import htmlparser from 'cheerio';
 import { Handler } from 'express';
 import fs from 'fs';
+import { i18n, Resource } from 'i18next';
 import path from 'path';
 import { resetServerContext } from 'react-beautiful-dnd';
 import { StaticRouterContext } from 'react-router';
@@ -30,7 +31,8 @@ const PH_MUI_STYLE_TAGS = '%MUI_STYLE_TAGS%';
 const PH_SCRIPT_TAGS = '%SCRIPT_TAGS%';
 const PH_MAIN_SCREEN = '%MAIN_SCREEN%';
 const PH_STORE_CONTENT = '%STORE_CONTENT%';
-const PH_INIT_LNG = '%INIT_LNG%';
+const PH_I18N_INIT_LNG = '%I18N_INIT_LNG%';
+const PH_I18N_INIT_STORE = '%I18N_INIT_STORE%';
 
 export const replaceParentDomain = (html) => {
   if (connectConfig.parentDomain === 'clearflask.com') return html;
@@ -62,7 +64,8 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_ENV);
   $('body').append(PH_PARENT_DOMAIN);
-  $('body').append(PH_INIT_LNG);
+  $('body').append(PH_I18N_INIT_LNG);
+  $('body').append(PH_I18N_INIT_STORE);
   $('body').append(PH_SCRIPT_TAGS);
   $('body').append(PH_STORE_CONTENT);
   $('body').find('script').remove();
@@ -79,8 +82,8 @@ export default function render(): Handler {
       const awaitPromises: Array<Promise<any>> = [];
 
       // From i18next-http-middleware
-      const lng = req.language;
-      const i18n = req.i18n;
+      const i18n = req.i18n as i18n;
+      const lng = i18n.language;
 
       var renderResult: RenderResult | undefined;
       var isFinished = false;
@@ -187,7 +190,16 @@ export default function render(): Handler {
         html = html.replace(PH_STORE_CONTENT, '');
       }
 
-      html = html.replace(PH_INIT_LNG, htmlDataCreate('__SSR_INIT_LNG__', lng));
+      // I18N initial language and in-memory store
+      html = html.replace(PH_I18N_INIT_LNG, htmlDataCreate('__SSR_I18N_INIT_LNG__', lng));
+      const i18nStore: Resource = { [lng]: {} };
+      (lng === 'en' ? ['en'] : ['en', lng]).forEach(l => {
+        i18nStore[l] = {};
+        i18n.reportNamespaces.getUsedNamespaces().forEach(ns => {
+          i18nStore[l][ns] = i18n.services.resourceStore.data[l][ns];
+        });
+      });
+      html = html.replace(PH_I18N_INIT_STORE, htmlDataCreate('__SSR_I18N_INIT_STORE__', i18nStore));
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',
