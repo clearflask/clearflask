@@ -1,1 +1,6 @@
-{}
+{
+	"avatar": "Avatar",
+	"displayname": "Display name",
+	"email": "Email",
+	"balance": "Balance"
+}
