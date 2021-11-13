@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../../api/admin";
+import { T } from "../../../i18n";
 import stringToSlug from "../../util/slugger";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
@@ -47,7 +48,7 @@ export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' |
     const categoriesProp = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const feedbackCategoryId = FeedbackCategoryIdPrefix + randomUuid();
     categoriesProp.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: feedbackCategoryId, name: 'Feedback',
+      categoryId: feedbackCategoryId, name: T<'app'>('feedback'),
       userCreatable: true,
       userMergeableCategoryIds: [feedbackCategoryId, ...(roadmap ? [roadmap.categoryAndIndex.category.categoryId] : [])],
       workflow: { statuses: [] },
@@ -68,10 +69,10 @@ export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' |
     const statusIdAccepted = FeedbackStatusAcceptedPrefix + randomUuid();
     const statusIdClosed = randomUuid();
     this.workflow(postCategoryIndex, statusIdNew, [
-      { name: 'New', nextStatusIds: [statusIdGatheringFeedback, statusIdAccepted, statusIdClosed, statusIdClosed], color: this.workflowColorNew, statusId: statusIdNew, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-      { name: 'Considering', nextStatusIds: [statusIdAccepted, statusIdClosed], color: this.workflowColorNeutral, statusId: statusIdGatheringFeedback, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-      { name: 'Accepted', nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdAccepted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-      { name: 'Closed', nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdClosed, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+      { name: T<'app'>('new'), nextStatusIds: [statusIdGatheringFeedback, statusIdAccepted, statusIdClosed, statusIdClosed], color: this.workflowColorNew, statusId: statusIdNew, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+      { name: T<'app'>('considering'), nextStatusIds: [statusIdAccepted, statusIdClosed], color: this.workflowColorNeutral, statusId: statusIdGatheringFeedback, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+      { name: T<'app'>('accepted'), nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdAccepted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+      { name: T<'app'>('closed'), nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdClosed, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
     ]);
 
     feedback = (await this.feedbackGet())!;
@@ -170,8 +171,8 @@ export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' |
           showEdit: false,
         },
         allowCreate: {
-          actionTitle: 'Suggest',
-          actionTitleLong: 'Suggest an idea',
+          actionTitle: T<'app'>('suggest'),
+          actionTitleLong: T<'app'>('suggest-an-idea'),
         },
         allowSearch: {
           enableSort: true,
@@ -186,7 +187,7 @@ export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' |
     if (!feedback.pageAndIndex) {
       const page: PageWithFeedback = {
         pageId: FeedbackPageIdPrefix + randomUuid(),
-        name: 'Feedback',
+        name: T<'app'>('feedback'),
         slug: stringToSlug('feedback'),
         icon: 'RecordVoiceOver',
         panels: [],
@@ -237,7 +238,7 @@ function getDebate(feedback: FeedbackInstance, roadmap?: RoadmapInstance): {
   if (!!roadmap?.categoryAndIndex.category.categoryId && !!roadmap?.statusIdBacklog) {
     roadmapDebate = {
       panel: {
-        title: "See what else we're thinking about",
+        title: T<'app'>('see-what-else-were-thinking-about'),
         hideIfEmpty: true,
         search: {
           sortBy: Admin.IdeaSearchSortByEnum.Random,
@@ -265,7 +266,7 @@ function getDebate(feedback: FeedbackInstance, roadmap?: RoadmapInstance): {
   }
   const feedbackDebate: Admin.PageFeedback['debate'] = {
     panel: {
-      title: !!roadmapDebate ? 'Feedback submitted by others' : 'See what others are saying',
+      title: !!roadmapDebate ? T<'app'>('feedback-submitted-by-others') : T<'app'>('see-what-others-are-saying'),
       hideIfEmpty: true,
       search: {
         sortBy: Admin.IdeaSearchSortByEnum.Trending,

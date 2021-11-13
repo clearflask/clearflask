@@ -16,6 +16,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../../api/client';
@@ -115,7 +116,7 @@ interface State {
 
 
 
-class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
+class IdeaExplorer extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   state: State = {};
   readonly titleInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly inViewObserverRef = React.createRef<InViewObserver>();
@@ -240,9 +241,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         }}
       >
         <Typography noWrap>
-          {createShown
-            ? (this.props.explorer.allowCreate.actionTitleLong || this.props.explorer.allowCreate.actionTitle || 'Add new post')
-            : (this.props.explorer.allowCreate.actionTitle || 'Add')}
+          {this.props.t(createShown
+            ? (this.props.explorer.allowCreate.actionTitleLong as any || this.props.explorer.allowCreate.actionTitle as any || 'add-new-post')
+            : (this.props.explorer.allowCreate.actionTitle as any || 'add'))}
         </Typography>
         <AddIcon
           fontSize='small'
@@ -272,7 +273,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           defaultDescription={this.state.animateDescription}
         />
         <LogIn
-          actionTitle='Get notified of replies'
+          actionTitle={this.props.t('get-notified-of-replies')}
           server={this.props.server}
           open={!!this.state.onLoggedIn}
           onClose={() => this.setState({ onLoggedIn: undefined })}
@@ -397,6 +398,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   }
 }, null, null, { forwardRef: true })(
   // withQueryParams(QueryState, 
-  withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(IdeaExplorer))))
+  withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(withTranslation('app', { withRef: true })(IdeaExplorer)))))
   // )
   ;

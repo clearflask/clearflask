@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { ReduxState } from '../api/server';
 import { setAppTitle } from '../common/util/titleUtil';
@@ -35,13 +36,13 @@ interface ConnectProps {
   projectName?: string,
   suppressSetTitle: boolean,
 }
-class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class BasePage extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>> {
   readonly styles = {
   };
 
   render() {
     if (!this.props.suppressSetTitle && !!this.props.projectName) {
-      setAppTitle(this.props.projectName, this.props.titleText);
+      setAppTitle(this.props.projectName, this.props.t(this.props.titleText as any));
     }
     return (
       <>
@@ -71,4 +72,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     connectProps.titleText = page?.pageTitle || page?.name;
   }
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BasePage));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(BasePage)));

@@ -15,6 +15,7 @@ import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect, Provider } from 'react-redux';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
@@ -421,7 +422,7 @@ interface State {
   iWantThisCommentExpanded?: boolean;
   demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
 }
-class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
+class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   onLoggedIn?: () => void;
   _isMounted: boolean = false;
   readonly fundingControlRef = createMutableRef<any>();
@@ -537,7 +538,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
             {this.renderComments()}
           </div>
           <LogIn
-            actionTitle='Get notified of updates'
+            actionTitle={this.props.t('get-notified-of-updates')}
             server={this.props.server}
             open={this.state.logInOpen}
             onClose={() => this.setState({ logInOpen: false })}
@@ -696,7 +697,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
         disabled={!!this.state.commentExpanded}
         onClick={e => this.setState({ commentExpanded: true })}
       >
-        Comment
+        {this.props.t('comment')}
       </MyButton>
     );
   }
@@ -715,7 +716,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
         collapseIn={!!this.state.iWantThisCommentExpanded}
         focusOnIn
         logIn={this.logIn.bind(this)}
-        inputLabel={this.props.category.support.vote.iWantThis.encourageLabel || 'Tell us why'}
+        inputLabel={this.props.t(this.props.category.support.vote.iWantThis.encourageLabel as any || 'tell-us-why')}
         onSubmitted={() => this.setState({ iWantThisCommentExpanded: undefined })}
         onBlurAndEmpty={() => this.setState({ iWantThisCommentExpanded: undefined })}
       />
@@ -793,7 +794,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           Icon={RespondIcon}
           onClick={e => this.setState({ showEditingStatusAndResponse: 'response' })}
         >
-          Respond
+          {this.props.t('respond')}
         </MyButton>
       </React.Fragment>
     );
@@ -815,7 +816,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           Icon={LinkAltIcon}
           onClick={e => this.setState({ showEditingConnect: true })}
         >
-          Link
+          {this.props.t('link')}
         </MyButton>
         <Provider key={this.props.server.getProjectId()} store={this.props.server.getStore()}>
           <PostConnectDialog
@@ -843,19 +844,19 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           Icon={DeleteIcon}
           onClick={e => this.setState({ deleteDialogOpen: true })}
         >
-          Delete
+          {this.props.t('delete')}
         </MyButton>
         <Dialog
           open={!!this.state.deleteDialogOpen}
           onClose={() => this.setState({ deleteDialogOpen: false })}
         >
-          <DialogTitle>Delete post</DialogTitle>
+          <DialogTitle>{this.props.t('delete-post')}</DialogTitle>
           <DialogContent>
-            <DialogContentText>Are you sure you want to permanently delete this post?</DialogContentText>
+            <DialogContentText>{this.props.t('are-you-sure-permanently-delete-post')}</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ deleteDialogOpen: false })}
-            >Cancel</Button>
+            >{this.props.t('cancel')}</Button>
             <SubmitButton
               isSubmitting={this.state.isSubmittingDelete}
               style={{ color: !this.state.isSubmittingDelete ? this.props.theme.palette.error.main : undefined }}
@@ -872,7 +873,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
                   this.setState({ isSubmittingDelete: false });
                 }
               }}>
-              Delete
+              {this.props.t('delete')}
             </SubmitButton>
           </DialogActions>
         </Dialog>
@@ -967,7 +968,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           bare
           noContentLabel={(
             <Typography variant='caption' className={this.props.classes.noContentLabel}
-            >Add tags</Typography>
+            >{this.props.t('add-tags')}</Typography>
           )}
         >
           {contentTags.length ? contentTags : null}
@@ -1442,7 +1443,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
             forceOutline
             noContentLabel={(
               <Typography className={this.props.classes.noContentLabel}
-              >Add description</Typography>
+              >{this.props.t('add-description')}</Typography>
             )}
           >
             {description}
@@ -1463,7 +1464,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           isSubmitting={this.props.isSubmittingDisconnect}
           onClick={e => this.props.onDisconnect?.()}
         >
-          {this.props.disconnectType === 'link' ? 'Unlink' : 'Unmerge'}
+          {this.props.disconnectType === 'link' ? this.props.t('unlink') : this.props.t('unmerge')}
         </MyButton>
       </React.Fragment>
     );
@@ -1634,7 +1635,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           />
           {!!status && (
             <>
-              <Typography variant='body1'>changed to&nbsp;</Typography>
+              <Typography variant='body1'>{this.props.t('changed-to')}&nbsp;</Typography>
               {status}
             </>
           )}
@@ -1717,7 +1718,7 @@ class Post extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
           onChange={response => this.setState({ editingResponse: response })}
           isSubmitting={this.state.isSubmittingStatusAndResponse}
           RichEditorProps={{
-            placeholder: 'Add a response',
+            placeholder: this.props.t('add-a-response'),
           }}
           bare
           forceOutline
@@ -2065,4 +2066,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     linkedFromPosts,
     fetchPostIds,
   };
-})(withStyles(styles, { withTheme: true })(withSnackbar(Post)));
+})(withStyles(styles, { withTheme: true })(withSnackbar(withTranslation('app', { withRef: true })(Post))));

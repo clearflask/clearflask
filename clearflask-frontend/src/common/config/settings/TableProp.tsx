@@ -11,7 +11,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Server } from '../../../api/server';
 import * as ConfigEditor from '../configEditor';
-import Property from './Property';
+import Property, { PropertyInputMinWidth } from './Property';
 
 const styles = (theme: Theme) => createStyles({
   table: {
@@ -154,7 +154,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           {(label || helperText) && (
             <div style={{
               width: this.props.width,
-              minWidth: Property.inputMinWidth,
+              minWidth: PropertyInputMinWidth,
             }}>
               {label}
               {helperText}
@@ -168,7 +168,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
         <div>
           <div style={{
             width: this.props.width,
-            minWidth: Property.inputMinWidth,
+            minWidth: PropertyInputMinWidth,
           }}>
             {label}
             <FormControlLabel

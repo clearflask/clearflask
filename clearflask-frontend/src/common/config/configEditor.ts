@@ -102,6 +102,7 @@ export enum PropSubType {
   Color = 'color',
   Emoji = 'emoji',
   KeyGen = 'keygen',
+  I18n = 'i18n',
   Multiline = 'multiline',
   Rich = 'rich',
   Icon = 'icon',

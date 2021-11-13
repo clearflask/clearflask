@@ -3,6 +3,7 @@
 import { Button, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -44,7 +45,7 @@ interface ConnectProps {
   getNextNotifications?: () => void;
 }
 
-class NotificationList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
+class NotificationList extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & RouteComponentProps> {
 
   constructor(props) {
     super(props);
@@ -66,7 +67,7 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
                 <Typography
                   className={this.props.classes.noNotificationsLabel}
                   variant='overline'
-                >No notifications</Typography>
+                >{this.props.t('no-notifications')}</Typography>
               ) : this.props.notifications!.map(notification => (
                 <TableRow
                   key={notification.notificationId}
@@ -86,12 +87,12 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
         </div>
         {hasNotifications && (
           <Button fullWidth className={this.props.classes.button} onClick={() => this.clearAll()}>
-            Clear all
+            {this.props.t('clear-all')}
           </Button>
         )}
         {this.props.getNextNotifications && (
           <Button fullWidth className={this.props.classes.button} onClick={() => this.props.getNextNotifications && this.props.getNextNotifications()}>
-            Show more
+            {this.props.t('show-more')}
           </Button>
         )}
       </div>
@@ -147,4 +148,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     getNextNotifications: getNextNotifications,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(NotificationList)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('app', { withRef: true })(NotificationList))));

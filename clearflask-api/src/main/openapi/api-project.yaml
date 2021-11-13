@@ -52,6 +52,9 @@ components:
         domain:
           x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
           type: string
+        hideLang:
+          x-clearflask-prop: { order: 6, name: 'Language', description: 'Determine whether to show or hide language selection', falseAsUndefined: true, trueLabel: 'Hidden', falseLabel: 'Shown'  }
+          type: boolean
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:
@@ -420,13 +423,13 @@ components:
           required:
           properties:
             title:
-              x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to show users to entice them to subscribe', defaultValue: 'Get notified' }
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to show users to entice them to subscribe', defaultValue: 'Get notified' }
               type: string
             message:
-              x-clearflask-prop: { order: 1, name: 'Message', description: 'Reason why they should subscribe', defaultValue: 'If you enjoyed reading this, follow my new content.' }
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Message', description: 'Reason why they should subscribe', defaultValue: 'If you enjoyed reading this, follow my new content.' }
               type: string
             button:
-              x-clearflask-prop: { order: 1, name: 'Button text', description: 'Subscribe button action text', defaultValue: 'Follow' }
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Button text', description: 'Subscribe button action text', defaultValue: 'Follow' }
               type: string
     support:
       x-clearflask-page: { order: 4, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
@@ -454,13 +457,13 @@ components:
               type: object
               properties:
                 positiveLabel:
-                  x-clearflask-prop: { order: 20, name: 'Positive button label', description: 'Text to show on the "I want this" button', placeholder: 'I want this' }
+                  x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Positive button label', description: 'Text to show on the "I want this" button', placeholder: 'I want this' }
                   type: string
                 negativeLabel:
-                  x-clearflask-prop: { order: 30, name: 'Negative button label', description: 'Text to show on the "I hate this" button', placeholder: 'I hate this' }
+                  x-clearflask-prop: { order: 30, subType: 'i18n', name: 'Negative button label', description: 'Text to show on the "I hate this" button', placeholder: 'I hate this' }
                   type: string
                 encourageLabel:
-                  x-clearflask-prop: { order: 40, name: 'Encourage label', description: 'Text to show once the user wants it, to encourage leaving a comment', placeholder: 'Tell us why' }
+                  x-clearflask-prop: { order: 40, subType: 'i18n', name: 'Encourage label', description: 'Text to show once the user wants it, to encourage leaving a comment', placeholder: 'Tell us why' }
                   type: string
         express:
           x-clearflask-prop: { order: 4, name: 'Expression', description: 'When you need a wider range of emotions to express feedback, weighted emojis are here to help.' }
@@ -531,7 +534,7 @@ components:
                 items:
                   type: string
               name:
-                x-clearflask-prop: { order: 1, name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
+                x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
                 type: string
               icon:
                 x-clearflask-prop: { order: 3, subType: 'icon', name: 'Icon', description: 'Icon name to display. Defaults to page icon if only a sigle page is linked. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
@@ -555,16 +558,16 @@ components:
                 x-clearflask-hide: true
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, subType: 'i18n', name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
                 type: string
               pageTitle:
-                x-clearflask-prop: { order: 3, name: 'Page Title', description: 'Page title that appears on your browser window or tab when this page is open.' }
+                x-clearflask-prop: { order: 3, subType: 'i18n', name: 'Page Title', description: 'Page title that appears on your browser window or tab when this page is open.' }
                 type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.' }
                 type: string
               title:
-                x-clearflask-prop: { order: 3, name: 'Heading', description: 'Main heading visible as the first text on this page', placeholder: 'Feature Requests' }
+                x-clearflask-prop: { order: 3, subType: 'i18n', name: 'Heading', description: 'Main heading visible as the first text on this page', placeholder: 'Feature Requests' }
                 type: string
               description:
                 x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
@@ -588,10 +591,10 @@ components:
                       - title
                       properties:
                         title:
-                          x-clearflask-prop: { order: 0, name: 'Name', description: 'Headline to show for this link', placeholder: 'Name' }
+                          x-clearflask-prop: { order: 0, subType: 'i18n', name: 'Name', description: 'Headline to show for this link', placeholder: 'Name' }
                           type: string
                         description:
-                          x-clearflask-prop: { order: 1, name: 'Description', description: 'Description to show for this link', placeholder: 'Description' }
+                          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Description', description: 'Description to show for this link', placeholder: 'Description' }
                           type: string
                         icon:
                           x-clearflask-prop: { order: 2, subType: 'icon', name: 'Icon', description: 'Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
@@ -999,7 +1002,7 @@ components:
             - hideIfEmpty
           properties:
             title:
-              x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above content'}
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to display above content'}
               type: string
             color:
               x-clearflask-prop: { subType: 'color', order: 2, name: 'Title color', description: 'Optional display color for title' }
@@ -1043,10 +1046,10 @@ components:
               type: object
               properties:
                 actionTitle:
-                  x-clearflask-prop: { order: 1, name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add'}
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add'}
                   type: string
                 actionTitleLong:
-                  x-clearflask-prop: { order: 1, name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post'}
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post'}
                   type: string
     PageFeedback:
       x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
@@ -1059,13 +1062,13 @@ components:
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
           type: string
         labelTitle:
-          x-clearflask-prop: { order: 10, name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea'}
+          x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea'}
           type: string
         labelDescription:
-          x-clearflask-prop: { order: 20, name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)'}
+          x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)'}
           type: string
         labelSubmit:
-          x-clearflask-prop: { order: 25, name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea'}
+          x-clearflask-prop: { order: 25, subType: 'i18n', name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea'}
           type: string
         help:
           x-clearflask-page: { order: 30, name: 'Help', description: 'Shown as you type to entice user to solve their own problem by showing help articles' }

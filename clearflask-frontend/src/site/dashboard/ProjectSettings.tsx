@@ -34,7 +34,7 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
 import DataSettings from '../../common/config/settings/DataSettings';
 import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
-import Property from '../../common/config/settings/Property';
+import Property, { PropertyInputMinWidth } from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import UpgradeWrapper, { Action, RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../../common/config/template/changelog';
@@ -2347,7 +2347,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
               TextFieldProps={{
                 InputProps: {
                   style: {
-                    minWidth: Property.inputMinWidth,
+                    minWidth: PropertyInputMinWidth,
                     width: propertyWidth,
                   },
                 }
@@ -2587,7 +2587,7 @@ export const ProjectSettingsFeedbackTag = (props: {
       TextFieldProps={{
         InputProps: {
           style: {
-            minWidth: Property.inputMinWidth,
+            minWidth: PropertyInputMinWidth,
             width: propertyWidth,
           },
         },
@@ -2623,7 +2623,7 @@ export const ProjectSettingsAddWithName = (props: {
       )}
       InputProps={{
         style: {
-          minWidth: Property.inputMinWidth,
+          minWidth: PropertyInputMinWidth,
           width: propertyWidth,
         },
         endAdornment: (
@@ -2778,7 +2778,7 @@ export const ProjectSettingsRoadmap = (props: {
                               TextFieldProps={{
                                 InputProps: {
                                   style: {
-                                    minWidth: Property.inputMinWidth,
+                                    minWidth: PropertyInputMinWidth,
                                     width: propertyWidth,
                                   },
                                 },
@@ -2874,7 +2874,7 @@ export const ProjectSettingsRoadmapPanel = (props: {
                 TextFieldProps={{
                   InputProps: {
                     style: {
-                      minWidth: Property.inputMinWidth,
+                      minWidth: PropertyInputMinWidth,
                       width: propertyWidth,
                     },
                   },

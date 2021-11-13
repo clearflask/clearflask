@@ -5,6 +5,7 @@ import { createStyles, makeStyles, Theme, useTheme, withStyles, WithStyles } fro
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { useTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
@@ -340,11 +341,12 @@ export const PageTitleDescription = (props: {
   suppressSpacing?: boolean;
 }) => {
   const classes = useStyles();
+  const { t } = useTranslation('app');
 
   var title;
   if (props.page.title) {
     title = (
-      <Typography component="h1" variant="h4" color='textSecondary' className={classes.title}>{props.page.title}</Typography>
+      <Typography component="h1" variant="h4" color='textSecondary' className={classes.title}>{t(props.page.title as any)}</Typography>
     );
   }
 
@@ -400,6 +402,7 @@ export const LandingLink = (props: {
   openInNew?: boolean;
 }) => {
   const classes = useStyles();
+  const { t } = useTranslation('app');
 
   if (!props.link) return null;
   var linkToPage = !props.link.linkToPageId ? undefined
@@ -446,10 +449,10 @@ export const LandingLink = (props: {
         />
       )}
       {!!props.link.title && (
-        <Typography variant='h5' component='h2' className={classes.landingLinkTitle}>{props.link.title}</Typography>
+        <Typography variant='h5' component='h2' className={classes.landingLinkTitle}>{t(props.link.title as any)}</Typography>
       )}
       {!!props.link.description && (
-        <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{props.link.description}</Typography>
+        <Typography variant='body1' component='div' className={classes.landingLinkDescription}>{t(props.link.description as any)}</Typography>
       )}
       <GoIcon
         className={classes.landingLinkGo}

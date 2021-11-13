@@ -8,7 +8,7 @@ const assertConsoleLines = new Set([
   'ClearFlask Greenlock Manager Started',
   'ClearFlask Greenlock Store Started',
   'ClearFlask Greenlock Http Challenge Started',
-  'Master Started',
+  'Master Started (test)',
 ]);
 var testLog = console.log.bind(console);
 const isFork = process.send !== undefined;

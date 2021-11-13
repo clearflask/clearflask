@@ -6,6 +6,7 @@ import AccountIcon from '@material-ui/icons/AccountCircle';
 import ReturnIcon from '@material-ui/icons/KeyboardBackspaceOutlined';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
@@ -177,7 +178,7 @@ interface ConnectProps {
 interface State {
   logInOpen?: boolean;
 }
-class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class Header extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
   _isMounted: boolean = false;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
@@ -228,7 +229,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
                   {!!icon && (
                     <DynamicMuiIcon name={icon} />
                   )}
-                  {menu.name || page.name}
+                  {this.props.t(menu.name || page.name as any)}
                 </>
               )}
               classes={{
@@ -247,7 +248,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             currentTabValue = menu.menuId;
           }
           return {
-            name: page.name,
+            name: this.props.t(page.name as any),
             val: page.slug,
             icon: page.icon,
           };
@@ -300,33 +301,35 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         />
       );
     } else {
-      const languageSelect = (
+      const languageSelect = !!this.props.config?.hideLang ? undefined : (
         <LanguageSelect noFade />
       );
       var rightSide;
       if (this.props.config && this.props.loggedInUser) {
         rightSide = (
-          <Collapse classes={{ wrapperInner: this.props.classes.actions }} in={!isLanding}>
-            <NotificationButton
-              className={this.props.classes.actionButton}
-              server={this.props.server}
-            />
-            <IconButton
-              className={this.props.classes.actionButton}
-              aria-label='Account'
-              component={Link}
-              to='/account'
-            >
-              <Badge
-                color='secondary'
-                invisible={!!this.props.loggedInUser.isExternal || !!this.props.loggedInUser.name}
-                variant='dot'
+          <div className={this.props.classes.actions}>
+            <Collapse classes={{ wrapperInner: this.props.classes.actions }} in={!isLanding}>
+              <NotificationButton
+                className={this.props.classes.actionButton}
+                server={this.props.server}
+              />
+              <IconButton
+                className={this.props.classes.actionButton}
+                aria-label='Account'
+                component={Link}
+                to='/account'
               >
-                <AccountIcon fontSize='inherit' />
-              </Badge>
-            </IconButton>
+                <Badge
+                  color='secondary'
+                  invisible={!!this.props.loggedInUser.isExternal || !!this.props.loggedInUser.name}
+                  variant='dot'
+                >
+                  <AccountIcon fontSize='inherit' />
+                </Badge>
+              </IconButton>
+            </Collapse>
             {languageSelect}
-          </Collapse>
+          </div>
         );
       } else if (this.props.config && !this.props.loggedInUser) {
         rightSide = (
@@ -500,4 +503,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     loggedInUser: state.users.loggedIn.user,
     settings: state.settings,
   };
-})(withStyles(styles, { withTheme: true })(Header));
+})(withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(Header)));

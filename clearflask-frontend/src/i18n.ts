@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="./@types/transform-media-imports.d.ts"/>
-import i18n, { InitOptions } from 'i18next';
+import i18n, { InitOptions, Resource } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
-import { initReactI18next } from 'react-i18next';
+import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
@@ -28,14 +28,18 @@ export const supportedLanguages: Array<SupportedLanguage>
    */
   = [
     { code: 'en', img: FlagEn, label: 'English' },
-    { code: 'mn', img: FlagMn, label: 'Монгол' },
-    { code: 'sk', img: FlagSk, label: 'Slovenčina' },
+    ...(isProd() ? [] : [
+      { code: 'mn', img: FlagMn, label: 'Монгол' },
+      { code: 'sk', img: FlagSk, label: 'Slovenčina' },
+      { code: 'cimode', img: FlagAdd, label: 'No translation' },
+    ]),
     { code: 'lol', img: FlagAdd, label: 'Help us translate', isContribute: true },
   ];
 export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code));
 
 export const getI18n = (
   initialLng: string | undefined,
+  initialStore: Resource | undefined,
   languageDetector,
   opts?: InitOptions,
 ) => {
@@ -52,15 +56,15 @@ export const getI18n = (
     }))
     // Docs: https://www.i18next.com/overview/configuration-options
     .init({
-      initImmediate: true,
+      initImmediate: false,
       lng: initialLng,
       fallbackLng: defaultLanguage,
       supportedLngs: [...supportedLanguagesSet],
-      ns: [
-        'app',
-        'site',
-      ],
       debug: !isProd(),
+      resources: initialStore,
+      missingKeyNoValueFallbackToKey: false,
+      ns: ['app', 'site'],
+      defaultNS: 'app',
       ...opts,
       interpolation: {
         escapeValue: false, // not needed for react as it escapes by default
@@ -68,9 +72,13 @@ export const getI18n = (
       },
       react: {
         useSuspense: false,
-        wait: true
+        wait: true,
+        transWrapTextNodes: 'span',
+        ...opts?.react,
       },
     });
-
   return i18n;
 };
+
+// For type-checking standalone strings without the use of t function
+export const T = <N extends Namespace>(key: TFuncKey<N>): string => key;

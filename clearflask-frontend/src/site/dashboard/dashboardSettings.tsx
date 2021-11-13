@@ -116,7 +116,6 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
         this.forcePathListener(forcePath);
       }
-      setTitle(currentPage.getDynamicName());
 
       mainContent = (
         <ProjectSettingsBase>

@@ -9,6 +9,7 @@ import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
@@ -84,7 +85,7 @@ interface State {
   balanceAdjustment?: string;
   balanceDescription?: string;
 }
-class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
+class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> & WithMediaQuery & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   state: State = {};
   userAdminFetchedForUserId: string | undefined;
 
@@ -100,9 +101,9 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
       if (!isModOrAdminLoggedIn) return null;
       content = (
         <div key='create-form' className={this.props.classes.section}>
-          <PanelTitle text='Create user' />
+          <PanelTitle text={this.props.t('create-user')} />
           <Grid container alignItems='center' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>{this.props.t('avatar')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
               <AvatarDisplay user={{
                 name: this.state.displayName || '',
@@ -110,7 +111,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
             </Grid>
           </Grid>
           <Grid container alignItems='center' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
               <TextField
                 value={this.state.displayName || ''}
@@ -132,7 +133,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                   userAdmin: newUserAdmin,
                   displayName: undefined,
                 });
-              }}>Save</Button>
+              }}>{this.props.t('save')}</Button>
             </Grid>
           </Grid>
         </div>
@@ -141,21 +142,21 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
       // View only
       content = (
         <div key='view-only' className={this.props.classes.section}>
-          <PanelTitle text='Info' />
+          <PanelTitle text={this.props.t('info')} />
           <Grid container alignItems='center' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>{this.props.t('avatar')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
               <AvatarDisplay user={this.props.user} size={40} />
             </Grid>
           </Grid>
           <Grid container alignItems='center' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
               {DisplayUserName(this.props.user)}
             </Grid>
           </Grid>
           <Grid container alignItems='center' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Registered</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>{this.props.t('registered')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
               <TimeAgo date={this.props.user?.created || 0} />
             </Grid>
@@ -206,9 +207,9 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
       content = (
         <React.Fragment key='edit-user'>
           <div className={this.props.classes.section}>
-            <PanelTitle text='Account' />
+            <PanelTitle text={this.props.t('account')} />
             <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Avatar</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography>{this.props.t('avatar')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                 <AvatarDisplay user={{
                   ...user,
@@ -222,10 +223,10 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
               </Grid>
             </Grid>
             <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                 {!!user.isExternal ? (
-                  <Tooltip title="Cannot be changed" placement='top-start'>
+                  <Tooltip title={this.props.t('cannot-be-changed')} placement='top-start'>
                     <Typography>{user.name || 'None'}</Typography>
                   </Tooltip>
                 ) : (
@@ -236,7 +237,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       value={(this.state.displayName === undefined ? user.name : this.state.displayName) || ''}
                       onChange={e => this.setState({ displayName: e.target.value })}
                     />
-                    <Button aria-label="Save" color='primary' style={{
+                    <Button aria-label={this.props.t('save')} color='primary' style={{
                       visibility:
                         !this.state.displayName
                           || this.state.displayName === user.name
@@ -262,17 +263,17 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                         });
                         this.setState({ displayName: undefined });
                       }
-                    }}>Save</Button>
+                    }}>{this.props.t('save')}</Button>
                   </>
                 )}
               </Grid>
             </Grid>
             <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography>{this.props.t('email')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                 {!!user.isExternal ? (
-                  <Tooltip title="Cannot be changed" placement='top-start'>
-                    <Typography>{user.email || 'None'}</Typography>
+                  <Tooltip title={this.props.t('cannot-be-changed')} placement='top-start'>
+                    <Typography>{user.email || this.props.t('none')}</Typography>
                   </Tooltip>
                 ) : (
                   <>
@@ -282,7 +283,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       onChange={e => this.setState({ email: e.target.value })}
                       autoFocus={!!this.state.createdUserId}
                     />
-                    <Button aria-label="Save" color='primary' style={{
+                    <Button aria-label={this.props.t('save')} color='primary' style={{
                       visibility:
                         !this.state.email
                           || this.state.email === user.email
@@ -308,14 +309,14 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                         });
                         this.setState({ email: undefined });
                       }
-                    }}>Save</Button>
+                    }}>{this.props.t('save')}</Button>
                   </>
                 )}
               </Grid>
             </Grid>
             {!user.isExternal && (
               <Grid container alignItems='center' className={this.props.classes.item}>
-                <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
+                <Grid item xs={12} sm={6}><Typography>{this.props.t('password-0')}</Typography></Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                   <TextField
                     id='password'
@@ -337,7 +338,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       ),
                     }}
                   />
-                  <Button aria-label="Save" color='primary' style={{
+                  <Button aria-label={this.props.t('save')} color='primary' style={{
                     visibility:
                       !this.state.password
                         || this.state.password === user.name
@@ -362,13 +363,13 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       });
                       this.setState({ password: undefined });
                     }
-                  }}>Save</Button>
+                  }}>{this.props.t('save')}</Button>
                 </Grid>
               </Grid>
             )}
             {this.props.credits && (
               <Grid container alignItems='center' className={this.props.classes.item}>
-                <Grid item xs={12} sm={6}><Typography>Balance</Typography></Grid>
+                <Grid item xs={12} sm={6}><Typography>{this.props.t('balance')}</Typography></Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                   <CreditView val={balance || 0} credits={this.props.credits} />
                   {isMe && !!this.props.credits?.creditPurchase?.redirectUrl && (
@@ -447,7 +448,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
             {isModOrAdminLoggedIn && (
               <>
                 <Grid container alignItems='center' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={6}><Typography>Is moderator</Typography></Grid>
+                  <Grid item xs={12} sm={6}><Typography>{this.props.t('is-moderator')}</Typography></Grid>
                   <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                     <FormControlLabel
                       control={(
@@ -467,14 +468,14 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       )}
                       label={(
                         <FormHelperText component='span'>
-                          {user.isMod ? 'Yes' : 'No'}
+                          {user.isMod ? this.props.t('yes') : this.props.t('no')}
                         </FormHelperText>
                       )}
                     />
                   </Grid>
                 </Grid>
                 <Grid container alignItems='center' className={this.props.classes.item}>
-                  <Grid item xs={12} sm={6}><Typography>User ID</Typography></Grid>
+                  <Grid item xs={12} sm={6}><Typography>{this.props.t('user-id')}</Typography></Grid>
                   <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                     <Typography>{userId}</Typography>
                   </Grid>
@@ -484,14 +485,14 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
             {!!isMe && !this.props.suppressSignOut && (
               <Grid container alignItems='center' className={this.props.classes.item}>
                 <Grid item xs={12} sm={6}><Typography>
-                  Sign out of your account
+                  {this.props.t('sign-out-of-your-account')}
                   {!!isPushOrAnon && (
                     <Collapse in={!!this.state.signoutWarnNoEmail}>
                       <Alert
                         variant='outlined'
                         severity='warning'
                       >
-                        Please add an email before signing out or delete your account instead.
+                        {this.props.t('please-add-an-email-before')}
                       </Alert>
                     </Collapse>
                   )}
@@ -513,7 +514,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
               </Grid>
             )}
             <Grid container alignItems='center' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>{isMe ? 'Delete your account' : 'Delete account'}</Typography></Grid>
+              <Grid item xs={12} sm={6}><Typography>{this.props.t('delete-account')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                 <Button
                   onClick={() => this.setState({ deleteDialogOpen: true })}
@@ -544,17 +545,17 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
                       }
                       this.props.onDeleted?.();
                       this.setState({ deleteDialogOpen: false });
-                    }}>Delete</Button>
+                    }}>{this.props.t('delete')}</Button>
                   </DialogActions>
                 </Dialog>
               </Grid>
             </Grid>
           </div>
           <div className={this.props.classes.section}>
-            <PanelTitle text='Notifications' />
+            <PanelTitle text={this.props.t('notifications')} />
             {browserPushControl && (
               <Grid container alignItems='center' className={this.props.classes.item}>
-                <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
+                <Grid item xs={12} sm={6}><Typography>{this.props.t('browser-desktop-messages')}</Typography></Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>{browserPushControl}</Grid>
               </Grid>
             )}
@@ -574,7 +575,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
               <Grid container alignItems='center' className={this.props.classes.item}>
                 <Grid item xs={12} sm={6}>
                   <Typography>
-                    Email
+                    {this.props.t('email')}
                     {user.email !== undefined && (<Typography variant='caption'>&nbsp;({truncateWithElipsis(20, user.email)})</Typography>)}
                   </Typography>
                 </Grid>
@@ -584,7 +585,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
             {categoriesWithSubscribe.map(category => !!user && (
               <Grid container alignItems='center' className={this.props.classes.item}>
                 <Grid item xs={12} sm={6}>
-                  <Typography>New {category.name}</Typography>
+                  <Typography>{this.props.t('new-category', { category: category.name })}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                   {this.renderCategorySubscribeControl(category, isMe, user)}
@@ -609,7 +610,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
     const isSubscribed = user?.categorySubscriptions?.includes(category.categoryId);
 
     if (!isMe) {
-      return user.browserPush ? 'Subscribed' : 'Not subscribed';
+      return user.browserPush ? this.props.t('subscribed') : this.props.t('not-subscribed');
     }
 
     return (
@@ -630,7 +631,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
         )}
         label={(
           <FormHelperText component='span'>
-            {isSubscribed ? 'Subscribed' : 'Unsubscribed'}
+            {isSubscribed ? this.props.t('subscribed') : this.props.t('not-subscribed')}
           </FormHelperText>
         )}
       />
@@ -643,7 +644,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
     }
 
     if (!isMe) {
-      return user.browserPush ? 'Receiving' : 'Not receiving';
+      return user.browserPush ? this.props.t('receiving') : this.props.t('not-receiving');
     }
 
     const browserPushStatus = WebNotification.getInstance().getStatus();
@@ -652,7 +653,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
     var browserPushLabel;
     if (user.browserPush) {
       browserPushControlDisabled = false;
-      browserPushLabel = 'Enabled';
+      browserPushLabel = this.props.t('enabled');
     } else {
       switch (browserPushStatus) {
         case WebNotificationStatus.Unsupported:
@@ -667,7 +668,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
         case WebNotificationStatus.Available:
         case WebNotificationStatus.Granted:
           browserPushControlDisabled = false;
-          browserPushLabel = 'Disabled';
+          browserPushLabel = this.props.t('disabled');
           break;
       }
     }
@@ -800,7 +801,7 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
     }
 
     if (!isMe) {
-      return user.browserPush ? 'Receiving' : 'Not receiving';
+      return user.browserPush ? this.props.t('receiving') : this.props.t('not-receiving');
     }
 
     var enabled;
@@ -810,9 +811,9 @@ class UserEdit extends Component<Props & ConnectProps & WithMediaQuery & WithSty
       controlDisabled = false;
       enabled = user.emailNotify;
       if (user.emailNotify) {
-        label = 'Enabled';
+        label = this.props.t('enabled');
       } else {
-        label = 'Disabled';
+        label = this.props.t('disabled');
       }
     } else {
       controlDisabled = true;
@@ -854,4 +855,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(withSnackbar(UserEdit))));
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(withSnackbar(withTranslation('app', { withRef: true })(UserEdit)))));

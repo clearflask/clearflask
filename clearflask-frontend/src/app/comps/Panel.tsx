@@ -4,6 +4,7 @@ import { Fade, IconButton, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { useTranslation } from 'react-i18next';
 import { contentScrollApplyStyles, Orientation, Side } from '../../common/ContentScroll';
 import { TourAnchor } from '../../common/tour';
 import DividerCorner from '../utils/DividerCorner';
@@ -90,6 +91,7 @@ export const PanelTitle = (props: {
   };
 } & Omit<Partial<React.ComponentPropsWithoutRef<typeof Typography>>, 'color'>) => {
   const { text, color, ...TypographyProps } = props;
+  const { t } = useTranslation('app');
   const theme = useTheme();
   if (!props.text) return null;
 
@@ -116,7 +118,7 @@ export const PanelTitle = (props: {
       style={{ color: color !== undefined ? color : theme.palette.text.secondary }}
       {...TypographyProps}
     >
-      {text}
+      {t(text as any)}
       {iconAction}
     </Typography>
   );

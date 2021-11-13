@@ -10,6 +10,9 @@ if (!!window['parentDomain'] && window['parentDomain'] !== 'clearflask.com') {
   __webpack_require__.p = '/';
 }
 
+// Initialize i18n before any components are rendered
+require('./i18n-csr').getI18n();
+
 // Load the client-side rendered entrypoint
 require('./index-csr');
 

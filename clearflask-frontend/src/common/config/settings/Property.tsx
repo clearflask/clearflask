@@ -6,10 +6,12 @@ import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { Server } from '../../../api/server';
 import { DemoUpdateDelay } from '../../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
+import LanguageKeySelect from '../../../LanguageKeySelect';
 import { importFailed, importSuccess } from '../../../Main';
 import DynamicMuiIcon from '../../icon/DynamicMuiIcon';
 import MyColorPicker from '../../MyColorPicker';
@@ -23,6 +25,8 @@ import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
 
 const EmojiPicker = loadable(() => import(/* webpackChunkName: "EmojiPicker", webpackPreload: true */'../../EmojiPicker').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
+
+export const PropertyInputMinWidth = 224;
 
 interface Props {
   key: string;
@@ -49,8 +53,7 @@ interface Props {
 interface State {
   value?: any;
 }
-export default class Property extends Component<Props, State> {
-  static inputMinWidth = 224;
+class Property extends Component<Props & WithTranslation<'app'>, State> {
   readonly colorRef = React.createRef<HTMLDivElement>();
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   unsubscribe?: () => void;
@@ -85,7 +88,7 @@ export default class Property extends Component<Props, State> {
     const prop = this.props.prop;
     const description = this.props.overrideDescription !== undefined ? this.props.overrideDescription : prop.description;
     const name = this.props.overrideName !== undefined ? this.props.overrideName : prop.name || prop.pathStr;
-    const inputMinWidth = this.props.inputMinWidth !== undefined ? this.props.inputMinWidth : Property.inputMinWidth;
+    const inputMinWidth = this.props.inputMinWidth !== undefined ? this.props.inputMinWidth : PropertyInputMinWidth;
     var marginTop = this.props.marginTop !== undefined ? this.props.marginTop : 30;
     var propertySetter;
     var shrink = (this.state.value !== undefined && this.state.value !== '') ? true : undefined;
@@ -163,6 +166,10 @@ export default class Property extends Component<Props, State> {
         }
         const TextFieldCmpt = prop.subType === ConfigEditor.PropSubType.Rich
           ? RichEditor : TextField;
+        const translatedValue = prop.subType === ConfigEditor.PropSubType.I18n
+          && this.props.i18n.exists(this.state.value)
+          && this.props.t(this.state.value)
+          || undefined;
         propertySetter = (
           <>
             <TextFieldCmpt
@@ -171,7 +178,7 @@ export default class Property extends Component<Props, State> {
               id={prop.pathStr}
               label={!this.props.bare && name}
               {...({ iAgreeInputIsSanitized: true })}
-              value={this.state.value || ''}
+              value={translatedValue || this.state.value || ''}
               onChange={e => this.propSet(e.target.value as never)}
               error={!!prop.errorMsg}
               placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
@@ -206,7 +213,15 @@ export default class Property extends Component<Props, State> {
                   <InputAdornment position='end'>
                     <DynamicMuiIcon name={this.state.value || ''} />
                   </InputAdornment>
-                ) : undefined),
+                ) : (prop.subType === ConfigEditor.PropSubType.I18n ? (
+                  <InputAdornment position='end'>
+                    <LanguageKeySelect
+                      ns='app'
+                      value={this.state.value}
+                      setValue={value => this.propSet(value)}
+                    />
+                  </InputAdornment>
+                ) : undefined)),
               }}
               FormHelperTextProps={{
                 style: {
@@ -573,3 +588,5 @@ export default class Property extends Component<Props, State> {
     return propertySetter;
   }
 }
+
+export default withTranslation('app', { withRef: true })(Property);

@@ -93,7 +93,7 @@ export async function renderExplore(this: Dashboard, context: DashboardPageConte
       header: {
         title: { title: 'Explore' },
         action: {
-          label: 'Create',
+          label: this.props.t('create'),
           icon: CreateIcon,
           onClick: () => this.pageClicked('post'),
         },

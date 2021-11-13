@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../../api/admin";
+import { T } from "../../../i18n";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
@@ -103,13 +104,13 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
     const categoryId = ChangelogCategoryIdPrefix + randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId,
-      name: 'Changelog',
+      name: T<'app'>('changelog'),
       userCreatable: false,
       subscription: {
         hellobar: {
-          title: 'Follow us',
-          message: 'If you are interested in hearing about new features in our product',
-          button: 'Get notified',
+          title: T<'app'>('follow-us'),
+          message: T<'app'>('if-interested-hearing-new-features'),
+          button: T<'app'>('get-notified'),
         }
       },
       workflow: { statuses: [] },
@@ -128,12 +129,12 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
     const changelogPageId = ChangelogPageIdPrefix + randomUuid();
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: changelogPageId,
-      name: 'Changelog',
+      name: T<'app'>('changelog'),
       slug: 'changelog',
       icon: 'ChangeHistory',
       panels: [],
       board: undefined,
-      title: 'Changes we made',
+      title: T<'app'>('changes-we-made'),
       explorer: {
         allowCreate: undefined,
         display: Admin.PostDisplayToJSON({
@@ -169,7 +170,7 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
     if (!existsInMenu) {
       const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
       (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-        menuId: randomUuid(), name: 'Changelog', pageIds: [changelog.pageAndIndex.page.pageId],
+        menuId: randomUuid(), pageIds: [changelog.pageAndIndex.page.pageId],
       }));
     }
   }

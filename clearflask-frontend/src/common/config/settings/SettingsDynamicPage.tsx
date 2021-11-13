@@ -3,9 +3,11 @@
 import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { Server } from '../../../api/server';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
+import setTitle from '../../util/titleUtil';
 import * as ConfigEditor from '../configEditor';
 import CreditPreview from './injects/CreditPreview';
 import WorkflowPreview from './injects/WorkflowPreview';
@@ -25,7 +27,7 @@ interface Props {
 interface ConnectProps {
   accountBasePlanId?: string;
 }
-class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class SettingsDynamicPage extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>> {
   unsubscribePage?: () => void;
   unsubscribeUsedSettings?: () => void;
   cachedUsedAdvancedSettings?: boolean;
@@ -43,6 +45,9 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<ty
   }
 
   render() {
+    const translatedDynamicName = this.props.t(this.props.page.getDynamicName() as any);
+    setTitle(translatedDynamicName);
+
     const creditPreview = this.props.page.pathStr === 'users.credits'
       && (<CreditPreview editor={this.props.editor} />);
     var workflowPreview;
@@ -61,7 +66,7 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithStyles<ty
 
     return (
       <div>
-        <Typography variant='h4' component='h1'>{this.props.page.getDynamicName()}</Typography>
+        <Typography variant='h4' component='h1'>{translatedDynamicName}</Typography>
         <Typography variant='body1' component='p'>{this.props.page.description}</Typography>
         <PresetWidget page={this.props.page} editor={this.props.editor} />
         {creditPreview}
@@ -97,4 +102,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   return {
     accountBasePlanId: state.account.account.account?.basePlanId,
   };
-})(withStyles(styles, { withTheme: true })(SettingsDynamicPage));
+})(withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(SettingsDynamicPage)));
