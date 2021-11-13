@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../../api/admin";
+import { T } from "../../../i18n";
 import stringToSlug from "../../util/slugger";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
@@ -63,17 +64,17 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
       entryStatus: statusIdBacklog,
       statuses: [
         // Alternative names: Gathering Feedback, Maturing, Listening, Ideation, Growing, Finalizing, Seeking
-        { name: 'Ideas', nextStatusIds: [statusIdLater, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Later', nextStatusIds: [statusIdNext, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Next', nextStatusIds: [statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Now', nextStatusIds: [statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdCompleted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
-        { name: 'Cancelled', nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdCancelled, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('ideas'), nextStatusIds: [statusIdLater, statusIdCancelled], color: this.workflowColorNew, statusId: statusIdBacklog, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('later'), nextStatusIds: [statusIdNext, statusIdCancelled], color: this.workflowColorNeutralest, statusId: statusIdLater, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('next'), nextStatusIds: [statusIdNow, statusIdCancelled], color: this.workflowColorNeutraler, statusId: statusIdNext, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('now'), nextStatusIds: [statusIdCancelled, statusIdCompleted], color: this.workflowColorNeutral, statusId: statusIdNow, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('completed'), nextStatusIds: [], color: this.workflowColorComplete, statusId: statusIdCompleted, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
+        { name: T<'app'>('cancelled'), nextStatusIds: [], color: this.workflowColorFail, statusId: statusIdCancelled, disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false },
       ],
     });
 
     categoriesProp.insert().setRaw(Admin.CategoryToJSON({
-      categoryId, name: 'Task',
+      categoryId, name: T<'app'>('task'),
       userCreatable: false,
       workflow,
       support: {
@@ -95,12 +96,12 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
   if (!roadmap.pageAndIndex) {
     const page: PageWithBoard = {
       pageId: RoadmapPageIdPrefix + randomUuid(),
-      name: 'Roadmap',
+      name: T<'app'>('roadmap'),
       slug: stringToSlug('roadmap'),
       icon: 'Roadmap',
       panels: [],
       board: Admin.PageBoardToJSON({
-        title: "Here's our plan",
+        title: T<'app'>('heres-our-plan'),
         panels: roadmap.categoryAndIndex.category.workflow.statuses
           .filter(s => !s.statusId.startsWith(RoadmapStatusClosedPrefix)
             && !s.statusId.startsWith(RoadmapStatusCompletedPrefix)

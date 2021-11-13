@@ -113,7 +113,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
       header: {
         title: { title: 'Changelog' },
         action: {
-          label: 'Create',
+          label: this.props.t('create'),
           icon: CreateIcon,
           onClick: () => this.pageClicked('post'),
           tourAnchorProps: {
@@ -136,7 +136,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
                 underline='none'
                 rel='noopener nofollow'
               >
-                Public view
+                {this.props.t('public-view')}
                 &nbsp;
                 <VisibilityIcon fontSize='inherit' />
               </Button>

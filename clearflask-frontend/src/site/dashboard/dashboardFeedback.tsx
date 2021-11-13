@@ -229,7 +229,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
           </Fade>
         ),
         action: {
-          label: 'Create',
+          label: this.props.t('create'),
           onClick: () => this.pageClicked('post'),
           icon: CreateIcon,
           tourAnchorProps: {

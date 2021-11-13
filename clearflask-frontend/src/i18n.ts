@@ -3,7 +3,7 @@
 /// <reference path="./@types/transform-media-imports.d.ts"/>
 import i18n, { InitOptions, Resource } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
-import { initReactI18next } from 'react-i18next';
+import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
@@ -28,8 +28,11 @@ export const supportedLanguages: Array<SupportedLanguage>
    */
   = [
     { code: 'en', img: FlagEn, label: 'English' },
-    { code: 'mn', img: FlagMn, label: 'Монгол' },
-    { code: 'sk', img: FlagSk, label: 'Slovenčina' },
+    ...(isProd() ? [] : [
+      { code: 'mn', img: FlagMn, label: 'Монгол' },
+      { code: 'sk', img: FlagSk, label: 'Slovenčina' },
+      { code: 'cimode', img: FlagAdd, label: 'No translation' },
+    ]),
     { code: 'lol', img: FlagAdd, label: 'Help us translate', isContribute: true },
   ];
 export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code));
@@ -76,3 +79,6 @@ export const getI18n = (
     });
   return i18n;
 };
+
+// For type-checking standalone strings without the use of t function
+export const T = <N extends Namespace>(key: TFuncKey<N>): string => key;

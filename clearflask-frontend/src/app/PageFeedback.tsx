@@ -5,10 +5,12 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExpandDownIcon from '@material-ui/icons/ExpandMore';
 import classNames from 'classnames';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import SubmitButton from '../common/SubmitButton';
+import { T } from '../i18n';
 import LogIn from './comps/LogIn';
 import { Direction, PanelTitle } from './comps/Panel';
 import PanelPost from './comps/PanelPost';
@@ -96,6 +98,7 @@ const PageFeedback = (props: {
   pageFeedback: Client.PageFeedback;
 }) => {
   const classes = useStyles();
+  const { t } = useTranslation('app');
   const loggedIn = useSelector<ReduxState, boolean>(state => !!state.users.loggedIn.user?.userId, shallowEqual);
   const [onLogIn, setOnLogIn] = useState<((userId: string) => void) | undefined>();
   const [createdPostId, setCreatedPostId] = useState<string | undefined>();
@@ -117,7 +120,7 @@ const PageFeedback = (props: {
     <div className={classNames(classes.container, props.className)}>
       <Collapse in={!createdPostId}>
         <div className={classes.feedbackForm}>
-          <PanelTitle text='How can we improve?' />
+          <PanelTitle text={T<'app'>('how-can-we-improve')} />
           <PostCreateForm
             server={props.server}
             type='large'
@@ -125,9 +128,9 @@ const PageFeedback = (props: {
             searchSimilar={text => setSimilarText(text)}
             adminControlsDefaultVisibility='none'
             logInAndGetUserId={() => new Promise<string>(resolve => setOnLogIn(() => resolve))}
-            unauthenticatedSubmitButtonTitle='Next'
-            labelTitle={props.pageFeedback.labelTitle || 'Idea'}
-            labelDescription={props.pageFeedback.labelDescription || 'Describe your idea (optional)'}
+            unauthenticatedSubmitButtonTitle={t('next')}
+            labelTitle={t(props.pageFeedback.labelTitle as any || 'idea')}
+            labelDescription={t(props.pageFeedback.labelDescription as any || 'describe-your-idea-optional')}
             externalSubmit={onSubmit => setFormSubmit(() => onSubmit)}
           />
           <Collapse in={!createdPostId && !loggedIn} className={classes.logInContainer}>
@@ -136,10 +139,10 @@ const PageFeedback = (props: {
               inline
               minimalistic
               actionTitle={(
-                <PanelTitle variant='caption' text="We'll send you updates here" className={classes.logInTitle} />
+                <PanelTitle variant='caption' text={t('well-send-you-updates-here')} className={classes.logInTitle} />
               )}
-              guestLabelOverride='No follow-up'
-              actionSubmitTitle='Submit'
+              guestLabelOverride={t('no-follow-up')}
+              actionSubmitTitle={t('submit')}
               server={props.server}
               open={true}
               onLoggedInAndClose={userId => {
@@ -174,7 +177,7 @@ const PageFeedback = (props: {
               }
             }}
           >
-            {props.pageFeedback.labelSubmit || 'Post Idea'}
+            {t(props.pageFeedback.labelSubmit as any || 'post-idea')}
           </SubmitButton>
         </div>
       </Collapse>
@@ -193,8 +196,8 @@ const PageFeedback = (props: {
       {!!similarText && !!props.pageFeedback.related && (
         <Collapse in={!!createdPostId && !!similarCount && !relatedClosed}>
           <div className={classes.related}>
-            <PanelTitle text={props.pageFeedback.related.panel.title || (
-              similarCount > 1 ? 'Are any of these related?' : 'Is this related?')} />
+            <PanelTitle text={t(props.pageFeedback.related.panel.title as any || (
+              similarCount > 1 ? 'are-any-of-these-related' : 'is-this-related'))} />
             <PanelPost
               direction={Direction.Vertical}
               panel={props.pageFeedback.related.panel}
@@ -227,7 +230,7 @@ const PageFeedback = (props: {
                         setRelatedIsSubmittingPostId(undefined)
                       }
                     }}
-                  >Yes</SubmitButton>
+                  >{t('yes')}</SubmitButton>
                   {postNode}
                 </div>
               )}
@@ -245,7 +248,7 @@ const PageFeedback = (props: {
         <Fade in={hasAnyDebate || hasAnyDebate2}>
           <div className={classes.debate}>
             <Divider className={classes.debateDivider} />
-            <PanelTitle text={props.pageFeedback.debate.panel.title || 'See what others are saying'} />
+            <PanelTitle text={t(props.pageFeedback.debate.panel.title as any || 'see-what-others-are-saying')} />
             <Collapse in={!isDebateOpen}>
               <IconButton onClick={() => setDebateOpen(true)}>
                 <ExpandDownIcon fontSize='inherit' className={classes.debateMoreIcon} />

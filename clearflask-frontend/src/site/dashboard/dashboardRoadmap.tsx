@@ -254,12 +254,12 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
       name: 'roadmap',
       header: {
         title: {
-          title: 'Roadmap',
+          title: this.props.t('roadmap'),
           help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
             + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
         },
         action: {
-          label: 'Create',
+          label: this.props.t('create'),
           icon: CreateIcon,
           onClick: () => this.pageClicked('post'),
         },
@@ -279,7 +279,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
                 underline='none'
                 rel='noopener nofollow'
               >
-                Public view
+                {this.props.t('public-view')}
                 &nbsp;
                 <VisibilityIcon fontSize='inherit' />
               </Button>

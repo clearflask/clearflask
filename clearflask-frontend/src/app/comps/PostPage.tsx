@@ -5,6 +5,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import NotifyIcon from '@material-ui/icons/NotificationsActiveRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../../api/client';
@@ -84,7 +85,7 @@ interface State {
   isSubmitting?: boolean;
   logInOpen?: boolean;
 }
-class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMediaQueries<keyof MediaQueries> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class PostPage extends Component<Props & ConnectProps & WithTranslation<'app'> & WithWidthProps & WithMediaQueries<keyof MediaQueries> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
@@ -123,7 +124,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
       subscribeToMe = (
         <>
           {this.props.category.subscription.hellobar.message && (
-            <Typography>{this.props.category.subscription.hellobar.message}</Typography>
+            <Typography>{this.props.t(this.props.category.subscription.hellobar.message as any)}</Typography>
           )}
           <SubmitButton
             className={this.props.classes.subscribeButton}
@@ -147,10 +148,10 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
             }}
             color='primary'
           >
-            {this.props.category.subscription.hellobar.button || 'Follow'}
+            {this.props.t(this.props.category.subscription.hellobar.button || 'follow' as any)}
           </SubmitButton>
           <LogIn
-            actionTitle={this.props.category.subscription.hellobar.title}
+            actionTitle={this.props.t(this.props.category.subscription.hellobar.title as any)}
             server={this.props.server}
             open={this.state.logInOpen}
             onClose={() => this.setState({ logInOpen: false })}
@@ -175,7 +176,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithMed
             <div className={this.props.classes.subscribeTitle}>
               <NotifyIcon fontSize='inherit' />
               &nbsp;&nbsp;
-              {this.props.category.subscription.hellobar.title}
+              {this.props.t(this.props.category.subscription.hellobar.title as any)}
             </div>
           )}
         >
@@ -284,4 +285,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     spaceForOnePanel: `(min-width: ${600 + 250}px)`,
     spaceForTwoPanels: `(min-width: ${600 + 250 + 150}px)`,
   };
-})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withRouter(PostPage)))));
+})(withStyles(styles, { withTheme: true })(withWidth({ initialWidth })(withRouter(withTranslation('app', { withRef: true })(PostPage))))));

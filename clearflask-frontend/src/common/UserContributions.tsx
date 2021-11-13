@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
 import { getSearchKey, Server } from '../api/server';
@@ -16,7 +17,7 @@ interface Props {
   userId: string;
   server: Server;
 }
-class UserContributions extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
+class UserContributions extends React.Component<Props & WithTranslation<'app'> & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     const postsPanel: Client.PagePanelWithHideIfEmpty = {
       search: {
@@ -29,7 +30,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
         descriptionTruncateLines: 2,
         responseTruncateLines: 0,
       },
-      title: 'Posts',
+      title: this.props.t('posts'),
       hideIfEmpty: true,
     };
     const commentSearch: Client.CommentSearch = {
@@ -46,7 +47,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
         <PanelComment
           className={this.props.sectionClassName}
           key={getSearchKey(commentSearch)}
-          title='Comments'
+          title={this.props.t('comments')}
           server={this.props.server}
           search={commentSearch}
           direction={Direction.Horizontal}
@@ -58,4 +59,4 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(UserContributions));
+export default withStyles(styles, { withTheme: true })(withRouter(withTranslation('app', { withRef: true })(UserContributions)));

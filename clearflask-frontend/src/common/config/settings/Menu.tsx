@@ -6,6 +6,7 @@ import List, { ListProps } from '@material-ui/core/List';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import ExpandIcon from '../../icon/ExpandIcon';
 import * as ConfigEditor from '../configEditor';
@@ -188,7 +189,7 @@ interface PropsPage {
 interface StatePage {
   expanded?: boolean;
 }
-class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof styles, true>, StatePage> {
+class MenuPageWithoutStyle extends Component<PropsPage & WithTranslation<'app'> & WithStyles<typeof styles, true>, StatePage> {
   state: StatePage = {};
   unsubscribe?: () => void;
 
@@ -250,7 +251,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
                     expanded={expanded}
                   />
                 )}
-                {this.props.overrideName !== undefined ? this.props.overrideName : this.props.page.getDynamicName()}
+                {this.props.overrideName !== undefined ? this.props.overrideName : this.props.t(this.props.page.getDynamicName() as any)}
               </span>
               {this.props.hasUnsavedChanges && (
                 <Badge
@@ -317,7 +318,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
     return true;
   }
 }
-const MenuPage = withStyles(styles, { withTheme: true })(MenuPageWithoutStyle);
+const MenuPage = withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(MenuPageWithoutStyle));
 
 interface PropsPageGroup {
   key: string;

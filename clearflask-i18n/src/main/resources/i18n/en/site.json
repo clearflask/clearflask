@@ -205,5 +205,6 @@
   "publish": "Publish",
   "discard-changes": "Discard changes",
   "are-you-sure-you-want-to-discard-all-your-configuration-changes": "Are you sure you want to discard all your configuration changes?",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "public-view": "Public view"
 }

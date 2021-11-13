@@ -3,6 +3,7 @@
 import { Breadcrumbs, Link } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { Project } from '../../../api/serverAdmin';
 import * as ConfigEditor from '../configEditor';
 
@@ -19,7 +20,7 @@ interface Props {
   activeSubPath?: ConfigEditor.Path;
   pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
 }
-class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
+class Crumbs extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>> {
   unsubscribe: { [pathStr: string]: (() => void) } = {};
 
   subscribe(item: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property) {
@@ -43,7 +44,7 @@ class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
         if (item.type !== ConfigEditor.PageType) continue;
         this.subscribe(item);
         const name = (i === 0 && this.props.activeProjectSlugName)
-          ? this.props.activeProjectSlugName : item.getDynamicName();
+          ? this.props.activeProjectSlugName : this.props.t(item.getDynamicName() as any);
         crumbs.push(this.createCrumb(name, this.props.activeProjectSlug, item.path));
       }
     }
@@ -69,4 +70,4 @@ class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Crumbs)
+export default withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(Crumbs))

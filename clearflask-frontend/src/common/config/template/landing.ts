@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Admin from "../../../api/admin";
+import { T } from "../../../i18n";
 import randomUuid from "../../util/uuid";
 import * as ConfigEditor from "../configEditor";
 import Templater from "../configTemplater";
@@ -59,8 +60,8 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
   if (!landing) {
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert(0).setRaw(Admin.PageToJSON({
       pageId: randomUuid(),
-      name: 'Welcome',
-      title: 'How can we help?',
+      name: T<'app'>('welcome'),
+      title: T<'app'>('how-can-we-help'),
       slug: '',
       panels: [],
       landing: {
@@ -78,8 +79,8 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     && (!onlyPageIds || onlyPageIds.has(feedback.pageAndIndex.page.pageId))
     && !landing.pageAndIndex.page.landing.links.some(l => l.linkToPageId === feedback?.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: 'Feedback',
-      description: 'How can we improve our product?',
+      title: T<'app'>('feedback'),
+      description: T<'app'>('how-can-we-improve-our-product'),
       linkToPageId: feedback.pageAndIndex.page.pageId,
     }));
   }
@@ -89,8 +90,8 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     && (!onlyPageIds || onlyPageIds.has(roadmap.pageAndIndex.page.pageId))
     && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === roadmap.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: 'Roadmap',
-      description: "See what we're working on next.",
+      title: T<'app'>('roadmap'),
+      description: T<'app'>('see-what-were-working-on-next'),
       linkToPageId: roadmap?.pageAndIndex.page.pageId,
     }));
   }
@@ -100,8 +101,8 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     && (!onlyPageIds || onlyPageIds.has(changelog.pageAndIndex.page.pageId))
     && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === changelog.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: 'Changelog',
-      description: 'Check out our recent updates.',
+      title: T<'app'>('changelog'),
+      description: T<'app'>('check-out-our-recent-updates'),
       linkToPageId: changelog.pageAndIndex.page.pageId,
     }));
   }

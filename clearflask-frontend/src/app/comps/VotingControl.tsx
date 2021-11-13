@@ -9,6 +9,7 @@ import PositiveIcon from '@material-ui/icons/FavoriteBorder';
 import NegativeSelectedIcon from '@material-ui/icons/ThumbDown';
 import NegativeIcon from '@material-ui/icons/ThumbDownOutlined';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import * as Client from '../../api/client';
 import MyButton from './MyButton';
 
@@ -59,7 +60,7 @@ interface Props {
   onDownvote?: () => void;
 }
 
-class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
+class VotingControl extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>> {
 
   render() {
     if (!this.props.votingAllowed || this.props.onlyShowCount || !this.props.onUpvote) {
@@ -137,7 +138,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         Icon={upvoted ? PositiveSelectedIcon : PositiveIcon}
         onClick={this.props.onUpvote}
       >
-        {this.props.iWantThis?.positiveLabel || 'Want'}
+        {this.props.t(this.props.iWantThis?.positiveLabel as any || 'want')}
       </MyButton>
     );
 
@@ -157,11 +158,11 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
           Icon={downvoted ? NegativeSelectedIcon : NegativeIcon}
           onClick={this.props.onDownvote}
         >
-          {this.props.iWantThis?.negativeLabel || 'Hate'}
+          {this.props.t(this.props.iWantThis?.negativeLabel as any || 'hate')}
         </MyButton>
       </>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(VotingControl);
+export default withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(VotingControl));
