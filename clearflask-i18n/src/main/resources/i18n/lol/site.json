@@ -205,5 +205,6 @@
   "publish": "crwdns955:0crwdne955:0",
   "discard-changes": "crwdns957:0crwdne957:0",
   "are-you-sure-you-want-to-discard-all-your-configuration-changes": "crwdns959:0crwdne959:0",
-  "cancel": "crwdns961:0crwdne961:0"
+  "cancel": "crwdns961:0crwdne961:0",
+  "public-view": "crwdns1143:0crwdne1143:0"
 }
