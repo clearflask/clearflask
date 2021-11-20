@@ -14,9 +14,14 @@ export const defaultLanguage = 'en';
 export type SupportedLanguage = {
   code: string;
   label: string;
+  perc?: number;
   img: Img;
   isContribute?: boolean;
 };
+/**
+ * Indicates how many texts on the whole site are translatable.
+ */
+export const percOfSiteTextI18n = 0.8;
 export const supportedLanguages: Array<SupportedLanguage>
   /**
    * IMPORTANT:
@@ -27,10 +32,10 @@ export const supportedLanguages: Array<SupportedLanguage>
    * - Find language label in https://en.wikipedia.org/wiki/List_of_language_names
    */
   = [
-    { code: 'en', img: FlagEn, label: 'English' },
+    { code: 'en', img: FlagEn, label: 'English', perc: 1 },
+    { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 1 },
+    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0 },
     ...(isProd() ? [] : [
-      { code: 'mn', img: FlagMn, label: 'Монгол' },
-      { code: 'sk', img: FlagSk, label: 'Slovenčina' },
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
     ]),
     { code: 'lol', img: FlagAdd, label: 'Help us translate', isContribute: true },

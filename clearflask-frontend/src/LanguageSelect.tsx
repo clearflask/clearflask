@@ -9,7 +9,7 @@ import ClosablePopper from './common/ClosablePopper';
 import { contentScrollApplyStyles, Orientation } from './common/ContentScroll';
 import ImgIso from './common/ImgIso';
 import windowIso from './common/windowIso';
-import { defaultLanguage, supportedLanguages } from './i18n';
+import { defaultLanguage, percOfSiteTextI18n, supportedLanguages } from './i18n';
 
 const styles = (theme: Theme) => createStyles({
   labelOptionContainer: {
@@ -17,6 +17,17 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     margin: theme.spacing(1, 2),
     cursor: 'pointer',
+  },
+  flexGrow: {
+    flexGrow: 1,
+  },
+  langLabel: {
+    marginLeft: theme.spacing(2),
+    fontWeight: 'bold',
+  },
+  langPerc: {
+    marginLeft: theme.spacing(2),
+    fontSize: '0.8em',
   },
   flagFade: {
     '&:not(:hover)': {
@@ -76,8 +87,13 @@ export const LanguageSelect = (props: {
                 >
                   <div className={classes.labelOptionContainer}>
                     <ImgIso img={lang.img} minWidth={30} minHeight={30} />
-                    &nbsp;&nbsp;&nbsp;
-                    {lang.label}
+                    <div className={classes.langLabel}>{lang.label}</div>
+                    {lang.perc !== undefined && (
+                      <>
+                        <div className={classes.flexGrow} />
+                        <div className={classes.langPerc}>{lang.perc * (lang.code === 'en' ? 1 : percOfSiteTextI18n) * 100}&#37;</div>
+                      </>
+                    )}
                   </div>
                 </TableRow>
               ))}
