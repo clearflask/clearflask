@@ -152,7 +152,6 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
             statusColorGivenCategories={[categoryId]}
             PostListProps={{
               search: {
-                sortBy: Admin.IdeaSearchAdminSortByEnum.New,
                 filterCategoryIds: [categoryId],
                 limit: 3,
                 similarToIdeaId: this.state.feedbackPreview.id,
