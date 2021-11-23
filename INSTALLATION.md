@@ -22,6 +22,8 @@ docker-compose --profile with-deps up
 
 Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
 
+If you wish to host it remotely other than `localhost`, read the [DNS section](#dns).
+
 Otherwise read on to deploy a long-term installation.
 
 ## Deploy dependencies
@@ -125,6 +127,33 @@ ClearFlask consists of two components:
 2. Carefully read and modify `server/config-selfhost.cfg`.
 3. Carefully read and modify `connect/connect.config.json`.
 
+#### DNS
+
+By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com` or `192.168.1.123`, set the following properties:
+
+- `connect.config.json:parentDomain`: `yoursite.com`
+- `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
+
+#### Certificate management
+
+By default, it is assumed you are managing TLS certificates behind a reverse proxy. If you wish to redirect all `http` requests to `https`, set the following config:
+
+- `connect.config.json:disableAutoFetchCertificate`: `true`
+- `connect.config.json:forceRedirectHttpToHttps`: `true`
+
+If you wish to have certificates fetched and renewed for you automagically using Let's Encrypt, ensure your
+DNS is correctly pointing to your server, it is publicly accessible, and set the following config parameters:
+
+- `connect.config.json:disableAutoFetchCertificate`: `false`
+- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
+
+Once you load your site for the first time, a Certificate is auto-magically fetched for you.
+
+##### Self-managed reverse-proxy
+
+If instead you wish to manage certificates yourself using a reverse proxy, set the following properties to redirect to
+https and trust the last reverse proxy in the list:
+
 #### Dashboard account
 
 For you to manage the dashboard, you need to whitelist an email to be able to create a super-admin account:
@@ -134,28 +163,6 @@ For you to manage the dashboard, you need to whitelist an email to be able to cr
 After you sign-up, disable further signups using:
 
 `config-selfhost.cfg:com.smotana.clearflask.web.resource.AccountResource$Config.signupEnabled`: `false`
-
-#### DNS and certificates
-
-##### Auto-magic certificate management
-
-By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com`, ensure your
-DNS is correctly pointing to this server, and set these config parameters:
-
-- `connect.config.json:parentDomain`: `yoursite.com`
-- `connect.config.json:disableAutoFetchCertificate`: `false`
-- `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
-- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
-
-Once you load your site for the first time, a Certificate is auto-magically fetched for you and auto-renewed as needed.
-
-##### Self-managed reverse-proxy
-
-If instead you wish to manage certificates yourself using a reverse proxy, set the following properties to redirect to
-https and trust the last reverse proxy in the list:
-
-- `connect.config.json:disableAutoFetchCertificate`: `true`
-- `connect.config.json:forceRedirectHttpToHttps`: `true`
 
 ### Run
 
