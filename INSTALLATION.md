@@ -129,25 +129,42 @@ ClearFlask consists of two components:
 
 #### DNS
 
-By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com` or `192.168.1.123`, set the following properties:
+By default, everything is assumed to be on `localhost`. If you wish to host your portal on `yoursite.com`
+or `192.168.1.123`, set the following properties:
 
 - `connect.config.json:parentDomain`: `yoursite.com`
 - `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.domain`: `yoursite.com`
 
 #### Certificate management
 
-By default, it is assumed you are managing TLS certificates behind a reverse proxy. If you wish to redirect all `http` requests to `https`, set the following config:
+#### Automagic using Let's Encrypt
+
+If you wish to have certificates fetched and renewed for you automagically using Let's Encrypt, ensure your DNS is
+correctly pointing to your server, it is publicly accessible, and set the following config parameters:
+
+- `connect.config.json:disableAutoFetchCertificate`: `false`
+- `connect.config.json:forceRedirectHttpToHttps`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
+- `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
+
+Once you load your site for the first time, a Certificate is auto-magically fetched for you.
+
+#### Self-managed behind reverse proxy
+
+If you are managing TLS certificates behind a reverse proxy, redirect all `http` requests to `https`, set the following
+config:
 
 - `connect.config.json:disableAutoFetchCertificate`: `true`
 - `connect.config.json:forceRedirectHttpToHttps`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
 
-If you wish to have certificates fetched and renewed for you automagically using Let's Encrypt, ensure your
-DNS is correctly pointing to your server, it is publicly accessible, and set the following config parameters:
+#### No certificates
 
-- `connect.config.json:disableAutoFetchCertificate`: `false`
-- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
+Although discouraged, you can run ClearFlask over HTTP only. Ensure these settings are set:
 
-Once you load your site for the first time, a Certificate is auto-magically fetched for you.
+- `connect.config.json:disableAutoFetchCertificate`: `true`
+- `connect.config.json:forceRedirectHttpToHttps`: `false`
+- `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `false`
 
 ##### Self-managed reverse-proxy
 
