@@ -52,7 +52,7 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
 
   componentDidMount() {
     if (!this.state.results) {
-      this.props.server.dispatchAdmin({ debounce: true })
+      this.props.server.dispatchAdmin()
         .then(this.props.search)
         .then(results => this.setState({ results }));
     }
