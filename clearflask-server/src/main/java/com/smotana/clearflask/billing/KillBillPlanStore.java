@@ -74,7 +74,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited projects", TERMS_PROJECTS),
                     new PlanPerk("Roadmap", null),
-                    new PlanPerk("Changelog", null)),
+                    new PlanPerk("Announcements", null)),
                     null, null))
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("standard-monthly", pp -> new Plan("standard-monthly", "Standard",
@@ -87,7 +87,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited projects", TERMS_PROJECTS),
                     new PlanPerk("Roadmap", null),
-                    new PlanPerk("Changelog", null)),
+                    new PlanPerk("Announcements", null)),
                     null, null))
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(

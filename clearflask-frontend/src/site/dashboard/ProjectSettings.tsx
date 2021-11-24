@@ -491,7 +491,7 @@ const permissions: Array<[number, number, number, number, string]> = [
   [0, 0, 1, 1, 'Dashboard access'],
   [0, 0, 1, 1, 'Address feedback'],
   [0, 0, 1, 1, 'Prioritize roadmap'],
-  [0, 0, 1, 1, 'Manage changelog'],
+  [0, 0, 1, 1, 'Manage announcements'],
   [0, 0, 1, 1, 'Project settings'],
   [0, 0, 0, 1, 'API access'],
   [0, 0, 0, 1, 'Delete project'],
@@ -2928,7 +2928,7 @@ export const ProjectSettingsChangelog = (props: {
   editor: ConfigEditor.Editor;
 }) => {
   return (
-    <ProjectSettingsBase title='Changelog'>
+    <ProjectSettingsBase title='Announcements'>
       <TemplateWrapper<ChangelogInstance | undefined>
         key='changelog'
         editor={props.editor}

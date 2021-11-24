@@ -70,7 +70,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               { type: 'item', slug: 'settings/project/landing', name: this.props.t('landing'), offset: 1 },
               { type: 'item', slug: 'settings/project/feedback', name: this.props.t('feedback'), offset: 1 },
               { type: 'item', slug: 'settings/project/roadmap', name: this.props.t('roadmap'), offset: 1 },
-              { type: 'item', slug: 'settings/project/changelog', name: this.props.t('changelog'), offset: 1 },
+              { type: 'item', slug: 'settings/project/changelog', name: this.props.t('announcements'), offset: 1 },
               { type: 'item', slug: 'settings/project/onboard', name: this.props.t('onboard'), offset: 1 },
               { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 },
               { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 },

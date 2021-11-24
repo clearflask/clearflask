@@ -27,7 +27,7 @@ export async function changelogGet(this: Templater): Promise<ChangelogInstance |
   if (potentialCategories.length === 0) {
     potentialCategories = this.editor.getConfig().content.categories
       .map((category, index) => ({ category, index }))
-      .filter(c => c.category.name.match(/Changelog/i));
+      .filter(c => c.category.name.match(/Changelog|Announcements/i));
   }
 
   if (potentialCategories.length === 0) {
@@ -43,8 +43,8 @@ export async function changelogGet(this: Templater): Promise<ChangelogInstance |
     category = potentialCategories[0];
   } else {
     const categoryId = await this._getConfirmation({
-      title: 'Which one is the Changelog category?',
-      description: 'We are having trouble determining which category is used for Changelog. Please select the category to edit it.',
+      title: 'Which one is the Anouncements category?',
+      description: 'We are having trouble determining which category is used for Announcements. Please select the category to edit it.',
       responses: potentialCategories.map(c => ({
         id: c.category.categoryId,
         title: c.category.name,
@@ -79,8 +79,8 @@ export async function changelogGet(this: Templater): Promise<ChangelogInstance |
     changelog.pageAndIndex = potentialPages[0];
   } else if (potentialPages.length > 1) {
     const pageId = await this._getConfirmation({
-      title: 'Which one is a Changelog page?',
-      description: 'We are having trouble determining where your Changelog is located. Please select the page that with your Changelog to edit it.',
+      title: 'Which one is an Announcement page?',
+      description: 'We are having trouble determining where your Announcements are located. Please select the page that with your Announcements to edit it.',
       responses: potentialPages.map(pageAndIndex => ({
         id: pageAndIndex.page.pageId,
         title: pageAndIndex.page.name,
@@ -104,7 +104,7 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
     const categoryId = ChangelogCategoryIdPrefix + randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId,
-      name: T<'app'>('changelog'),
+      name: T<'app'>('announcements'),
       userCreatable: false,
       subscription: {
         hellobar: {
@@ -129,8 +129,8 @@ export async function changelogOn(this: Templater): Promise<ChangelogInstance> {
     const changelogPageId = ChangelogPageIdPrefix + randomUuid();
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: changelogPageId,
-      name: T<'app'>('changelog'),
-      slug: 'changelog',
+      name: T<'app'>('announcements'),
+      slug: 'announcements',
       icon: 'ChangeHistory',
       panels: [],
       board: undefined,

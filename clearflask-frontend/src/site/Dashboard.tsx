@@ -715,7 +715,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     to='/dashboard/changelog'
                     value='changelog'
                     disableRipple
-                    label={this.props.t('changelog')}
+                    label={this.props.t('announcements')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}

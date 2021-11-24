@@ -440,7 +440,7 @@ class PostConnectDialog extends Component<Props & WithWidthProps & WithStyles<ty
           : 'Merge'}
         &nbsp;
         <HelpPopper description={type === 'link'
-          ? 'Shows a link between two related posts. Typically used for linking related feedback to tasks or completed tasks to a changelog entry.'
+          ? 'Shows a link between two related posts. Typically used for linking related feedback to tasks or completed tasks to an announcement.'
           : 'Merges one post to another including all comments, votes and subscribers. Typically used for merging duplicate or similar posts together.'}
         />
       </div>
