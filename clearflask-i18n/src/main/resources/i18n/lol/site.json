@@ -207,5 +207,9 @@
   "discard-changes": "crwdns957:0crwdne957:0",
   "are-you-sure-you-want-to-discard-all-your-configuration-changes": "crwdns959:0crwdne959:0",
   "cancel": "crwdns961:0crwdne961:0",
-  "public-view": "crwdns1143:0crwdne1143:0"
+  "public-view": "crwdns1143:0crwdne1143:0",
+  "redeem": "crwdns1163:0crwdne1163:0",
+  "redeem-coupon": "crwdns1165:0crwdne1165:0",
+  "coupon-code": "crwdns1167:0crwdne1167:0",
+  "check": "crwdns1169:0crwdne1169:0"
 }
