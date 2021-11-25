@@ -207,5 +207,9 @@
   "discard-changes": "Discard changes",
   "are-you-sure-you-want-to-discard-all-your-configuration-changes": "Are you sure you want to discard all your configuration changes?",
   "cancel": "Cancel",
-  "public-view": "Public view"
+  "public-view": "Public view",
+  "redeem": "Redeem",
+  "redeem-coupon": "Redeem coupon",
+  "coupon-code": "Coupon code",
+  "check": "Check"
 }
