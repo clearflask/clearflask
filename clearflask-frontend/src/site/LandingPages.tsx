@@ -430,7 +430,7 @@ export function Landing() {
         largePoints
         points={[
           t('public-roadmap'),
-          t('changelog'),
+          t('announcements'),
           t('subscribe-to-updates'),
         ]}
         alignItems='center'

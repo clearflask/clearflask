@@ -52,6 +52,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 "unittest@clearflask.com",
                 "password",
                 "growth2-monthly",
+                null,
                 null));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(

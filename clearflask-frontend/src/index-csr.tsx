@@ -9,14 +9,12 @@ import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import { getI18n } from './i18n-csr';
 import Main from './Main';
 
-if (detectEnv() !== Environment.PRODUCTION_SELF_HOST) {
-  Sentry.init({
-    dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
-    integrations: [new Integrations.BrowserTracing()],
-    tracesSampleRate: !isProd() ? 1.0 : 0.1,
-    environment: detectEnv(),
-  });
-}
+Sentry.init({
+  dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
+  integrations: [new Integrations.BrowserTracing()],
+  tracesSampleRate: !isProd() ? 1.0 : 0.1,
+  environment: detectEnv(),
+});
 
 if (detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
   loadableReady(() => {

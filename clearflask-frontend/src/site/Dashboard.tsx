@@ -9,6 +9,7 @@ import EmptyIcon from '@material-ui/icons/BlurOn';
 import CheckIcon from '@material-ui/icons/Check';
 import CodeIcon from '@material-ui/icons/Code';
 import SettingsIcon from '@material-ui/icons/Settings';
+import SuperAccountIcon from '@material-ui/icons/SupervisedUserCircle';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
@@ -48,7 +49,6 @@ import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
-import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
 import { createMutableRef } from '../common/util/refUtil';
@@ -205,9 +205,6 @@ const styles = (theme: Theme) => createStyles({
     },
     ...(tabHoverApplyStyles(theme)),
   },
-  accountSwitcher: {
-    margin: theme.spacing(4, 'auto', 0),
-  },
   unsavedChangesBar: {
     display: 'flex',
     alignItems: 'center',
@@ -291,8 +288,6 @@ interface ConnectProps {
 }
 interface State {
   selectedProjectId?: string;
-  accountSearch?: AdminClient.Account[];
-  accountSearching?: string;
   previewShowOnPage?: string;
   saveIsSubmitting?: boolean;
   saveDiscardDialogOpen?: boolean;
@@ -326,7 +321,6 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
   forcePathListener: ((forcePath: string) => void) | undefined;
-  readonly searchAccounts: (newValue: string) => void;
   lastConfigVer?: string;
   similarPostWasClicked?: {
     originalPostId: string;
@@ -340,23 +334,6 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     super(props);
 
     Dashboard.getStripePromise();
-
-    const searchAccountsDebounced = debounce(
-      (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
-        accountSearchSuperAdmin: {
-          searchText: newValue,
-        },
-      })).then(result => this.setState({
-        accountSearch: result.results,
-        ...(this.state.accountSearching === newValue ? { accountSearching: undefined } : {}),
-      })).catch(e => {
-        if (this.state.accountSearching === newValue) this.setState({ accountSearching: undefined });
-      })
-      , SearchTypeDebounceTime);
-    this.searchAccounts = newValue => {
-      this.setState({ accountSearching: newValue });
-      searchAccountsDebounced(newValue);
-    }
   }
 
   componentDidMount() {
@@ -715,7 +692,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     to='/dashboard/changelog'
                     value='changelog'
                     disableRipple
-                    label={this.props.t('changelog')}
+                    label={this.props.t('announcements')}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
@@ -764,6 +741,9 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
+                      ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [
+                        { type: 'button' as 'button', link: '/dashboard/settings/super/loginas', title: 'Super Admin', icon: SuperAccountIcon },
+                      ] : []),
                       {
                         type: 'button', onClick: () => {
                           ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());

@@ -101,7 +101,7 @@ export async function landingOn(this: Templater, onlyPageIds?: Set<string>): Pro
     && (!onlyPageIds || onlyPageIds.has(changelog.pageAndIndex.page.pageId))
     && !landing.pageAndIndex.page.landing?.links.some(l => l.linkToPageId === changelog.pageAndIndex?.page.pageId)) {
     (landingLinksProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.LandingLinkToJSON({
-      title: T<'app'>('changelog'),
+      title: T<'app'>('announcements'),
       description: T<'app'>('check-out-our-recent-updates'),
       linkToPageId: changelog.pageAndIndex.page.pageId,
     }));

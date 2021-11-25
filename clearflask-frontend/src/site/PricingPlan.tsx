@@ -186,18 +186,20 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
 
     var monthlyPrice = this.props.plan.pricing?.basePrice || 0;
     var billed: any = null;
-    switch (this.props.plan.pricing?.period) {
-      case Admin.PlanPricingPeriodEnum.Monthly:
-        // No need to show anything
-        break;
-      case Admin.PlanPricingPeriodEnum.Quarterly:
-        monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 3);
-        billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
-        break;
-      case Admin.PlanPricingPeriodEnum.Yearly:
-        monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 12);
-        billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
-        break;
+    if (this.props.plan.pricing?.basePrice !== 0) {
+      switch (this.props.plan.pricing?.period) {
+        case Admin.PlanPricingPeriodEnum.Monthly:
+          // No need to show anything
+          break;
+        case Admin.PlanPricingPeriodEnum.Quarterly:
+          monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 3);
+          billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+          break;
+        case Admin.PlanPricingPeriodEnum.Yearly:
+          monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 12);
+          billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+          break;
+      }
     }
     if (billed) billed = (
       <Typography component='div' variant='subtitle1'>{billed}</Typography>

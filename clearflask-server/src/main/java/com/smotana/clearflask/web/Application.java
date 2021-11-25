@@ -46,13 +46,11 @@ public class Application extends ResourceConfig {
 
         log.info("Initializing Sentry");
         ServiceInjector.Environment env = injector.getInstance(ServiceInjector.Environment.class);
-        if (!ServiceInjector.Environment.PRODUCTION_SELF_HOST.equals(env)) {
-            Sentry.init(options -> {
-                options.setEnvironment(env.name());
-                options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
-                options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
-            });
-        }
+        Sentry.init(options -> {
+            options.setEnvironment(env.name());
+            options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
+            options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
+        });
 
         log.info("Initializing Application");
         // Register specific resources that are enabled via Guice bindings

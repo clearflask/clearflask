@@ -16,7 +16,8 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
-import com.smotana.clearflask.api.PlanApi;
+import com.smotana.clearflask.api.PlanAdminApi;
+import com.smotana.clearflask.api.PlanSuperAdminApi;
 import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
@@ -31,7 +32,9 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.AvailableRepos;
+import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
 import com.smotana.clearflask.api.model.InvitationResult;
 import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
 import com.smotana.clearflask.api.model.Invoices;
@@ -39,8 +42,11 @@ import com.smotana.clearflask.api.model.LegalResponse;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.api.model.ViewCouponResponse;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
+import com.smotana.clearflask.billing.CouponStore;
+import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
@@ -68,6 +74,7 @@ import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
@@ -79,6 +86,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -91,10 +100,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class AccountResource extends AbstractResource implements AccountAdminApi, AccountSuperAdminApi, PlanApi {
-
-    public AccountResource() {
-    }
+public class AccountResource extends AbstractResource implements AccountAdminApi, AccountSuperAdminApi, PlanAdminApi, PlanSuperAdminApi {
 
     public interface Config {
         @DefaultValue("P30D")
@@ -146,6 +152,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private ProjectStore projectStore;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private CouponStore couponStore;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -279,6 +287,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                                 Optional.empty(),
                                 Optional.of(oauthResult.get().getGuid()),
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getCouponId())),
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
                         created = true;
                     }
@@ -343,10 +352,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public void accountLogoutAdmin() {
-        Optional<String> accountSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
-        Optional<String> superAdminSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt).map(AccountSession::getAccountId);
+        Optional<String> accountSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getSessionId);
+        Optional<String> superAdminSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt).map(AccountSession::getSessionId);
 
-        log.debug("Logout session for accountId {} superAdminAccountId {}",
+        log.debug("Logout session for account {} superAdminAccount {}",
                 accountSessionIdOpt, superAdminSessionIdOpt);
 
         Arrays.stream(request.getCookies())
@@ -358,14 +367,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 });
 
         accountSessionIdOpt.ifPresent(accountStore::revokeSession);
-        accountSessionIdOpt.ifPresent(superAdminSessionId ->
+        accountSessionIdOpt.ifPresent(accountSessionId ->
                 authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME));
 
         if (!accountSessionIdOpt.equals(superAdminSessionIdOpt)) {
             superAdminSessionIdOpt.ifPresent(accountStore::revokeSession);
+            superAdminSessionIdOpt.ifPresent(superAdminSessionId ->
+                    authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME));
         }
-        superAdminSessionIdOpt.ifPresent(superAdminSessionId ->
-                authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME));
     }
 
     @PermitAll
@@ -378,6 +387,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Optional.of(signup.getPassword()),
                 Optional.empty(),
                 Optional.ofNullable(Strings.emptyToNull(signup.getInvitationId())),
+                Optional.ofNullable(Strings.emptyToNull(signup.getCouponId())),
                 Optional.of(signup.getBasePlanId())
         );
 
@@ -390,6 +400,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             Optional<String> passwordOpt,
             Optional<String> guidOpt,
             Optional<String> invitationIdOpt,
+            Optional<String> couponIdOpt,
             Optional<String> preferredPlanIdOpt) {
         if (!config.signupEnabled()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
@@ -403,8 +414,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             throw new ApiException(Response.Status.BAD_REQUEST, "Email not allowed, check configuration of 'superAdminEmailRegex', by default only 'admin@localhost' can sign up.");
         }
 
-        // Pre-accept any invitation
         String accountId = accountStore.genAccountId();
+
+        // Accept coupon
+        Optional<CouponModel> redeemedCouponOpt = Optional.empty();
+        if (couponIdOpt.isPresent()) {
+            redeemedCouponOpt = couponStore.redeem(couponIdOpt.get(), accountId);
+            if (redeemedCouponOpt.isEmpty()) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Coupon is expired, please contact support");
+            }
+        }
+
+        // Accept invitation
         ImmutableSet<String> externalProjectIds = invitationIdOpt
                 .map(invitationId -> projectStore.acceptInvitation(invitationId, accountId))
                 .stream()
@@ -412,17 +433,22 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         boolean isTeammate = !externalProjectIds.isEmpty();
 
         // Find preferred plan, otherwise find a first plan we find
-        String planId = isTeammate
-                ? PlanStore.TEAMMATE_PLAN_ID
-                : preferredPlanIdOpt.flatMap(pId -> planStore.getPublicPlans().getPlans().stream()
-                        .filter(p -> p.getBasePlanId().equals(pId))
-                        .filter(p -> p.getComingSoon() != Boolean.TRUE)
-                        .findAny())
-                .orElseGet(() -> planStore.getPublicPlans().getPlans().stream()
-                        .filter(p -> p.getComingSoon() != Boolean.TRUE)
-                        .findFirst()
-                        .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled")))
-                .getBasePlanId();
+        String planId;
+        if (redeemedCouponOpt.isPresent()) {
+            planId = redeemedCouponOpt.get().getBasePlanId();
+        } else if (isTeammate) {
+            planId = PlanStore.TEAMMATE_PLAN_ID;
+        } else {
+            planId = preferredPlanIdOpt.flatMap(pId -> planStore.getPublicPlans().getPlans().stream()
+                            .filter(p -> p.getBasePlanId().equals(pId))
+                            .filter(p -> p.getComingSoon() != Boolean.TRUE)
+                            .findAny())
+                    .orElseGet(() -> planStore.getPublicPlans().getPlans().stream()
+                            .filter(p -> p.getComingSoon() != Boolean.TRUE)
+                            .findFirst()
+                            .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled")))
+                    .getBasePlanId();
+        }
 
         // Create account locally
         Account account = new Account(
@@ -488,7 +514,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 }
             }
             try {
-                planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
+                planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanStore.Action.API_KEY);
             } catch (RequiresUpgradeException ex) {
                 if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                     throw ex;
@@ -552,20 +578,30 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
-
-            Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
-            // Only update account if plan was changed immediately, as oppose to end of term
-            if (newPlanid.equals(subscription.getPlanName())) {
-                account = accountStore.setPlan(account.getAccountId(), newPlanid).getAccount();
-            } else if (!newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
-                if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
-                    log.warn("Plan change to {} doesnt seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
-                            newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
-                }
-            }
+            account = changePlan(account, newPlanid);
         }
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 10)
+    @Override
+    public ViewCouponResponse accountViewCouponAdmin(String couponId) {
+        Optional<CouponModel> couponOpt = couponStore.check(couponId);
+
+        boolean isRedeemedByYou = false;
+        if (couponOpt.isPresent() && !Strings.isNullOrEmpty(couponOpt.get().getRedeemedAccountId())) {
+            Optional<String> accountIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
+            isRedeemedByYou = accountIdOpt.isPresent() && accountIdOpt.get().equals(couponOpt.get().getRedeemedAccountId());
+        }
+
+        Optional<Plan> planOpt = couponOpt
+                .filter(coupon -> Strings.isNullOrEmpty(coupon.getRedeemedAccountId()))
+                .flatMap(coupon -> planStore.getPlan(coupon.getBasePlanId(), Optional.empty()));
+
+        return new ViewCouponResponse(
+                planOpt.orElse(null),
+                isRedeemedByYou);
     }
 
     @PermitAll
@@ -623,6 +659,29 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public StreamingOutput couponGenerateSuperAdmin(CouponGenerateSuperAdmin couponGenerateSuperAdmin) {
+        Plan plan = planStore.getPlan(couponGenerateSuperAdmin.getBasePlanId(), Optional.empty())
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "No plan exists with that ID"));
+
+        String fileName = "coupons-" + plan.getBasePlanId() + "-" + couponGenerateSuperAdmin.getAmount() + "-" + DateTime.now().toString("yyyy-MM-dd-HH-mm-ss") + ".txt";
+        response.setHeader("content-disposition", "attachment; filename=" + fileName);
+
+        return (os) -> {
+            try (PrintWriter pw = new PrintWriter(os)) {
+                couponStore.generate(
+                        plan.getBasePlanId(),
+                        couponGenerateSuperAdmin.getAmount(),
+                        Optional.ofNullable(couponGenerateSuperAdmin.getExpiry()),
+                        batch -> {
+                            batch.forEach(pw::println);
+                            pw.flush();
+                        });
+            }
+        };
+    }
+
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
@@ -669,6 +728,31 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         account.getExternalProjectIds().forEach(projectId -> projectStore.removeAdmin(projectId, account.getAccountId()));
         accountStore.deleteAccount(account.getAccountId());
         billing.closeAccount(account.getAccountId());
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 10, challengeAfter = 10)
+    @Override
+    public AccountAdmin accountAcceptCouponAdmin(String couponId) {
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
+
+        if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(account.getStatus())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Account is not in good standing, please contact support.");
+        }
+
+        CouponModel coupon = couponStore.redeem(couponId, account.getAccountId())
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Coupon expired or invalid"));
+
+        String newPlanid = coupon.getBasePlanId();
+        Plan newPlan = planStore.getPlan(coupon.getBasePlanId(), Optional.empty())
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Coupon plan is not available"));
+
+        account = changePlan(account, newPlanid);
+
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -833,6 +917,28 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public PlansGetResponse plansGet() {
         return planStore.getPublicPlans();
+    }
+
+    @Override
+    public AllPlansGetResponse plansGetSuperAdmin() {
+        return planStore.getAllPlans();
+    }
+
+    private Account changePlan(Account account, String newPlanid) {
+        planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
+
+        Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
+        // Only update account if plan was changed immediately, as oppose to end of term
+        if (newPlanid.equals(subscription.getPlanName())) {
+            account = accountStore.setPlan(account.getAccountId(), newPlanid).getAccount();
+        } else if (!newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
+            if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
+                log.warn("Plan change to {} doesnt seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
+                        newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
+            }
+        }
+
+        return account;
     }
 
     public static Module module() {

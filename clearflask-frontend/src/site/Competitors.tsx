@@ -1268,7 +1268,7 @@ const MajorFeatures = (props: {}) => {
       <p><Typography>For niche use cases and for tools where feedback is part of a larger solution, see the <LinkScroll anchorId={'Alternatives'}>Alternatives</LinkScroll>. These include Product Management tools, Customer Relationship Management tools and customer behavior analytics.</Typography></p>
 
       <Typography><span className={classes.emphasize}>Public Roadmap</span>: Show off your product plan and what you're currently working on.</Typography>
-      <Typography><span className={classes.emphasize}>Changelog</span>: Let your users know of recently launched features</Typography>
+      <Typography><span className={classes.emphasize}>Announcements</span>: Let your users know of recently launched features</Typography>
       <Typography><span className={classes.emphasize}>Knowledge base</span>: Product help articles to describe functionality and address frequent issues</Typography>
       <Typography><span className={classes.emphasize}>Forum</span>: Let your user discuss various topics</Typography>
       <Typography><span className={classes.emphasize}>Blog</span>: Share your thoughts on your own blog and let your users subscribe.</Typography>
@@ -1278,7 +1278,7 @@ const MajorFeatures = (props: {}) => {
         headers={[
           { headingId: 'ideas', content: 'Feature voting' },
           { headingId: 'roadmap', content: 'Public Roadmap' },
-          { headingId: 'changelog', content: 'Changelog' },
+          { headingId: 'changelog', content: 'Announcements' },
           { headingId: 'knowledge', content: 'Knowledge base' },
           { headingId: 'forum', content: 'Forum' },
           { headingId: 'blog', content: 'Blog' },
@@ -1785,7 +1785,7 @@ const Customize = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Custom content type</Typography>
       <p><Typography>ClearFlask is built to handle custom content types.
-        There are pre-made templates ready to use for feedback, changelog items, knowledge base, and blog articles.</Typography></p>
+        There are pre-made templates ready to use for feedback, announcements, knowledge base, and blog articles.</Typography></p>
       <p><Typography>You can create your own content types to match your needs such as <span className={classes.emphasize}>Job postings</span>, <span className={classes.emphasize}>Employee feedback</span>, <span className={classes.emphasize}>Q&amp;A</span>.
         Create new pages and customize the menu for a custom experience.</Typography></p>
       <BrandList small platformIds={[PlatformClearFlask]} />

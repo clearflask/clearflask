@@ -101,6 +101,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   account?: Admin.AccountAdmin & {
     planId: string;
     acceptedInvitations: Set<string>;
+    acceptedCoupons: Set<string>;
   } = undefined;
   accountPass?: string = undefined;
   // Mock project database
@@ -148,6 +149,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       featuresTable: FeaturesTable,
     });
   }
+  plansGetSuperAdmin(): Promise<Admin.AllPlansGetResponse> {
+    return this.returnLater({
+      plans: Object.values(AvailablePlans),
+    });
+  }
   legalGet(): Promise<Admin.LegalResponse> {
     return this.returnLater({
       terms: 'Here are Terms of Service',
@@ -169,6 +175,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           password: 'unused-in-server-mock',
           basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-monthly',
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
+          couponId: request.accountBindAdmin.oauthToken.couponId,
         }
       }).then(account => ({
         account,
@@ -213,6 +220,36 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
       this.DEFAULT_LIMIT, request.cursor));
   }
+  accountViewCouponAdmin(request: Admin.AccountViewCouponAdminRequest): Promise<Admin.ViewCouponResponse> {
+    const redeemedByYou = this.account?.acceptedCoupons.has(request.couponId);
+    return this.returnLater({
+      redeemedByYou,
+      plan: (redeemedByYou || request.couponId.length < 3) ? undefined : {
+        basePlanId: 'coupon-monthly', title: 'Standard',
+        pricing: { basePrice: 0, baseMau: 100, unitPrice: 10, unitMau: 100, period: Admin.PlanPricingPeriodEnum.Monthly },
+        perks: [
+          { desc: 'Private projects' },
+          { desc: 'Teammates' },
+          { desc: 'SSO and OAuth' },
+        ],
+      },
+    });
+  }
+  accountAcceptCouponAdmin(request: Admin.AccountAcceptCouponAdminRequest): Promise<Admin.AccountAdmin> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    this.account?.acceptedCoupons.add(request.couponId);
+    return this.returnLater(this.account);
+  }
+  couponGenerateSuperAdmin(request: Admin.CouponGenerateSuperAdminRequest): Promise<Admin.FileDownload> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
+    return this.returnLater({
+      filename: `coupons.txt`,
+      contentType: 'text/plain',
+      blob: new Blob(['COUPON1\nCOUPON2\nCOUPON3\n'], { type: 'text/plain' }),
+    }, undefined);
+  }
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;
     this.superLoggedIn = false;
@@ -241,6 +278,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.account = {
       planId: account.basePlanId,
       acceptedInvitations: new Set(request.accountSignupAdmin.invitationId ? [request.accountSignupAdmin.invitationId] : []),
+      acceptedCoupons: new Set(request.accountSignupAdmin.couponId ? [request.accountSignupAdmin.couponId] : []),
       ...account
     };
     if (request.accountSignupAdmin.invitationId) {

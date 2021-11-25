@@ -167,11 +167,13 @@ export const FilterControlDateRange = (props: {
             name='From'
             value={props.valueFrom}
             onChanged={props.onFromChanged}
+            type='past'
           />
           <FilterControlDatePicker
             name='To'
             value={props.valueTo}
             onChanged={props.onToChanged}
+            type='past'
           />
         </div>
         {/* <div className={this.props.classes.dateButtons}>
@@ -206,13 +208,19 @@ export const FilterControlDatePicker = (props: {
   name: string;
   value?: Date;
   onChanged: (val?: Date) => void;
+  KeyboardDatePickerProps?: Partial<React.ComponentProps<typeof KeyboardDatePicker>>;
+  type: 'past' | 'future';
 }) => {
   const classes = useStyles();
   return (
     <KeyboardDatePicker
       shouldDisableDate={(date) => {
         if (!date) return true;
-        if (date.isAfter(moment().endOf('day'))) return true;
+        if (props.type === 'past') {
+          if (date.isAfter(moment().endOf('day'))) return true;
+        } else if (props.type === 'future') {
+          if (date.isBefore(moment().endOf('day'))) return true;
+        }
         return false
       }}
       variant='inline'
@@ -234,6 +242,7 @@ export const FilterControlDatePicker = (props: {
       onChange={val => {
         props.onChanged(val?.toDate());
       }}
+      {...props.KeyboardDatePickerProps}
     />
   );
 }

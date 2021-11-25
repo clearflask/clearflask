@@ -208,17 +208,20 @@ class Main extends Component<Props> {
                               </Provider>
                             )} />
                           ), (
-                            <Route key='enter' exact path='/:type(login|signup|invitation)/:invitationId([a-z0-9]*)?' render={props => (
+                            <Route key='enter' exact path='/:type(login|signup|invitation|coupon)/:id([a-z0-9]*)?' render={props => (
                               <Provider store={ServerAdmin.get().getStore()}>
                                 <SetMaxAge val={0} />
                                 <SetTitle title={props.match.params['type'] === 'login'
                                   ? 'Login'
                                   : (props.match.params['type'] === 'signup'
                                     ? 'Sign up'
-                                    : 'Invitation')} />
+                                    : (props.match.params['type'] === 'invitation'
+                                      ? 'Invitation'
+                                      : 'Coupon'))} />
                                 <AccountEnterPage
                                   type={props.match.params['type']}
-                                  invitationId={props.match.params['type'] === 'invitation' ? props.match.params['invitationId'] : undefined}
+                                  invitationId={props.match.params['type'] === 'invitation' ? props.match.params['id'] : undefined}
+                                  couponId={props.match.params['type'] === 'coupon' ? props.match.params['id'] : undefined}
                                 />
                               </Provider>
                             )} />

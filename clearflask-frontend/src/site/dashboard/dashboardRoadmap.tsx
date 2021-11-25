@@ -256,7 +256,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
         title: {
           title: this.props.t('roadmap'),
           help: 'View your public roadmap. Drag and drop tasks between columns to prioritize your roadmap.'
-            + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to a Changelog entry on the next page.' : '')
+            + (this.state.changelog?.pageAndIndex ? ' Completed tasks can be added to an announcement on the next page.' : '')
         },
         action: {
           label: this.props.t('create'),

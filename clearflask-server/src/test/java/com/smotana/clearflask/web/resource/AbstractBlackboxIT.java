@@ -33,6 +33,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.DynamoCouponStore;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
@@ -237,6 +238,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoDraftStore.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoProjectStore.module(),
+                DynamoCouponStore.module(),
                 ProjectUpgraderImpl.module(),
                 DynamoElasticUserStore.module(),
                 DynamoTokenVerifyStore.module(),
@@ -346,6 +348,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 IdUtil.randomId(5) + "unittest@clearflask.com",
                 "password",
                 planid,
+                null,
                 null));
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 ModelUtil.createEmptyConfig("myproject").getConfig());

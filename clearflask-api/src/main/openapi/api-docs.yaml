@@ -88,6 +88,8 @@ paths:
   #   $ref: 'api-account.yaml#/~1admin~1legal'
   # /admin/plan:
   #   $ref: 'api-account.yaml#/~1admin~1plan'
+  # /superadmin/plan:
+  #   $ref: 'api-account.yaml#/~1superadmin~1plan'
   # /admin/account/signup:
   #   $ref: 'api-account.yaml#/~1admin~1account~1signup'
   # /admin/account/bind:
@@ -98,6 +100,8 @@ paths:
   #   $ref: 'api-account.yaml#/~1admin~1account~1noop'
   # /admin/account/invitation:
   #   $ref: 'api-account.yaml#/~1admin~1account~1invitation'
+  # /admin/account/coupon:
+  #   $ref: 'api-account.yaml#/~1admin~1account~1coupon'
   # /admin/account/logout:
   #   $ref: 'api-account.yaml#/~1admin~1account~1logout'
   # /admin/account/update:

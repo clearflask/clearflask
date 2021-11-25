@@ -832,7 +832,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         Optional<SortOrder> sortOrderOpt;
         ImmutableList<String> sortFields;
-        if (ideaSearchAdmin.getSortBy() != null) {
+        if (ideaSearchAdmin.getSortBy() != null
+                && Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())
+                && Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
             switch (ideaSearchAdmin.getSortBy()) {
                 case TOP:
                     sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");

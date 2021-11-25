@@ -14,6 +14,7 @@ import ReactGA from 'react-ga';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
 import FeaturesImg from '../../../public/img/landing/hero.svg';
 import UpgradeImg from '../../../public/img/landing/notify.svg';
@@ -24,7 +25,7 @@ import { HeaderLogoLogo } from '../../app/Header';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
-import { TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
@@ -171,10 +172,11 @@ interface Props {
   projectCreated: (projectId: string) => void;
 }
 interface ConnectProps {
-  isPlanTeammate?: boolean;
+  basePlanId?: string;
+  accountProjectCount?: number;
 }
 interface State extends CreateTemplateV2Options {
-  step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite';
+  step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite' | 'plan-limit-reached';
   isSubmitting?: boolean;
   invites: Array<string>;
   createdProjectId?: string;
@@ -184,15 +186,49 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
   constructor(props) {
     super(props);
 
+    var step: State['step'] = 'feature-select';
+    if (!!this.props.basePlanId && ((ProjectMaxCount[this.props.basePlanId] || Infinity) <= (this.props.accountProjectCount || 0))) {
+      step = 'plan-limit-reached';
+    } else if (this.props.basePlanId === TeammatePlanId) {
+      step = 'upgrade-plan';
+    }
+
     this.state = {
       ...createTemplateV2OptionsDefault,
-      step: !!this.props.isPlanTeammate ? 'upgrade-plan' : 'feature-select',
+      step,
       invites: [],
     };
   }
 
   render() {
     switch (this.state.step) {
+      case 'plan-limit-reached':
+        return (
+          <CreateLayout
+            key='plan-limit-reached'
+            isOnboarding={this.props.isOnboarding}
+            title='Plan limit reached'
+            description={(
+              <>
+                Your limit on the number of projects you can create has been reached.
+                <p>Please either delete other projects or change your plan before continuing.</p>
+              </>
+            )}
+            stretchContent
+            img={UpgradeImg}
+            actions={[(
+              <Button
+                variant='contained'
+                disableElevation
+                color='primary'
+                component={Link}
+                to='/dashboard/settings/account/billing'
+              >
+                {this.props.t('billing')}
+              </Button>
+            )]}
+          />
+        );
       case 'upgrade-plan':
         return (
           <CreateLayout
@@ -283,30 +319,32 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                     />
                   </div>
                   <div className={this.props.classes.templateCards}>
-                    <TemplateCard
-                      className={this.props.classes.templateCard}
-                      icon={InternalFeedbackIcon}
-                      title={this.props.t('internal-feedback')}
-                      content={this.props.t('feedback-collected-within-a-private')}
-                      onClick={() => {
-                        this.setState({
-                          templateFeedbackIsClassic: true,
-                          templateLanding: true,
-                          templateFeedback: true,
-                          templateRoadmap: true,
-                          templateChangelog: true,
-                          isPrivate: true,
-                          step: 'project-details',
-                        });
-                        if (isTracking()) {
-                          ReactGA.event({
-                            category: 'new-project',
-                            action: 'choose-scenario',
-                            label: 'internal-feedback',
+                    <UpgradeWrapper propertyPath={['users', 'onboarding', 'visibility']} hideInsteadOfCover>
+                      <TemplateCard
+                        className={this.props.classes.templateCard}
+                        icon={InternalFeedbackIcon}
+                        title={this.props.t('internal-feedback')}
+                        content={this.props.t('feedback-collected-within-a-private')}
+                        onClick={() => {
+                          this.setState({
+                            templateFeedbackIsClassic: true,
+                            templateLanding: true,
+                            templateFeedback: true,
+                            templateRoadmap: true,
+                            templateChangelog: true,
+                            isPrivate: true,
+                            step: 'project-details',
                           });
-                        }
-                      }}
-                    />
+                          if (isTracking()) {
+                            ReactGA.event({
+                              category: 'new-project',
+                              action: 'choose-scenario',
+                              label: 'internal-feedback',
+                            });
+                          }
+                        }}
+                      />
+                    </UpgradeWrapper>
                     {!this.props.isOnboarding && (
                       <TemplateCard
                         className={this.props.classes.templateCard}
@@ -578,7 +616,12 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
 }
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
-    isPlanTeammate: state.account.account.account?.basePlanId === TeammatePlanId,
+    basePlanId: state.account.account.account?.basePlanId,
+    accountProjectCount: state.configs.configs.byProjectId
+      ? Object.values(state.configs.configs.byProjectId)
+        .filter(project => !project.isExternal)
+        .length
+      : undefined,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('site', { withRef: true })(CreatePage))));

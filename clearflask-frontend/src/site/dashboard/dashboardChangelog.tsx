@@ -17,7 +17,7 @@ import DashboardSearchControls from './DashboardSearchControls';
 import PostList from './PostList';
 
 export async function renderChangelog(this: Dashboard, context: DashboardPageContext) {
-  setTitle('Changelog - Dashboard');
+  setTitle('announcements - Dashboard');
   if (!context.activeProject) {
     context.showCreateProjectWarning = true;
     return;
@@ -58,7 +58,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
     content: layoutState => (
       <div className={this.props.classes.listWithSearchContainer}>
         <DashboardSearchControls
-          placeholder='Search for changelog entries'
+          placeholder='Search for announcements'
           key={'changelog-entries-search-bar' + activeProject.server.getProjectId()}
           searchText={changelogPostSearch.searchText || ''}
           onSearchChanged={searchText => this.setState({
@@ -111,7 +111,7 @@ export async function renderChangelog(this: Dashboard, context: DashboardPageCon
     extra: {
       size: PostPreviewSize,
       header: {
-        title: { title: 'Changelog' },
+        title: { title: 'Announcements' },
         action: {
           label: this.props.t('create'),
           icon: CreateIcon,

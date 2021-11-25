@@ -127,6 +127,8 @@ components:
               type: string
             invitationId:
               type: string
+            couponId:
+              type: string
     AccountSignupAdmin:
       type: object
       required:
@@ -144,6 +146,8 @@ components:
         basePlanId:
           type: string
         invitationId:
+          type: string
+        couponId:
           type: string
     Account:
       type: object
@@ -331,6 +335,20 @@ components:
                 type: string
               invoiceId:
                 type: string
+    CouponGenerateSuperAdmin:
+      type: object
+      required:
+      - amount
+      - basePlanId
+      properties:
+        amount:
+          type: integer
+          format: int64
+        basePlanId:
+          type: string
+        expiry:
+          type: string
+          format: date-time
 
 /support/message:
   post:
@@ -355,7 +373,7 @@ components:
 /admin/plan:
   get:
     operationId: plansGet
-    tags: [Plan]
+    tags: [PlanAdmin]
     parameters:
     responses:
       '200':
@@ -373,6 +391,25 @@ components:
                     $ref: 'api-account.yaml#/components/schemas/Plan'
                 featuresTable:
                   $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
+/superadmin/plan:
+  get:
+    operationId: plansGetSuperAdmin
+    tags: [PlanSuperAdmin]
+    parameters:
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: AllPlansGetResponse
+              type: object
+              required:
+              - plans
+              properties:
+                plans:
+                  type: array
+                  items:
+                    $ref: 'api-account.yaml#/components/schemas/Plan'
 /admin/legal:
   get:
     operationId: legalGet
@@ -567,6 +604,60 @@ components:
                   type: array
                   items:
                     $ref: 'api-account.yaml#/components/schemas/Account'
+/admin/account/coupon:
+  get:
+    operationId: accountViewCouponAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: couponId
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ViewCouponResponse
+              type: object
+              properties:
+                plan:
+                  $ref: 'api-account.yaml#/components/schemas/Plan'
+                redeemedByYou:
+                  type: boolean
+  post:
+    operationId: accountAcceptCouponAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: couponId
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/superadmin/coupon/generate:
+  post:
+    operationId: couponGenerateSuperAdmin
+    tags: [AccountSuperAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/CouponGenerateSuperAdmin'
+    responses:
+      '200':
+        content:
+          text/plain:
+            schema:
+              type: string
+              format: binary
 /admin/account/logout:
   post:
     operationId: accountLogoutAdmin

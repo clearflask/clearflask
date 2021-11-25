@@ -15,14 +15,12 @@ import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, { replaceParentDomain } from './renderer';
 
-if (process.env.ENV !== 'selfhost') {
-  Sentry.init({
-    dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
-    integrations: [new Integrations.Express()],
-    tracesSampleRate: 0.1,
-    environment: process.env.ENV,
-  });
-}
+Sentry.init({
+  dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
+  integrations: [new Integrations.Express()],
+  tracesSampleRate: 0.1,
+  environment: process.env.ENV,
+});
 
 const urlsSkipCache = new Set([
   '/index.html',
