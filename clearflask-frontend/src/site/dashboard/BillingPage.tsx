@@ -731,6 +731,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Button>
               </div>
             )}
+            {showPlanChange && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showPlanChange}
+                  onClick={() => this.props.history.push('/coupon')}
+                >
+                  Redeem coupon
+                </Button>
+              </div>
+            )}
             {this.props.isSuperAdmin && (
               <>
                 <Dialog

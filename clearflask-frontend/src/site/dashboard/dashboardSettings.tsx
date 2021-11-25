@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from '@material-ui/core';
 import React from 'react';
-import * as Admin from '../../api/admin';
 import ServerAdmin from '../../api/serverAdmin';
-import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Menu, { MenuHeading, MenuItem } from '../../common/config/settings/Menu';
 import SettingsDynamicPage from '../../common/config/settings/SettingsDynamicPage';
@@ -12,11 +10,10 @@ import { Orientation } from '../../common/ContentScroll';
 import { SectionContent } from '../../common/Layout';
 import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor } from '../../common/tour';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsCoupons, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsLoginAs, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
@@ -28,26 +25,6 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
   const activeProject = context.activeProject;
   const activePath = this.props.match.params['path'] || '';
   const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
-
-  // Superadmin account switcher
-  const accountToLabel = (account: Admin.Account): Label => {
-    return {
-      label: account.name,
-      filterString: `${account.name} ${account.email}`,
-      value: account.email
-    };
-  }
-  const seenAccountEmails: Set<string> = new Set();
-  const curAccountLabel: Label = accountToLabel(this.props.account);
-  const accountOptions = [curAccountLabel];
-  seenAccountEmails.add(this.props.account.email)
-  this.state.accountSearch && this.state.accountSearch.forEach(account => {
-    if (!seenAccountEmails.has(account.email)) {
-      const label = accountToLabel(account);
-      seenAccountEmails.add(account.email);
-      accountOptions.push(label);
-    }
-  });
 
   var mainContent: SectionContent;
   if (activeSubPath[0] === 'project') {
@@ -201,47 +178,6 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
             activePath={activePath}
             activeSubPath={activeSubPath}
           />
-          {!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
-            <SelectionPicker
-              className={this.props.classes.accountSwitcher}
-              disableClearable
-              value={[curAccountLabel]}
-              forceDropdownIcon={false}
-              options={accountOptions}
-              helperText='Switch account'
-              minWidth={50}
-              maxWidth={150}
-              inputMinWidth={0}
-              showTags
-              bareTags
-              disableFilter
-              loading={this.state.accountSearching !== undefined}
-              noOptionsMessage='No accounts'
-              onFocus={() => {
-                if (this.state.accountSearch === undefined
-                  && this.state.accountSearching === undefined) {
-                  this.searchAccounts('');
-                }
-              }}
-              onInputChange={(newValue, reason) => {
-                if (reason === 'input') {
-                  this.searchAccounts(newValue);
-                }
-              }}
-              onValueChange={labels => {
-                const email = labels[0]?.value;
-                if (email && this.props.account?.email !== email) {
-                  ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
-                    accountLoginAs: {
-                      email,
-                    },
-                  }).then(result => {
-                    return d.configGetAllAndUserBindAllAdmin();
-                  }));
-                }
-              }}
-            />
-          )}
         </>
       ),
     });
@@ -258,6 +194,38 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
       case 'api':
         setTitle('API - ' + this.props.t('dashboard'));
         mainContent = (<ProjectSettingsApi />);
+        break;
+    }
+  } else if (activeSubPath[0] === 'super') {
+    context.sections.push({
+      name: 'menu',
+      breakAction: 'menu',
+      size: { breakWidth: 200, width: 'max-content', maxWidth: 350, scroll: Orientation.Vertical },
+      content: (
+        <Menu key='account'
+          items={[
+            { type: 'heading', text: 'Super Admin' } as MenuHeading,
+            { type: 'item', slug: 'settings/super/loginas', name: 'Login As', offset: 1 } as MenuItem,
+            { type: 'item', slug: 'settings/super/coupons', name: 'Coupons', offset: 1 } as MenuItem,
+          ]}
+          activePath={activePath}
+          activeSubPath={activeSubPath}
+        />
+      ),
+    });
+
+    switch (activeSubPath[1]) {
+      case 'loginas':
+        setTitle('Login As - ' + this.props.t('dashboard'));
+        mainContent = (
+          <ProjectSettingsLoginAs account={this.props.account} />
+        );
+        break;
+      case 'coupons':
+        setTitle('Coupons - ' + this.props.t('dashboard'));
+        mainContent = (
+          <ProjectSettingsCoupons />
+        );
         break;
     }
   }

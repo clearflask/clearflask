@@ -12,6 +12,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.FeaturesTable;
 import com.smotana.clearflask.api.model.FeaturesTableFeatures;
@@ -35,7 +36,9 @@ import org.killbill.billing.client.model.Catalogs;
 import org.killbill.billing.client.model.gen.Catalog;
 import org.killbill.billing.client.model.gen.Phase;
 import org.killbill.billing.client.model.gen.PhasePrice;
+import org.killbill.billing.client.model.gen.Price;
 import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.TieredBlock;
 import org.killbill.billing.client.model.gen.Usage;
 
 import javax.ws.rs.core.Response;
@@ -95,6 +98,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("Teammates", TERMS_ADMINS),
                     new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH)),
                     null, null))
+            // Available only on external marketplace via coupons
+            .put("pro-lifetime", pp -> new Plan("pro-lifetime", "Pro",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Unlimited users", null),
+                    new PlanPerk("1 Teammate", TERMS_ADMINS),
+                    new PlanPerk("1 Project", TERMS_PROJECTS)),
+                    null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
@@ -142,6 +152,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private ImmutableMap<String, Plan> allPlans;
     private ImmutableMap<String, Plan> availablePlans;
     private PlansGetResponse plansGetResponse;
+    private AllPlansGetResponse allPlansGetResponse;
 
     @Override
     protected ImmutableSet<Class> serviceDependencies() {
@@ -154,29 +165,60 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         ImmutableList<Plan> plans = PLANS_BUILDER.entrySet().stream().map(e -> {
             // Oh god this is just terrible, this is what happens when you check in at 4am
             String planName = e.getKey();
-            Phase evergreen = catalogs
+            org.killbill.billing.client.model.gen.Plan plan = catalogs
                     .stream()
                     .sorted(Comparator.comparing(Catalog::getEffectiveDate).reversed())
                     .flatMap(c -> c.getProducts().stream())
                     .flatMap(p -> p.getPlans().stream())
                     .filter(p -> planName.equals(p.getName()))
                     .findFirst()
-                    .stream()
+                    .orElseThrow(() -> new RuntimeException("Plan not found in catalog:" + e.getKey()));
+            Optional<Phase> evergreenOpt = Stream.of(plan)
                     .flatMap(p -> p.getPhases().stream())
                     .filter(p -> PhaseType.EVERGREEN.name().equals(p.getType()))
-                    .findAny()
-                    .get();
-            long basePrice = evergreen.getPrices().get(0).getValue().longValueExact();
-            Usage usage = evergreen.getUsages().get(0);
+                    .findAny();
+            Optional<Price> priceOpt = evergreenOpt.stream()
+                    .flatMap(p -> p.getPrices().stream())
+                    .findFirst();
+            long basePrice = priceOpt
+                    .map(Price::getValue)
+                    .map(BigDecimal::longValueExact)
+                    .orElse(0L);
+            Optional<Usage> usageOpt = evergreenOpt.stream()
+                    .flatMap(p -> p.getUsages().stream())
+                    .findFirst();
             PeriodEnum period;
-            if (BillingPeriod.MONTHLY.name().equals(usage.getBillingPeriod())) {
+            if (BillingPeriod.MONTHLY.equals(plan.getBillingPeriod())) {
                 period = PeriodEnum.MONTHLY;
             } else {
                 period = PeriodEnum.YEARLY;
             }
-            long baseMau = Double.valueOf(usage.getTiers().get(0).getBlocks().get(0).getSize()).longValue();
-            long unitPrice = usage.getTiers().get(1).getBlocks().get(0).getPrices().get(0).getValue().longValueExact();
-            long unitMau = Double.valueOf(usage.getTiers().get(1).getBlocks().get(0).getSize()).longValue();
+            long baseMau = usageOpt.stream()
+                    .flatMap(usage -> usage.getTiers().stream())
+                    .flatMap(tier -> tier.getBlocks().stream())
+                    .findFirst()
+                    .map(TieredBlock::getSize)
+                    .map(Double::valueOf)
+                    .map(Double::longValue)
+                    .orElse(0L);
+            long unitPrice = usageOpt.stream()
+                    .flatMap(usage -> usage.getTiers().stream())
+                    .skip(1)
+                    .flatMap(tier -> tier.getBlocks().stream())
+                    .flatMap(block -> block.getPrices().stream())
+                    .findFirst()
+                    .map(Price::getValue)
+                    .map(BigDecimal::longValueExact)
+                    .orElse(0L);
+            long unitMau = usageOpt.stream()
+                    .flatMap(usage -> usage.getTiers().stream())
+                    .skip(1)
+                    .flatMap(tier -> tier.getBlocks().stream())
+                    .findFirst()
+                    .map(TieredBlock::getSize)
+                    .map(Double::valueOf)
+                    .map(Double::longValue)
+                    .orElse(0L);
             PlanPricing planPricing = PlanPricing.builder()
                     .basePrice(basePrice)
                     .baseMau(baseMau)
@@ -200,12 +242,20 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         plansGetResponse = new PlansGetResponse(
                 availablePlans.values().asList(),
                 FEATURES_TABLE);
+        allPlansGetResponse = new AllPlansGetResponse(
+                allPlans.values().asList());
     }
 
     @Extern
     @Override
     public PlansGetResponse getPublicPlans() {
         return plansGetResponse;
+    }
+
+    @Extern
+    @Override
+    public AllPlansGetResponse getAllPlans() {
+        return allPlansGetResponse;
     }
 
     @Extern
@@ -227,6 +277,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "growth2-monthly":
             case "standard2-monthly":
                 return ImmutableSet.of(
+                        availablePlans.get("growth2-monthly"),
+                        availablePlans.get("standard2-monthly"));
+            case "pro-lifetime":
+                return ImmutableSet.of(
+                        allPlans.get("pro-lifetime"),
                         availablePlans.get("growth2-monthly"),
                         availablePlans.get("standard2-monthly"));
             case "flat-yearly":
@@ -307,14 +362,22 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     verifyTeammateInviteMeetsPlanRestrictions(planId, project.getProjectId(), false);
                 });
 
+        verifyProjectCountMeetsPlanRestrictions(planId, accountId, false);
+
         if (!Strings.isNullOrEmpty(account.getApiKey())) {
-            verifyActionMeetsPlanRestrictions(planId, Action.API_KEY);
+            verifyActionMeetsPlanRestrictions(planId, accountId, Action.API_KEY);
         }
     }
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws RequiresUpgradeException {
+    public void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws RequiresUpgradeException {
+        Account account = accountStore.getAccount(accountId, true).get();
+
+        if (Action.CREATE_PROJECT.equals(action)) {
+            verifyProjectCountMeetsPlanRestrictions(planId, accountId, true);
+        }
+
         switch (getBasePlanId(planId)) {
             case TEAMMATE_PLAN_ID:
                 switch (action) {
@@ -345,6 +408,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 throw new RequiresUpgradeException("growth2-monthly", "Not allowed to have projects without a plan");
             case "growth-monthly":
             case "growth2-monthly":
+            case "pro-lifetime":
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use OAuth on your plan");
@@ -387,6 +451,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
+            case "pro-lifetime":
                 // Only allow 1
                 if (addOne) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
@@ -414,6 +479,21 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
                 .count();
         return invitationCount = adminCount;
+    }
+
+    /** If changed, also change in UpgradeWrapper.tsx */
+    @Override
+    public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
+        long projectCount = accountStore.getAccount(accountId, true).get()
+                .getProjectIds().size();
+        switch (getBasePlanId(planId)) {
+            case "pro-lifetime":
+                if ((projectCount + (addOne ? 1 : 0)) > 1L) {
+                    throw new RequiresUpgradeException("growth-monthly", "Your plan has reached project limit");
+                }
+                break;
+            default:
+        }
     }
 
     private PeriodEnum billingPeriodToPeriodEnum(BillingPeriod billingPeriod) {

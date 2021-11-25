@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.FeaturesTable;
 import com.smotana.clearflask.api.model.Plan;
@@ -40,6 +41,11 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
+    public AllPlansGetResponse getAllPlans() {
+        return new AllPlansGetResponse(ImmutableList.of(SELF_HOST_PLAN));
+    }
+
+    @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
         return ImmutableSet.of();
     }
@@ -65,7 +71,7 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
-    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException {
+    public void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException {
         // No-op
     }
 
@@ -76,6 +82,11 @@ public class SelfHostPlanStore implements PlanStore {
 
     @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
+        // No-op
+    }
+
+    @Override
+    public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         // No-op
     }
 

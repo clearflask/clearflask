@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import MomentUtils from '@date-io/moment';
 import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
@@ -12,7 +13,9 @@ import FacebookIcon from '@material-ui/icons/Facebook';
 import GithubIcon from '@material-ui/icons/GitHub';
 import CustomIcon from '@material-ui/icons/MoreHoriz';
 import { Alert, AlertTitle, ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import classNames from 'classnames';
+import download from 'downloadjs';
 import React, { Component, useEffect, useRef, useState } from 'react';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -25,6 +28,7 @@ import { Direction } from '../../app/comps/Panel';
 import PanelPost from '../../app/comps/PanelPost';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import TagSelect from '../../app/comps/TagSelect';
+import ErrorMsg from '../../app/ErrorMsg';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
@@ -54,13 +58,14 @@ import TwitchIcon from '../../common/icon/TwitchIcon';
 import Message from '../../common/Message';
 import MyAccordion from '../../common/MyAccordion';
 import MyColorPicker from '../../common/MyColorPicker';
-import { FilterControlSelect } from '../../common/search/FilterControls';
+import Promised from '../../common/Promised';
+import { FilterControlDatePicker, FilterControlSelect } from '../../common/search/FilterControls';
 import SubmitButton from '../../common/SubmitButton';
 import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
-import debounce from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
 import { OAuthFlow, OAUTH_CODE_PARAM_NAME } from '../../common/util/oauthUtil';
 import randomUuid from '../../common/util/uuid';
@@ -267,6 +272,9 @@ const styles = (theme: Theme) => createStyles({
     '& .MuiTableCell-root': {
       borderBottom: 'none !important',
     },
+  },
+  accountSwitcher: {
+    margin: theme.spacing(4, 'auto', 0),
   },
 });
 const useStyles = makeStyles(styles);
@@ -3330,6 +3338,236 @@ export const ProjectSettingsApi = () => {
         </Grid>
       </UpgradeWrapper>
     </ProjectSettingsBase>
+  );
+}
+
+export const ProjectSettingsLoginAs = (props: {
+  account?: Admin.AccountAdmin;
+}) => {
+  const classes = useStyles();
+
+  const [accountSearch, setAccountSearch] = useState<Admin.Account[]>();
+  const [accountSearching, setAccountSearching] = useState<string>();
+
+  const searchAccountsRef = useRef<(newValue: string) => void>();
+  useEffect(() => {
+    const searchAccountsDebounced = debounce(
+      (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
+        accountSearchSuperAdmin: {
+          searchText: newValue,
+        },
+      })).then(result => {
+        setAccountSearch(result.results);
+        if (accountSearching === newValue) setAccountSearching(undefined);
+      }).catch(e => {
+        if (accountSearching === newValue) setAccountSearching(undefined);
+      })
+      , SearchTypeDebounceTime);
+    searchAccountsRef.current = newValue => {
+      setAccountSearching(newValue);
+      searchAccountsDebounced(newValue);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const accountToLabel = (account: Admin.Account): Label => {
+    return {
+      label: account.name,
+      filterString: `${account.name} ${account.email}`,
+      value: account.email
+    };
+  }
+  const seenAccountEmails: Set<string> = new Set();
+  const curValue = props.account ? [accountToLabel(props.account)] : [];
+  const accountOptions = [...curValue];
+  props.account && seenAccountEmails.add(props.account.email)
+  accountSearch?.forEach(account => {
+    if (!seenAccountEmails.has(account.email)) {
+      const label = accountToLabel(account);
+      seenAccountEmails.add(account.email);
+      accountOptions.push(label);
+    }
+  });
+
+  return (
+    <ProjectSettingsBase title='Login As...'>
+      <Section
+        description='Log in to another account.'
+        content={(
+          <SelectionPicker
+            className={classes.accountSwitcher}
+            disableClearable
+            value={curValue}
+            forceDropdownIcon={false}
+            options={accountOptions}
+            helperText='Switch account'
+            minWidth={50}
+            maxWidth={150}
+            inputMinWidth={0}
+            showTags
+            bareTags
+            disableFilter
+            loading={accountSearching !== undefined}
+            noOptionsMessage='No accounts'
+            onFocus={() => {
+              if (accountSearch === undefined
+                && accountSearching === undefined) {
+                searchAccountsRef.current?.('');
+              }
+            }}
+            onInputChange={(newValue, reason) => {
+              if (reason === 'input') {
+                searchAccountsRef.current?.(newValue);
+              }
+            }}
+            onValueChange={labels => {
+              const email = labels[0]?.value;
+              if (email && props.account?.email !== email) {
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
+                  accountLoginAs: {
+                    email,
+                  },
+                }).then(result => {
+                  return d.configGetAllAndUserBindAllAdmin();
+                }));
+              }
+            }}
+          />
+        )}
+      />
+    </ProjectSettingsBase>
+  );
+}
+
+export const ProjectSettingsCoupons = (props: {
+}) => {
+  const classes = useStyles();
+
+  const [basePlanId, setBasePlanId] = useState<string>('');
+  const [amount, setAmount] = useState<number>(1);
+
+  const [allPlans, setAllPlans] = useState<Array<Admin.Plan>>();
+  useEffect(() => {
+    ServerAdmin.get().dispatchAdmin()
+      .then(d => d.plansGetSuperAdmin())
+      .then(result => setAllPlans(result.plans));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const planSelectedLabel: Label[] = [];
+  const planOptionsLabels: Label[] = [];
+  allPlans?.forEach(plan => {
+    const label: Label = {
+      label: `${plan.title} - ${plan.basePlanId}`,
+      value: plan.basePlanId,
+    };
+    planOptionsLabels.push(label);
+    if (basePlanId === plan.basePlanId) {
+      planSelectedLabel.push(label);
+    }
+  });
+
+  const [expiry, setExpiry] = useState<Date>();
+  const [isSubmitting, setIsSubmitting] = useState<boolean>();
+
+  const [result, setResult] = useState<Admin.FileDownload>();
+  const [display, setDisplay] = useState<boolean>();
+
+  return (
+    <ProjectSettingsBase title='Coupons'>
+      <Section
+        description='Manage coupons for signup deals'
+        content={(
+          <>
+            <SelectionPicker
+              className={classes.usersOauthAddProp}
+              label='Plan'
+              value={planSelectedLabel}
+              options={planOptionsLabels}
+              disableClearable
+              disableInput
+              showTags
+              bareTags
+              disableFilter
+              noOptionsMessage='Loading...'
+              onValueChange={labels => setBasePlanId(labels[0]?.value)}
+              TextFieldProps={{
+                variant: 'outlined',
+                size: 'small',
+              }}
+            />
+            <TextField
+              className={classes.usersOauthAddProp}
+              size='small'
+              variant='outlined'
+              label='Amount'
+              type='number'
+              value={amount}
+              onChange={e => setAmount(parseInt(e.target.value))}
+            />
+            <Collapse in={(amount || 0) > 10000}>
+              <ErrorMsg msg='Ensure server-side rate limiter is configured appropriately for your volume' variant='warning' />
+            </Collapse>
+            <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
+              <FilterControlDatePicker
+                name='Expiry'
+                value={expiry}
+                onChanged={setExpiry}
+                KeyboardDatePickerProps={{
+                  inputVariant: 'outlined',
+                }}
+                type='future'
+              />
+            </MuiPickersUtilsProvider>
+            <Button
+              disabled={!result}
+              onClick={() => {
+                if (!result) return;
+                download(result.blob, result.filename, result.contentType);
+              }}>
+              Download
+            </Button>
+            <Button
+              disabled={!result || !!display}
+              onClick={() => {
+                if (!result) return;
+                setDisplay(true);
+              }}>
+              Display
+            </Button>
+            <SubmitButton
+              isSubmitting={isSubmitting}
+              disabled={!amount || !basePlanId}
+              color='primary'
+              onClick={async () => {
+                if (!amount || !basePlanId) return;
+                setIsSubmitting(true);
+                try {
+                  const result = await (await ServerAdmin.get().dispatchAdmin()).couponGenerateSuperAdmin({
+                    couponGenerateSuperAdmin: { amount, basePlanId, expiry },
+                  });
+                  setDisplay(false);
+                  setResult(result);
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}>
+              {result ? 'Re-generate' : 'Generate'}
+            </SubmitButton>
+            {!!display && !!result && (
+              <Promised
+                key={result.filename}
+                promise={result.blob.text()}
+                render={resultText => (
+                  <>
+                    <br /><br /><br /><br />
+                    <pre dangerouslySetInnerHTML={{ __html: resultText }} />
+                  </>
+                )}
+              />
+            )}
+          </>
+        )
+        }
+      />
+    </ProjectSettingsBase >
   );
 }
 

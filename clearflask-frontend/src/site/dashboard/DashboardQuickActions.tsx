@@ -6,6 +6,7 @@ import classNames from 'classnames';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useRef, useState } from 'react';
 import { Droppable, SensorAPI } from 'react-beautiful-dnd';
+import { useTranslation } from 'react-i18next';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server } from '../../api/server';
@@ -100,7 +101,8 @@ const DashboardQuickActions = (props: {
 }) => {
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
   useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []); // eslint-disable-line react-hooks/exhaustive-deps
-
+  
+  const { t } = useTranslation('app');
   const classes = useStyles();
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -198,7 +200,7 @@ const DashboardQuickActions = (props: {
           </TourAnchor>
         </Provider>
       )}
-      <FilterControlTitle name='Delete' className={classes.feedbackTitle} help={{
+      <FilterControlTitle name={t('delete')} className={classes.feedbackTitle} help={{
         description: helperDelete,
       }} />
       <QuickActionArea
@@ -214,7 +216,7 @@ const DashboardQuickActions = (props: {
           if (! await noticeDeleteRef.current?.invoke()) return;
           return await onClick?.(droppableId);
         }}
-        title='Delete'
+        title={t('delete')}
       />
       <Provider store={ServerAdmin.get().getStore()}>
         <FirstTimeNotice
@@ -369,6 +371,7 @@ export const QuickActionArea = (props: {
   color?: string;
   title?: string;
 }) => {
+  const { t } = useTranslation('app');
   const theme = useTheme();
   const classes = useStyles();
   const [autoDragging, setAutoDragging] = useState<boolean>(false);
@@ -410,7 +413,7 @@ export const QuickActionArea = (props: {
               >
                 {provided.placeholder && (<div style={{ display: 'none' }}>{provided.placeholder}</div>)}
                 {props.title && (
-                  <Typography>{props.title}</Typography>
+                  <Typography>{t(props.title as any)}</Typography>
                 )}
               </CardActionArea>
             )}

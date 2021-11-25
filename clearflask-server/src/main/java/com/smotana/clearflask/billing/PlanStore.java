@@ -3,6 +3,7 @@
 package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
@@ -27,7 +28,11 @@ public interface PlanStore {
      */
     String TEAMMATE_PLAN_ID = "teammate-unlimited";
 
+    ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(TEAMMATE_PLAN_ID, "pro-lifetime");
+
     PlansGetResponse getPublicPlans();
+
+    AllPlansGetResponse getAllPlans();
 
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
 
@@ -41,11 +46,13 @@ public interface PlanStore {
 
     void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException;
 
-    void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ApiException;
+    void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException;
 
     void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException;
 
     void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException;
+
+    void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
 
     enum Action {
         API_KEY,

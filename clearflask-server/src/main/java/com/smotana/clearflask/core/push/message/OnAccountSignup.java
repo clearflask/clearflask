@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class OnAccountSignup {
 
     public interface Config {
-        @DefaultValue("Welcome to ClearFlask")
+        @DefaultValue("__NAME__ welcome to ClearFlask")
         String subject();
 
         @DefaultValue("Hello __NAME__, thank you for signing up with us. Visit the dashboard below to get started.")
@@ -43,7 +43,9 @@ public class OnAccountSignup {
 
         String subject = config.subject();
         String content = config.content();
-        content = content.replace("__NAME__", emailTemplates.sanitize(account.getName()));
+        String nameSanitized = emailTemplates.sanitize(account.getName());
+        subject = subject.replace("__NAME__", nameSanitized);
+        content = content.replace("__NAME__", nameSanitized);
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();

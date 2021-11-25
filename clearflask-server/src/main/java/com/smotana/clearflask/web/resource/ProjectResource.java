@@ -394,7 +394,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .get();
 
         try {
-            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.CREATE_PROJECT);
+            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanStore.Action.CREATE_PROJECT);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;

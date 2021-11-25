@@ -27,6 +27,7 @@ const GrowthRestrictedProperties: Path[] = [
 ];
 /** If changed, also change in KillBillPlanStore.java */
 export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
+  'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,
 };
@@ -34,8 +35,13 @@ export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
   'growth-monthly': 1,
   'growth2-monthly': 1,
+  'pro-lifetime': 1,
   'standard-monthly': 8,
   'standard2-monthly': 8,
+};
+/** If changed, also change in KillBillPlanStore.java */
+export const ProjectMaxCount: { [basePlanId: string]: number } = {
+  'pro-lifetime': 1,
 };
 
 export enum Action {
@@ -85,6 +91,7 @@ interface Props {
   subscriptionStatus?: Admin.SubscriptionStatus;
   teammatesCount?: number;
   overrideUpgradeMsg?: string,
+  hideInsteadOfCover?: boolean;
 }
 interface ConnectProps {
   accountBasePlanId?: string;
@@ -96,7 +103,7 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
       return this.props.children;
     }
 
-    return (
+    return this.props.hideInsteadOfCover ? null : (
       <UpgradeCover overrideUpgradeMsg={this.props.overrideUpgradeMsg}>
         {this.props.children}
       </UpgradeCover>

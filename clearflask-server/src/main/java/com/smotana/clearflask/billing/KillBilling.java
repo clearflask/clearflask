@@ -233,7 +233,7 @@ public class KillBilling extends ManagedService implements Billing {
             subscription = kbSubscription.createSubscription(new Subscription()
                             .setBundleExternalKey(accountInDyn.getAccountId())
                             .setAccountId(account.getAccountId())
-                            .setPhaseType(PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
+                            .setPhaseType(PlanStore.PLANS_WITHOUT_TRIAL.contains(accountInDyn.getPlanid())
                                     ? PhaseType.EVERGREEN
                                     : PhaseType.TRIAL)
                             .setPlanName(accountInDyn.getPlanid()),
@@ -705,7 +705,11 @@ public class KillBilling extends ManagedService implements Billing {
                 // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
                 switch (subscriptionInKb.getPhaseType()) {
                     case TRIAL:
-                        newPhase = PhaseType.TRIAL;
+                        if (PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
+                            newPhase = PhaseType.EVERGREEN;
+                        } else {
+                            newPhase = PhaseType.TRIAL;
+                        }
                         break;
                     default:
                     case DISCOUNT:

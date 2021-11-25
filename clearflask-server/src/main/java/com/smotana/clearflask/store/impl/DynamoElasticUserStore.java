@@ -921,7 +921,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "identifierHash", e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue())))
                 .toArray(PrimaryKey[]::new))));
 
-        updateUserCountForProject(projectId, users.stream()
+        updateUserCountForProject(projectId, -users.stream()
                 .filter(user -> user.getIsTracked() == Boolean.TRUE)
                 .count());
 

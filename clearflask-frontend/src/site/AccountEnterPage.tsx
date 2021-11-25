@@ -7,6 +7,7 @@ import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { Alert, AlertTitle } from '@material-ui/lab';
 import { withStyles } from '@material-ui/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -34,6 +35,7 @@ import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
+import PricingPlan from './PricingPlan';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = true;
@@ -41,10 +43,12 @@ export const SIGNUP_PROD_ENABLED = true;
 export const PRE_SELECTED_BASE_PLAN_ID = 'preSelectedPlanId';
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 export const ADMIN_ENTER_INVITATION_ID = 'ADMIN_ENTER_INVITATION_ID';
+export const ADMIN_ENTER_COUPON_ID = 'ADMIN_ENTER_COUPON_ID';
 interface LocationState {
   [ADMIN_LOGIN_REDIRECT_TO]?: string;
   [PRE_SELECTED_BASE_PLAN_ID]?: string;
   [ADMIN_ENTER_INVITATION_ID]?: string;
+  [ADMIN_ENTER_COUPON_ID]?: string;
 }
 
 export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string => {
@@ -56,6 +60,7 @@ export const urlAddCfJwt = (url: string, account?: Admin.AccountAdmin): string =
 interface OauthExtraData {
   selectedPlanId?: string;
   invitationId?: string;
+  couponId?: string;
   redirectTo?: string;
 }
 
@@ -133,6 +138,9 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     textTransform: 'none',
   },
+  alert: {
+    margin: theme.spacing(1, 0),
+  },
   enterTemplate: {
     height: '100%',
     position: 'relative',
@@ -151,8 +159,9 @@ const styles = (theme: Theme) => createStyles({
 });
 const useStyles = makeStyles(styles);
 interface Props {
-  type: 'login' | 'signup' | 'invitation';
+  type: 'login' | 'signup' | 'invitation' | 'coupon';
   invitationId?: string;
+  couponId?: string;
 }
 interface ConnectProps {
   accountStatus?: Status;
@@ -167,6 +176,10 @@ interface State {
   redirectTo?: string; // Used when redirecting back from OAuth provider
   accountWasCreated?: boolean; // Used for determining redirection page
   invitationType?: 'login' | 'signup';
+  couponId?: string;
+  couponPlan?: Admin.Plan;
+  couponRedeemedByYou?: boolean;
+  couponError?: string;
   isSubmitting?: boolean;
   useEmail?: boolean; // login & signup
   email?: string; // login & signup
@@ -176,12 +189,15 @@ interface State {
   revealPassword?: boolean; // login & signup
 }
 class AccountEnterPage extends Component<Props & WithTranslation<'site'> & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
-  state: State = {};
   readonly cfReturnUrl?: string;
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
 
   constructor(props) {
     super(props);
+
+    this.state = {
+      couponId: this.props.couponId,
+    };
 
     try {
       const paramCfr = new URL(windowIso.location.href).searchParams.get('cfr');
@@ -196,11 +212,13 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     if (!!oauthToken) {
       this.setState({ isSubmitting: true });
       var basePlanId: string | undefined;
+      var couponId: string | undefined;
       var invitationId: string | undefined;
       var redirectTo: string | undefined;
       if (oauthToken?.extraData) {
         try {
           const oauthExtraData = JSON.parse(oauthToken?.extraData) as OauthExtraData;
+          couponId = oauthExtraData?.couponId;
           invitationId = oauthExtraData?.invitationId;
           basePlanId = oauthExtraData?.selectedPlanId;
           redirectTo = oauthExtraData?.redirectTo;
@@ -214,6 +232,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
               code: oauthToken.code,
               basePlanId,
               invitationId,
+              couponId,
             },
           },
         });
@@ -230,6 +249,14 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         this.setState({ isSubmitting: false });
         throw e;
       }
+    } else if (this.props.type === 'coupon' || this.props.type === 'invitation') {
+      if (this.props.accountStatus === undefined && !this.props.account) {
+        ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin({ accountBindAdmin: {} }));
+      }
+    }
+
+    if (!!this.props.couponId) {
+      this.onCouponCheck(this.props.couponId);
     }
   }
 
@@ -238,8 +265,12 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
       ServerAdmin.get().dispatchAdmin({ debounce: true, ssr: true }).then(d => d
         .plansGet());
     }
+    const isLoggedIn = this.props.accountStatus === Status.FULFILLED && !!this.props.account;
     if (this.props.type === 'invitation') {
-      return this.renderInvitation();
+      return this.renderInvitation(isLoggedIn);
+    }
+    if (this.props.type === 'coupon') {
+      return this.renderCoupon(isLoggedIn);
     }
 
     if (this.props.accountStatus === Status.FULFILLED && !!this.props.account
@@ -288,6 +319,16 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         )}
         renderContent={submitButton => (
           <>
+            {this.state.couponPlan && (
+              <Alert className={this.props.classes.alert} severity='info'>
+                Redeeming <span className={this.props.classes.bold}>{this.state.couponPlan.title}</span> plan.
+              </Alert>
+            )}
+            {this.props.invitation?.projectName && (
+              <Alert className={this.props.classes.alert} severity='info'>
+                Invitation to <span className={this.props.classes.bold}>{this.props.invitation?.projectName}</span>.
+              </Alert>
+            )}
             {isOauthEnabled && (
               <>
                 <Button
@@ -445,7 +486,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     );
   }
 
-  renderInvitation() {
+  renderInvitation(isLoggedIn: boolean) {
     // Only load invitation if we are on /invitation/...
     // We want to make sure a user is not tricked into accepting an invitation
     if (this.props.invitationId && this.props.invitationStatus === undefined) {
@@ -454,7 +495,6 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         .accountViewInvitationAdmin({ invitationId }));
     }
 
-    const isLoggedIn = this.props.accountStatus === Status.FULFILLED && !!this.props.account;
     const expired = !this.props.invitationId || this.props.invitationStatus === Status.REJECTED || (this.props.invitationStatus === Status.FULFILLED && !this.props.invitation);
     const accepted = this.props.invitation?.isAcceptedByYou;
     return (
@@ -532,10 +572,123 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     );
   }
 
+  renderCoupon(isLoggedIn: boolean) {
+    const couponId = this.state.couponId !== undefined ? this.state.couponId : this.props.couponId || '';
+    return (
+      <EnterTemplate
+        title={this.props.t('redeem-coupon')}
+        renderContent={submitButton => (
+          <>
+            <TextField
+              variant='outlined'
+              fullWidth
+              margin='normal'
+              label={this.props.t('coupon-code')}
+              placeholder='XXXXXXXX'
+              value={couponId}
+              onChange={e => this.setState({ couponId: e.target.value })}
+              disabled={this.state.isSubmitting || !!this.state.couponPlan || !!this.state.couponRedeemedByYou}
+            />
+            <Collapse in={!!this.state.couponRedeemedByYou}>
+              <Alert className={this.props.classes.alert} severity='success'>
+                <AlertTitle>Success!</AlertTitle>
+                This coupon has been applied to your account.
+              </Alert>
+            </Collapse>
+            <Collapse in={!!this.state.couponPlan && !this.state.couponRedeemedByYou}>
+              {!!this.state.couponPlan && (
+                <PricingPlan plan={this.state.couponPlan} />
+              )}
+            </Collapse>
+            <Collapse in={!this.state.couponRedeemedByYou && !!this.state.couponPlan}>
+              <Alert className={this.props.classes.alert} severity='info'>
+                {!isLoggedIn ? 'This plan will be applied upon sign-up or login' : 'This plan will replace your current plan on your account.'}
+              </Alert>
+            </Collapse>
+            {submitButton}
+            <Collapse in={!!this.state.couponError}>
+              <Alert className={this.props.classes.alert} severity='warning'>
+                {this.state.couponError}
+              </Alert>
+            </Collapse>
+          </>
+        )}
+        submitTitle={!!this.state.couponRedeemedByYou
+          ? this.props.t('continue')
+          : (!this.state.couponPlan
+            ? this.props.t('check')
+            : (!isLoggedIn
+              ? this.props.t('continue')
+              : this.props.t('redeem')))}
+        submitDisabled={!couponId}
+        isSubmitting={this.state.isSubmitting}
+        onSubmit={async () => {
+          if (!couponId) return;
+          if (!!this.state.couponRedeemedByYou) {
+            // Already redeemed by you
+            this.props.history.push('/dashboard');
+          } else if (!this.state.couponPlan) {
+            // Need to check couponn
+            await this.onCouponCheck(couponId);
+          } else if (!isLoggedIn) {
+            // Redirect to signup for a valid code
+            this.props.history.push('/signup/', {
+              [ADMIN_ENTER_COUPON_ID]: couponId,
+              [ADMIN_LOGIN_REDIRECT_TO]: `/coupon/${couponId}`,
+            })
+          } else {
+            // Accept code on own account
+            this.setState({ isSubmitting: true });
+            try {
+              await (await ServerAdmin.get().dispatchAdmin()).accountAcceptCouponAdmin({
+                couponId,
+              });
+              this.setState({
+                couponRedeemedByYou: true,
+                couponError: undefined,
+              });
+            } finally {
+              this.setState({ isSubmitting: false });
+            }
+          }
+        }}
+        footer={(!this.state.couponRedeemedByYou && !!this.state.couponPlan && !isLoggedIn) ? {
+          text: this.props.t('have-an-account'),
+          actionText: this.props.t('log-in-here'),
+          linkTo: {
+            pathname: '/login',
+            state: {
+              [ADMIN_ENTER_COUPON_ID]: couponId,
+              [ADMIN_LOGIN_REDIRECT_TO]: `/coupon/${couponId}`,
+            },
+          },
+        } : undefined}
+        layout={this.props.type}
+      />
+    );
+  }
+
+  async onCouponCheck(couponId: string) {
+    this.setState({ isSubmitting: true });
+    try {
+      const result = await (await ServerAdmin.get().dispatchAdmin()).accountViewCouponAdmin({
+        couponId,
+      });
+      this.setState({
+        couponPlan: result.plan,
+        couponRedeemedByYou: !!result.redeemedByYou,
+        couponError: (!result.plan && !result.redeemedByYou) ? 'Coupon expired or invalid.' : undefined
+      });
+    } finally {
+      this.setState({ isSubmitting: false });
+    }
+  }
+
   onOauth(type: 'google' | 'github' | 'bathtub', selectedPlanId: string) {
     const extraData: OauthExtraData = {
       selectedPlanId,
       invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
+      couponId: this.props.location.state?.[ADMIN_ENTER_COUPON_ID],
       redirectTo: this.props.location.state?.[ADMIN_LOGIN_REDIRECT_TO],
     };
     this.oauthFlow.openForAccount(type, 'self', JSON.stringify(extraData));
@@ -575,6 +728,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
+      const couponId = this.props.location.state?.[ADMIN_ENTER_COUPON_ID];
       await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           name: this.state.name!,
@@ -582,11 +736,16 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
           password: saltHashPassword(this.state.pass!),
           basePlanId: selectedPlanId,
           invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
+          couponId,
         }
       });
       this.setState({
         isSubmitting: false,
         accountWasCreated: true,
+        ...(!!couponId ? {
+          couponId,
+          couponRedeemedByYou: true,
+        } : {}),
       });
     } catch (e) {
       this.setState({ isSubmitting: false });
@@ -622,7 +781,7 @@ const EnterTemplate = (props: {
           <div className={classNames(
             classes.paperContainer,
             props.layout === 'login' && classes.paperContainerRight,
-            props.layout === 'invitation' && classes.paperContainerCenter,
+            (props.layout === 'invitation' || props.layout === 'coupon') && classes.paperContainerCenter,
           )}>
             <Paper className={classes.paper}>
               <Typography component='h1' variant='h4' color='textPrimary' className={classes.welcomeBack}>
