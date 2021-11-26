@@ -454,9 +454,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = new Account(
                 accountId,
                 email,
-                isTeammate
-                        ? SubscriptionStatus.ACTIVE // Teammate plan is trialless and unlimited
-                        : SubscriptionStatus.ACTIVETRIAL, // Assume it's a trial
+                PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)
+                        ? SubscriptionStatus.ACTIVE
+                        : SubscriptionStatus.ACTIVETRIAL,
                 null,
                 planId,
                 Instant.now(),

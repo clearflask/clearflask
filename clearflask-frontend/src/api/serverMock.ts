@@ -260,7 +260,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       accountId: randomUuid(),
       basePlanId: (request.accountSignupAdmin.invitationId
         ? TeammatePlanId
-        : request.accountSignupAdmin.basePlanId)
+        : (request.accountSignupAdmin.couponId
+          ? 'pro-lifetime'
+          : request.accountSignupAdmin.basePlanId))
         || 'standard2-monthly',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
@@ -270,7 +272,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
-      subscriptionStatus: request.accountSignupAdmin.invitationId
+      subscriptionStatus: (request.accountSignupAdmin.invitationId || request.accountSignupAdmin.couponId)
         ? Admin.SubscriptionStatus.Active
         : Admin.SubscriptionStatus.ActiveTrial,
     };
