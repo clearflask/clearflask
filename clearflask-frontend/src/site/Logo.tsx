@@ -11,11 +11,8 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     margin: (props: Props) => !props.suppressMargins ? theme.spacing(0, 3) : undefined,
-    fontSize: '1.4em',
   },
   image: {
-    width: 32,
-    height: 32,
     marginRight: 8,
   },
   clear: {
@@ -29,20 +26,25 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   suppressMargins?: boolean;
   suppressName?: boolean;
+  scale?: number;
 }
 class Logo extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    const scale = this.props.scale || 1;
     var logo = (
-      <div className={this.props.classes.container}>
+      <div className={this.props.classes.container} style={{
+        fontSize: `${1.4 * scale}rem`,
+      }}>
         <ImgIso
           alt=''
           className={this.props.classes.image}
-          src={LogoImg.src}
-          aspectRatio={LogoImg.aspectRatio}
-          width={LogoImg.width}
-          height={LogoImg.height}
-          maxWidth={LogoImg.width}
-          maxHeight={LogoImg.height}
+          styleOuter={{
+            width: 32 * scale,
+            height: 32 * scale,
+          }}
+          img={LogoImg}
+          minWidth={32 * scale}
+          minHeight={32 * scale}
         />
         {!this.props.suppressName && (
           <>

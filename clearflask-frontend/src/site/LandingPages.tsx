@@ -130,6 +130,7 @@ import Templater, { createTemplateV2OptionsDefault } from '../common/config/conf
 import CreditView from '../common/config/CreditView';
 import { contentScrollApplyStyles, Orientation, Side } from '../common/ContentScroll';
 import FakeBrowser from '../common/FakeBrowser';
+import Hr from '../common/Hr';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
 import LockSimpleIcon from '../common/icon/LockSimpleIcon';
@@ -149,6 +150,7 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
+import Logo from './Logo';
 import PricingPage from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -375,14 +377,15 @@ export function Landing() {
             // raiseOnHover
             contentSpacingVertical={200}
             items={[{
+              height: 'max-content',
               content: (
                 <FakeBrowser>
-                  <ImgIso img={DemoFeedbackWhatElseImg} />
+                  <ImgIso img={DemoPageFeedbackClassigImg} />
                 </FakeBrowser>
               )
             }, {
               height: 'max-content',
-              width: 450,
+              width: 330,
               content: (
                 <FakeBrowser>
                   <ImgIso img={DemoFeedbackImg} />
@@ -3065,6 +3068,173 @@ export function GetStartedColumn() {
         image={TeamImg}
         {...FooterHorizontalPanelsBlockProps}
       />
+    </>
+  );
+}
+
+export function LandingPromo() {
+  return (
+    <>
+      <Background svg={{
+        d: 'M 0 49.98 Q 59 131 226 93 C 374 59 387 188 500 176 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 150',
+      }} width={2400} height={1000}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ margin: '180px 150px 50px 0px' }}>
+            <Logo scale={5} />
+          </div>
+          <div style={{ margin: '0px 0px 30px' }}>
+            <Typography variant='h3' color='textSecondary'>
+              Open-source feedback tool<br /> to build better products.
+            </Typography>
+          </div>
+        </div>
+      </Background>
+      <div style={{ zIndex: 1, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <FakeBrowser fixedWidth={1000}>
+          <ImgIso img={DemoPageFeedbackClassigImg} />
+        </FakeBrowser>
+      </div>
+
+      <Hr margins={300} />
+
+      <Background svg={{
+        d: 'M 0 177 Q 113 188 226 116 C 359 65 400 154 502 107 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 150',
+      }} width={2400} height={1000}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ margin: '100px 700px 0px 0px' }}>
+            <Logo scale={1} />
+          </div>
+        </div>
+      </Background>
+      <Block
+        title='Product feedback'
+        type='headingMain'
+        xlargePoints
+        points={[
+          'Ask for feedback',
+          'Validate new ideas',
+          'Easy integration',
+        ]}
+        alignItems='center'
+        demoFixedWidth='100%'
+        demoFixedHeight={500}
+        spacingTop={0}
+        demo={(
+          <Stack
+            float='right'
+            contentSpacingVertical={200}
+            items={[{
+              height: 'max-content',
+              width: 800,
+              content: (
+                <FakeBrowser>
+                  <ImgIso img={DemoFeedbackWhatElseImg} />
+                </FakeBrowser>
+              )
+            }, {
+              height: 'max-content',
+              width: 330,
+              content: (
+                <FakeBrowser>
+                  <ImgIso img={DemoFeedbackImg} />
+                </FakeBrowser>
+              )
+            }]}
+          />
+        )}
+      />
+
+      <Hr margins={300} />
+
+      <Background align='top' svg={{
+        d: 'M 0 177 Q 130 27 287 139 C 362 182 408 258 501 229 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 200',
+      }} width={2400} height={1000}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ margin: '100px 0px 0px 700px' }}>
+            <Logo scale={1} />
+          </div>
+        </div>
+        <Block
+          mirror
+          title='Analyze ideas'
+          type='headingMain'
+          xlargePoints
+          points={[
+            'Convert ideas to tasks',
+            'Prioritize your roadmap',
+            'Estimate value/effort',
+          ]}
+          alignItems='center'
+          demoFixedWidth='100%'
+          spacingTop={0}
+          demo={(
+            <Stack
+              contentSpacingVertical={200}
+              float='right' // overflow left
+              items={[{
+                content: (<ImgIso img={DemoDashboardRoadmapImg} />),
+                height: 'max-content',
+              }, {
+                content: (<ImgIso img={DemoDashboardFeedbackImg} />),
+                height: 'max-content',
+              }]}
+            />
+          )}
+        />
+      </Background>
+
+      <Hr margins={300} />
+
+      <Background align='top' svg={{
+        d: 'M 0 177 Q 166 -61 287 139 C 351 239 408 258 501 229 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 200',
+      }} width={2400} height={1000}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ margin: '100px 700px 0px 0px' }}>
+            <Logo scale={1} />
+          </div>
+        </div>
+        <Block
+          title='Keep everyone informed'
+          type='headingMain'
+          xlargePoints
+          points={[
+            'Public Roadmap',
+            'Announcements',
+          ]}
+          alignItems='center'
+          demoFixedWidth='100%'
+          spacingTop={0}
+          demo={(
+            <Stack
+              // topLeftToBottomRight
+              // ascendingLevel
+              float='right'
+              contentSpacingVertical={280}
+              items={[{
+                content: (
+                  <FakeBrowser>
+                    <ImgIso img={DemoRoadmapImg} />
+                  </FakeBrowser>
+                ),
+                width: 800,
+                height: 'max-content',
+              }, {
+                content: (
+                  <FakeBrowser>
+                    <ImgIso img={DemoChangelogImg} />
+                  </FakeBrowser>
+                ),
+                width: 550,
+                height: 'max-content',
+              }]}
+            />
+          )}
+        />
+      </Background>
     </>
   );
 }

@@ -85,6 +85,7 @@ export interface Props {
   description?: string | React.ReactNode;
   points?: Array<Point>;
   largePoints?: boolean;
+  xlargePoints?: boolean;
   counterpoints?: Array<string>;
   postStatusId?: string;
   buttonIcon?: React.ReactNode;
@@ -139,7 +140,7 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
         bodyCmpt = 'div';
         break;
     }
-    const pointVariant = this.props.largePoints ? 'h6' : bodyVariant;
+    const pointVariant = this.props.xlargePoints ? 'h4' : (this.props.largePoints ? 'h6' : bodyVariant);
     const counterpoints = this.props.counterpoints?.map(text => {
       return (
         <Typography variant={pointVariant} component='div' className={this.props.classes.point}>

@@ -29,7 +29,7 @@ import Loading from '../app/utils/Loading';
 import OpenSourceIcon from '../common/icon/OpenSourceIcon';
 import { MenuButton, MenuDropdown, MenuItems } from '../common/menus';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -60,6 +60,7 @@ const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "Landing
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
 const LandingEmbedFeedbackPage = loadable<any, any>(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
 const LandingOpenSource = loadable(() => import(/* webpackChunkName: "LandingOpenSource" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingOpenSource, fallback: (<Loading />) });
+const LandingPromo = loadable(() => import(/* webpackChunkName: "LandingPromo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPromo, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -370,6 +371,13 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
               <SetTitle title={this.props.t('pricing')} />
               <PricingPage />
             </Route>
+
+            {!isProd() && (
+              <Route exact path='/promo'>
+                <SetTitle title='Promo' />
+                <LandingPromo />
+              </Route>
+            )}
 
             <Route path='/e'>
               <LandingEmbedFeedbackPage browserPathPrefix='/e' embed />
