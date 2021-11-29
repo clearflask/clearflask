@@ -79,11 +79,13 @@ public class DynamoNotificationStore implements NotificationStore {
 
     @Override
     public void notificationsCreate(Collection<NotificationModel> notifications) {
-        TableWriteItems tableWriteItems = new TableWriteItems(notificationSchema.tableName());
-        tableWriteItems.withItemsToPut(notifications.stream()
-                .map(notificationSchema::toItem)
-                .collect(ImmutableList.toImmutableList()));
-        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+
+        Iterables.partition(notifications, DYNAMO_WRITE_BATCH_MAX_SIZE).forEach(batch -> {
+            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(notificationSchema.tableName())
+                    .withItemsToPut(batch.stream()
+                            .map(notificationSchema::toItem)
+                            .collect(ImmutableList.toImmutableList()))));
+        });
     }
 
     @Override
@@ -112,9 +114,9 @@ public class DynamoNotificationStore implements NotificationStore {
                 .map(item -> notificationSchema.fromItem(item))
                 .collect(ImmutableList.toImmutableList());
         Optional<String> newCursorOpt = Optional.ofNullable(page
-                .getLowLevelResult()
-                .getQueryResult()
-                .getLastEvaluatedKey())
+                        .getLowLevelResult()
+                        .getQueryResult()
+                        .getLastEvaluatedKey())
                 .map(m -> m.get(notificationSchema.rangeKeyName()))
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
@@ -135,17 +137,17 @@ public class DynamoNotificationStore implements NotificationStore {
     @Override
     public void notificationClearAll(String projectId, String userId) {
         Iterables.partition(StreamSupport.stream(notificationSchema.table().query(new QuerySpec()
-                .withHashKey(notificationSchema.partitionKey(Map.of(
-                        "userId", userId,
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(notificationSchema.rangeKeyName())
-                        .beginsWith(notificationSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(notificationSchema::fromItem)
-                .map(NotificationModel::getNotificationId)
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(notificationSchema.partitionKey(Map.of(
+                                                "userId", userId,
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(notificationSchema.rangeKeyName())
+                                                .beginsWith(notificationSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(notificationSchema::fromItem)
+                        .map(NotificationModel::getNotificationId)
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(notificationIdsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(notificationSchema.tableName());
                     notificationIdsBatch.stream()
