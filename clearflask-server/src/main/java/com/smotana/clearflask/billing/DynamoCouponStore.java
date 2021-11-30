@@ -123,6 +123,7 @@ public class DynamoCouponStore extends ManagedService implements CouponStore {
                 .condition("attribute_not_exists(" + expressionBuilder.fieldMapping("redeemedAccountId") + ")" +
                         " OR " + expressionBuilder.fieldMapping("redeemedAccountId") + " = " + expressionBuilder.valueMapping("redeemedAccountId", accountId))
                 .set("redeemedAccountId", accountId)
+                .remove("ttlInEpochSec")
                 .build();
         try {
             return Optional.of(couponSchema.fromItem(couponSchema.table().updateItem(new UpdateItemSpec()
