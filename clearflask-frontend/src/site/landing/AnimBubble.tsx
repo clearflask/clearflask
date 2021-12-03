@@ -18,6 +18,7 @@ interface Props {
   duration?: string;
   timingFunction?: string;
   background?: string;
+  color?: string;
 }
 class BubbleAnim extends Component<Props & WithStyles<typeof styles, true>> {
   init: boolean = true;
@@ -35,7 +36,7 @@ class BubbleAnim extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   render() {
-    const color = this.props.theme.palette.secondary.main;
+    const color = this.props.color || this.props.theme.palette.secondary.main;
     const size = this.init
       ? '0px'
       : (typeof this.props.size === 'number'

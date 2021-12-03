@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button, Collapse, Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
-import { createStyles, makeStyles, Theme, WithStyles } from '@material-ui/core/styles';
+import { createStyles, fade, makeStyles, Theme, useTheme, WithStyles } from '@material-ui/core/styles';
 import BathtubIcon from '@material-ui/icons/Bathtub';
 import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
@@ -91,6 +91,9 @@ const styles = (theme: Theme) => createStyles({
     position: 'relative',
   },
   paperContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     width: 'max-content',
     position: 'absolute',
     transition: theme.transitions.create(['left', 'transform']),
@@ -769,20 +772,27 @@ const EnterTemplate = (props: {
   layout?: Props['type'];
 }) => {
   const classes = useStyles();
+  const theme = useTheme();
+  const bubbleColor = fade(theme.palette.primary.main, 0.15);
   return (
     <div className={classes.page}>
       <Container maxWidth='md' className={classes.enterTemplate}>
-        <AnimBubble delay='0ms' duration='400ms' size={props.layout === 'signup' ? 350 : (props.layout === 'login' ? 100 : 400)} x={props.layout === 'signup' ? 420 : (props.layout === 'login' ? 50 : 100)} y={props.layout === 'signup' ? 70 : (props.layout === 'login' ? 210 : 0)} />
-        <AnimBubble delay='20ms' duration='200ms' size={props.layout === 'signup' ? 100 : (props.layout === 'login' ? 300 : 200)} x={props.layout === 'signup' ? 800 : (props.layout === 'login' ? 400 : 650)} y={props.layout === 'signup' ? 130 : (props.layout === 'login' ? 50 : 250)} />
-        <AnimBubble delay='40ms' duration='300ms' size={props.layout === 'signup' ? 150 : (props.layout === 'login' ? 500 : 100)} x={props.layout === 'signup' ? 520 : (props.layout === 'login' ? -200 : 100)} y={props.layout === 'signup' ? 470 : (props.layout === 'login' ? 700 : 500)} />
-        <AnimBubble delay='100ms' duration='500ms' size={props.layout === 'signup' ? 300 : (props.layout === 'login' ? 150 : 700)} x={props.layout === 'signup' ? 900 : (props.layout === 'login' ? 350 : 800)} y={props.layout === 'signup' ? 700 : (props.layout === 'login' ? 500 : 950)} />
-        <AnimBubble delay='100ms' duration='500ms' size={props.layout === 'signup' ? 500 : (props.layout === 'login' ? 300 : 400)} x={props.layout === 'signup' ? 1300 : (props.layout === 'login' ? 900 : 1100)} y={props.layout === 'signup' ? 450 : (props.layout === 'login' ? 700 : 150)} />
+        <AnimBubble color={bubbleColor} delay='0ms' duration='400ms' size={props.layout === 'signup' ? 350 : (props.layout === 'login' ? 100 : 400)} x={props.layout === 'signup' ? 420 : (props.layout === 'login' ? 50 : 100)} y={props.layout === 'signup' ? 70 : (props.layout === 'login' ? 210 : 0)} />
+        <AnimBubble color={bubbleColor} delay='20ms' duration='200ms' size={props.layout === 'signup' ? 100 : (props.layout === 'login' ? 300 : 200)} x={props.layout === 'signup' ? 800 : (props.layout === 'login' ? 400 : 650)} y={props.layout === 'signup' ? 130 : (props.layout === 'login' ? 50 : 250)} />
+        <AnimBubble color={bubbleColor} delay='40ms' duration='300ms' size={props.layout === 'signup' ? 150 : (props.layout === 'login' ? 500 : 100)} x={props.layout === 'signup' ? 520 : (props.layout === 'login' ? -200 : 100)} y={props.layout === 'signup' ? 470 : (props.layout === 'login' ? 700 : 500)} />
+        <AnimBubble color={bubbleColor} delay='100ms' duration='500ms' size={props.layout === 'signup' ? 300 : (props.layout === 'login' ? 150 : 700)} x={props.layout === 'signup' ? 900 : (props.layout === 'login' ? 350 : 800)} y={props.layout === 'signup' ? 700 : (props.layout === 'login' ? 500 : 950)} />
+        <AnimBubble color={bubbleColor} delay='100ms' duration='500ms' size={props.layout === 'signup' ? 500 : (props.layout === 'login' ? 300 : 400)} x={props.layout === 'signup' ? 1300 : (props.layout === 'login' ? 900 : 1100)} y={props.layout === 'signup' ? 450 : (props.layout === 'login' ? 700 : 150)} />
         <div className={classes.paperContainerContainer}>
           <div className={classNames(
             classes.paperContainer,
             props.layout === 'login' && classes.paperContainerRight,
             (props.layout === 'invitation' || props.layout === 'coupon') && classes.paperContainerCenter,
           )}>
+            {/* <CollapseV5 in={props.layout === 'login'} orientation='horizontal'>
+              <Paper className={classes.paper}>
+                sdfsdfasdffasd
+              </Paper>
+            </CollapseV5> */}
             <Paper className={classes.paper}>
               <Typography component='h1' variant='h4' color='textPrimary' className={classes.welcomeBack}>
                 {props.title}
@@ -813,6 +823,11 @@ const EnterTemplate = (props: {
                 </div>
               )}
             </Paper>
+            {/* <CollapseV5 in={props.layout === 'signup'} orientation='horizontal'>
+              <Paper className={classes.paper}>
+                sdfsdfasdffasd
+              </Paper>
+            </CollapseV5> */}
           </div>
         </div>
       </Container>
