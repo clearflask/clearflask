@@ -340,6 +340,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(this.account);
   }
+  accountAttrsUpdateAdmin(request: Admin.AccountAttrsUpdateAdminRequest): Promise<Admin.AccountAdmin> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    if (!!request.accountAttrsUpdateAdmin.attrs) {
+      this.account.attrs = {
+        ...(this.account.attrs || {}),
+        ...request.accountAttrsUpdateAdmin.attrs,
+      };
+    }
+    return this.returnLater(this.account);
+  }
   accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice !== undefined) {

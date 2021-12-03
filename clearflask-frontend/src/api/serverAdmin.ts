@@ -243,6 +243,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
     case Admin.accountLoginAdminActionStatus.Fulfilled:
     case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
     case Admin.accountUpdateAdminActionStatus.Fulfilled:
+    case Admin.accountAttrsUpdateAdminActionStatus.Fulfilled:
     case Admin.accountAcceptCouponAdminActionStatus.Fulfilled:
       return {
         ...state,

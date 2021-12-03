@@ -17,12 +17,10 @@ const getGuideAttrId = (guideId: string): string => {
   return `guide-state-${guideId}`;
 }
 const setGuideState = async (guideId: string, state: TourDefinitionGuideState) => {
-  (await ServerAdmin.get().dispatchAdmin()).accountUpdateAdmin({
-    accountUpdateAdmin: {
-      attrs: {
-        [getGuideAttrId(guideId)]: state,
-      }
-    },
+  (await ServerAdmin.get().dispatchAdmin()).accountAttrsUpdateAdmin({
+    accountAttrsUpdateAdmin: {
+      attrs: { [getGuideAttrId(guideId)]: state }
+    }
   });
 }
 export const tourSetGuideState = async (guideId: string, state: TourDefinitionGuideState) => {

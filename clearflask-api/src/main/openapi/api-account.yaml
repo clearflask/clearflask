@@ -205,6 +205,13 @@ components:
       - NoPaymentMethod
       - Blocked
       - Cancelled
+    AccountAttrsUpdateAdmin:
+      type: object
+      properties:
+        attrs:
+          type: object
+          additionalProperties:
+            type: string
     AccountUpdateAdmin:
       type: object
       properties:
@@ -234,6 +241,7 @@ components:
           type: boolean
         resume:
           type: boolean
+        # Deprecated, use the /admin/account/update/attrs endpoint instead
         attrs:
           type: object
           additionalProperties:
@@ -675,6 +683,22 @@ components:
         application/json:
           schema:
             $ref: 'api-account.yaml#/components/schemas/AccountUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/update/attrs:
+  post:
+    operationId: accountAttrsUpdateAdmin
+    tags: [AccountAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountAttrsUpdateAdmin'
     responses:
       '200':
         content:

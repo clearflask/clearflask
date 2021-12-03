@@ -46,10 +46,10 @@ const FirstTimeNotice = React.forwardRef((props: {
         const newNoticeStatus = dialogResult.dontShowAgain ? ConfirmedAndDontShowAgain : ConfirmedButShowAgain;
         if (newNoticeStatus !== noticeStatus)
           // Update in the background
-          ServerAdmin.get().dispatchAdmin().then(dispatcher => dispatcher.accountUpdateAdmin({
-            accountUpdateAdmin: {
+          ServerAdmin.get().dispatchAdmin().then(dispatcher => dispatcher.accountAttrsUpdateAdmin({
+            accountAttrsUpdateAdmin: {
               attrs: { [dialogId]: newNoticeStatus },
-            },
+            }
           }));
       }
       return dialogResult.confirmed;

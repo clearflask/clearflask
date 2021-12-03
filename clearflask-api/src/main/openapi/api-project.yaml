@@ -920,7 +920,7 @@ components:
       type: object
       properties:
         title:
-          x-clearflask-prop: { order: 1, name: 'Board title'}
+          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Board title'}
           type: string
         panels:
           x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames: ['title'] }

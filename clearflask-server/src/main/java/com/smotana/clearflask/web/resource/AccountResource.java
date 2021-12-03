@@ -20,6 +20,7 @@ import com.smotana.clearflask.api.PlanAdminApi;
 import com.smotana.clearflask.api.PlanSuperAdminApi;
 import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountAttrsUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
@@ -500,6 +501,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateName(account.getAccountId(), accountUpdateAdmin.getName()).getAccount();
         }
         if (accountUpdateAdmin.getAttrs() != null && !accountUpdateAdmin.getAttrs().isEmpty()) {
+            log.info("{} using deprecated call to update attrs via accountUpdateAdmin", accountUpdateAdmin.getName());
             account = accountStore.updateAttrs(account.getAccountId(), accountUpdateAdmin.getAttrs(), account.getAttrs() == null || account.getAttrs().isEmpty());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
@@ -768,6 +770,22 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         accountStore.addExternalProject(accountId, projectId);
 
         return new AccountAcceptInvitationResponse(projectId);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public AccountAdmin accountAttrsUpdateAdmin(AccountAttrsUpdateAdmin accountAttrsUpdateAdmin) {
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .get();
+
+        if (accountAttrsUpdateAdmin.getAttrs() != null && !accountAttrsUpdateAdmin.getAttrs().isEmpty()) {
+            account = accountStore.updateAttrs(account.getAccountId(), accountAttrsUpdateAdmin.getAttrs(), account.getAttrs() == null || account.getAttrs().isEmpty());
+        }
+
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
