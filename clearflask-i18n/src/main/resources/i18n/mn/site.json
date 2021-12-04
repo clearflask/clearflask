@@ -1,4 +1,13 @@
 {
+  "pricing": "Үнийн мэдээлэл",
+  "get-started": "Эхлэх",
+  "hero": "Хэрэглэгчийн санал хүсэлт",
+  "simple-yet-powerful-feedback-experience": "Хэрэгдэгчдийн санал хүсэлтүүд",
+  "ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas": "Хэрэглэгчдээсээ бүтээгдэхүүний талаар санал хүсэлтийг асууж, үнэ цэнэтэй санаануудыг нэвтрүүлэх.",
+  "gauge-customer-interest": "Хэрэглэгчийн хүсэл сонирхлыг дэмжих",
+  "community-discussion": "Олон нийтийн хэлэлцүүлэг хийх",
+  "website-integration": "Өөрийн вебсайттай холбох",
+  "free-14-day-trial": "14 хоног үнэгүй турших",
   "roadmap": "Замын зураг",
   "email": "И-мэйл"
 }
