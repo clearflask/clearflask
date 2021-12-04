@@ -9,8 +9,10 @@ export const getI18n = () => {
   if (process.env.ENV === 'production') {
     languageDetector = new i18nMiddleware.LanguageDetector();
     languageDetector.addDetector((req, res, lng, options) => {
-      const languages = CountryLocaleMap.getCountryByAlpha2(req.header('x-clearflask-country-to-locale')).languages;
-      return languages?.find(language => supportedLanguagesSet.has(language)) || defaultLanguage;
+      const languages = CountryLocaleMap.getCountryByAlpha2(
+        req.header('x-clearflask-country-to-locale')?.toUpperCase())
+        .languages;
+      return languages?.find(language => supportedLanguagesSet.has(language.toLowerCase())) || defaultLanguage;
     });
   } else {
     languageDetector = i18nMiddleware.LanguageDetector;
