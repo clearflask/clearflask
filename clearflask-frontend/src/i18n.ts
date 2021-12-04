@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="./@types/transform-media-imports.d.ts"/>
-import i18n, { InitOptions, Resource } from 'i18next';
+import i18n, { InitOptions, LanguageDetectorModule, Resource } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
@@ -45,43 +45,42 @@ export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code)
 export const getI18n = (
   initialLng: string | undefined,
   initialStore: Resource | undefined,
-  languageDetector,
+  languageDetector?: LanguageDetectorModule,
   opts?: InitOptions,
 ) => {
-  i18n
-    .use(initReactI18next)
-    .use(languageDetector)
-    .use(resourcesToBackend((language, namespace, callback) => {
-      if (!supportedLanguagesSet.has(language)) {
-        return callback({ name: 'unsupported', message: `Language ${language} not supported` }, null);
-      }
-      import(/* webpackChunkName: "[request]" */ `./locales/${language}/${namespace}.json`)
-        .then(({ default: resources }) => callback(null, resources))
-        .catch((error) => callback(error, null))
-    }))
-    // Docs: https://www.i18next.com/overview/configuration-options
-    .init({
-      initImmediate: false,
-      lng: initialLng,
-      fallbackLng: defaultLanguage,
-      supportedLngs: [...supportedLanguagesSet],
-      debug: !isProd(),
-      resources: initialStore,
-      missingKeyNoValueFallbackToKey: false,
-      ns: ['app', 'site'],
-      defaultNS: 'app',
-      ...opts,
-      interpolation: {
-        escapeValue: false, // not needed for react as it escapes by default
-        ...opts?.interpolation,
-      },
-      react: {
-        useSuspense: false,
-        wait: true,
-        transWrapTextNodes: 'span',
-        ...opts?.react,
-      },
-    });
+  i18n.use(initReactI18next);
+  if (languageDetector) i18n.use(initReactI18next);
+  i18n.use(resourcesToBackend((language, namespace, callback) => {
+    if (!supportedLanguagesSet.has(language)) {
+      return callback({ name: 'unsupported', message: `Language ${language} not supported` }, null);
+    }
+    import(/* webpackChunkName: "[request]" */ `./locales/${language}/${namespace}.json`)
+      .then(({ default: resources }) => callback(null, resources))
+      .catch((error) => callback(error, null))
+  }));
+  // Docs: https://www.i18next.com/overview/configuration-options
+  i18n.init({
+    initImmediate: false,
+    lng: initialLng,
+    fallbackLng: defaultLanguage,
+    supportedLngs: [...supportedLanguagesSet],
+    debug: !isProd(),
+    resources: initialStore,
+    missingKeyNoValueFallbackToKey: false,
+    ns: ['app', 'site'],
+    defaultNS: 'app',
+    ...opts,
+    interpolation: {
+      escapeValue: false, // not needed for react as it escapes by default
+      ...opts?.interpolation,
+    },
+    react: {
+      useSuspense: false,
+      wait: true,
+      transWrapTextNodes: 'span',
+      ...opts?.react,
+    },
+  });
   return i18n;
 };
 

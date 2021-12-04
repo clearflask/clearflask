@@ -13,7 +13,7 @@ export const getI18n = () => {
     instance = getI18nGeneric(
       initialLanguage,
       htmlDataRetrieve('__SSR_I18N_INIT_STORE__'),
-      BrowserLanguageDetector,
+      new BrowserLanguageDetector(),
       {
         partialBundledLanguages: true,
       }
