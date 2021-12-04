@@ -33,6 +33,7 @@ import { TourDefinitionGuideState } from '../../common/tour';
 import { detectEnv, Environment, isTracking } from '../../common/util/detectEnv';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
+import { AddonExtraProject } from './BillingPage';
 
 const styles = (theme: Theme) => createStyles({
   layout: {
@@ -174,6 +175,7 @@ interface Props {
 interface ConnectProps {
   basePlanId?: string;
   accountProjectCount?: number;
+  addonExtraProjectsCount: number;
 }
 interface State extends CreateTemplateV2Options {
   step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite' | 'plan-limit-reached';
@@ -187,7 +189,9 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
     super(props);
 
     var step: State['step'] = 'feature-select';
-    if (!!this.props.basePlanId && ((ProjectMaxCount[this.props.basePlanId] || Infinity) <= (this.props.accountProjectCount || 0))) {
+    if (!!this.props.basePlanId
+      && (((ProjectMaxCount[this.props.basePlanId] || Infinity) + this.props.addonExtraProjectsCount)
+        <= (this.props.accountProjectCount || 0))) {
       step = 'plan-limit-reached';
     } else if (this.props.basePlanId === TeammatePlanId) {
       step = 'upgrade-plan';
@@ -617,6 +621,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
     basePlanId: state.account.account.account?.basePlanId,
+    addonExtraProjectsCount: parseInt(state.account.account.account?.addons?.[AddonExtraProject] || '') || 0,
     accountProjectCount: state.configs.configs.byProjectId
       ? Object.values(state.configs.configs.byProjectId)
         .filter(project => !project.isExternal)

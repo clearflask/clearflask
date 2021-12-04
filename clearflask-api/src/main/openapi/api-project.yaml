@@ -323,6 +323,7 @@ components:
         - palette
         - typography
         - animation
+        - whitelabel
       properties:
         animation:
           x-clearflask-prop: { order: 1, name: 'Animation' }
@@ -410,6 +411,17 @@ components:
             footer:
               x-clearflask-prop: { order: 4, name: 'Footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden.', subType: 'multiline' }
               type: string
+        whitelabel:
+          x-clearflask-prop: { order: 1, name: 'Whitelabel' }
+          title: Whitelabel
+          type: object
+          required:
+            - poweredBy
+          properties:
+            poweredBy:
+              x-clearflask-prop: { order: 0, name: 'Powered by ClearFlask', defaultValue: 'Show', description: 'Consider supporting us by keeping the Powered-By link as it is one of our primary ways to reach new customers. Minimal option shows the link on the front page only when not embedded.' }
+              type: string
+              enum: [Show, Minimal, Hidden]
     subscription:
       x-clearflask-page: { order: 3, name: 'Subscription', description: 'Allow users to subscribe to new content, typically used for a blog or changelog.' }
       title: Subscription

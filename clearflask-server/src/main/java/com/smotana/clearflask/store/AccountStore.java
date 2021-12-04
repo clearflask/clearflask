@@ -53,7 +53,9 @@ public interface AccountStore {
 
     long getUserCountForAccount(String accountId);
 
-    AccountAndIndexingFuture setPlan(String accountId, String planid);
+    AccountAndIndexingFuture setPlan(String accountId, String planid, Optional<ImmutableMap<String, String>> addons);
+
+    Account updateAddons(String accountId, Map<String, String> addons, boolean overwriteMap);
 
     AccountAndIndexingFuture addProject(String accountId, String projectId);
 
@@ -184,6 +186,8 @@ public interface AccountStore {
 
         ImmutableMap<String, String> attrs;
 
+        ImmutableMap<String, String> addons;
+
         /**
          * ClearFlask Feedback page guid
          */
@@ -209,7 +213,8 @@ public interface AccountStore {
                     intercomUtil.getIdentity(getEmail()).orElse(null),
                     getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
-                    getAttrs());
+                    getAttrs(),
+                    getAddons());
         }
 
         public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {

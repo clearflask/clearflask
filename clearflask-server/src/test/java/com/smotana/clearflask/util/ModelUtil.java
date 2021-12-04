@@ -24,6 +24,7 @@ import com.smotana.clearflask.api.model.Typography;
 import com.smotana.clearflask.api.model.Users;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.api.model.Voting;
+import com.smotana.clearflask.api.model.Whitelabel;
 import com.smotana.clearflask.api.model.Workflow;
 
 public class ModelUtil {
@@ -59,7 +60,8 @@ public class ModelUtil {
                         new Flow(true),
                         new Palette(false, null, null, null, null, null, null),
                         new Typography(null, null),
-                        null),
+                        null,
+                        new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),
                 new Users(
                         null,
                         new Onboarding(

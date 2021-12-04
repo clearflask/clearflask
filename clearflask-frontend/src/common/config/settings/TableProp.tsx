@@ -43,7 +43,6 @@ interface Props {
   errorMsg?: string;
   width?: string | number;
   pageClicked?: (path: ConfigEditor.Path) => void;
-  requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
   hideReorder?: boolean;
   hideDelete?: boolean;
   hideAdd?: boolean;
@@ -259,7 +258,6 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           key={prop.key}
           prop={prop}
           pageClicked={this.props.pageClicked}
-          requiresUpgrade={this.props.requiresUpgrade}
           width='100%'
         />
       </TableCell>

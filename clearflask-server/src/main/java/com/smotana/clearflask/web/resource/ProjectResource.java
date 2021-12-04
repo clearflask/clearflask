@@ -298,7 +298,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), configAdmin);
+            planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), accountId, configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
@@ -402,7 +402,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
 
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;

@@ -37,6 +37,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   customPageSlug?: string;
+  isFrontPage?: boolean;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -53,14 +54,19 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       );
     }
 
+    const hidePoweredBy = this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Hidden
+      || (this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Minimal && !this.props.isFrontPage);
+
     return (
       <>
         {footer}
-        <div className={this.props.classes.footerSpacing}>
-          <div className={classNames(this.props.classes.footerWrapper, this.props.classes.poweredBy)}>
-            <PoweredBy />
+        {!hidePoweredBy && (
+          <div className={this.props.classes.footerSpacing}>
+            <div className={classNames(this.props.classes.footerWrapper, this.props.classes.poweredBy)}>
+              <PoweredBy />
+            </div>
           </div>
-        </div>
+        )}
       </>
     );
   }

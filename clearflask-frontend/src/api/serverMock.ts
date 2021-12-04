@@ -54,6 +54,17 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     ],
   },
 };
+const AllPlans: { [planId: string]: Admin.Plan } = {
+  ...AvailablePlans,
+  'pro-lifetime': {
+    basePlanId: 'pro-lifetime', title: 'Pro',
+    perks: [
+      { desc: 'Unlimited users' },
+      { desc: '1 Teammate' },
+      { desc: '1 Project' },
+    ],
+  },
+};
 const FeaturesTable: Admin.FeaturesTable | undefined = {
   plans: ['Growth', 'Standard', 'Flat'],
   features: [
@@ -129,7 +140,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (ServerMock.instance === undefined) {
       ServerMock.instance = new ServerMock();
       if (!windowIso.isSsr && !isProd()) {
-        windowIso['db'] = ServerMock.instance.db;
+        windowIso['mock'] = ServerMock.instance;
       }
     }
     return ServerMock.instance;
@@ -151,7 +162,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   plansGetSuperAdmin(): Promise<Admin.AllPlansGetResponse> {
     return this.returnLater({
-      plans: Object.values(AvailablePlans),
+      plans: Object.values(AllPlans),
     });
   }
   legalGet(): Promise<Admin.LegalResponse> {
@@ -272,6 +283,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
+      // subscriptionStatus: Admin.SubscriptionStatus.Active,
       subscriptionStatus: (request.accountSignupAdmin.invitationId || request.accountSignupAdmin.couponId)
         ? Admin.SubscriptionStatus.Active
         : Admin.SubscriptionStatus.ActiveTrial,
@@ -355,8 +367,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice !== undefined) {
       const basePlanId = 'flat-yearly';
       const newPlanId = `${basePlanId}-${Math.round(Math.random() * 1000)}`;
-      AvailablePlans[newPlanId] = {
-        ...AvailablePlans[basePlanId],
+      AllPlans[newPlanId] = {
+        ...AllPlans[basePlanId],
         pricing: request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice > 0 ? {
           period: Admin.PlanPricingPeriodEnum.Yearly,
           basePrice: request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice,
@@ -367,6 +379,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       };
       this.account.planId = newPlanId;
       this.account.basePlanId = basePlanId;
+    };
+    if (request.accountUpdateSuperAdmin.addons !== undefined) {
+      this.account.addons = {
+        ...this.account.addons,
+        ...request.accountUpdateSuperAdmin.addons,
+      };
     };
     return this.returnLater(this.account);
   }
@@ -414,7 +432,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
-      plan: this.account.planId === TeammatePlanId ? TeammatePlan : AvailablePlans[this.account.planId]!,
+      plan: this.account.planId === TeammatePlanId ? TeammatePlan : AllPlans[this.account.planId]!,
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {

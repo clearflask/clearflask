@@ -28,6 +28,7 @@ interface Props {
   children?: React.ReactNode;
   showFooter?: boolean;
   customPageSlug?: string;
+  isFrontPage?: boolean;
   pageTitle?: string;
   suppressPageTitle?: boolean,
 }
@@ -54,7 +55,10 @@ class BasePage extends Component<Props & ConnectProps & WithTranslation<'app'> &
           </div>
         </div>
         {!!this.props.showFooter && (
-          <Footer customPageSlug={this.props.customPageSlug} />
+          <Footer
+            customPageSlug={this.props.customPageSlug}
+            isFrontPage={this.props.isFrontPage}
+          />
         )}
       </>
     );

@@ -341,16 +341,19 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     @Override
-    public AccountAndIndexingFuture setPlan(String accountId, String planid) {
+    public AccountAndIndexingFuture setPlan(String accountId, String planid, Optional<ImmutableMap<String, String>> addonsOpt) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
+        addonsOpt.ifPresent(addons -> expressionBuilder.set("addons", addons));
+        Expression expression = expressionBuilder
+                .conditionExists()
+                .set("planid", planid)
+                .build();
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                        .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withUpdateExpression("SET #planid = :planid")
-                        .withNameMap(new NameMap()
-                                .with("#planid", "planid")
-                                .with("#partitionKey", accountSchema.partitionKeyName()))
-                        .withValueMap(new ValueMap()
-                                .withString(":planid", planid))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
                         .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         accountCache.put(accountId, Optional.of(account));
@@ -365,6 +368,52 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId)));
 
         return new AccountAndIndexingFuture(account, indexingFuture);
+    }
+
+    @Override
+    public Account updateAddons(String accountId, Map<String, String> addons, boolean overwriteMap) {
+        if (addons == null) {
+            addons = ImmutableMap.of();
+        }
+        if (overwriteMap) {
+            Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                            .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                            .withConditionExpression("attribute_exists(#partitionKey)")
+                            .withUpdateExpression("SET #addons = :addons")
+                            .withNameMap(new NameMap()
+                                    .with("#partitionKey", accountSchema.partitionKeyName())
+                                    .with("#addons", "addons"))
+                            .withValueMap(new ValueMap().with(":addons", accountSchema.toDynamoValue("addons", addons)))
+                            .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+            accountCache.put(accountId, Optional.of(account));
+            return account;
+        } else {
+            if (addons.isEmpty()) {
+                return getAccount(accountId, true).get();
+            }
+
+            ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
+            addons.forEach((key, val) -> {
+                if (!Strings.isNullOrEmpty(val)) {
+                    expressionBuilder.set(ImmutableList.of("addons", key), val);
+                } else {
+                    expressionBuilder.remove(ImmutableList.of("addons", key));
+                }
+            });
+            Expression expression = expressionBuilder.build();
+            Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                            .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                            .withConditionExpression("attribute_exists(#partitionKey)")
+                            .withUpdateExpression(expression.updateExpression().orElse(null))
+                            .withConditionExpression(expression.conditionExpression().orElse(null))
+                            .withNameMap(expression.nameMap().orElse(null))
+                            .withValueMap(expression.valMap().orElse(null))
+                            .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+            accountCache.put(accountId, Optional.of(account));
+            return account;
+        }
     }
 
     @Extern

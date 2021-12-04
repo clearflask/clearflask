@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import ActiveIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
@@ -41,6 +41,11 @@ interface PaymentStripeAction {
     'paymentIntentClientSecret': string,
   };
 }
+
+/** If changed, also change in KillBillPlanStore.java */
+export const AddonWhitelabel = 'whitelabel';
+export const AddonPrivateProjects = 'private-projects';
+export const AddonExtraProject = 'extra-project';
 
 export const BillingPaymentActionRedirectPath = 'billing-redirect';
 
@@ -111,6 +116,11 @@ const styles = (theme: Theme) => createStyles({
   paymentActionMessage: {
     margin: theme.spacing(4, 0),
   },
+  addonsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    rowGap: theme.spacing(1),
+  }
 });
 interface Props {
   stripePromise: Promise<Stripe | null>;
@@ -139,6 +149,10 @@ interface State {
   paymentActionMessageSeverity?: Color;
   showFlatYearlyChange?: boolean;
   flatYearlyPrice?: number;
+  showAddonsChange?: boolean;
+  whitelabel?: boolean;
+  privateProjects?: boolean;
+  extraProjects?: number;
 }
 class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   state: State = {};
@@ -785,6 +799,88 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     disabled={this.state.isSubmitting}
                     onClick={() => this.setState({ showFlatYearlyChange: true })}
                   >Flatten</Button>
+                </div>
+              </>
+            )}
+            {this.props.isSuperAdmin && (
+              <>
+                <Dialog
+                  open={!!this.state.showAddonsChange}
+                  onClose={() => this.setState({ showAddonsChange: undefined })}
+                  scroll='body'
+                  maxWidth='md'
+                >
+                  <DialogTitle>Manage addons</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    <TextField
+                      label='Extra projects'
+                      variant='outlined'
+                      type='number'
+                      value={this.state.extraProjects !== undefined ? this.state.extraProjects : (this.props.account.addons?.[AddonExtraProject] || 0)}
+                      onChange={e => this.setState({ extraProjects: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={this.state.whitelabel !== undefined ? this.state.whitelabel : !!this.props.account.addons?.[AddonWhitelabel]}
+                          onChange={(e, checked) => this.setState({ whitelabel: !!checked })}
+                          color='default'
+                        />
+                      )}
+                      label={(<FormHelperText>Whitelabel</FormHelperText>)}
+                    />
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={this.state.privateProjects !== undefined ? this.state.privateProjects : !!this.props.account.addons?.[AddonPrivateProjects]}
+                          onChange={(e, checked) => this.setState({ privateProjects: !!checked })}
+                          color='default'
+                        />
+                      )}
+                      label={(<FormHelperText>Private projects</FormHelperText>)}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showAddonsChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.whitelabel === undefined
+                        && this.state.privateProjects === undefined
+                        && this.state.extraProjects === undefined}
+                      color='primary'
+                      onClick={() => {
+                        if (this.state.whitelabel === undefined
+                          && this.state.privateProjects === undefined
+                          && this.state.extraProjects === undefined) return;
+
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            addons: {
+                              ...(this.state.whitelabel === undefined ? {} : {
+                                [AddonWhitelabel]: this.state.whitelabel ? 'true' : ''
+                              }),
+                              ...(this.state.privateProjects === undefined ? {} : {
+                                [AddonPrivateProjects]: this.state.privateProjects ? 'true' : ''
+                              }),
+                              ...(this.state.extraProjects === undefined ? {} : {
+                                [AddonExtraProject]: `${this.state.extraProjects}`
+                              }),
+                            },
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({ isSubmitting: false, showAddonsChange: undefined }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showAddonsChange: true })}
+                  >Addons</Button>
                 </div>
               </>
             )}

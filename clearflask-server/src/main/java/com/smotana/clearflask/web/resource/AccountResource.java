@@ -49,6 +49,7 @@ import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.CouponStore;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.PlanStore.PlanWithAddons;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -466,7 +467,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 ImmutableSet.of(),
                 externalProjectIds,
                 guidOpt.orElse(null),
-                ImmutableMap.of());
+                null,
+                null);
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -580,7 +582,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            account = changePlan(account, newPlanid);
+            account = changePlan(account, newPlanid, ImmutableMap.of());
         }
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -589,17 +591,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 10)
     @Override
     public ViewCouponResponse accountViewCouponAdmin(String couponId) {
+        Optional<String> accountIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
         Optional<CouponModel> couponOpt = couponStore.check(couponId);
 
         boolean isRedeemedByYou = false;
         if (couponOpt.isPresent() && !Strings.isNullOrEmpty(couponOpt.get().getRedeemedAccountId())) {
-            Optional<String> accountIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
             isRedeemedByYou = accountIdOpt.isPresent() && accountIdOpt.get().equals(couponOpt.get().getRedeemedAccountId());
         }
 
         Optional<Plan> planOpt = couponOpt
                 .filter(coupon -> Strings.isNullOrEmpty(coupon.getRedeemedAccountId()))
-                .flatMap(coupon -> planStore.getPlan(coupon.getBasePlanId(), Optional.empty()));
+                .flatMap(coupon -> planStore.getCouponPlan(coupon, accountIdOpt))
+                .map(PlanWithAddons::getPlan);
 
         return new ViewCouponResponse(
                 planOpt.orElse(null),
@@ -655,6 +658,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     billing.getAccount(account.getAccountId()),
                     subscription,
                     "Change to flat plan");
+        }
+
+        if (accountUpdateAdmin.getAddons() != null && !accountUpdateAdmin.getAddons().isEmpty()) {
+            accountStore.updateAddons(account.getAccountId(), accountUpdateAdmin.getAddons(), false);
         }
 
         return accountStore.getAccount(account.getAccountId(), false).get()
@@ -748,11 +755,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         CouponModel coupon = couponStore.redeem(couponId, account.getAccountId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Coupon expired or invalid"));
 
-        String newPlanid = coupon.getBasePlanId();
-        Plan newPlan = planStore.getPlan(coupon.getBasePlanId(), Optional.empty())
+        PlanWithAddons planWithAddons = planStore.getCouponPlan(coupon, Optional.of(account.getAccountId()))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Coupon plan is not available"));
 
-        account = changePlan(account, newPlanid);
+        account = changePlan(account, planWithAddons.getPlan().getBasePlanId(), planWithAddons.getAddons());
 
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -818,11 +824,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!subscription.getPlanName().equals(account.getPlanid())) {
             log.info("Account billing caused accountId {} plan change {} -> {}",
                     account.getAccountId(), account.getPlanid(), subscription.getPlanName());
-            account = accountStore.setPlan(account.getAccountId(), subscription.getPlanName()).getAccount();
+            account = accountStore.setPlan(account.getAccountId(), subscription.getPlanName(), Optional.empty()).getAccount();
         }
 
 
-        Plan plan = planStore.getPlan(account.getPlanid(), Optional.of(subscription)).get();
+        Plan plan = planStore.getPlan(account.getPlanid(), Optional.of(accountId)).get();
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(account.getAccountId());
         Invoices invoices = billing.getInvoices(account.getAccountId(), Optional.empty());
         Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(account.getAccountId());
@@ -942,18 +948,28 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return planStore.getAllPlans();
     }
 
-    private Account changePlan(Account account, String newPlanid) {
+    private Account changePlan(Account account, String newPlanid, ImmutableMap<String, String> addons) {
         planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
 
-        Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
-        // Only update account if plan was changed immediately, as oppose to end of term
-        if (newPlanid.equals(subscription.getPlanName())) {
-            account = accountStore.setPlan(account.getAccountId(), newPlanid).getAccount();
-        } else if (!newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
-            if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
-                log.warn("Plan change to {} doesnt seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
-                        newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
+        boolean isAddonsChangeOnly = newPlanid.equals(account.getPlanid());
+
+        boolean isPlanChangingNow = false;
+        if (!isAddonsChangeOnly) {
+            Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
+            // Only update account if plan was changed immediately, as oppose to end of term
+            isPlanChangingNow = newPlanid.equals(subscription.getPlanName());
+            if (!newPlanid.equals(subscription.getPlanName())
+                    && !newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
+                if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
+                    log.warn("Plan change to {} doesn't seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
+                            newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
+                }
             }
+        }
+        if (isPlanChangingNow) {
+            account = accountStore.setPlan(account.getAccountId(), newPlanid, Optional.of(addons)).getAccount();
+        } else if (isAddonsChangeOnly) {
+            account = accountStore.updateAddons(account.getAccountId(), addons, false);
         }
 
         return account;

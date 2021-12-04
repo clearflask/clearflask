@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.Integrations;
+import com.smotana.clearflask.api.model.Whitelabel;
 import com.smotana.clearflask.testutil.AbstractTest;
 import org.junit.Test;
 
@@ -399,5 +400,8 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
     void assertUpgraded(ConfigAdmin config) throws Exception {
         assertEquals(EmailSignup.ModeEnum.SIGNUPANDLOGIN, config.getUsers().getOnboarding().getNotificationMethods().getEmail().getMode());
         assertEquals(Integrations.builder().build(), config.getIntegrations());
+        assertEquals(Whitelabel.builder()
+                .poweredBy(Whitelabel.PoweredByEnum.SHOW)
+                .build(), config.getStyle().getWhitelabel());
     }
 }

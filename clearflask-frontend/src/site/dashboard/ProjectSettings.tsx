@@ -40,7 +40,7 @@ import DataSettings from '../../common/config/settings/DataSettings';
 import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import Property, { PropertyInputMinWidth } from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
-import UpgradeWrapper, { Action, RestrictedProperties } from '../../common/config/settings/UpgradeWrapper';
+import UpgradeWrapper, { Action } from '../../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
@@ -303,6 +303,7 @@ export const ProjectSettingsTeammates = (props: {
 }) => {
   const myAccountId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.accountId, shallowEqual);
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
   const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
   if (!accountBasePlanId || !accountSubscriptionStatus) return null;
   return (
@@ -313,6 +314,7 @@ export const ProjectSettingsTeammates = (props: {
           server={props.server}
           myAccountId={myAccountId}
           accountBasePlanId={accountBasePlanId}
+          accountAddons={accountAddons}
           accountSubscriptionStatus={accountSubscriptionStatus}
         />
       </Provider>
@@ -324,6 +326,7 @@ export const ProjectSettingsTeammatesList = (props: {
   server: Server;
   myAccountId?: string;
   accountBasePlanId: string;
+  accountAddons: { [addonId: string]: string };
   accountSubscriptionStatus: Admin.SubscriptionStatus;
 }) => {
   const classes = useStyles();
@@ -407,6 +410,7 @@ export const ProjectSettingsTeammatesList = (props: {
       <UpgradeWrapper
         overrideUpgradeMsg='Plan upgrade required to invite more'
         accountBasePlanId={props.accountBasePlanId}
+        accountAddons={props.accountAddons}
         subscriptionStatus={props.accountSubscriptionStatus}
         action={Action.TEAMMATE_INVITE}
         teammatesCount={teammates.length + invitations.length}
@@ -452,10 +456,14 @@ export const NeedHelpInviteTeammate = (props: {
   const classes = useStyles();
   return (
     <div className={classes.teammatesInviteMargins}>
-      <Typography variant='h6' className={classes.teammatesInviteNeedHelp}>Need help?</Typography>
-      <Provider store={props.server.getStore()}>
-        <ProjectSettingsInviteTeammate server={props.server} noMargin />
-      </Provider>
+      <UpgradeWrapper
+        action={Action.TEAMMATE_INVITE}
+      >
+        <Typography variant='h6' className={classes.teammatesInviteNeedHelp}>Need help?</Typography>
+        <Provider store={props.server.getStore()}>
+          <ProjectSettingsInviteTeammate server={props.server} noMargin />
+        </Provider>
+      </UpgradeWrapper>
     </div>
   );
 }
@@ -1062,6 +1070,14 @@ export const ProjectSettingsBranding = (props: {
           </>
         )}
       />
+      <Section
+        title='Whitelabel'
+        content={(
+          <>
+            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'whitelabel', 'poweredBy']} />
+          </>
+        )}
+      />
     </ProjectSettingsBase>
   );
 }
@@ -1153,13 +1169,19 @@ export const ProjectSettingsUsersOnboardingDemo = (props: {
     />
   );
 }
-export const ProjectSettingsUsersOnboarding = (props: Omit<React.ComponentProps<typeof ProjectSettingsUsersOnboardingInternal>, 'accountBasePlanId' | 'accountSubscriptionStatus'>) => {
+export const ProjectSettingsUsersOnboarding = (props: Omit<React.ComponentProps<typeof ProjectSettingsUsersOnboardingInternal>, 'accountBasePlanId' | 'accountAddons' | 'accountSubscriptionStatus'>) => {
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
   const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
   if (!accountBasePlanId || !accountSubscriptionStatus) return null;
   return (
     <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-      <ProjectSettingsUsersOnboardingInternal accountBasePlanId={accountBasePlanId} accountSubscriptionStatus={accountSubscriptionStatus} {...props} />
+      <ProjectSettingsUsersOnboardingInternal
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        accountSubscriptionStatus={accountSubscriptionStatus}
+        {...props}
+      />
     </Provider>
   );
 }
@@ -1167,6 +1189,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
   accountBasePlanId: string;
+  accountAddons: { [addonId: string]: string };
   accountSubscriptionStatus: Admin.SubscriptionStatus;
   onPageClicked?: () => void;
   inviteMods?: string[];
@@ -1211,7 +1234,12 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   );
   return (
     <Provider store={ServerAdmin.get().getStore()}>
-      <UpgradeWrapper accountBasePlanId={props.accountBasePlanId} subscriptionStatus={props.accountSubscriptionStatus} propertyPath={['users', 'onboarding', 'visibility']}>
+      <UpgradeWrapper
+        accountBasePlanId={props.accountBasePlanId}
+        accountAddons={props.accountAddons}
+        subscriptionStatus={props.accountSubscriptionStatus}
+        propertyPath={['users', 'onboarding', 'visibility']}
+      >
         <TourAnchor anchorId='settings-onboard-visibility' placement='bottom'>
           {(next, isActive, anchorRef) => (
             <ToggleButtonGroup
@@ -1581,6 +1609,7 @@ export const ProjectSettingsUsersOauth = (props: {
 }) => {
   const classes = useStyles();
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
   const subscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
   const [expandedType, setExpandedType] = useState<'oauth' | undefined>();
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>();
@@ -1600,7 +1629,12 @@ export const ProjectSettingsUsersOauth = (props: {
           </>
         )}
         content={(
-          <UpgradeWrapper accountBasePlanId={accountBasePlanId} subscriptionStatus={subscriptionStatus} propertyPath={['users', 'onboarding', 'notificationMethods', 'oauth']}>
+          <UpgradeWrapper
+            accountBasePlanId={accountBasePlanId}
+            accountAddons={accountAddons}
+            subscriptionStatus={subscriptionStatus}
+            propertyPath={['users', 'onboarding', 'notificationMethods', 'oauth']}
+          >
             <div className={classes.feedbackAccordionContainer}>
               {props.editor.getConfig().users.onboarding.notificationMethods.oauth.map((oauth, oauthIndex) => (
                 <ProjectSettingsUsersOauthItem
@@ -3185,7 +3219,7 @@ export const ProjectSettingsGitHub = (props: {
         )
         }
       />
-      < br /><br />
+      <br /><br />
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase >
   );
@@ -3862,14 +3896,6 @@ const PropertyByPath = (props: {
   bare?: boolean;
 }) => {
   const history = useHistory();
-  const planId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
-
-  var propertyRequiresUpgrade: ((propertyPath: ConfigEditor.Path) => boolean) | undefined;
-  const restrictedProperties = planId && RestrictedProperties[planId];
-  if (restrictedProperties) {
-    propertyRequiresUpgrade = (path) => restrictedProperties.some(restrictedPath =>
-      ConfigEditor.pathEquals(restrictedPath, path));
-  }
 
   return (
     <Property
@@ -3877,7 +3903,6 @@ const PropertyByPath = (props: {
       server={props.server}
       prop={props.editor.get(props.path)}
       pageClicked={path => history.push(`/dashboard/settings/project/advanced/${path.join('/')}`)}
-      requiresUpgrade={propertyRequiresUpgrade}
       marginTop={props.marginTop}
       width={props.width || propertyWidth}
       inputMinWidth={props.inputMinWidth}

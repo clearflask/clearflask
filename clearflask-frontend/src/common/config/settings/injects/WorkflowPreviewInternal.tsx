@@ -138,7 +138,8 @@ class WorkflowPreview extends Component<WorkflowPreviewInternalProps, State> {
           style: {
             'label': 'data(label)',
             'font-size': 12,
-            'font-family': this.props.fontFamily,
+            // Causes a browser crash on Mac Chrome 96, crazy...
+            // 'font-family': this.props.fontFamily,
             'background-color': 'white',
             'border-width': '1px',
             'border-color': 'data(color)',
