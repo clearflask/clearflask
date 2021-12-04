@@ -467,8 +467,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 ImmutableSet.of(),
                 externalProjectIds,
                 guidOpt.orElse(null),
-                null,
-                null);
+                ImmutableMap.of(),
+                ImmutableMap.of());
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -661,7 +661,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         if (accountUpdateAdmin.getAddons() != null && !accountUpdateAdmin.getAddons().isEmpty()) {
-            accountStore.updateAddons(account.getAccountId(), accountUpdateAdmin.getAddons(), false);
+            accountStore.updateAddons(account.getAccountId(), accountUpdateAdmin.getAddons(), account.getAddons() == null || account.getAddons().isEmpty());
         }
 
         return accountStore.getAccount(account.getAccountId(), false).get()
@@ -969,7 +969,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (isPlanChangingNow) {
             account = accountStore.setPlan(account.getAccountId(), newPlanid, Optional.of(addons)).getAccount();
         } else if (isAddonsChangeOnly) {
-            account = accountStore.updateAddons(account.getAccountId(), addons, false);
+            account = accountStore.updateAddons(account.getAccountId(), addons, account.getAddons() == null || account.getAddons().isEmpty());
         }
 
         return account;
