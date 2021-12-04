@@ -62,7 +62,7 @@ public class ConfigSchemaUpgrader {
         if (!styleObj.has("whitelabel")) {
             JsonObject whitelabelObj = new JsonObject();
             whitelabelObj.addProperty("poweredBy", "Show");
-            notificationMethodsObj.add("oauth", whitelabelObj);
+            styleObj.add("whitelabel", whitelabelObj);
             hasChanged = true;
         }
 

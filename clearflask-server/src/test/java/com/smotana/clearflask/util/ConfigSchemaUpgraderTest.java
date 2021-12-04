@@ -9,12 +9,14 @@ import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.Integrations;
 import com.smotana.clearflask.api.model.Whitelabel;
 import com.smotana.clearflask.testutil.AbstractTest;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 
+@Slf4j
 public class ConfigSchemaUpgraderTest extends AbstractTest {
 
     private static final String SAMPLE_SCHEMA_VERSION_ONE = "{\n" +
@@ -383,6 +385,7 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
     public void testUpgrade() throws Exception {
         Optional<String> configJsonUpgradedOpt = upgrader.upgrade(SAMPLE_SCHEMA_VERSION_ONE);
         assertTrue(configJsonUpgradedOpt.isPresent());
+        log.info("Upgraded json: {}", configJsonUpgradedOpt.get());
 
         ConfigAdmin config = gson.fromJson(configJsonUpgradedOpt.get(), ConfigAdmin.class);
         assertUpgraded(config);
