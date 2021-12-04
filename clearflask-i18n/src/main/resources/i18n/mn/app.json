@@ -1,6 +1,11 @@
 {
   "email": "И-мэйл",
+  "powered-by": "Танд хүргэсэн",
+  "roadmap": "Замын зураг",
+  "how-can-we-improve-our-product": "Бид бүтээгдэхүүнээ хэрхэн сайжруулах вэ?",
   "how-can-we-improve": "Бид бүтээгдэхүүнээ хэрхэн сайжруулах вэ?",
-  "describe-your-idea-optional": "Санаагаа тайлбарлана уу (заавал биш)",
-  "want": "Дэмжих"
+  "later": "Дараа нь",
+  "now": "Одоо",
+  "changes-we-made": "Бидний хийсэн өөрчлөлтүүд",
+  "describe-your-idea-optional": "Санаагаа тайлбарлана уу (заавал биш)"
 }
