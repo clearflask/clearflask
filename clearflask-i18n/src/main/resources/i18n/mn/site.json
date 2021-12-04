@@ -18,5 +18,18 @@
   "feedback-collected-within-a-private": "Дотоод хамт олон болон байгууллагын дунд өрнөх санал асуулга.",
   "for-advanced-use-cases-start": "Захиалгат хэрэглээнд зориулан урьдчилж бэлтгэсэн загваргүй төсөл.",
   "fill-out-details": "Mэдээлэл",
-  "give-us-a-few-more-details-about-your-project": "Төслийнхөө талаар мэдээллийг бөглөнө үү."
+  "give-us-a-few-more-details-about-your-project": "Төслийнхөө талаар мэдээллийг бөглөнө үү.",
+  "create": "Шинээр үүсгэх",
+  "completed-tasks": "Гүйцэтгэсэн даалгаврууд",
+  "identified-users": "Бүртгэлтэй хэрэглэгчид",
+  "manage-incoming-feedback": "Ирсэн санал хүсэлтийг хуваарилах",
+  "capture-feedback": "Шинэ хүсэлт оруулах",
+  "first-lets-capture-feedback-from-a-customer": "Шинээр ирсэн хүсэлтээ бүртгэлд оруулна  уу.",
+  "prioritize-your-roadmap": "Зураглал дахь хийж гүйцэтгэх ажлаа эрэмбэлэх",
+  "backlog-of-ideas": "Хэрэгжиж эхлээгүй санаанууд",
+  "these-are-tasks-that-are-in-an-ideation": "Үүнд хараахан ажиллаж эхлээгүй санаанууд багтана. Эдгээр санааг илүү боловсронгуй болгох үүднээс хэрэглэгчдийн санал хүсэлтэд багтаасан хэдий ч ажлын зураглалд оруулаагүй байна.",
+  "create-a-changelog-entry": "Мэдээлэл үүсгэх",
+  "how-to-manage-feedback-roadmap-and-changelog": "Хэрхэн санал хүсэлт, ажлын зураглал болон мэдээллээ удирдах вэ",
+  "quick-start-guide": "Эхлэх заавар",
+  "public-view": "Нийтэд харагдах байдал"
 }
