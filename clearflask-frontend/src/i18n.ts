@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="./@types/transform-media-imports.d.ts"/>
-import i18n, { InitOptions, LanguageDetectorModule, Resource } from 'i18next';
+import i18n, { InitOptions, Module, Resource } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
@@ -45,7 +45,7 @@ export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code)
 export const getI18n = (
   initialLng: string | undefined,
   initialStore: Resource | undefined,
-  languageDetector?: LanguageDetectorModule,
+  languageDetector?: Module,
   opts?: InitOptions,
 ) => {
   i18n.use(initReactI18next);
