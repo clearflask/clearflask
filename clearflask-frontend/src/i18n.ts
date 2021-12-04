@@ -34,7 +34,7 @@ export const supportedLanguages: Array<SupportedLanguage>
   = [
     { code: 'en', img: FlagEn, label: 'English', perc: 1 },
     { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 1 },
-    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0 },
+    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.18 },
     ...(isProd() ? [] : [
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
     ]),
