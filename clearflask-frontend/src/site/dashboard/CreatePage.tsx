@@ -182,6 +182,7 @@ interface State extends CreateTemplateV2Options {
   isSubmitting?: boolean;
   invites: Array<string>;
   createdProjectId?: string;
+  infoSkipWebsite?: boolean;
 }
 class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
 
@@ -387,94 +388,102 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
             img={DetailsImg}
             content={(
               <div className={this.props.classes.projectDetailsFields}>
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  autoFocus
-                  label={this.props.t('your-website-optional')}
-                  placeholder='example.com'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoWebsite || ''}
-                  onChange={e => {
-                    const nameMatch = e.target.value.match(/^(https?:\/\/)?([^./]+).*$/);
-                    var slug: string | undefined = undefined;
-                    var name: string | undefined = undefined;
-                    if (nameMatch && nameMatch[2]) {
-                      name = nameMatch[2].toLowerCase();
-                      if (name) {
-                        name = name.charAt(0).toUpperCase() + name.slice(1);
-                        slug = this.nameToSlug(name);
-                      }
-                    }
-                    const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
-                    var logo: string | undefined = undefined;
-                    if (logoMatch && logoMatch[2]) {
-                      logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
-                    }
-                    this.setState({
-                      infoWebsite: e.target.value,
-                      ...(!!logo ? { infoLogo: logo } : {}),
-                      ...(!!slug ? { infoSlug: slug } : {}),
-                      ...(!!name ? { infoName: name } : {}),
-                    })
-                  }}
-                />
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  label={this.props.t('product-name')}
-                  placeholder='Vandelay Industries'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoName || ''}
-                  onChange={e => {
-                    const slug = this.nameToSlug(e.target.value);
-                    this.setState({
-                      infoName: e.target.value,
-                      ...(!!slug ? { infoSlug: slug } : {}),
-                    });
-                  }}
-                />
-                {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
+                <Collapse in={!this.state.infoSkipWebsite}>
                   <TextField
                     className={this.props.classes.field}
                     variant='outlined'
-                    label={this.props.t('portal-domain')}
+                    autoFocus
+                    label={this.props.t('your-website-optional')}
+                    placeholder='example.com'
                     disabled={!!this.state.isSubmitting}
-                    value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
-                    onChange={e => this.setState({ infoSlug: e.target.value })}
+                    value={this.state.infoWebsite || ''}
+                    onChange={e => {
+                      const nameMatch = e.target.value.match(/^(https?:\/\/)?([^./]+).*$/);
+                      var slug: string | undefined = undefined;
+                      var name: string | undefined = undefined;
+                      if (nameMatch && nameMatch[2]) {
+                        name = nameMatch[2].toLowerCase();
+                        if (name) {
+                          name = name.charAt(0).toUpperCase() + name.slice(1);
+                          slug = this.nameToSlug(name);
+                        }
+                      }
+                      const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
+                      var logo: string | undefined = undefined;
+                      if (logoMatch && logoMatch[2]) {
+                        logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
+                      }
+                      this.setState({
+                        infoWebsite: e.target.value,
+                        ...(!!logo ? { infoLogo: logo } : {}),
+                        ...(!!slug ? { infoSlug: slug } : {}),
+                        ...(!!name ? { infoName: name } : {}),
+                      })
+                    }}
                   />
-                ) : (
-                  <div className={this.props.classes.subdomainFields}>
+                </Collapse>
+                <Collapse in={this.state.infoName !== undefined || !!this.state.infoSkipWebsite}>
+                  <TextField
+                    className={this.props.classes.field}
+                    variant='outlined'
+                    label={this.props.t('product-name')}
+                    placeholder='Vandelay Industries'
+                    disabled={!!this.state.isSubmitting}
+                    value={this.state.infoName || ''}
+                    onChange={e => {
+                      const slug = this.nameToSlug(e.target.value);
+                      this.setState({
+                        infoName: e.target.value,
+                        ...(!!slug ? { infoSlug: slug } : {}),
+                      });
+                    }}
+                  />
+                </Collapse>
+                <Collapse in={this.state.infoDomain !== undefined || this.state.infoSlug !== undefined}>
+                  {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
                     <TextField
                       className={this.props.classes.field}
                       variant='outlined'
-                      label={this.props.t('portal-subdomain')}
-                      placeholder='vandelay-industries'
+                      label={this.props.t('portal-domain')}
                       disabled={!!this.state.isSubmitting}
-                      value={this.state.infoSlug || ''}
+                      value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
                       onChange={e => this.setState({ infoSlug: e.target.value })}
                     />
-                    <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
-                  </div>
-                )}
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  label={this.props.t('logo-url-optional')}
-                  placeholder='example.com/favicon.ico'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoLogo || ''}
-                  onChange={e => this.setState({ infoLogo: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        {this.state.infoLogo && (
-                          <HeaderLogoLogo logoUrl={this.state.infoLogo} />
-                        )}
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  ) : (
+                    <div className={this.props.classes.subdomainFields}>
+                      <TextField
+                        className={this.props.classes.field}
+                        variant='outlined'
+                        label={this.props.t('portal-subdomain')}
+                        placeholder='vandelay-industries'
+                        disabled={!!this.state.isSubmitting}
+                        value={this.state.infoSlug || ''}
+                        onChange={e => this.setState({ infoSlug: e.target.value })}
+                      />
+                      <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
+                    </div>
+                  )}
+                </Collapse>
+                <Collapse in={this.state.infoLogo !== undefined}>
+                  <TextField
+                    className={this.props.classes.field}
+                    variant='outlined'
+                    label={this.props.t('logo-url-optional')}
+                    placeholder='example.com/favicon.ico'
+                    disabled={!!this.state.isSubmitting}
+                    value={this.state.infoLogo || ''}
+                    onChange={e => this.setState({ infoLogo: e.target.value })}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          {this.state.infoLogo && (
+                            <HeaderLogoLogo logoUrl={this.state.infoLogo} />
+                          )}
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Collapse>
               </div>
             )}
             actions={[(
@@ -484,7 +493,15 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
               >
                 {this.props.t('back')}
               </Button>
-            ), (
+            ), this.state.infoWebsite === undefined && !this.state.infoSkipWebsite ? (
+              <Button
+                variant='outlined'
+                disableElevation
+                onClick={() => this.setState({ infoSkipWebsite: true })}
+              >
+                {this.props.t('skip')}
+              </Button>
+            ) : (
               <SubmitButton
                 variant='contained'
                 disableElevation
