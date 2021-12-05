@@ -9,9 +9,10 @@ export const getI18n = () => {
   if (process.env.ENV === 'production') {
     languageDetector = new i18nMiddleware.LanguageDetector();
     languageDetector.addDetector({
-      name: 'asd',
+      name: 'by-header',
       lookup: (req, res, options) => {
         const headerCountry = req.header('x-clearflask-country-to-locale')?.toUpperCase();
+        console.info(`x-clearflask-country-to-locale: ${headerCountry}`);
         if (!headerCountry) return defaultLanguage;
         return CountryLocaleMap.getCountryByAlpha2(headerCountry)?.languages?.find(language =>
           supportedLanguagesSet.has(language.toLowerCase()))
