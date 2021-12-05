@@ -50,7 +50,7 @@ export const getI18n = (
   prepare: (i: typeof i18n) => typeof i18n,
   opts?: InitOptions,
 ) => {
-  i18n.use(
+  prepare(i18n).use(
     initReactI18next
   ).use(resourcesToBackend((language, namespace, callback) => {
     if (!supportedLanguagesSet.has(language)) {
