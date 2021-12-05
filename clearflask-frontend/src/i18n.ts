@@ -5,6 +5,8 @@ import i18n, { InitOptions, Module, Resource } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
+import FlagDe from '../public/img/flag/de.svg';
+import FlagFr from '../public/img/flag/fr.svg';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
 import FlagEn from '../public/img/flag/us.svg';
@@ -32,9 +34,11 @@ export const supportedLanguages: Array<SupportedLanguage>
    * - Find language label in https://en.wikipedia.org/wiki/List_of_language_names
    */
   = [
+    { code: 'de', img: FlagDe, label: 'Deutsch', perc: 0.19 },
     { code: 'en', img: FlagEn, label: 'English', perc: 1 },
+    { code: 'fr', img: FlagFr, label: 'Français', perc: 0.01 },
+    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.17 },
     { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 1 },
-    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.18 },
     ...(isProd() ? [] : [
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
     ]),
