@@ -64,7 +64,6 @@ public class ClearFlaskCreditSync extends ManagedService {
         client = HttpClientBuilder.create().build();
     }
 
-
     @Override
     protected void serviceStop() throws Exception {
         if (client != null) {

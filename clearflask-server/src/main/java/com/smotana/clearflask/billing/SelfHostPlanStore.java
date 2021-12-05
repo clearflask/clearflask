@@ -1,6 +1,7 @@
 package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -11,7 +12,6 @@ import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.web.ApiException;
-import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
 
@@ -51,8 +51,17 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
-    public Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt) {
-        return SELF_HOST_PLAN.getBasePlanId().equals(planId) ? Optional.of(SELF_HOST_PLAN) : Optional.empty();
+    public Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt) {
+        return SELF_HOST_PLAN.getBasePlanId().equals(planId)
+                ? Optional.of(SELF_HOST_PLAN)
+                : Optional.empty();
+    }
+
+    @Override
+    public Optional<PlanWithAddons> getCouponPlan(CouponStore.CouponModel coupon, Optional<String> accountId) {
+        return SELF_HOST_PLAN.getBasePlanId().equals(coupon.getBasePlanId())
+                ? Optional.of(new PlanWithAddons(SELF_HOST_PLAN, ImmutableMap.of()))
+                : Optional.empty();
     }
 
     @Override
@@ -76,7 +85,7 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
-    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException {
+    public void verifyConfigMeetsPlanRestrictions(String planId, String accountId, ConfigAdmin config) throws ApiException {
         // No-op
     }
 

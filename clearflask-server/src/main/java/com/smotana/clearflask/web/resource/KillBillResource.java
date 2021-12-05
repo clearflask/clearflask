@@ -3,6 +3,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonNonNull;
@@ -235,7 +236,7 @@ public class KillBillResource extends ManagedService {
         if (!kbSubscription.getPlanName().equals(accountOpt.get().getPlanid())) {
             log.info("KillBill event {} caused accountId {} plan change {} -> {}",
                     event.getEventType(), accountId, accountOpt.get().getPlanid(), kbSubscription.getPlanName());
-            accountStore.setPlan(accountId, kbSubscription.getPlanName());
+            accountStore.setPlan(accountId, kbSubscription.getPlanName(), Optional.of(ImmutableMap.of()));
             changesMade = true;
         }
 

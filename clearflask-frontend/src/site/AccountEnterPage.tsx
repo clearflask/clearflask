@@ -595,7 +595,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
             <Collapse in={!!this.state.couponRedeemedByYou}>
               <Alert className={this.props.classes.alert} severity='success'>
                 <AlertTitle>Success!</AlertTitle>
-                This coupon has been applied to your account.
+                This coupon has already been applied to your account.
               </Alert>
             </Collapse>
             <Collapse in={!!this.state.couponPlan && !this.state.couponRedeemedByYou}>

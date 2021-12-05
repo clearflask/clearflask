@@ -59,6 +59,7 @@ import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.ClearFlaskSso;
+import com.smotana.clearflask.security.SimpleEmailValidator;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
@@ -251,6 +252,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 UserBindUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
+                SimpleEmailValidator.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override

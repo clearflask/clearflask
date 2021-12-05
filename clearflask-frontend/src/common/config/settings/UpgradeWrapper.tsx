@@ -9,11 +9,16 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as Admin from '../../../api/admin';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
+import { AddonPrivateProjects, AddonWhitelabel } from '../../../site/dashboard/BillingPage';
 import { Path, pathEquals } from '../configEditor';
 
 /** If changed, also change in PlanStore.java */
 export const TeammatePlanId = 'teammate-unlimited';
 
+/** If changed, also change in KillBillPlanStore.java */
+const RestrictedPropertiesByDefault: Path[] = [
+  ['style', 'whitelabel', 'poweredBy'],
+];
 /** If changed, also change in KillBillPlanStore.java */
 const GrowthRestrictedProperties: Path[] = [
   ['users', 'onboarding', 'notificationMethods', 'sso'],
@@ -26,7 +31,7 @@ const GrowthRestrictedProperties: Path[] = [
   ['integrations', 'intercom'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
-export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
+const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,
@@ -43,7 +48,15 @@ export const TeammatesMaxCount: { [basePlanId: string]: number } = {
 export const ProjectMaxCount: { [basePlanId: string]: number } = {
   'pro-lifetime': 1,
 };
-
+/** If changed, also change in KillBillPlanStore.java */
+const AllowedPropertiesByAddon: { [addonId: string]: Path[] } = {
+  [AddonWhitelabel]: [
+    ['style', 'whitelabel', 'poweredBy'],
+  ],
+  [AddonPrivateProjects]: [
+    ['users', 'onboarding', 'visibility'],
+  ],
+};
 export enum Action {
   API_KEY,
   TEAMMATE_INVITE,
@@ -88,6 +101,7 @@ interface Props {
   propertyPath?: Path;
   action?: Action;
   accountBasePlanId?: string;
+  accountAddons?: { [addonId: string]: string };
   subscriptionStatus?: Admin.SubscriptionStatus;
   teammatesCount?: number;
   overrideUpgradeMsg?: string,
@@ -95,11 +109,14 @@ interface Props {
 }
 interface ConnectProps {
   accountBasePlanId?: string;
+  accountAddons?: { [addonId: string]: string };
   subscriptionStatus?: Admin.SubscriptionStatus;
 }
 class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if (!this.isActionRestricted() && !this.isPropertyRestricted() && !this.isTeammatesInviteRestricted()) {
+    if (!this.isActionRestricted()
+      && !this.isPropertyRestricted()
+      && !this.isTeammatesInviteRestricted()) {
       return this.props.children;
     }
 
@@ -118,11 +135,30 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   }
 
   isPropertyRestricted(): boolean {
+    return (this.isPropertyRestrictedByDefault() || this.isPropertyRestrictedByPlan())
+      && !this.isPropertyAllowedByAddon();
+
+  }
+
+  isPropertyRestrictedByDefault(): boolean {
+    return this.props.propertyPath !== undefined
+      && RestrictedPropertiesByDefault.some(restrictedPath =>
+        pathEquals(restrictedPath, this.props.propertyPath!));
+  }
+
+  isPropertyRestrictedByPlan(): boolean {
     return this.props.propertyPath !== undefined
       && this.props.accountBasePlanId !== undefined
       && !this.canAutoUpgrade()
-      && RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
-        pathEquals(restrictedPath, this.props.propertyPath!))
+      && RestrictedPropertiesByPlan[this.props.accountBasePlanId]?.some(restrictedPath =>
+        pathEquals(restrictedPath, this.props.propertyPath!));
+  }
+
+  isPropertyAllowedByAddon(): boolean {
+    return this.props.propertyPath !== undefined
+      && Object.entries(AllowedPropertiesByAddon)
+        .some(([addonId, paths]) => !!this.props.accountAddons?.[addonId]
+          && paths.some(path => pathEquals(path, this.props.propertyPath!)));
   }
 
   isTeammatesInviteRestricted(): boolean {
@@ -130,7 +166,7 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
       && this.props.accountBasePlanId !== undefined
       && !this.canAutoUpgrade()
       && TeammatesMaxCount[this.props.accountBasePlanId] !== undefined
-      && (this.props.teammatesCount || 1) >= TeammatesMaxCount[this.props.accountBasePlanId];
+      && (this.props.teammatesCount || 2) >= TeammatesMaxCount[this.props.accountBasePlanId];
   }
 
   canAutoUpgrade(): boolean {
@@ -183,6 +219,7 @@ export const UpgradeCover = (props: {
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
     accountBasePlanId: ownProps.accountBasePlanId !== undefined ? ownProps.accountBasePlanId : state.account.account.account?.basePlanId,
+    accountAddons: ownProps.accountAddons !== undefined ? ownProps.accountAddons : state.account.account.account?.addons,
     subscriptionStatus: ownProps.subscriptionStatus !== undefined ? ownProps.subscriptionStatus : state.account.account.account?.subscriptionStatus,
   };
 })(withStyles(styles, { withTheme: true })(UpgradeWrapper));

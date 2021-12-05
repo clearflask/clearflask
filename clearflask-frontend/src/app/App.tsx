@@ -216,7 +216,11 @@ class App extends Component<Props> {
                 key='app-switch'
                 render={(pageSlug: string) => (
                   <Route exact key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
-                    <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
+                    <BasePage
+                      showFooter={!props.match.params['embed']}
+                      customPageSlug={pageSlug}
+                      isFrontPage={!props.match.params['embed'] && !pageSlug}
+                    >
                       <AppDynamicPage
                         pageSlug={pageSlug}
                         server={this.server}

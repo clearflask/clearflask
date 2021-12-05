@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Divider, Grow, MenuItem, SvgIconTypeMap } from '@material-ui/core';
+import { Button, Divider, Grow, MenuItem, PropTypes, SvgIconTypeMap } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
@@ -14,6 +14,7 @@ export interface MenuDropdown {
   type: 'dropdown';
   title: string;
   items: Array<MenuButton | MenuHeader | MenuDivider>;
+  color?: PropTypes.Color;
 }
 export type MenuButton = {
   icon?: OverridableComponent<SvgIconTypeMap>;
@@ -86,6 +87,7 @@ const useStyles = makeStyles(styles);
 interface MenuDropdownButtonProps {
   dropdown: MenuDropdown;
   isOuter?: boolean;
+  color?: PropTypes.Color;
 }
 interface MenuDropdownButtonState {
   open?: boolean;
@@ -118,6 +120,7 @@ class MenuDropdownButtonRaw extends React.Component<MenuDropdownButtonProps & Wi
         <Button
           size='large'
           className={classNames(this.props.classes.button, this.props.isOuter && this.props.classes.buttonOuter)}
+          color={this.props.color}
           onClick={() => {
             ++this.lastEventId;
             this.setState({ open: true })
@@ -225,6 +228,7 @@ export function MenuItems(props: {
                   key={item.title}
                   dropdown={item}
                   isOuter={isOuter}
+                  color={item.color}
                 />
               );
             }

@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.billing;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.web.ApiException;
-import org.killbill.billing.client.model.gen.Subscription;
+import lombok.NonNull;
+import lombok.Value;
 
 import java.util.Optional;
 
@@ -37,7 +40,10 @@ public interface PlanStore {
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
 
     /** If subscription is passed, pricing reflects actual pricing for account */
-    Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt);
+    Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt);
+
+    /** Gets plan to be applied if given coupon is used. Takes care of stacking */
+    Optional<PlanWithAddons> getCouponPlan(CouponModel coupon, Optional<String> accountIdOpt);
 
     /** Strips suffix from planId appended by KillBill during price override */
     String getBasePlanId(String planId);
@@ -48,7 +54,7 @@ public interface PlanStore {
 
     void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException;
 
-    void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ApiException;
+    void verifyConfigMeetsPlanRestrictions(String planId, String accountId, ConfigAdmin config) throws ApiException;
 
     void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException;
 
@@ -58,4 +64,14 @@ public interface PlanStore {
         API_KEY,
         CREATE_PROJECT
     }
+
+    @Value
+    class PlanWithAddons {
+        @NonNull
+        Plan plan;
+
+        @NonNull
+        ImmutableMap<String, String> addons;
+    }
+
 }

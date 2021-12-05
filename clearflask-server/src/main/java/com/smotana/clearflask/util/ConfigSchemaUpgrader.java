@@ -26,7 +26,7 @@ public class ConfigSchemaUpgrader {
     public Optional<String> upgrade(JsonElement config) {
         boolean hasChanged = false;
 
-        // Added email signup mode (Version 1 to 2 upgrade)
+        // Added email signup mode
         JsonElement emailEl = config
                 .getAsJsonObject().get("users")
                 .getAsJsonObject().get("onboarding")
@@ -37,14 +37,14 @@ public class ConfigSchemaUpgrader {
             hasChanged = true;
         }
 
-        // Added integrations (Version 2 to 3 upgrade)
+        // Added integrations
         JsonElement integrationsEl = config.getAsJsonObject().get("integrations");
         if (integrationsEl == null) {
             config.getAsJsonObject().add("integrations", new JsonObject());
             hasChanged = true;
         }
 
-        // Added OAuth list (Version 3 to 4 upgrade)
+        // Added OAuth list
         JsonObject notificationMethodsObj = config
                 .getAsJsonObject().get("users")
                 .getAsJsonObject().get("onboarding")
@@ -52,6 +52,17 @@ public class ConfigSchemaUpgrader {
                 .getAsJsonObject();
         if (!notificationMethodsObj.has("oauth")) {
             notificationMethodsObj.add("oauth", new JsonArray());
+            hasChanged = true;
+        }
+
+        // Added Whitelabel
+        JsonObject styleObj = config
+                .getAsJsonObject().get("style")
+                .getAsJsonObject();
+        if (!styleObj.has("whitelabel")) {
+            JsonObject whitelabelObj = new JsonObject();
+            whitelabelObj.addProperty("poweredBy", "Show");
+            styleObj.add("whitelabel", whitelabelObj);
             hasChanged = true;
         }
 

@@ -7,6 +7,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Longs;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -22,6 +25,8 @@ import com.smotana.clearflask.api.model.PlanPerk;
 import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
 import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.Whitelabel;
+import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -41,14 +46,17 @@ import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.TieredBlock;
 import org.killbill.billing.client.model.gen.Usage;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.AbstractCollection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -56,6 +64,12 @@ import java.util.stream.Stream;
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
+    /** If changed, also change in BillingPage.tsx */
+    private static final String ADDON_WHITELABEL = "whitelabel";
+    /** If changed, also change in BillingPage.tsx */
+    private static final String ADDON_PRIVATE_PROJECTS = "private-projects";
+    /** If changed, also change in BillingPage.tsx */
+    private static final String ADDON_EXTRA_PROJECT = "extra-project";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
@@ -67,6 +81,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_GITHUB = "Synchronize GitHub issues with ClearFlask";
     private static final String TERMS_INTERCOM = "Add Intercom widget on every page";
     private static final String TERMS_BILLING = "Custom billing and invoicing";
+    private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
             "growth2-monthly",
             "standard2-monthly",
@@ -110,7 +125,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
                     new PlanPerk("Flat annual price", null),
-                    new PlanPerk("Tailored plan", null),
+                    new PlanPerk("Whitelabel", null),
                     new PlanPerk("Support & SLA", null)),
                     null, null),
             new Plan(TEAMMATE_PLAN_ID, "Teammate",
@@ -136,6 +151,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
                     new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
+                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), TERMS_WHITELABEL),
                     new FeaturesTableFeatures("Volume discount", ImmutableList.of("No", "No", "Yes"), null),
                     new FeaturesTableFeatures("Billing & Invoicing", ImmutableList.of("No", "No", "Yes"), TERMS_BILLING)
             ), null);
@@ -264,59 +280,136 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Subscription subscription = billing.getSubscription(accountId);
         String planToChangeFrom = billing.getEndOfTermChangeToPlanId(subscription)
                 .orElse(subscription.getPlanName());
-        switch (getBasePlanId(planToChangeFrom)) {
+        Plan currentPlan = getPlan(planToChangeFrom, Optional.of(accountId)).get();
+        Set<Plan> planOptions = Sets.newHashSet();
+        switch (currentPlan.getBasePlanId()) {
             case "growth-monthly":
-                return ImmutableSet.of(
-                        availablePlans.get("growth-monthly"),
-                        availablePlans.get("standard2-monthly"));
-            case "standard-monthly":
-                return ImmutableSet.of(
-                        availablePlans.get("growth2-monthly"),
-                        availablePlans.get("standard-monthly"));
-            case TEAMMATE_PLAN_ID:
             case "growth2-monthly":
+                planOptions.add(availablePlans.get("standard2-monthly"));
+                break;
+            case "standard-monthly":
             case "standard2-monthly":
-                return ImmutableSet.of(
-                        availablePlans.get("growth2-monthly"),
-                        availablePlans.get("standard2-monthly"));
+                planOptions.add(availablePlans.get("growth2-monthly"));
+                break;
+            case TEAMMATE_PLAN_ID:
             case "pro-lifetime":
-                return ImmutableSet.of(
-                        allPlans.get("pro-lifetime"),
-                        availablePlans.get("growth2-monthly"),
-                        availablePlans.get("standard2-monthly"));
+                planOptions.add(availablePlans.get("growth2-monthly"));
+                planOptions.add(availablePlans.get("standard2-monthly"));
+                break;
             case "flat-yearly":
             default:
-                return ImmutableSet.of();
+                break;
         }
+        planOptions.add(currentPlan);
+        return ImmutableSet.copyOf(planOptions);
     }
 
     @Extern
+    private Optional<Plan> getPlanExternOnly(String planId, @Nullable String accountIdOpt) {
+        return getPlan(planId, Optional.ofNullable(Strings.emptyToNull(accountIdOpt)), Optional.empty())
+                .map(PlanWithAddons::getPlan);
+    }
+
     @Override
-    public Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt) {
+    public Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt) {
+        return getPlan(planId, accountIdOpt, Optional.empty())
+                .map(PlanWithAddons::getPlan);
+    }
+
+    @Override
+    public Optional<PlanWithAddons> getCouponPlan(CouponModel coupon, Optional<String> accountIdOpt) {
+        return getPlan(coupon.getBasePlanId(), accountIdOpt, Optional.of(coupon));
+    }
+
+    private Optional<PlanWithAddons> getPlan(String planId, Optional<String> accountIdOpt, Optional<CouponModel> couponOpt) {
         String basePlanId = getBasePlanId(planId);
         Optional<Plan> planOpt = Optional.ofNullable(allPlans.get(basePlanId));
-        if (planOpt.isPresent()
-                && subscriptionOpt.isPresent()) {
-            Optional<Long> recurringPrice = Stream.of(subscriptionOpt.get().getPriceOverrides(), subscriptionOpt.get().getPrices())
-                    .filter(Objects::nonNull)
-                    .flatMap(List::stream)
-                    .filter(phasePrice -> subscriptionOpt.get().getPlanName().equals(phasePrice.getPlanName()))
-                    .filter(phasePrice -> subscriptionOpt.get().getPhaseType().name().equals(phasePrice.getPhaseType()))
-                    .findFirst()
-                    .map(PhasePrice::getRecurringPrice)
-                    .map(BigDecimal::longValueExact);
-            if (recurringPrice.isPresent()) {
-                return planOpt.map(plan -> plan.toBuilder()
-                        .pricing(new PlanPricing(
-                                recurringPrice.get(),
-                                0L,
-                                0L,
-                                0L,
-                                billingPeriodToPeriodEnum(subscriptionOpt.get().getBillingPeriod())))
-                        .build());
+
+        Optional<Account> accountOpt = accountIdOpt.flatMap(accountId -> accountStore.getAccount(accountIdOpt.get(), true));
+        boolean isStackingProPlan = couponOpt.isPresent()
+                && "pro-lifetime".equals(planOpt.map(Plan::getBasePlanId).orElse(null))
+                && "pro-lifetime".equals(accountOpt.map(Account::getPlanid).orElse(null));
+
+        ImmutableMap<String, String> addons = ImmutableMap.of();
+        if (planOpt.isPresent() && accountOpt.isPresent()) {
+            boolean isPlanChanging = couponOpt.isPresent() && !isStackingProPlan;
+
+            if (!isPlanChanging) {
+                // Update with actual plan price from killbill for given account
+                Subscription subscription = billing.getSubscription(accountOpt.get().getAccountId());
+                Optional<Long> recurringPrice = Stream.of(subscription.getPriceOverrides(), subscription.getPrices())
+                        .filter(Objects::nonNull)
+                        .flatMap(List::stream)
+                        .filter(phasePrice -> subscription.getPlanName().equals(phasePrice.getPlanName()))
+                        .filter(phasePrice -> subscription.getPhaseType().name().equals(phasePrice.getPhaseType()))
+                        .findFirst()
+                        .map(PhasePrice::getRecurringPrice)
+                        .map(BigDecimal::longValueExact);
+                if (recurringPrice.isPresent()) {
+                    planOpt = planOpt.map(plan -> plan.toBuilder()
+                            .pricing(new PlanPricing(
+                                    recurringPrice.get(),
+                                    0L,
+                                    0L,
+                                    0L,
+                                    billingPeriodToPeriodEnum(subscription.getBillingPeriod())))
+                            .build());
+                }
+
+                // Update plan perks with account addons
+                addons = accountOpt.get().getAddons() == null
+                        ? ImmutableMap.of()
+                        : accountOpt.get().getAddons();
+
+                // Apply Pro plan stacking
+                if (isStackingProPlan) {
+                    HashMap<String, String> addonsNew = Maps.newHashMap(addons);
+                    addonsNew.compute(ADDON_EXTRA_PROJECT, (k, v) -> String.valueOf(Optional.ofNullable(v)
+                            .flatMap(extraProjectCountStr -> Optional.ofNullable(Longs.tryParse(extraProjectCountStr)))
+                            .orElse(0L) + 1L));
+                    addons = ImmutableMap.copyOf(addonsNew);
+                }
+
+                ImmutableList<PlanPerk> addonPerks = addons.entrySet().stream()
+                        .flatMap(e -> getAddonAsPlanPerk(e.getKey(), e.getValue()).stream())
+                        .collect(ImmutableList.toImmutableList());
+                if (!addonPerks.isEmpty()) {
+                    planOpt = planOpt.map(plan -> plan.toBuilder()
+                            .perks(ImmutableList.<PlanPerk>builder()
+                                    .addAll(plan.getPerks())
+                                    .addAll(addonPerks)
+                                    .build())
+                            .build());
+                }
             }
         }
-        return planOpt;
+        return planOpt.isPresent()
+                ? Optional.of(new PlanWithAddons(planOpt.get(), addons))
+                : Optional.empty();
+    }
+
+
+    private Optional<PlanPerk> getAddonAsPlanPerk(String addonId, String value) {
+        if (Strings.isNullOrEmpty(value)
+                || "false".equals(value)
+                || "0".equals(value)) {
+            return Optional.empty();
+        }
+        switch (addonId) {
+            case ADDON_WHITELABEL:
+                return Optional.of(new PlanPerk("Whitelabel", TERMS_WHITELABEL));
+            case ADDON_PRIVATE_PROJECTS:
+                return Optional.of(new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS));
+            case ADDON_EXTRA_PROJECT:
+                long projectCount = Optional.ofNullable(Longs.tryParse(value)).orElse(0L);
+                boolean isMultiple = projectCount > 1;
+                return Optional.of(new PlanPerk(
+                        isMultiple ? "Extra " + projectCount + " projects" : "Extra project",
+                        "In addition to your plan limits, you can create "
+                                + (isMultiple ? projectCount + " additional projects" : "one additional project")));
+            default:
+                return Optional.empty();
+        }
     }
 
     /**
@@ -358,7 +451,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(project -> {
-                    verifyConfigMeetsPlanRestrictions(planId, project.getVersionedConfigAdmin().getConfig());
+                    verifyConfigMeetsPlanRestrictions(planId, accountId, project.getVersionedConfigAdmin().getConfig());
                     verifyTeammateInviteMeetsPlanRestrictions(planId, project.getProjectId(), false);
                 });
 
@@ -402,7 +495,20 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
-    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws RequiresUpgradeException {
+    public void verifyConfigMeetsPlanRestrictions(String planId, String accountId, ConfigAdmin config) throws RequiresUpgradeException {
+        ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
+                .map(Account::getAddons)
+                .orElse(ImmutableMap.of());
+
+        // Restrict whitelabel by Addon
+        if (!Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())
+                && !"true".equals(addons.get(ADDON_WHITELABEL))) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
+        }
+
+        // Private projects Addon
+        boolean hasAddonPrivateProjects = "true".equals(addons.get(ADDON_PRIVATE_PROJECTS));
+
         switch (getBasePlanId(planId)) {
             case TEAMMATE_PLAN_ID:
                 throw new RequiresUpgradeException("growth2-monthly", "Not allowed to have projects without a plan");
@@ -418,7 +524,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
-                if (config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
+                if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
@@ -484,15 +590,31 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
-        long projectCount = accountStore.getAccount(accountId, true).get()
-                .getProjectIds().size();
+        ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
+                .map(Account::getAddons)
+                .orElse(ImmutableMap.of());
+
+        Optional<Long> planLimitOpt = Optional.empty();
         switch (getBasePlanId(planId)) {
             case "pro-lifetime":
-                if ((projectCount + (addOne ? 1 : 0)) > 1L) {
-                    throw new RequiresUpgradeException("growth-monthly", "Your plan has reached project limit");
-                }
+                planLimitOpt = Optional.of(1L);
                 break;
             default:
+                break;
+        }
+
+        // Project Addons
+        long addonExtraProjectCount = Optional.ofNullable(addons.get(ADDON_EXTRA_PROJECT))
+                .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
+                .orElse(0L);
+        planLimitOpt = planLimitOpt.map(planLimit -> planLimit + addonExtraProjectCount);
+
+        if (planLimitOpt.isPresent()) {
+            long projectCount = accountStore.getAccount(accountId, true).get()
+                    .getProjectIds().size();
+            if ((projectCount + (addOne ? 1 : 0)) > planLimitOpt.get()) {
+                throw new RequiresUpgradeException("growth-monthly", "Your plan has reached project limit");
+            }
         }
     }
 

@@ -38,7 +38,6 @@ interface Props {
   width?: string | number;
   pageClicked?: (path: ConfigEditor.Path) => void;
   isInsideMuiTable?: boolean;
-  requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
   overrideName?: string;
   overrideDescription?: string;
   // If property uses a TextField-like component, will inject these properties
@@ -454,7 +453,6 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
               helperText={description}
               width={this.props.width}
               pageClicked={this.props.pageClicked}
-              requiresUpgrade={this.props.requiresUpgrade}
               bare={this.props.bare}
               {...this.props.TablePropProps}
             />
@@ -575,15 +573,13 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
       </div>
     );
 
-    if (!!this.props.requiresUpgrade && this.props.requiresUpgrade(this.props.prop.path)) {
-      propertySetter = (
-        <UpgradeWrapper
-          propertyPath={this.props.prop.path}
-        >
-          {propertySetter}
-        </UpgradeWrapper>
-      );
-    }
+    propertySetter = (
+      <UpgradeWrapper
+        propertyPath={this.props.prop.path}
+      >
+        {propertySetter}
+      </UpgradeWrapper>
+    );
 
     return propertySetter;
   }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../../@types/transform-media-imports.d.ts"/>
-import { Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
+import { Box, Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import InternalFeedbackIcon from '@material-ui/icons/AccountBoxRounded';
@@ -16,6 +16,8 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
+import DemoPageFeedbackClassigCroppedImg from '../../../public/img/landing/demo-page-feedback-classic-cropped.png';
+import DemoPageFeedbackCroppedImg from '../../../public/img/landing/demo-page-feedback-cropped.png';
 import FeaturesImg from '../../../public/img/landing/hero.svg';
 import UpgradeImg from '../../../public/img/landing/notify.svg';
 import DetailsImg from '../../../public/img/landing/understand.svg';
@@ -26,6 +28,7 @@ import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
 import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import FakeBrowser from '../../common/FakeBrowser';
 import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
@@ -33,6 +36,7 @@ import { TourDefinitionGuideState } from '../../common/tour';
 import { detectEnv, Environment, isTracking } from '../../common/util/detectEnv';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
+import { AddonExtraProject } from './BillingPage';
 
 const styles = (theme: Theme) => createStyles({
   layout: {
@@ -87,6 +91,12 @@ const styles = (theme: Theme) => createStyles({
     width: 200,
     display: 'flex',
     flexDirection: 'column',
+  },
+  templateCardLarge: {
+    width: 500,
+  },
+  feedbackLayoutSelectBrowser: {
+    margin: theme.spacing(4),
   },
   projectDetailsFields: {
     display: 'flex',
@@ -174,12 +184,14 @@ interface Props {
 interface ConnectProps {
   basePlanId?: string;
   accountProjectCount?: number;
+  addonExtraProjectsCount: number;
 }
 interface State extends CreateTemplateV2Options {
-  step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite' | 'plan-limit-reached';
+  step: 'upgrade-plan' | 'feature-select' | 'feedback-layout-select' | 'project-details' | 'invite' | 'plan-limit-reached';
   isSubmitting?: boolean;
   invites: Array<string>;
   createdProjectId?: string;
+  infoSkipWebsite?: boolean;
 }
 class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
 
@@ -187,7 +199,9 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
     super(props);
 
     var step: State['step'] = 'feature-select';
-    if (!!this.props.basePlanId && ((ProjectMaxCount[this.props.basePlanId] || Infinity) <= (this.props.accountProjectCount || 0))) {
+    if (!!this.props.basePlanId
+      && (((ProjectMaxCount[this.props.basePlanId] || Infinity) + this.props.addonExtraProjectsCount)
+        <= (this.props.accountProjectCount || 0))) {
       step = 'plan-limit-reached';
     } else if (this.props.basePlanId === TeammatePlanId) {
       step = 'upgrade-plan';
@@ -282,7 +296,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           templateRoadmap: true,
                           templateChangelog: true,
                           isPrivate: false,
-                          step: 'project-details',
+                          step: 'feedback-layout-select',
                         });
                         if (isTracking()) {
                           ReactGA.event({
@@ -306,7 +320,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           templateRoadmap: true,
                           templateChangelog: true,
                           isPrivate: false,
-                          step: 'project-details',
+                          step: 'feedback-layout-select',
                         });
                         if (isTracking()) {
                           ReactGA.event({
@@ -333,7 +347,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             templateRoadmap: true,
                             templateChangelog: true,
                             isPrivate: true,
-                            step: 'project-details',
+                            step: 'feedback-layout-select',
                           });
                           if (isTracking()) {
                             ReactGA.event({
@@ -373,6 +387,85 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
             )}
           />
         );
+      case 'feedback-layout-select':
+        return (
+          <CreateLayout
+            key='feedback-layout-select'
+            isOnboarding={this.props.isOnboarding}
+            title={'Feedback layout'}
+            description={this.props.t('you-can-always-customize-later-for')}
+            stretchContent
+            // img={CompareImg}
+            content={(
+              <>
+                <div className={this.props.classes.templateCards}>
+                  <TemplateCard
+                    className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
+                    title={this.props.t('feedback-first')}
+                    content={(
+                      <>
+                        <Box maxWidth={280} margin='auto'>
+                          {this.props.t('first-and-foremost-capture-customers-own')}
+                        </Box>
+                        <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
+                          <ImgIso img={DemoPageFeedbackCroppedImg} width={400} />
+                        </FakeBrowser>
+                      </>
+                    )}
+                    onClick={() => {
+                      this.setState({
+                        templateFeedbackIsClassic: false,
+                        step: 'project-details',
+                      });
+                      if (isTracking()) {
+                        ReactGA.event({
+                          category: 'new-project',
+                          action: 'choose-feedback-layout',
+                          label: 'feedback-first',
+                        });
+                      }
+                    }}
+                  />
+                  <TemplateCard
+                    className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
+                    title={this.props.t('community-first')}
+                    content={(
+                      <>
+                        <Box maxWidth={280} margin='auto'>
+                          {this.props.t('show-your-customers-a-public')}
+                        </Box>
+                        <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
+                          <ImgIso img={DemoPageFeedbackClassigCroppedImg} width={400} />
+                        </FakeBrowser>
+                      </>
+                    )}
+                    onClick={() => {
+                      this.setState({
+                        templateFeedbackIsClassic: true,
+                        step: 'project-details',
+                      });
+                      if (isTracking()) {
+                        ReactGA.event({
+                          category: 'new-project',
+                          action: 'choose-feedback-layout',
+                          label: 'community-first',
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            actions={[(
+              <Button
+                variant='text'
+                onClick={() => this.setState({ step: 'feature-select' })}
+              >
+                {this.props.t('back')}
+              </Button>
+            )]}
+          />
+        );
       case 'project-details':
         return (
           <CreateLayout
@@ -383,104 +476,122 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
             img={DetailsImg}
             content={(
               <div className={this.props.classes.projectDetailsFields}>
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  autoFocus
-                  label={this.props.t('your-website-optional')}
-                  placeholder='example.com'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoWebsite || ''}
-                  onChange={e => {
-                    const nameMatch = e.target.value.match(/^(https?:\/\/)?([^./]+).*$/);
-                    var slug: string | undefined = undefined;
-                    var name: string | undefined = undefined;
-                    if (nameMatch && nameMatch[2]) {
-                      name = nameMatch[2].toLowerCase();
-                      if (name) {
-                        name = name.charAt(0).toUpperCase() + name.slice(1);
-                        slug = this.nameToSlug(name);
-                      }
-                    }
-                    const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
-                    var logo: string | undefined = undefined;
-                    if (logoMatch && logoMatch[2]) {
-                      logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
-                    }
-                    this.setState({
-                      infoWebsite: e.target.value,
-                      ...(!!logo ? { infoLogo: logo } : {}),
-                      ...(!!slug ? { infoSlug: slug } : {}),
-                      ...(!!name ? { infoName: name } : {}),
-                    })
-                  }}
-                />
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  label={this.props.t('product-name')}
-                  placeholder='Vandelay Industries'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoName || ''}
-                  onChange={e => {
-                    const slug = this.nameToSlug(e.target.value);
-                    this.setState({
-                      infoName: e.target.value,
-                      ...(!!slug ? { infoSlug: slug } : {}),
-                    });
-                  }}
-                />
-                {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
+                <Collapse in={!this.state.infoSkipWebsite}>
                   <TextField
                     className={this.props.classes.field}
                     variant='outlined'
-                    label={this.props.t('portal-domain')}
+                    autoFocus
+                    label={this.props.t('your-website-optional')}
+                    placeholder='example.com'
                     disabled={!!this.state.isSubmitting}
-                    value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
-                    onChange={e => this.setState({ infoSlug: e.target.value })}
+                    value={this.state.infoWebsite || ''}
+                    onChange={e => {
+                      const nameMatch = e.target.value.match(/^(https?:\/\/)?([^./]+).*$/);
+                      var slug: string | undefined = undefined;
+                      var name: string | undefined = undefined;
+                      if (nameMatch && nameMatch[2]) {
+                        name = nameMatch[2].toLowerCase();
+                        if (name) {
+                          name = name.charAt(0).toUpperCase() + name.slice(1);
+                          slug = this.nameToSlug(name);
+                        }
+                      }
+                      const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
+                      var logo: string | undefined = undefined;
+                      if (logoMatch && logoMatch[2]) {
+                        logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
+                      }
+                      this.setState({
+                        infoWebsite: e.target.value,
+                        ...(!!logo ? { infoLogo: logo } : {}),
+                        ...(!!slug ? { infoSlug: slug } : {}),
+                        ...(!!name ? { infoName: name } : {}),
+                      })
+                    }}
                   />
-                ) : (
-                  <div className={this.props.classes.subdomainFields}>
+                </Collapse>
+                <Collapse in={this.state.infoName !== undefined || !!this.state.infoSkipWebsite}>
+                  <TextField
+                    className={this.props.classes.field}
+                    variant='outlined'
+                    label={this.props.t('product-name')}
+                    placeholder='Vandelay Industries'
+                    disabled={!!this.state.isSubmitting}
+                    value={this.state.infoName || ''}
+                    onChange={e => {
+                      const slug = this.nameToSlug(e.target.value);
+                      this.setState({
+                        infoName: e.target.value,
+                        ...(!!slug ? { infoSlug: slug } : {}),
+                      });
+                    }}
+                  />
+                </Collapse>
+                <Collapse in={this.state.infoDomain !== undefined || this.state.infoSlug !== undefined}>
+                  {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
                     <TextField
                       className={this.props.classes.field}
                       variant='outlined'
-                      label={this.props.t('portal-subdomain')}
-                      placeholder='vandelay-industries'
+                      label={this.props.t('portal-domain')}
                       disabled={!!this.state.isSubmitting}
-                      value={this.state.infoSlug || ''}
+                      value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
                       onChange={e => this.setState({ infoSlug: e.target.value })}
                     />
-                    <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
-                  </div>
-                )}
-                <TextField
-                  className={this.props.classes.field}
-                  variant='outlined'
-                  label={this.props.t('logo-url-optional')}
-                  placeholder='example.com/favicon.ico'
-                  disabled={!!this.state.isSubmitting}
-                  value={this.state.infoLogo || ''}
-                  onChange={e => this.setState({ infoLogo: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        {this.state.infoLogo && (
-                          <HeaderLogoLogo logoUrl={this.state.infoLogo} />
-                        )}
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  ) : (
+                    <div className={this.props.classes.subdomainFields}>
+                      <TextField
+                        className={this.props.classes.field}
+                        variant='outlined'
+                        label={this.props.t('portal-subdomain')}
+                        placeholder='vandelay-industries'
+                        disabled={!!this.state.isSubmitting}
+                        value={this.state.infoSlug || ''}
+                        onChange={e => this.setState({ infoSlug: e.target.value })}
+                      />
+                      <Typography variant='h6' component='div'>{`.${windowIso.parentDomain}`}</Typography>
+                    </div>
+                  )}
+                </Collapse>
+                <Collapse in={this.state.infoLogo !== undefined}>
+                  <TextField
+                    className={this.props.classes.field}
+                    variant='outlined'
+                    label={this.props.t('logo-url-optional')}
+                    placeholder='example.com/favicon.ico'
+                    disabled={!!this.state.isSubmitting}
+                    value={this.state.infoLogo || ''}
+                    onChange={e => this.setState({ infoLogo: e.target.value })}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          {this.state.infoLogo && (
+                            <HeaderLogoLogo logoUrl={this.state.infoLogo} />
+                          )}
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Collapse>
               </div>
             )}
             actions={[(
               <Button
                 variant='text'
-                onClick={() => this.setState({ step: 'feature-select' })}
+                onClick={() => this.setState({ step: 'feedback-layout-select' })}
               >
                 {this.props.t('back')}
               </Button>
-            ), (
+            ), this.state.infoWebsite === undefined && !this.state.infoSkipWebsite ? (
+              <Button
+                variant='outlined'
+                disableElevation
+                color='inherit'
+                style={{ color: this.props.theme.palette.error.dark }}
+                onClick={() => this.setState({ infoSkipWebsite: true })}
+              >
+                {this.props.t('skip')}
+              </Button>
+            ) : (
               <SubmitButton
                 variant='contained'
                 disableElevation
@@ -617,6 +728,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
     basePlanId: state.account.account.account?.basePlanId,
+    addonExtraProjectsCount: parseInt(state.account.account.account?.addons?.[AddonExtraProject] || '') || 0,
     accountProjectCount: state.configs.configs.byProjectId
       ? Object.values(state.configs.configs.byProjectId)
         .filter(project => !project.isExternal)
@@ -630,7 +742,7 @@ const TemplateCard = (props: {
   icon?: OverridableComponent<SvgIconTypeMap>,
   className?: string;
   title: string;
-  content: string;
+  content: string | React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
 }) => {
@@ -661,7 +773,9 @@ const TemplateCard = (props: {
               titleTypographyProps={{ align: 'center' }}
               subheaderTypographyProps={{ align: 'center' }}
             />
-            <CardContent>{props.content}</CardContent>
+            {!!props.content && (
+              <CardContent>{props.content}</CardContent>
+            )}
           </CardActionArea>
         </Card>
       )}
@@ -676,7 +790,7 @@ const CreateLayout = (props: {
   stretchContent?: boolean;
   content?: React.ReactNode;
   actions?: React.ReactNode[];
-  img: Img;
+  img?: Img;
 }) => {
   const classes = useStyles();
   return (
@@ -708,18 +822,20 @@ const CreateLayout = (props: {
             </div>
           )}
         </div>
-        <Hidden mdDown>
-          <ImgIso
-            alt=''
-            className={classes.layoutImage}
-            src={props.img.src}
-            aspectRatio={props.img.aspectRatio}
-            width={props.img.width}
-            height={props.img.height}
-            maxWidth={props.img.width}
-            maxHeight={props.img.height}
-          />
-        </Hidden>
+        {!!props.img && (
+          <Hidden mdDown>
+            <ImgIso
+              alt=''
+              className={classes.layoutImage}
+              src={props.img.src}
+              aspectRatio={props.img.aspectRatio}
+              width={props.img.width}
+              height={props.img.height}
+              maxWidth={props.img.width}
+              maxHeight={props.img.height}
+            />
+          </Hidden>
+        )}
       </div>
     </div>
   );

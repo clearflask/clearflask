@@ -91,7 +91,7 @@ export const LanguageSelect = (props: {
                     {lang.perc !== undefined && (
                       <>
                         <div className={classes.flexGrow} />
-                        <div className={classes.langPerc}>{lang.perc * (lang.code === 'en' ? 1 : percOfSiteTextI18n) * 100}&#37;</div>
+                        <div className={classes.langPerc}>{Math.round(lang.perc * (lang.code === 'en' ? 1 : percOfSiteTextI18n) * 100)}&#37;</div>
                       </>
                     )}
                   </div>

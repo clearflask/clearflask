@@ -94,7 +94,8 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 null,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
@@ -213,7 +214,8 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 null,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                null);
         store.createAccount(account).getIndexingFuture().get();
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -266,6 +268,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 // Prior to adding attrs, all accounts have this as null
                 // test the creation of this map
+                null,
                 null);
 
         HashMap<String, String> attrsExpected = null;

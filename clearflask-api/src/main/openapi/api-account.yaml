@@ -195,6 +195,10 @@ components:
           type: object
           additionalProperties:
             type: string
+        addons:
+          type: object
+          additionalProperties:
+            type: string
     SubscriptionStatus:
       type: string
       enum:
@@ -252,6 +256,10 @@ components:
         changeToFlatPlanWithYearlyPrice:
           type: integer
           format: int64
+        addons:
+          type: object
+          additionalProperties:
+            type: string
     AccountBilling:
       type: object
       required:

@@ -13,7 +13,6 @@ import CreditPreview from './injects/CreditPreview';
 import WorkflowPreview from './injects/WorkflowPreview';
 import PresetWidget from './PresetWidget';
 import Property from './Property';
-import { RestrictedProperties } from './UpgradeWrapper';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -57,13 +56,6 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithTranslati
       );
     }
 
-    var propertyRequiresUpgrade: ((propertyPath: ConfigEditor.Path) => boolean) | undefined;
-    const restrictedProperties = this.props.accountBasePlanId && RestrictedProperties[this.props.accountBasePlanId];
-    if (restrictedProperties) {
-      propertyRequiresUpgrade = (path) => restrictedProperties.some(restrictedPath =>
-        ConfigEditor.pathEquals(restrictedPath, path));
-    }
-
     return (
       <div>
         <Typography variant='h4' component='h1'>{translatedDynamicName}</Typography>
@@ -79,7 +71,6 @@ class SettingsDynamicPage extends Component<Props & ConnectProps & WithTranslati
               key={child.key}
               prop={child}
               pageClicked={this.props.pageClicked}
-              requiresUpgrade={propertyRequiresUpgrade}
               width={350}
             />
           ))}

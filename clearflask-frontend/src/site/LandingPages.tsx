@@ -360,6 +360,38 @@ export function Landing() {
         )}
       />
       <Block
+        className={classes.textAlignCenter}
+        type='headingOnly'
+        title='See what we have to offer'
+        spacingBottom={0}
+      />
+      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={40}>
+        <Block
+          type='column'
+          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
+          title='Customer Feedback'
+          titleColorSecondary
+          demoImage={DemoFeedbackImg}
+          demoWrap='browser'
+        />
+        <Block
+          type='column'
+          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
+          title='Product Roadmap'
+          titleColorSecondary
+          demoImage={DemoRoadmapImg}
+          demoWrap='browser'
+        />
+        <Block
+          type='column'
+          icon={(<ChangeIcon fontSize='inherit' />)}
+          title='Announcements'
+          titleColorSecondary
+          demoImage={DemoChangelog2Img}
+          demoWrap='browser'
+        />
+      </HorizontalPanels>
+      <Block
         type='headingMain'
         title={t('simple-yet-powerful-feedback-experience')}
         description={t('ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas')}
@@ -845,7 +877,7 @@ export function LandingHero() {
     }} width={2400} height={1000}>
       <Hero
         title={t('hero')}
-        description='Open-source ideation tool to close the feedback loop between your product and customers.'
+        description={t('subhero')}
         // description='Open-source ideation tool to gather feedback and prioritize your roadmap transparently within your product community.'
         // description='Listen to your users during product development and prioritize your roadmap with our open-source Feedback Management Tool'
         vidyard={{
