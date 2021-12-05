@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 /// <reference path="../../@types/transform-media-imports.d.ts"/>
-import { Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
+import { Box, Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import InternalFeedbackIcon from '@material-ui/icons/AccountBoxRounded';
@@ -16,6 +16,8 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import CreatedImg from '../../../public/img/dashboard/created.svg';
+import DemoPageFeedbackClassigCroppedImg from '../../../public/img/landing/demo-page-feedback-classic-cropped.png';
+import DemoPageFeedbackCroppedImg from '../../../public/img/landing/demo-page-feedback-cropped.png';
 import FeaturesImg from '../../../public/img/landing/hero.svg';
 import UpgradeImg from '../../../public/img/landing/notify.svg';
 import DetailsImg from '../../../public/img/landing/understand.svg';
@@ -26,6 +28,7 @@ import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
 import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import FakeBrowser from '../../common/FakeBrowser';
 import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
@@ -88,6 +91,12 @@ const styles = (theme: Theme) => createStyles({
     width: 200,
     display: 'flex',
     flexDirection: 'column',
+  },
+  templateCardLarge: {
+    width: 500,
+  },
+  feedbackLayoutSelectBrowser: {
+    margin: theme.spacing(4),
   },
   projectDetailsFields: {
     display: 'flex',
@@ -178,7 +187,7 @@ interface ConnectProps {
   addonExtraProjectsCount: number;
 }
 interface State extends CreateTemplateV2Options {
-  step: 'upgrade-plan' | 'feature-select' | 'project-details' | 'invite' | 'plan-limit-reached';
+  step: 'upgrade-plan' | 'feature-select' | 'feedback-layout-select' | 'project-details' | 'invite' | 'plan-limit-reached';
   isSubmitting?: boolean;
   invites: Array<string>;
   createdProjectId?: string;
@@ -287,7 +296,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           templateRoadmap: true,
                           templateChangelog: true,
                           isPrivate: false,
-                          step: 'project-details',
+                          step: 'feedback-layout-select',
                         });
                         if (isTracking()) {
                           ReactGA.event({
@@ -311,7 +320,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           templateRoadmap: true,
                           templateChangelog: true,
                           isPrivate: false,
-                          step: 'project-details',
+                          step: 'feedback-layout-select',
                         });
                         if (isTracking()) {
                           ReactGA.event({
@@ -338,7 +347,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             templateRoadmap: true,
                             templateChangelog: true,
                             isPrivate: true,
-                            step: 'project-details',
+                            step: 'feedback-layout-select',
                           });
                           if (isTracking()) {
                             ReactGA.event({
@@ -376,6 +385,85 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                 </div>
               </>
             )}
+          />
+        );
+      case 'feedback-layout-select':
+        return (
+          <CreateLayout
+            key='feedback-layout-select'
+            isOnboarding={this.props.isOnboarding}
+            title={'Feedback layout'}
+            description={this.props.t('you-can-always-customize-later-for')}
+            stretchContent
+            // img={CompareImg}
+            content={(
+              <>
+                <div className={this.props.classes.templateCards}>
+                  <TemplateCard
+                    className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
+                    title={'Feedback first'}
+                    content={(
+                      <>
+                        <Box maxWidth={280} margin='auto'>
+                          First and foremost, capture customers' own words. Intended for detail-oriented product managers.
+                        </Box>
+                        <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
+                          <ImgIso img={DemoPageFeedbackCroppedImg} width={400} />
+                        </FakeBrowser>
+                      </>
+                    )}
+                    onClick={() => {
+                      this.setState({
+                        templateFeedbackIsClassic: false,
+                        step: 'project-details',
+                      });
+                      if (isTracking()) {
+                        ReactGA.event({
+                          category: 'new-project',
+                          action: 'choose-feedback-layout',
+                          label: 'feedback-first',
+                        });
+                      }
+                    }}
+                  />
+                  <TemplateCard
+                    className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
+                    title={'Community first'}
+                    content={(
+                      <>
+                        <Box maxWidth={280} margin='auto'>
+                          Show your customers a public feedback forum to discuss each other's ideas. A hands-off approach to let the community manage feedback for you.
+                        </Box>
+                        <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
+                          <ImgIso img={DemoPageFeedbackClassigCroppedImg} width={400} />
+                        </FakeBrowser>
+                      </>
+                    )}
+                    onClick={() => {
+                      this.setState({
+                        templateFeedbackIsClassic: true,
+                        step: 'project-details',
+                      });
+                      if (isTracking()) {
+                        ReactGA.event({
+                          category: 'new-project',
+                          action: 'choose-feedback-layout',
+                          label: 'community-first',
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            actions={[(
+              <Button
+                variant='text'
+                onClick={() => this.setState({ step: 'feature-select' })}
+              >
+                {this.props.t('back')}
+              </Button>
+            )]}
           />
         );
       case 'project-details':
@@ -489,7 +577,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
             actions={[(
               <Button
                 variant='text'
-                onClick={() => this.setState({ step: 'feature-select' })}
+                onClick={() => this.setState({ step: 'feedback-layout-select' })}
               >
                 {this.props.t('back')}
               </Button>
@@ -497,6 +585,8 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
               <Button
                 variant='outlined'
                 disableElevation
+                color='inherit'
+                style={{ color: this.props.theme.palette.error.dark }}
                 onClick={() => this.setState({ infoSkipWebsite: true })}
               >
                 {this.props.t('skip')}
@@ -652,7 +742,7 @@ const TemplateCard = (props: {
   icon?: OverridableComponent<SvgIconTypeMap>,
   className?: string;
   title: string;
-  content: string;
+  content: string | React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
 }) => {
@@ -683,7 +773,9 @@ const TemplateCard = (props: {
               titleTypographyProps={{ align: 'center' }}
               subheaderTypographyProps={{ align: 'center' }}
             />
-            <CardContent>{props.content}</CardContent>
+            {!!props.content && (
+              <CardContent>{props.content}</CardContent>
+            )}
           </CardActionArea>
         </Card>
       )}
@@ -698,7 +790,7 @@ const CreateLayout = (props: {
   stretchContent?: boolean;
   content?: React.ReactNode;
   actions?: React.ReactNode[];
-  img: Img;
+  img?: Img;
 }) => {
   const classes = useStyles();
   return (
@@ -730,18 +822,20 @@ const CreateLayout = (props: {
             </div>
           )}
         </div>
-        <Hidden mdDown>
-          <ImgIso
-            alt=''
-            className={classes.layoutImage}
-            src={props.img.src}
-            aspectRatio={props.img.aspectRatio}
-            width={props.img.width}
-            height={props.img.height}
-            maxWidth={props.img.width}
-            maxHeight={props.img.height}
-          />
-        </Hidden>
+        {!!props.img && (
+          <Hidden mdDown>
+            <ImgIso
+              alt=''
+              className={classes.layoutImage}
+              src={props.img.src}
+              aspectRatio={props.img.aspectRatio}
+              width={props.img.width}
+              height={props.img.height}
+              maxWidth={props.img.width}
+              maxHeight={props.img.height}
+            />
+          </Hidden>
+        )}
       </div>
     </div>
   );
