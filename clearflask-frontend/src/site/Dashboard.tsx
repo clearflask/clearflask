@@ -726,7 +726,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }, title: this.props.t('visit'), icon: VisitIcon
                   }] : []),
                   {
-                    type: 'dropdown', title: this.props.account.name, items: [
+                    type: 'dropdown', title: (!!activeProject && projects.length > 1) ? activeProject.editor.getConfig().name : this.props.account.name,
+                    color: 'primary', items: [
                       ...(projects.map(p => ({
                         type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: p.editor.getConfig().name,
 
