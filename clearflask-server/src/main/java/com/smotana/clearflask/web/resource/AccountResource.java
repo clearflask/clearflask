@@ -54,6 +54,7 @@ import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
+import com.smotana.clearflask.security.EmailValidator;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -168,6 +169,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private NotificationService notificationService;
     @Inject
     private IntercomUtil intercomUtil;
+    @Inject
+    private EmailValidator emailValidator;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -409,7 +412,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         checkState(guidOpt.isPresent() || passwordOpt.isPresent());
-        sanitizer.email(email);
+        // More robust check than sanitizer.email(email);
+        emailValidator.checkValid(email);
         sanitizer.accountName(name);
 
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(email)) {
