@@ -15,6 +15,8 @@
   "sign-up": "Registrácia",
   "privacy-policy": "Podmienky osobných údajov",
   "terms-of-service": "Podmienky služby",
+  "hero": "Lepší spôsob, ako spravovať spätnú väzbu",
+  "subhero": "Open-Source ideový nástroj pre spätnú väzbu, plán a oznámenia",
   "lets-get-started": "Začnime",
   "see-demo": "Pozri demo",
   "simple-yet-powerful-feedback-experience": "Jednoduchá, ale účinná spätná väzba",
@@ -101,9 +103,11 @@
   "for-advanced-use-cases-start": "Pre pokročilé prípady použitia začiatok bez preddefinovaných šablón.",
   "fill-out-details": "Vyplňte podrobnosti",
   "give-us-a-few-more-details-about-your-project": "Dajte nám niekoľko podrobností o vašom projekte.",
+  "your-website-optional": "Vaša stránka",
   "product-name": "Názov produktu",
   "portal-domain": "Doména portálu",
   "portal-subdomain": "Subdoména portálu",
+  "logo-url-optional": "Adresa URL loga",
   "back": "Späť",
   "create": "Vytvoriť",
   "success": "Hotovo!",
@@ -208,5 +212,9 @@
   "redeem": "Uplatniť",
   "redeem-coupon": "Uplatniť kupón",
   "coupon-code": "Kód kupónu",
-  "check": "Skontrolovať"
+  "check": "Skontrolovať",
+  "feedback-first": "Prednosne spätná väzba",
+  "community-first": "Prednosne komunita",
+  "first-and-foremost-capture-customers-own": "V prvom rade zachyťte vlastné slová zákazníkov. Určené pre detailne orientovaných produktových manažérov.",
+  "show-your-customers-a-public": "Ukážte svojim zákazníkom verejné fórum spätnej väzby, kde môžete navzájom diskutovať o svojich nápadoch. Praktický prístup, ktorý umožňuje komunite spravovať spätnú väzbu za vás."
 }
