@@ -401,11 +401,11 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                 <div className={this.props.classes.templateCards}>
                   <TemplateCard
                     className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
-                    title={'Feedback first'}
+                    title={this.props.t('feedback-first')}
                     content={(
                       <>
                         <Box maxWidth={280} margin='auto'>
-                          First and foremost, capture customers' own words. Intended for detail-oriented product managers.
+                          {this.props.t('first-and-foremost-capture-customers-own')}
                         </Box>
                         <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
                           <ImgIso img={DemoPageFeedbackCroppedImg} width={400} />
@@ -428,11 +428,11 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                   />
                   <TemplateCard
                     className={classNames(this.props.classes.templateCard, this.props.classes.templateCardLarge)}
-                    title={'Community first'}
+                    title={this.props.t('community-first')}
                     content={(
                       <>
                         <Box maxWidth={280} margin='auto'>
-                          Show your customers a public feedback forum to discuss each other's ideas. A hands-off approach to let the community manage feedback for you.
+                          {this.props.t('show-your-customers-a-public')}
                         </Box>
                         <FakeBrowser className={this.props.classes.feedbackLayoutSelectBrowser}>
                           <ImgIso img={DemoPageFeedbackClassigCroppedImg} width={400} />

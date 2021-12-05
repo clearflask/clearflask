@@ -35,6 +35,9 @@ const styles = (theme: Theme) => createStyles({
   marker: {
     color: theme.palette.text.secondary,
   },
+  titleColorSecondary: {
+    color: theme.palette.text.secondary,
+  },
   points: {
     margin: theme.spacing(1, 0),
   },
@@ -80,6 +83,7 @@ const styles = (theme: Theme) => createStyles({
 export interface Props {
   className?: string;
   title?: string | React.ReactNode;
+  titleColorSecondary?: boolean;
   subtitle?: string | React.ReactNode;
   marker?: string;
   description?: string | React.ReactNode;
@@ -151,7 +155,7 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
     });
     return (
       <div className={classNames(this.props.classes.container, this.props.className)}>
-        <Typography variant={titleVariant} component={titleCmpt}>
+        <Typography variant={titleVariant} component={titleCmpt} className={classNames(this.props.titleColorSecondary && this.props.classes.titleColorSecondary)}>
           {this.props.icon ? (
             <div className={classNames(
               this.props.classes.iconTitleContainer,
