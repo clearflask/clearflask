@@ -15,7 +15,8 @@
   "sign-up": "Sign up",
   "privacy-policy": "Privacy Policy",
   "terms-of-service": "Terms of Service",
-  "hero": "Community centric product feedback",
+  "hero": "A better way to manage product feedback",
+  "subhero": "Open-source Ideation Tool for Feedback, Roadmap and Announcements",
   "lets-get-started": "Let's get started",
   "see-demo": "See Demo",
   "simple-yet-powerful-feedback-experience": "Simple, yet powerful feedback experience",
@@ -211,5 +212,9 @@
   "redeem": "Redeem",
   "redeem-coupon": "Redeem coupon",
   "coupon-code": "Coupon code",
-  "check": "Check"
+  "check": "Check",
+  "feedback-first": "Feedback first",
+  "community-first": "Community first",
+  "first-and-foremost-capture-customers-own": "First and foremost, capture customers' own words. Intended for detail-oriented product managers.",
+  "show-your-customers-a-public": "Show your customers a public feedback forum to discuss each other's ideas. A hands-off approach to let the community manage feedback for you."
 }
