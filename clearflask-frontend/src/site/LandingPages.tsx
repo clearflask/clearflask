@@ -369,7 +369,7 @@ export function Landing() {
         <Block
           type='column'
           icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
-          title='Customer Feedback'
+          title={t('customer-feedback')}
           titleColorSecondary
           demoImage={DemoFeedbackImg}
           demoWrap='browser'
@@ -377,7 +377,7 @@ export function Landing() {
         <Block
           type='column'
           icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
-          title='Product Roadmap'
+          title={t('product-roadmap')}
           titleColorSecondary
           demoImage={DemoRoadmapImg}
           demoWrap='browser'
@@ -385,7 +385,7 @@ export function Landing() {
         <Block
           type='column'
           icon={(<ChangeIcon fontSize='inherit' />)}
-          title='Announcements'
+          title={t('announcements')}
           titleColorSecondary
           demoImage={DemoChangelog2Img}
           demoWrap='browser'
@@ -397,8 +397,7 @@ export function Landing() {
         description={t('ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas')}
         largePoints
         points={[
-          t('gauge-customer-interest'),
-          t('community-discussion'),
+          t('choose-between-feedback-first-or'),
           t('website-integration'),
         ]}
         alignItems='center'
