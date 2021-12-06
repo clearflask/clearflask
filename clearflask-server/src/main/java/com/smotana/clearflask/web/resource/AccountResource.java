@@ -413,7 +413,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         checkState(guidOpt.isPresent() || passwordOpt.isPresent());
         // More robust check than sanitizer.email(email);
-        emailValidator.checkValid(email);
+        emailValidator.assertValid(email);
         sanitizer.accountName(name);
 
         if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(email)) {
