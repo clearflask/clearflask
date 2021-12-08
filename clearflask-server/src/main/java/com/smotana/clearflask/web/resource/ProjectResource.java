@@ -161,11 +161,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .getVisibility())) {
             // For private boards, force user to login first, also hide the full config until login
             return new ConfigBindSlugResult(
+                    project.getProjectId(),
                     null,
                     project.getVersionedConfig().getConfig().getUsers().getOnboarding());
         }
 
         return new ConfigBindSlugResult(
+                project.getProjectId(),
                 project.getVersionedConfig(),
                 null);
     }

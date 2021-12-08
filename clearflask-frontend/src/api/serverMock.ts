@@ -811,6 +811,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
     return this.returnLater({
+      projectId: project.config.config.projectId,
       config: project.config,
     });
   }

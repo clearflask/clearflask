@@ -1195,6 +1195,8 @@ components:
                   $ref: 'api-project.yaml#/components/schemas/onboarding'
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /slug/{slug}/bind/config:
   post:
     operationId: configBindSlug
@@ -1212,11 +1214,17 @@ components:
             schema:
               title: ConfigBindSlugResult
               type: object
+              required:
+              - projectId
               properties:
+                projectId:
+                  type: string
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 onboardBefore:
                   $ref: 'api-project.yaml#/components/schemas/onboarding'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /slug/{slug}/bind/user:
   post:
     operationId: userBindSlug

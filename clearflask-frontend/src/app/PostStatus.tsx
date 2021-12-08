@@ -100,7 +100,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     }
 
     const post = await dispatcher.ideaGet({
-      projectId: configAndUserBind.config.config.projectId,
+      projectId: configAndUserBind.projectId,
       ideaId: props.postId,
     });
 
