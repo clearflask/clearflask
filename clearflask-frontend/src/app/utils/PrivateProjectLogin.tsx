@@ -9,6 +9,7 @@ import LogIn from '../comps/LogIn';
 interface Props {
   children: React.ReactNode,
   server: Server;
+  slug: string;
 }
 interface ConnectProps {
   onboardBefore?: Client.Onboarding;
@@ -33,7 +34,7 @@ class PrivateProjectLogin extends Component<Props & ConnectProps> {
           server={this.props.server}
           open={showLogin}
           onLoggedInAndClose={() => this.props.server.dispatch().then(d => d.configAndUserBindSlug({
-            slug: this.props.server.getStore().getState().conf.conf?.slug!,
+            slug: this.props.slug,
             userBind: {},
           }))}
         />

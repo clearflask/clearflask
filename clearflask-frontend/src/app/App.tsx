@@ -203,7 +203,7 @@ class App extends Component<Props> {
               } : {}),
             }}
           >
-            <PrivateProjectLogin server={this.server}>
+            <PrivateProjectLogin server={this.server} slug={this.props.slug}>
               <MyLoadingBar />
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
