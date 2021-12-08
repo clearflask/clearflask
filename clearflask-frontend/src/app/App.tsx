@@ -117,7 +117,9 @@ class App extends Component<Props> {
     }
 
     var result;
-    if (this.server.getStore().getState().conf.status !== Status.FULFILLED) {
+    if (this.server.getStore().getState().conf.status !== Status.FULFILLED
+      // If SSR gets onboardBefore, we still want to retry getting conf ourselves
+      || !this.server.getStore().getState().conf.conf) {
       try {
         result = await (await this.server.dispatch()).configAndUserBindSlug({
           slug: this.props.slug,
