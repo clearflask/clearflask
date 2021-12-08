@@ -1184,7 +1184,11 @@ components:
             schema:
               title: ConfigAndUserBindSlugResult
               type: object
+              required:
+              - projectId
               properties:
+                projectId:
+                  type: string
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 onboardBefore: # For private projects, you have to first onboard before receiving config

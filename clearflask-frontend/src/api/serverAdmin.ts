@@ -162,6 +162,7 @@ export default class ServerAdmin {
         type: Client.configAndUserBindSlugActionStatus.Fulfilled,
         meta: { action: Client.Action.configAndUserBindSlug, request: { slug: versionedConfigAdmin.config.slug, userBind: {} } },
         payload: {
+          projectId,
           config: versionedConfigAdmin,
           user: loggedInUser,
         },

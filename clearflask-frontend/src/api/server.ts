@@ -336,7 +336,7 @@ function reducerProjectId(projectId: string | null = stateProjectIdDefault, acti
       return action.payload.config.projectId || projectId;
     case Client.configBindSlugActionStatus.Fulfilled:
     case Client.configAndUserBindSlugActionStatus.Fulfilled:
-      return action.payload.config?.config.projectId || projectId;
+      return action.payload.projectId || action.payload.config?.config.projectId || projectId;
     default:
       return projectId;
   }

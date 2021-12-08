@@ -830,6 +830,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const userBind = await this.userBindSlug(request);
 
     return this.returnLater({
+      projectId: project.config.config.projectId,
       config: configGet.config,
       user: userBind.user,
     });
