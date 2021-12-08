@@ -94,7 +94,7 @@ release-perform:
 release-github-release:
 	mvn build-helper:parse-version \
 		-DgithubReleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.incrementalVersion} \
-		--non-recursive -Dgithub.draft=true github-release:release
+		--non-recursive github-release:release -Dgithub.draft=true
 
 deploy:
 	make deploy-server
