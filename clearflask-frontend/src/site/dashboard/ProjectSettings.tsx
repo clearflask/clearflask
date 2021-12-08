@@ -1204,7 +1204,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   const sso = useSelector<ReduxState, Admin.SsoSignup | undefined>(state => state.conf.conf?.users.onboarding.notificationMethods.sso, shallowEqual);
   const oauthNum = useSelector<ReduxState, number>(state => state.conf.conf?.users.onboarding.notificationMethods.oauth?.length || 0, shallowEqual);
   const website = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.website, shallowEqual);
-  const websiteWithoutProtocol = website?.replace(/^https?:\/\//, '');
+  const websiteWithoutProtocol = website?.replace(/^https?:\/\/(www\.)?/, '');
   const allowedDomainsProp = props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email', 'allowedDomains']) as ConfigEditor.ArrayProperty;
   const [allowedDomain, setAllowedDomain] = useDebounceProp<string>(
     (email?.allowedDomains?.[0] !== undefined ? email.allowedDomains[0] : websiteWithoutProtocol) || '',
@@ -1332,7 +1332,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
                       style={{ width: 140 }}
                       placeholder='company.com'
                       required
-                      disabled={!email}
+                      disabled={!email?.allowedDomains}
                       error={!!email && !allowedDomain}
                       value={allowedDomain}
                       InputProps={{
