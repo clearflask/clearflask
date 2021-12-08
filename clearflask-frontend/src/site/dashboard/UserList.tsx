@@ -162,7 +162,7 @@ export default keyMapper(
       newProps.searchResult.cursor = bySearch.cursor;
       newProps.searchResult.users = (bySearch.userIds || []).map(userId => {
         const user = state.users.byId[userId];
-        if (!user.user) return undefined;
+        if (!user?.user) return undefined;
         // Admin.UserAdmin type guard
         if (user.user?.['hasPassword'] === undefined) return undefined;
         return user.user as Admin.UserAdmin;
