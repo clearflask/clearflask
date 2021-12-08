@@ -5,11 +5,11 @@
     <parent>
         <artifactId>clearflask-parent</artifactId>
         <groupId>com.smotana.clearflask</groupId>
-        <version>1.5.2</version>
+        <version>1.5.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>clearflask-legal</artifactId>
-    <version>1.5.2</version>
+    <version>1.5.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <build>
