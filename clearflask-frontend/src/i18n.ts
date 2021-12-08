@@ -37,8 +37,8 @@ export const supportedLanguages: Array<SupportedLanguage>
     { code: 'de', img: FlagDe, label: 'Deutsch', perc: 0.19 },
     { code: 'en', img: FlagEn, label: 'English', perc: 1 },
     { code: 'fr', img: FlagFr, label: 'Français', perc: 0.01 },
-    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.17 },
-    { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 1 },
+    { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.35 },
+    { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 0.99 },
     ...(isProd() ? [] : [
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
     ]),
