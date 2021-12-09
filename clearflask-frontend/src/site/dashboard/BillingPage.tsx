@@ -927,10 +927,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
                         this.setState({ isSubmitting: true });
                         ServerAdmin.get().dispatchAdmin().then(d => d.accountCreditAdjustmentSuperAdmin({
-                          accountCreditAdjustmentSuperAdmin: {
+                          accountCreditAdjustment: {
                             accountId: this.props.account!.accountId,
-                            amount: this.state.creditAmount,
-                            description: this.state.creditDescription,
+                            amount: this.state.creditAmount!,
+                            description: this.state.creditDescription!,
                           },
                         }).then(() => d.accountBillingAdmin({})))
                           .then(() => this.setState({ isSubmitting: false, showCreditAdjustment: undefined, creditAmount: undefined, creditDescription: undefined }))

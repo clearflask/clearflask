@@ -113,7 +113,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     planId: string;
     acceptedInvitations: Set<string>;
     acceptedCoupons: Set<string>;
-    billing: Admin.AccountBilling,
   } = undefined;
   accountPass?: string = undefined;
   // Mock project database
