@@ -27,6 +27,7 @@ export type MenuButton = {
 } & ({
   link: string;
   linkIsExternal?: boolean;
+  linkIsNewWindowNoFollow?: boolean;
 } | {
   onClick: () => void;
 })
@@ -254,6 +255,14 @@ export function MenuItemButton(props: {
     linkProps = {
       component: 'a',
       href: props.item['link'],
+      underline: 'none',
+    };
+  } else if (props.item['linkIsNewWindowNoFollow'] !== undefined) {
+    linkProps = {
+      component: 'a',
+      href: props.item['link'],
+      rel: 'noopener nofollow',
+      target: '_blank',
       underline: 'none',
     };
   } else if (props.item['link'] !== undefined) {

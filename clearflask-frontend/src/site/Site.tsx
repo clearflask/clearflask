@@ -12,6 +12,7 @@ import ActIcon from '@material-ui/icons/DirectionsRun';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import MenuIcon from '@material-ui/icons/Menu';
+import StatusIcon from '@material-ui/icons/Notifications';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
@@ -187,13 +188,14 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
       // },
       {
         type: 'dropdown', title: this.props.t('resources'), items: [
-          { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
-          { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
-          { type: 'divider' },
-          // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
           { type: 'button', link: `/open-source`, title: this.props.t('open-source'), icon: OpenSourceIcon },
           { type: 'button', link: '/e/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
           { type: 'button', link: '/e/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
+          // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          { type: 'divider' },
+          { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
+          { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
+          { type: 'button', link: 'https://stats.uptimerobot.com/jM01vFY31w/', linkIsNewWindowNoFollow: true, title: 'Status', icon: StatusIcon },
         ]
       },
     ];
@@ -406,6 +408,8 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
                           case 'button':
                             if (subItem['linkIsExternal'] !== undefined) {
                               return (<MuiLink key={subIndex} href={subItem['link']} className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>);
+                            } else if (subItem['linkIsNewWindowNoFollow'] !== undefined) {
+                              return (<MuiLink key={subIndex} href={subItem['link']} target='_blank' rel='noopener nofollow' className={this.props.classes.bottomItem} underline='none'>{subItem.title}</MuiLink>);
                             } else if (subItem['link'] !== undefined) {
                               return (<NavLink key={subIndex} to={subItem['link']} className={this.props.classes.bottomItem}>{subItem.title}</NavLink>);
                             } else {
