@@ -871,8 +871,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     .getMillis());
         }
 
-        long accountReceivable = kbAccount.getAccountBalance() == null ? 0L : kbAccount.getAccountBalance().longValueExact();
-        long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValueExact();
+        long accountReceivable = kbAccount.getAccountBalance() == null ? 0L : kbAccount.getAccountBalance().longValue();
+        long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValue();
 
         Optional<Plan> endOfTermChangeToPlan = billing.getEndOfTermChangeToPlanId(subscription)
                 .flatMap(planId -> planStore.getPlan(planId, Optional.empty()));

@@ -267,7 +267,7 @@ public class KillBillResource extends ManagedService {
                 .filter(pt -> pt.getTransactionId().equals(paymentMetadata.getPaymentTransactionId()))
                 .findAny()
                 .get();
-        long amount = paymentTransaction.getAmount().longValueExact();
+        long amount = paymentTransaction.getAmount().longValue();
         boolean requiresAction = paymentTransaction.getProperties() != null && paymentTransaction.getProperties().stream()
                 .anyMatch(pluginProperty -> "status".equals(pluginProperty.getKey())
                         && "requires_action".equals(pluginProperty.getValue()));
