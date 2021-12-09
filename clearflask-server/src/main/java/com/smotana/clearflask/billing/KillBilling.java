@@ -1034,14 +1034,28 @@ public class KillBilling extends ManagedService implements Billing {
     public void creditAdjustment(String accountId, long amount, String description) {
         try {
             UUID accountIdKb = getAccount(accountId).getAccountId();
+
             org.killbill.billing.client.model.gen.InvoiceItem invoiceItem = new org.killbill.billing.client.model.gen.InvoiceItem()
                     .setAccountId(accountIdKb)
-                    .setAmount(BigDecimal.valueOf(amount))
+                    .setAmount(BigDecimal.valueOf(Math.abs(amount)))
                     .setDescription(description);
             InvoiceItems invoiceItems = new InvoiceItems();
             invoiceItems.add(invoiceItem);
-
-            kbCredit.createCredits(invoiceItems, true, null, KillBillUtil.roDefault());
+            if (amount > 0L) {
+                kbCredit.createCredits(
+                        invoiceItems,
+                        true,
+                        null,
+                        KillBillUtil.roDefault());
+            } else if (amount < 0L) {
+                kbInvoice.createExternalCharges(
+                        accountIdKb,
+                        invoiceItems,
+                        org.joda.time.LocalDate.now(),
+                        true,
+                        null,
+                        KillBillUtil.roDefault());
+            }
         } catch (KillBillClientException ex) {
             log.warn("Failed to set credits of {} to account id {} description {}",
                     amount, accountId, description, ex);
