@@ -45,7 +45,6 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.ProductCategory;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
-import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.BundleApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
@@ -861,7 +860,7 @@ public class KillBilling extends ManagedService implements Billing {
                         null,
                         KillBillUtil.roDefault());
             } else {
-                result = kbClient.doGet(nextPaginationUrlOpt.get(), org.killbill.billing.client.model.Invoices.class, RequestOptions.empty());
+                result = kbClient.doGet(nextPaginationUrlOpt.get(), org.killbill.billing.client.model.Invoices.class, KillBillUtil.roDefault());
             }
 
             ImmutableList<InvoiceItem> invoices = result.stream()
@@ -1042,7 +1041,7 @@ public class KillBilling extends ManagedService implements Billing {
             InvoiceItems invoiceItems = new InvoiceItems();
             invoiceItems.add(invoiceItem);
 
-            kbCredit.createCredits(invoiceItems, true, null, RequestOptions.empty());
+            kbCredit.createCredits(invoiceItems, true, null, KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to set credits of {} to account id {} description {}",
                     amount, accountId, description, ex);
