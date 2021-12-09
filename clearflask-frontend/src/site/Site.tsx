@@ -326,7 +326,7 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
               <LandingIntegrations />
             </Route>
             <Route exact path='/product/compare'>
-              <SetTitle title='Customer Feedback Tools comparison' />
+              <SetTitle title='30+ Customer Feedback Tools comparison' />
               <LandingCompare />
             </Route>
             <Route exact path='/product/scale-with-us'>
