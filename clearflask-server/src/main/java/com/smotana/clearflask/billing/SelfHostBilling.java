@@ -220,6 +220,11 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
+    public void creditAdjustment(String accountId, long amount, String description) {
+        // No-op
+    }
+
+    @Override
     public ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId) {
         return Futures.immediateVoidFuture();
     }

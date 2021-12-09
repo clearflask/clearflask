@@ -365,6 +365,20 @@ components:
         expiry:
           type: string
           format: date-time
+    AccountCreditAdjustment:
+      type: object
+      required:
+      - accountId
+      - amount
+      - description
+      properties:
+        accountId:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        description:
+          type: string
 
 /support/message:
   post:
@@ -781,6 +795,19 @@ components:
               properties:
                 invoiceHtml:
                   type: string
+/superadmin/account/billing/credit:
+  post:
+    operationId: accountCreditAdjustmentSuperAdmin
+    tags: [AccountSuperAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountCreditAdjustment'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /admin/account/github/repos:
   post:
     operationId: gitHubGetReposAdmin

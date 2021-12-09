@@ -113,6 +113,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     planId: string;
     acceptedInvitations: Set<string>;
     acceptedCoupons: Set<string>;
+    billing: Admin.AccountBilling,
   } = undefined;
   accountPass?: string = undefined;
   // Mock project database
@@ -466,6 +467,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   accountBillingSyncPaymentsAdmin(): Promise<void> {
+    return this.returnLater(undefined);
+  }
+  accountCreditAdjustmentSuperAdmin(request: Admin.AccountCreditAdjustmentSuperAdminRequest): Promise<void> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
     return this.returnLater(undefined);
   }
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {

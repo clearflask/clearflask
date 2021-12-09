@@ -153,6 +153,9 @@ interface State {
   whitelabel?: boolean;
   privateProjects?: boolean;
   extraProjects?: number;
+  showCreditAdjustment?: boolean;
+  creditAmount?: number;
+  creditDescription?: string;
 }
 class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   state: State = {};
@@ -881,6 +884,66 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     disabled={this.state.isSubmitting}
                     onClick={() => this.setState({ showAddonsChange: true })}
                   >Addons</Button>
+                </div>
+              </>
+            )}
+            {this.props.isSuperAdmin && (
+              <>
+                <Dialog
+                  open={!!this.state.showCreditAdjustment}
+                  onClose={() => this.setState({ showCreditAdjustment: undefined })}
+                  scroll='body'
+                  maxWidth='md'
+                >
+                  <DialogTitle>Credit adjustment</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    <TextField
+                      label='Amount'
+                      variant='outlined'
+                      type='number'
+                      value={this.state.creditAmount || 0}
+                      onChange={e => this.setState({ creditAmount: parseInt(e.target.value) })}
+                    />
+                    <TextField
+                      label='Description'
+                      variant='outlined'
+                      value={this.state.creditDescription || ''}
+                      onChange={e => this.setState({ creditDescription: e.target.value })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showCreditAdjustment: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.props.account
+                        || !this.state.creditAmount
+                        || !this.state.creditDescription}
+                      color='primary'
+                      onClick={() => {
+                        if (!this.props.account
+                          || !this.state.creditAmount
+                          || !this.state.creditDescription) return;
+
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountCreditAdjustmentSuperAdmin({
+                          accountCreditAdjustmentSuperAdmin: {
+                            accountId: this.props.account!.accountId,
+                            amount: this.state.creditAmount,
+                            description: this.state.creditDescription,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({ isSubmitting: false, showCreditAdjustment: undefined, creditAmount: undefined, creditDescription: undefined }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showCreditAdjustment: true })}
+                  >Credit</Button>
                 </div>
               </>
             )}

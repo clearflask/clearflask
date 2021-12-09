@@ -26,6 +26,7 @@ import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.AccountBindAdmin;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
+import com.smotana.clearflask.api.model.AccountCreditAdjustment;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountLoginAs;
 import com.smotana.clearflask.api.model.AccountSearchResponse;
@@ -897,6 +898,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public void accountNoopAdmin() {
         // Noop
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public void accountCreditAdjustmentSuperAdmin(AccountCreditAdjustment accountCreditAdjustment) {
+        Account account = accountStore.getAccount(accountCreditAdjustment.getAccountId(), true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
+
+        billing.creditAdjustment(account.getAccountId(), accountCreditAdjustment.getAmount(), accountCreditAdjustment.getDescription());
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

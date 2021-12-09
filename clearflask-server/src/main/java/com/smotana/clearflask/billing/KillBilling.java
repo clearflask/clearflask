@@ -49,12 +49,14 @@ import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.BundleApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.CreditApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.PaymentApi;
 import org.killbill.billing.client.api.gen.PaymentMethodApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
 import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.Bundles;
+import org.killbill.billing.client.model.InvoiceItems;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.Payments;
 import org.killbill.billing.client.model.PlanDetails;
@@ -136,6 +138,8 @@ public class KillBilling extends ManagedService implements Billing {
     private ServerSecret serverSecretCursor;
     @Inject
     private AccountApi kbAccount;
+    @Inject
+    private CreditApi kbCredit;
     @Inject
     private BundleApi kbBundle;
     @Inject
@@ -1024,6 +1028,26 @@ public class KillBilling extends ManagedService implements Billing {
             log.warn("Failed to get available base plans for account id {}", accountId, ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor", ex);
+        }
+    }
+
+    @Override
+    public void creditAdjustment(String accountId, long amount, String description) {
+        try {
+            UUID accountIdKb = getAccount(accountId).getAccountId();
+            org.killbill.billing.client.model.gen.InvoiceItem invoiceItem = new org.killbill.billing.client.model.gen.InvoiceItem()
+                    .setAccountId(accountIdKb)
+                    .setAmount(BigDecimal.valueOf(amount))
+                    .setDescription(description);
+            InvoiceItems invoiceItems = new InvoiceItems();
+            invoiceItems.add(invoiceItem);
+
+            kbCredit.createCredits(invoiceItems, true, null, RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to set credits of {} to account id {} description {}",
+                    amount, accountId, description, ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to adjust credits", ex);
         }
     }
 

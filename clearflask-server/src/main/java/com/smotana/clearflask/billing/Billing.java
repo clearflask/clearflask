@@ -82,6 +82,8 @@ public interface Billing {
 
     ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
 
+    void creditAdjustment(String accountId, long amount, String description);
+
     ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId);
 
     ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, UserModel user);
