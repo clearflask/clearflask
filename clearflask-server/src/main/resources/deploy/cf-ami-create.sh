@@ -15,7 +15,7 @@ CATALINA_OPTS="$CATALINA_OPTS
                -Dcom.sun.management.jmxremote
                -Dcom.sun.management.jmxremote.port=9050
                -Dcom.sun.management.jmxremote.ssl=false
-               -Dcom.sun.management.jmxremote.ssl=false
+               -Dlog4j2.formatMsgNoLookups=true
                -Dcom.sun.management.jmxremote.authenticate=false
                -Dcom.sun.management.jmxremote.local.only=false
                -Djava.rmi.server.hostname=localhost

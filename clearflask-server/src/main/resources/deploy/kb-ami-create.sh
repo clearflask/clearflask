@@ -437,6 +437,7 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #               -Dcom.sun.management.jmxremote
 #               -Dcom.sun.management.jmxremote.port=9050
 #               -Dcom.sun.management.jmxremote.ssl=false
+#               -Dlog4j2.formatMsgNoLookups=true
 #               -Dcom.sun.management.jmxremote.authenticate=false
 #               -Dcom.sun.management.jmxremote.local.only=false
 #               -Djava.rmi.server.hostname=localhost
