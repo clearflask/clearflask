@@ -75,12 +75,14 @@ function createApp(serverHttpp) {
   serverApp.get('/robots.txt', async (req, res) => {
     res.header('Cache-Control', 'public, max-age=0');
     var doIndex = true;
-    try {
-      doIndex = !!(await serverConnect.get().dispatch().robotsConnect({
-        slug: req.hostname,
-      })).index;
-    } catch (er) {
-      console.log('Failed to check robots connect for slug', req.hostname, er);
+    if (req.hostname !== connectConfig.parentDomain) {
+      try {
+        doIndex = !!(await serverConnect.get().dispatch().robotsConnect({
+          slug: req.hostname,
+        })).index;
+      } catch (er) {
+        console.log('Failed to check robots connect for slug', req.hostname, er);
+      }
     }
     res.sendFile(path.resolve(connectConfig.publicPath,
       doIndex ? 'robots.txt' : 'robots-deny.txt'));
