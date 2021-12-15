@@ -190,3 +190,5 @@ paths:
     $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1dns'
   /connect/cert:
     $ref: 'api-sni.yaml#/~1connect~1cert'
+  /connect/robots/slug/{slug}:
+    $ref: 'api-robots.yaml#/~1connect~1robots~1slug~1{slug}'

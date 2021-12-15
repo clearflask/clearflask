@@ -1,0 +1,28 @@
+## SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+## SPDX-License-Identifier: AGPL-3.0-only
+components:
+  schemas:
+    RobotsResult:
+      type: object
+      required:
+      - index
+      properties:
+        index:
+          type: boolean
+
+/connect/robots/slug/{slug}:
+  get:
+    operationId: robotsConnect
+    tags: [RobotsConnect]
+    parameters:
+    - name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-robots.yaml#/components/schemas/RobotsResult'

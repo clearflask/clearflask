@@ -29,6 +29,7 @@ const GrowthRestrictedProperties: Path[] = [
   ['integrations', 'googleAnalytics'],
   ['integrations', 'hotjar'],
   ['integrations', 'intercom'],
+  ['noIndex'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {

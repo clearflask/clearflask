@@ -55,6 +55,9 @@ components:
         hideLang:
           x-clearflask-prop: { order: 6, name: 'Language', description: 'Determine whether to show or hide language selection', falseAsUndefined: true, trueLabel: 'Hidden', falseLabel: 'Shown'  }
           type: boolean
+        noIndex:
+          x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed'  }
+          type: boolean
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:

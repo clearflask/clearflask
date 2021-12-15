@@ -14,6 +14,7 @@ import { getI18n } from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, { replaceParentDomain } from './renderer';
+import serverConnect from './serverConnect';
 
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
@@ -70,6 +71,20 @@ function createApp(serverHttpp) {
       req.secure ? next() : res.redirect('https://' + req.headers.host + req.url);
     });
   }
+
+  serverApp.get('/robots.txt', async (req, res) => {
+    res.header('Cache-Control', 'public, max-age=0');
+    var doIndex = true;
+    try {
+      doIndex = !!(await serverConnect.get().dispatch().robotsConnect({
+        slug: req.hostname,
+      })).index;
+    } catch (er) {
+      console.log('Failed to check robots connect for slug', req.hostname, er);
+    }
+    res.sendFile(path.resolve(connectConfig.publicPath,
+      doIndex ? 'robots.txt' : 'robots-deny.txt'));
+  });
 
   if (connectConfig.parentDomain !== 'clearflask.com') {
     ['asset-manifest.json', 'index.html', 'api/openapi.yaml'].forEach(file => {

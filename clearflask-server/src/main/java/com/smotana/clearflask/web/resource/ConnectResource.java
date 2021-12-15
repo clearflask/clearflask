@@ -8,16 +8,19 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.RobotsConnectApi;
 import com.smotana.clearflask.api.SniConnectApi;
 import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
+import com.smotana.clearflask.api.model.RobotsResult;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Role;
@@ -37,7 +40,7 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class ConnectResource extends AbstractResource implements SniConnectApi {
+public class ConnectResource extends AbstractResource implements SniConnectApi, RobotsConnectApi {
 
     public interface Config {
         @DefaultValue("^(.+\\.)?clearflask\\.com$")
@@ -175,6 +178,19 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
                 Instant.ofEpochMilli(cert.getIssuedAt()),
                 Instant.ofEpochMilli(cert.getExpiresAt()),
                 cert.getExpiresAt()));
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public RobotsResult robotsConnect(String slug) {
+        Optional<Project> projectOpt = projectStore.getProjectBySlug(slug, false);
+
+        boolean doIndex = false;
+        if (projectOpt.isPresent()) {
+            doIndex = projectOpt.get().getVersionedConfigAdmin().getConfig().getNoIndex() != Boolean.TRUE;
+        }
+
+        return new RobotsResult(doIndex);
     }
 
     public static Module module() {

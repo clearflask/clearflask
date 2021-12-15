@@ -544,6 +544,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 if (config.getIntegrations().getIntercom() != null) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Intercom integration on your plan");
                 }
+                if (config.getNoIndex() == Boolean.TRUE) {
+                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to disable Search Indexing on your plan");
+                }
                 return;
             case "standard-monthly":
             case "standard2-monthly":

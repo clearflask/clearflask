@@ -3,3 +3,4 @@ Allow: /
 
 Disallow: /.well-known
 Disallow: /api
+Disallow: /img/landing/customer
