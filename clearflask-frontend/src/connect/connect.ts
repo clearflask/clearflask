@@ -14,7 +14,7 @@ import { getI18n } from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, { replaceParentDomain } from './renderer';
-import serverConnect from './serverConnect';
+import ServerConnect from './serverConnect';
 
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
@@ -77,8 +77,10 @@ function createApp(serverHttpp) {
     var doIndex = true;
     if (req.hostname !== connectConfig.parentDomain) {
       try {
-        doIndex = !!(await serverConnect.get().dispatch().robotsConnect({
+        doIndex = !!(await ServerConnect.get().dispatch().robotsConnect({
           slug: req.hostname,
+        }, undefined, {
+          'x-cf-connect-token': connectConfig.connectToken,
         })).index;
       } catch (er) {
         console.log('Failed to check robots connect for slug', req.hostname, er);
