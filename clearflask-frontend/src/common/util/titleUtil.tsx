@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import windowIso from "../windowIso"
 import { detectEnv, isProd } from "./detectEnv"
+import { truncateWithElipsis } from "./stringUtil"
 
 const defaultText = 'Feedback Management Tool | ClearFlask'
 const titleSuffix = ' | ClearFlask: Feedback Management Tool'
@@ -24,7 +25,7 @@ function setTitle(text?: string, forceShort?: boolean) {
 export function setAppTitle(projectName: string, text?: string) {
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
-    title += text + ' | ' + projectName
+    title += truncateWithElipsis(50, text) + ' | ' + projectName
   } else {
     title += projectName;
   }

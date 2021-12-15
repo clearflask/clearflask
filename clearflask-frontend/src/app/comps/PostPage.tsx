@@ -15,7 +15,6 @@ import { preserveEmbed } from '../../common/util/historyUtil';
 import { WithMediaQueries, withMediaQueries } from '../../common/util/MediaQuery';
 import { RedirectIso } from '../../common/util/routerUtil';
 import { initialWidth } from '../../common/util/screenUtil';
-import { truncateWithElipsis } from '../../common/util/stringUtil';
 import { setAppTitle } from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
 import DividerCorner from '../utils/DividerCorner';
@@ -103,7 +102,7 @@ class PostPage extends Component<Props & ConnectProps & WithTranslation<'app'> &
     }
 
     if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
-      setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));
+      setAppTitle(this.props.projectName, this.props.post.title);
     }
 
     if (this.props.postStatus === Status.REJECTED) {
