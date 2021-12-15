@@ -43,6 +43,7 @@ public class ModelUtil {
                 projectId,
                 null,
                 null,
+                null,
                 new Layout(null, ImmutableList.of(), ImmutableList.of()),
                 new Content(ImmutableList.of(new Category(
                         IdUtil.randomId(),

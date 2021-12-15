@@ -738,8 +738,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                      { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
-                      { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
+                      { type: 'button', link: '/dashboard/feedback', title: this.props.t('give-feedback') },
+                      { type: 'button', link: '/dashboard/roadmap', title: this.props.t('our-roadmap') },
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
                       ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [

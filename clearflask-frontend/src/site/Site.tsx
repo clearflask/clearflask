@@ -13,6 +13,7 @@ import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import MenuIcon from '@material-ui/icons/Menu';
 import StatusIcon from '@material-ui/icons/Notifications';
+import BlogIcon from '@material-ui/icons/RssFeed';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
@@ -40,6 +41,8 @@ import { urlAddCfJwt } from './AccountEnterPage';
 import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
+
+const App = loadable(() => import(/* webpackChunkName: "app" */'../app/App').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
 const ContactPage = loadable(() => import(/* webpackChunkName: "ContactPage", webpackPreload: true */'./ContactPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 const LegalPage = loadable(() => import(/* webpackChunkName: "LegalPage" */'./LegalPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
@@ -189,9 +192,10 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
       {
         type: 'dropdown', title: this.props.t('resources'), items: [
           { type: 'button', link: `/open-source`, title: this.props.t('open-source'), icon: OpenSourceIcon },
-          { type: 'button', link: '/e/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/e/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
-          // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//blog.${windowIso.location.host}`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          { type: 'button', link: '/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: '/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
+          { type: 'button', link: '/blog', title: this.props.t('blog'), icon: BlogIcon },
+          // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/blog`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
           { type: 'divider' },
           { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
@@ -381,6 +385,9 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
               </Route>
             )}
 
+            <Route path='/(post|blog|feedback|roadmap|changelog|account|issue)'>
+              <App slug={`product.${windowIso.parentDomain}`} settings={{ forceEmbed: true }} />
+            </Route>
             <Route path='/e'>
               <LandingEmbedFeedbackPage browserPathPrefix='/e' embed />
             </Route>

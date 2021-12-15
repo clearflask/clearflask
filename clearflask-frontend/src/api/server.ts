@@ -352,6 +352,7 @@ interface updateSettingsAction {
 }
 export interface StateSettings {
   suppressSetTitle?: boolean;
+  forceEmbed?: boolean;
   demoUserIsInteracting?: boolean;
   demoPortalContainer?: React.RefObject<any>;
   demoFlashPostVotingControls?: boolean;

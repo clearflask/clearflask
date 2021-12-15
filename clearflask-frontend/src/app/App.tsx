@@ -207,21 +207,25 @@ class App extends Component<Props> {
               <MyLoadingBar />
               {isTracking() && (<CustomerExternalTrackers />)}
               <IntercomWrapperCustomer />
-              <Route key='header' path='/:page?' render={props => ['embed', 'sso', 'oauth'].includes(props.match.params['page']) ? null : (
-                <Header
-                  pageSlug={props.match.params['page'] || ''}
-                  server={this.server}
-                  pageChanged={this.pageChanged.bind(this)}
-                />
-              )} />
+              <Route key='header' path='/:page?' render={props => (
+                this.props.settings?.forceEmbed
+                || ['embed', 'sso', 'oauth'].includes(props.match.params['page']))
+                ? null
+                : (
+                  <Header
+                    pageSlug={props.match.params['page'] || ''}
+                    server={this.server}
+                    pageChanged={this.pageChanged.bind(this)}
+                  />
+                )} />
               <AnimatedPageSwitch
                 key='app-switch'
                 render={(pageSlug: string) => (
                   <Route exact key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
                     <BasePage
-                      showFooter={!props.match.params['embed']}
+                      showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}
                       customPageSlug={pageSlug}
-                      isFrontPage={!props.match.params['embed'] && !pageSlug}
+                      isFrontPage={!this.props.settings?.forceEmbed && !props.match.params['embed'] && !pageSlug}
                     >
                       <AppDynamicPage
                         pageSlug={pageSlug}
@@ -242,24 +246,24 @@ class App extends Component<Props> {
                 )}
               >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
-                  <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
+                  <BasePage suppressPageTitle showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}>
                     <UserPage server={this.server} userId={props.match.params.userId} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (
-                  <BasePage pageTitle='Account' showFooter={!props.match.params['embed']}>
+                  <BasePage pageTitle='Account' showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}>
                     <AccountPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='sso-oauth' path='/:type(sso|oauth)' render={props => (
                   <BasePage
                     pageTitle={props.match.params['type'] === 'sso' ? 'Single Sign-On' : 'OAuth'}
-                    showFooter={!props.match.params['embed']}>
+                    showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}>
                     <SsoSuccessPage type={props.match.params['type']} />
                   </BasePage>
                 )} />
                 <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
-                  <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
+                  <BasePage suppressPageTitle showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}>
                     <PostPage
                       key={'postpage=' + props.match.params['postId']}
                       postId={props.match.params['postId'] || ''}
