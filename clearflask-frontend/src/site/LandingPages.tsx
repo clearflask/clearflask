@@ -64,6 +64,7 @@ import ComparisonImg from '../../public/img/landing/comparison.svg';
 import CreatorImg from '../../public/img/landing/creator.svg';
 import CrowdfundImg from '../../public/img/landing/crowdfund.svg';
 import CustomerCloudStaff from '../../public/img/landing/customer/cloudstaff.png';
+import CustomerDekra from '../../public/img/landing/customer/dekra.jpg';
 import CustomerErpca from '../../public/img/landing/customer/erpca.png';
 import CustomerGoodOnYou from '../../public/img/landing/customer/goodonyou.svg';
 import CustomerLeaseWeb from '../../public/img/landing/customer/leaseweb.png';
@@ -351,6 +352,7 @@ export function Landing() {
         type='headingOnly'
         title={(
           <div className={classes.customers}>
+            <ImgIso img={CustomerDekra} />
             <ImgIso img={CustomerLeaseWeb} />
             <ImgIso img={CustomerCloudStaff} />
             <ImgIso img={CustomerErpca} />
