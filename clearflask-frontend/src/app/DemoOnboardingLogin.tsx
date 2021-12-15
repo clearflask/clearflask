@@ -46,7 +46,7 @@ class DemoOnboardingLogin extends Component<Props & RouteComponentProps & WithSt
               this.setState({ fakeLoggedIn: true });
 
               // Broadcast to onboarding demo that login was successfully faked
-              const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+              const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth-demo' });
               oauthFlow.broadcastSuccess();
 
               // Close window

@@ -287,11 +287,11 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
               <SetTitle title={this.props.t('contact')} />
               <ContactPage />
             </Route>
-            <Route exact path='/sso'>
+            <Route exact path='/sso-demo'>
               <SetTitle title='Single Sign-On' />
               <DemoOnboardingLogin type='sso' />
             </Route>
-            <Route path='/oauth'>
+            <Route path='/oauth-demo'>
               <SetTitle title='OAuth' />
               <DemoOnboardingLogin type='oauth' />
             </Route>

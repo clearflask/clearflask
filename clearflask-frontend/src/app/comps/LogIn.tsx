@@ -109,6 +109,7 @@ interface ConnectProps {
   config?: Client.Config;
   onboardBefore?: Client.Onboarding;
   loggedInUser?: Client.UserMe;
+  demoSsoOauthRedirect?: boolean;
 }
 interface State {
   open?: boolean;
@@ -132,7 +133,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   readonly emailInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   state: State = {};
   externalSubmitEnabled: boolean = false;
-  readonly oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+  readonly oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: this.props.demoSsoOauthRedirect ? '/oauth-demo' : '/oauth' });
   oauthListenerUnsubscribe: Unsubscribe | undefined;
 
   componentWillUnmount() {
@@ -720,7 +721,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'sso' });
     !windowIso.isSsr && windowIso.open(onboarding.notificationMethods.sso.redirectUrl
-      .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}/sso`),
+      .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}${this.props.demoSsoOauthRedirect ? '/sso-demo' : '/sso'}`),
       `cf_${this.props.server.getProjectId()}_sso`,
       `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`,
     );
@@ -772,5 +773,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     config: state.conf.conf,
     onboardBefore: state.conf.onboardBefore,
     loggedInUser: state.users.loggedIn.status === Status.FULFILLED ? state.users.loggedIn.user : undefined,
+    demoSsoOauthRedirect: state.settings.demoSsoOauthRedirect,
   }
 })(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps>({ breakpoint: 'xs' })(LogIn))));

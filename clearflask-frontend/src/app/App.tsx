@@ -105,7 +105,7 @@ class App extends Component<Props> {
       this.props.history.replace(this.props.location.pathname);
     }
     // Used for OAuth
-    const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: '/oauth' });
+    const oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: this.props.settings?.demoSsoOauthRedirect ? '/oauth-demo' : '/oauth' });
     const oauthToken = oauthFlow.checkResult();
     // Used for logging in via web notification permission
     var browserPushToken;

@@ -57,6 +57,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
     this.settings = {
       ...(props.containerPortal ? { demoPortalContainer: this.containerRef } : {}),
       suppressSetTitle: true,
+      demoSsoOauthRedirect: true,
       ...props.settings,
     };
     this.projectPromise = props.demoProject || getProject(props.template, props.mock, this.settings);

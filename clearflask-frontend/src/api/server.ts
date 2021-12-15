@@ -353,6 +353,7 @@ interface updateSettingsAction {
 export interface StateSettings {
   suppressSetTitle?: boolean;
   forceEmbed?: boolean;
+  demoSsoOauthRedirect?: boolean;
   demoUserIsInteracting?: boolean;
   demoPortalContainer?: React.RefObject<any>;
   demoFlashPostVotingControls?: boolean;
