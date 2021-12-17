@@ -435,7 +435,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         null,
                         ImmutableSet.of(),
                         null,
-                        ghIssue.getIssue().getHtmlUrl().toExternalForm())));
+                        ghIssue.getIssue().getHtmlUrl().toExternalForm(),
+                        null)));
             case "reopened":
             case "closed":
                 Optional<String> switchToStatusOpt = Optional.ofNullable(integration.getStatusSync())

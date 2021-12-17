@@ -3268,6 +3268,25 @@ export function LandingPromo() {
           )}
         />
       </Background>
+
+      <Hr margins={300} />
+
+      <Background align='top' svg={{
+        d: 'M 0 177 Q 125 33 287 139 C 423 208 473 120 501 229 L 500 0 L 0 0 Z',
+        viewBox: '0 0 500 200',
+      }} width={2400} height={1000}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ margin: '100px 700px 0px 0px' }}>
+            <Logo scale={1} />
+          </div>
+        </div>
+        <div style={{ margin: '180px 150px 50px 0px' }}>
+          <FeedbackIcon fontSize='inherit' style={{ fontSize: '5em', margin: 'auto' }} />
+        </div>
+      </Background>
+
+      <Hr margins={300} />
+
     </>
   );
 }

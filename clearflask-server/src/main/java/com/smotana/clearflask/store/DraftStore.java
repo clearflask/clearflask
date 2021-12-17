@@ -115,6 +115,8 @@ public interface DraftStore {
 
         Double order;
 
+        String coverImg;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId(), false);
         }
@@ -148,6 +150,7 @@ public interface DraftStore {
                     getNotifySubscribers(),
                     getLinkedFromPostIds().asList(),
                     getOrder(),
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getDraftId(),
                     getLastSaved());
         }

@@ -270,6 +270,8 @@ public interface IdeaStore {
 
         String linkedGitHubUrl;
 
+        String coverImg;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId(), false);
         }
@@ -329,7 +331,8 @@ public interface IdeaStore {
                     getMergedToPostTime(),
                     getMergedPostIds().asList(),
                     getOrder(),
-                    getLinkedGitHubUrl());
+                    getLinkedGitHubUrl(),
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null));
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -364,6 +367,7 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     vote);
         }
 

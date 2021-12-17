@@ -3,6 +3,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
+import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -12,6 +13,7 @@ import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import BareTextField from '../../common/BareTextField';
 import LinkAltIcon from '../../common/icon/LinkAltIcon';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor } from '../../common/tour';
 import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../../common/util/debounce';
@@ -22,7 +24,7 @@ import UserSelection from '../../site/dashboard/UserSelection';
 import CategorySelect from './CategorySelect';
 import { ConnectedPostById, ConnectedPostsContainer, OutlinePostContent } from './ConnectedPost';
 import MyButton from './MyButton';
-import { MaxContentWidth, MinContentWidth, PostDescription, PostTitle } from './Post';
+import { MaxContentWidth, MinContentWidth, PostCover, PostCoverEdit, PostDescription, PostTitle } from './Post';
 import PostConnectDialog from './PostConnectDialog';
 import { ClickToEdit, PostEditDescription, PostEditTitle } from './PostEdit';
 import StatusSelect from './StatusSelect';
@@ -143,6 +145,7 @@ interface State {
   draftFieldNotifyTitle?: string;
   draftFieldNotifyBody?: string;
   draftFieldLinkedFromPostIds?: string[];
+  draftFieldCoverImage?: string;
   tagSelectHasError?: boolean;
   isSubmitting?: boolean;
   adminControlsExpanded?: boolean;
@@ -151,10 +154,11 @@ interface State {
   connectDialogOpen?: boolean;
 }
 
-class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
+class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps & WithSnackbarProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly searchSimilarDebounced?: (title?: string, categoryId?: string) => void;
   externalSubmitEnabled: boolean = false;
+  readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
 
   constructor(props) {
     super(props);
@@ -207,6 +211,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     if (draft.title === undefined && this.props.type === 'post') draft.title = `New ${selectedCategory.name}`;
     if (this.state.draftFieldDescription !== undefined) draft.description = this.state.draftFieldDescription;
     if (this.state.draftFieldLinkedFromPostIds !== undefined) draft.linkedFromPostIds = this.state.draftFieldLinkedFromPostIds;
+    if (this.state.draftFieldCoverImage !== undefined) draft.coverImg = this.state.draftFieldCoverImage;
     if (this.state.draftFieldChosenTagIds !== undefined) draft.tagIds = this.state.draftFieldChosenTagIds;
     if (draft.tagIds?.length) draft.tagIds = draft.tagIds.filter(tagId => selectedCategory?.tagging.tags.some(t => t.tagId === tagId));
     if (this.props.mandatoryTagIds?.length) draft.tagIds = [...(draft.tagIds || []), ...this.props.mandatoryTagIds];
@@ -397,6 +402,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         } : {}),
       },
     });
+    const editCover = this.renderEditCover(draft, selectedCategory);
     const editUser = this.renderEditUser(draft, {
       className: this.props.classes.postUser,
       SelectionPickerProps: {
@@ -427,6 +433,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
       <div className={this.props.classes.postContainer}>
         <div className={this.props.classes.postTitleDesc}>
           {editUser}
+          {editCover}
           {editTitle}
           {editDescription}
         </div>
@@ -580,6 +587,24 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           limitTags: 1,
           ...TagSelectProps?.SelectionPickerProps,
         }}
+      />
+    );
+  }
+  renderEditCover(
+    draft: Partial<Admin.IdeaDraftAdmin>,
+    selectedCategory?: Client.Category,
+  ) {
+    if (!this.showModOptions() || !selectedCategory?.useCover) return null;
+    return (
+      <PostCover
+        coverImg={draft.coverImg}
+        editable={img => (
+          <PostCoverEdit
+            server={this.props.server}
+            content={img}
+            onUploaded={coverUrl => this.setState({ draftFieldCoverImage: coverUrl })}
+          />
+        )}
       />
     );
   }
@@ -996,6 +1021,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             notifySubscribers: draft.notifySubscribers,
             tagIds: draft.tagIds || [],
             linkedFromPostIds: draft.linkedFromPostIds,
+            coverImg: draft.coverImg,
           },
         });
       } else {
@@ -1054,4 +1080,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     callOnMount,
     draft,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(PostCreateForm))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth({ initialWidth })(withSnackbar(PostCreateForm)))));

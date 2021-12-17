@@ -238,6 +238,8 @@ components:
           format: double
         linkedGitHubUrl:
           type: string
+        coverImg:
+          type: string
     IdeaConnectResponse:
       type: object
       required:
@@ -315,6 +317,8 @@ components:
             order:
               type: number
               format: double
+            coverImg:
+              type: string
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
@@ -359,6 +363,8 @@ components:
             order:
               type: number
               format: double
+            coverImg:
+              type: string
     Hits:
       type: object
       required:

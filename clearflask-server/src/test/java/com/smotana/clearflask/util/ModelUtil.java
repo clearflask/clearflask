@@ -52,6 +52,7 @@ public class ModelUtil {
                         true,
                         null,
                         null,
+                        null,
                         new Workflow(null, ImmutableList.of(
                                 new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false)
                         )),

@@ -957,6 +957,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         null,
                         null,
                         null,
+                        null,
                         null),
                 Optional.empty());
     }
@@ -970,6 +971,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withReturnValues(ReturnValue.ALL_NEW);
         Map<String, Object> indexUpdates = Maps.newHashMap();
 
+        if (ideaUpdateAdmin.getCoverImg() != null) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("coverImg")
+                    .put(ideaSchema.toDynamoValue("coverImg", ideaUpdateAdmin.getCoverImg())));
+        }
         if (ideaUpdateAdmin.getTitle() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("title")
                     .put(ideaSchema.toDynamoValue("title", ideaUpdateAdmin.getTitle())));

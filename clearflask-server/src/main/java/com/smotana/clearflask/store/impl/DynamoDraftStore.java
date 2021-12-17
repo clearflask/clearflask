@@ -101,7 +101,8 @@ public class DynamoDraftStore implements DraftStore {
                 ideaCreateAdmin.getNotifySubscribers(),
                 ideaCreateAdmin.getLinkedFromPostIds() == null ? ImmutableSet.of()
                         : ideaCreateAdmin.getLinkedFromPostIds().stream().filter(id -> !Strings.isNullOrEmpty(id)).collect(ImmutableSet.toImmutableSet()),
-                ideaCreateAdmin.getOrder());
+                ideaCreateAdmin.getOrder(),
+                ideaCreateAdmin.getCoverImg());
         setDraft(draftModel, Optional.empty());
         return draftModel;
     }
@@ -140,20 +141,20 @@ public class DynamoDraftStore implements DraftStore {
         Optional<Set<String>> filterCategoryIdsOpt = (draftSearch.getFilterCategoryIds() == null || draftSearch.getFilterCategoryIds().isEmpty())
                 ? Optional.empty() : Optional.of(ImmutableSet.copyOf(draftSearch.getFilterCategoryIds()));
         Page<Item, QueryOutcome> page = draftSchema.table().query(new QuerySpec()
-                .withHashKey(draftSchema.partitionKey(Map.of(
-                        "userId", userId,
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(draftSchema.rangeKeyName())
-                        .beginsWith(draftSchema.rangeValuePartial(Map.of())))
-                .withScanIndexForward(false) // last created first
-                .withExclusiveStartKey(cursorOpt
-                        .map(serverSecretCursor::decryptString)
-                        .map(lastEvaluatedKey -> new PrimaryKey(
-                                draftSchema.partitionKey(Map.of(
-                                        "userId", userId,
-                                        "projectId", projectId)),
-                                new KeyAttribute(draftSchema.rangeKeyName(), lastEvaluatedKey)))
-                        .orElse(null)))
+                        .withHashKey(draftSchema.partitionKey(Map.of(
+                                "userId", userId,
+                                "projectId", projectId)))
+                        .withRangeKeyCondition(new RangeKeyCondition(draftSchema.rangeKeyName())
+                                .beginsWith(draftSchema.rangeValuePartial(Map.of())))
+                        .withScanIndexForward(false) // last created first
+                        .withExclusiveStartKey(cursorOpt
+                                .map(serverSecretCursor::decryptString)
+                                .map(lastEvaluatedKey -> new PrimaryKey(
+                                        draftSchema.partitionKey(Map.of(
+                                                "userId", userId,
+                                                "projectId", projectId)),
+                                        new KeyAttribute(draftSchema.rangeKeyName(), lastEvaluatedKey)))
+                                .orElse(null)))
                 .firstPage();
         ImmutableList<DraftModel> drafts = page
                 .getLowLevelResult()
@@ -163,9 +164,9 @@ public class DynamoDraftStore implements DraftStore {
                 .filter(draft -> !filterCategoryIdsOpt.isPresent() || filterCategoryIdsOpt.get().contains(draft.getCategoryId()))
                 .collect(ImmutableList.toImmutableList());
         Optional<String> newCursorOpt = Optional.ofNullable(page
-                .getLowLevelResult()
-                .getQueryResult()
-                .getLastEvaluatedKey())
+                        .getLowLevelResult()
+                        .getQueryResult()
+                        .getLastEvaluatedKey())
                 .map(m -> m.get(draftSchema.rangeKeyName()))
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
@@ -186,16 +187,16 @@ public class DynamoDraftStore implements DraftStore {
     public void deleteAllForProject(String projectId) {
         // Delete drafts
         Iterables.partition(StreamSupport.stream(draftByProjectIdSchema.index().query(new QuerySpec()
-                .withHashKey(draftByProjectIdSchema.partitionKey(Map.of(
-                        "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(draftByProjectIdSchema.rangeKeyName())
-                        .beginsWith(draftByProjectIdSchema.rangeValuePartial(Map.of()))))
-                .pages()
-                .spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(draftByProjectIdSchema::fromItem)
-                .filter(draft -> projectId.equals(draft.getProjectId()))
-                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                                        .withHashKey(draftByProjectIdSchema.partitionKey(Map.of(
+                                                "projectId", projectId)))
+                                        .withRangeKeyCondition(new RangeKeyCondition(draftByProjectIdSchema.rangeKeyName())
+                                                .beginsWith(draftByProjectIdSchema.rangeValuePartial(Map.of()))))
+                                .pages()
+                                .spliterator(), false)
+                        .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                        .map(draftByProjectIdSchema::fromItem)
+                        .filter(draft -> projectId.equals(draft.getProjectId()))
+                        .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(draftsBatch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(draftSchema.tableName());
                     draftsBatch.stream()

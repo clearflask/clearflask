@@ -305,6 +305,13 @@ public class Sanitizer {
                 .toFactory();
     }
 
+    public Optional<String> signCoverImg(String projectId, String coverImg) {
+        if (Strings.isNullOrEmpty(coverImg)) {
+            return Optional.empty();
+        }
+        return contentStore.signUrl(projectId, coverImg);
+    }
+
     public String richHtmlToPlaintext(String html) {
         StringBuilder sanitizedHtmlBuilder = new StringBuilder();
 

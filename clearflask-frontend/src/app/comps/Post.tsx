@@ -10,11 +10,13 @@ import UnmergeIcon from '@material-ui/icons/CallSplit';
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
+import ImgIcon from '@material-ui/icons/Image';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component } from 'react';
+import { useSnackbar, withSnackbar, WithSnackbarProps } from 'notistack';
+import React, { Component, useRef } from 'react';
+import Dropzone from 'react-dropzone';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect, Provider } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -30,6 +32,7 @@ import LinkAltIcon from '../../common/icon/LinkAltIcon';
 import PinIcon from '../../common/icon/PinIcon';
 import UnLinkAltIcon from '../../common/icon/UnLinkAltIcon';
 import InViewObserver from '../../common/InViewObserver';
+import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import RichViewer from '../../common/RichViewer';
 import SubmitButton from '../../common/SubmitButton';
 import TruncateFade from '../../common/TruncateFade';
@@ -362,6 +365,33 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
     fontStyle: 'italic',
   },
+  dropzone: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: theme.spacing(1, 0),
+    padding: theme.spacing(2),
+    width: theme.spacing(30),
+    color: theme.palette.text.hint,
+    textAlign: 'center',
+    borderStyle: 'dashed',
+    borderColor: theme.palette.text.hint,
+    borderWidth: 2,
+    borderRadius: 6,
+    outline: 'none',
+    transition: theme.transitions.create(['border', 'color']),
+    '&:hover': {
+      color: theme.palette.text.primary,
+      borderColor: theme.palette.text.primary,
+    },
+  },
+  uploadIcon: {
+    marginRight: theme.spacing(2),
+  },
+  coverImg: {
+    width: 'auto',
+    maxWidth: 'max-content',
+  },
 });
 const useStyles = makeStyles(styles);
 type Props = {
@@ -516,6 +546,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
               {this.renderTitleAndDescription((
                 <>
                   {this.renderHeader()}
+                  {this.renderCover()}
                   {this.renderTitle()}
                   {this.renderDescription()}
                 </>
@@ -1401,6 +1432,31 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
     );
   }
 
+  renderCover() {
+    const canEdit = this.canEdit() === 'mod' && this.props.variant === 'page';
+    if (!this.props.category?.useCover
+      || !this.props.idea
+      || (!this.props.idea?.coverImg && !canEdit)) return null;
+    return (
+      <PostCover
+        coverImg={this.props.idea?.coverImg}
+        editable={canEdit ? img => (
+          <PostCoverEdit
+            server={this.props.server}
+            content={img}
+            onUploaded={coverImg => this.props.server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
+              projectId: this.props.projectId,
+              ideaId: this.props.idea!.ideaId!,
+              ideaUpdateAdmin: {
+                coverImg,
+              }
+            }))}
+          />
+        ) : undefined}
+      />
+    );
+  }
+
   renderTitle() {
     if (!this.props.idea?.title) return null;
     return (
@@ -1912,6 +1968,83 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
     });
     return response;
   }
+}
+
+export const PostCover = (props: {
+  editable?: React.ReactNode | ((title: React.ReactNode) => React.ReactNode);
+} & Pick<Client.Idea, 'coverImg'>
+) => {
+  const classes = useStyles();
+
+  if (!props.editable && !props.coverImg) return null;
+
+  var cover: React.ReactNode | undefined = !props.coverImg ? undefined : (
+    <img
+      className={classes.coverImg}
+      alt=''
+      src={props.coverImg}
+    />
+  );
+
+  if (props.editable) {
+    cover = typeof props.editable === 'function' ? props.editable(cover) : props.editable;
+  }
+
+  return (<>{cover}</>);
+}
+
+export const PostCoverEdit = (props: {
+  onUploaded: (coverUrl: string) => void;
+  server: Server;
+  authorUserId?: string;
+  content?: React.ReactNode;
+}) => {
+  const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
+  const imageUploadRef = useRef<RichEditorImageUpload>(null);
+
+  return (
+    <>
+      <Dropzone
+        minSize={1}
+        maxFiles={1}
+        onDrop={async (acceptedFiles, rejectedFiles, e) => {
+          rejectedFiles.forEach(rejectedFile => {
+            rejectedFile.errors.forEach(error => {
+              enqueueSnackbar(
+                `${rejectedFile.file.name}: ${error.message}`,
+                { variant: 'error' });
+            })
+          })
+
+          if (acceptedFiles.length < 1) return;
+          const acceptedFile = acceptedFiles[0];
+
+          const coverUrl = await imageUploadRef.current?.uploadImage(acceptedFile);
+          if (!coverUrl) return;
+
+          props.onUploaded(coverUrl);
+        }}
+      >
+        {({ getRootProps, getInputProps }) => (
+          <div className={classNames(!props.content && classes.dropzone)} {...getRootProps()}>
+            <input {...getInputProps()} />
+            {props.content ? props.content : (
+              <>
+                <ImgIcon color='inherit' className={classes.uploadIcon} />
+                Upload a cover image
+              </>
+            )}
+          </div>
+        )}
+      </Dropzone>
+      <RichEditorImageUpload
+        ref={imageUploadRef}
+        server={props.server}
+        asAuthorId={props.authorUserId}
+      />
+    </>
+  );
 }
 
 export const PostTitle = (props: {
