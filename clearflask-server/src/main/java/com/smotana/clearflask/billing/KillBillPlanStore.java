@@ -116,9 +116,78 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             // Available only on external marketplace via coupons
             .put("pro-lifetime", pp -> new Plan("pro-lifetime", "Pro",
                     pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
                     new PlanPerk("Unlimited users", null),
                     new PlanPerk("1 Teammate", TERMS_ADMINS),
                     new PlanPerk("1 Project", TERMS_PROJECTS)),
+                    null, null))
+            .put("pitchground-a-lifetime", pp -> new Plan("pitchground-a-lifetime", "PitchGround A",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
+                    new PlanPerk("50 tracked users", null),
+                    new PlanPerk("1 Teammate", TERMS_ADMINS),
+                    new PlanPerk("1 Project", TERMS_PROJECTS),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null),
+                    new PlanPerk("Custom domain", null)),
+                    null, null))
+            .put("pitchground-b-lifetime", pp -> new Plan("pitchground-b-lifetime", "PitchGround B",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
+                    new PlanPerk("500 tracked users", null),
+                    new PlanPerk("3 Teammates", TERMS_ADMINS),
+                    new PlanPerk("1 Project", TERMS_PROJECTS),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null),
+                    new PlanPerk("Custom domain", null)),
+                    null, null))
+            .put("pitchground-c-lifetime", pp -> new Plan("pitchground-c-lifetime", "PitchGround C",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
+                    new PlanPerk("Unlimited users", null),
+                    new PlanPerk("5 Teammates", TERMS_ADMINS),
+                    new PlanPerk("5 Projects", TERMS_PROJECTS),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null),
+                    new PlanPerk("Custom domain", null),
+                    new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
+                    new PlanPerk("API", TERMS_API),
+                    new PlanPerk("All integrations", null)),
+                    null, null))
+            .put("pitchground-d-lifetime", pp -> new Plan("pitchground-d-lifetime", "PitchGround D",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
+                    new PlanPerk("Unlimited users", null),
+                    new PlanPerk("10 Teammates", TERMS_ADMINS),
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null),
+                    new PlanPerk("Custom domain", null),
+                    new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
+                    new PlanPerk("API", TERMS_API),
+                    new PlanPerk("All integrations", null)),
+                    null, null))
+            .put("pitchground-e-lifetime", pp -> new Plan("pitchground-e-lifetime", "PitchGround E",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Lifetime deal", null),
+                    new PlanPerk("Unlimited users", null),
+                    new PlanPerk("25 Teammates", TERMS_ADMINS),
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null),
+                    new PlanPerk("Custom domain", null),
+                    new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
+                    new PlanPerk("API", TERMS_API),
+                    new PlanPerk("All integrations", null),
+                    new PlanPerk("Whitelabel", TERMS_WHITELABEL)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
@@ -293,6 +362,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 break;
             case TEAMMATE_PLAN_ID:
             case "pro-lifetime":
+            case "pitchground-a-lifetime":
+            case "pitchground-b-lifetime":
+            case "pitchground-c-lifetime":
+            case "pitchground-d-lifetime":
+            case "pitchground-e-lifetime":
                 planOptions.add(availablePlans.get("growth2-monthly"));
                 planOptions.add(availablePlans.get("standard2-monthly"));
                 break;
@@ -482,6 +556,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 return;
             case "growth-monthly":
             case "growth2-monthly":
+            case "pitchground-a-lifetime":
+            case "pitchground-b-lifetime":
                 switch (action) {
                     case API_KEY:
                         throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use API on your plan");
@@ -499,14 +575,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
-
-        // Restrict whitelabel by Addon
-        if (!Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())
-                && !"true".equals(addons.get(ADDON_WHITELABEL))) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
-        }
-
-        // Private projects Addon
+        boolean hasAddonWhitelabel = "true".equals(addons.get(ADDON_WHITELABEL));
         boolean hasAddonPrivateProjects = "true".equals(addons.get(ADDON_PRIVATE_PROJECTS));
 
         switch (getBasePlanId(planId)) {
@@ -515,6 +584,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "growth-monthly":
             case "growth2-monthly":
             case "pro-lifetime":
+                // Restrict Whitelabel
+                if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
+                }
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use OAuth on your plan");
@@ -544,37 +617,106 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 if (config.getIntegrations().getIntercom() != null) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use Intercom integration on your plan");
                 }
+                // Restrict No Index
                 if (config.getNoIndex() == Boolean.TRUE) {
                     throw new RequiresUpgradeException("standard2-monthly", "Not allowed to disable Search Indexing on your plan");
                 }
                 return;
+            case "pitchground-a-lifetime":
+            case "pitchground-b-lifetime":
+                // Restrict OAuth
+                if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use OAuth on your plan");
+                }
+                // Restrict Single Sign-On
+                if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use SSO on your plan");
+                }
+                // Restrict Private projects
+                if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Private visibility on your plan");
+                }
+                // Restrict Integrations
+                if (config.getGithub() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use GitHub integration on your plan");
+                }
+                if (config.getIntegrations().getGoogleAnalytics() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Google Analytics integration on your plan");
+                }
+                if (config.getIntegrations().getHotjar() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use HotJar integration on your plan");
+                }
+                if (config.getIntegrations().getIntercom() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Intercom integration on your plan");
+                }
+                // rollover to next case
+            case "pitchground-c-lifetime":
+            case "pitchground-d-lifetime":
+                // Restrict Whitelabel
+                if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
+                }
+                // rollover to next case
+            case "pitchground-e-lifetime":
+                // Restrict Site template
+                if (config.getStyle().getTemplates() != null) {
+                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Templates on your plan");
+                }
+                break;
             case "standard-monthly":
             case "standard2-monthly":
             case "flat-yearly":
+                // Restrict Whitelabel
+                if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
+                }
+                break;
         }
     }
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
+        Optional<Long> teammateLimitOpt = Optional.empty();
+        String requiredPlanId = "flat-yearly";
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
             case "growth2-monthly":
             case "pro-lifetime":
-                // Only allow 1
-                if (addOne) {
-                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
-                } else if (getCurrentTeammateCount(projectId) > 1L) {
-                    throw new RequiresUpgradeException("standard2-monthly", "Not allowed to invite teammates on your plan");
-                }
+            case "pitchground-a-lifetime":
+                teammateLimitOpt = Optional.of(1L);
+                requiredPlanId = "standard2-monthly";
+                break;
+            case "pitchground-b-lifetime":
+                teammateLimitOpt = Optional.of(3L);
+                requiredPlanId = "standard2-monthly";
+                break;
+            case "pitchground-c-lifetime":
+                teammateLimitOpt = Optional.of(5L);
+                requiredPlanId = "standard2-monthly";
                 break;
             case "standard-monthly":
             case "standard2-monthly":
-                if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > 8L) {
-                    throw new RequiresUpgradeException("flat-yearly", "Your plan has reached the teammate limit");
-                }
+                teammateLimitOpt = Optional.of(8L);
                 break;
-            case "flat-yearly":
+            case "pitchground-d-lifetime":
+                teammateLimitOpt = Optional.of(10L);
+                break;
+            case "pitchground-e-lifetime":
+                teammateLimitOpt = Optional.of(25L);
+                break;
+            default:
+        }
+        if (teammateLimitOpt.isPresent()) {
+            if (teammateLimitOpt.get() == 1L) {
+                if (addOne || getCurrentTeammateCount(projectId) > 1L) {
+                    throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
+                }
+            } else {
+                if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > teammateLimitOpt.get()) {
+                    throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
+                }
+            }
         }
     }
 
@@ -597,10 +739,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
 
-        Optional<Long> planLimitOpt = Optional.empty();
+        Optional<Long> projectCountLimitOpt = Optional.empty();
         switch (getBasePlanId(planId)) {
             case "pro-lifetime":
-                planLimitOpt = Optional.of(1L);
+            case "pitchground-a-lifetime":
+            case "pitchground-b-lifetime":
+                projectCountLimitOpt = Optional.of(1L);
+                break;
+            case "pitchground-c-lifetime":
+                projectCountLimitOpt = Optional.of(5L);
                 break;
             default:
                 break;
@@ -610,12 +757,12 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         long addonExtraProjectCount = Optional.ofNullable(addons.get(ADDON_EXTRA_PROJECT))
                 .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
                 .orElse(0L);
-        planLimitOpt = planLimitOpt.map(planLimit -> planLimit + addonExtraProjectCount);
+        projectCountLimitOpt = projectCountLimitOpt.map(planLimit -> planLimit + addonExtraProjectCount);
 
-        if (planLimitOpt.isPresent()) {
+        if (projectCountLimitOpt.isPresent()) {
             long projectCount = accountStore.getAccount(accountId, true).get()
                     .getProjectIds().size();
-            if ((projectCount + (addOne ? 1 : 0)) > planLimitOpt.get()) {
+            if ((projectCount + (addOne ? 1 : 0)) > projectCountLimitOpt.get()) {
                 throw new RequiresUpgradeException("growth-monthly", "Your plan has reached project limit");
             }
         }

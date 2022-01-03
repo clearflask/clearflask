@@ -21,6 +21,7 @@ const RestrictedPropertiesByDefault: Path[] = [
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const GrowthRestrictedProperties: Path[] = [
+  ['style', 'whitelabel', 'poweredBy'],
   ['users', 'onboarding', 'notificationMethods', 'sso'],
   ['users', 'onboarding', 'notificationMethods', 'oauth'],
   ['users', 'onboarding', 'visibility'],
@@ -32,22 +33,59 @@ const GrowthRestrictedProperties: Path[] = [
   ['noIndex'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
+const AbPitchGroundRestrictedProperties: Path[] = [
+  ['style', 'whitelabel', 'poweredBy'],
+  ['users', 'onboarding', 'notificationMethods', 'sso'],
+  ['users', 'onboarding', 'notificationMethods', 'oauth'],
+  ['users', 'onboarding', 'visibility'],
+  ['integrations', 'github'],
+  ['integrations', 'googleAnalytics'],
+  ['integrations', 'hotjar'],
+  ['integrations', 'intercom'],
+  ['style', 'templates'],
+];
+/** If changed, also change in KillBillPlanStore.java */
+const CdPitchGroundRestrictedProperties: Path[] = [
+  ['style', 'whitelabel', 'poweredBy'],
+  ['style', 'templates'],
+];
+/** If changed, also change in KillBillPlanStore.java */
+const EPitchGroundRestrictedProperties: Path[] = [
+  ['style', 'templates'],
+];
+/** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,
+  'standard-monthly': RestrictedPropertiesByDefault,
+  'standard2-monthly': RestrictedPropertiesByDefault,
+  'flat-yearly': RestrictedPropertiesByDefault,
+  'pitchground-a-lifetime': AbPitchGroundRestrictedProperties,
+  'pitchground-b-lifetime': AbPitchGroundRestrictedProperties,
+  'pitchground-c-lifetime': CdPitchGroundRestrictedProperties,
+  'pitchground-d-lifetime': CdPitchGroundRestrictedProperties,
+  'pitchground-e-lifetime': EPitchGroundRestrictedProperties,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
   'growth-monthly': 1,
   'growth2-monthly': 1,
   'pro-lifetime': 1,
+  'pitchground-a-lifetime': 1,
+  'pitchground-b-lifetime': 3,
+  'pitchground-c-lifetime': 5,
   'standard-monthly': 8,
   'standard2-monthly': 8,
+  'pitchground-d-lifetime': 10,
+  'pitchground-e-lifetime': 25,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const ProjectMaxCount: { [basePlanId: string]: number } = {
   'pro-lifetime': 1,
+  'pitchground-a-lifetime': 1,
+  'pitchground-b-lifetime': 1,
+  'pitchground-c-lifetime': 5,
 };
 /** If changed, also change in KillBillPlanStore.java */
 const AllowedPropertiesByAddon: { [addonId: string]: Path[] } = {
@@ -66,6 +104,8 @@ export enum Action {
 export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
   'growth-monthly': new Set([Action.API_KEY]),
   'growth2-monthly': new Set([Action.API_KEY]),
+  'pitchground-a-lifetime': new Set([Action.API_KEY]),
+  'pitchground-b-lifetime': new Set([Action.API_KEY]),
 };
 
 const styles = (theme: Theme) => createStyles({
@@ -136,15 +176,9 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   }
 
   isPropertyRestricted(): boolean {
-    return (this.isPropertyRestrictedByDefault() || this.isPropertyRestrictedByPlan())
+    return this.isPropertyRestrictedByPlan()
       && !this.isPropertyAllowedByAddon();
 
-  }
-
-  isPropertyRestrictedByDefault(): boolean {
-    return this.props.propertyPath !== undefined
-      && RestrictedPropertiesByDefault.some(restrictedPath =>
-        pathEquals(restrictedPath, this.props.propertyPath!));
   }
 
   isPropertyRestrictedByPlan(): boolean {

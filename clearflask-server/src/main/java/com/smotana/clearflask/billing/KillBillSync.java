@@ -72,6 +72,7 @@ public class KillBillSync extends ManagedService {
             .add("catalog005.xml")
             .add("catalog006.xml")
             .add("catalog007.xml")
+            .add("catalog008.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";

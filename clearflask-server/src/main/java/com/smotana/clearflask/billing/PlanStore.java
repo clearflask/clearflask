@@ -31,7 +31,14 @@ public interface PlanStore {
      */
     String TEAMMATE_PLAN_ID = "teammate-unlimited";
 
-    ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(TEAMMATE_PLAN_ID, "pro-lifetime");
+    ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(
+            TEAMMATE_PLAN_ID,
+            "pro-lifetime",
+            "pitchground-a-lifetime",
+            "pitchground-b-lifetime",
+            "pitchground-c-lifetime",
+            "pitchground-d-lifetime",
+            "pitchground-e-lifetime");
 
     PlansGetResponse getPublicPlans();
 
