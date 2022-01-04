@@ -385,7 +385,7 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
               </Route>
             )}
 
-            <Route path='/(post|user|blog|feedback|roadmap|changelog|announcements|account|issue|account|sso|oauth)'>
+            <Route path='/(post|user|blog|feedback|roadmap|changelog|announcements|docs|account|issue|account|sso|oauth)'>
               <App slug={`product.${windowIso.parentDomain}`} settings={{ forceEmbed: true }} />
             </Route>
             <Route path='/e'>

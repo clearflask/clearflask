@@ -3019,6 +3019,10 @@ export const ProjectSettingsGitHub = (props: {
   const theme = useTheme();
   const [repos, setRepos] = useState<Array<Admin.AvailableRepo> | undefined>();
 
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
   useEffect(() => {
     return props.project.subscribeToUnsavedChanges(() => {
@@ -3061,164 +3065,171 @@ export const ProjectSettingsGitHub = (props: {
 
   return (
     <ProjectSettingsBase title='GitHub Integration' description='Mirror GitHub Issues in ClearFlask. Resolve them right from within ClearFlask.'>
-      <Collapse in={!!gitHub}>
-        <Section
-          title='Configure synchronization'
-          description={(
-            <>
-              Your linked GitHub repository <b>{gitHub?.name}</b> synchronization can be configured here.
-            </>
-          )}
-          content={!!gitHub && (
-            <>
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithCategoryId']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'initialStatusId']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithTags']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'statusSync']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'responseSync']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['github', 'commentSync']} />
-              <p>
-                <Button
-                  style={{ color: theme.palette.error.dark }}
-                  color='inherit'
-                  onClick={() => props.editor.getPage(['github']).set(undefined)}
-                >Delete</Button>
-              </p>
-            </>
-          )}
-        />
-      </Collapse>
-      <Section
-        title='Select new repository'
-        description='Link your repository by installing our GitHub App'
-        content={(
-          <>
-            <Collapse in={!repos && hasUnsavedChanges}>
-              <p>
-                <Message message='You must publish unsaved changes before we can redirect you to GitHub' severity='warning' />
-              </p>
-            </Collapse>
-            <Collapse in={!repos && !!promptCheckWithCode && !checkWithoutStateComplete}>
-              <p>
-                <Message message='We detected you made changes to your installation' severity='info' action={(
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['github']}
+      >
+        <Collapse in={!!gitHub}>
+          <Section
+            title='Configure synchronization'
+            description={(
+              <>
+                Your linked GitHub repository <b>{gitHub?.name}</b> synchronization can be configured here.
+              </>
+            )}
+            content={!!gitHub && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'commentSync']} />
+                <p>
                   <Button
-                    onClick={() => {
-                      !!promptCheckWithCode && getRepos(promptCheckWithCode);
-                      setCheckWithoutStateComplete(true);
-                    }}
-                  >View</Button>
-                )} />
-              </p>
-            </Collapse>
-            <Collapse in={!repos && !hasUnsavedChanges}>
-              <p>
-                <Button
-                  variant='contained'
-                  disableElevation
-                  color='primary'
-                  disabled={hasUnsavedChanges}
-                  onClick={() => isProd() ? oauthFlow.openForGitHubAppInstall() : getRepos('my-code')}
-                >Install</Button>
-              </p>
-              <p>
-                <Typography component='span' variant='caption' color='textPrimary'>
-                  Already installed?&nbsp;
-                </Typography>
-                <MuiLink
-                  href='#'
-                  onClick={() => isProd() ? oauthFlow.openForGitHubApp() : getRepos('my-code')}
-                >
-                  <Typography component='span' variant='caption' color='primary'>
-                    Link your installation
+                    style={{ color: theme.palette.error.dark }}
+                    color='inherit'
+                    onClick={() => props.editor.getPage(['github']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title='Select new repository'
+          description='Link your repository by installing our GitHub App'
+          content={(
+            <>
+              <Collapse in={!repos && hasUnsavedChanges}>
+                <p>
+                  <Message message='You must publish unsaved changes before we can redirect you to GitHub' severity='warning' />
+                </p>
+              </Collapse>
+              <Collapse in={!repos && !!promptCheckWithCode && !checkWithoutStateComplete}>
+                <p>
+                  <Message message='We detected you made changes to your installation' severity='info' action={(
+                    <Button
+                      onClick={() => {
+                        !!promptCheckWithCode && getRepos(promptCheckWithCode);
+                        setCheckWithoutStateComplete(true);
+                      }}
+                    >View</Button>
+                  )} />
+                </p>
+              </Collapse>
+              <Collapse in={!repos && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant='contained'
+                    disableElevation
+                    color='primary'
+                    disabled={hasUnsavedChanges}
+                    onClick={() => isProd() ? oauthFlow.openForGitHubAppInstall() : getRepos('my-code')}
+                  >Install</Button>
+                </p>
+                <p>
+                  <Typography component='span' variant='caption' color='textPrimary'>
+                    Already installed?&nbsp;
                   </Typography>
-                </MuiLink>
-              </p>
-            </Collapse>
-            {!!repos && (repos.length ? (
-              <TemplateWrapper<FeedbackInstance | undefined>
-                key='feedback'
-                editor={props.editor}
-                mapper={templater => templater.feedbackGet()}
-                renderResolved={(templater, feedback) => (
-                  <Collapse in={!!repos} appear>
-                    <Table className={classes.githubReposTable}>
-                      <TableBody>
-                        {repos.map(repo => {
-                          const selected = gitHub?.repositoryId === repo.repositoryId
-                            && gitHub?.installationId === repo.installationId;
-                          return (
-                            <TableRow key={repo.name}>
-                              <TableCell key='repo'>
-                                <Typography>{repo.name}</Typography>
-                              </TableCell>
-                              <TableCell key='action'>
-                                <Typography>
-                                  <Button
-                                    variant='contained'
-                                    disableElevation
-                                    color='primary'
-                                    disabled={selected}
-                                    onClick={() => {
-                                      if (selected) return;
-                                      const gitHubPage = props.editor.getPage(['github']);
-                                      if (!gitHubPage.value) {
-                                        gitHubPage.set(true);
-                                        (props.editor.getProperty(['github', 'statusSync']) as ConfigEditor.ObjectProperty)
-                                          .set(true);
+                  <MuiLink
+                    href='#'
+                    onClick={() => isProd() ? oauthFlow.openForGitHubApp() : getRepos('my-code')}
+                  >
+                    <Typography component='span' variant='caption' color='primary'>
+                      Link your installation
+                    </Typography>
+                  </MuiLink>
+                </p>
+              </Collapse>
+              {!!repos && (repos.length ? (
+                <TemplateWrapper<FeedbackInstance | undefined>
+                  key='feedback'
+                  editor={props.editor}
+                  mapper={templater => templater.feedbackGet()}
+                  renderResolved={(templater, feedback) => (
+                    <Collapse in={!!repos} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {repos.map(repo => {
+                            const selected = gitHub?.repositoryId === repo.repositoryId
+                              && gitHub?.installationId === repo.installationId;
+                            return (
+                              <TableRow key={repo.name}>
+                                <TableCell key='repo'>
+                                  <Typography>{repo.name}</Typography>
+                                </TableCell>
+                                <TableCell key='action'>
+                                  <Typography>
+                                    <Button
+                                      variant='contained'
+                                      disableElevation
+                                      color='primary'
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const gitHubPage = props.editor.getPage(['github']);
+                                        if (!gitHubPage.value) {
+                                          gitHubPage.set(true);
+                                          (props.editor.getProperty(['github', 'statusSync']) as ConfigEditor.ObjectProperty)
+                                            .set(true);
 
-                                        var category: Admin.Category | undefined;
-                                        var closedStatuses: Array<string> | undefined;
-                                        var closedStatus: string | undefined;
-                                        var openStatus: string | undefined;
-                                        if (feedback) {
-                                          category = feedback.categoryAndIndex.category;
-                                        } else {
-                                          category = props.editor.getConfig().content.categories[0];
+                                          var category: Admin.Category | undefined;
+                                          var closedStatuses: Array<string> | undefined;
+                                          var closedStatus: string | undefined;
+                                          var openStatus: string | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+                                          closedStatuses = [
+                                            ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
+                                            ...(category ? category.workflow.statuses
+                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name.toLowerCase()))
+                                              .map(status => status.statusId) : []),
+                                          ];
+                                          closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];
+                                          openStatus = category?.workflow.entryStatus || category?.workflow.statuses.find(s => !closedStatuses?.includes(s.statusId))?.statusId;
+
+                                          category && (props.editor.getProperty(['github', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                          closedStatuses?.length && (props.editor.getProperty(['github', 'statusSync', 'closedStatuses']) as ConfigEditor.LinkMultiProperty)
+                                            .set(new Set(closedStatuses));
+                                          closedStatus && (props.editor.getProperty(['github', 'statusSync', 'closedStatus']) as ConfigEditor.StringProperty)
+                                            .set(closedStatus);
+                                          openStatus && (props.editor.getProperty(['github', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
+                                            .set(openStatus);
                                         }
-                                        closedStatuses = [
-                                          ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
-                                          ...(category ? category.workflow.statuses
-                                            .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name.toLowerCase()))
-                                            .map(status => status.statusId) : []),
-                                        ];
-                                        closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];
-                                        openStatus = category?.workflow.entryStatus || category?.workflow.statuses.find(s => !closedStatuses?.includes(s.statusId))?.statusId;
-
-                                        category && (props.editor.getProperty(['github', 'createWithCategoryId']) as ConfigEditor.StringProperty)
-                                          .set(category.categoryId);
-                                        closedStatuses?.length && (props.editor.getProperty(['github', 'statusSync', 'closedStatuses']) as ConfigEditor.LinkMultiProperty)
-                                          .set(new Set(closedStatuses));
-                                        closedStatus && (props.editor.getProperty(['github', 'statusSync', 'closedStatus']) as ConfigEditor.StringProperty)
-                                          .set(closedStatus);
-                                        openStatus && (props.editor.getProperty(['github', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
-                                          .set(openStatus);
-                                      }
-                                      (props.editor.getProperty(['github', 'name']) as ConfigEditor.StringProperty)
-                                        .set(repo.name);
-                                      (props.editor.getProperty(['github', 'repositoryId']) as ConfigEditor.NumberProperty)
-                                        .set(repo.repositoryId);
-                                      (props.editor.getProperty(['github', 'installationId']) as ConfigEditor.NumberProperty)
-                                        .set(repo.installationId);
-                                    }}
-                                  >
-                                    {selected ? 'Linked' : 'Link'}
-                                  </Button>
-                                </Typography>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </Collapse>
-                )} />
-            ) : (
-              <Message message='No repositories found' severity='warning' />
-            ))}
-          </>
-        )
-        }
-      />
+                                        (props.editor.getProperty(['github', 'name']) as ConfigEditor.StringProperty)
+                                          .set(repo.name);
+                                        (props.editor.getProperty(['github', 'repositoryId']) as ConfigEditor.NumberProperty)
+                                          .set(repo.repositoryId);
+                                        (props.editor.getProperty(['github', 'installationId']) as ConfigEditor.NumberProperty)
+                                          .set(repo.installationId);
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message='No repositories found' severity='warning' />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
       <br /><br />
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase >
@@ -3229,19 +3240,30 @@ export const ProjectSettingsIntercom = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
   return (
     <ProjectSettingsBase title='Intercom Integration'>
-      <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-        <ProjectSettingsEnableCheckbox
-          getEnabled={state => !!state.conf.conf?.integrations.intercom}
-          onChange={enable => props.editor.getPage(['integrations', 'intercom']).set(enable ? true : undefined)}
-        >
-          <Provider store={ServerAdmin.get().getStore()}>
-            <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'intercom', 'appId']} />
-            <PropertyByPath server={props.server} editor={props.editor} path={['intercomIdentityVerificationSecret']} unhide />
-          </Provider>
-        </ProjectSettingsEnableCheckbox>
-      </Provider>
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['integrations', 'intercom']}
+      >
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsEnableCheckbox
+            getEnabled={state => !!state.conf.conf?.integrations.intercom}
+            onChange={enable => props.editor.getPage(['integrations', 'intercom']).set(enable ? true : undefined)}
+          >
+            <Provider store={ServerAdmin.get().getStore()}>
+              <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'intercom', 'appId']} />
+              <PropertyByPath server={props.server} editor={props.editor} path={['intercomIdentityVerificationSecret']} unhide />
+            </Provider>
+          </ProjectSettingsEnableCheckbox>
+        </Provider>
+      </UpgradeWrapper>
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
@@ -3251,18 +3273,29 @@ export const ProjectSettingsGoogleAnalytics = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
   return (
     <ProjectSettingsBase title='Google Analytics Integration'>
-      <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-        <ProjectSettingsEnableCheckbox
-          getEnabled={state => !!state.conf.conf?.integrations.googleAnalytics}
-          onChange={enable => props.editor.getPage(['integrations', 'googleAnalytics']).set(enable ? true : undefined)}
-        >
-          <Provider store={ServerAdmin.get().getStore()}>
-            <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'googleAnalytics', 'trackingCode']} />
-          </Provider>
-        </ProjectSettingsEnableCheckbox>
-      </Provider>
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['integrations', 'googleAnalytics']}
+      >
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsEnableCheckbox
+            getEnabled={state => !!state.conf.conf?.integrations.googleAnalytics}
+            onChange={enable => props.editor.getPage(['integrations', 'googleAnalytics']).set(enable ? true : undefined)}
+          >
+            <Provider store={ServerAdmin.get().getStore()}>
+              <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'googleAnalytics', 'trackingCode']} />
+            </Provider>
+          </ProjectSettingsEnableCheckbox>
+        </Provider>
+      </UpgradeWrapper>
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
@@ -3272,18 +3305,29 @@ export const ProjectSettingsHotjar = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, { [addonId: string]: string }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
   return (
     <ProjectSettingsBase title='Hotjar Integration'>
-      <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-        <ProjectSettingsEnableCheckbox
-          getEnabled={state => !!state.conf.conf?.integrations.hotjar}
-          onChange={enable => props.editor.getPage(['integrations', 'hotjar']).set(enable ? true : undefined)}
-        >
-          <Provider store={ServerAdmin.get().getStore()}>
-            <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'hotjar', 'trackingCode']} />
-          </Provider>
-        </ProjectSettingsEnableCheckbox>
-      </Provider>
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['integrations', 'hotjar']}
+      >
+        <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+          <ProjectSettingsEnableCheckbox
+            getEnabled={state => !!state.conf.conf?.integrations.hotjar}
+            onChange={enable => props.editor.getPage(['integrations', 'hotjar']).set(enable ? true : undefined)}
+          >
+            <Provider store={ServerAdmin.get().getStore()}>
+              <PropertyByPath server={props.server} editor={props.editor} path={['integrations', 'hotjar', 'trackingCode']} />
+            </Provider>
+          </ProjectSettingsEnableCheckbox>
+        </Provider>
+      </UpgradeWrapper>
       <NeedHelpInviteTeammate server={props.server} />
     </ProjectSettingsBase>
   );
