@@ -37,7 +37,7 @@ export const PostTitleMaxLength = 100
 
 export type Draft = Partial<Admin.IdeaDraftAdmin>;
 // https://stackoverflow.com/a/67110140
-type FilterStartsWith<Set, Needle extends string> = Set extends `${Needle}${infer _X}` ? Set : never;
+type FilterStartsWith<Set, Needle extends string> = Set extends `${Needle}${infer _X}` ? Set : never; // eslint-disable-line @typescript-eslint/no-unused-vars
 export type DraftState = Pick<State, FilterStartsWith<keyof State, 'draftField'>>;
 export type ExternalControl = {
   subscription: Subscription<Draft>;

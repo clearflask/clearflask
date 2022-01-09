@@ -165,6 +165,6 @@ const diff = (prev: object, curr: object, msg: string) => {
 }
 
 export const useForceUpdate = () => {
-  const [value, setValue] = useState(0); // integer state
-  return () => setValue(value => value + 1); // update the state to force render
+  const [value, setValue] = useState(0); // eslint-disable-line @typescript-eslint/no-unused-vars
+  return () => setValue(value => value + 1);
 }

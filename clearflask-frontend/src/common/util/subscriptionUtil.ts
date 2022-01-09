@@ -40,6 +40,6 @@ export const useSubsciption = <T>(subscription?: Subscription<T>) => {
   useEffect(() => {
     const unsubscribe = subscription?.subscribe(data => forceUpdate());
     return () => unsubscribe?.();
-  }, [subscription]);
+  }, [subscription]); // eslint-disable-line react-hooks/exhaustive-deps
   return subscription?.getValue();
 }
