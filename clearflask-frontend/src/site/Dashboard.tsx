@@ -27,7 +27,7 @@ import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/se
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import LogIn from '../app/comps/LogIn';
 import { PanelPostNavigator } from '../app/comps/PanelPost';
-import PostCreateForm from '../app/comps/PostCreateForm';
+import PostCreateForm, { ExternalControl } from '../app/comps/PostCreateForm';
 import { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
@@ -51,7 +51,7 @@ import { MenuItems } from '../common/menus';
 import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { escapeHtml } from '../common/util/htmlUtil';
-import { createMutableRef } from '../common/util/refUtil';
+import { createMutableRef, MutableRef } from '../common/util/refUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
 import Subscription from '../common/util/subscriptionUtil';
@@ -328,6 +328,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
   };
   draggingPostIdSubscription = new Subscription<string | undefined>(undefined);
   readonly feedbackListRef = createMutableRef<PanelPostNavigator>();
+  readonly changelogPostDraftExternalControlRef = createMutableRef<ExternalControl>();
   state: State = {};
 
   constructor(props) {
@@ -850,6 +851,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     extra?: Partial<Section> | ((previewState: PreviewState | undefined) => Partial<Section>),
     createCategoryIds?: string[],
     createAllowDrafts?: boolean,
+    postDraftExternalControlRef?: MutableRef<ExternalControl>;
   }): Section | null {
     if (!preview.project) {
       return preview.renderEmpty ? this.renderPreviewEmpty('No project selected') : null;
@@ -859,7 +861,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     if (!previewState) {
       section = preview.renderEmpty !== undefined ? this.renderPreviewEmpty(preview.renderEmpty) : null;
     } else if (previewState.type === 'create-post') {
-      section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts, previewState.defaultStatusId);
+      section = this.renderPreviewPostCreate(preview.stateKey, preview.project, previewState.draftId, preview.createCategoryIds, preview.createAllowDrafts, previewState.defaultStatusId, preview.postDraftExternalControlRef);
     } else if (previewState.type === 'post') {
       section = this.renderPreviewPost(previewState.id, preview.stateKey, preview.project, previewState.headerTitle, previewState.headerIcon);
     } else if (previewState.type === 'create-user') {
@@ -936,6 +938,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     mandatoryCategoryIds?: string[],
     allowDrafts?: boolean,
     defaultStatusId?: string,
+    externalControlRef?: MutableRef<ExternalControl>,
   ): Section {
     if (!project) {
       return this.renderPreviewEmpty('No project selected');
@@ -970,6 +973,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                 onDiscarded={() => {
                   this.setState({ [stateKey]: undefined } as any);
                 }}
+                externalControlRef={externalControlRef}
               />
               <LogIn
                 actionTitle='Get notified of replies'

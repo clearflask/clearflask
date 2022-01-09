@@ -18,7 +18,9 @@ import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor } from '../../common/tour';
 import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
+import { MutableRef } from '../../common/util/refUtil';
 import { initialWidth } from '../../common/util/screenUtil';
+import Subscription from '../../common/util/subscriptionUtil';
 import PostSelection from '../../site/dashboard/PostSelection';
 import UserSelection from '../../site/dashboard/UserSelection';
 import CategorySelect from './CategorySelect';
@@ -32,6 +34,15 @@ import TagSelect from './TagSelect';
 
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
+
+export type Draft = Partial<Admin.IdeaDraftAdmin>;
+// https://stackoverflow.com/a/67110140
+type FilterStartsWith<Set, Needle extends string> = Set extends `${Needle}${infer _X}` ? Set : never;
+export type DraftState = Pick<State, FilterStartsWith<keyof State, 'draftField'>>;
+export type ExternalControl = {
+  subscription: Subscription<Draft>;
+  update: (draftUpdate: DraftState) => void;
+};
 
 const styles = (theme: Theme) => createStyles({
   createFormFields: {
@@ -122,6 +133,7 @@ interface Props {
   draftId?: string;
   onDiscarded?: () => void;
   onDraftCreated?: (draft: Admin.IdeaDraftAdmin) => void;
+  externalControlRef?: MutableRef<ExternalControl>;
 }
 interface ConnectProps {
   configver?: string;
@@ -153,7 +165,6 @@ interface State {
   discardDraftDialogOpen?: boolean;
   connectDialogOpen?: boolean;
 }
-
 class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps & WithSnackbarProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly searchSimilarDebounced?: (title?: string, categoryId?: string) => void;
@@ -170,6 +181,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     this.searchSimilarDebounced = !props.searchSimilar ? undefined : debounce(
       (title?: string, categoryId?: string) => !!title && this.props.searchSimilar?.(title, categoryId),
       this.props.type === 'post' ? SimilarTypeDebounceTime : SearchTypeDebounceTime);
+
+    if (this.props.externalControlRef) {
+      this.props.externalControlRef.current = {
+        subscription: new Subscription({}),
+        update: draftUpdate => this.setState(draftUpdate),
+      };
+    }
   }
 
   shouldComponentUpdate = customShouldComponentUpdate({
@@ -183,7 +201,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
 
   render() {
     // Merge defaults, server draft, and local changes into one draft
-    const draft: Partial<Admin.IdeaDraftAdmin> = {
+    const draft: Draft = {
       authorUserId: this.props.loggedInUserId,
       title: this.props.defaultTitle,
       description: this.props.defaultDescription,
@@ -228,6 +246,9 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         body: this.state.draftFieldNotifyBody,
       } : {}),
     };
+
+    // External control update
+    this.props.externalControlRef?.current?.subscription.notify(draft);
 
     const enableSubmit = !!draft.title && !!draft.categoryId && !this.state.tagSelectHasError;
     if (this.props.externalSubmit && this.externalSubmitEnabled !== enableSubmit) {

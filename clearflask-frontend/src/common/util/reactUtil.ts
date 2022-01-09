@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // Based on React
 
@@ -162,4 +162,9 @@ const diff = (prev: object, curr: object, msg: string) => {
   if (Object.keys(changedProps).length > 0) {
     console.log(msg, changedProps);
   }
+}
+
+export const useForceUpdate = () => {
+  const [value, setValue] = useState(0); // integer state
+  return () => setValue(value => value + 1); // update the state to force render
 }

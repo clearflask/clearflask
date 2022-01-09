@@ -11,6 +11,7 @@ import { Provider, shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server } from '../../api/server';
 import ServerAdmin, { Project } from '../../api/serverAdmin';
+import { ExternalControl } from '../../app/comps/PostCreateForm';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import HoverArea from '../../common/HoverArea';
@@ -18,9 +19,10 @@ import { FilterControlTitle } from '../../common/search/FilterControls';
 import { TourAnchor } from '../../common/tour';
 import { dndDrag } from '../../common/util/dndUtil';
 import { customReactMemoEquals } from '../../common/util/reactUtil';
+import { MutableRef } from '../../common/util/refUtil';
 import RenderControl from '../../common/util/RenderControl';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
-import Subscription from '../../common/util/subscriptionUtil';
+import Subscription, { useSubsciption } from '../../common/util/subscriptionUtil';
 import { droppableDataSerialize } from './dashboardDndActionHandler';
 import FirstTimeNotice, { FirstTimeNoticeHandle } from './FirstTimeNotice';
 import PostList from './PostList';
@@ -101,7 +103,7 @@ const DashboardQuickActions = (props: {
 }) => {
   const [draggingPostId, setDraggingPostId] = useState(props.draggingPostIdSubscription.getValue());
   useEffect(() => props.draggingPostIdSubscription.subscribe(setDraggingPostId), []); // eslint-disable-line react-hooks/exhaustive-deps
-  
+
   const { t } = useTranslation('app');
   const classes = useStyles();
   const theme = useTheme();
@@ -247,7 +249,170 @@ const DashboardQuickActions = (props: {
 }
 export default DashboardQuickActions;
 
-const QuickActionPostList = React.memo((props: {
+const SelectableQuickActionPostList = React.memo((props: {
+  server: Server;
+  title?: {
+    name: string;
+    helpDescription?: string;
+  };
+  enabled?: boolean;
+  selectedPostIds?: string[];
+  onClick?: (postId: string) => void;
+  PostListProps?: Partial<React.ComponentProps<typeof PostList>>;
+  showSampleItem?: string;
+  disabledDuringTour?: boolean;
+  FirstTimeNoticeProps?: React.ComponentPropsWithoutRef<typeof FirstTimeNotice>;
+}) => {
+  const { t } = useTranslation('app');
+  const classes = useStyles();
+  const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
+  const noticeRef = useRef<FirstTimeNoticeHandle>(null);
+
+  var content = (
+    <PostList
+      key={props.server.getProjectId()}
+      server={props.server}
+      layout='similar-merge-action'
+      PanelPostProps={{
+        overrideTitle: !props.title ? undefined : (
+          <FilterControlTitle name={props.title.name} className={classes.feedbackTitle} help={{
+            description: props.title.helpDescription,
+          }} />
+        ),
+        renderPost: (idea, ideaIndex) => {
+          const title = truncateWithElipsis(30, idea.title);
+          return (
+            <HoverArea>
+              {(hoverAreaProps, isHovering, isHoverDown) => {
+                const isLinked = props.selectedPostIds?.includes(idea.ideaId);
+                const color = isLinked
+                  ? theme.palette.primary.main
+                  : theme.palette.common.black;
+                return (
+                  <CardActionArea
+                    {...hoverAreaProps}
+                    disabled={!props.enabled}
+                    className={classNames(
+                      classes.postAction,
+                      !props.enabled && classes.postActionDisabled,
+                    )}
+                    style={!props.enabled ? {
+                      color: theme.palette.text.disabled,
+                    } : {
+                      color: color,
+                      borderColor: color || fade(theme.palette.common.black, 0.54),
+                    }}
+                    onClick={async e => {
+                      if (!props.enabled || !props.onClick) return;
+
+                      if (props.disabledDuringTour) {
+                        enqueueSnackbar('Disabled during tutorial', { variant: 'warning', preventDuplicate: true });
+                        return;
+                      }
+                      if (!!noticeRef.current && ! await noticeRef.current.invoke()) return;
+                      props.onClick(idea.ideaId);
+                    }}
+                  >
+                    {title && (
+                      <Typography>{t(title as any)}</Typography>
+                    )}
+                  </CardActionArea>
+                );
+              }}
+            </HoverArea>
+          );
+        },
+        renderEmpty: !props.showSampleItem ? undefined : () => (
+          <QuickActionArea
+            key={`sample-item-${props.showSampleItem}`}
+            isDragging={false}
+            droppableId='disabled-for-dropping'
+            enabled={false}
+            title={props.showSampleItem}
+          />
+        ),
+      }}
+      hideIfEmpty={!props.showSampleItem}
+      {...props.PostListProps}
+    />
+  );
+
+  if (props.FirstTimeNoticeProps) {
+    content = (
+      <>
+        {content}
+        <Provider store={ServerAdmin.get().getStore()}>
+          <FirstTimeNotice
+            {...props.FirstTimeNoticeProps}
+            ref={noticeRef}
+          />
+        </Provider>
+      </>
+    );
+  }
+
+  return content;
+}, customReactMemoEquals({
+  nested: new Set(['PostListProps', 'FirstTimeNoticeProps', 'title']),
+}));
+SelectableQuickActionPostList.displayName = 'SelectableQuickActionPostList';
+
+const LinkQuickActionPostList = React.memo((props: {
+  // Use when editing post draft
+  postDraftExternalControlRef?: MutableRef<ExternalControl>;
+  // Use when editing submitted post
+  postId?: string;
+} & Omit<React.ComponentProps<typeof SelectableQuickActionPostList>, 'enabled' | 'onClick' | 'selectedPostIds'>) => {
+  const { postDraftExternalControlRef, postId, ...selectableQuickActionPostListProps } = props;
+  // Subscribe to changes
+  useSubsciption(props.postDraftExternalControlRef?.current?.subscription);
+  const post = useSelector<ReduxState, Admin.Idea | undefined>(state => !props.postId ? undefined : state.ideas.byId[props.postId]?.idea, shallowEqual);
+  const alreadyLinkedPostIds = post?.linkedFromPostIds || postDraftExternalControlRef?.current?.subscription.getValue().linkedFromPostIds;
+  return (
+    <SelectableQuickActionPostList
+      onClick={async postOtherId => {
+        if (post) {
+          const isLinked = post.linkedFromPostIds?.includes(postOtherId);
+          if (isLinked) {
+            (await props.server.dispatchAdmin()).ideaUnLinkAdmin({
+              projectId: props.server.getProjectId(),
+              parentIdeaId: post.ideaId,
+              ideaId: postOtherId,
+            });
+          } else {
+            (await props.server.dispatchAdmin()).ideaLinkAdmin({
+              projectId: props.server.getProjectId(),
+              parentIdeaId: post.ideaId,
+              ideaId: postOtherId,
+            });
+          }
+        }
+        if (postDraftExternalControlRef?.current) {
+          const draft = postDraftExternalControlRef.current.subscription.getValue();
+          const isLinkedWithIndex = draft.linkedFromPostIds?.findIndex(linkedPostId => linkedPostId === postOtherId);
+          if (!!draft.linkedFromPostIds && isLinkedWithIndex !== -1 && isLinkedWithIndex !== undefined) {
+            const draftFieldLinkedFromPostIds = [...draft.linkedFromPostIds];
+            draftFieldLinkedFromPostIds.splice(isLinkedWithIndex, 1);
+            postDraftExternalControlRef.current.update({ draftFieldLinkedFromPostIds });
+          } else {
+            postDraftExternalControlRef.current.update({
+              draftFieldLinkedFromPostIds: [...draft.linkedFromPostIds || [], postOtherId],
+            });
+          }
+        }
+      }}
+      selectedPostIds={alreadyLinkedPostIds}
+      enabled={!!postDraftExternalControlRef?.current || !!postId}
+      {...selectableQuickActionPostListProps}
+    />
+  );
+}, customReactMemoEquals({
+  nested: new Set(['PostListProps', 'FirstTimeNoticeProps', 'title']),
+}));
+LinkQuickActionPostList.displayName = 'LinkQuickActionPostList';
+
+const DroppableQuickActionPostList = React.memo((props: {
   server: Server;
   title?: {
     name: string;
@@ -356,11 +521,10 @@ const QuickActionPostList = React.memo((props: {
 
   return content;
 }, customReactMemoEquals({
-  nested: new Set(['PostListProps', 'DroppableProvidedProps', 'statusColorGivenCategories', 'title']),
+  nested: new Set(['PostListProps', 'FirstTimeNoticeProps', 'DroppableProvidedProps', 'statusColorGivenCategories', 'title']),
   presence: new Set(['fallbackClickHandler', 'getDroppableId']),
 }));
-QuickActionPostList.displayName = 'QuickActionPostList';
-export { QuickActionPostList };
+DroppableQuickActionPostList.displayName = 'DroppableQuickActionPostList';
 
 export const QuickActionArea = (props: {
   droppableId: string;
@@ -439,3 +603,5 @@ const onClickAction = (dragDropSensorApi, fallbackClickHandler, draggableId) => 
   }
   return success;
 }
+
+export { SelectableQuickActionPostList, LinkQuickActionPostList, DroppableQuickActionPostList };

@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
+import { useEffect } from "react";
+import { useForceUpdate } from "./reactUtil";
 import randomUuid from "./uuid";
 
 export type Subscriber<T> = ((data: T) => void);
@@ -31,4 +33,13 @@ export default class Subscription<T> {
   getValue(): T {
     return this.value;
   }
+}
+
+export const useSubsciption = <T>(subscription?: Subscription<T>) => {
+  const forceUpdate = useForceUpdate();
+  useEffect(() => {
+    const unsubscribe = subscription?.subscribe(data => forceUpdate());
+    return () => unsubscribe?.();
+  }, [subscription]);
+  return subscription?.getValue();
 }

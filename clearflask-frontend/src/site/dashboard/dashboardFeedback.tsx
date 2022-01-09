@@ -18,7 +18,7 @@ import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import { dashboardOnDragEnd, droppableDataSerialize } from "./dashboardDndActionHandler";
 import DashboardPostFilterControls from './DashboardPostFilterControls';
-import DashboardQuickActions, { FallbackClickHandler, QuickActionPostList } from './DashboardQuickActions';
+import DashboardQuickActions, { DroppableQuickActionPostList, FallbackClickHandler } from './DashboardQuickActions';
 import DashboardSearchControls from './DashboardSearchControls';
 import DragndropPostList from './DragndropPostList';
 
@@ -119,7 +119,7 @@ export async function renderFeedback(this: Dashboard, context: DashboardPageCont
     return (
       <div className={this.props.classes.feedbackColumnRelated}>
         <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-          <QuickActionPostList
+          <DroppableQuickActionPostList
             key={activeProject.server.getProjectId()}
             server={activeProject.server}
             title={type === 'feedback' ? {
