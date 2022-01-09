@@ -16,6 +16,7 @@ export default class RichEditor extends Component<React.ComponentProps<typeof Ri
     } else {
       return (
         <RichEditorInternal
+          key='rich-editor-internal'
           {...this.props}
           fallback={this.renderFallback()}
         />
@@ -26,6 +27,7 @@ export default class RichEditor extends Component<React.ComponentProps<typeof Ri
   renderFallback() {
     return (
       <TextField
+        key='rich-editor-internal-fallback' // Not sure if this is needed, it may fix the spurious bug of disappering text
         {...this.props}
         {...(this.props.minInputHeight !== undefined ? {
           inputProps: {
