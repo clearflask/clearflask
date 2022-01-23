@@ -101,7 +101,7 @@
     "memoizee": "0.4.15",
     "moment": "2.29.1",
     "moment-timezone": "0.5.31",
-    "node-fetch": "3.1.1",
+    "node-fetch": "2.6.7",
     "notistack": "1.0.10",
     "oidc-client": "1.10.1",
     "prismjs": "1.25.0",
