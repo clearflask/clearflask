@@ -3,10 +3,6 @@
 package com.smotana.clearflask.util;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -14,16 +10,14 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 
 /**
  * A way to force serializing an explicit null value using Gson.
- * There are two ways to use this:
- * - Inline serialization of an instance of this class such as ImmutableList.of(ExplicitNull.get())
- * - Annotate a model class or field with @JsonAdapter(ExplicitNull.class)
- * Note: If you annotate a field, the field itself won't be explicitly null, just the fields of that class will be.
+ * Usage:
+ * - ImmutableMap.of("a", ExplicitNull.get())
+ * - ImmutableMap.of("a", ExplicitNull.orNull(varThatMayBeNull))
  */
-public class ExplicitNull implements TypeAdapterFactory, JsonSerializer<ExplicitNull> {
+public class ExplicitNull implements TypeAdapterFactory {
 
     private static final ExplicitNull instance = new ExplicitNull();
 
@@ -40,26 +34,25 @@ public class ExplicitNull implements TypeAdapterFactory, JsonSerializer<Explicit
     }
 
     @Override
-    public JsonElement serialize(ExplicitNull src, Type typeOfSrc, JsonSerializationContext context) {
-        return JsonNull.INSTANCE;
-    }
-
-    @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
-        final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
+        if (gson.serializeNulls() || !(type.getRawType().isAssignableFrom(ExplicitNull.class))) {
+            return null;
+        }
         return new TypeAdapter<T>() {
             @Override
             public void write(JsonWriter out, T value) throws IOException {
-                boolean serializeNullsPrev = out.getSerializeNulls();
-                out.setSerializeNulls(true);
-                delegate.write(out, value);
-                out.setSerializeNulls(serializeNullsPrev);
+                out.jsonValue("null");
             }
 
             @Override
             public T read(JsonReader reader) throws IOException {
-                return delegate.read(reader);
+                return null;
             }
         };
+    }
+
+    @Override
+    public String toString() {
+        return "null";
     }
 }

@@ -50,7 +50,7 @@ public class GsonProvider implements Provider<Gson> {
                 .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
                 .registerTypeAdapter(Instant.class, new InstantTypeConverter())
                 .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
-                .registerTypeAdapter(ExplicitNull.class, ExplicitNull.get());
+                .registerTypeAdapterFactory(ExplicitNull.get());
         if (useConfigAdminUpgrader) {
             gsonBuilder.registerTypeAdapter(ConfigAdmin.class, new ConfigAdminUpgrader());
         }

@@ -2,15 +2,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.util;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import com.google.gson.annotations.JsonAdapter;
 import com.google.inject.Inject;
 import com.smotana.clearflask.testutil.AbstractTest;
-import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
+@Slf4j
 public class ExplicitNullTest extends AbstractTest {
 
     @Inject
@@ -23,56 +27,22 @@ public class ExplicitNullTest extends AbstractTest {
         install(GsonProvider.module());
     }
 
-    @Value
-    public static class Data {
-        private final String myString;
-        private final Double myDouble;
-    }
-
-    @Value
-    public static class DataA {
-        private final String myString;
-        private final Double myDouble;
-        private final Data myData;
-    }
-
-    @JsonAdapter(ExplicitNull.class)
-    @Value
-    public static class DataB {
-        private final String myString;
-        private final Double myDouble;
-        private final Data myData1;
-        private final Data myData2;
-    }
-
-    @Value
-    public static class DataC {
-        @JsonAdapter(ExplicitNull.class)
-        private final String myString;
-        private final Double myDouble;
-        @JsonAdapter(ExplicitNull.class)
-        private final Data myData1;
-        @JsonAdapter(ExplicitNull.class)
-        private final Data myData2;
-    }
-
-    @Value
-    public static class DataD {
-        private final DataB myDataB;
-        private final DataC myDataC;
-    }
-
     @Test(timeout = 10_000L)
-    public void testAnnotation() throws Exception {
+    public void testOrNull() throws Exception {
+        HashMap<Object, Object> mapWithNull = Maps.newHashMap();
+        mapWithNull.put("a", null);
         assertEquals("{}",
-                gson.toJson(new DataA(null, null, null)));
-        assertEquals("{\"myString\":null,\"myDouble\":null,\"myData1\":null,\"myData2\":{\"myString\":null,\"myDouble\":null}}",
-                gson.toJson(new DataB(null, null, null, new Data(null, null))));
-        assertEquals("{\"myData2\":{\"myString\":null,\"myDouble\":null}}",
-                gson.toJson(new DataC(null, null, null, new Data(null, null))));
-        assertEquals("{}",
-                gson.toJson(new DataD(null, null)));
-        assertEquals("{\"myDataB\":{\"myString\":null,\"myDouble\":null,\"myData1\":null,\"myData2\":{\"myString\":null,\"myDouble\":null}},\"myDataC\":{\"myData2\":{\"myString\":null,\"myDouble\":null}}}",
-                gson.toJson(new DataD(new DataB(null, null, null, new Data(null, null)), new DataC(null, null, null, new Data(null, null)))));
+                gson.toJson(mapWithNull));
+        assertEquals("null",
+                gson.toJson(null));
+        assertEquals("null",
+                gson.toJson(ExplicitNull.get()));
+        assertEquals("{\"a\":null}",
+                gson.toJson(ImmutableMap.of("a", ExplicitNull.get())));
+        assertEquals("{\"a\":7}",
+                gson.toJson(ImmutableMap.of("a", ExplicitNull.orNull(7L))));
+        log.debug("asd: {}", ImmutableMap.of("a", ExplicitNull.orNull((Long) null)));
+        assertEquals("{\"a\":null}",
+                gson.toJson(ImmutableMap.of("a", ExplicitNull.orNull((Long) null))));
     }
 }
