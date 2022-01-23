@@ -161,5 +161,8 @@ public interface DynamoMapper {
         Optional<ImmutableMap<String, String>> nameMap();
 
         Optional<ImmutableMap<String, Object>> valMap();
+
+        @Override
+        String toString();
     }
 }

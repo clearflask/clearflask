@@ -402,6 +402,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 }
             });
             Expression expression = expressionBuilder.build();
+            log.trace("update addons expression {}", expression);
             Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                             .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                             .withConditionExpression("attribute_exists(#partitionKey)")
@@ -515,6 +516,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .remove(accountByOauthGuidSchema.rangeKeyName());
         }
         Expression expression = expressionBuilder.build();
+        log.trace("update oauth guid expression {}", expression);
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                         .withConditionExpression(expression.conditionExpression().orElse(null))
@@ -702,6 +704,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 }
             });
             Expression expression = expressionBuilder.build();
+            log.trace("update account attrs expression {}", expression);
             Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                             .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                             .withConditionExpression("attribute_exists(#partitionKey)")

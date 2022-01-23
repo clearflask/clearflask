@@ -624,6 +624,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         Expression ideaExpression = ideaExpressionBuilder.build();
+        log.trace("connect ideaExpression {}", ideaExpression);
         idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
@@ -635,6 +636,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         Expression parentIdeaExpression = parentIdeaExpressionBuilder.build();
+        log.trace("connect parentIdeaExpression {}", parentIdeaExpression);
         parentIdea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
@@ -1399,6 +1401,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             expressionBuilder.conditionFieldNotExists("mergedToPostId");
         }
         Expression expression = expressionBuilder.build();
+        log.trace("delete idea expression {}", expression);
 
         ideaSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
