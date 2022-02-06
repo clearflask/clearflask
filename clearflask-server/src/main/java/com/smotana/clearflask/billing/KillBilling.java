@@ -11,7 +11,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.ListenableScheduledFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
@@ -35,6 +36,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.web.resource.ProjectResource;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +85,8 @@ import org.killbill.billing.util.tag.ControlTagType;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -90,6 +94,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -128,6 +133,15 @@ public class KillBilling extends ManagedService implements Billing {
         /** Retry creating subscription again assuming it failed before */
         @DefaultValue("true")
         boolean createSubscriptionIfNotExists();
+
+        @DefaultValue("P1D")
+        Duration scanUncommitedInvoicesScheduleFrequency();
+
+        @DefaultValue("P1D")
+        Duration scanUncommitedInvoicesCommitOlderThan();
+
+        @DefaultValue("P7D")
+        Duration scanUncommitedInvoicesCommitYoungerThan();
     }
 
     @Inject
@@ -158,14 +172,17 @@ public class KillBilling extends ManagedService implements Billing {
     @Inject
     private AccountStore accountStore;
     @Inject
+    private ProjectResource projectResource;
+    @Inject
     private PlanStore planStore;
     @Inject
     private UserStore userStore;
     @Inject
     private NotificationService notificationService;
 
-    private ListeningExecutorService usageExecutor;
-    private ListeningExecutorService accountCreationExecutor;
+    private ListeningScheduledExecutorService usageExecutor;
+    private ListeningScheduledExecutorService accountCreationExecutor;
+    private ListenableScheduledFuture commitUncommitedInvoicesSchedule;
 
     @Override
     protected void serviceStart() throws Exception {
@@ -173,10 +190,17 @@ public class KillBilling extends ManagedService implements Billing {
                 .setNameFormat("KillBilling-usage-%d").build()));
         accountCreationExecutor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder()
                 .setNameFormat("KillBilling-account-creation-%d").build()));
+
+        commitUncommitedInvoicesSchedule = usageExecutor.scheduleAtFixedRate(
+                this::commitUncommitedInvoices,
+                (long) (config.scanUncommitedInvoicesScheduleFrequency().toMillis() * ThreadLocalRandom.current().nextDouble()),
+                config.scanUncommitedInvoicesScheduleFrequency().toMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
     protected void serviceStop() throws Exception {
+        commitUncommitedInvoicesSchedule.cancel(false);
+
         usageExecutor.shutdown();
         accountCreationExecutor.shutdown();
 
@@ -503,10 +527,15 @@ public class KillBilling extends ManagedService implements Billing {
             log.info("Subscription status change {} -> {}, reason: {}, for {}",
                     currentStatus, newStatus, reason, account.getExternalKey());
             accountStore.updateStatus(account.getExternalKey(), newStatus);
-            // Trial ends email notification
             if (ACTIVETRIAL.equals(currentStatus)) {
+                // Trial ends email notification
                 Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
                 notificationService.onTrialEnded(account.getExternalKey(), account.getEmail(), paymentOpt.isPresent());
+            } else if (BLOCKED.equals(currentStatus)) {
+                // Delete all projects to free up resources
+                accountStore.getAccount(account.getExternalKey(), false).get()
+                        .getProjectIds()
+                        .forEach(projectResource::projectDeleteAdmin);
             }
         }
         return newStatus;
@@ -841,6 +870,10 @@ public class KillBilling extends ManagedService implements Billing {
         return allowUpgrade;
     }
 
+    /**
+     * TODO sort invoices by newest
+     * This is helpful: https://groups.google.com/g/killbilling-users/c/P0gwkdTarTA/m/Ol0WSE1iBgAJ
+     */
     @Override
     public Invoices getInvoices(String accountId, Optional<String> cursorOpt) {
         try {
@@ -1166,7 +1199,7 @@ public class KillBilling extends ManagedService implements Billing {
                     continue;
                 }
                 doUpdateInvoice = true;
-                log.debug("Recorded usage {} tracked users, accountId {} invoiceId {} planId {} recordDate {}",
+                log.info("Recorded usage {} tracked users, accountId {} invoiceId {} planId {} recordDate {}",
                         userCountSupplier.get(), invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
             }
 
@@ -1215,7 +1248,47 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
-    ImmutableList<UUID> getDraftInvoicingTagIds() {
+    @Extern
+    private void commitUncommitedInvoices() {
+        try {
+            Optional<org.killbill.billing.client.model.Invoices> invoicesOpt = Optional.of(kbInvoice.getInvoices(
+                    0L,
+                    // Negative limit searches backwards (https://groups.google.com/g/killbilling-users/c/P0gwkdTarTA/m/Ol0WSE1iBgAJ)
+                    -100L,
+                    null,
+                    KillBillUtil.roDefault()));
+            Instant olderThan = Instant.now().minus(config.scanUncommitedInvoicesCommitOlderThan());
+            Instant youngerThan = Instant.now().minus(config.scanUncommitedInvoicesCommitYoungerThan());
+
+            OUTER:
+            do {
+                for (Invoice invoice : invoicesOpt.get()) {
+                    if (invoice.getInvoiceDate().toDate().toInstant().isBefore(youngerThan)) {
+                        break OUTER;
+                    }
+                    if (invoice.getInvoiceDate().toDate().toInstant().isAfter(olderThan)) {
+                        continue;
+                    }
+                    if (!InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
+                        continue;
+                    }
+                    String accountId = getAccountByKbId(invoice.getAccountId()).getExternalKey();
+                    finalizeInvoice(accountId, invoice.getInvoiceId());
+                }
+                invoicesOpt = invoicesOpt.flatMap(invoices -> {
+                    try {
+                        return Optional.ofNullable(invoices.getNext());
+                    } catch (KillBillClientException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+            } while (invoicesOpt.isPresent());
+        } catch (Exception ex) {
+            log.warn("Failed to process commitUncommitedInvoices", ex);
+        }
+    }
+
+    private ImmutableList<UUID> getDraftInvoicingTagIds() {
         return config.reuseDraftInvoices()
                 ? ImmutableList.of(
                 ControlTagType.AUTO_INVOICING_DRAFT.getId(),
