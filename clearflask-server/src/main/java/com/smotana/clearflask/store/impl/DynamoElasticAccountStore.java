@@ -81,9 +81,11 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -332,9 +334,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public long getUserCountForAccount(String accountId) {
-        return getAccount(accountId, false).get()
-                .getProjectIds()
-                .stream()
+        return getAccount(accountId, false)
+                .map(Account::getProjectIds)
+                .map(Collection::stream)
+                .orElse(Stream.empty())
                 .mapToLong(userStore::getUserCountForProject)
                 .sum();
     }
