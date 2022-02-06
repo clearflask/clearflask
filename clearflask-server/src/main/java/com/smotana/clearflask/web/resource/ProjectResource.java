@@ -34,6 +34,7 @@ import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.ProjectAdminsInviteResult;
 import com.smotana.clearflask.api.model.ProjectAdminsListResult;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.Tag;
 import com.smotana.clearflask.api.model.UserBind;
 import com.smotana.clearflask.api.model.UserBindResponse;
@@ -56,6 +57,7 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -449,6 +451,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
                 .get();
+        projectDeleteAdmin(account, projectId);
+    }
+
+    @Extern
+    public void projectDeleteAdmin(String accountId, String projectId) {
+        projectDeleteAdmin(accountStore.getAccount(accountId, true).get(), projectId);
+    }
+
+    public void projectDeleteAdmin(Account account, String projectId) {
         try {
             ListenableFuture<WriteResponse> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
@@ -741,6 +752,29 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     private String getExportFileName(String projectId, String type, String extension) {
         return projectId + "-" + type + "-" + DateTime.now().toString("yyyy-MM-dd-HH-mm-ss") + "." + extension;
+    }
+
+    /** One-off method to clean up projects on blocked accounts. */
+    @Extern
+    private void deleteProjectsForBlockedAccounts() {
+        Optional<AccountStore.SearchAccountsResponse> searchAccountsResponseOpt = Optional.empty();
+        do {
+            searchAccountsResponseOpt = Optional.of(accountStore.listAccounts(
+                    true,
+                    searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt),
+                    Optional.empty()));
+            searchAccountsResponseOpt.get().getAccountIds()
+                    .stream()
+                    .flatMap(accountId -> accountStore.getAccount(accountId, true).stream())
+                    .filter(account -> SubscriptionStatus.BLOCKED.equals(account.getStatus()))
+                    .forEach(account -> {
+                        for (String projectId : account.getProjectIds()) {
+                            log.info("Deleting project for blocked account id {}, projectId {}",
+                                    account.getAccountId(), projectId);
+                            projectDeleteAdmin(account, projectId);
+                        }
+                    });
+        } while (searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt).isPresent())
     }
 
     public static Module module() {

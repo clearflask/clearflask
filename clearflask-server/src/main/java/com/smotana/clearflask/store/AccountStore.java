@@ -49,6 +49,8 @@ public interface AccountStore {
 
     boolean isEmailAvailable(String email);
 
+    SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
+
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
     long getUserCountForAccount(String accountId);

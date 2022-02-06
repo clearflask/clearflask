@@ -71,7 +71,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
@@ -298,12 +298,26 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Override
+    public SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        return searchAccounts(Optional.empty(), useAccurateCursor, cursorOpt, pageSizeOpt);
+    }
+
+    @Override
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        MultiMatchQueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
-                        "email", "name")
-                .field("email", 2f)
-                .fuzziness("AUTO")
-                .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
+        return searchAccounts(Optional.ofNullable(Strings.emptyToNull(accountSearchSuperAdmin.getSearchText())), useAccurateCursor, cursorOpt, pageSizeOpt);
+    }
+
+    private SearchAccountsResponse searchAccounts(Optional<String> searchTextOpt, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        QueryBuilder queryBuilder;
+        if (searchTextOpt.isPresent()) {
+            queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
+                            "email", "name")
+                    .field("email", 2f)
+                    .fuzziness("AUTO")
+                    .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
+        } else {
+            queryBuilder = QueryBuilders.matchAllQuery();
+        }
         log.trace("Account search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(ACCOUNT_INDEX)

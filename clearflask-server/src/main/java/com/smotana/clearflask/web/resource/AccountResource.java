@@ -738,7 +738,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, false))
                 .get();
-        account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
+        account.getProjectIds().forEach(projectId -> projectResource.projectDeleteAdmin(account, projectId));
         account.getExternalProjectIds().forEach(projectId -> projectStore.removeAdmin(projectId, account.getAccountId()));
         accountStore.deleteAccount(account.getAccountId());
         billing.closeAccount(account.getAccountId());

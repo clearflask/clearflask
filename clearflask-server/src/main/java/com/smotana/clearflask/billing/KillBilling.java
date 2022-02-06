@@ -533,9 +533,9 @@ public class KillBilling extends ManagedService implements Billing {
                 notificationService.onTrialEnded(account.getExternalKey(), account.getEmail(), paymentOpt.isPresent());
             } else if (BLOCKED.equals(currentStatus)) {
                 // Delete all projects to free up resources
-                accountStore.getAccount(account.getExternalKey(), false).get()
-                        .getProjectIds()
-                        .forEach(projectResource::projectDeleteAdmin);
+                AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
+                accountInDyn.getProjectIds()
+                        .forEach(projectId -> projectResource.projectDeleteAdmin(accountInDyn, projectId));
             }
         }
         return newStatus;
