@@ -774,7 +774,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                             projectDeleteAdmin(account, projectId);
                         }
                     });
-        } while (searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt).isPresent())
+        } while (searchAccountsResponseOpt
+                .flatMap(AccountStore.SearchAccountsResponse::getCursorOpt)
+                .isPresent());
     }
 
     public static Module module() {
