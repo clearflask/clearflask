@@ -94,5 +94,8 @@
   "comments": "Komentár",
   "want": "Chcem",
   "hate": "Nemám rád",
-  "accept-cookie": "Akceptovať"
+  "cookie-consent": "Súhlas cookies",
+  "we-use-cookies-to": "Cookies používame na prispôsobenie obsahu a na lepšie pochopenie našich používateľov.",
+  "accept-cookie": "Akceptovať",
+  "reject-cookie": "Odmietnuť"
 }
