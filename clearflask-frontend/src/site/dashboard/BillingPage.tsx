@@ -27,8 +27,8 @@ import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
-import { isTracking } from '../../common/util/detectEnv';
 import { initialWidth } from '../../common/util/screenUtil';
+import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
@@ -499,13 +499,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       isSubmitting={this.state.isSubmitting}
                       disabled={this.state.showAddPayment}
                       onClick={() => {
-                        if (isTracking()) {
+                        trackingBlock(() => {
                           ReactGA.event({
                             category: 'billing',
                             action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
                             label: this.props.accountBilling?.plan.basePlanId,
                           });
-                        }
+                        });
                         this.setState({ showAddPayment: true });
                         next();
                       }}
@@ -733,13 +733,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Button
                   disabled={this.state.isSubmitting || this.state.showPlanChange}
                   onClick={() => {
-                    if (isTracking()) {
+                    trackingBlock(() => {
                       ReactGA.event({
                         category: 'billing',
                         action: 'click-plan-switch-open',
                         label: this.props.accountBilling?.plan.basePlanId,
                       });
-                    }
+                    });
 
                     this.setState({ showPlanChange: true });
                   }}
@@ -951,13 +951,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               open={!!this.state.showPlanChange}
               onClose={() => this.setState({ showPlanChange: undefined })}
               onSubmit={basePlanId => {
-                if (isTracking()) {
+                trackingBlock(() => {
                   ReactGA.event({
                     category: 'billing',
                     action: 'click-plan-switch-submit',
                     label: basePlanId,
                   });
-                }
+                });
 
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
@@ -989,14 +989,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe): Promise<boolean> {
-    if (isTracking()) {
+    trackingBlock(() => {
       ReactGA.event({
         category: 'billing',
         action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
         label: this.props.accountBilling?.plan.basePlanId,
         value: this.props.accountBilling?.plan.pricing?.basePrice,
       });
-    }
+    });
 
     this.setState({ isSubmitting: true, stripePaymentError: undefined });
 

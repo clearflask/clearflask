@@ -66,6 +66,14 @@ public class ConfigSchemaUpgrader {
             hasChanged = true;
         }
 
+        // Added Cookie Consent
+        JsonObject configObject = config.getAsJsonObject();
+        if (!configObject.has("cookieConsent")) {
+            JsonObject cookieConsentObj = new JsonObject();
+            configObject.add("cookieConsent", cookieConsentObj);
+            hasChanged = true;
+        }
+
         // Important notes:
         // - Make sure the upgrade is idempotent, update hasChanged if necessary
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded

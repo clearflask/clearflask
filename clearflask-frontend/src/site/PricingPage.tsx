@@ -17,7 +17,8 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import ImgIso from '../common/ImgIso';
-import { isProd, isTracking } from '../common/util/detectEnv';
+import { isProd } from '../common/util/detectEnv';
+import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
 import Background from './landing/Background';
 import PricingPlan from './PricingPlan';
@@ -174,13 +175,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           actionTitle='Install it'
           remark='Join our community'
           actionOnClick={() => {
-            if (isTracking()) {
+            trackingBlock(() => {
               ReactGA.event({
                 category: 'pricing',
                 action: 'click-plan',
                 label: 'community',
               });
-            }
+            });
           }}
           actionToExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
         />
@@ -195,13 +196,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
           remark={plan.pricing ? this.props.t('free-14-day-trial') : this.props.t('let-us-help-you')}
           actionOnClick={() => {
-            if (isTracking()) {
+            trackingBlock(() => {
               ReactGA.event({
                 category: 'pricing',
                 action: 'click-plan',
                 label: plan.basePlanId,
               });
-            }
+            });
           }}
           actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
             ? {

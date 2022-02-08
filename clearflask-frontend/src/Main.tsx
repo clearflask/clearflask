@@ -22,11 +22,12 @@ import Loading from './app/utils/Loading';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { detectEnv, Environment, isProd, isTracking } from './common/util/detectEnv';
+import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import { RedirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { SetTitle } from './common/util/titleUtil';
+import { trackingBlock, trackingImplicitConsent } from './common/util/trackingDelay';
 import windowIso from './common/windowIso';
 import { CrowdInInlineEditing } from './LanguageSelect';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
@@ -105,7 +106,7 @@ class Main extends Component<Props> {
       vh,
     });
 
-    if (isTracking()) {
+    trackingBlock(() => {
       try {
         ReactGA.initialize('UA-127162051-3', {
           gaOptions: {}
@@ -117,7 +118,7 @@ class Main extends Component<Props> {
         ReactGA.pageview(windowIso.location.pathname + windowIso.location.search);
         LinkedInTag.init('3564876', 'dc', false);
       } catch (e) { }
-    }
+    });
   }
 
   render() {
@@ -135,6 +136,10 @@ class Main extends Component<Props> {
     const showSite = isParentDomain && !isSelfHost;
     const showProject = !showSite;
     const showDashboard = isParentDomain || isSelfHost;
+
+    if (showSite || showDashboard) {
+      trackingImplicitConsent();
+    }
 
     return (
       <ErrorBoundary showDialog>
@@ -161,13 +166,13 @@ class Main extends Component<Props> {
                       } : {})}
                     >
                       <ScrollAnchor scrollOnNavigate />
-                      {isTracking() && (
-                        <Route path='/' render={routeProps => {
+                      <Route path='/' render={routeProps => {
+                        trackingBlock(() => {
                           ReactGA.set({ page: routeProps.location.pathname + routeProps.location.search });
                           ReactGA.pageview(routeProps.location.pathname + routeProps.location.search);
-                          return null;
-                        }} />
-                      )}
+                        });
+                        return null;
+                      }} />
                       <Route render={routeProps => routeProps.location.pathname.startsWith('/embed-status') ? null : (
                         <EnvironmentNotifier key='env-notifier' />
                       )} />

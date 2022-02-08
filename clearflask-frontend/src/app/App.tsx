@@ -9,7 +9,7 @@ import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import MyLoadingBar from '../common/MyLoadingBar';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
-import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
@@ -28,6 +28,7 @@ import Header from './Header';
 import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
+import { CookieConsenter } from './utils/CookieConsenter';
 import CustomerExternalTrackers from './utils/CustomerExternalTrackers';
 import Loading from './utils/Loading';
 import PrivateProjectLogin from './utils/PrivateProjectLogin';
@@ -54,7 +55,7 @@ interface Props {
 }
 class App extends Component<Props> {
   readonly uniqId = randomUuid();
-  readonly server;
+  readonly server: Server;
 
   constructor(props) {
     super(props);
@@ -186,6 +187,7 @@ class App extends Component<Props> {
             overflowY: this.props.settings?.demoScrollY ? 'scroll' : undefined,
           })}
         >
+          <CookieConsenter />
           <PushNotificationListener server={this.server} />
           <ServerErrorNotifier />
           <CaptchaChallenger />
@@ -205,7 +207,7 @@ class App extends Component<Props> {
           >
             <PrivateProjectLogin server={this.server} slug={this.props.slug}>
               <MyLoadingBar />
-              {isTracking() && (<CustomerExternalTrackers />)}
+              <CustomerExternalTrackers />
               <IntercomWrapperCustomer />
               <Route key='header' path='/:page?' render={props => (
                 this.props.settings?.forceEmbed

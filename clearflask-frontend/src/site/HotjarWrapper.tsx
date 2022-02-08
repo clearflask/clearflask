@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Component } from 'react';
 import { hotjar } from 'react-hotjar';
+import { trackingBlock } from '../common/util/trackingDelay';
 
 var initializedTrackerCode: number | undefined;
 
@@ -11,11 +12,14 @@ export interface HotjarWrapperProps {
 export default class IntercomWrapper extends Component<HotjarWrapperProps> {
 
   render() {
-    if (initializedTrackerCode !== this.props.trackerCode && this.props.trackerCode) {
-      try {
-        hotjar.initialize(this.props.trackerCode, 6);
-        initializedTrackerCode = this.props.trackerCode;
-      } catch (e) { }
+    const trackerCode = this.props.trackerCode;
+    if (initializedTrackerCode !== trackerCode && trackerCode) {
+      trackingBlock(() => {
+        try {
+          hotjar.initialize(trackerCode, 6);
+          initializedTrackerCode = trackerCode;
+        } catch (e) { }
+      });
     }
 
     return null;

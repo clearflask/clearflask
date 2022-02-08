@@ -85,8 +85,8 @@ import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
 import DeviceContainer, { Device } from '../common/DeviceContainer';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
-import { isTracking } from '../common/util/detectEnv';
 import { vh } from '../common/util/screenUtil';
+import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
 import Hero from './landing/Hero';
 
@@ -2335,13 +2335,13 @@ const ExternalLinkPlatform = (props: ({
       color='inherit'
       aria-label={props.type === 'pricing' ? 'pricing page' : 'home page'}
       onClick={e => {
-        if (isTracking()) {
+        trackingBlock(() => {
           ReactGA.event({
             category: 'compare',
             action: props.type === 'pricing' ? 'click-competitor-pricing-page' : 'click-competitor-home-page',
             label: props.platform.id,
           });
-        }
+        });
         !windowIso.isSsr && windowIso.open(props.type === 'pricing' ? props.platform.pricing.url : props.platform.url, '_blank', 'noopener');
       }}
     >

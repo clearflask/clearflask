@@ -2988,6 +2988,85 @@ export const ProjectSettingsData = (props: {
   );
 }
 
+export const ProjectSettingsCookies = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  return (
+    <ProjectSettingsBase title='Cookies' description='Choose whether cookies and analytics require consent from the user. This is typically required to conform to GDPR, CCPA and other local legislation.'>
+      <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+        <ProjectSettingsCookiesInternal server={props.server} editor={props.editor} />
+      </Provider>
+    </ProjectSettingsBase>
+  );
+}
+export const ProjectSettingsCookiesInternal = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const builtIn = useSelector<ReduxState, Admin.BuiltIn | undefined>(state => state.conf.conf?.cookieConsent.builtIn, shallowEqual);
+  const cookieYes = useSelector<ReduxState, Admin.CookieYes | undefined>(state => state.conf.conf?.cookieConsent.cookieYes, shallowEqual);
+
+  return (
+    <>
+      <br /><br />
+      <Select
+        label='Consent type'
+        value={!!builtIn ? 'builtIn' : (!!cookieYes ? 'cookieYes' : 'none')}
+        onChange={e => {
+          switch (e.target.value as string) {
+            case 'builtIn':
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'builtIn']).set(true);
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'cookieYes']).set(undefined);
+              break;
+            case 'cookieYes':
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'builtIn']).set(undefined);
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'cookieYes']).set(true);
+              break;
+            case 'none':
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'builtIn']).set(undefined);
+              props.editor.getProperty<ConfigEditor.ObjectProperty>(['cookieConsent', 'cookieYes']).set(undefined);
+              break;
+          }
+        }}
+      >
+        <MenuItem value='none'>Do not show</MenuItem>
+        <MenuItem value='builtIn'>Show consent banner</MenuItem>
+        <MenuItem value='cookieYes'>Show CookieYes banner (third-party)</MenuItem>
+      </Select>
+      <Collapse in={!!builtIn}>
+        <Section
+          title='Consent banner'
+          description='Customize the text of the banner'
+          content={!!builtIn && (
+            <>
+              <Provider store={ServerAdmin.get().getStore()}>
+                <PropertyByPath server={props.server} editor={props.editor} path={['cookieConsent', 'builtIn', 'title']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['cookieConsent', 'builtIn', 'description']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['cookieConsent', 'builtIn', 'accept']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['cookieConsent', 'builtIn', 'reject']} />
+              </Provider>
+            </>
+          )}
+        />
+      </Collapse>
+      <Collapse in={!!cookieYes}>
+        <Section
+          title='CookieYes consent banner'
+          description='Integrate with third-party cookie consent banner'
+          content={!!cookieYes && (
+            <>
+              <Provider store={ServerAdmin.get().getStore()}>
+                <PropertyByPath server={props.server} editor={props.editor} path={['cookieConsent', 'cookieYes', 'clientId']} />
+              </Provider>
+            </>
+          )}
+        />
+      </Collapse>
+    </>
+  );
+}
+
 export const ProjectSettingsGitHub = (props: {
   project: AdminProject;
   server: Server;

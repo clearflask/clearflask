@@ -8,6 +8,7 @@ import com.smotana.clearflask.api.model.AnonymousSignup;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Content;
+import com.smotana.clearflask.api.model.CookieConsent;
 import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Flow;
@@ -44,6 +45,7 @@ public class ModelUtil {
                 null,
                 null,
                 null,
+                new CookieConsent(null, null),
                 new Layout(null, ImmutableList.of(), ImmutableList.of()),
                 new Content(ImmutableList.of(new Category(
                         IdUtil.randomId(),

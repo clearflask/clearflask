@@ -30,9 +30,10 @@ import GoogleIcon from '../common/icon/GoogleIcon';
 import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
-import { detectEnv, Environment, isProd, isTracking } from '../common/util/detectEnv';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
+import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
 import AnimBubble from './landing/AnimBubble';
 import PricingPlan from './PricingPlan';
@@ -719,14 +720,14 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
   }
 
   async signUp(selectedPlanId: string) {
-    if (isTracking()) {
+    trackingBlock(() => {
       ReactGA.event({
         category: 'account-signup',
         action: 'click-create',
         label: selectedPlanId,
       });
       LinkedInTag.track('5353172');
-    }
+    });
 
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();

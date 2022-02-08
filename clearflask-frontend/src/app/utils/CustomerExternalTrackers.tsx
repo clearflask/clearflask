@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { Route } from 'react-router';
 import * as Client from '../../api/client';
 import { ReduxState } from '../../api/server';
+import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import HotjarWrapperCustomer from '../../site/HotjarWrapperCustomer';
 
@@ -39,8 +40,10 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
         <HotjarWrapperCustomer />
         {this.props.googleAnalytics && (
           <Route path='/' render={routeProps => {
-            ReactGA.ga(`${CustomerTrackerName}.set`, 'page', routeProps.location.pathname + routeProps.location.search);
-            ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': routeProps.location.pathname + routeProps.location.search });
+            trackingBlock(() => {
+              ReactGA.ga(`${CustomerTrackerName}.set`, 'page', routeProps.location.pathname + routeProps.location.search);
+              ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': routeProps.location.pathname + routeProps.location.search });
+            });
             return null;
           }} />
         )}
@@ -49,11 +52,13 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
   }
 
   gaInitialize(trackingCode: string) {
-    ReactGA.ga('create', trackingCode, 'auto', { 'name': CustomerTrackerName });
-    ReactGA.ga(`${CustomerTrackerName}.set`, 'anonymizeIp', true);
-    ReactGA.ga(`${CustomerTrackerName}.set`, 'forceSSL', true);
+    trackingBlock(() => {
+      ReactGA.ga('create', trackingCode, 'auto', { 'name': CustomerTrackerName });
+      ReactGA.ga(`${CustomerTrackerName}.set`, 'anonymizeIp', true);
+      ReactGA.ga(`${CustomerTrackerName}.set`, 'forceSSL', true);
 
-    ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': windowIso.location.pathname + windowIso.location.search });
+      ReactGA.ga(`${CustomerTrackerName}.send`, 'pageview', { 'page': windowIso.location.pathname + windowIso.location.search });
+    });
   }
 }
 

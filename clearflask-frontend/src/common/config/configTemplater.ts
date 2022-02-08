@@ -48,6 +48,8 @@ export interface CreateTemplateV2Options {
   infoLogo?: string;
 
   isPrivate?: boolean;
+
+  cookieConsent?: boolean;
 }
 export const createTemplateV2OptionsDefault: CreateTemplateV2Options = {
   templateLanding: true,
@@ -197,6 +199,8 @@ export default class Templater {
     if (opts.templateLanding) result.landing = await this.landingOn();
 
     if (opts.isPrivate) this.privateProject();
+
+    if (opts.cookieConsent) this._get<ConfigEditor.ObjectProperty>(['cookieConsent', 'builtIn']).setRaw(Admin.BuiltInToJSON({}));
 
     if (!isProd()) {
       this.styleWhite();

@@ -33,7 +33,8 @@ import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
 import { TourDefinitionGuideState } from '../../common/tour';
-import { detectEnv, Environment, isTracking } from '../../common/util/detectEnv';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
 import { AddonExtraProject } from './BillingPage';
@@ -298,13 +299,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           isPrivate: false,
                           step: 'feedback-layout-select',
                         });
-                        if (isTracking()) {
+                        trackingBlock(() => {
                           ReactGA.event({
                             category: 'new-project',
                             action: 'choose-scenario',
                             label: 'customer-feedback',
                           });
-                        }
+                        });
                       }}
                     />
                     <TemplateCard
@@ -322,13 +323,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           isPrivate: false,
                           step: 'feedback-layout-select',
                         });
-                        if (isTracking()) {
+                        trackingBlock(() => {
                           ReactGA.event({
                             category: 'new-project',
                             action: 'choose-scenario',
                             label: 'open-community',
                           });
-                        }
+                        });
                       }}
                     />
                   </div>
@@ -349,13 +350,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             isPrivate: true,
                             step: 'feedback-layout-select',
                           });
-                          if (isTracking()) {
+                          trackingBlock(() => {
                             ReactGA.event({
                               category: 'new-project',
                               action: 'choose-scenario',
                               label: 'internal-feedback',
                             });
-                          }
+                          });
                         }}
                       />
                     </UpgradeWrapper>
@@ -371,13 +372,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             isPrivate: false,
                             step: 'project-details',
                           });
-                          if (isTracking()) {
+                          trackingBlock(() => {
                             ReactGA.event({
                               category: 'new-project',
                               action: 'choose-scenario',
                               label: 'blank',
                             });
-                          }
+                          });
                         }}
                       />
                     )}
@@ -417,13 +418,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                         templateFeedbackIsClassic: false,
                         step: 'project-details',
                       });
-                      if (isTracking()) {
+                      trackingBlock(() => {
                         ReactGA.event({
                           category: 'new-project',
                           action: 'choose-feedback-layout',
                           label: 'feedback-first',
                         });
-                      }
+                      });
                     }}
                   />
                   <TemplateCard
@@ -444,13 +445,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                         templateFeedbackIsClassic: true,
                         step: 'project-details',
                       });
-                      if (isTracking()) {
+                      trackingBlock(() => {
                         ReactGA.event({
                           category: 'new-project',
                           action: 'choose-feedback-layout',
                           label: 'community-first',
                         });
-                      }
+                      });
                     }}
                   />
                 </div>

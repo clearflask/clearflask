@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { connect } from 'react-redux';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import { isProd, isTracking } from '../common/util/detectEnv';
+import { isProd } from '../common/util/detectEnv';
 import IntercomWrapper, { IntercomWrapperConnectProps } from './IntercomWrapper';
 
 const PROD_APP_ID = 'zklmfmdu';
@@ -20,7 +20,7 @@ export default connect<IntercomWrapperConnectProps, {}, { suppressBind?: boolean
     };
   }
 
-  if (state.account.isSuperAdmin || !isTracking()) {
+  if (state.account.isSuperAdmin) {
     connectProps.disabled = true;
     return connectProps;
   }

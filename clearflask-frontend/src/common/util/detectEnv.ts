@@ -35,7 +35,3 @@ export function isProd(): boolean {
   return detectEnv() === Environment.PRODUCTION
     || detectEnv() === Environment.PRODUCTION_SELF_HOST;
 }
-
-export function isTracking(): boolean {
-  return isProd() && !windowIso.isSsr;
-}

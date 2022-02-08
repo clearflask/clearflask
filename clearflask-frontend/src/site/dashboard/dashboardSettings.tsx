@@ -13,7 +13,7 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsCoupons, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsLoginAs, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsCookies, ProjectSettingsCoupons, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsLoginAs, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
@@ -52,6 +52,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               { type: 'item', slug: 'settings/project/onboard/sso', name: 'SSO', offset: 2 },
               { type: 'item', slug: 'settings/project/onboard/oauth', name: 'OAuth', offset: 2 },
               { type: 'item', slug: 'settings/project/install', name: this.props.t('install'), offset: 1 },
+              { type: 'item', slug: 'settings/project/cookies', name: this.props.t('cookie-consent'), offset: 1 },
               { type: 'item', slug: 'settings/project/data', name: this.props.t('data'), offset: 1 },
               { type: 'heading', text: this.props.t('integrations'), offset: 1 },
               { type: 'item', slug: 'settings/project/github', name: 'GitHub', offset: 2 },
@@ -143,6 +144,9 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
           break;
         case 'data':
           mainContent = (<ProjectSettingsData server={activeProject.server} />);
+          break;
+        case 'cookies':
+          mainContent = (<ProjectSettingsCookies server={activeProject.server} editor={activeProject.editor} />);
           break;
         case 'github':
           mainContent = (<ProjectSettingsGitHub project={activeProject} server={activeProject.server} editor={activeProject.editor} />);

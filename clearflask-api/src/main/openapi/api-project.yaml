@@ -11,6 +11,7 @@ components:
         - projectId
         - name
         - slug
+        - cookieConsent
         - layout
         - content
         - style
@@ -58,6 +59,8 @@ components:
         noIndex:
           x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed'  }
           type: boolean
+        cookieConsent:
+          $ref: 'api-project.yaml#/components/schemas/cookieConsent'
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:
@@ -817,6 +820,30 @@ components:
           $ref: 'api-project.yaml#/components/schemas/hotjar'
         intercom:
           $ref: 'api-project.yaml#/components/schemas/intercom'
+    cookieConsent:
+      x-clearflask-page: { order: 30, name: 'Cookie consent', description: 'Enable dialogs to prompt user for cookie consent.' }
+      title: CookieConsent
+      type: object
+      properties:
+        builtIn:
+          x-clearflask-prop: { order: 10, name: 'Built-in', description: 'Enable dialogs to prompt user for cookie consent.' }
+          title: BuiltIn
+          type: object
+          properties:
+            title:
+              x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Dialog Title', description: 'Cookie consent title to show', placeholder: 'Cookie consent' }
+              type: string
+            description:
+              x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Dialog Description', description: 'Description of the consent form to show.', placeholder: 'This website uses cookies that...' }
+              type: string
+            accept:
+              x-clearflask-prop: { order: 30, subType: 'i18n', name: 'Button Accept', description: 'Button text for accepting all cookies.', placeholder: 'Accept' }
+              type: string
+            reject:
+              x-clearflask-prop: { order: 40, subType: 'i18n', name: 'Button Reject', description: 'Button text for rejecting all cookies.', placeholder: 'Reject' }
+              type: string
+        cookieYes:
+          $ref: 'api-project.yaml#/components/schemas/cookieYes'
     googleAnalytics:
       x-clearflask-page: { order: 2, name: 'Google Analytics', description: 'Add Google Analytics tracking' }
       title: GoogleAnalytics
@@ -847,6 +874,16 @@ components:
       properties:
         appId:
           x-clearflask-prop: { order: 0, name: 'App ID', description: 'Visit Intercom and paste your App ID here. Please ensure you add ClearFlask as part of your trusted domains in Intercom.', placeholder: 'xxxxxxxx' }
+          type: string
+    cookieYes:
+      x-clearflask-prop: { order: 40, name: 'CookieYes', description: 'Third-party cookie consent for GDPR and CCPA compliance.' }
+      title: CookieYes
+      type: object
+      required:
+      - clientId
+      properties:
+        clientId:
+          x-clearflask-prop: { order: 0, name: 'Client ID', description: 'Visit app.cookieyes.com/site-settings, click "Get Script" and copy the characters between "client_data/" and "/script.js".', placeholder: 'A0A0A0A0A0A0A0A0A0A0A0A0' }
           type: string
     ConfigAdmin:
       description: >-

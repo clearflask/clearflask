@@ -20,6 +20,7 @@ export async function mock(slug: string = 'product'): Promise<VersionedConfigAdm
     infoLogo: isGreatProduct ? `${windowIso.location.origin}/img/landing/GreatProductLogo.png` : 'https://clearflask.com/img/clearflask-logo.png',
     infoWebsite: `https://${windowIso.parentDomain}`,
     infoSlug: 'product',
+    cookieConsent: true,
   });
   if (templateResult.roadmap) {
     templater.taggingIdeaBug(templateResult.roadmap.categoryAndIndex.index);

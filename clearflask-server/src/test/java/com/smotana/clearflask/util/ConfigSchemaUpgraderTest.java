@@ -5,6 +5,7 @@ package com.smotana.clearflask.util;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.CookieConsent;
 import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.Integrations;
 import com.smotana.clearflask.api.model.Whitelabel;
@@ -406,5 +407,6 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
         assertEquals(Whitelabel.builder()
                 .poweredBy(Whitelabel.PoweredByEnum.SHOW)
                 .build(), config.getStyle().getWhitelabel());
+        assertEquals(CookieConsent.builder().build(), config.getCookieConsent());
     }
 }

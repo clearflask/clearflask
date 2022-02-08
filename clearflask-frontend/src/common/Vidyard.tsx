@@ -4,7 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ImgIso from './ImgIso';
-import { isTracking } from './util/detectEnv';
+import { trackingBlock } from './util/trackingDelay';
 import windowIso from './windowIso';
 
 var vidyardLoaded = false;
@@ -23,15 +23,15 @@ class Vidyard extends Component<Props & WithStyles<typeof styles, true>> {
     super(props);
 
     if (!windowIso.isSsr && !vidyardLoaded) {
-      if (isTracking()) {
-        windowIso['onVidyardAPI'] = (vidyardEmbed) => {
-          vidyardEmbed.api.addReadyListener((_, player) => {
+      windowIso['onVidyardAPI'] = (vidyardEmbed) => {
+        vidyardEmbed.api.addReadyListener((_, player) => {
+          trackingBlock(() => {
             var scriptTag = document.createElement('script');
             scriptTag.src = "//play.vidyard.com/v0/google-analytics.js";
             document.body.appendChild(scriptTag);
           });
-        };
-      }
+        });
+      };
 
       var scriptTag = document.createElement('script');
       scriptTag.src = "//play.vidyard.com/embed/v4.js";
