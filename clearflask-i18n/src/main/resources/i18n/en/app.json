@@ -93,5 +93,9 @@
   "posts": "Posts",
   "comments": "Comments",
   "want": "Want",
-  "hate": "Hate"
+  "hate": "Hate",
+  "cookie-consent": "Cookie consent",
+  "we-use-cookies-to": "We use cookies to personalize content and to better understand our users.",
+  "accept-cookie": "Accept",
+  "reject-cookie": "Reject"
 }
