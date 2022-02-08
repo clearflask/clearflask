@@ -93,8 +93,12 @@ export const BannerCookieYes = (props: {
     s.src = `https://cdn-cookieyes.com/client_data/${props.opts.clientId}/script.js`;
     s.onload = function () {
       // CookieYes will now start intercepting cookie creation,
-      // so let's go ahead and start our tracking.
-      trackingImplicitConsent();
+      // so let's go ahead and start our tracking after script loads.
+      const timeoutHandle = setTimeout(trackingImplicitConsent, 5000);
+      !windowIso.isSsr && windowIso.document.addEventListener('cookieyes_consent_update', e => {
+        clearTimeout(timeoutHandle);
+        trackingImplicitConsent();
+      });
     };
     var x = windowIso.document.getElementsByTagName('script')[0];
     x.parentNode?.insertBefore(s, x);
