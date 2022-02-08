@@ -82,6 +82,16 @@ export const BannerBuiltIn = (props: {
   );
 }
 
+// Undocumented event from CookieYes triggered on library load and on subsequent user actions
+const ConsentUpdateEventName = 'cookieyes_consent_update';
+type ConsentTypes = 'necessary' | 'functional' | 'analytics' | 'performance' | 'advertisement' | 'other';
+type ConsentUpdateEvent = {
+  detail: {
+    accepted: Array<ConsentTypes>;
+    rejected: Array<ConsentTypes>;
+  };
+}
+
 export const BannerCookieYes = (props: {
   opts: Client.CookieYes;
 }) => {
@@ -92,13 +102,16 @@ export const BannerCookieYes = (props: {
     s.type = 'text/javascript';
     s.src = `https://cdn-cookieyes.com/client_data/${props.opts.clientId}/script.js`;
     s.onload = function () {
-      // CookieYes will now start intercepting cookie creation,
-      // so let's go ahead and start our tracking after script loads.
-      const timeoutHandle = setTimeout(trackingImplicitConsent, 5000);
-      !windowIso.isSsr && windowIso.document.addEventListener('cookieyes_consent_update', e => {
-        clearTimeout(timeoutHandle);
-        trackingImplicitConsent();
-      });
+      const consentUpdateHandler: ((e: any) => void) = (e: ConsentUpdateEvent) => {
+        // Analytics will be triggered only if user
+        // accepts all cookie types as we have no control
+        // over filtering which cookies get set.
+        if (e.detail.rejected.length === 0) {
+          trackingImplicitConsent();
+          !windowIso.isSsr && windowIso.document.removeEventListener(ConsentUpdateEventName, consentUpdateHandler);
+        }
+      };
+      !windowIso.isSsr && windowIso.document.addEventListener(ConsentUpdateEventName, consentUpdateHandler);
     };
     var x = windowIso.document.getElementsByTagName('script')[0];
     x.parentNode?.insertBefore(s, x);
