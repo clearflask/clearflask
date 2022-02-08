@@ -55,6 +55,7 @@ export const BannerBuiltIn = (props: {
       variant='persistent'
       open={trackingIsConsented() === undefined}
       anchor='bottom'
+      PaperProps={{ style: { 'visibility': 'visible' } }} // Fix drawer incorrectly sets visiblity to false
     >
       <div className={classes.bannerDrawer}>
         <div>
