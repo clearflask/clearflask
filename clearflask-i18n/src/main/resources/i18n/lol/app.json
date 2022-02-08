@@ -93,5 +93,9 @@
   "posts": "crwdns1135:0crwdne1135:0",
   "comments": "crwdns1137:0crwdne1137:0",
   "want": "crwdns1139:0crwdne1139:0",
-  "hate": "crwdns1141:0crwdne1141:0"
+  "hate": "crwdns1141:0crwdne1141:0",
+  "cookie-consent": "crwdns1190:0crwdne1190:0",
+  "we-use-cookies-to": "crwdns1192:0crwdne1192:0",
+  "accept-cookie": "crwdns1194:0crwdne1194:0",
+  "reject-cookie": "crwdns1196:0crwdne1196:0"
 }
