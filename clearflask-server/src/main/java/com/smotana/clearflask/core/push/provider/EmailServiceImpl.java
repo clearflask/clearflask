@@ -109,7 +109,7 @@ public class EmailServiceImpl implements EmailService {
     private GuavaRateLimiters guavaRateLimiters;
 
     private RateLimiter rateLimiter;
-    private Optional<Mailer> smtpOpt;
+    private Optional<Mailer> smtpOpt = Optional.empty();
 
     @Inject
     private void setup() {
