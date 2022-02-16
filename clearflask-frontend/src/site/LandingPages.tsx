@@ -3032,7 +3032,7 @@ export function LandingPricingOptions() {
         title={t('self-hosting')}
         description={t('open-source-with-no-limitations-own')}
         buttonTitle={t('install-it')}
-        buttonLinkExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
+        buttonLinkExt='https://github.com/clearflask/clearflask#self-hosting'
         buttonVariant='contained'
         buttonSuppressIcon
         image={Server3Img}

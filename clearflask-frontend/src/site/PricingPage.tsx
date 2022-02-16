@@ -183,7 +183,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
               });
             });
           }}
-          actionToExt='https://github.com/clearflask/clearflask/blob/master/INSTALLATION.md'
+          actionToExt='https://github.com/clearflask/clearflask#self-hosting'
         />
       ),
       ...(this.props.plans || []).map((plan, index) => (
