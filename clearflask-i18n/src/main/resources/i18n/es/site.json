@@ -1,1 +1,17 @@
-{}
+{
+  "product": "Producto",
+  "pricing": "Precios",
+  "resources": "Recursos",
+  "get-started": "Iniciar",
+  "hero": "Una mejor manera de gestionar los comentarios sobre los productos",
+  "subhero": "Herramienta de código abierto, para ideación de comentarios, hoja de ruta y anuncios",
+  "see-demo": "Ver demostración",
+  "simple-yet-powerful-feedback-experience": "Experiencia de retroalimentación simple, pero potente",
+  "ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas": "Pida a sus clientes comentarios sobre su producto y extraiga ideas valiosas.",
+  "website-integration": "Integración con página web",
+  "free-14-day-trial": "Prueba gratuita de 14 días",
+  "log-in": "Iniciar sesión",
+  "product-roadmap": "Hoja de ruta",
+  "customer-feedback": "Comentarios de los clientes",
+  "choose-between-feedback-first-or": "Elija entre opciones enfocadas en la retroalimentación o en el cliente"
+}
