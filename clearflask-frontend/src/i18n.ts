@@ -6,9 +6,11 @@ import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
 import FlagDe from '../public/img/flag/de.svg';
+import FlagEs from '../public/img/flag/es.svg';
 import FlagFr from '../public/img/flag/fr.svg';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
+import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { isProd } from './common/util/detectEnv';
 
@@ -29,6 +31,8 @@ export const supportedLanguages: Array<SupportedLanguage>
    * IMPORTANT:
    * Adding a new language checklist:
    * - You must also specify which countries will defualt to this language by editing Lambda function "clearflask-cloudfront-locale-header".
+   *   - Update Lambda function and publish new version at https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/clearflask-cloudfront-locale-header/versions/5?tab=code
+   *   - Update Lambda version in CloudFront: https://console.aws.amazon.com/cloudfront/v3/home?region=us-east-1#/distributions/EQHBQLQZXVKCU/behaviors
    * - Ensure the clearflask-i18n bundles the translation files
    * - Find image in https://github.com/ekwonye-richard/react-flags-select/tree/master/flags
    * - Find language label in https://en.wikipedia.org/wiki/List_of_language_names
@@ -36,6 +40,8 @@ export const supportedLanguages: Array<SupportedLanguage>
   = [
     { code: 'de', img: FlagDe, label: 'Deutsch', perc: 0.19 },
     { code: 'en', img: FlagEn, label: 'English', perc: 1 },
+    { code: 'es', img: FlagEs, label: 'Español', perc: .04 },
+    { code: 'uk', img: FlagUa, label: 'Українська', perc: .01 },
     { code: 'fr', img: FlagFr, label: 'Français', perc: 0.01 },
     { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.35 },
     { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 0.99 },
