@@ -102,6 +102,7 @@
   "for-advanced-use-cases-start": "Захиалгат хэрэглээнд зориулан урьдчилж бэлтгэсэн загваргүй төсөл.",
   "fill-out-details": "Mэдээлэл",
   "give-us-a-few-more-details-about-your-project": "Төслийнхөө талаар мэдээллийг бөглөнө үү.",
+  "your-website-optional": "Таны вэбсай",
   "product-name": "Бүтээгдэхүүний нэр",
   "portal-domain": "Портал домэйн",
   "portal-subdomain": "Портал дэд домайн",
@@ -205,5 +206,7 @@
   "discard-changes": "Өөрчлөлтийг хаях",
   "are-you-sure-you-want-to-discard-all-your-configuration-changes": "Та тохиргооны бүх өөрчлөлтөө цуцлахдаа итгэлтэй байна уу?",
   "cancel": "Цуцлах",
-  "public-view": "Нийтэд харагдах байдал"
+  "public-view": "Нийтэд харагдах байдал",
+  "blog": "Блог",
+  "free-forever": "Үүрд төгс"
 }
