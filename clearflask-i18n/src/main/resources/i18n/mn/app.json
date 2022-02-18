@@ -94,5 +94,6 @@
   "comments": "Сэтгэгдэл",
   "want": "Дэмжих",
   "hate": "Үзэн ядалт",
-  "accept-cookie": "Хүлээн зөвшөөрөх"
+  "accept-cookie": "Хүлээн зөвшөөрөх",
+  "reject-cookie": "Татгалзах"
 }
