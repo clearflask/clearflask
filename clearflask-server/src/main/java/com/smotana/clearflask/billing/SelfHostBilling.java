@@ -2,8 +2,6 @@ package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -35,7 +33,7 @@ import java.util.UUID;
 
 public class SelfHostBilling implements Billing {
 
-    private static UUID ACCOUNT_ID = UUID.fromString("250F25AE-327D-4DFD-B947-D5507073EAC9");
+    private static final UUID ACCOUNT_ID = UUID.fromString("250F25AE-327D-4DFD-B947-D5507073EAC9");
 
     public interface Config {
         @DefaultValue("John Doe")
@@ -225,13 +223,18 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId) {
-        return Futures.immediateVoidFuture();
+    public void recordUsage(UsageType type, String accountId, String projectId) {
+        // No-op
     }
 
     @Override
-    public ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, UserStore.UserModel user) {
-        return Futures.immediateVoidFuture();
+    public void recordUsage(UsageType type, String accountId, String projectId, String userId) {
+        // No-op
+    }
+
+    @Override
+    public void recordUsage(UsageType type, String accountId, String projectId, UserStore.UserModel user) {
+        // No-op
     }
 
     @Override

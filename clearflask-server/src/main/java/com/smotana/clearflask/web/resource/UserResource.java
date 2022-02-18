@@ -260,10 +260,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
         long balance = 0;
         Optional<CreditsCreditOnSignup> creditOnSignupOpt = Optional.ofNullable(project
-                .getVersionedConfigAdmin()
-                .getConfig()
-                .getUsers()
-                .getCredits())
+                        .getVersionedConfigAdmin()
+                        .getConfig()
+                        .getUsers()
+                        .getCredits())
                 .map(Credits::getCreditOnSignup);
         if (creditOnSignupOpt.isPresent() && creditOnSignupOpt.get().getAmount() > 0L) {
             balance = creditOnSignupOpt.get().getAmount();
@@ -545,7 +545,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse userHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {

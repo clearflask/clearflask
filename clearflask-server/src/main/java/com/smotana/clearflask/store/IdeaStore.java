@@ -83,6 +83,8 @@ public interface IdeaStore {
 
     SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 
+    long countIdeas(String projectId);
+
     IdeaAggregateResponse countIdeas(String projectId, String categoryId);
 
     void exportAllForProject(String projectId, Consumer<IdeaModel> consumer);

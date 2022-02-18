@@ -59,6 +59,7 @@ import setTitle from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
 import { LanguageSelect } from '../LanguageSelect';
 import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
+import ContactPage from './ContactPage';
 import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
@@ -589,6 +590,15 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       case 'settings':
         this.renderSettings(context);
         break;
+      case 'contact':
+        context.sections.push({
+          name: 'main',
+          noPaper: true,
+          collapseTopBottom: true, collapseLeft: true, collapseRight: true,
+          size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
+          content: (<ContactPage />)
+        });
+        break;
       case 'e':
         context.sections.push({
           name: 'main',
@@ -739,6 +749,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
+                      { type: 'button', link: '/dashboard/contact', title: this.props.t('contact') },
                       { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
                       { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
                       { type: 'divider' },

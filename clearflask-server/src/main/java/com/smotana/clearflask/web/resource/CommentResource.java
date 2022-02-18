@@ -210,7 +210,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .getCommentModel().toComment(sanitizer);
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse commentHistogramAdmin(String projectId, HistogramSearchAdmin histogramSearchAdmin) {

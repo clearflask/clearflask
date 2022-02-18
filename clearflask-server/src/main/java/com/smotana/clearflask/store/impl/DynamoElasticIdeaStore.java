@@ -85,6 +85,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -899,6 +900,17 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 searchResponseWithCursor.getCursorOpt(),
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
                 searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
+    }
+
+    @Override
+    public long countIdeas(String projectId) {
+        try {
+            return elastic.count(new CountRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+                            RequestOptions.DEFAULT)
+                    .getCount();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override

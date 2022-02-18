@@ -35,6 +35,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.GitHubStatusSync;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.CommentStore.CommentAndIndexingFuture;
@@ -153,6 +154,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     private Sanitizer sanitizer;
     @Inject
     private ColorUtil colorUtil;
+    @Inject
+    private Billing billing;
 
     private final JsonPath changesBodyJsonPath = JsonPath.compile("changes.body");
     private TableSchema<GitHubAuthorization> gitHubAuthorizationSchema;
@@ -470,6 +473,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             case "deleted":
                 try {
                     ideaStore.deleteIdea(project.getProjectId(), ideaId, true);
+                    billing.recordUsage(Billing.UsageType.POST_DELETED, project.getAccountId(), project.getProjectId());
                 } catch (ConditionalCheckFailedException ex) {
                     // Issue was probably created before integration was setup and doesn't exist
                 }

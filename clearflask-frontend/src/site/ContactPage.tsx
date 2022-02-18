@@ -155,7 +155,8 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
   }
 
   render() {
-    const prefixMatch = this.props.match.url.replace(/\/$/, '');
+    const prefixMatch = this.props.match.url.match(/^.*contact/)?.[0];
+    if (!prefixMatch) return null;
     return (
       <MuiAnimatedSwitch>
         <Route exact key='success' path={`${prefixMatch}/success`} render={props => (

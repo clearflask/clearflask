@@ -32,6 +32,7 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.catalog.api.BillingPeriod;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -64,14 +66,21 @@ import java.util.stream.Stream;
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
+    /** If changed, also change in UpgradeWrapper.tsx */
+    private static final long STARTER_MAX_POSTS = 30L;
+    /** If changed, also change in UpgradeWrapper.tsx */
+    private static final long GROWTH_MAX_TEAMMATES = 2L;
+    /** If changed, also change in UpgradeWrapper.tsx */
+    private static final long STANDARD_MAX_TEAMMATES = 8L;
     /** If changed, also change in BillingPage.tsx */
     private static final String ADDON_WHITELABEL = "whitelabel";
     /** If changed, also change in BillingPage.tsx */
     private static final String ADDON_PRIVATE_PROJECTS = "private-projects";
     /** If changed, also change in BillingPage.tsx */
     private static final String ADDON_EXTRA_PROJECT = "extra-project";
+    private static final String TERMS_POSTS = "Keep your project tidy and delete old posts to stay within the limits.";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
-    private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project.";
+    private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project including yourself.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
     private static final String TERMS_SSO_AND_OAUTH = "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook";
@@ -83,6 +92,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_BILLING = "Custom billing and invoicing";
     private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
+            "starter-unlimited",
             "growth2-monthly",
             "standard2-monthly",
             "flat-yearly");
@@ -101,16 +111,23 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
                     null, null))
+            .put("starter-unlimited", pp -> new Plan("starter-unlimited", "Starter",
+                    pp, ImmutableList.of(
+                    new PlanPerk(STARTER_MAX_POSTS + " ideas", TERMS_POSTS),
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Unlimited users", null)),
+                    null, null))
             .put("growth2-monthly", pp -> new Plan("growth2-monthly", "Growth",
                     pp, ImmutableList.of(
-                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
-                    new PlanPerk("Roadmap", null),
-                    new PlanPerk("Announcements", null)),
+                    new PlanPerk("Unlimited ideas", null),
+                    new PlanPerk(GROWTH_MAX_TEAMMATES + " Teammates", TERMS_ADMINS),
+                    new PlanPerk("Scalable pricing", null)),
                     null, null))
             .put("standard2-monthly", pp -> new Plan("standard2-monthly", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("Teammates", TERMS_ADMINS),
+                    new PlanPerk(STANDARD_MAX_TEAMMATES + " Teammates", TERMS_ADMINS),
+                    new PlanPerk("Integrations & API", null),
                     new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH)),
                     null, null))
             // Available only on external marketplace via coupons
@@ -193,7 +210,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
-                    new PlanPerk("Flat annual price", null),
+                    new PlanPerk("Flat price", null),
+                    new PlanPerk("Annual invoicing", null),
                     new PlanPerk("Whitelabel", null),
                     new PlanPerk("Support & SLA", null)),
                     null, null),
@@ -204,25 +222,26 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
-            ImmutableList.of("Growth", "Standard", "Flat"),
+            ImmutableList.of("Starter", "Growth", "Standard", "Flat"),
             ImmutableList.of(
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Tracked users", ImmutableList.of("No limit", "No limit", "No limit"), null),
-                    new FeaturesTableFeatures("Teammates", ImmutableList.of("1", "8", "No limit"), TERMS_ADMINS),
-                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
-                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
-                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), TERMS_WHITELABEL),
-                    new FeaturesTableFeatures("Volume discount", ImmutableList.of("No", "No", "Yes"), null),
-                    new FeaturesTableFeatures("Billing & Invoicing", ImmutableList.of("No", "No", "Yes"), TERMS_BILLING)
+                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit", "No limit"), TERMS_PROJECTS),
+                    new FeaturesTableFeatures("Tracked users", ImmutableList.of("No limit", "No limit", "No limit", "No limit"), null),
+                    new FeaturesTableFeatures("Posts", ImmutableList.of(Long.toString(STARTER_MAX_POSTS), "No limit", "No limit", "No limit"), TERMS_POSTS),
+                    new FeaturesTableFeatures("Teammates", ImmutableList.of("1", Long.toString(GROWTH_MAX_TEAMMATES), Long.toString(STANDARD_MAX_TEAMMATES), "No limit"), TERMS_ADMINS),
+                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
+                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
+                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
+                    new FeaturesTableFeatures("API", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_API),
+                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_GITHUB),
+                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
+                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "No", "Yes"), TERMS_WHITELABEL),
+                    new FeaturesTableFeatures("Volume discount", ImmutableList.of("No", "No", "No", "Yes"), null),
+                    new FeaturesTableFeatures("Billing & Invoicing", ImmutableList.of("No", "No", "No", "Yes"), TERMS_BILLING)
             ), null);
 
     @Inject
@@ -304,7 +323,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     .map(Double::valueOf)
                     .map(Double::longValue)
                     .orElse(0L);
-            PlanPricing planPricing = PlanPricing.builder()
+            PlanPricing planPricing = (basePrice == 0L && unitPrice == 0L) ? null
+                    : PlanPricing.builder()
                     .basePrice(basePrice)
                     .baseMau(baseMau)
                     .unitPrice(unitPrice)
@@ -362,6 +382,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 break;
             case TEAMMATE_PLAN_ID:
             case "pro-lifetime":
+            case "starter-unlimited":
             case "pitchground-a-lifetime":
             case "pitchground-b-lifetime":
             case "pitchground-c-lifetime":
@@ -529,11 +550,36 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     verifyTeammateInviteMeetsPlanRestrictions(planId, project.getProjectId(), false);
                 });
 
+        verifyAccountMeetsLimits(planId, accountId);
+
         verifyProjectCountMeetsPlanRestrictions(planId, accountId, false);
 
         if (!Strings.isNullOrEmpty(account.getApiKey())) {
             verifyActionMeetsPlanRestrictions(planId, accountId, Action.API_KEY);
         }
+    }
+
+    @Override
+    public void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException {
+        if (isAccountExceedsPostLimit(planId, accountId)) {
+            throw new RequiresUpgradeException("growth2-monthly", "Maximum number of posts reached, please delete old ones");
+        }
+    }
+
+    @Override
+    public boolean isAccountExceedsPostLimit(String planId, String accountId) {
+        OptionalLong maxPostsOpt = OptionalLong.empty();
+        switch (planId) {
+            case "starter-unlimited":
+                maxPostsOpt = OptionalLong.of(STARTER_MAX_POSTS);
+            default:
+                // No limit
+        }
+        if (maxPostsOpt.isPresent()
+                && accountStore.getPostCountForAccount(accountId) > maxPostsOpt.getAsLong()) {
+            return true;
+        }
+        return false;
     }
 
     /** If changed, also change in UpgradeWrapper.tsx */
@@ -554,6 +600,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         throw new RequiresUpgradeException("growth2-monthly", "Not allowed to use API without a plan");
                 }
                 return;
+            case "starter-unlimited":
             case "growth-monthly":
             case "growth2-monthly":
             case "pitchground-a-lifetime":
@@ -563,9 +610,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         throw new RequiresUpgradeException("standard2-monthly", "Not allowed to use API on your plan");
                 }
                 return;
-            case "standard-monthly":
-            case "standard2-monthly":
-            case "flat-yearly":
+            default:
+                // No restriction
         }
     }
 
@@ -581,6 +627,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         switch (getBasePlanId(planId)) {
             case TEAMMATE_PLAN_ID:
                 throw new RequiresUpgradeException("growth2-monthly", "Not allowed to have projects without a plan");
+            case "starter-unlimited":
             case "growth-monthly":
             case "growth2-monthly":
             case "pro-lifetime":
@@ -680,8 +727,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Optional<Long> teammateLimitOpt = Optional.empty();
         String requiredPlanId = "flat-yearly";
         switch (getBasePlanId(planId)) {
-            case "growth-monthly":
-            case "growth2-monthly":
+            case "starter-unlimited":
             case "pro-lifetime":
             case "pitchground-a-lifetime":
                 teammateLimitOpt = Optional.of(1L);
@@ -695,9 +741,14 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 teammateLimitOpt = Optional.of(5L);
                 requiredPlanId = "standard2-monthly";
                 break;
+            case "growth-monthly":
+            case "growth2-monthly":
+                teammateLimitOpt = Optional.of(GROWTH_MAX_TEAMMATES);
+                requiredPlanId = "standard2-monthly";
+                break;
             case "standard-monthly":
             case "standard2-monthly":
-                teammateLimitOpt = Optional.of(8L);
+                teammateLimitOpt = Optional.of(STANDARD_MAX_TEAMMATES);
                 break;
             case "pitchground-d-lifetime":
                 teammateLimitOpt = Optional.of(10L);
@@ -705,7 +756,12 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "pitchground-e-lifetime":
                 teammateLimitOpt = Optional.of(25L);
                 break;
+            case "flat-yearly":
+                break; // No limit
             default:
+                if (LogUtil.rateLimitAllowLog("killbillplanstore-teammates-unknown-limit")) {
+                    log.warn("Plan {} has no defined teammate limit", getBasePlanId(planId));
+                }
         }
         if (teammateLimitOpt.isPresent()) {
             if (teammateLimitOpt.get() == 1L) {

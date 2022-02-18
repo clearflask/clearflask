@@ -55,6 +55,7 @@ const EPitchGroundRestrictedProperties: Path[] = [
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
+  'starter-unlimited': GrowthRestrictedProperties,
   'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,
@@ -69,8 +70,9 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
-  'growth-monthly': 1,
-  'growth2-monthly': 1,
+  'starter-unlimited': 2,
+  'growth-monthly': 2,
+  'growth2-monthly': 2,
   'pro-lifetime': 1,
   'pitchground-a-lifetime': 1,
   'pitchground-b-lifetime': 3,
@@ -102,11 +104,14 @@ export enum Action {
 }
 /** If changed, also change in KillBillPlanStore.java */
 export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
+  'starter-unlimited': new Set([Action.API_KEY]),
   'growth-monthly': new Set([Action.API_KEY]),
   'growth2-monthly': new Set([Action.API_KEY]),
   'pitchground-a-lifetime': new Set([Action.API_KEY]),
   'pitchground-b-lifetime': new Set([Action.API_KEY]),
 };
+/** If changed, also change in KillBillPlanStore.java */
+export const StarterMaxPosts = 30;
 
 const styles = (theme: Theme) => createStyles({
   outer: {

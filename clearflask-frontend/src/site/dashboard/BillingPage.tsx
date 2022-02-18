@@ -21,7 +21,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
-import { TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import { StarterMaxPosts, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import CreditCard from '../../common/CreditCard';
 import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
@@ -320,6 +320,20 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           planTitle = 'Your plan is active until the end of the billing cycle';
         }
         planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
+        break;
+      case Admin.SubscriptionStatus.Limited:
+        paymentTitle = 'Automatic renewal is active';
+        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
+        cardState = 'active';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showCancelSubscription = true;
+        planTitle = 'Your plan is limited';
+        planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to going over your plan limits. Please resolve all issues to continue using our service.`;
+        if (hasAvailablePlansToSwitch) {
+          planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
+          showPlanChange = true;
+        }
         break;
       case Admin.SubscriptionStatus.NoPaymentMethod:
         paymentTitle = 'Automatic renewal is inactive';
@@ -712,6 +726,19 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Box gridArea='mauAmt' display='flex'>
                   <Typography component='div' variant='h5'>
                     {this.props.accountBilling.trackedUsers}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            {(this.props.accountBilling?.postCount !== undefined) && (
+              <Box display='grid' gridTemplateAreas='"postCountLbl postCountAmt"' alignItems='baseline' gridGap='10px 10px'>
+                <Box gridArea='postCountLbl'><Typography component='div'>Post count:</Typography></Box>
+                <Box gridArea='postCountAmt' display='flex'>
+                  <Typography component='div' variant='h5' color={
+                    this.props.account.basePlanId === 'starter-unlimited'
+                      && this.props.accountBilling.postCount > StarterMaxPosts
+                      ? 'error' : undefined}>
+                    {this.props.accountBilling.postCount}
                   </Typography>
                 </Box>
               </Box>

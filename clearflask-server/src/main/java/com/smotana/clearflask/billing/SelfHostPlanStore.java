@@ -80,6 +80,16 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
+    public void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException {
+        // No-op
+    }
+
+    @Override
+    public boolean isAccountExceedsPostLimit(String planId, String accountId) {
+        return false;
+    }
+
+    @Override
     public void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException {
         // No-op
     }

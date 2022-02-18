@@ -166,7 +166,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   renderPriceTag() {
-    if (this.props.customPrice !== undefined && !this.props.plan.pricing) {
+    if (this.props.customPrice !== undefined) {
       return (
         <>
           <div className={this.props.classes.cardPricing}>

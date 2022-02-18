@@ -7,6 +7,7 @@ import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
 import { AllTourActions, reducerTour, ReduxStateTour, stateTourDefault } from '../common/tour';
 import Cache from '../common/util/cache';
+import debounce from '../common/util/debounce';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
@@ -28,7 +29,7 @@ export interface Project {
   resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
 
-export type AllActionsAdmin = Admin.Actions | AllTourActions;
+export type AllActionsAdmin = Admin.Actions | AllTourActions | billingClearAction;
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
@@ -36,7 +37,7 @@ export default class ServerAdmin {
   readonly projects: { [projectId: string]: Project } = {};
   readonly dispatcherAdmin: Admin.Dispatcher;
   readonly dispatchDebounceCache = new Cache(1000);
-  readonly store: Store<ReduxStateAdmin, Admin.Actions>;
+  readonly store: Store<ReduxStateAdmin, AllActionsAdmin>;
 
   constructor() {
     if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
@@ -72,7 +73,7 @@ export default class ServerAdmin {
     return ServerAdmin.instance;
   }
 
-  getStore(): Store<ReduxStateAdmin, Admin.Actions> {
+  getStore(): Store<ReduxStateAdmin, AllActionsAdmin> {
     return this.store;
   }
 
@@ -198,8 +199,29 @@ export default class ServerAdmin {
     const state = this.store.getState();
     return !!state.account.account.account?.accountId;
   }
+
+  _onForbidenAttemptRebindDebounced = debounce(async () => {
+    if (this.store.getState().account.account.account) {
+      const dispatcherAdmin = await this.dispatchAdmin();
+      const result = await dispatcherAdmin.accountBindAdmin({ accountBindAdmin: {} });
+      if (result.account) {
+        await dispatcherAdmin.configGetAllAndUserBindAllAdmin();
+      }
+    } else {
+      for (const server of this.getServers()) {
+        const slug = server.getStore().getState().conf.conf?.slug;
+        if (slug) {
+          await (await server.dispatch()).configAndUserBindSlug({ slug, userBind: {} });
+        }
+      }
+    }
+  }, 10000, true)
+  onForbidenAttemptRebind() {
+    this._onForbidenAttemptRebindDebounced();
+  }
 }
 
+interface billingClearAction { type: 'billingClear' }
 export interface StateAccount {
   isSuperAdmin: boolean;
   account: {
@@ -305,6 +327,11 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: AllAc
       return {
         ...stateAccountDefault,
         isSuperAdmin: state.isSuperAdmin,
+      };
+    case 'billingClear':
+      return {
+        ...state,
+        billing: {},
       };
     default:
       return state;

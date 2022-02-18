@@ -465,6 +465,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             projectStore.deleteProject(projectId);
             ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
+            billing.recordUsage(Billing.UsageType.POST_DELETED, account.getAccountId(), projectId);
             draftStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
             voteStore.deleteAllForProject(projectId);

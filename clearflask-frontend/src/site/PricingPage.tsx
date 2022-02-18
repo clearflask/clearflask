@@ -51,6 +51,17 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     ),
   },
   {
+    heading: 'What are the limits on ideas/posts?',
+    body: (
+      <>
+        <p>
+          Some plans may have a limit on content specifically the number of ideas/posts.
+          This is a soft limit as users will continue to be able to submit more content, but as an Administrator you won't be able to perform any actions until you clean up old content to comply with the limits.
+        </p>
+      </>
+    ),
+  },
+  {
     heading: 'Open-Source, Non-Profit or Non-Commercial?',
     body: (
       <>
@@ -118,6 +129,13 @@ const styles = (theme: Theme) => createStyles({
   billingSelect: {
     margin: theme.spacing(3),
   },
+  plansToggle: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  plansToggleButton: {
+    padding: theme.spacing(0, 2),
+  },
   image: {
     maxWidth: theme.breakpoints.values.md,
     padding: theme.spacing(0, 8),
@@ -153,48 +171,56 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   }
 
   render() {
-
-    const plans = [
-      (
-        <PricingPlan
-          key='community'
-          plan={{
-            basePlanId: 'community',
-            title: 'Community',
-            pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
-            perks: [
-              { desc: 'Self-hosted' },
-              { desc: 'Quick-start Docker deploy' },
-              { desc: 'Community supported' },
-            ],
-          }}
-          overrideMauTerms={[
-            'Open source',
-            'AGPLv3 License',
-          ]}
-          actionTitle='Install it'
-          remark='Join our community'
-          actionOnClick={() => {
-            trackingBlock(() => {
-              ReactGA.event({
-                category: 'pricing',
-                action: 'click-plan',
-                label: 'community',
-              });
-            });
-          }}
-          actionToExt='https://github.com/clearflask/clearflask#self-hosting'
-        />
-      ),
-      ...(this.props.plans || []).map((plan, index) => (
+    // const communityPlan = (
+    //   <PricingPlan
+    //     key='community'
+    //     plan={{
+    //       basePlanId: 'community',
+    //       title: 'Community',
+    //       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+    //       perks: [
+    //         { desc: 'Open-source AGPLv3' },
+    //         { desc: 'Quickstart deploy' },
+    //         { desc: 'Community supported' },
+    //       ],
+    //     }}
+    //     overrideMauTerms={[
+    //       'Self-hosted',
+    //       'Own your data',
+    //     ]}
+    //     actionTitle='Install it'
+    //     remark='Join our community'
+    //     actionOnClick={() => {
+    //       trackingBlock(() => {
+    //         ReactGA.event({
+    //           category: 'pricing',
+    //           action: 'click-plan',
+    //           label: 'community',
+    //         });
+    //       });
+    //     }}
+    //     actionToExt='https://github.com/clearflask/clearflask#self-hosting'
+    //   />
+    // );
+    const plansAll: JSX.Element[] = [];
+    for (const plan of this.props.plans || []) {
+      const pricingPlan = (
         <PricingPlan
           key={plan.basePlanId}
-          customPrice='1000+'
+          customPrice={plan.basePlanId === 'flat-yearly' ? '1000+' : undefined}
+          overrideMauTerms={plan.basePlanId === 'starter-unlimited' ? [
+            'Free forever',
+            'Upgrade anytime',
+          ] : undefined}
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId
-            || this.state.callForQuote && !plan.pricing}
-          actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          remark={plan.pricing ? this.props.t('free-14-day-trial') : this.props.t('let-us-help-you')}
+            || this.state.callForQuote && plan.basePlanId === 'flat-yearly'}
+          actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+          remark={plan.basePlanId === 'starter-unlimited'
+            ? this.props.t('free-forever')
+            : (plan.pricing
+              ? this.props.t('free-14-day-trial')
+              : this.props.t('let-us-help-you'))}
           actionOnClick={() => {
             trackingBlock(() => {
               ReactGA.event({
@@ -204,27 +230,18 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
               });
             });
           }}
-          actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
+          actionTo={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd())
             ? {
               pathname: '/signup',
               state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
             }
             : '/contact/sales'}
         />
-      )),
-    ];
-
-    const plansGrouped: React.ReactNode[] = [];
-    for (var i = 0; i < plans.length; i += 2) {
-      const left = plans[i];
-      const right = plans[i + 1];
-      plansGrouped.push((
-        <div key={`${left?.key}-${right?.key}`} className={classNames(this.props.classes.subSectionPlans)}>
-          {left}
-          {right}
-        </div>
-      ));
+      );
+      plansAll.push(pricingPlan);
     }
+
+    const plansAllGrouped = this.groupPlans(plansAll);
 
     return (
       <>
@@ -253,7 +270,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <Loader loaded={!!this.props.plans} skipFade>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {plansGrouped}
+              {plansAllGrouped}
             </div>
             <PricingSlider
               className={this.props.classes.pricingSlider}
@@ -319,6 +336,21 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         default: return value;
       }
     });
+  }
+
+  groupPlans(plans: JSX.Element[]): JSX.Element[] {
+    const plansGrouped: JSX.Element[] = [];
+    for (var i = 0; i < plans.length; i += 2) {
+      const left = plans[i];
+      const right = plans[i + 1];
+      plansGrouped.push((
+        <div key={`${left?.key}-${right?.key}`} className={classNames(this.props.classes.subSectionPlans)}>
+          {left}
+          {right}
+        </div>
+      ));
+    }
+    return plansGrouped;
   }
 }
 

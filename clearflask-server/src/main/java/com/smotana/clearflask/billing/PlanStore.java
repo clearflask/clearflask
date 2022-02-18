@@ -32,6 +32,7 @@ public interface PlanStore {
     String TEAMMATE_PLAN_ID = "teammate-unlimited";
 
     ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(
+            "starter-unlimited",
             TEAMMATE_PLAN_ID,
             "pro-lifetime",
             "pitchground-a-lifetime",
@@ -58,6 +59,10 @@ public interface PlanStore {
     String prettifyPlanName(String planIdOrPrettyPlanName);
 
     void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException;
+
+    void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException;
+
+    boolean isAccountExceedsPostLimit(String planId, String accountId);
 
     void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException;
 

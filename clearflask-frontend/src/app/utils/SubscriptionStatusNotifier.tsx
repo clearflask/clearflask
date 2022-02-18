@@ -1,23 +1,27 @@
 // SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: AGPL-3.0-only
 import { Button } from '@material-ui/core';
-import { useSnackbar, VariantType } from 'notistack';
+import { SnackbarKey, useSnackbar, VariantType } from 'notistack';
 import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
+import ServerAdmin from '../../api/serverAdmin';
 
-var wasShown = false;
+var lastShown: Admin.SubscriptionStatus | undefined;
+var lastKey: SnackbarKey;
 const SubscriptionStatusNotifier = (props: {
   account: Admin.AccountAdmin
 }) => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const history = useHistory();
 
-  if (wasShown) return null;
-  wasShown = true;
+  if (lastShown === props.account.subscriptionStatus) return null;
+  lastShown = props.account.subscriptionStatus;
+  closeSnackbar(lastKey);
 
   var persist: boolean = true;
   var variant: VariantType = 'info';
   var content: string | undefined;
+  var billingButtonTitle = 'Billing';
   switch (props.account.subscriptionStatus) {
     case Admin.SubscriptionStatus.Active:
     case Admin.SubscriptionStatus.ActiveTrial:
@@ -31,9 +35,15 @@ const SubscriptionStatusNotifier = (props: {
       content = 'Your account will soon expire';
       persist = false;
       break;
+    case Admin.SubscriptionStatus.Limited:
+      variant = 'warning';
+      content = 'You have reached your plan limit, please delete some posts';
+      billingButtonTitle = 'Check again';
+      break;
     case Admin.SubscriptionStatus.NoPaymentMethod:
       variant = 'warning';
       content = 'Please add a payment method';
+      billingButtonTitle = 'Add';
       break;
     case Admin.SubscriptionStatus.Blocked:
       variant = 'error';
@@ -46,18 +56,19 @@ const SubscriptionStatusNotifier = (props: {
   }
 
   if (content) {
-    enqueueSnackbar(content, {
+    lastKey = enqueueSnackbar(content, {
       variant,
       preventDuplicate: true,
       persist,
       action: (key) => (
         <Button
           color='inherit'
-          onClick={() => {
+          onClick={async () => {
+            await ServerAdmin.get().getStore().dispatch({ type: 'billingClear' });
             history.push('/dashboard/settings/account/billing');
-            closeSnackbar(key);
+            !persist && closeSnackbar(key);
           }}
-        >Billing</Button>
+        >{billingButtonTitle}</Button>
       ),
     });
   }

@@ -5,7 +5,6 @@ package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
@@ -84,9 +83,11 @@ public interface Billing {
 
     void creditAdjustment(String accountId, long amount, String description);
 
-    ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId);
+    void recordUsage(UsageType type, String accountId, String projectId);
 
-    ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, UserModel user);
+    void recordUsage(UsageType type, String accountId, String projectId, String userId);
+
+    void recordUsage(UsageType type, String accountId, String projectId, UserModel user);
 
     void finalizeInvoice(String accountId, UUID invoiceId);
 
@@ -134,6 +135,7 @@ public interface Billing {
 
     enum UsageType {
         POST,
+        POST_DELETED,
         COMMENT,
         VOTE
     }

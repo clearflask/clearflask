@@ -17,6 +17,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -130,6 +131,8 @@ public class KillBillResource extends ManagedService {
     private ClearFlaskCreditSync clearFlaskCreditSync;
     @Inject
     private NotificationService notificationService;
+    @Inject
+    private PlanStore planStore;
 
     private ImmutableSet<ExtBusEventType> eventsToListenForCached = ImmutableSet.of();
 
@@ -308,6 +311,8 @@ public class KillBillResource extends ManagedService {
 
         Optional<String> planNameOpt = invoice.getItems().stream()
                 .map(InvoiceItem::getPrettyPlanName)
+                .filter(p -> !Strings.isNullOrEmpty(p))
+                .map(planStore::prettifyPlanName)
                 .findAny();
         String summary = planNameOpt.map(n -> "Credit for " + n + " plan").orElse("Credit for payment");
 

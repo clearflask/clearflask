@@ -849,6 +849,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             trackedUsers = accountStore.getUserCountForAccount(account.getAccountId());
         }
 
+        Long postCount = null;
+        if ("starter-unlimited".equals(plan.getBasePlanId())) {
+            postCount = accountStore.getPostCountForAccount(account.getAccountId());
+        }
+
         Instant billingPeriodEnd = null;
         if (subscription.getPhaseType() == PhaseType.EVERGREEN
                 && subscription.getChargedThroughDate() != null) {
@@ -885,6 +890,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
                 (trackedUsers == null || trackedUsers <= 0) ? null : trackedUsers,
+                postCount,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,

@@ -55,6 +55,8 @@ public interface AccountStore {
 
     long getUserCountForAccount(String accountId);
 
+    long getPostCountForAccount(String accountId);
+
     AccountAndIndexingFuture setPlan(String accountId, String planid, Optional<ImmutableMap<String, String>> addons);
 
     Account updateAddons(String accountId, Map<String, String> addons, boolean overwriteMap);

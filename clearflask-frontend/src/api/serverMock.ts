@@ -19,6 +19,7 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
 const termsProjects = 'You can create separate projects each having their own set of users and content';
+const termsPosts = 'Keep your project tidy and delete old posts to stay within the limits.';
 const TeammatePlan: Admin.Plan = {
   basePlanId: TeammatePlanId, title: 'Teammate',
   perks: [
@@ -27,13 +28,21 @@ const TeammatePlan: Admin.Plan = {
   ],
 };
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
+  'starter-unlimited': {
+    basePlanId: 'starter-unlimited', title: 'Starter',
+    perks: [
+      { desc: '30 ideas', terms: termsPosts },
+      { desc: 'Unlimited projects', terms: termsProjects },
+      { desc: 'Unlimited users' },
+    ],
+  },
   'growth2-monthly': {
     basePlanId: 'growth2-monthly', title: 'Growth',
     pricing: { basePrice: 10, baseMau: 50, unitPrice: 10, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Roadmap' },
-      { desc: 'Changelog' },
+      { desc: 'Unlimited ideas' },
+      { desc: '2 Teammmates' },
     ],
   },
   'standard2-monthly': {
@@ -41,7 +50,7 @@ const AvailablePlans: { [planId: string]: Admin.Plan } = {
     pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Private projects' },
-      { desc: 'Teammates' },
+      { desc: '8 Teammates' },
       { desc: 'SSO and OAuth' },
     ],
   },
@@ -443,6 +452,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
       billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       trackedUsers: 341,
+      postCount: 32,
       availablePlans: Object.values(AvailablePlans).filter(p => p.basePlanId !== 'flat-yearly'),
       invoices: {
         cursor: 'one more',

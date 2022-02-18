@@ -206,6 +206,7 @@ components:
       - ActiveTrial
       - ActivePaymentRetry
       - ActiveNoRenewal
+      - Limited
       - NoPaymentMethod
       - Blocked
       - Cancelled
@@ -295,6 +296,9 @@ components:
           type: string
           format: date-time
         trackedUsers:
+          type: integer
+          format: int64
+        postCount:
           type: integer
           format: int64
         availablePlans:

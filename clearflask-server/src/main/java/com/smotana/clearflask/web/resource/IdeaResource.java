@@ -311,7 +311,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 10)
     @Override
     public HistogramResponse ideaHistogramAdmin(String projectId, IdeaHistogramSearchAdmin ideaHistogramSearchAdmin) {
@@ -416,7 +416,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         searchResponse.isTotalHitsGte() ? true : null));
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
@@ -502,17 +502,27 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public void ideaDelete(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId, false);
         commentStore.deleteCommentsForIdea(projectId, ideaId);
+
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserSession::getUserId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
+        Project project = projectStore.getProject(projectId, true).get();
+        billing.recordUsage(Billing.UsageType.POST_DELETED, project.getAccountId(), project.getProjectId(), userId);
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId, true);
         commentStore.deleteCommentsForIdea(projectId, ideaId);
+
+        Project project = projectStore.getProject(projectId, true).get();
+        billing.recordUsage(Billing.UsageType.POST_DELETED, project.getAccountId(), project.getProjectId());
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteBulkAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin) {
@@ -531,6 +541,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());
             searchResponse.getIdeaIds().forEach(ideaId -> commentStore.deleteCommentsForIdea(projectId, ideaId));
         } while (!searchResponse.getCursorOpt().isPresent());
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+        billing.recordUsage(Billing.UsageType.POST_DELETED, accountId, projectId);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR})

@@ -2,15 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.billing;
 
-
 import com.google.common.base.Strings;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -433,11 +430,18 @@ public class KillBilling extends ManagedService implements Billing {
      * Active : - Subscription active
      * Active : - No outstanding balance
      * Active : - Not overdue
+     * Active --> Limited : Plan exceeds limits
      * Active --> ActivePaymentRetry : Outstanding balance
      * Active --> ActiveNoRenewal : Cancel subscription
      * Active --> Active : Update payment
      * Active --> Active : Change plan
      * Active --> [*] : Delete account
+     *
+     * Limited : - Subscription active
+     * Limited : - Limited functionality
+     * Limited : - ie exceeded plan max posts
+     * Limited --> Active : Plan within limits
+     * Limited --> [*] : Delete account
      *
      * Blocked : - Not TRIAL phase
      * Blocked : - Phase is BLOCKED
@@ -484,22 +488,23 @@ public class KillBilling extends ManagedService implements Billing {
         boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
         Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent())::get;
+        Supplier<Boolean> isLimited = Suppliers.memoize(() -> isAccountLimited(account.getExternalKey(), subscription.getPlanName()))::get;
 
         if (EntitlementState.BLOCKED.equals(subscription.getState()) || isOverdueCancelled) {
             status = BLOCKED;
         } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
-            status = ACTIVETRIAL;
+            status = isLimited.get() ? LIMITED : ACTIVETRIAL;
         } else if (subscription.getState() == EntitlementState.ACTIVE
                 && subscription.getCancelledDate() == null
                 && !hasOutstandingBalance
                 && !isOverdueUnpaid
                 && !isOverdueCancelled) {
-            status = ACTIVE;
+            status = isLimited.get() ? LIMITED : ACTIVE;
         } else if (EntitlementState.CANCELLED.equals(subscription.getState())) {
             status = CANCELLED;
         } else if (EntitlementState.ACTIVE.equals(subscription.getState())
                 && subscription.getCancelledDate() != null) {
-            status = ACTIVENORENEWAL;
+            status = isLimited.get() ? LIMITED : ACTIVENORENEWAL;
         } else if (hasPaymentMethod.get()
                 && hasOutstandingBalance
                 && !isOverdueUnpaid) {
@@ -518,6 +523,15 @@ public class KillBilling extends ManagedService implements Billing {
                     status, account, subscription, overdueState, hasPaymentMethod.get());
         }
         return status;
+    }
+
+    private boolean isAccountLimited(String accountId, String planId) {
+        try {
+            planStore.verifyAccountMeetsLimits(planId, accountId);
+        } catch (ApiException ex) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -720,8 +734,8 @@ public class KillBilling extends ManagedService implements Billing {
             Subscription subscriptionInKb = getSubscription(accountId);
 
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccount(accountId, false).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
-            if (status != ACTIVETRIAL && status != ACTIVE) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
+            if (status != ACTIVETRIAL && status != ACTIVE && status != LIMITED) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan when not in good standing: " + status);
             }
 
             PhaseType newPhase;
@@ -1098,23 +1112,33 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Override
-    public ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId) {
-        return recordUsage(type, accountId, projectId, userId, Optional.empty());
+    public void recordUsage(UsageType type, String accountId, String projectId) {
+        recordUsage(type, accountId, projectId, Optional.empty(), Optional.empty());
     }
 
     @Override
-    public ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, UserModel user) {
-        return recordUsage(type, accountId, projectId, user.getUserId(), Optional.of(user));
+    public void recordUsage(UsageType type, String accountId, String projectId, String userId) {
+        recordUsage(type, accountId, projectId, Optional.of(userId), Optional.empty());
     }
 
-    private ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId, Optional<UserModel> userOpt) {
+    @Override
+    public void recordUsage(UsageType type, String accountId, String projectId, UserModel user) {
+        recordUsage(type, accountId, projectId, Optional.of(user.getUserId()), Optional.of(user));
+    }
+
+    private void recordUsage(UsageType type, String accountId, String projectId, Optional<String> userIdOpt, Optional<UserModel> userOpt) {
+        userIdOpt.ifPresent(s -> recordTrackedUsers(type, accountId, projectId, s, userOpt));
+        recordPostCountChanged(type, accountId);
+    }
+
+    private void recordTrackedUsers(UsageType type, String accountId, String projectId, String userId, Optional<UserModel> userOpt) {
         if (!config.usageRecordEnabled()) {
-            return Futures.immediateFuture(null);
+            return;
         }
         if ((userOpt.isPresent() && userOpt.get().getIsTracked() == Boolean.TRUE)) {
-            return Futures.immediateFuture(null);
+            return;
         }
-        return usageExecutor.submit(() -> {
+        usageExecutor.submit(() -> {
             try {
                 if (!config.usageRecordEnabled()) {
                     return null;
@@ -1126,6 +1150,51 @@ public class KillBilling extends ManagedService implements Billing {
             } catch (Throwable th) {
                 if (LogUtil.rateLimitAllowLog("killbilling-usage-record-fail")) {
                     log.warn("Failed to execute usage recording", th);
+                }
+            }
+            return null;
+        });
+    }
+
+    private void recordPostCountChanged(UsageType type, String accountId) {
+        if (!config.usageRecordEnabled()) {
+            return;
+        }
+        boolean increased;
+        switch (type) {
+            case POST:
+                increased = true;
+                break;
+            case POST_DELETED:
+                increased = false;
+                break;
+            default:
+                return;
+        }
+        AccountStore.Account account = accountStore.getAccount(accountId, true).get();
+        if (!"starter-unlimited".equals(account.getPlanid())) {
+            return;
+        }
+        if (SubscriptionStatus.LIMITED.equals(account.getStatus()) == increased) {
+            return;
+        }
+        usageExecutor.submit(() -> {
+            try {
+                if (!config.usageRecordEnabled()) {
+                    return null;
+                }
+                Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountId, false);
+                if (accountOpt.isEmpty()) {
+                    return null;
+                }
+                updateAndGetEntitlementStatus(
+                        accountOpt.get().getStatus(),
+                        getAccount(accountId),
+                        getSubscription(accountId),
+                        "Post delete");
+            } catch (Throwable th) {
+                if (LogUtil.rateLimitAllowLog("killbilling-usage-record-post-delete-fail")) {
+                    log.warn("Failed to execute post delete usage recording", th);
                 }
             }
             return null;

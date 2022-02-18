@@ -46,6 +46,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -136,6 +137,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private RestHighLevelClient elastic;
     @Inject
     private UserStore userStore;
+    @Inject
+    private IdeaStore ideaStore;
 
     private TableSchema<Account> accountSchema;
     private IndexSchema<Account> accountByApiKeySchema;
@@ -353,6 +356,14 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .map(Collection::stream)
                 .orElse(Stream.empty())
                 .mapToLong(userStore::getUserCountForProject)
+                .sum();
+    }
+
+    @Override
+    public long getPostCountForAccount(String accountId) {
+        return getAccount(accountId, false).stream()
+                .flatMap(account -> account.getProjectIds().stream())
+                .mapToLong(ideaStore::countIdeas)
                 .sum();
     }
 
