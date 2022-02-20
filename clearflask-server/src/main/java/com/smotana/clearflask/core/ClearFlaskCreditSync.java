@@ -98,7 +98,7 @@ public class ClearFlaskCreditSync extends ManagedService {
                         + config.projectId()
                         + "."
                         + configApp.domain()
-                        + "/api/project/"
+                        + "/api/v1/project/"
                         + config.projectId()
                         + "/admin/credit/income");
         req.setHeader(EXTERNAL_API_AUTH_HEADER_NAME_TOKEN, config.apiKey());
