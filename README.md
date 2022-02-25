@@ -210,11 +210,6 @@ Although discouraged, you can run ClearFlask over HTTP only. Ensure these settin
 - `connect.config.json:forceRedirectHttpToHttps`: `false`
 - `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `false`
 
-##### Self-managed reverse-proxy
-
-If instead you wish to manage certificates yourself using a reverse proxy, set the following properties to redirect to
-https and trust the last reverse proxy in the list:
-
 #### Dashboard account
 
 For you to manage the dashboard, you need to whitelist an email to be able to create a super-admin account:
