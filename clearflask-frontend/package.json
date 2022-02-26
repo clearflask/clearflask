@@ -104,7 +104,7 @@
     "node-fetch": "2.6.7",
     "notistack": "1.0.10",
     "oidc-client": "1.10.1",
-    "prismjs": "1.25.0",
+    "prismjs": "1.27.0",
     "push.js": "1.0.9",
     "query-string": "6.13.1",
     "querystring": "0.2.0",
