@@ -22,6 +22,16 @@
 
 Listen to your users during product development with [ClearFlask](https://clearflask.com/)
 <br />Open-source Feedback Management Tool.
+  
+<br />
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
+  
+<br />
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
 
 </div>
 
