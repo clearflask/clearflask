@@ -22,6 +22,16 @@
 
 Listen to your users during product development with [ClearFlask](https://clearflask.com/)
 <br />Open-source Feedback Management Tool.
+  
+<br />
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
+  
+<br />
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
+
+<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
 
 </div>
 
@@ -209,11 +219,6 @@ Although discouraged, you can run ClearFlask over HTTP only. Ensure these settin
 - `connect.config.json:disableAutoFetchCertificate`: `true`
 - `connect.config.json:forceRedirectHttpToHttps`: `false`
 - `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `false`
-
-##### Self-managed reverse-proxy
-
-If instead you wish to manage certificates yourself using a reverse proxy, set the following properties to redirect to
-https and trust the last reverse proxy in the list:
 
 #### Dashboard account
 
