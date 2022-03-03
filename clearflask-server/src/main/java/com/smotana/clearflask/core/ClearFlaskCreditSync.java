@@ -38,6 +38,9 @@ public class ClearFlaskCreditSync extends ManagedService {
         boolean enabled();
 
         @NoDefaultValue
+        String projectSlug();
+
+        @NoDefaultValue
         String projectId();
 
         @NoDefaultValue
@@ -95,7 +98,7 @@ public class ClearFlaskCreditSync extends ManagedService {
 
         HttpPost req = new HttpPost(
                 "https://"
-                        + config.projectId()
+                        + config.projectSlug()
                         + "."
                         + configApp.domain()
                         + "/api/v1/project/"
