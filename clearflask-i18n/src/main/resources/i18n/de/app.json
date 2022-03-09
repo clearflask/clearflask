@@ -13,6 +13,7 @@
   "password-0": "Passwort",
   "balance-0": "Kontostand",
   "is-moderator": "Ist Moderator",
+  "account": "Konto",
   "yes": "Ja",
   "no": "Nein",
   "user-id": "Nutzer ID",
@@ -39,6 +40,7 @@
   "add-tags": "Tags hinzufügen",
   "add-description": "Beschreibung hinzufügen",
   "unlink": "Verlinkung aufheben",
+  "cancel": "Abbrechen",
   "unmerge": "Verbindung auflösen",
   "changed-to": "geändert in",
   "add-a-response": "Antwort hinzufügen",
@@ -92,5 +94,8 @@
   "comments": "Kommentare",
   "want": "Möchte",
   "hate": "Hass",
-  "accept-cookie": "Akzeptieren"
+  "cookie-consent": "Cookie Zustimmung",
+  "we-use-cookies-to": "Wir verwenden Cookies, um Inhalte zu personalisieren und unsere Benutzer besser zu verstehen.",
+  "accept-cookie": "Akzeptieren",
+  "reject-cookie": "Ablehnen"
 }
