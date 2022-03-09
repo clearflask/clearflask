@@ -5,9 +5,11 @@ import i18n, { InitOptions } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
 import FlagAdd from '../public/img/flag/add.png';
+import FlagCy from '../public/img/flag/cy.svg';
 import FlagDe from '../public/img/flag/de.svg';
 import FlagEs from '../public/img/flag/es.svg';
 import FlagFr from '../public/img/flag/fr.svg';
+import FlagKr from '../public/img/flag/kr.svg';
 import FlagMn from '../public/img/flag/mn.svg';
 import FlagSk from '../public/img/flag/sk.svg';
 import FlagUa from '../public/img/flag/ua.svg';
@@ -38,13 +40,15 @@ export const supportedLanguages: Array<SupportedLanguage>
    * - Find language label in https://en.wikipedia.org/wiki/List_of_language_names
    */
   = [
-    { code: 'de', img: FlagDe, label: 'Deutsch', perc: 0.19 },
+    { code: 'cy', img: FlagCy, label: 'Cymraeg', perc: 0.01 },
+    { code: 'de', img: FlagDe, label: 'Deutsch', perc: 0.42 },
     { code: 'en', img: FlagEn, label: 'English', perc: 1 },
     { code: 'es', img: FlagEs, label: 'Español', perc: .04 },
-    { code: 'uk', img: FlagUa, label: 'Українська', perc: .01 },
     { code: 'fr', img: FlagFr, label: 'Français', perc: 0.01 },
+    { code: 'ko', img: FlagKr, label: '한국어', perc: .03 },
     { code: 'mn', img: FlagMn, label: 'Монгол', perc: 0.35 },
     { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 0.99 },
+    { code: 'uk', img: FlagUa, label: 'Українська', perc: .01 },
     ...(isProd() ? [] : [
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
     ]),
