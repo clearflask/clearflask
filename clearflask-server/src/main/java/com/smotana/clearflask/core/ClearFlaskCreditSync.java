@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.core;
 
-import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -19,6 +18,7 @@ import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -105,7 +105,7 @@ public class ClearFlaskCreditSync extends ManagedService {
                         + config.projectId()
                         + "/admin/credit/income");
         req.setHeader(EXTERNAL_API_AUTH_HEADER_NAME_TOKEN, config.apiKey());
-        req.setEntity(new StringEntity(bodyStr, Charsets.UTF_8));
+        req.setEntity(new StringEntity(bodyStr, ContentType.APPLICATION_JSON));
         try (CloseableHttpResponse res = client.execute(req)) {
             if (res.getStatusLine().getStatusCode() < 200
                     || res.getStatusLine().getStatusCode() > 299) {

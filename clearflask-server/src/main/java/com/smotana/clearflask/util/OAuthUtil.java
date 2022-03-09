@@ -12,6 +12,8 @@ import com.jayway.jsonpath.JsonPathException;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -48,7 +50,11 @@ public class OAuthUtil {
             String clientId,
             String clientSecret,
             String code) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        try (CloseableHttpClient client = HttpClientBuilder.create()
+                // Fixes ResponseProcessCookies "Invalid cookie header ... Invalid 'expires' attribute"
+                // Sent by linkedin during OAuth flow with expiry in the past
+                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+                .build()) {
             HttpPost reqAuthorize = new HttpPost(tokenUrl);
             reqAuthorize.setHeader("Accept", "application/json");
             reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
