@@ -54,6 +54,7 @@ import DiscordIcon from '../../common/icon/DiscordIcon';
 import DynamicMuiIcon from '../../common/icon/DynamicMuiIcon';
 import GitlabIcon from '../../common/icon/GitlabIcon';
 import GoogleIcon from '../../common/icon/GoogleIcon';
+import LinkedInIcon from '../../common/icon/LinkedInIcon';
 import MicrosoftIcon from '../../common/icon/MicrosoftIcon';
 import TwitchIcon from '../../common/icon/TwitchIcon';
 import Message from '../../common/Message';
@@ -1603,6 +1604,17 @@ const OauthPrefilled: {
     emailJsonPath: 'mail',
     icon: 'Microsoft',
   },
+  LinkedIn: {
+    authorizeUrl: 'https://www.linkedin.com/oauth/v2/authorization',
+    tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
+    scope: 'r_liteprofile r_emailaddress',
+    userProfileUrl: 'https://api.linkedin.com/v2/me',
+    guidJsonPath: 'id',
+    nameJsonPath: 'firstName',
+    emailUrl: 'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
+    emailJsonPath: "$.['handle~'].emailAddress",
+    icon: 'LinkedIn',
+  },
 };
 export const ProjectSettingsUsersOauth = (props: {
   server: Server;
@@ -1676,6 +1688,7 @@ export const ProjectSettingsUsersOauth = (props: {
                 <MenuItem value='Discord'><DiscordIcon />&nbsp;&nbsp;&nbsp;Discord</MenuItem>
                 <MenuItem value='Twitch'><TwitchIcon />&nbsp;&nbsp;&nbsp;Twitch</MenuItem>
                 <MenuItem value='Azure'><MicrosoftIcon />&nbsp;&nbsp;&nbsp;Azure</MenuItem>
+                <MenuItem value='LinkedIn'><LinkedInIcon />&nbsp;&nbsp;&nbsp;LinkedIn</MenuItem>
                 <MenuItem value='Custom'><CustomIcon />&nbsp;&nbsp;&nbsp;Other</MenuItem>
               </Select>
             </FormControl>
@@ -1699,6 +1712,7 @@ export const ProjectSettingsUsersOauth = (props: {
               <Collapse mountOnEnter in={newOauthType === 'Discord'}>Visit <MuiLink href="https://discordapp.com/developers/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Twitch'}>Visit <MuiLink href="https://glass.twitch.tv/console/apps/create" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Azure'}>Visit <MuiLink href="https://portal.azure.com/" rel="noreferrer noopener" target="_blank">here</MuiLink> -&gt; "Azure Active Directory" -&gt; "App Registrations" to get started.</Collapse>
+              <Collapse mountOnEnter in={newOauthType === 'LinkedIn'}>Visit <MuiLink href="https://www.linkedin.com/developers/tools/oauth/token-generator" rel="noreferrer noopener" target="_blank">here</MuiLink> to get started. After you create an App, enable "Sign In with LinkedIn" under Products tab.</Collapse>
               <p>Once you are done, fill these out:</p>
               <TextField
                 className={classes.usersOauthAddProp}

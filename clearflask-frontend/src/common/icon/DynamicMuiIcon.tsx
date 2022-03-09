@@ -9,6 +9,7 @@ import GitlabIcon from './GitlabIcon';
 import GoogleIcon from './GoogleIcon';
 import GuestIcon from './GuestIcon';
 import LinkAltIcon from './LinkAltIcon';
+import LinkedInIcon from './LinkedInIcon';
 import LockSimpleIcon from './LockSimpleIcon';
 import LogoutIcon from './LogoutIcon';
 import MicrosoftIcon from './MicrosoftIcon';
@@ -28,6 +29,7 @@ const IconOverrides = {
   'Discord': DiscordIcon,
   'Microsoft': MicrosoftIcon,
   'Twitch': TwitchIcon,
+  'LinkedIn': LinkedInIcon,
   'Pin': PinIcon,
   'LinkAlt': LinkAltIcon,
   'UnLinkAlt': UnLinkAltIcon,
