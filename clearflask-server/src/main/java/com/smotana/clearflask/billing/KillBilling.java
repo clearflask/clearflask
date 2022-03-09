@@ -139,6 +139,10 @@ public class KillBilling extends ManagedService implements Billing {
 
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
+
+        /** TODO temporarily disabled by default until confirmed to be working fine */
+        @DefaultValue("false")
+        boolean enableDeleteProjectForBlockedAccount();
     }
 
     @Inject
@@ -506,15 +510,13 @@ public class KillBilling extends ManagedService implements Billing {
                 && subscription.getCancelledDate() != null) {
             status = isLimited.get() ? LIMITED : ACTIVENORENEWAL;
         } else if (hasPaymentMethod.get()
-                && hasOutstandingBalance
-                && !isOverdueUnpaid) {
+                && hasOutstandingBalance) {
             status = ACTIVEPAYMENTRETRY;
         } else if (!hasPaymentMethod.get()
-                && hasOutstandingBalance
-                && !isOverdueCancelled) {
+                && hasOutstandingBalance) {
             status = NOPAYMENTMETHOD;
         } else {
-            status = BLOCKED;
+            status = ACTIVE;
             log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
                     status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get());
         }
@@ -547,9 +549,14 @@ public class KillBilling extends ManagedService implements Billing {
                 notificationService.onTrialEnded(account.getExternalKey(), account.getEmail(), paymentOpt.isPresent());
             } else if (BLOCKED.equals(currentStatus)) {
                 // Delete all projects to free up resources
-                AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
-                accountInDyn.getProjectIds()
-                        .forEach(projectId -> projectResource.projectDeleteAdmin(accountInDyn, projectId));
+                if (config.enableDeleteProjectForBlockedAccount()) {
+                    AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
+                    accountInDyn.getProjectIds()
+                            .forEach(projectId -> projectResource.projectDeleteAdmin(accountInDyn, projectId));
+                } else {
+                    log.error("ACTION REQUIRED: Project not deleted for blocked account, status {} account {} email {} reason {}",
+                            currentStatus, account.getExternalKey(), account.getEmail(), reason);
+                }
             }
         }
         return newStatus;
@@ -738,11 +745,18 @@ public class KillBilling extends ManagedService implements Billing {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change plan when not in good standing: " + status);
             }
 
+            boolean newPlanHasNoTrial = PlanStore.PLANS_WITHOUT_TRIAL.contains(planId);
+
             PhaseType newPhase;
-            if (PlanStore.TEAMMATE_PLAN_ID.equals(subscriptionInKb.getPlanName())) {
+            if (!newPlanHasNoTrial && PlanStore.TEAMMATE_PLAN_ID.equals(subscriptionInKb.getPlanName())) {
                 // Teammate plan is essentially a non-plan plan,
                 // user had no trial yet, so let's give them a trial
                 // to prevent creating new accounts
+                newPhase = PhaseType.TRIAL;
+            } else if (!newPlanHasNoTrial && "starter-unlimited".equals(subscriptionInKb.getPlanName())) {
+                // Started plan has a limit of ideas, users can switch one time
+                // to a paid plan and they deserve their trial. Some users may switch to
+                // a paid plan before using their starter plan for two weeks
                 newPhase = PhaseType.TRIAL;
             } else {
                 // Even though we are using START_OF_SUBSCRIPTION changeAlignment
@@ -751,7 +765,7 @@ public class KillBilling extends ManagedService implements Billing {
                 // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
                 switch (subscriptionInKb.getPhaseType()) {
                     case TRIAL:
-                        if (PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
+                        if (newPlanHasNoTrial) {
                             newPhase = PhaseType.EVERGREEN;
                         } else {
                             newPhase = PhaseType.TRIAL;
