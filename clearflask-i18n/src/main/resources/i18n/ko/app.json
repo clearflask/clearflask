@@ -1,1 +1,18 @@
-{}
+{
+  "powered-by": "제공",
+  "comment": "코멘트",
+  "changed-to": "변경함 :",
+  "how-can-we-help": "어떻게 도와드릴까요?",
+  "how-can-we-improve-our-product": "제품을 어떻게 개선할까요?",
+  "how-can-we-improve": "어떻게 개선할까요?",
+  "see-what-were-working-on-next": "다음 작업을 확인하세요",
+  "check-out-our-recent-updates": "최근 업데이트를 확인하세요",
+  "later": "나중에",
+  "next": "다음",
+  "now": "현재",
+  "changes-we-made": "변경사항",
+  "idea": "아이디어",
+  "describe-your-idea-optional": "아이디어를 설명해 주세요 (선택사항)",
+  "post-idea": "아이디어 게시하기",
+  "want": "원함"
+}
