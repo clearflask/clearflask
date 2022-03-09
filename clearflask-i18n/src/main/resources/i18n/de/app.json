@@ -10,6 +10,7 @@
   "registered": "Registriert",
   "cannot-be-changed": "Kann nicht geändert werden",
   "none": "Keine",
+  "password-0": "Passwort",
   "balance-0": "Kontostand",
   "is-moderator": "Ist Moderator",
   "yes": "Ja",
@@ -43,7 +44,10 @@
   "add-a-response": "Antwort hinzufügen",
   "welcome": "Herzlich willkommen",
   "how-can-we-help": "Wie können wir helfen?",
+  "feedback": "Feedback",
+  "roadmap": "Zeitplan",
   "announcements": "Ankündigungen",
+  "changelog": "Änderungsverlauf",
   "how-can-we-improve-our-product": "Wie können wir Ihre Erfahrung verbessern?",
   "how-can-we-improve": "Was können wir besser machen?",
   "see-what-were-working-on-next": "Sehen Sie, woran wir als nächstes arbeiten.",
@@ -85,6 +89,8 @@
   "add-new-post": "Neuen Post hinzufügen",
   "get-notified-of-replies": "Über Antworten benachrichtigt werden",
   "posts": "Beiträge",
+  "comments": "Kommentare",
   "want": "Möchte",
-  "hate": "Hass"
+  "hate": "Hass",
+  "accept-cookie": "Akzeptieren"
 }
