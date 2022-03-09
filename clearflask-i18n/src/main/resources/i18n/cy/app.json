@@ -1,1 +1,17 @@
-{}
+{
+  "avatar": "Afatar",
+  "displayname": "Enw arddangos",
+  "email": "Ebost",
+  "balance": "Gweddill",
+  "powered-by": "Pwerir gan",
+  "create-user": "Creu defnyddiwr",
+  "save": "Arbed",
+  "info": "Gwybodaeth",
+  "registered": "Cofrestrwyd",
+  "cannot-be-changed": "Ni ellir ei newid",
+  "none": "Dim",
+  "balance-0": "Gweddill",
+  "is-moderator": "Yn gymedrolwr",
+  "yes": "Ie",
+  "no": "Na"
+}
