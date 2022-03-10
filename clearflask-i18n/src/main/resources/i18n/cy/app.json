@@ -13,5 +13,18 @@
   "balance-0": "Gweddill",
   "is-moderator": "Yn gymedrolwr",
   "yes": "Ie",
-  "no": "Na"
+  "no": "Na",
+  "user-id": "ID Defnyddwr",
+  "sign-out-of-your-account": "Allgofnodi o'ch cyfrif",
+  "please-add-an-email-before": "Ychwanegwch e-bost cyn allgofnodi neu dilëwch eich cyfrif yn lle hynny.",
+  "delete-account": "Dileu cyfrif",
+  "delete": "Dileu",
+  "notifications": "Hysbysiadau",
+  "browser-desktop-messages": "Negeseuon bwrdd gwaith porwr",
+  "new-category": "{{category}} newydd",
+  "subscribed": "Tanysgrifio",
+  "not-subscribed": "Heb danysgrifio",
+  "receiving": "Derbyn",
+  "not-receiving": "Ddim yn derbyn",
+  "enabled": "Wedi ei alluogi"
 }
