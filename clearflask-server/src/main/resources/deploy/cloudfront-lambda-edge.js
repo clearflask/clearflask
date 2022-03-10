@@ -8,7 +8,7 @@
 'use strict';
 
 // ADD NEW LANGUAGE HERE
-const allowedLanguages = new Set(['en', 'mn', 'sk', 'fr', 'de']);
+const allowedLanguages = new Set(['en', 'ar', 'zh', 'cy', 'cs', 'da', 'de', 'el', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'mn', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'sk', 'fi', 'sv', 'uk']);
 
 exports.handler = (event, context, callback) => {
   const request = event.Records[0].cf.request;
