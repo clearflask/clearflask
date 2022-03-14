@@ -191,7 +191,7 @@ or `192.168.1.123`, set the following properties:
 
 #### Certificate management
 
-#### Automagic using Let's Encrypt
+##### Automagic using Let's Encrypt
 
 If you wish to have certificates fetched and renewed for you automagically using Let's Encrypt, ensure your DNS is
 correctly pointing to your server, it is publicly accessible, and set the following config parameters:
@@ -203,7 +203,7 @@ correctly pointing to your server, it is publicly accessible, and set the follow
 
 Once you load your site for the first time, a Certificate is auto-magically fetched for you.
 
-#### Self-managed behind reverse proxy
+##### Self-managed behind reverse proxy
 
 If you are managing TLS certificates behind a reverse proxy, redirect all `http` requests to `https`, set the following
 config:
@@ -212,7 +212,7 @@ config:
 - `connect.config.json:forceRedirectHttpToHttps`: `true`
 - `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
 
-#### No certificates
+##### No certificates
 
 Although discouraged, you can run ClearFlask over HTTP only. Ensure these settings are set:
 
