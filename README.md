@@ -176,10 +176,11 @@ ClearFlask consists of two components:
 
 ### Setup
 
-1. Download or build the artifact `clearflask-release-*-docker-compose-self-host.tar.gz` from
-   the [latest release](https://github.com/clearflask/clearflask/packages/955621)
-2. Carefully read and modify `server/config-selfhost.cfg`.
-3. Carefully read and modify `connect/connect.config.json`.
+1. Download the [Docker Compose service file](clearflask-release/src/main/docker/compose/docker-compose.self-host.yml)
+2. Run it with `docker-compose --profile with-deps up` which creates few configuration files in your local directory
+3. Carefully read and modify `server/config-selfhost.cfg`.
+4. Carefully read and modify `connect/connect.config.json`.
+5. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
 
 #### DNS
 
