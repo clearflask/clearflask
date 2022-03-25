@@ -2,17 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.util;
 
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.common.Strings;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.InternalServerErrorException;
 
-/**
- * Used for intercepting registration of already registered beans. Handles it by re-registering instead of throwing.
- */
 @Slf4j
 public class IpUtil {
     public static String getRemoteIp(HttpServletRequest request, ServiceInjector.Environment env) {

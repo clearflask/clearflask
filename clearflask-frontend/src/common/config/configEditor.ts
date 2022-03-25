@@ -106,6 +106,7 @@ export enum PropSubType {
   Multiline = 'multiline',
   Rich = 'rich',
   Icon = 'icon',
+  Language = 'language',
 }
 export interface xCfPropLink {
   /** Path to array */

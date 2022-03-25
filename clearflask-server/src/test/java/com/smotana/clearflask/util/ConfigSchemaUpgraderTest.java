@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package com.smotana.clearflask.util;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -367,7 +368,8 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
             "  \"projectId\": \"mock\",\n" +
             "  \"name\": \"Sandbox App\",\n" +
             "  \"slug\": \"mock\",\n" +
-            "  \"ssoSecretKey\": \"63195fc1-d8c0-4909-9039-e15ce3c96dce\"\n" +
+            "  \"ssoSecretKey\": \"63195fc1-d8c0-4909-9039-e15ce3c96dce\",\n" +
+            "  \"hideLang\": true\n" +
             "}";
 
     @Inject
@@ -408,5 +410,6 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
                 .poweredBy(Whitelabel.PoweredByEnum.SHOW)
                 .build(), config.getStyle().getWhitelabel());
         assertEquals(CookieConsent.builder().build(), config.getCookieConsent());
+        assertEquals(ImmutableList.of(), config.getLangWhitelist().getLangs());
     }
 }

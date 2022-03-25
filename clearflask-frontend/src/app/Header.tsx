@@ -301,8 +301,8 @@ class Header extends Component<Props & ConnectProps & WithTranslation<'app'> & W
         />
       );
     } else {
-      const languageSelect = !!this.props.config?.hideLang ? undefined : (
-        <LanguageSelect noFade />
+      const languageSelect = this.props.config?.langWhitelist?.langs.length === 0 ? undefined : (
+        <LanguageSelect noFade whitelist={this.props.config?.langWhitelist?.langs} />
       );
       var rightSide;
       if (this.props.config && this.props.loggedInUser) {

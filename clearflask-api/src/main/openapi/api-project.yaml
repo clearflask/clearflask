@@ -53,9 +53,18 @@ components:
         domain:
           x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
           type: string
-        hideLang:
-          x-clearflask-prop: { order: 6, name: 'Language', description: 'Determine whether to show or hide language selection', falseAsUndefined: true, trueLabel: 'Hidden', falseLabel: 'Shown'  }
-          type: boolean
+        langWhitelist:
+          x-clearflask-prop: { order: 10, name: 'Whitelist languages', description: 'Show only a subset of languages or none at all.' }
+          title: LangWhitelist
+          type: object
+          required:
+          - langs
+          properties:
+            langs:
+              x-clearflask-prop: { order: 6, subType: 'language', name: 'Languages', description: 'Only allows users to select these langauges. Keep blank to hide language selection. If user locale is outside of this list, that language will also be shown.' }
+              type: array
+              items:
+                type: string
         noIndex:
           x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed'  }
           type: boolean

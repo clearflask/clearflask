@@ -49,17 +49,20 @@ const styles = (theme: Theme) => createStyles({
       orientation: Orientation.Vertical,
       backgroundColor: theme.palette.background.paper,
     }),
-    height: 300,
-    maxHeight: '100vh',
+    maxHeight: 'min(300px, 100vh)',
+    height: 'fit-content',
   },
 });
 const useStyles = makeStyles(styles);
 export const LanguageSelect = (props: {
   noFade?: boolean;
+  whitelist?: string[];
 }) => {
   const { i18n } = useTranslation();
   const classes = useStyles();
   const [anchor, setAnchor] = useState<HTMLButtonElement>();
+
+  const whitelistSet = props.whitelist ? new Set(props.whitelist) : undefined;
 
   return (
     <IconButton
@@ -80,7 +83,7 @@ export const LanguageSelect = (props: {
         <div className={classes.table}>
           <Table size='medium'>
             <TableBody>
-              {supportedLanguages.map(lang => (
+              {supportedLanguages.filter(lang => !whitelistSet || lang.code === i18n.language || whitelistSet.has(lang.code)).map(lang => (
                 <TableRow
                   key={lang.code}
                   hover

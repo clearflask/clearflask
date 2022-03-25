@@ -74,6 +74,17 @@ public class ConfigSchemaUpgrader {
             hasChanged = true;
         }
 
+        // Transform "hideLang" to "langWhitelist"
+        if (configObject.has("hideLang")) {
+            if (configObject.get("hideLang").getAsBoolean()) {
+                JsonObject langWhitelist = new JsonObject();
+                langWhitelist.add("langs", new JsonArray());
+                configObject.add("langWhitelist", langWhitelist);
+            }
+            configObject.remove("hideLang");
+            hasChanged = true;
+        }
+
         // Important notes:
         // - Make sure the upgrade is idempotent, update hasChanged if necessary
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded

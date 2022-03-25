@@ -11,6 +11,7 @@ import { Server } from '../../../api/server';
 import { DemoUpdateDelay } from '../../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import Loading from '../../../app/utils/Loading';
+import { supportedLanguages } from '../../../i18n';
 import LanguageKeySelect from '../../../LanguageKeySelect';
 import { importFailed, importSuccess } from '../../../Main';
 import DynamicMuiIcon from '../../icon/DynamicMuiIcon';
@@ -408,7 +409,40 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
         break;
       case ConfigEditor.PageGroupType:
       case ConfigEditor.PropertyType.Array:
-        if (prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
+        if (prop.type === ConfigEditor.PropertyType.Array && prop.subType === ConfigEditor.PropSubType.Language) {
+          const values: Label[] = [];
+          const options: Label[] = [];
+          const selected = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.StringProperty).value));
+          supportedLanguages.forEach(lang => {
+            const label = { label: lang.label, value: lang.code };
+            options.push(label);
+            if (selected.has(lang.code)) {
+              values.push(label);
+            }
+          });
+          propertySetter = (
+            <SelectionPicker
+              TextFieldProps={{
+                variant: 'outlined',
+                size: 'small',
+                ...this.props.TextFieldProps,
+              }}
+              label={this.props.bare ? undefined : name}
+              helperText={this.props.bare ? undefined : description}
+              placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
+              errorMsg={prop.errorMsg}
+              value={values}
+              options={options}
+              isMulti
+              clearOnBlur
+              width={this.props.width || 'max-content'}
+              minWidth={inputMinWidth}
+              onValueChange={labels => prop
+                .setRaw(labels.map(label => label.value))}
+              {...this.props.SelectionPickerProps}
+            />
+          );
+        } else if (prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
           const values: Label[] = [];
           const options: Label[] = [];
           const enumValues = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.EnumProperty)

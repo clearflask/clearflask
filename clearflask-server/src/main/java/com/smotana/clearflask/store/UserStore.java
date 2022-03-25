@@ -35,6 +35,7 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -84,7 +85,7 @@ public interface UserStore {
 
     UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
 
-    ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
+    Future<Optional<BulkResponse>> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
     String createToken(String projectId, String userId, Duration ttl);
 

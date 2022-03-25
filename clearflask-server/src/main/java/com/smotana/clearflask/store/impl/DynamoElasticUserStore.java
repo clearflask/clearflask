@@ -129,6 +129,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -903,8 +904,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds) {
+    public Future<Optional<BulkResponse>> deleteUsers(String projectId, ImmutableCollection<String> userIds) {
+        if (userIds.isEmpty()) {
+            return Futures.immediateFuture(Optional.empty());
+        }
         ImmutableCollection<UserModel> users = getUsers(projectId, userIds).values();
+        if (users.isEmpty()) {
+            return Futures.immediateFuture(Optional.empty());
+        }
         dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(userSchema.tableName()).withPrimaryKeysToDelete(users.stream()
                 .map(userModel -> userSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -937,7 +944,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                 .collect(ImmutableList.toImmutableList())),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
-        return indexingFuture;
+        return Futures.lazyTransform(indexingFuture, Optional::of);
     }
 
     @Override
