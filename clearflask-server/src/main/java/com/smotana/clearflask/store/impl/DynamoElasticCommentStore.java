@@ -56,6 +56,7 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ApiException;
@@ -75,6 +76,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -222,6 +224,39 @@ public class DynamoElasticCommentStore implements CommentStore {
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
+    }
+
+    @Extern
+    @Override
+    public void reindex(String projectId, boolean deleteExistingIndex) throws Exception {
+        boolean indexAlreadyExists = elastic.indices().exists(
+                new GetIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
+                RequestOptions.DEFAULT);
+        if (indexAlreadyExists && deleteExistingIndex) {
+            elastic.indices().delete(
+                    new DeleteIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
+                    RequestOptions.DEFAULT);
+        }
+        if (!indexAlreadyExists || deleteExistingIndex) {
+            createIndex(projectId).get();
+        }
+
+        StreamSupport.stream(commentByProjectIdSchema.index().query(new QuerySpec()
+                                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(commentByProjectIdSchema::fromItem)
+                .filter(comment -> projectId.equals(comment.getProjectId()))
+                .forEach(comment -> elastic.indexAsync(commentToEsIndexRequest(comment),
+                        RequestOptions.DEFAULT, ActionListeners.onFailure(ex -> {
+                            if (LogUtil.rateLimitAllowLog("dynamoelasticcommentstore-reindex-failure")) {
+                                log.warn("Failed to re-index comment {}", comment.getCommentId(), ex);
+                            }
+                        })));
     }
 
     @Extern
@@ -744,25 +779,29 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     private void indexComment(SettableFuture<WriteResponse> indexingFuture, CommentModel comment) {
-        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .id(comment.getCommentId())
-                        .source(gson.toJson(ImmutableMap.builder()
-                                .put("ideaId", comment.getIdeaId())
-                                .put("parentCommentIds", comment.getParentCommentIds())
-                                .put("level", comment.getLevel())
-                                .put("childCommentCount", comment.getChildCommentCount())
-                                .put("authorUserId", orNull(comment.getAuthorUserId()))
-                                .put("authorName", orNull(comment.getAuthorName()))
-                                .put("authorIsMod", orNull(comment.getAuthorIsMod()))
-                                .put("created", comment.getCreated().getEpochSecond())
-                                .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
-                                .put("content", orNull(comment.getContentAsText(sanitizer)))
-                                .put("upvotes", comment.getUpvotes())
-                                .put("downvotes", comment.getDownvotes())
-                                .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
-                                .build()), XContentType.JSON),
+        elastic.indexAsync(commentToEsIndexRequest(comment),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+    }
+
+    private IndexRequest commentToEsIndexRequest(CommentModel comment) {
+        return new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
+                .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                .id(comment.getCommentId())
+                .source(gson.toJson(ImmutableMap.builder()
+                        .put("ideaId", comment.getIdeaId())
+                        .put("parentCommentIds", comment.getParentCommentIds())
+                        .put("level", comment.getLevel())
+                        .put("childCommentCount", comment.getChildCommentCount())
+                        .put("authorUserId", orNull(comment.getAuthorUserId()))
+                        .put("authorName", orNull(comment.getAuthorName()))
+                        .put("authorIsMod", orNull(comment.getAuthorIsMod()))
+                        .put("created", comment.getCreated().getEpochSecond())
+                        .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
+                        .put("content", orNull(comment.getContentAsText(sanitizer)))
+                        .put("upvotes", comment.getUpvotes())
+                        .put("downvotes", comment.getDownvotes())
+                        .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
+                        .build()), XContentType.JSON);
     }
 
     public static Module module() {

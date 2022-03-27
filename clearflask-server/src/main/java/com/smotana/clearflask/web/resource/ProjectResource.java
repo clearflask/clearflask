@@ -455,8 +455,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @Extern
-    public void projectDeleteAdmin(String accountId, String projectId) {
-        projectDeleteAdmin(accountStore.getAccount(accountId, true).get(), projectId);
+    private void projectDeleteAdminExtern(String projectId) {
+        Project project = projectStore.getProject(projectId, true).get();
+        projectDeleteAdmin(accountStore.getAccount(project.getAccountId(), true).get(), projectId);
     }
 
     public void projectDeleteAdmin(Account account, String projectId) {
@@ -778,6 +779,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         } while (searchAccountsResponseOpt
                 .flatMap(AccountStore.SearchAccountsResponse::getCursorOpt)
                 .isPresent());
+    }
+
+    @Extern
+    private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
+        ideaStore.reindex(projectId, deleteExistingIndices);
+        userStore.reindex(projectId, deleteExistingIndices);
+        commentStore.reindex(projectId, deleteExistingIndices);
     }
 
     public static Module module() {

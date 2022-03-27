@@ -109,6 +109,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -223,7 +224,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private WebhookService webhookService;
 
     private TableSchema<UserModel> userSchema;
-    private IndexSchema<UserModel> userByProjectSchema;
+    private IndexSchema<UserModel> userByProjectIdSchema;
     private TableSchema<IdentifierUser> identifierToUserIdSchema;
     private IndexSchema<IdentifierUser> identifierByProjectIdSchema;
     private TableSchema<UserSession> sessionByIdSchema;
@@ -234,7 +235,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private void setup() {
         userSchema = dynamoMapper.parseTableSchema(UserModel.class);
-        userByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, UserModel.class);
+        userByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, UserModel.class);
         identifierToUserIdSchema = dynamoMapper.parseTableSchema(IdentifierUser.class);
         identifierByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
         sessionByIdSchema = dynamoMapper.parseTableSchema(UserSession.class);
@@ -295,6 +296,39 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
+    }
+
+    @Extern
+    @Override
+    public void reindex(String projectId, boolean deleteExistingIndex) throws Exception {
+        boolean indexAlreadyExists = elastic.indices().exists(
+                new GetIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+                RequestOptions.DEFAULT);
+        if (indexAlreadyExists && deleteExistingIndex) {
+            elastic.indices().delete(
+                    new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+                    RequestOptions.DEFAULT);
+        }
+        if (!indexAlreadyExists || deleteExistingIndex) {
+            createIndex(projectId).get();
+        }
+
+        StreamSupport.stream(userByProjectIdSchema.index().query(new QuerySpec()
+                                .withHashKey(userByProjectIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(userByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(userByProjectIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(userByProjectIdSchema::fromItem)
+                .filter(user -> projectId.equals(user.getProjectId()))
+                .forEach(user -> elastic.indexAsync(userToEsIndexRequest(user),
+                        RequestOptions.DEFAULT, ActionListeners.onFailure(ex -> {
+                            if (LogUtil.rateLimitAllowLog("dynamoelsaticuserstore-reindex-failure")) {
+                                log.warn("Failed to re-index user {}", user.getUserId(), ex);
+                            }
+                        })));
     }
 
     @Override
@@ -463,15 +497,15 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Override
     public void exportAllForProject(String projectId, Consumer<UserModel> consumer) {
-        StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
-                                .withHashKey(userByProjectSchema.partitionKey(Map.of(
+        StreamSupport.stream(userByProjectIdSchema.index().query(new QuerySpec()
+                                .withHashKey(userByProjectIdSchema.partitionKey(Map.of(
                                         "projectId", projectId)))
-                                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
-                                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                                .withRangeKeyCondition(new RangeKeyCondition(userByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(userByProjectIdSchema.rangeValuePartial(Map.of()))))
                         .pages()
                         .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(userByProjectSchema::fromItem)
+                .map(userByProjectIdSchema::fromItem)
                 .filter(user -> projectId.equals(user.getProjectId()))
                 .forEach(consumer);
     }
@@ -1274,15 +1308,15 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete users
-        Iterables.partition(StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
-                                        .withHashKey(userByProjectSchema.partitionKey(Map.of(
+        Iterables.partition(StreamSupport.stream(userByProjectIdSchema.index().query(new QuerySpec()
+                                        .withHashKey(userByProjectIdSchema.partitionKey(Map.of(
                                                 "projectId", projectId)))
-                                        .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
-                                                .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                                        .withRangeKeyCondition(new RangeKeyCondition(userByProjectIdSchema.rangeKeyName())
+                                                .beginsWith(userByProjectIdSchema.rangeValuePartial(Map.of()))))
                                 .pages()
                                 .spliterator(), false)
                         .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                        .map(userByProjectSchema::fromItem)
+                        .map(userByProjectIdSchema::fromItem)
                         .filter(user -> projectId.equals(user.getProjectId()))
                         .map(UserModel::getUserId)
                         .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
@@ -1358,17 +1392,21 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     private void indexUser(SettableFuture<WriteResponse> indexingFuture, UserModel user) {
-        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .id(user.getUserId())
-                        .source(gson.toJson(ImmutableMap.of(
-                                "name", orNull(user.getName()),
-                                "email", orNull(user.getEmail()),
-                                "created", orNull(user.getCreated().getEpochSecond()),
-                                "balance", orNull(user.getBalance()),
-                                "isMod", user.getIsMod() == Boolean.TRUE
-                        )), XContentType.JSON),
+        elastic.indexAsync(userToEsIndexRequest(user),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+    }
+
+    private IndexRequest userToEsIndexRequest(UserModel user) {
+        return new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))
+                .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                .id(user.getUserId())
+                .source(gson.toJson(ImmutableMap.of(
+                        "name", orNull(user.getName()),
+                        "email", orNull(user.getEmail()),
+                        "created", orNull(user.getCreated().getEpochSecond()),
+                        "balance", orNull(user.getBalance()),
+                        "isMod", user.getIsMod() == Boolean.TRUE
+                )), XContentType.JSON);
     }
 
     private String hashIdentifier(String identifier) {

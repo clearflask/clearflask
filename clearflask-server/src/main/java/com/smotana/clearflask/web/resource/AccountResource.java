@@ -127,6 +127,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         @DefaultValue("true")
         boolean signupEnabled();
+
+        /** For testing only, allow signup and plan changes to any plan */
+        @DefaultValue("false")
+        boolean enableNonPublicPlans();
     }
 
     public static final String SUPER_ADMIN_AUTH_COOKIE_NAME = "cf_sup_auth";
@@ -446,7 +450,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         } else if (isTeammate) {
             planId = PlanStore.TEAMMATE_PLAN_ID;
         } else {
-            planId = preferredPlanIdOpt.flatMap(pId -> planStore.getPublicPlans().getPlans().stream()
+            planId = preferredPlanIdOpt.flatMap(pId -> (config.enableNonPublicPlans()
+                            ? planStore.getAllPlans().getPlans()
+                            : planStore.getPublicPlans().getPlans()).stream()
                             .filter(p -> p.getBasePlanId().equals(pId))
                             .filter(p -> p.getComingSoon() != Boolean.TRUE)
                             .findAny())
@@ -578,7 +584,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getBasePlanId())) {
             String newPlanid = accountUpdateAdmin.getBasePlanId();
-            Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(account.getAccountId()).stream()
+            Optional<Plan> newPlanOpt = (config.enableNonPublicPlans()
+                    ? planStore.getAllPlans().getPlans()
+                    : planStore.getAccountChangePlanOptions(account.getAccountId())).stream()
                     .filter(p -> p.getBasePlanId().equals(newPlanid))
                     .findAny();
             if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {

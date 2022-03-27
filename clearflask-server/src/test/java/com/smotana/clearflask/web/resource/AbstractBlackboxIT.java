@@ -160,6 +160,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected UserStore userStore;
     @Inject
+    protected ProjectStore projectStore;
+    @Inject
     protected IdeaStore ideaStore;
     @Inject
     protected AccountApi kbAccount;
@@ -266,6 +268,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
+                }));
+                install(ConfigSystem.overrideModule(AccountResource.Config.class, om -> {
+                    om.override(om.id().enableNonPublicPlans()).withValue(Boolean.TRUE);
                 }));
                 install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
@@ -422,6 +427,12 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void addTrackedUsers(AccountAndProject accountAndProject, long amount) throws Exception {
         userStore.updateUserCountForProject(accountAndProject.getProject().getProjectId(), amount);
+    }
+
+    protected void addTeammates(AccountAndProject accountAndProject, long amount) throws Exception {
+        for (int i = 0; i < amount; i++) {
+            projectStore.addAdmin(accountAndProject.getProject().getProjectId(), IdUtil.randomId());
+        }
     }
 
     protected void deleteAccount(AccountAndProject accountAndProject) {

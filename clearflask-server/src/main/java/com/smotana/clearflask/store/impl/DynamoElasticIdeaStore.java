@@ -66,6 +66,7 @@ import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.Value;
@@ -88,6 +89,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
@@ -266,6 +268,39 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
+    }
+
+    @Extern
+    @Override
+    public void reindex(String projectId, boolean deleteExistingIndex) throws Exception {
+        boolean indexAlreadyExists = elastic.indices().exists(
+                new GetIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+                RequestOptions.DEFAULT);
+        if (indexAlreadyExists && deleteExistingIndex) {
+            elastic.indices().delete(
+                    new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+                    RequestOptions.DEFAULT);
+        }
+        if (!indexAlreadyExists || deleteExistingIndex) {
+            createIndex(projectId).get();
+        }
+
+        StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
+                                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(ideaByProjectIdSchema::fromItem)
+                .filter(idea -> projectId.equals(idea.getProjectId()))
+                .forEach(idea -> elastic.indexAsync(ideaToEsIndexRequest(idea, false),
+                        RequestOptions.DEFAULT, ActionListeners.onFailure(ex -> {
+                            if (LogUtil.rateLimitAllowLog("dynamoelsaticideastore-reindex-failure")) {
+                                log.warn("Failed to re-index idea {}", idea.getIdeaId(), ex);
+                            }
+                        })));
     }
 
     @Override

@@ -230,13 +230,24 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           ))}
         </>
       );
-    } else if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
-      extraMau = (
-        <>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
-        </>
-      );
+    } else {
+      if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
+        extraMau = (
+          <>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
+          </>
+        );
+      }
+      if (this.props.plan.pricing?.admins) {
+        extraMau = (
+          <>
+            {extraMau}
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.admins.amountIncluded} Teammates`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.admins.additionalPrice} / Teammate`}</Typography>
+          </>
+        );
+      }
     }
 
     return (

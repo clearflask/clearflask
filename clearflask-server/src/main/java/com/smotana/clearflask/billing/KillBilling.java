@@ -104,7 +104,9 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 public class KillBilling extends ManagedService implements Billing {
 
     /** If changed, also change in catalogXXX.xml */
-    private static final String TRACKED_USER_UNIT_NAME = "tracked-user";
+    public static final String TRACKED_USER_UNIT_NAME = "tracked-user";
+    /** If changed, also change in catalogXXX.xml */
+    public static final String TRACKED_TEAMMATE_UNIT_NAME = "tracked-teammate";
 
     public interface Config {
         @DefaultValue("60000")
@@ -226,6 +228,7 @@ public class KillBilling extends ManagedService implements Billing {
     private Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
         try {
+            log.trace("Creating account {}", accountInDyn);
             account = kbAccount.createAccount(new Account()
                     .setExternalKey(accountInDyn.getAccountId())
                     .setName(accountInDyn.getName())
@@ -237,8 +240,11 @@ public class KillBilling extends ManagedService implements Billing {
                     "Failed to contact payment processor, try again later", ex);
         }
 
-        if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(accountInDyn.getPlanid())) {
+        if (PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(accountInDyn.getPlanid())
+                || PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(accountInDyn.getPlanid())) {
             try {
+                log.trace("Attaching invoicing tags to new KillBill Account for email {} name {}",
+                        accountInDyn.getEmail(), accountInDyn.getName());
                 kbAccount.createAccountTags(
                         account.getAccountId(),
                         getDraftInvoicingTagIds(),
@@ -786,11 +792,15 @@ public class KillBilling extends ManagedService implements Billing {
                 }
             }
 
-            boolean oldPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName());
-            boolean newPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(planId);
+            boolean oldPlanHasTracking = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName())
+                    || PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(subscriptionInKb.getPlanName());
+            boolean newPlanHasTracking = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(planId)
+                    || PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(planId);
 
             ImmutableList<UUID> draftInvoicingTagIds = getDraftInvoicingTagIds();
-            if (!oldPlanHasTrackedUsers && newPlanHasTrackedUsers) {
+            if (!oldPlanHasTracking && newPlanHasTracking) {
+                log.trace("Attaching invoicing tags to changed plan for KillBill Account {} name {}",
+                        accountInKb.getAccountId(), accountInKb.getName());
                 kbAccount.createAccountTags(
                         accountInKb.getAccountId(),
                         draftInvoicingTagIds,
@@ -812,7 +822,9 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     KillBillUtil.roDefault());
 
-            if (oldPlanHasTrackedUsers && !newPlanHasTrackedUsers) {
+            if (oldPlanHasTracking && !newPlanHasTracking) {
+                log.trace("Removing invoicing tags to changed plan for KillBill Account {} name {}",
+                        accountInKb.getAccountId(), accountInKb.getName());
                 kbAccount.deleteAccountTags(
                         accountInKb.getAccountId(),
                         draftInvoicingTagIds,
@@ -857,8 +869,9 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     KillBillUtil.roDefault());
 
-            boolean oldPlanHasTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName());
-            if (oldPlanHasTrackedUsers) {
+            boolean oldPlanHasTracking = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains(subscriptionInKb.getPlanName())
+                    || PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(subscriptionInKb.getPlanName());
+            if (oldPlanHasTracking) {
                 kbAccount.deleteAccountTags(
                         accountInKb.getAccountId(),
                         getDraftInvoicingTagIds(),
@@ -877,10 +890,10 @@ public class KillBilling extends ManagedService implements Billing {
         boolean allowUpgrade = false;
         if (ACTIVETRIAL.equals(accountInDyn.getStatus())
                 && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
-                && "standard2-monthly".equals(requiredPlanId)) {
+                && "standard3-monthly".equals(requiredPlanId)) {
             allowUpgrade = true;
         } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
-                && ImmutableSet.of("growth2-monthly", "standard2-monthly").equals(requiredPlanId)) {
+                && ImmutableSet.of("starter3-monthly", "standard3-monthly").equals(requiredPlanId)) {
             allowUpgrade = true;
         }
 
@@ -999,6 +1012,7 @@ public class KillBilling extends ManagedService implements Billing {
             // TODO make this more robust
             invoiceHtml = invoiceHtml.replaceAll("growth2-tracked-users", "Tracked Users");
             invoiceHtml = invoiceHtml.replaceAll("standard2-tracked-users", "Tracked Users");
+            invoiceHtml = invoiceHtml.replaceAll("standard3-teammates", "Teammates");
             return invoiceHtml;
         } catch (KillBillClientException ex) {
             log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
@@ -1221,37 +1235,34 @@ public class KillBilling extends ManagedService implements Billing {
             if (!config.finalizeInvoiceEnabled()) {
                 return;
             }
+            log.trace("Received invoice to finalize for account {} invoiceId {}", accountId, invoiceId);
 
             Invoice invoice = kbInvoice.getInvoice(invoiceId, KillBillUtil.roDefault());
             if (!InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
+                log.trace("Invoice not finalizing for status {} for account {} invoiceId {}", invoice.getStatus(), accountId, invoiceId);
                 return;
             }
 
             Subscription subscription = getSubscription(accountId);
-            Optional<org.joda.time.LocalDate> cancelledDateOpt = Optional.ofNullable(subscription.getCancelledDate());
 
             boolean doUpdateInvoice = false;
             Supplier<Long> userCountSupplier = Suppliers.memoize(() -> accountStore.getUserCountForAccount(accountId));
+            Supplier<Long> teammateCountSupplier = Suppliers.memoize(() -> accountStore.getTeammateCountForAccount(accountId));
             HashSet<String> idempotentKeys = Sets.newHashSet();
             for (var invoiceItem : invoice.getItems()) {
-                if (!PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains((invoiceItem.getPlanName()))) {
+                if (!InvoiceItemType.USAGE.equals(invoiceItem.getItemType())) {
                     continue;
                 }
-                if (!InvoiceItemType.USAGE.equals(invoiceItem.getItemType())) {
+
+                boolean recordTrackedUsers = PlanStore.RECORD_TRACKED_USERS_FOR_PLANS.contains((invoiceItem.getPlanName()));
+                boolean recordTeammates = PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains((invoiceItem.getPlanName()));
+                if (!recordTrackedUsers && !recordTeammates) {
                     continue;
                 }
 
                 org.joda.time.LocalDate recordDate = invoiceItem.getStartDate().equals(invoiceItem.getEndDate())
                         ? invoiceItem.getStartDate() : invoiceItem.getEndDate().minusDays(1);
-                String idempotentKey = TRACKED_USER_UNIT_NAME + '-' + recordDate.toString();
-                if (!idempotentKeys.add(idempotentKey)) {
-                    continue;
-                }
-
-                if (userCountSupplier.get() <= 0L) {
-                    break;
-                }
-
+                Optional<org.joda.time.LocalDate> cancelledDateOpt = Optional.ofNullable(subscription.getCancelledDate());
                 // Killbill doesnt allow recording usage after entitlement ends
                 // Backdate usage to cancellation instead.
                 if (cancelledDateOpt.isPresent() && recordDate.isAfter(cancelledDateOpt.get())) {
@@ -1260,35 +1271,68 @@ public class KillBilling extends ManagedService implements Billing {
                     recordDate = cancelledDateOpt.get();
                 }
 
-                try {
-                    kbUsage.recordUsage(new SubscriptionUsageRecord(
-                            invoiceItem.getSubscriptionId(),
-                            idempotentKey,
-                            ImmutableList.of(new UnitUsageRecord(
-                                    TRACKED_USER_UNIT_NAME,
-                                    ImmutableList.of(new UsageRecord(
-                                            recordDate,
-                                            userCountSupplier.get()
-                                    ))))), KillBillUtil.roDefault());
-                } catch (KillBillClientException ex) {
-                    if (ex.getBillingException() == null
-                            || ex.getBillingException().getCode() == null
-                            || ex.getBillingException().getCode() != ErrorCode.USAGE_RECORD_TRACKING_ID_ALREADY_EXISTS.getCode()) {
-                        throw ex;
+                if (recordTeammates) {
+                    String idempotentKey = TRACKED_TEAMMATE_UNIT_NAME + '-' + recordDate.toString();
+                    if (idempotentKeys.add(idempotentKey)) {
+                        try {
+                            kbUsage.recordUsage(new SubscriptionUsageRecord(
+                                    invoiceItem.getSubscriptionId(),
+                                    idempotentKey,
+                                    ImmutableList.of(new UnitUsageRecord(
+                                            TRACKED_TEAMMATE_UNIT_NAME,
+                                            ImmutableList.of(new UsageRecord(
+                                                    recordDate,
+                                                    teammateCountSupplier.get()
+                                            ))))), KillBillUtil.roDefault());
+                            doUpdateInvoice = true;
+                            log.info("Recorded usage {} teammates, accountId {} invoiceId {} planId {} recordDate {}",
+                                    teammateCountSupplier.get(), invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
+                        } catch (KillBillClientException ex) {
+                            if (ex.getBillingException() == null
+                                    || ex.getBillingException().getCode() == null
+                                    || ex.getBillingException().getCode() != ErrorCode.USAGE_RECORD_TRACKING_ID_ALREADY_EXISTS.getCode()) {
+                                throw ex;
+                            }
+                            // If it exists already, no need to update invoice
+                            log.trace("Recorded usage already exists for teammates, accountId {} invoiceId {} planId {} recordDate {}",
+                                    invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
+                        }
                     }
-                    // If it exists already, no need to update invoice
-                    log.trace("Recorded usage already exists for tracked users, accountId {} invoiceId {} planId {} recordDate {}",
-                            invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
-                    continue;
                 }
-                doUpdateInvoice = true;
-                log.info("Recorded usage {} tracked users, accountId {} invoiceId {} planId {} recordDate {}",
-                        userCountSupplier.get(), invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
+
+                if (recordTrackedUsers) {
+                    String idempotentKey = TRACKED_USER_UNIT_NAME + '-' + recordDate.toString();
+                    if (idempotentKeys.add(idempotentKey) && userCountSupplier.get() > 0L) {
+                        try {
+                            kbUsage.recordUsage(new SubscriptionUsageRecord(
+                                    invoiceItem.getSubscriptionId(),
+                                    idempotentKey,
+                                    ImmutableList.of(new UnitUsageRecord(
+                                            TRACKED_USER_UNIT_NAME,
+                                            ImmutableList.of(new UsageRecord(
+                                                    recordDate,
+                                                    userCountSupplier.get()
+                                            ))))), KillBillUtil.roDefault());
+                            doUpdateInvoice = true;
+                            log.info("Recorded usage {} tracked users, accountId {} invoiceId {} planId {} recordDate {}",
+                                    userCountSupplier.get(), invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
+                        } catch (KillBillClientException ex) {
+                            if (ex.getBillingException() == null
+                                    || ex.getBillingException().getCode() == null
+                                    || ex.getBillingException().getCode() != ErrorCode.USAGE_RECORD_TRACKING_ID_ALREADY_EXISTS.getCode()) {
+                                throw ex;
+                            }
+                            // If it exists already, no need to update invoice
+                            log.trace("Recorded usage already exists for tracked users, accountId {} invoiceId {} planId {} recordDate {}",
+                                    invoice.getAccountId(), invoice.getInvoiceId(), invoiceItem.getPlanName(), recordDate);
+                        }
+                    }
+                }
             }
 
             Optional<Invoice> newInvoiceOpt = Optional.empty();
             if (doUpdateInvoice) {
-                newInvoiceOpt = Optional.of(kbInvoice.createFutureInvoice(
+                newInvoiceOpt = Optional.ofNullable(kbInvoice.createFutureInvoice(
                         invoice.getAccountId(),
                         null,
                         KillBillUtil.roDefault()));

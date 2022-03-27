@@ -61,6 +61,8 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'growth2-monthly': GrowthRestrictedProperties,
   'standard-monthly': RestrictedPropertiesByDefault,
   'standard2-monthly': RestrictedPropertiesByDefault,
+  'starter3-monthly': GrowthRestrictedProperties,
+  'standard3-monthly': RestrictedPropertiesByDefault,
   'flat-yearly': RestrictedPropertiesByDefault,
   'pitchground-a-lifetime': AbPitchGroundRestrictedProperties,
   'pitchground-b-lifetime': AbPitchGroundRestrictedProperties,
@@ -105,6 +107,7 @@ export enum Action {
 /** If changed, also change in KillBillPlanStore.java */
 export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
   'starter-unlimited': new Set([Action.API_KEY]),
+  'starter3-monthly': new Set([Action.API_KEY]),
   'growth-monthly': new Set([Action.API_KEY]),
   'growth2-monthly': new Set([Action.API_KEY]),
   'pitchground-a-lifetime': new Set([Action.API_KEY]),

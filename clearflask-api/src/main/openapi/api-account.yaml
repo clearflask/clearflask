@@ -36,6 +36,18 @@ components:
             unitPrice:
               type: integer
               format: int64
+            admins:
+              type: object
+              required:
+              - amountIncluded
+              - additionalPrice
+              properties:
+                amountIncluded:
+                  type: integer
+                  format: int64
+                additionalPrice:
+                  type: integer
+                  format: int64
             period:
               type: string
               enum:

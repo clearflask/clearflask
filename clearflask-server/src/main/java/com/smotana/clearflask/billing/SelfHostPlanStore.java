@@ -25,6 +25,7 @@ public class SelfHostPlanStore implements PlanStore {
                     0L,
                     0L,
                     0L,
+                    null,
                     PlanPricing.PeriodEnum.YEARLY),
             ImmutableList.of(),
             false,

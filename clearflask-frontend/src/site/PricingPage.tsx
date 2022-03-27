@@ -22,45 +22,12 @@ import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
 import Background from './landing/Background';
 import PricingPlan from './PricingPlan';
-import PricingSlider from './PricingSlider';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
 export const EstimatedPercUsersBecomeTracked = 0.05;
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
-  {
-    heading: 'How long is the trial for?',
-    body: (
-      <>
-        <p>
-          When you sign up for any plan, you can continue using ClearFlask for 14 days for free. At that point you will be asked to provide a payment method.
-        </p>
-      </>
-    ),
-  },
-  {
-    heading: 'What are tracked users?',
-    body: (
-      <>
-        <p>
-          A user signed up on ClearFlask becomes tracked when they provide you with feedback by posting, commenting or voting.
-          Typically about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked.
-        </p>
-      </>
-    ),
-  },
-  {
-    heading: 'What are the limits on ideas/posts?',
-    body: (
-      <>
-        <p>
-          Some plans may have a limit on content specifically the number of ideas/posts.
-          This is a soft limit as users will continue to be able to submit more content, but as an Administrator you won't be able to perform any actions until you clean up old content to comply with the limits.
-        </p>
-      </>
-    ),
-  },
   {
     heading: 'Open-Source, Non-Profit or Non-Commercial?',
     body: (
@@ -76,7 +43,7 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Yes, you can switch between providers whenever you need to. We provide both import and export functionality via CSV format. You can also switch between self-hosted and cloud options. Contact us for help.
+          Yes, we provide both import and export functionality via CSV format. You can easily switch between our cloud-hosted plans and a self-hosted installation.
         </p>
       </>
     ),
@@ -254,7 +221,6 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             <div className={this.props.classes.header}>
               <div>
                 <Typography component="h2" variant="h2" color="textPrimary">{this.props.t('pricing')}</Typography>
-                <Typography component="div" variant="h6" color="textSecondary">{this.props.t('only-pay-for-users-that-provide-value')}</Typography>
               </div>
               <ImgIso
                 alt=''
@@ -272,6 +238,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
               {plansAllGrouped}
             </div>
+            {/* TODO remove this, at the removal of tracked users from plans, I have retired the pricing slider, but I can't let go of it just yet. Please let's keep it commented for some time until I have the courage to delete it permanently.
             <PricingSlider
               className={this.props.classes.pricingSlider}
               plans={this.props.plans || []}
@@ -279,7 +246,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                 highlightedBasePlanid: callForQuote ? undefined : basePlanId,
                 callForQuote,
               })}
-            />
+            /> */}
           </Loader>
           <br />
           <br />

@@ -337,6 +337,30 @@ public class BillingIT extends AbstractBlackboxIT {
         addTrackedUsers(accountAndProject, 300);
         kbClockSleepAndRefresh(31, accountAndProject);
 
-        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 49.09, 60.0, 1500.0));
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 10.0, 1425.81, 60.0));
+    }
+
+    @Test(timeout = 300_000L)
+    public void test_teammateUsage() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("standard3-monthly");
+        accountAndProject = addPaymentMethod(accountAndProject);
+
+        addTeammates(accountAndProject, 2);
+        kbClockSleepAndRefresh(15, accountAndProject);
+
+        addTeammates(accountAndProject, 3);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTeammates(accountAndProject, 3);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        addTeammates(accountAndProject, 1);
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        kbClockSleepAndRefresh(31, accountAndProject);
+
+        accountAndProject = cancelAccount(accountAndProject);
+        kbClockSleepAndRefresh(31, accountAndProject);
+        assertInvoices(accountAndProject, ImmutableList.of(0.0, 100.0, 100.0, 25.0, 100.0, 100.0, 100.0, 125.0, 100.0, 125.0, -90.32, 125.0));
     }
 }

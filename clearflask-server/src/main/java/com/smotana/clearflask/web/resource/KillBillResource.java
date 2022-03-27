@@ -175,6 +175,7 @@ public class KillBillResource extends ManagedService {
     @Limit(requiredPermits = 1)
     public void webhook(String payload) {
         Event event = gson.fromJson(payload, Event.class);
+        log.trace("Incoming KillBill event {} {}", event.getEventType(), event);
 
         if (!eventsToListenForCached.contains(event.eventType)) {
             return;

@@ -52,6 +52,8 @@ CommentStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
+    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+
     double computeCommentScore(int upvotes, int downvotes);
 
     CommentAndIndexingFuture<List<WriteResponse>> createCommentAndUpvote(CommentModel comment);

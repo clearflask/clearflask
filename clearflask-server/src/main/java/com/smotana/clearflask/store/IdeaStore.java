@@ -63,6 +63,8 @@ public interface IdeaStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
+    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+
     ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
 
     IdeaAndIndexingFuture createIdeaAndUpvote(IdeaModel idea);

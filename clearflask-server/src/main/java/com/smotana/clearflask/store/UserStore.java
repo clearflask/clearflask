@@ -51,6 +51,8 @@ public interface UserStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
+    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+
     UserAndIndexingFuture createUser(UserModel user);
 
     Optional<UserModel> getUser(String projectId, String userId);

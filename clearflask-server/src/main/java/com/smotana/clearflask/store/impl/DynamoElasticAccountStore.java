@@ -47,6 +47,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -79,6 +80,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -139,6 +141,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private UserStore userStore;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private ProjectStore projectStore;
 
     private TableSchema<Account> accountSchema;
     private IndexSchema<Account> accountByApiKeySchema;
@@ -165,28 +169,32 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
             if (!exists) {
                 log.info("Creating account index");
-                elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
-                                "dynamic", "false",
-                                "properties", ImmutableMap.builder()
-                                        .put("name", ImmutableMap.of(
-                                                "type", "text",
-                                                "index_prefixes", ImmutableMap.of()))
-                                        .put("email", ImmutableMap.of(
-                                                "type", "text",
-                                                "index_prefixes", ImmutableMap.of()))
-                                        .put("status", ImmutableMap.of(
-                                                "type", "keyword"))
-                                        .put("planid", ImmutableMap.of(
-                                                "type", "keyword"))
-                                        .put("created", ImmutableMap.of(
-                                                "type", "date",
-                                                "format", "epoch_second"))
-                                        .put("projectIds", ImmutableMap.of(
-                                                "type", "keyword"))
-                                        .build())), XContentType.JSON),
-                        RequestOptions.DEFAULT);
+                createIndex();
             }
         }
+    }
+
+    private void createIndex() throws IOException {
+        elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
+                        "dynamic", "false",
+                        "properties", ImmutableMap.builder()
+                                .put("name", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("email", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("status", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("planid", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("created", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("projectIds", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .build())), XContentType.JSON),
+                RequestOptions.DEFAULT);
     }
 
     @Override
@@ -357,6 +365,20 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .orElse(Stream.empty())
                 .mapToLong(userStore::getUserCountForProject)
                 .sum();
+    }
+
+    @Override
+    public long getTeammateCountForAccount(String accountId) {
+        return getAccount(accountId, false)
+                .map(Account::getProjectIds)
+                .map(projectIds -> projectStore.getProjects(projectIds, false))
+                .stream()
+                .flatMap(Collection::stream)
+                .map(ProjectStore.Project::getModel)
+                .map(ProjectStore.ProjectModel::getAdminsAccountIds)
+                .flatMap(accountIds -> Stream.concat(accountIds.stream(), Stream.of(accountId)))
+                .distinct()
+                .count();
     }
 
     @Override

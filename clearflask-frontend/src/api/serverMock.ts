@@ -19,7 +19,6 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
 const termsProjects = 'You can create separate projects each having their own set of users and content';
-const termsPosts = 'Keep your project tidy and delete old posts to stay within the limits.';
 const TeammatePlan: Admin.Plan = {
   basePlanId: TeammatePlanId, title: 'Teammate',
   perks: [
@@ -28,37 +27,29 @@ const TeammatePlan: Admin.Plan = {
   ],
 };
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'starter-unlimited': {
-    basePlanId: 'starter-unlimited', title: 'Starter',
+  'starter3-monthly': {
+    basePlanId: 'starter3-monthly', title: 'Starter',
+    pricing: { basePrice: 10, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: '30 ideas', terms: termsPosts },
       { desc: 'Unlimited projects', terms: termsProjects },
+      { desc: 'Unlimited teammates' },
       { desc: 'Unlimited users' },
     ],
   },
-  'growth2-monthly': {
-    basePlanId: 'growth2-monthly', title: 'Growth',
-    pricing: { basePrice: 10, baseMau: 50, unitPrice: 10, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
-    perks: [
-      { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Unlimited ideas' },
-      { desc: '2 Teammmates' },
-    ],
-  },
-  'standard2-monthly': {
-    basePlanId: 'standard2-monthly', title: 'Standard',
-    pricing: { basePrice: 100, baseMau: 500, unitPrice: 50, unitMau: 500, period: Admin.PlanPricingPeriodEnum.Monthly },
+  'standard3-monthly': {
+    basePlanId: 'standard3-monthly', title: 'Standard',
+    pricing: { basePrice: 100, baseMau: 0, unitPrice: 0, unitMau: 0, admins: { amountIncluded: 5, additionalPrice: 25 }, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Private projects' },
-      { desc: '8 Teammates' },
+      { desc: 'Integrations & API' },
       { desc: 'SSO and OAuth' },
     ],
   },
   'flat-yearly': {
-    basePlanId: 'flat-yearly', title: 'Flat',
+    basePlanId: 'flat-yearly', title: 'Business',
     perks: [
-      { desc: 'Flat annual price' },
-      { desc: 'Tailored plan' },
+      { desc: 'Customized plan' },
+      { desc: 'Annual pricing' },
       { desc: 'Support & SLA' },
     ],
   },
@@ -75,7 +66,7 @@ const AllPlans: { [planId: string]: Admin.Plan } = {
   },
 };
 const FeaturesTable: Admin.FeaturesTable | undefined = {
-  plans: ['Growth', 'Standard', 'Flat'],
+  plans: ['Starter', 'Standard', 'Flat'],
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
     { feature: 'Tracked users', values: ['No limit', 'No limit', 'No limit'] },
@@ -193,7 +184,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           name: 'Joe Doe',
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
-          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-monthly',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard3-monthly',
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
           couponId: request.accountBindAdmin.oauthToken.couponId,
         }
@@ -283,7 +274,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         : (request.accountSignupAdmin.couponId
           ? 'pro-lifetime'
           : request.accountSignupAdmin.basePlanId))
-        || 'standard2-monthly',
+        || 'standard3-monthly',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -347,8 +338,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         // Auto-upgrade test, simulate Java-land background upgrade
         setTimeout(() => {
           if (this.account) {
-            this.account.planId = 'standard2-monthly';
-            this.account.basePlanId = 'standard2-monthly';
+            this.account.planId = 'standard3-monthly';
+            this.account.basePlanId = 'standard3-monthly';
           }
         }, 500);
       }
