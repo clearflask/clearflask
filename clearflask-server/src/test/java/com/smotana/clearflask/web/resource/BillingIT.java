@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -16,7 +15,7 @@ import static org.junit.Assert.assertEquals;
  *
  * Re-run when you make changes to Billing.
  */
-@Ignore
+//@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
