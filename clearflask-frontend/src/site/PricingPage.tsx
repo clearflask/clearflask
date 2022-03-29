@@ -138,38 +138,38 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   }
 
   render() {
-    // const communityPlan = (
-    //   <PricingPlan
-    //     key='community'
-    //     plan={{
-    //       basePlanId: 'community',
-    //       title: 'Community',
-    //       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
-    //       perks: [
-    //         { desc: 'Open-source AGPLv3' },
-    //         { desc: 'Quickstart deploy' },
-    //         { desc: 'Community supported' },
-    //       ],
-    //     }}
-    //     overrideMauTerms={[
-    //       'Self-hosted',
-    //       'Own your data',
-    //     ]}
-    //     actionTitle='Install it'
-    //     remark='Join our community'
-    //     actionOnClick={() => {
-    //       trackingBlock(() => {
-    //         ReactGA.event({
-    //           category: 'pricing',
-    //           action: 'click-plan',
-    //           label: 'community',
-    //         });
-    //       });
-    //     }}
-    //     actionToExt='https://github.com/clearflask/clearflask#self-hosting'
-    //   />
-    // );
-    const plansAll: JSX.Element[] = [];
+    const communityPlan = (
+      <PricingPlan
+        key='community'
+        plan={{
+          basePlanId: 'community',
+          title: 'Community',
+          pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+          perks: [
+            { desc: 'Open-source AGPLv3' },
+            { desc: 'Quickstart deploy' },
+            { desc: 'Community supported' },
+          ],
+        }}
+        overrideMauTerms={[
+          'Self-hosted',
+          'Own your data',
+        ]}
+        actionTitle='Install it'
+        remark='Join our community'
+        actionOnClick={() => {
+          trackingBlock(() => {
+            ReactGA.event({
+              category: 'pricing',
+              action: 'click-plan',
+              label: 'community',
+            });
+          });
+        }}
+        actionToExt='https://github.com/clearflask/clearflask#self-hosting'
+      />
+    );
+    const plansAll: JSX.Element[] = [communityPlan];
     for (const plan of this.props.plans || []) {
       const pricingPlan = (
         <PricingPlan
