@@ -36,7 +36,7 @@ public class HttpRedirectorFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) request;
 
-        if (Strings.nullToEmpty(req.getHeader("x-forwarded-proto")).toLowerCase().equals("http")
+        if (Strings.nullToEmpty(req.getHeader("x-forwarded-proto")).equalsIgnoreCase("http")
                 && !Strings.nullToEmpty(req.getRequestURI()).startsWith("/api/health")) {
             HttpServletResponse res = (HttpServletResponse) response;
 

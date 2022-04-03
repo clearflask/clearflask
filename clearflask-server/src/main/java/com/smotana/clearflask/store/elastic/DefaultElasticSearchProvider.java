@@ -15,6 +15,7 @@ import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
@@ -41,6 +42,9 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
     public interface Config {
         @NoDefaultValue
         String serviceEndpoint();
+
+        @DefaultValue("60_000")
+        int requestTimeout();
     }
 
     @Inject
@@ -67,7 +71,10 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         log.info("Opening ElasticSearch client on {}", config.serviceEndpoint());
         if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
-                .builder(HttpHost.create(config.serviceEndpoint()))));
+                .builder(HttpHost.create(config.serviceEndpoint()))
+                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
+                        .setConnectTimeout(config.requestTimeout())
+                        .setSocketTimeout(config.requestTimeout()))));
         return restClientOpt.get();
     }
 
@@ -75,13 +82,13 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
     protected void serviceStart() throws Exception {
         checkState(restClientOpt.isPresent());
         Futures.allAsList(Arrays.stream(ElasticScript.values())
-                .map(script -> {
-                    SettableFuture<AcknowledgedResponse> scriptsFuture = SettableFuture.create();
-                    restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(gson),
-                            RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
-                    return scriptsFuture;
-                })
-                .collect(ImmutableSet.toImmutableSet()))
+                        .map(script -> {
+                            SettableFuture<AcknowledgedResponse> scriptsFuture = SettableFuture.create();
+                            restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(gson),
+                                    RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
+                            return scriptsFuture;
+                        })
+                        .collect(ImmutableSet.toImmutableSet()))
                 .get(1, TimeUnit.MINUTES);
     }
 

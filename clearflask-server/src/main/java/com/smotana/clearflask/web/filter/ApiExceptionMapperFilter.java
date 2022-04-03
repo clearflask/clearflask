@@ -21,7 +21,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Optional;
 
 @Slf4j
 public class ApiExceptionMapperFilter implements Filter {
