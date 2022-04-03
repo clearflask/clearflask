@@ -148,7 +148,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                         .withTableName(getTableOrIndexName(Primary, -1))
                         .withKeySchema(primaryKeySchemas)
                         .withAttributeDefinitions(primaryAttributeDefinitions)
-                        .withBillingMode(BillingMode.PAY_PER_REQUEST)
+                        .withBillingMode(BillingMode.PROVISIONED)
                         .withProvisionedThroughput(new ProvisionedThroughput(1L, 1L));
                 if (!localSecondaryIndexes.isEmpty()) {
                     createTableRequest.withLocalSecondaryIndexes(localSecondaryIndexes);
