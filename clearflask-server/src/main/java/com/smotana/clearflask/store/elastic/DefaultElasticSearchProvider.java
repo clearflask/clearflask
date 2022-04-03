@@ -43,7 +43,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         @NoDefaultValue
         String serviceEndpoint();
 
-        @DefaultValue("60_000")
+        @DefaultValue("60000")
         int requestTimeout();
     }
 
