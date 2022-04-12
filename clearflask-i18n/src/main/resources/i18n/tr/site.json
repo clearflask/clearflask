@@ -1,1 +1,10 @@
-{}
+{
+  "product": "Ürün",
+  "pricing": "Fiyatlandırma",
+  "dashboard": "Kontrol Paneli",
+  "get-started": "Başlarken",
+  "demo": "Demo",
+  "integrations": "Entegrasyonlar",
+  "roadmap": "Yol Haritası",
+  "email": "E-Posta"
+}
