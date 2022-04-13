@@ -4,8 +4,10 @@
   "email": "E-Posta",
   "balance": "Bakiye",
   "balance-0": "Bakiye",
+  "feedback": "Geri Bildirim",
   "roadmap": "Yol Haritası",
   "how-can-we-improve": "Nasıl geliştirebiliriz?",
   "idea": "Öneri",
-  "describe-your-idea-optional": "Önerinizin detaylarını açıklayın (isteğe bağlı)"
+  "describe-your-idea-optional": "Önerinizin detaylarını açıklayın (isteğe bağlı)",
+  "comments": "Yorumlar"
 }
