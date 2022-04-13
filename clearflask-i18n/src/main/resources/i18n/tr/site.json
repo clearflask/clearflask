@@ -5,6 +5,13 @@
   "get-started": "Başlarken",
   "demo": "Demo",
   "integrations": "Entegrasyonlar",
+  "feedback": "Geri Bildirim",
   "roadmap": "Yol Haritası",
-  "email": "E-Posta"
+  "email": "E-Posta",
+  "completed-tasks": "Tamamlanan Görevler",
+  "identified-users": "Tanımlanan Kullanıcılar",
+  "comments": "Yorumlar",
+  "quick-start-guide": "Hızlı başlangıç rehberi",
+  "users": "Kullanıcılar",
+  "visit": "Ziyaret Et"
 }
