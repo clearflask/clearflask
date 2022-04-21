@@ -27,6 +27,7 @@ import FlagRo from '../public/img/flag/ro.svg';
 import FlagRu from '../public/img/flag/ru.svg';
 import FlagSe from '../public/img/flag/se.svg';
 import FlagSk from '../public/img/flag/sk.svg';
+import FlagTr from '../public/img/flag/tr.svg';
 import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { isProd } from './common/util/detectEnv';
@@ -48,7 +49,7 @@ export const supportedLanguages: Array<SupportedLanguage>
    * IMPORTANT:
    * Adding a new language checklist:
    * - You must also specify which countries will defualt to this language by editing Lambda function "clearflask-cloudfront-locale-header".
-   *   - Update Lambda function and publish new version at https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/clearflask-cloudfront-locale-header/versions/5?tab=code
+   *   - Update Lambda function and publish new version at https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions/clearflask-cloudfront-locale-header?tab=code
    *   - Update Lambda version in CloudFront: https://console.aws.amazon.com/cloudfront/v3/home?region=us-east-1#/distributions/EQHBQLQZXVKCU/behaviors
    * - Ensure the clearflask-i18n bundles the translation files
    * - Find image in https://github.com/ekwonye-richard/react-flags-select/tree/master/flags
@@ -78,6 +79,7 @@ export const supportedLanguages: Array<SupportedLanguage>
     { code: 'sk', img: FlagSk, label: 'Slovenčina', perc: 1 },
     { code: 'fi', img: FlagFi, label: 'Suomi', perc: 1 },
     { code: 'sv', img: FlagSe, label: 'Svenska', perc: 1 },
+    { code: 'tr', img: FlagTr, label: 'Türkçe', perc: .25 },
     { code: 'uk', img: FlagUa, label: 'Українська', perc: 1 },
     ...(isProd() ? [] : [
       { code: 'cimode', img: FlagAdd, label: 'No translation' },
