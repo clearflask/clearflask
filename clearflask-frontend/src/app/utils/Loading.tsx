@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Fade from '@material-ui/core/Fade';
 import React, { useContext, useEffect } from 'react';

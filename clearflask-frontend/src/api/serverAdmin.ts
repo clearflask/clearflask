@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import { loadingBarMiddleware } from 'react-redux-loading-bar';
 import { applyMiddleware, combineReducers, compose, createStore, Store, StoreEnhancer } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';

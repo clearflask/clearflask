@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-/// <reference path="../../@types/transform-media-imports.d.ts"/>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import { Box, Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';

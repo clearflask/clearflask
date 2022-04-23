@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-/// <reference path="../@types/transform-media-imports.d.ts"/>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tooltip, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
@@ -1766,7 +1765,7 @@ const Customize = (props: {}) => {
 
       <Typography component='h4' variant='h6'>Open-source</Typography>
       <p><Typography>if you got the time, open-source gives you freedom for a custom solution and complete ownership.
-        The only contenders are Fider and ClearFlask both licensed under AGPL3.
+        The only contenders are Fider (AGPLv3) and ClearFlask (Apache 2.0).
         While Fider is lacking analytic features and scalable infrastructure, it is ideal for small to medium volume.
         Whereas ClearFlask can be deployed either via a PostgreSQL DB for small deployments or a scalable deployment with DynamoDB, ElasticSearch, S3, Load balancing and CloudFront</Typography></p>
       <BrandList small platformIds={[PlatformClearFlask, PlatformFider]} />

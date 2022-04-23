@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-License-Identifier: Apache-2.0
 import { ChunkExtractorManager } from '@loadable/server';
 import i18n from 'i18next';
 import fetch from 'node-fetch';

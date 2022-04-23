@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Originally from: https://raw.githubusercontent.com/mui-org/material-ui/2f6a982aa74ffa46680798089ad20ed67ed0c5ae/docs/src/modules/components/MarkdownElement.js
  * 

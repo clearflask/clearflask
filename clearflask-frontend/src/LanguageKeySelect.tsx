@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0
 import { IconButton, Table, TableBody, TableRow } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import TranslateIcon from '@material-ui/icons/Translate';

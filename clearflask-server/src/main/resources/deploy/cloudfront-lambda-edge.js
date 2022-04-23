@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 // Have CloudFront cache separate pages for each language.
 // - CloudFront is configured to cache by header x-clearflask-country-to-locale
 // - Parse accept-language header and filter by supported languages to minimize extra cache copies

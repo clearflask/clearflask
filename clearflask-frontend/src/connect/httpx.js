@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-// Modified from https://stackoverflow.com/a/42019773
+// SPDX-License-Identifier: Apache-2.0
 'use strict';
 let net = require('net');
 

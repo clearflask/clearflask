@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import { Button } from '@material-ui/core';
 import { SnackbarKey, useSnackbar, VariantType } from 'notistack';
 import { useHistory } from 'react-router';

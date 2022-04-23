@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Imported from MuiV5 since MuiV4 only has vertical Collapse.
  * Once we migrate, this can be deleted unless new functionality has been added.

@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-/// <reference path="../@types/transform-media-imports.d.ts"/>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import loadable from '@loadable/component';
 import { Button, ButtonGroup, Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, fade, makeStyles, Theme } from '@material-ui/core/styles';

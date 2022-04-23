@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import { createStyles, Theme, useTheme, WithStyles, withStyles } from '@material-ui/core/styles';
 import React, { Component, useState } from 'react';

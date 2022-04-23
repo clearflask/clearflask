@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 /**
  * From https://gist.githubusercontent.com/rgrove/5463265/raw/6d4e39342ce6d583b0b56e35388b46d9c34df909/getAbsoluteBoundingRect.js
  * 

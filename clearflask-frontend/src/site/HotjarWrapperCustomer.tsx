@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 import { connect } from 'react-redux';
 import { ReduxState } from '../api/server';
 import ServerAdmin from '../api/serverAdmin';

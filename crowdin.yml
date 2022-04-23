@@ -1,3 +1,5 @@
+## SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+## SPDX-License-Identifier: Apache-2.0
 files:
   - source: /clearflask-i18n/src/main/resources/i18n/en
     translation: /clearflask-i18n/src/main/resources/i18n/%two_letters_code%/%file_name%.%file_extension%

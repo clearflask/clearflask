@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-/// <reference path="../@types/transform-media-imports.d.ts"/>
+// SPDX-License-Identifier: Apache-2.0
 import { Box, createStyles, Theme, WithStyles, withStyles } from '@material-ui/core';
 import React, { Component } from 'react';
 import PageNotFoundImg from '../../public/img/landing/404.svg';

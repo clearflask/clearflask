@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-License-Identifier: Apache-2.0
 // As a first thing, we need to set the public path before any imports
 declare var __webpack_public_path__: any;
 declare var __webpack_require__: any;

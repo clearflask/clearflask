@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2020 Matus Faro <matus@smotana.com>
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-License-Identifier: Apache-2.0
 const disaposableEmailList: Array<string> = [
   // https://github.com/disposable-email-domains/disposable-email-domains/blob/59479a29a46d54ea1d34feebddea89c5ba6bdc51/disposable_email_blocklist.conf
   "0-mail.com",
