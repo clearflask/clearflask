@@ -40,6 +40,7 @@ import { urlAddCfJwt } from './AccountEnterPage';
 import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const App = loadable(() => import(/* webpackChunkName: "app" */'../app/App').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
