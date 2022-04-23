@@ -27,8 +27,8 @@
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-to-slf4j:2.13.3" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.13.3" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jcl-over-slf4j:1.7.30" level="project" />
-    <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.2.3" level="project" />
-    <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.2.3" level="project" />
+    <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.2.9" level="project" />
+    <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.2.9" level="project" />
     <orderEntry type="library" name="Maven: io.sentry:sentry-logback:5.1.1" level="project" />
     <orderEntry type="library" name="Maven: io.sentry:sentry:5.1.1" level="project" />
     <orderEntry type="library" name="Maven: io.sentry:sentry-servlet:5.1.1" level="project" />
@@ -249,7 +249,7 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.skife.config:config-magic:0.17" level="project" />
     <orderEntry type="library" name="Maven: org.kohsuke:github-api:1.133" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.9" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.12.5" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.12.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.12.5" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.12.5" level="project" />
     <orderEntry type="library" name="Maven: com.infradna.tool:bridge-method-annotation:1.21" level="project" />
