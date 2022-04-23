@@ -4,6 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import LogoImg from '../../public/img/clearflask-logo.png';
 import ImgIso from '../common/ImgIso';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const styles = (theme: Theme) => createStyles({
   container: {

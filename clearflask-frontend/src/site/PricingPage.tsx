@@ -21,6 +21,7 @@ import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
 import Background from './landing/Background';
 import PricingPlan from './PricingPlan';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;

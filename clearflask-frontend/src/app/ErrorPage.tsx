@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 import PageNotFoundImg from '../../public/img/landing/404.svg';
 import ImgIso from '../common/ImgIso';
 import Message from '../common/Message';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const styles = (theme: Theme) => createStyles({
   message: {

@@ -30,6 +30,7 @@ import FlagTr from '../public/img/flag/tr.svg';
 import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { isProd } from './common/util/detectEnv';
+/// <reference path="./@types/transform-media-imports.d.ts"/>
 
 export const defaultLanguage = 'en';
 export type SupportedLanguage = {

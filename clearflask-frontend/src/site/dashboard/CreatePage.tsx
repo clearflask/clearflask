@@ -37,6 +37,7 @@ import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
 import { AddonExtraProject } from './BillingPage';
+/// <reference path="../../@types/transform-media-imports.d.ts"/>
 
 const styles = (theme: Theme) => createStyles({
   layout: {

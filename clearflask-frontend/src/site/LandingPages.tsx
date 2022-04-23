@@ -152,6 +152,7 @@ import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import Logo from './Logo';
 import PricingPage from './PricingPage';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 

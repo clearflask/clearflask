@@ -88,6 +88,7 @@ import { vh } from '../common/util/screenUtil';
 import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
 import Hero from './landing/Hero';
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const PlatformClearFlask = 'clearflask';
 const PlatformUserVoice = 'uservoice';
