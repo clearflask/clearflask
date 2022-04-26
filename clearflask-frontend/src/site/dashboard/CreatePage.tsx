@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+
+/// <reference path="../../@types/transform-media-imports.d.ts"/>
 import { Box, Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -37,7 +39,6 @@ import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
 import { AddonExtraProject } from './BillingPage';
-/// <reference path="../../@types/transform-media-imports.d.ts"/>
 
 const styles = (theme: Theme) => createStyles({
   layout: {

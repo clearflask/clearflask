@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, createStyles, Theme, WithStyles, withStyles } from '@material-ui/core';
 import React, { Component } from 'react';
 import PageNotFoundImg from '../../public/img/landing/404.svg';
 import ImgIso from '../common/ImgIso';
 import Message from '../common/Message';
-/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const styles = (theme: Theme) => createStyles({
   message: {

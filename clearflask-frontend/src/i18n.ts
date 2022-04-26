@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+
+/// <reference path="./@types/transform-media-imports.d.ts"/>
 import i18n, { InitOptions } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
@@ -30,7 +32,6 @@ import FlagTr from '../public/img/flag/tr.svg';
 import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { isProd } from './common/util/detectEnv';
-/// <reference path="./@types/transform-media-imports.d.ts"/>
 
 export const defaultLanguage = 'en';
 export type SupportedLanguage = {

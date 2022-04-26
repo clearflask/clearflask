@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -40,7 +42,6 @@ import { urlAddCfJwt } from './AccountEnterPage';
 import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
-/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const App = loadable(() => import(/* webpackChunkName: "app" */'../app/App').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 

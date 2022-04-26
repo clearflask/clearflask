@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+
+/// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tooltip, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
@@ -88,7 +90,6 @@ import { vh } from '../common/util/screenUtil';
 import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
 import Hero from './landing/Hero';
-/// <reference path="../@types/transform-media-imports.d.ts"/>
 
 const PlatformClearFlask = 'clearflask';
 const PlatformUserVoice = 'uservoice';
