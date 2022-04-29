@@ -32,7 +32,7 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
             core: this.props.state,
           }}
           render={(renderedTemplate) => {
-            return <DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate} />
+            return (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate?.__html} />);
           }}
         />
       </NoSsr>
