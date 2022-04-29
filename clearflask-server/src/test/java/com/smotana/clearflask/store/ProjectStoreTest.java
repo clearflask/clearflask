@@ -154,6 +154,9 @@ public class ProjectStoreTest extends AbstractTest {
                 .slug(slug1).build()).build();
         store.createProject(IdUtil.randomId(), projectId, configSlug1);
 
+        assertEquals(Optional.of(projectId), store.getProject(projectId, false).map(Project::getProjectId));
+        assertEquals(Optional.of(projectId), store.getProjectBySlug(slug1, false).map(Project::getVersionedConfigAdmin).map(VersionedConfigAdmin::getConfig).map(ConfigAdmin::getProjectId));
+
         String slug2 = "slug2";
         VersionedConfigAdmin configSlug2 = configSlug1.toBuilder().config(configSlug1.getConfig().toBuilder()
                 .slug(slug2).build()).build();

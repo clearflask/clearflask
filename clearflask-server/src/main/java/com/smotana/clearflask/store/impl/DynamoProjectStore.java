@@ -186,15 +186,13 @@ public class DynamoProjectStore implements ProjectStore {
                 .getItem(new GetItemSpec()
                         .withPrimaryKey(slugSchema
                                 .primaryKey(Map.of("slug", slug))))));
-        slugModelOpt.ifPresent(slugModel -> slugCache.put(slug, slugModel.getProjectId()));
         if (!slugModelOpt.isPresent() && slugAltOpt.isPresent()) {
             slugModelOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
                     .getItem(new GetItemSpec()
                             .withPrimaryKey(slugSchema
                                     .primaryKey(Map.of("slug", slugAltOpt.get()))))));
-            slugModelOpt.ifPresent(slugModel -> slugCache.put(slug, slugModel.getProjectId()));
         }
-        Optional<Project> projectOpt = slugModelOpt.flatMap(slugModel -> getProject(slugModel.getSlug(), useCache));
+        Optional<Project> projectOpt = slugModelOpt.flatMap(slugModel -> getProject(slugModel.getProjectId(), useCache));
 
         if (projectOpt.isEmpty() && slugModelOpt.isPresent() && slugModelOpt.get().getTtlInEpochSec() == null) {
             log.info("Removing slug {} without expiry pointing to non-existent project {}; this is expected for projects deleted prior to fixing slug removal bug",
@@ -211,6 +209,7 @@ public class DynamoProjectStore implements ProjectStore {
                             ":projectId", slugModelOpt.get().getProjectId())));
         }
 
+        slugModelOpt.ifPresent(slugModel -> slugCache.put(slug, slugModel.getProjectId()));
         return projectOpt;
     }
 
@@ -471,10 +470,10 @@ public class DynamoProjectStore implements ProjectStore {
                         .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(slugsBatch -> {
                     slugCache.invalidateAll(slugsBatch);
-                    TableWriteItems tableWriteItems = new TableWriteItems(slugByProjectSchema.indexName());
+                    TableWriteItems tableWriteItems = new TableWriteItems(slugSchema.tableName());
                     slugsBatch.stream()
-                            .map(slugModel -> slugByProjectSchema.primaryKey(Map.of(
-                                    "projectId", slugModel.getProjectId())))
+                            .map(slugModel -> slugSchema.primaryKey(Map.of(
+                                    "slug", slugModel.getSlug())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
                     dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
