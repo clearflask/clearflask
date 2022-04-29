@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { NoSsr } from '@material-ui/core';
+import DangerouslySetInnerHtmlWithScriptExecution from 'dangerously-set-html-content';
 import React, { Component } from 'react';
 import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
@@ -30,6 +31,9 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
             page: this.props.page,
             loggedInUser: this.props.loggedInUser,
             core: this.props.state,
+          }}
+          render={(renderedTemplate) => {
+            return <DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate} />
           }}
         />
       </NoSsr>
