@@ -8,10 +8,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.SlugModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
@@ -33,6 +37,8 @@ public class ProjectStoreTest extends AbstractTest {
 
     @Inject
     private ProjectStore store;
+    @Inject
+    private DynamoMapper mapper;
 
     @Override
     protected void configure() {
@@ -137,5 +143,47 @@ public class ProjectStoreTest extends AbstractTest {
 
         store.removeAdmin(projectId, admin1AccountId);
         assertEquals(ImmutableSet.of(admin2AccountId), store.getProject(projectId, true).get().getModel().getAdminsAccountIds());
+    }
+
+    @Test(timeout = 10_000L)
+    public void testDeleteProject() throws Exception {
+        String projectId = "projectId";
+        String slug1 = "slug1";
+        VersionedConfigAdmin configSlug1 = ModelUtil.createEmptyConfig(projectId);
+        configSlug1 = configSlug1.toBuilder().config(configSlug1.getConfig().toBuilder()
+                .slug(slug1).build()).build();
+        store.createProject(IdUtil.randomId(), projectId, configSlug1);
+
+        String slug2 = "slug2";
+        VersionedConfigAdmin configSlug2 = configSlug1.toBuilder().config(configSlug1.getConfig().toBuilder()
+                .slug(slug2).build()).build();
+        store.updateConfig(projectId, Optional.empty(), configSlug2, false);
+
+        assertEquals(Optional.of(projectId), store.getProject(projectId, false).map(Project::getProjectId));
+        assertEquals(Optional.of(projectId), store.getProjectBySlug(slug1, false).map(Project::getVersionedConfigAdmin).map(VersionedConfigAdmin::getConfig).map(ConfigAdmin::getProjectId));
+        assertEquals(Optional.of(projectId), store.getProjectBySlug(slug2, false).map(Project::getVersionedConfigAdmin).map(VersionedConfigAdmin::getConfig).map(ConfigAdmin::getProjectId));
+
+        store.deleteProject(projectId);
+
+        assertEquals(Optional.empty(), store.getProject(projectId, false).map(Project::getProjectId));
+        assertEquals(Optional.empty(), store.getProjectBySlug(slug1, false).map(Project::getVersionedConfigAdmin).map(VersionedConfigAdmin::getConfig).map(ConfigAdmin::getProjectId));
+        assertEquals(Optional.empty(), store.getProjectBySlug(slug2, false).map(Project::getVersionedConfigAdmin).map(VersionedConfigAdmin::getConfig).map(ConfigAdmin::getProjectId));
+
+        // Ensure we can create another project with same slug
+        store.createProject(IdUtil.randomId(), projectId, configSlug1);
+        store.updateConfig(projectId, Optional.empty(), configSlug2, false);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testAutoDeleteSlugWithoutProject() throws Exception {
+        TableSchema<SlugModel> slugSchema = mapper.parseTableSchema(SlugModel.class);
+
+        SlugModel slugModel = new SlugModel("mySlug", "myProject", null);
+        slugSchema.table().putItem(slugSchema.toItem(slugModel));
+        assertEquals(slugModel, slugSchema.fromItem(slugSchema.table().getItem(slugSchema.primaryKey(slugModel))));
+
+        assertEquals(Optional.empty(), store.getProjectBySlug(slugModel.getSlug(), false));
+
+        assertNull(slugSchema.fromItem(slugSchema.table().getItem(slugSchema.primaryKey(slugModel))));
     }
 }
