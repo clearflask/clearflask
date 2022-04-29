@@ -24,7 +24,6 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
     return (
       <NoSsr>
         <ReactLiquid
-          html
           template={this.props.template}
           data={{
             config: this.props.config,
