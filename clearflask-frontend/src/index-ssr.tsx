@@ -22,7 +22,6 @@ export const renderIndexSsr = (props: {
 }) => renderToString(props.renderResult.muiSheets.collect(
   <ChunkExtractorManager extractor={props.renderResult.extractor}>
     <WindowIsoSsrProvider
-      env={process.env.ENV || process.env.NODE_ENV as any}
       fetch={fetch}
       apiBasePath={connectConfig.apiBasePath}
       url={props.requestedUrl}

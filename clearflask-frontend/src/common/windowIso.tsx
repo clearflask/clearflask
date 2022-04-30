@@ -43,7 +43,6 @@ export const WindowIsoSsrProvider = (props: {
   children: React.ReactElement;
   fetch: any;
   apiBasePath: string;
-  env: 'development' | 'production' | 'local' | 'test';
   url: string;
   setTitle: (title: string) => void;
   setMaxAge: (maxAge: number) => void;
@@ -52,7 +51,6 @@ export const WindowIsoSsrProvider = (props: {
   staticRouterContext: StaticRouterContext;
   parentDomain: string;
 }) => {
-  win['ENV'] = props.env;
   win['fetch'] = props.fetch;
   win['apiBasePath'] = props.apiBasePath;
   const url = new URL(props.url);
@@ -69,10 +67,10 @@ export const WindowIsoSsrProvider = (props: {
 export type WindowIso = {
   // Both CSR and SSR
   parentDomain: string;
-  ENV?: 'development' | 'production' | 'selfhost' | 'local' | 'test';
 } & (( // CSR only
   Window & typeof globalThis & {
     isSsr: false;
+    ENV?: 'development' | 'production' | 'selfhost' | 'local' | 'test';
   }
 ) | ( // SSR only
     NodeJS.Global & {

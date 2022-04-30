@@ -13,11 +13,14 @@ export enum Environment {
 
 export function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (windowIso.ENV === 'local') {
+    const envVar = windowIso.isSsr
+      ? (process.env.ENV || process.env.NODE_ENV)
+      : windowIso.ENV;
+    if (envVar === 'local') {
       envCache = Environment.DEVELOPMENT_LOCAL;
-    } else if (windowIso.ENV === 'selfhost') {
+    } else if (envVar === 'selfhost') {
       envCache = Environment.PRODUCTION_SELF_HOST;
-    } else if (windowIso.ENV === 'development' || process?.env?.NODE_ENV === 'development') {
+    } else if (envVar === 'development' || process?.env?.NODE_ENV === 'development') {
       const paramsEnv = new URL(windowIso.location.href).searchParams.get('env');
       if (!!paramsEnv && Object.values(Environment).includes(paramsEnv as any)) {
         envCache = paramsEnv as Environment;
