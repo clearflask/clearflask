@@ -4,11 +4,11 @@
     <parent>
         <artifactId>clearflask-parent</artifactId>
         <groupId>com.smotana.clearflask</groupId>
-        <version>1.5.7-SNAPSHOT</version>
+        <version>1.5.8</version>
     </parent>
 
     <artifactId>clearflask-release</artifactId>
-    <version>1.5.7-SNAPSHOT</version>
+    <version>1.5.8</version>
 
     <name>clearflask-release</name>
     <url>https://clearflask.com</url>
