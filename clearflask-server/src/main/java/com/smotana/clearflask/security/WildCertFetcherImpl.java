@@ -147,9 +147,7 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
                     ImmutableList.of(domainWildcard),
                     certificate.getCertificate().getNotBefore().toInstant(),
                     certificate.getCertificate().getNotAfter().toInstant(),
-                    ChronoUnit.SECONDS.between(
-                            Instant.now(),
-                            certificate.getCertificate().getNotAfter().toInstant())));
+                    certificate.getCertificate().getNotAfter().toInstant().getEpochSecond()));
 
             certStore.setCert(certModelOpt.get());
         }

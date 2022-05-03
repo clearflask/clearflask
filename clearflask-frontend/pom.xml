@@ -208,6 +208,16 @@
                         <phase>initialize</phase>
                     </execution>
                     <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --production=false</arguments>
+                        </configuration>
+                        <phase>initialize</phase>
+                    </execution>
+                    <execution>
                         <id>npm ci</id>
                         <goals>
                             <goal>npm</goal>
