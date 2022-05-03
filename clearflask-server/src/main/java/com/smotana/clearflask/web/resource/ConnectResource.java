@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.api.model.RobotsResult;
+import com.smotana.clearflask.security.WildCertFetcher;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
@@ -55,6 +56,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     private CertStore certStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private WildCertFetcher wildCertFetcher;
 
     @RolesAllowed({Role.CONNECT})
     @Override
@@ -66,7 +69,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Override
     public Keypair accountKeypairGetConnect(String id) {
         return certStore.getKeypair(KeypairType.ACCOUNT, id)
-                .map(KeypairModel::toKeyPair)
+                .map(KeypairModel::toApiKeypair)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 
@@ -131,6 +134,11 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @RolesAllowed({Role.CONNECT})
     @Override
     public Cert certGetConnect(String domain) {
+        Optional<Cert> wildCertOpt = wildCertFetcher.getCert()
+                .map(CertModel::toCert);
+        if (wildCertOpt.isPresent()) {
+            return wildCertOpt.get();
+        }
         Optional<Cert> certOpt = certStore.getCert(domain)
                 .map(CertModel::toCert);
         if (certOpt.isPresent()) {
@@ -153,7 +161,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Override
     public Keypair certKeypairGetConnect(String id) {
         return certStore.getKeypair(KeypairType.CERT, id)
-                .map(KeypairModel::toKeyPair)
+                .map(KeypairModel::toApiKeypair)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND));
     }
 

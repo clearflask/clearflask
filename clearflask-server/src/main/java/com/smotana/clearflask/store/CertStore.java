@@ -10,8 +10,14 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.Value;
+import org.jetbrains.annotations.NotNull;
+import org.shredzone.acme4j.util.KeyPairUtils;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.security.KeyPair;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -54,7 +60,7 @@ public interface CertStore {
     @DynamoTable(type = Primary, partitionKeys = {"id", "type"}, rangePrefix = "keypairById")
     class KeypairModel {
         /**
-         * For KeyPairType.ACCOUNT: 'hostmaster@clearflask.com' email or 'default'
+         * For KeyPairType.ACCOUNT: 'hostmaster@clearflask.com' email, 'default' or WildCertFetcherImpl.KEYPAIR_ID_INTERNAL_WILD
          * For KeyPairType.CERT: domain, or certificate id
          * See greenlock-store-clearflask.js for details
          */
@@ -75,10 +81,28 @@ public interface CertStore {
             CERT
         }
 
-        public Keypair toKeyPair() {
+        public Keypair toApiKeypair() {
             return new Keypair(
                     getPrivateKeyPem(),
                     getPrivateKeyJwkJson());
+        }
+
+        @SneakyThrows
+        public KeyPair toJavaKeyPair() {
+            try (StringReader stringReader = new StringReader(this.privateKeyPem)) {
+                return KeyPairUtils.readKeyPair(stringReader);
+            }
+        }
+
+        @SneakyThrows
+        public KeypairModel(@NotNull String id, @NotNull KeypairType type, @NotNull KeyPair javaKeyPair) {
+            this.id = id;
+            this.type = type;
+            try (StringWriter stringWriter = new StringWriter()) {
+                KeyPairUtils.writeKeyPair(javaKeyPair, stringWriter);
+                this.privateKeyPem = stringWriter.toString();
+            }
+            this.privateKeyJwkJson = "";
         }
     }
 
