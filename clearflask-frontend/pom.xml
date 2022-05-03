@@ -218,16 +218,6 @@
                         <phase>initialize</phase>
                     </execution>
                     <execution>
-                        <id>npm ci</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>ci --production=false</arguments>
-                        </configuration>
-                        <phase>initialize</phase>
-                    </execution>
-                    <execution>
                         <id>npm test</id>
                         <goals>
                             <goal>npm</goal>
