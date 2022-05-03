@@ -49,6 +49,7 @@ import com.smotana.clearflask.core.push.provider.EmailServiceImpl;
 import com.smotana.clearflask.security.CheckMailOrgEmailValidator;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
+import com.smotana.clearflask.security.WildCertFetcherImpl;
 import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
@@ -233,6 +234,7 @@ public enum ServiceInjector {
                 install(LocalChallengeLimiter.module());
                 install(CaptchaChallenger.module());
                 install(UserBindUtil.module());
+                install(WildCertFetcherImpl.module());
                 if (env == Environment.PRODUCTION_AWS) {
                     install(CheckMailOrgEmailValidator.module());
                 } else {

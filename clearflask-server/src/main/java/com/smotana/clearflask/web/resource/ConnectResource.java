@@ -134,12 +134,9 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @RolesAllowed({Role.CONNECT})
     @Override
     public Cert certGetConnect(String domain) {
-        Optional<Cert> wildCertOpt = wildCertFetcher.getCert()
-                .map(CertModel::toCert);
-        if (wildCertOpt.isPresent()) {
-            return wildCertOpt.get();
-        }
+        // TODO switch order to first get wild cert then individual cert; During migration while we are rate limited, don't hammer lets encrypt on every cert
         Optional<Cert> certOpt = certStore.getCert(domain)
+                .or(() -> wildCertFetcher.getOrCreateCert(domain))
                 .map(CertModel::toCert);
         if (certOpt.isPresent()) {
             return certOpt.get();
@@ -185,7 +182,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
                 cert.getAltnames(),
                 Instant.ofEpochMilli(cert.getIssuedAt()),
                 Instant.ofEpochMilli(cert.getExpiresAt()),
-                cert.getExpiresAt()));
+                Instant.ofEpochMilli(cert.getExpiresAt()).getEpochSecond()));
     }
 
     @RolesAllowed({Role.CONNECT})

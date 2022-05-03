@@ -8,12 +8,15 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -40,12 +43,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Singleton
 public class WildCertFetcherImpl extends ManagedService implements WildCertFetcher {
 
     public static final String KEYPAIR_ID_INTERNAL_WILD = "clearflask-wildcard";
 
     public interface Config {
-        @DefaultValue("false")
+        @DefaultValue("true")
         boolean enabled();
 
         @DefaultValue("P30D")
@@ -83,76 +87,97 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
 
     @SneakyThrows
     @Override
-    public Optional<CertModel> getCert() {
+    public Optional<CertModel> getOrCreateCert(String domain) {
         if (!config.enabled()) {
             return Optional.empty();
         }
 
+        try {
+            if (!configApp.domain().equals(domain) && !domain.endsWith("." + configApp.domain())) {
+                return Optional.empty();
+            }
+
+            String domainWildcard = "*." + configApp.domain();
+            Optional<CertModel> certModelOpt = certStore.getCert(domainWildcard);
+
+            if (certModelOpt.isEmpty()) {
+                certModelOpt = Optional.of(createCert());
+            } else if (Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
+                executor.submit(this::createCert);
+            }
+
+            return certModelOpt;
+        } catch (Exception ex) {
+            if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {
+                log.warn("Failed to get/create wildcard cert for domain {}", domain, ex);
+            }
+            return Optional.empty();
+        }
+    }
+
+    @SneakyThrows
+    private CertModel createCert() {
+        KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, KEYPAIR_ID_INTERNAL_WILD);
+
+        Session session = new Session("acme://letsencrypt.org");
+
+        Account account = findOrRegisterAccount(session, keyPair);
+
+        KeyPair domainKeyPair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
+
+        // Order the certificate
         String domainWildcard = "*." + configApp.domain();
-        Optional<CertModel> certModelOpt = certStore.getCert(domainWildcard);
+        ImmutableSet<String> domains = ImmutableSet.of(
+                configApp.domain(),
+                domainWildcard);
+        Order order = account.newOrder()
+                .domains(domains)
+                .create();
 
-        if (certModelOpt.isEmpty()) {
-            KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, KEYPAIR_ID_INTERNAL_WILD);
-
-            Session session = new Session("acme://letsencrypt.org");
-
-            Account account = findOrRegisterAccount(session, keyPair);
-
-            KeyPair domainKeyPair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
-
-            // Order the certificate
-            ImmutableSet<String> domains = ImmutableSet.of(
-                    configApp.domain(),
-                    domainWildcard);
-            Order order = account.newOrder()
-                    .domains(domains)
-                    .create();
-
-            for (Authorization auth : order.getAuthorizations()) {
-                authorize(auth);
-            }
-
-            // Generate a CSR for all of the domains, and sign it with the domain key pair.
-            CSRBuilder csrBuilder = new CSRBuilder();
-            csrBuilder.addDomains(domains);
-            csrBuilder.sign(domainKeyPair);
-
-            // Order the certificate
-            order.execute(csrBuilder.getEncoded());
-
-            // Wait for the order to complete
-            int attempts = 10;
-            while (order.getStatus() != Status.VALID && attempts-- > 0) {
-                // Did the order fail?
-                if (order.getStatus() == Status.INVALID) {
-                    log.warn("Order has failed, reason: {}", order.getError());
-                    throw new Exception("Order failed... Giving up.");
-                }
-
-                // Wait for a few seconds
-                Thread.sleep(3000L);
-
-                // Then update the status
-                order.update();
-            }
-
-            // Get the certificate
-            Certificate certificate = order.getCertificate();
-            certModelOpt = Optional.of(new CertModel(
-                    configApp.domain(),
-                    certificate.getCertificate().toString(),
-                    certificate.getCertificateChain().stream()
-                            .map(java.security.cert.Certificate::toString)
-                            .collect(Collectors.joining("\n\n")),
-                    ImmutableList.of(domainWildcard),
-                    certificate.getCertificate().getNotBefore().toInstant(),
-                    certificate.getCertificate().getNotAfter().toInstant(),
-                    certificate.getCertificate().getNotAfter().toInstant().getEpochSecond()));
-
-            certStore.setCert(certModelOpt.get());
+        for (Authorization auth : order.getAuthorizations()) {
+            authorize(auth);
         }
 
-        return certModelOpt;
+        // Generate a CSR for all of the domains, and sign it with the domain key pair.
+        CSRBuilder csrBuilder = new CSRBuilder();
+        csrBuilder.addDomains(domains);
+        csrBuilder.sign(domainKeyPair);
+
+        // Order the certificate
+        order.execute(csrBuilder.getEncoded());
+
+        // Wait for the order to complete
+        int attempts = 10;
+        while (order.getStatus() != Status.VALID && attempts-- > 0) {
+            // Did the order fail?
+            if (order.getStatus() == Status.INVALID) {
+                log.warn("Order has failed, reason: {}", order.getError());
+                throw new Exception("Order failed... Giving up.");
+            }
+
+            // Wait for a few seconds
+            Thread.sleep(3000L);
+
+            // Then update the status
+            order.update();
+        }
+
+        // Get the certificate
+        Certificate certificate = order.getCertificate();
+        CertModel certModel = new CertModel(
+                domainWildcard,
+                certificate.getCertificate().toString(),
+                certificate.getCertificateChain().stream()
+                        .map(java.security.cert.Certificate::toString)
+                        .collect(Collectors.joining("\n\n")),
+                ImmutableList.of(domainWildcard),
+                certificate.getCertificate().getNotBefore().toInstant(),
+                certificate.getCertificate().getNotAfter().toInstant(),
+                certificate.getCertificate().getNotAfter().toInstant().getEpochSecond());
+
+        certStore.setCert(certModel);
+
+        return certModel;
     }
 
     private KeyPair loadOrCreateKeyPair(KeypairType type, String id) {
@@ -246,7 +271,8 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(WildCertFetcherImpl.class).asEagerSingleton();
+                bind(WildCertFetcher.class).to(WildCertFetcherImpl.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WildCertFetcherImpl.class);
             }
         };

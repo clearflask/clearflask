@@ -33,6 +33,7 @@ import rx.Observable;
 import rx.functions.Action1;
 
 import javax.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -176,8 +177,9 @@ public class DynamoCertStore implements CertStore {
     @Override
     public Optional<CertModel> getCert(String domain) {
         return Optional.ofNullable(certSchema.fromItem(certSchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(certSchema.primaryKey(Map.of(
-                        "domain", domain))))));
+                        .withPrimaryKey(certSchema.primaryKey(Map.of(
+                                "domain", domain))))))
+                .filter(cert -> cert.getExpiresAt().isBefore(Instant.now()));
     }
 
     @Extern
