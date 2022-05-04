@@ -46,6 +46,10 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     public interface Config {
         @DefaultValue("^(.+\\.)?clearflask\\.com$")
         String domainWhitelist();
+
+        // TODO Re-enable after Let's Encrypt is fixed
+        @DefaultValue("false")
+        boolean enableConnectCertGeneration();
     }
 
     @Context
@@ -140,6 +144,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
                 .map(CertModel::toCert);
         if (certOpt.isPresent()) {
             return certOpt.get();
+        } else if (!config.enableConnectCertGeneration()) {
+            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
         } else if (domain.matches(config.domainWhitelist())
                 || projectStore.getProjectBySlug(domain, true).isPresent()) {
             throw new ClientErrorException(Response.Status.NOT_FOUND);

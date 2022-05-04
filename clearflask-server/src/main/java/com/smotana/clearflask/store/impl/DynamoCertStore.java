@@ -32,14 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Action1;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @Singleton
@@ -131,7 +130,9 @@ public class DynamoCertStore implements CertStore {
         if (route53 == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
-        checkArgument(allowedHostPredicate.test(host));
+        if (!allowedHostPredicate.test(host)) {
+            throw new BadRequestException("Host not allowed for DNS challenge: " + host);
+        }
         ListResourceRecordSetsResult result = route53.listResourceRecordSets(new ListResourceRecordSetsRequest(config.hostedZoneId())
                 .withStartRecordType(RRType.TXT)
                 .withStartRecordName(host));
@@ -146,7 +147,9 @@ public class DynamoCertStore implements CertStore {
         if (route53 == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
-        checkArgument(allowedHostPredicate.test(host));
+        if (!allowedHostPredicate.test(host)) {
+            throw new BadRequestException("Host not allowed for DNS challenge: " + host);
+        }
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),
                 new ChangeBatch(ImmutableList.of(new Change(
@@ -162,7 +165,9 @@ public class DynamoCertStore implements CertStore {
         if (route53 == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
-        checkArgument(allowedHostPredicate.test(host));
+        if (!allowedHostPredicate.test(host)) {
+            throw new BadRequestException("Host not allowed for DNS challenge: " + host);
+        }
         route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
                 config.hostedZoneId(),
                 new ChangeBatch(ImmutableList.of(new Change(
@@ -179,7 +184,7 @@ public class DynamoCertStore implements CertStore {
         return Optional.ofNullable(certSchema.fromItem(certSchema.table().getItem(new GetItemSpec()
                         .withPrimaryKey(certSchema.primaryKey(Map.of(
                                 "domain", domain))))))
-                .filter(cert -> cert.getExpiresAt().isBefore(Instant.now()));
+                .filter(cert -> cert.getExpiresAt().isAfter(Instant.now()));
     }
 
     @Extern

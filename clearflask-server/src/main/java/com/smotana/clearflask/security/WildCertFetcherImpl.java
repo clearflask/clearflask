@@ -93,7 +93,8 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         }
 
         try {
-            if (!configApp.domain().equals(domain) && !domain.endsWith("." + configApp.domain())) {
+            if (!configApp.domain().equals(domain)
+                    && !domain.endsWith("." + configApp.domain())) {
                 return Optional.empty();
             }
 
@@ -115,8 +116,7 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         }
     }
 
-    @SneakyThrows
-    private CertModel createCert() {
+    private CertModel createCert() throws Exception {
         KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, KEYPAIR_ID_INTERNAL_WILD);
 
         Session session = new Session("acme://letsencrypt.org");
@@ -264,7 +264,7 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
     }
 
     private String dnsChallengeDomainToHost(String domain) {
-        return "_acme-challenge." + domain + ".";
+        return "_acme-challenge." + domain;
     }
 
     public static Module module() {
