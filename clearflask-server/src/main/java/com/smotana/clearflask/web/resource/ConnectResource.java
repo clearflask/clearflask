@@ -60,6 +60,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     private CertStore certStore;
     @Inject
     private ProjectStore projectStore;
@@ -150,7 +152,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
         } else if (!config.enableConnectCertGeneration()) {
             throw new ClientErrorException(Response.Status.UNAUTHORIZED);
         } else if (!config.enableConnectCertGenerationForAppDomain()
-                && (domain.equals(config.getAppDomain()) || domain.endsWith("." + config.getAppDomain()))) {
+                && (domain.equals(configApp.domain()) || domain.endsWith("." + configApp.domain()))) {
             throw new ClientErrorException(Response.Status.UNAUTHORIZED);
         } else if (domain.matches(config.domainWhitelist())
                 || projectStore.getProjectBySlug(domain, true).isPresent()) {
