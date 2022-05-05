@@ -86,8 +86,7 @@ export class Server {
       if (storeOther) await storeOther.dispatch(msg);
     } catch (response) {
       if (!isProd()) {
-        console.log("Dispatch error: ", msg, response);
-        console.trace();
+        console.trace("Dispatch error: ", msg, response);
       }
       try {
         if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {

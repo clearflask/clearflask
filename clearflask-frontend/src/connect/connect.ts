@@ -170,7 +170,7 @@ if (!connectConfig.disableAutoFetchCertificate) {
         // },
       },
       notify: (event, details) => {
-        console.trace('EVENT:', event, details);
+        console.log('EVENT:', event, details);
       },
     })
     .ready(function (glx: glx) {
