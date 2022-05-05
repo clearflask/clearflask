@@ -29,13 +29,16 @@ import org.shredzone.acme4j.Session;
 import org.shredzone.acme4j.Status;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
+import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TXTRecord;
 import org.xbill.DNS.Type;
 
+import java.io.StringWriter;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -169,11 +172,12 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
 
         // Get the certificate
         Certificate certificate = order.getCertificate();
+
         CertModel certModel = new CertModel(
                 domainWildcard,
-                certificate.getCertificate().toString(),
+                certToPemString(certificate.getCertificate()),
                 certificate.getCertificateChain().stream()
-                        .map(java.security.cert.Certificate::toString)
+                        .map(this::certToPemString)
                         .collect(Collectors.joining("\n\n")),
                 ImmutableList.of(domainWildcard),
                 certificate.getCertificate().getNotBefore().toInstant(),
@@ -183,6 +187,14 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         certStore.setCert(certModel);
 
         return certModel;
+    }
+
+    @SneakyThrows
+    private String certToPemString(X509Certificate cert) {
+        try (StringWriter certWriter = new StringWriter()) {
+            AcmeUtils.writeToPem(cert.getEncoded(), AcmeUtils.PemLabel.CERTIFICATE, certWriter);
+            return certWriter.toString();
+        }
     }
 
     private KeyPair loadOrCreateKeyPair(KeypairType type, String id) {
@@ -256,18 +268,22 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
             throw new RuntimeException("No DNS challenge found, available ones: "
                     + authorization.getChallenges().stream().map(Challenge::getType).collect(Collectors.joining(",")));
         }
+        String challengeDomain = dnsChallengeDomainToHost(authorization.getIdentifier().getDomain());
         certStore.setDnsChallenge(
-                dnsChallengeDomainToHost(authorization.getIdentifier().getDomain()),
+                challengeDomain,
                 challenge.getDigest());
 
         // Poll to verify DNS entry.
-        Lookup lookup = new Lookup(authorization.getIdentifier().getDomain(), Type.TXT);
+        Lookup lookup = new Lookup(challengeDomain, Type.TXT);
         ImmutableList<String> txtStrings = ImmutableList.of();
         int attempts = 10;
         for (int i = 0; i < 10; i++) {
-            txtStrings = Optional.ofNullable((TXTRecord[]) lookup.run())
+            txtStrings = Optional.ofNullable(lookup.run())
                     .stream()
                     .flatMap(Arrays::stream)
+                    .filter(r -> r.getType() == Type.TXT)
+                    .filter(r -> r instanceof TXTRecord)
+                    .map(r -> (TXTRecord) r)
                     .map(TXTRecord::getStrings)
                     .flatMap(List::stream)
                     .collect(ImmutableList.toImmutableList());
@@ -285,12 +301,12 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
     }
 
     private void dnsChallengeTeardown(Authorization authorization, Dns01Challenge challenge) {
-        String host = dnsChallengeDomainToHost(authorization.getIdentifier().getDomain());
+        String challengeDomain = dnsChallengeDomainToHost(authorization.getIdentifier().getDomain());
         try {
-            certStore.deleteDnsChallenge(host, challenge.getDigest());
+            certStore.deleteDnsChallenge(challengeDomain, challenge.getDigest());
         } catch (Exception ex) {
             log.warn("Failed to teardown challenge, but continuing certificate creation of host {} challenge {}",
-                    host, challenge.getDigest(), ex);
+                    challengeDomain, challenge.getDigest(), ex);
         }
     }
 

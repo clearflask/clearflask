@@ -175,7 +175,7 @@ public class DynamoCertStore implements CertStore {
                         host,
                         RRType.TXT)
                         .withResourceRecords(new ResourceRecord("\"" + value + "\""))
-                        .withTTL(300L))))));
+                        .withTTL(10L))))));
     }
 
     @Extern

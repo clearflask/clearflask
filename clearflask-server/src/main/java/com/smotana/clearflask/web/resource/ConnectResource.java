@@ -46,13 +46,6 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     public interface Config {
         @DefaultValue("^(.+\\.)?clearflask\\.com$")
         String domainWhitelist();
-
-        @DefaultValue("true")
-        boolean enableConnectCertGeneration();
-
-        // TODO Re-enable after Let's Encrypt is fixed
-        @DefaultValue("false")
-        boolean enableConnectCertGenerationForAppDomain();
     }
 
     @Context
@@ -143,23 +136,20 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @RolesAllowed({Role.CONNECT})
     @Override
     public Cert certGetConnect(String domain) {
-        // TODO switch order to first get wild cert then individual cert; During migration while we are rate limited, don't hammer lets encrypt on every cert
-        Optional<Cert> certOpt = certStore.getCert(domain)
-                .or(() -> wildCertFetcher.getOrCreateCert(domain))
-                .map(CertModel::toCert);
+        Optional<CertModel> certOpt = certStore.getCert(domain);
         if (certOpt.isPresent()) {
-            return certOpt.get();
-        } else if (!config.enableConnectCertGeneration()) {
-            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
-        } else if (!config.enableConnectCertGenerationForAppDomain()
-                && (domain.equals(configApp.domain()) || domain.endsWith("." + configApp.domain()))) {
-            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
-        } else if (domain.matches(config.domainWhitelist())
-                || projectStore.getProjectBySlug(domain, true).isPresent()) {
-            throw new ClientErrorException(Response.Status.NOT_FOUND);
-        } else {
-            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
+            return certOpt.get().toCert();
         }
+        if (projectStore.getProjectBySlug(domain, true).isPresent()) {
+            throw new ClientErrorException(Response.Status.NOT_FOUND);
+        }
+        if (domain.matches(config.domainWhitelist())) {
+            Optional<CertModel> wildCertOpt = wildCertFetcher.getOrCreateCert(domain);
+            if (wildCertOpt.isPresent()) {
+                return wildCertOpt.get().toCert();
+            }
+        }
+        throw new ClientErrorException(Response.Status.UNAUTHORIZED);
     }
 
     @RolesAllowed({Role.CONNECT})
