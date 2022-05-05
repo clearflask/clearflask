@@ -31,11 +31,16 @@ import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.TXTRecord;
+import org.xbill.DNS.Type;
 
 import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -244,7 +249,7 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         }
     }
 
-
+    @SneakyThrows
     private Dns01Challenge dnsChallengeSetup(Authorization authorization) {
         Dns01Challenge challenge = authorization.findChallenge(Dns01Challenge.TYPE);
         if (challenge == null) {
@@ -254,13 +259,39 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         certStore.setDnsChallenge(
                 dnsChallengeDomainToHost(authorization.getIdentifier().getDomain()),
                 challenge.getDigest());
-        return challenge;
+
+        // Poll to verify DNS entry.
+        Lookup lookup = new Lookup(authorization.getIdentifier().getDomain(), Type.TXT);
+        ImmutableList<String> txtStrings = ImmutableList.of();
+        int attempts = 10;
+        for (int i = 0; i < 10; i++) {
+            txtStrings = Optional.ofNullable((TXTRecord[]) lookup.run())
+                    .stream()
+                    .flatMap(Arrays::stream)
+                    .map(TXTRecord::getStrings)
+                    .flatMap(List::stream)
+                    .collect(ImmutableList.toImmutableList());
+
+            if (txtStrings.stream().anyMatch(challenge.getDigest()::equals)) {
+                return challenge;
+            }
+
+            // Wait for a few seconds
+            Thread.sleep(3000L);
+        }
+        throw new Exception("Failed to verify own set DNS challenge for domain: " + authorization.getIdentifier().getDomain()
+                + " expected string: " + challenge.getDigest()
+                + " got strings: " + txtStrings);
     }
 
     private void dnsChallengeTeardown(Authorization authorization, Dns01Challenge challenge) {
-        certStore.deleteDnsChallenge(
-                dnsChallengeDomainToHost(authorization.getIdentifier().getDomain()),
-                challenge.getDigest());
+        String host = dnsChallengeDomainToHost(authorization.getIdentifier().getDomain());
+        try {
+            certStore.deleteDnsChallenge(host, challenge.getDigest());
+        } catch (Exception ex) {
+            log.warn("Failed to teardown challenge, but continuing certificate creation of host {} challenge {}",
+                    host, challenge.getDigest(), ex);
+        }
     }
 
     private String dnsChallengeDomainToHost(String domain) {
