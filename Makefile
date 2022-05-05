@@ -117,6 +117,18 @@ deploy-rotate-instances:
 	tools/instance-refresh-and-wait.sh clearflask-server
 	aws autoscaling describe-auto-scaling-instances --no-paginate --output table --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server']"
 
+deploy-running-servers:
+	make $(foreach server, \
+		$(shell aws ec2 describe-instances --no-paginate --output text \
+			--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server'].InstanceId") \
+			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		deploy-running-server-$(server) )
+
+deploy-running-server-%: get-project-version
+	echo "Deploying to $*"
+	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-0.1.war
+	ssh $* "sudo service tomcat stop && sudo rm -fr /var/lib/tomcat/webapps/ROOT.war /var/lib/tomcat/webapps/ROOT && sudo cp /home/ec2-user/clearflask-server-0.1.war /var/lib/tomcat/webapps/ROOT.war && sudo service tomcat restart"
+
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
 
