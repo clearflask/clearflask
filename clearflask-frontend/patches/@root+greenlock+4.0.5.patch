@@ -1,14 +1,66 @@
+diff --git a/node_modules/@root/greenlock/certificates.js b/node_modules/@root/greenlock/certificates.js
+index 9a46a0e..78d2b2c 100644
+--- a/node_modules/@root/greenlock/certificates.js
++++ b/node_modules/@root/greenlock/certificates.js
+@@ -89,6 +89,7 @@ C._rawGetOrOrder = function(gnlck, mconf, db, acme, chs, acc, email, args) {
+             }
+             err.subject = args.subject;
+             err.altnames = args.altnames;
++            log.trace('Sending error: ', err);
+             gnlck._notify('error', err);
+         });
+ 
 diff --git a/node_modules/@root/greenlock/greenlock.js b/node_modules/@root/greenlock/greenlock.js
-index b346f38..2e0f59a 100644
+index b346f38..43ebb7a 100644
 --- a/node_modules/@root/greenlock/greenlock.js
 +++ b/node_modules/@root/greenlock/greenlock.js
-@@ -147,7 +147,8 @@ G.create = function(gconf) {
+@@ -147,7 +147,7 @@ G.create = function(gconf) {
          return p;
      };
  
 -    greenlock.notify = greenlock._notify = function(ev, params) {
 +    greenlock.notify = greenlock._notify = async function(ev, params) {
-+        if ('error' === ev) console.trace('notify error: ', params);
          var mng = greenlock.manager;
  
          if ('_' === String(ev)[0]) {
+@@ -158,10 +158,12 @@ G.create = function(gconf) {
+                         renewAt: params.renewAt
+                     }).catch(function(e) {
+                         e.context = '_cert_issue';
++						log.trace('Sending error: ', e);
+                         greenlock._notify('error', e);
+                     });
+                 } catch (e) {
+                     e.context = '_cert_issue';
++                    log.trace('Sending error: ', e);
+                     greenlock._notify('error', e);
+                 }
+             }
+@@ -361,6 +363,7 @@ G.create = function(gconf) {
+                     // for debugging, but not to be relied on
+                     err._site = site;
+                     // TODO err.context = err.context || 'renew_certificate'
++                    log.trace('Sending error: ', err);
+                     greenlock._notify('error', err);
+                 })
+                 .then(function() {
+@@ -607,6 +610,7 @@ function mergeDefaults(MCONF, gconf) {
+ }
+ 
+ function _notify(ev, args) {
++    if (ev === 'error') console.trace('Notifying error: ', args);
+     if (!args) {
+         args = ev;
+         ev = args.event;
+diff --git a/node_modules/@root/greenlock/lib/manager-wrapper.js b/node_modules/@root/greenlock/lib/manager-wrapper.js
+index ff4c314..61561e8 100644
+--- a/node_modules/@root/greenlock/lib/manager-wrapper.js
++++ b/node_modules/@root/greenlock/lib/manager-wrapper.js
+@@ -172,6 +172,7 @@ module.exports.wrap = function(greenlock, gconf) {
+                             if (!err.context) {
+                                 err.contxt = 'renew';
+                             }
++                            log.trace('Sending error: ', err);
+                             greenlock._notify('error', err);
+                         });
+                     }

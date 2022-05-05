@@ -127,7 +127,20 @@ deploy-running-servers:
 deploy-running-server-%: get-project-version
 	echo "Deploying to $*"
 	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-0.1.war
-	ssh $* "sudo service tomcat stop && sudo rm -fr /var/lib/tomcat/webapps/ROOT.war /var/lib/tomcat/webapps/ROOT && sudo cp /home/ec2-user/clearflask-server-0.1.war /var/lib/tomcat/webapps/ROOT.war && sudo service tomcat restart"
+	ssh $* "sudo service tomcat stop && sudo rm -fr /var/lib/tomcat/webapps/ROOT.war /var/lib/tomcat/webapps/ROOT && sudo cp /home/ec2-user/clearflask-server-0.1.war /var/lib/tomcat/webapps/ROOT.war && sudo service tomcat start"
+
+
+deploy-running-connects:
+	make $(foreach server, \
+		$(shell aws ec2 describe-instances --no-paginate --output text \
+			--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server'].InstanceId") \
+			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		deploy-running-connect-$(server) )
+
+deploy-running-connect-%: get-project-version
+	echo "Deploying to $*"
+	scp ./clearflask-frontend/target/clearflask-frontend-$(PROJECT_VERSION)-connect.tar.gz $*:/home/ec2-user/clearflask-frontend-0.1-connect.tar.gz
+	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
 
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
