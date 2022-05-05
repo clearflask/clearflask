@@ -45,7 +45,6 @@ import rx.Observable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
@@ -61,6 +60,9 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue("noreply")
         String fromEmailLocalPart();
+
+        @DefaultValue("")
+        String fromEmailDomainOverride();
 
         @DefaultValue("ClearFlask")
         String emailDisplayName();
@@ -80,7 +82,6 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue(value = "events@clearflask.com", innerType = String.class)
         List<String> bccEmails();
-
 
         /** Valid options: TransportStrategy */
         @DefaultValue("SMTP_TLS")
@@ -140,7 +141,10 @@ public class EmailServiceImpl implements EmailService {
             return;
         }
 
-        String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
+        String fromEmailAddress = config.fromEmailLocalPart()
+                + "@"
+                + Optional.ofNullable(Strings.emptyToNull(config.fromEmailDomainOverride()))
+                .orElseGet(configApp::domain);
 
         if ("ses".equals(config.useService())) {
             String emailDisplayName = config.emailDisplayName();
@@ -218,14 +222,15 @@ public class EmailServiceImpl implements EmailService {
                     .withPlainText(email.getContentText());
             if (config.bccOnTagTypes() != null
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
-                emailBuilder.bcc(config.bccEmails().stream().collect(Collectors.joining(",")));
+                emailBuilder.bcc(String.join(",", config.bccEmails()));
             }
             AsyncResponse asyncResponse = this.smtpOpt.get().sendMail(emailBuilder
                     .buildEmail(), true);
             if (asyncResponse != null) {
                 asyncResponse.onException(ex -> {
                     if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
-                        log.warn("Email cannot be delivered", ex);
+                        log.warn("SMTP Email cannot be delivered, strategy {} host {}",
+                                config.smtpStrategy(), config.smtpHost(), ex);
                     }
                 });
                 asyncResponse.onSuccess(() -> log.trace("Email sent to {} project/account id {} to {} subject {}",
