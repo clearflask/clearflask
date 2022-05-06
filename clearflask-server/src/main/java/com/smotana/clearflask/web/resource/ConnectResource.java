@@ -157,6 +157,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Override
     public Cert certGetOrCreateConnect(String domain) {
         return certFetcher.getOrCreateCert(domain)
+                .map(CertModel::toCert)
                 .orElseThrow(NotFoundException::new);
     }
 
