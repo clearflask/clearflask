@@ -4,6 +4,6 @@ import com.smotana.clearflask.store.CertStore.CertModel;
 
 import java.util.Optional;
 
-public interface WildCertFetcher {
+public interface CertFetcher {
     Optional<CertModel> getOrCreateCert(String domain);
 }

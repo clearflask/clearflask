@@ -264,6 +264,21 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
       '401':
         $ref: 'api-client.yaml#/components/responses/Unauthorized'
+  post:
+    operationId: certGetOrCreateConnect
+    tags: [SniConnect]
+    parameters:
+    - name: domain
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Cert'
   put:
     operationId: certPutConnect
     tags: [SniConnect]

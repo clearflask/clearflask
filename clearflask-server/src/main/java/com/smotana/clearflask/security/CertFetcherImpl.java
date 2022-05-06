@@ -15,7 +15,9 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
+import com.smotana.clearflask.store.CertStore.ChallengeModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.SneakyThrows;
@@ -29,6 +31,7 @@ import org.shredzone.acme4j.Session;
 import org.shredzone.acme4j.Status;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
+import org.shredzone.acme4j.challenge.Http01Challenge;
 import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
@@ -52,7 +55,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
-public class WildCertFetcherImpl extends ManagedService implements WildCertFetcher {
+public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     public static final String KEYPAIR_ID_INTERNAL_WILD = "clearflask-wildcard";
 
@@ -73,6 +76,8 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
     private Application.Config configApp;
     @Inject
     private CertStore certStore;
+    @Inject
+    private ProjectStore projectStore;
 
     private ListeningExecutorService executor;
     private Duration renewWithExpiry;
@@ -101,18 +106,27 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         }
 
         try {
-            if (!configApp.domain().equals(domain)
-                    && !domain.endsWith("." + configApp.domain())) {
+            String domainToRequest;
+            if (configApp.domain().equals(domain)
+                    || domain.endsWith("." + configApp.domain())) {
+                domainToRequest = "*." + configApp.domain();
+            } else if (!projectStore.getProjectBySlug(domain, true).isPresent()) {
                 return Optional.empty();
+            } else {
+                domainToRequest = domain;
             }
 
-            String domainWildcard = "*." + configApp.domain();
-            Optional<CertModel> certModelOpt = certStore.getCert(domainWildcard);
-
+            Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest);
             if (certModelOpt.isEmpty()) {
-                certModelOpt = Optional.of(createCert());
+                certModelOpt = Optional.of(createCert(domainToRequest));
             } else if (Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
-                executor.submit(this::createCert);
+                executor.submit(() -> {
+                    try {
+                        createCert(domainToRequest);
+                    } catch (Exception ex) {
+                        log.warn("Failed to renew wildcard cert for domain {}", domain, ex);
+                    }
+                });
             }
 
             return certModelOpt;
@@ -124,8 +138,8 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         }
     }
 
-    private CertModel createCert() throws Exception {
-        KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, KEYPAIR_ID_INTERNAL_WILD);
+    private CertModel createCert(String domain) throws Exception {
+        KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, domain);
 
         Session session = new Session("acme://letsencrypt.org");
 
@@ -134,10 +148,10 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         KeyPair domainKeyPair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
 
         // Order the certificate
-        String domainWildcard = "*." + configApp.domain();
-        ImmutableSet<String> domains = ImmutableSet.of(
-                configApp.domain(),
-                domainWildcard);
+        boolean isWild = domain.startsWith("*.");
+        ImmutableSet<String> domains = isWild
+                ? ImmutableSet.of(domain, domain.substring(2))
+                : ImmutableSet.of(domain);
         Order order = account.newOrder()
                 .domains(domains)
                 .create();
@@ -174,12 +188,12 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         Certificate certificate = order.getCertificate();
 
         CertModel certModel = new CertModel(
-                domainWildcard,
+                domain,
                 certToPemString(certificate.getCertificate()),
                 certificate.getCertificateChain().stream()
                         .map(this::certToPemString)
                         .collect(Collectors.joining("\n\n")),
-                ImmutableList.of(domainWildcard),
+                domains.asList(),
                 certificate.getCertificate().getNotBefore().toInstant(),
                 certificate.getCertificate().getNotAfter().toInstant(),
                 certificate.getCertificate().getNotAfter().toInstant().getEpochSecond());
@@ -213,11 +227,10 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
 
     @SneakyThrows
     private Account findOrRegisterAccount(Session session, KeyPair accountKey) {
-        Account account = new AccountBuilder()
+        return new AccountBuilder()
                 .agreeToTermsOfService()
                 .useKeyPair(accountKey)
                 .create(session);
-        return account;
     }
 
     @SneakyThrows
@@ -226,10 +239,9 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
             return;
         }
 
-        Dns01Challenge challenge = dnsChallengeSetup(authorization);
+        Challenge challenge = challengeSetup(authorization);
 
         try {
-
             if (Status.VALID.equals(challenge.getStatus())) {
                 return;
             }
@@ -257,17 +269,37 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
             }
 
         } finally {
-            dnsChallengeTeardown(authorization, challenge);
+            challengeTeardown(authorization, challenge);
         }
     }
 
     @SneakyThrows
-    private Dns01Challenge dnsChallengeSetup(Authorization authorization) {
-        Dns01Challenge challenge = authorization.findChallenge(Dns01Challenge.TYPE);
-        if (challenge == null) {
-            throw new RuntimeException("No DNS challenge found, available ones: "
-                    + authorization.getChallenges().stream().map(Challenge::getType).collect(Collectors.joining(",")));
+    private Challenge challengeSetup(Authorization authorization) {
+        Http01Challenge httpChallenge = authorization.findChallenge(Http01Challenge.TYPE);
+        if (httpChallenge != null) {
+            httpChallengeSetup(authorization, httpChallenge);
+            return httpChallenge;
         }
+
+        Dns01Challenge dnsChallenge = authorization.findChallenge(Dns01Challenge.TYPE);
+        if (dnsChallenge != null) {
+            dnsChallengeSetup(authorization, dnsChallenge);
+            return dnsChallenge;
+        }
+
+        throw new RuntimeException("No appropriate challenges found, available ones: "
+                + authorization.getChallenges().stream().map(Challenge::getType).collect(Collectors.joining(",")));
+    }
+
+    @SneakyThrows
+    private void httpChallengeSetup(Authorization authorization, Http01Challenge challenge) {
+        certStore.setHttpChallenge(new ChallengeModel(
+                challenge.getToken(),
+                challenge.getAuthorization()));
+    }
+
+    @SneakyThrows
+    private void dnsChallengeSetup(Authorization authorization, Dns01Challenge challenge) {
         String challengeDomain = dnsChallengeDomainToHost(authorization.getIdentifier().getDomain());
         certStore.setDnsChallenge(
                 challengeDomain,
@@ -289,7 +321,7 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
                     .collect(ImmutableList.toImmutableList());
 
             if (txtStrings.stream().anyMatch(challenge.getDigest()::equals)) {
-                return challenge;
+                return;
             }
 
             // Wait for a few seconds
@@ -298,6 +330,19 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         throw new Exception("Failed to verify own set DNS challenge for domain: " + authorization.getIdentifier().getDomain()
                 + " expected string: " + challenge.getDigest()
                 + " got strings: " + txtStrings);
+    }
+
+    private void challengeTeardown(Authorization authorization, Challenge challenge) {
+        if (challenge instanceof Http01Challenge) {
+            httpChallengeTeardown((Http01Challenge) challenge);
+        } else if (challenge instanceof Dns01Challenge) {
+            dnsChallengeTeardown(authorization, (Dns01Challenge) challenge);
+        }
+        log.warn("Failed to teardown unknown challenge type {}, continuing...", challenge.getType());
+    }
+
+    private void httpChallengeTeardown(Http01Challenge challenge) {
+        certStore.deleteHttpChallenge(challenge.getToken());
     }
 
     private void dnsChallengeTeardown(Authorization authorization, Dns01Challenge challenge) {
@@ -318,9 +363,9 @@ public class WildCertFetcherImpl extends ManagedService implements WildCertFetch
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(WildCertFetcher.class).to(WildCertFetcherImpl.class).asEagerSingleton();
+                bind(CertFetcher.class).to(CertFetcherImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WildCertFetcherImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(CertFetcherImpl.class);
             }
         };
     }

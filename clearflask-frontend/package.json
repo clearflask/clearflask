@@ -99,6 +99,7 @@
     "jsonwebtoken": "8.5.1",
     "lodash.clonedeep": "4.5.0",
     "lorem-ipsum": "2.0.1",
+    "map-expire": "1.0.2",
     "marked": "4.0.10",
     "material-ui-color-picker": "3.5.0",
     "memoizee": "0.4.15",

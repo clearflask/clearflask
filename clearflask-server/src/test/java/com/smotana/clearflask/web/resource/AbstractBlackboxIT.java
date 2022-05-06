@@ -58,9 +58,9 @@ import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
+import com.smotana.clearflask.security.CertFetcherImpl;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
-import com.smotana.clearflask.security.WildCertFetcherImpl;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
@@ -201,7 +201,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ContentResource.module(),
                 CommentResource.module(),
                 CreditResource.module(),
-                WildCertFetcherImpl.module(),
+                CertFetcherImpl.module(),
                 NotificationResource.module(),
                 KillBillResource.module(),
                 GitHubResource.module(),
@@ -274,7 +274,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(AccountResource.Config.class, om -> {
                     om.override(om.id().enableNonPublicPlans()).withValue(Boolean.TRUE);
                 }));
-                install(ConfigSystem.overrideModule(WildCertFetcherImpl.Config.class, om -> {
+                install(ConfigSystem.overrideModule(CertFetcherImpl.Config.class, om -> {
                     om.override(om.id().enabled()).withValue(Boolean.FALSE);
                 }));
                 install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {

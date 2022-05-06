@@ -2,14 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as Sentry from "@sentry/node";
 import { Integrations } from "@sentry/tracing";
+import cluster from 'cluster';
 import compression from 'compression';
+import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
 import greenlockExpress, { glx } from 'greenlock-express';
+import http from 'http';
 import httpp from 'http-proxy';
+import https, { ServerOptions } from 'https';
 import i18nextMiddleware from 'i18next-http-middleware';
+import MapExpire from 'map-expire/MapExpire';
 import path from 'path';
 import serveStatic from 'serve-static';
+import tls, { SecureContext } from 'tls';
+import { Cert } from "../api/connect";
 import { getI18n } from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
@@ -29,8 +36,9 @@ const urlsSkipCache = new Set([
   '/sw.js',
   '/asset-manifest.json',
 ]);
+const apiBasePathWs = connectConfig.apiBasePath.replace(/[a-z]+:\/\//i, 'ws://');
 
-function createProxy() {
+function createApiProxy() {
   const serverHttpp = httpp.createProxyServer({ xfwd: true });
   serverHttpp.on('error', function (err, req, res) {
     console.error(err);
@@ -59,7 +67,91 @@ function replaceAndSend(res, filePath) {
   }
 }
 
-function createApp(serverHttpp) {
+const secureContextCache = new MapExpire([], {
+  capacity: 100,
+  duration: 0, // default expiry in millisecond
+});
+const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) => {
+  // Get cert
+  const wildName = '*.' + servername
+    .split('.')
+    .slice(1)
+    .join('.');
+  var secureContext: SecureContext = secureContextCache.get(servername) || secureContextCache.get(wildName);
+  if (!secureContext) {
+    var certificate: Cert;
+    try {
+      certificate = await ServerConnect.get()
+        .dispatch()
+        .certGetOrCreateConnect(
+          { domain: servername },
+          undefined,
+          { 'x-cf-connect-token': connectConfig.connectToken });
+      console.log('Found cert for servername', servername);
+    } catch (response: any) {
+      console.log('Cert get unknown error for servername', servername, response);
+      callback(new Error('No certificate found'), null as any);
+      return;
+    }
+
+    // Extract private key
+    const privKey = crypto.createPrivateKey({
+      key: certificate.cert,
+      format: 'pem',
+    });
+    const privKeyPem = privKey.export({
+      format: 'pem',
+      type: 'spki'
+    });
+
+    // Create secure context
+    secureContext = tls.createSecureContext({
+      key: privKeyPem,
+      cert: certificate.chain,
+    });
+
+    // Add to cache
+    const expiresInSec = certificate.expiresAt - new Date().getTime();
+    [servername, ...certificate.altnames].forEach(altName => secureContextCache.set(
+      servername,
+      secureContext,
+      Math.min(3600, expiresInSec)));
+  }
+
+  callback(null, secureContext);
+}
+
+function addAcmeRoute(server) {
+  server.get('/.well-known/acme-challenge/:key', async function (req, res) {
+    const key = req.params.key;
+    try {
+      const challenge = await ServerConnect.get()
+        .dispatch()
+        .certChallengeHttpGetConnect(
+          { key },
+          undefined,
+          { 'x-cf-connect-token': connectConfig.connectToken });
+      console.log('Challenge found for key', key);
+      res.status(200);
+      res.send(challenge.result);
+      return;
+    } catch (response: any) {
+      if (response?.status === 404) {
+        res.status(404);
+        res.send('Not found');
+        console.log('Challenge not found for key', key);
+        return;
+      }
+      console.log('Challenge failed for key', key, response);
+      res.status(500);
+      res.send('Internal server error');
+      throw response;
+    }
+  }
+  );
+}
+
+function createApp(serverApi) {
   const serverApp = express();
   const reactRender = reactRenderer();
 
@@ -103,6 +195,8 @@ function createApp(serverHttpp) {
     });
   }
 
+  addAcmeRoute(serverApp);
+
   serverApp.use(serveStatic(connectConfig.publicPath, {
     index: false,
     maxAge: '7d',
@@ -114,7 +208,7 @@ function createApp(serverHttpp) {
   }));
 
   serverApp.all(/^\/api\/./, function (req, res) {
-    serverHttpp.web(req, res, {
+    serverApi.web(req, res, {
       target: connectConfig.apiBasePath,
     });
   });
@@ -132,7 +226,7 @@ function createApp(serverHttpp) {
   return serverApp;
 }
 
-if (!connectConfig.disableAutoFetchCertificate) {
+if (!connectConfig.disableAutoFetchCertificate && connectConfig.useGreenlock) {
   greenlockExpress
     .init({
       agreeToTerms: true,
@@ -176,8 +270,8 @@ if (!connectConfig.disableAutoFetchCertificate) {
     .ready(function (glx: glx) {
       console.log('Worker Started');
 
-      // App
-      const serverHttpp = createProxy();
+      // API proxy
+      const serverHttpp = createApiProxy();
 
       // App
       const serverApp = createApp(serverHttpp);
@@ -190,7 +284,7 @@ if (!connectConfig.disableAutoFetchCertificate) {
       serverHttps.on("upgrade", function (req, socket, head) {
         serverHttpp.ws(req, socket, head, {
           ws: true,
-          target: "ws://localhost:8080"
+          target: apiBasePathWs,
         });
       });
 
@@ -211,8 +305,66 @@ if (!connectConfig.disableAutoFetchCertificate) {
     .master(function () {
       console.log(`Master Started (${process.env.ENV})`);
     });
+} else if (!connectConfig.disableAutoFetchCertificate && !connectConfig.useGreenlock) {
+  // Spin up cluster
+  if (cluster.isMaster) {
+    console.log(`Master ${process.pid} running`);
+
+    // Fork workers
+    for (let i = 0; i < Math.max(1, connectConfig.workerCount); i++) {
+      cluster.fork();
+    }
+
+    cluster.on('exit', (worker, code, signal) => {
+      console.log(`worker ${worker.process.pid} died`);
+      process.exit(42); // Kill entire cluster if one worker dies
+    });
+  } else {
+    console.log(`Worker ${process.pid} starting`);
+
+    // API proxy
+    const serverApi = createApiProxy();
+
+    // App
+    const serverApp = createApp(serverApi);
+
+    // ACME challenger
+    const serverAcme = express();
+    addAcmeRoute(serverAcme);
+    serverAcme.use('*', serverApp);
+
+    // Http
+    const serverHttp = http.createServer(serverAcme);
+
+    // Https
+    const serverHttps = https.createServer({
+      SNICallback: sniCallback,
+    }, serverApp);
+
+    // Http(s)
+    const serverHttpx = httpx.createServer(serverHttp, serverHttps);
+    serverHttpx.listen(connectConfig.listenPort, () => {
+      console.info("Http(s) on", connectConfig.listenPort);
+    });
+
+    // WebSockets
+    serverHttpx.on('upgrade', function (req, socket, head) {
+      serverApi.ws(req, socket, head, {
+        ws: true,
+        target: apiBasePathWs,
+      });
+    });
+
+    // Servers
+    serverHttp.listen(9080, "0.0.0.0", function () {
+      console.info("Http on", (serverHttp as any).address?.()?.port);
+    });
+    serverHttps.listen(9443, "0.0.0.0", function () {
+      console.info("Https on", (serverHttps as any).address?.()?.port);
+    });
+  }
 } else {
-  createApp(createProxy()).listen(9080, "0.0.0.0", function () {
+  createApp(createApiProxy()).listen(9080, "0.0.0.0", function () {
     console.info(`App on 9080 (${process.env.ENV})`);
   });
 }

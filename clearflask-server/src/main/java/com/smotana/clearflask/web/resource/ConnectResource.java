@@ -14,7 +14,7 @@ import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.api.model.RobotsResult;
-import com.smotana.clearflask.security.WildCertFetcher;
+import com.smotana.clearflask.security.CertFetcher;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
@@ -31,6 +31,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -59,7 +60,7 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Inject
     private ProjectStore projectStore;
     @Inject
-    private WildCertFetcher wildCertFetcher;
+    private CertFetcher certFetcher;
 
     @RolesAllowed({Role.CONNECT})
     @Override
@@ -144,12 +145,19 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
             throw new ClientErrorException(Response.Status.NOT_FOUND);
         }
         if (domain.matches(config.domainWhitelist())) {
-            Optional<CertModel> wildCertOpt = wildCertFetcher.getOrCreateCert(domain);
+            Optional<CertModel> wildCertOpt = certFetcher.getOrCreateCert(domain);
             if (wildCertOpt.isPresent()) {
                 return wildCertOpt.get().toCert();
             }
         }
         throw new ClientErrorException(Response.Status.UNAUTHORIZED);
+    }
+
+    @RolesAllowed({Role.CONNECT})
+    @Override
+    public Cert certGetOrCreateConnect(String domain) {
+        return certFetcher.getOrCreateCert(domain)
+                .orElseThrow(NotFoundException::new);
     }
 
     @RolesAllowed({Role.CONNECT})

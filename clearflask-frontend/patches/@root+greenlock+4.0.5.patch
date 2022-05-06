@@ -6,7 +6,7 @@ index 9a46a0e..78d2b2c 100644
              }
              err.subject = args.subject;
              err.altnames = args.altnames;
-+            log.trace('Sending error: ', err);
++            console.trace('Sending error: ', err);
              gnlck._notify('error', err);
          });
  
@@ -27,12 +27,12 @@ index b346f38..43ebb7a 100644
                          renewAt: params.renewAt
                      }).catch(function(e) {
                          e.context = '_cert_issue';
-+						log.trace('Sending error: ', e);
++						console.trace('Sending error: ', e);
                          greenlock._notify('error', e);
                      });
                  } catch (e) {
                      e.context = '_cert_issue';
-+                    log.trace('Sending error: ', e);
++                    console.trace('Sending error: ', e);
                      greenlock._notify('error', e);
                  }
              }
@@ -40,7 +40,7 @@ index b346f38..43ebb7a 100644
                      // for debugging, but not to be relied on
                      err._site = site;
                      // TODO err.context = err.context || 'renew_certificate'
-+                    log.trace('Sending error: ', err);
++                    console.trace('Sending error: ', err);
                      greenlock._notify('error', err);
                  })
                  .then(function() {
@@ -60,7 +60,7 @@ index ff4c314..61561e8 100644
                              if (!err.context) {
                                  err.contxt = 'renew';
                              }
-+                            log.trace('Sending error: ', err);
++                            console.trace('Sending error: ', err);
                              greenlock._notify('error', err);
                          });
                      }

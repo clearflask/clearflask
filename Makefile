@@ -140,7 +140,7 @@ deploy-running-connects:
 deploy-running-connect-%: get-project-version
 	echo "Deploying to $*"
 	scp ./clearflask-frontend/target/clearflask-frontend-$(PROJECT_VERSION)-connect.tar.gz $*:/home/ec2-user/clearflask-frontend-0.1-connect.tar.gz
-	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
+	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect/* && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
 
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
