@@ -16,6 +16,7 @@ import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
+import com.smotana.clearflask.store.CertStore.KeypairModel;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.LogUtil;
@@ -98,9 +99,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         executor.awaitTermination(30, TimeUnit.SECONDS);
     }
 
-    @SneakyThrows
     @Override
-    public Optional<CertModel> getOrCreateCert(String domain) {
+    public Optional<CertAndKeypair> getOrCreateCertAndKeypair(String domain) {
         if (!config.enabled()) {
             return Optional.empty();
         }
@@ -117,19 +117,28 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             }
 
             Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest);
-            if (certModelOpt.isEmpty()) {
-                certModelOpt = Optional.of(createCert(domainToRequest));
-            } else if (Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
+            if (certModelOpt.isPresent() && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
                 executor.submit(() -> {
                     try {
                         createCert(domainToRequest);
                     } catch (Exception ex) {
-                        log.warn("Failed to renew wildcard cert for domain {}", domain, ex);
+                        log.warn("Failed to renew cert for domain {}", domain, ex);
                     }
                 });
             }
-
-            return certModelOpt;
+            if (certModelOpt.isEmpty()) {
+                try {
+                    return Optional.of(createCert(domainToRequest));
+                } catch (Exception ex) {
+                    log.warn("Failed to create cert for domain {}", domain, ex);
+                    return Optional.empty();
+                }
+            } else {
+                Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
+                return keypairModelOpt.map(keypairModel -> new CertAndKeypair(
+                        certModelOpt.get(),
+                        keypairModel));
+            }
         } catch (Exception ex) {
             if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {
                 log.warn("Failed to get/create wildcard cert for domain {}", domain, ex);
@@ -138,14 +147,14 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         }
     }
 
-    private CertModel createCert(String domain) throws Exception {
-        KeyPair keyPair = loadOrCreateKeyPair(KeypairType.ACCOUNT, domain);
+    private CertAndKeypair createCert(String domain) throws Exception {
+        KeypairModel accountKeypair = loadOrCreateKeyPair(KeypairType.ACCOUNT, domain);
 
         Session session = new Session("acme://letsencrypt.org");
 
-        Account account = findOrRegisterAccount(session, keyPair);
+        Account account = findOrRegisterAccount(session, accountKeypair.toJavaKeyPair());
 
-        KeyPair domainKeyPair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
+        KeypairModel domainKeypair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
 
         // Order the certificate
         boolean isWild = domain.startsWith("*.");
@@ -163,7 +172,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         // Generate a CSR for all of the domains, and sign it with the domain key pair.
         CSRBuilder csrBuilder = new CSRBuilder();
         csrBuilder.addDomains(domains);
-        csrBuilder.sign(domainKeyPair);
+        csrBuilder.sign(domainKeypair.toJavaKeyPair());
 
         // Order the certificate
         order.execute(csrBuilder.getEncoded());
@@ -200,7 +209,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
         certStore.setCert(certModel);
 
-        return certModel;
+        return new CertAndKeypair(certModel, domainKeypair);
     }
 
     @SneakyThrows
@@ -211,16 +220,16 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         }
     }
 
-    private KeyPair loadOrCreateKeyPair(KeypairType type, String id) {
-        Optional<KeyPair> keyPairOpt = certStore.getKeypair(
-                        type, id)
-                .map(CertStore.KeypairModel::toJavaKeyPair);
+    private KeypairModel loadOrCreateKeyPair(KeypairType type, String id) {
+        Optional<KeypairModel> keyPairOpt = certStore.getKeypair(
+                type, id);
         if (keyPairOpt.isEmpty()) {
-            keyPairOpt = Optional.of(KeyPairUtils.createKeyPair());
-            certStore.setKeypair(new CertStore.KeypairModel(
+            KeyPair javaKeyPair = KeyPairUtils.createKeyPair();
+            keyPairOpt = Optional.of(new KeypairModel(
                     id,
                     type,
-                    keyPairOpt.get()));
+                    javaKeyPair));
+            certStore.setKeypair(keyPairOpt.get());
         }
         return keyPairOpt.get();
     }

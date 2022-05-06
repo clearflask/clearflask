@@ -11,10 +11,12 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.RobotsConnectApi;
 import com.smotana.clearflask.api.SniConnectApi;
 import com.smotana.clearflask.api.model.Cert;
+import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.api.model.RobotsResult;
 import com.smotana.clearflask.security.CertFetcher;
+import com.smotana.clearflask.security.CertFetcher.CertAndKeypair;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
@@ -145,9 +147,11 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
             throw new ClientErrorException(Response.Status.NOT_FOUND);
         }
         if (domain.matches(config.domainWhitelist())) {
-            Optional<CertModel> wildCertOpt = certFetcher.getOrCreateCert(domain);
+            Optional<Cert> wildCertOpt = certFetcher.getOrCreateCertAndKeypair(domain)
+                    .map(CertAndKeypair::getCert)
+                    .map(CertModel::toCert);
             if (wildCertOpt.isPresent()) {
-                return wildCertOpt.get().toCert();
+                return wildCertOpt.get();
             }
         }
         throw new ClientErrorException(Response.Status.UNAUTHORIZED);
@@ -155,9 +159,9 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
 
     @RolesAllowed({Role.CONNECT})
     @Override
-    public Cert certGetOrCreateConnect(String domain) {
-        return certFetcher.getOrCreateCert(domain)
-                .map(CertModel::toCert)
+    public CertGetOrCreateResponse certGetOrCreateConnect(String domain) {
+        return certFetcher.getOrCreateCertAndKeypair(domain)
+                .map(CertAndKeypair::toCertGetOrCreateResponse)
                 .orElseThrow(NotFoundException::new);
     }
 

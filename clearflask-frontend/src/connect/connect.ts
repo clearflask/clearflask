@@ -4,7 +4,6 @@ import * as Sentry from "@sentry/node";
 import { Integrations } from "@sentry/tracing";
 import cluster from 'cluster';
 import compression from 'compression';
-import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
 import greenlockExpress, { glx } from 'greenlock-express';
@@ -16,7 +15,7 @@ import MapExpire from 'map-expire/MapExpire';
 import path from 'path';
 import serveStatic from 'serve-static';
 import tls, { SecureContext } from 'tls';
-import { Cert } from "../api/connect";
+import { CertGetOrCreateResponse } from "../api/connect";
 import { getI18n } from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
@@ -79,9 +78,9 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
     .join('.');
   var secureContext: SecureContext = secureContextCache.get(servername) || secureContextCache.get(wildName);
   if (!secureContext) {
-    var certificate: Cert;
+    var certAndKey: CertGetOrCreateResponse;
     try {
-      certificate = await ServerConnect.get()
+      certAndKey = await ServerConnect.get()
         .dispatch()
         .certGetOrCreateConnect(
           { domain: servername },
@@ -94,25 +93,15 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
       return;
     }
 
-    // Extract private key
-    const privKey = crypto.createPrivateKey({
-      key: certificate.cert,
-      format: 'pem',
-    });
-    const privKeyPem = privKey.export({
-      format: 'pem',
-      type: 'spki'
-    });
-
     // Create secure context
     secureContext = tls.createSecureContext({
-      key: privKeyPem,
-      cert: certificate.chain,
+      key: certAndKey.keypair.privateKeyPem,
+      cert: certAndKey.cert.cert + "\n" + certAndKey.cert.chain,
     });
 
     // Add to cache
-    const expiresInSec = certificate.expiresAt - new Date().getTime();
-    [servername, ...certificate.altnames].forEach(altName => secureContextCache.set(
+    const expiresInSec = certAndKey.cert.expiresAt - new Date().getTime();
+    [servername, ...certAndKey.cert.altnames].forEach(altName => secureContextCache.set(
       servername,
       secureContext,
       Math.min(3600, expiresInSec)));
