@@ -73,6 +73,7 @@ public interface CertStore {
         @NonNull
         String privateKeyPem;
 
+        @Deprecated
         @NonNull
         String privateKeyJwkJson;
 

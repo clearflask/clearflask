@@ -1,5 +1,7 @@
 package com.smotana.clearflask.security;
 
+import com.amazonaws.util.StringInputStream;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -42,6 +44,8 @@ import org.xbill.DNS.Type;
 
 import java.io.StringWriter;
 import java.security.KeyPair;
+import java.security.Security;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,6 +63,7 @@ import java.util.stream.Collectors;
 public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     public static final String KEYPAIR_ID_INTERNAL_WILD = "clearflask-wildcard";
+    public static final Instant CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO = Instant.ofEpochMilli(/* May 7, 2022 */1651932425000L);
 
     public interface Config {
         @DefaultValue("true")
@@ -85,6 +90,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     @Override
     protected void serviceStart() throws Exception {
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
         executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
                 .setNameFormat("WildCertManager-worker-%d").build()));
         Duration expiryRange = config.renewWithExpiryRangeMax()
@@ -135,9 +142,27 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 }
             } else {
                 Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
-                return keypairModelOpt.map(keypairModel -> new CertAndKeypair(
+                if (keypairModelOpt.isEmpty()) {
+                    log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
+                    certStore.deleteCert(domainToRequest);
+                    return Optional.of(createCert(domainToRequest));
+                }
+
+                // Because there were a few certs we created with the wrong private key,
+                // Ensure the private key matches the cert otherwise throw it away
+                if (certModelOpt.get().getIssuedAt().isBefore(CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO)) {
+                    boolean privatePublicMatches = checkPrivatePublicMatches(certModelOpt.get(), keypairModelOpt.get());
+                    if (!privatePublicMatches) {
+                        log.warn("Keypair doesn't match cert for domain {}, re-creating both", domainToRequest);
+                        certStore.deleteKeypair(KeypairType.CERT, domainToRequest);
+                        certStore.deleteCert(domainToRequest);
+                        return Optional.of(createCert(domainToRequest));
+                    }
+                }
+
+                return Optional.of(new CertAndKeypair(
                         certModelOpt.get(),
-                        keypairModel));
+                        keypairModelOpt.get()));
             }
         } catch (Exception ex) {
             if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {
@@ -147,14 +172,29 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         }
     }
 
+    @SneakyThrows
+    @VisibleForTesting
+    static boolean checkPrivatePublicMatches(CertModel certModel, KeypairModel keypairModel) {
+        KeyPair keyPair = keypairModel.toJavaKeyPair();
+
+        X509Certificate cert;
+        try (StringInputStream sis = new StringInputStream(certModel.getCert())) {
+            return CertificateFactory.getInstance("X.509").generateCertificate(sis)
+                    .getPublicKey()
+                    .equals(keyPair.getPublic());
+        }
+    }
+
     private CertAndKeypair createCert(String domain) throws Exception {
+        log.info("Creating cert for domain {}", domain);
+
         KeypairModel accountKeypair = loadOrCreateKeyPair(KeypairType.ACCOUNT, domain);
 
         Session session = new Session("acme://letsencrypt.org");
 
         Account account = findOrRegisterAccount(session, accountKeypair.toJavaKeyPair());
 
-        KeypairModel domainKeypair = loadOrCreateKeyPair(KeypairType.CERT, configApp.domain());
+        KeypairModel domainKeypair = loadOrCreateKeyPair(KeypairType.CERT, domain);
 
         // Order the certificate
         boolean isWild = domain.startsWith("*.");
