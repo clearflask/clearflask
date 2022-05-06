@@ -84,20 +84,6 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
-                                    <directory>${project.basedir}/greenlock.d</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
-                                    <directory>${project.basedir}</directory>
-                                    <includes>
-                                        <include>.greenlockrc</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
                                     <directory>${project.basedir}/public/api/</directory>
                                     <includes>
                                         <include>**</include>

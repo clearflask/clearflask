@@ -13,11 +13,8 @@ components:
       type: object
       required:
         - privateKeyPem
-        - privateKeyJwkJson
       properties:
         privateKeyPem:
-          type: string
-        privateKeyJwkJson:
           type: string
     Cert:
       type: object
@@ -46,102 +43,6 @@ components:
           type: integer
           format: int64
 
-/connect/account/keypair:
-  get:
-    operationId: accountKeypairGetConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-sni.yaml#/components/schemas/Keypair'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-  put:
-    operationId: accountKeypairPutConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Keypair'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-  delete:
-    operationId: accountKeypairDeleteConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-/connect/cert/keypair:
-  get:
-    operationId: certKeypairGetConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-sni.yaml#/components/schemas/Keypair'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-  put:
-    operationId: certKeypairPutConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Keypair'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-  delete:
-    operationId: certKeypairDeleteConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
 /connect/cert/challenge/http:
   get:
     operationId: certChallengeHttpGetConnect
@@ -160,110 +61,7 @@ components:
               $ref: 'api-sni.yaml#/components/schemas/Challenge'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-  put:
-    operationId: certChallengeHttpPutConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: key
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Challenge'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-  delete:
-    operationId: certChallengeHttpDeleteConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: key
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-/connect/cert/challenge/dns:
-  get:
-    operationId: certChallengeDnsGetConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: host
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-sni.yaml#/components/schemas/Challenge'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-  put:
-    operationId: certChallengeDnsPutConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: host
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Challenge'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-  delete:
-    operationId: certChallengeDnsDeleteConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: host
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Challenge'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
 /connect/cert:
-  get:
-    operationId: certGetConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: domain
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-sni.yaml#/components/schemas/Cert'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-      '401':
-        $ref: 'api-client.yaml#/components/responses/Unauthorized'
   post:
     operationId: certGetOrCreateConnect
     tags: [ SniConnect ]
@@ -288,33 +86,3 @@ components:
                   $ref: 'api-sni.yaml#/components/schemas/Cert'
                 keypair:
                   $ref: 'api-sni.yaml#/components/schemas/Keypair'
-  put:
-    operationId: certPutConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: domain
-        in: query
-        required: true
-        schema:
-          type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-sni.yaml#/components/schemas/Cert'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-  delete:
-    operationId: certDeleteConnect
-    tags: [ SniConnect ]
-    parameters:
-      - name: domain
-        in: query
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'

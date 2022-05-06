@@ -22,11 +22,11 @@
 
 Listen to your users during product development with [ClearFlask](https://clearflask.com/)
 <br />Open-source Feedback Management Tool.
-  
+
 <br />
 
 <img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
-  
+
 <br />
 
 <img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
@@ -35,32 +35,28 @@ Listen to your users during product development with [ClearFlask](https://clearf
 
 </div>
 
-
-
 ### Contents
+
 - [Managed hosting](#managed-hosting)
 - [Self hosting](#self-hosting)
-  - [Quick start](#quick-start)
-  - [Deploy dependencies](#deploy-dependencies)
-      - [Via Docker](#via-docker)
-      - [Via AWS](#via-aws)
-  - [Deploy ClearFlask](#deploy-clearflask)
-      - [Setup](#setup)
-      - [Run](#run)
+    - [Quick start](#quick-start)
+    - [Deploy dependencies](#deploy-dependencies)
+        - [Via Docker](#via-docker)
+        - [Via AWS](#via-aws)
+    - [Deploy ClearFlask](#deploy-clearflask)
+        - [Setup](#setup)
+        - [Run](#run)
 - [Contributing](#contributing)
-  - [Code quality](#code-quality)
-  - [Building](#building)
-  - [Architecture](#architecture)
-  - [Release](#release)
+    - [Code quality](#code-quality)
+    - [Building](#building)
+    - [Architecture](#architecture)
+    - [Release](#release)
 - [Security Policy](#security-policy)
-
-
 
 # Managed Hosting
 
-Support our open-source development by choosing cloud hosting with [scalable pricing](https://clearflask.com/pricing), check us out on [our website](https://clearflask.com).
-
-
+Support our open-source development by choosing cloud hosting with [scalable pricing](https://clearflask.com/pricing),
+check us out on [our website](https://clearflask.com).
 
 # Self Hosting
 
@@ -199,7 +195,6 @@ correctly pointing to your server, it is publicly accessible, and set the follow
 
 - `connect.config.json:disableAutoFetchCertificate`: `false`
 - `connect.config.json:forceRedirectHttpToHttps`: `true`
-- `config-selfhost.cfg:com.smotana.clearflask.web.resource.ConnectResource$Config.domainWhitelist`: `^yoursite.com$`
 - `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
 
 Once you load your site for the first time, a Certificate is auto-magically fetched for you.
@@ -236,8 +231,6 @@ After you sign-up, disable further signups using:
 1. Run `docker-compose up` or `docker-compose --profile with-deps up` to also start dependencies.
 2. Point your browser at `http://localhost` or if you configured your DNS `https://yoursite.com`.
 3. Create an account using `admin@localhost` email or based on your configuration of `superAdminEmailRegex`.
-
-
 
 # Contributing
 
@@ -420,7 +413,8 @@ Server implementation of the OpenAPI definition to serve requests from clients. 
 
 ## Release
 
-Intended for ClearFlask developers, this guide is for making a release of ClearFlask to create Docker images and Maven artifacts.
+Intended for ClearFlask developers, this guide is for making a release of ClearFlask to create Docker images and Maven
+artifacts.
 
 ### Prerequisites
 
@@ -496,10 +490,10 @@ cd target/checkout
 mvn deploy -P docker-images-push -rf clearflask-<module-to-resume>
 ```
 
-
-
 # Security Policy
 
 ## Reporting a Vulnerability
 
-Please report to security@clearflask.com for all vulnerabilities or questions regarding security. We will issue a bounty for useful vulnerabilities to pay for your contribution, however we do not have a set standard on the amount and type of vulnerabilities at this time.
+Please report to security@clearflask.com for all vulnerabilities or questions regarding security. We will issue a bounty
+for useful vulnerabilities to pay for your contribution, however we do not have a set standard on the amount and type of
+vulnerabilities at this time.

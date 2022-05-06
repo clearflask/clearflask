@@ -1,15 +1,14 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import selfHostDeafaultConfigFile from '../connect.config.selfhost.json';
-import os from 'os';
 
 const configFile = '/opt/clearflask/connect.config.json';
 
 export interface ConnectConfig {
   listenPort: number;
-  email: string;
   connectToken: string;
   acmeDirectoryUrl?: string,
   workerCount: number, // Leave blank to match cores
@@ -21,13 +20,10 @@ export interface ConnectConfig {
   // Only if disableAutoFetchCertificate is true,
   // whether to still redirect and assume https
   forceRedirectHttpToHttps?: boolean;
-  // Please just don't
-  useGreenlock?: boolean;
 }
 
 var connectConfig: ConnectConfig = {
   listenPort: 44380,
-  email: 'hostmaster@clearflask.com',
   workerCount: os.cpus().length,
   apiBasePath: 'http://localhost:8080',
   parentDomain: 'clearflask.com',
@@ -35,7 +31,6 @@ var connectConfig: ConnectConfig = {
   publicPath: path.resolve(__dirname, 'public'),
   disableAutoFetchCertificate: process.env.ENV === 'development',
   forceRedirectHttpToHttps: process.env.ENV !== 'development',
-  useGreenlock: true,
 };
 
 if (process.env.ENV === 'production'

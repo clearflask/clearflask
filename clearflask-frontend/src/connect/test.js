@@ -4,10 +4,8 @@
 console.log('Running tests...');
 
 const assertConsoleLines = new Set([
-  'ClearFlask Greenlock Manager Started',
-  'ClearFlask Greenlock Store Started',
-  'ClearFlask Greenlock Http Challenge Started',
-  'Master Started (test)',
+  'Master started (test)',
+  'Worker started #test',
 ]);
 var testLog = console.log.bind(console);
 const isFork = process.send !== undefined;
@@ -36,6 +34,3 @@ if (!isFork) {
 }
 
 require('./bootstrap');
-require('./greenlock/greenlock-manager-clearflask').create();
-require('./greenlock/greenlock-challenge-http-clearflask').create();
-require('./greenlock/greenlock-store-clearflask').create();

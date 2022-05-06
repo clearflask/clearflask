@@ -7,17 +7,11 @@ info:
   version: 1.0.0
 
 servers:
-- url: https://clearflask.com/api/v1
+  - url: https://clearflask.com/api/v1
 
 paths:
-  /connect/account/keypair:
-    $ref: 'api-sni.yaml#/~1connect~1account~1keypair'
-  /connect/cert/keypair:
-    $ref: 'api-sni.yaml#/~1connect~1cert~1keypair'
   /connect/cert/challenge/http:
     $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1http'
-  /connect/cert/challenge/dns:
-    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1dns'
   /connect/cert:
     $ref: 'api-sni.yaml#/~1connect~1cert'
   /connect/robots/slug/{slug}:

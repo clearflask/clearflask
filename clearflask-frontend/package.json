@@ -87,7 +87,6 @@
     "emoji-mart": "2.11.0",
     "express": "4.17.1",
     "fuse.js": "^6.4.6",
-    "greenlock-express": "4.0.3",
     "he": "^1.2.0",
     "http-proxy": "1.18.1",
     "i18next": "21.4.0",

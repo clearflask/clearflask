@@ -68,8 +68,6 @@ builds/
 /connect.config-local.json
 
 ### Connect
-greenlock.d/
-.greenlockrc
 clearflask-frontend/dist
 clearflask-frontend/dist-*
 

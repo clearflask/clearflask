@@ -37,20 +37,6 @@ module.exports = {
     ],
   },
   plugins: [
-    // Since Greenlock performs a runtime import of these modules,
-    // We need to tell webpack where to find them.
-    // However, if we are running without webpack, the relative paths
-    // are resolvable by Greenlock. Did I mention Greenlock is a pain in the ass?
-    new webpack.ContextReplacementPlugin(
-      /@root[\/\\]greenlock/,
-      path.resolve(__dirname, 'src'),
-      {
-        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-manager-clearflask.js': './connect/greenlock/greenlock-manager-clearflask.js',
-        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-store-clearflask.js': './connect/greenlock/greenlock-store-clearflask.js',
-        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js': './connect/greenlock/greenlock-challenge-http-clearflask.js',
-        '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js': './connect/greenlock/greenlock-challenge-dns-clearflask.js',
-      }
-    ),
     new CopyPlugin({
       patterns: [
         { from: 'target/public', to: 'public' },

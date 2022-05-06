@@ -48,7 +48,7 @@ public class DynamoCertStore implements CertStore {
         @DefaultValue("")
         String hostedZoneId();
 
-        @DefaultValue("^(_acme-challenge\\.clearflask\\.com|_greenlock-dryrun-[a-z0-9]+\\.clearflask.com)$")
+        @DefaultValue("^_acme-challenge\\.clearflask\\.com$")
         String allowedDnsHostRegex();
 
         Observable<String> allowedDnsHostRegexObservable();

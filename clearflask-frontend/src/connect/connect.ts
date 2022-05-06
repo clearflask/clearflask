@@ -6,13 +6,13 @@ import cluster from 'cluster';
 import compression from 'compression';
 import express from 'express';
 import fs from 'fs';
-import greenlockExpress, { glx } from 'greenlock-express';
 import http from 'http';
 import httpp from 'http-proxy';
 import https, { ServerOptions } from 'https';
 import i18nextMiddleware from 'i18next-http-middleware';
 import MapExpire from 'map-expire/MapExpire';
 import path from 'path';
+import process from 'process';
 import serveStatic from 'serve-static';
 import tls, { SecureContext } from 'tls';
 import { CertGetOrCreateResponse } from "../api/connect";
@@ -215,90 +215,9 @@ function createApp(serverApi) {
   return serverApp;
 }
 
-if (!connectConfig.disableAutoFetchCertificate && connectConfig.useGreenlock) {
-  greenlockExpress
-    .init({
-      agreeToTerms: true,
-      renewOffset: '-45d',
-      renewStagger: '15d',
-      packageRoot: process.cwd(),
-      configDir: './greenlock.d',
-      packageAgent: 'clearflask/1.0',
-      maintainerEmail: connectConfig.email,
-      subscriberEmail: connectConfig.email,
-      cluster: true,
-      debug: true,
-      workers: connectConfig.workerCount,
-      manager: {
-        module: connectConfig.isInsideWebpack
-          ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-manager-clearflask.js'
-          : './src/connect/greenlock/greenlock-manager-clearflask.js',
-      },
-      store: {
-        module: connectConfig.isInsideWebpack
-          ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-store-clearflask.js'
-          : '../../../src/connect/greenlock/greenlock-store-clearflask.js',
-      },
-      challenges: {
-        "http-01": {
-          module: connectConfig.isInsideWebpack
-            ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-http-clearflask.js'
-            : '../../../src/connect/greenlock/greenlock-challenge-http-clearflask.js',
-        },
-        // For now wildcard challenges are disabled
-        // "dns-01": {
-        //   module: connectConfig.isInsideWebpack
-        //     ? '/WEBPACK_REPLACE_ME_PLEASE/greenlock-challenge-dns-clearflask.js'
-        //     : '../../../src/connect/greenlock/greenlock-challenge-dns-clearflask.js',
-        // },
-      },
-      notify: (event, details) => {
-        console.log('EVENT:', event, details);
-      },
-    })
-    .ready(function (glx: glx) {
-      console.log('Worker Started');
-
-      // API proxy
-      const serverHttpp = createApiProxy();
-
-      // App
-      const serverApp = createApp(serverHttpp);
-
-      // Http
-      const serverHttp = glx.httpServer();
-
-      // Https
-      const serverHttps = glx.httpsServer(null, serverApp);
-      serverHttps.on("upgrade", function (req, socket, head) {
-        serverHttpp.ws(req, socket, head, {
-          ws: true,
-          target: apiBasePathWs,
-        });
-      });
-
-      // Http(s)
-      const serverHttpx = httpx.createServer(serverHttp, serverHttps);
-      serverHttpx.listen(connectConfig.listenPort, () => {
-        console.info("Http(s) on", connectConfig.listenPort);
-      });
-
-      // Servers
-      serverHttp.listen(9080, "0.0.0.0", function () {
-        console.info("Http on", (serverHttp.address() as any)?.port);
-      });
-      serverHttps.listen(9443, "0.0.0.0", function () {
-        console.info("Https on", (serverHttps.address() as any)?.port);
-      });
-    })
-    .master(function () {
-      console.log(`Master Started (${process.env.ENV})`);
-    });
-} else if (!connectConfig.disableAutoFetchCertificate && !connectConfig.useGreenlock) {
+if (!connectConfig.disableAutoFetchCertificate) {
   // Spin up cluster
   if (cluster.isMaster) {
-    console.log(`Master ${process.pid} running`);
-
     // Fork workers
     for (let i = 0; i < Math.max(1, connectConfig.workerCount); i++) {
       cluster.fork();
@@ -308,8 +227,9 @@ if (!connectConfig.disableAutoFetchCertificate && connectConfig.useGreenlock) {
       console.log(`worker ${worker.process.pid} died`);
       process.exit(42); // Kill entire cluster if one worker dies
     });
-  } else {
-    console.log(`Worker ${process.pid} starting`);
+    console.log(`Master started (${process.env.ENV})`);
+  }
+  if (cluster.isWorker || process.env.ENV === 'test') {
 
     // API proxy
     const serverApi = createApiProxy();
@@ -351,6 +271,8 @@ if (!connectConfig.disableAutoFetchCertificate && connectConfig.useGreenlock) {
     serverHttps.listen(9443, "0.0.0.0", function () {
       console.info("Https on", (serverHttps as any).address?.()?.port);
     });
+
+    console.log(`Worker started #${cluster.isWorker ? cluster.worker.id : 'test'}`);
   }
 } else {
   createApp(createApiProxy()).listen(9080, "0.0.0.0", function () {

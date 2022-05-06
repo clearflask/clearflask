@@ -62,7 +62,6 @@ public interface CertStore {
         /**
          * For KeyPairType.ACCOUNT: 'hostmaster@clearflask.com' email, 'default' or WildCertFetcherImpl.KEYPAIR_ID_INTERNAL_WILD
          * For KeyPairType.CERT: domain, or certificate id
-         * See greenlock-store-clearflask.js for details
          */
         @NonNull
         String id;
@@ -73,19 +72,13 @@ public interface CertStore {
         @NonNull
         String privateKeyPem;
 
-        @Deprecated
-        @NonNull
-        String privateKeyJwkJson;
-
         public enum KeypairType {
             ACCOUNT,
             CERT
         }
 
         public Keypair toApiKeypair() {
-            return new Keypair(
-                    getPrivateKeyPem(),
-                    getPrivateKeyJwkJson());
+            return new Keypair(getPrivateKeyPem());
         }
 
         @SneakyThrows
@@ -103,7 +96,6 @@ public interface CertStore {
                 KeyPairUtils.writeKeyPair(javaKeyPair, stringWriter);
                 this.privateKeyPem = stringWriter.toString();
             }
-            this.privateKeyJwkJson = "";
         }
     }
 
