@@ -386,8 +386,9 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             httpChallengeTeardown((Http01Challenge) challenge);
         } else if (challenge instanceof Dns01Challenge) {
             dnsChallengeTeardown(authorization, (Dns01Challenge) challenge);
+        } else {
+            log.warn("Failed to teardown unknown challenge type {}, continuing...", challenge.getType());
         }
-        log.warn("Failed to teardown unknown challenge type {}, continuing...", challenge.getType());
     }
 
     private void httpChallengeTeardown(Http01Challenge challenge) {
