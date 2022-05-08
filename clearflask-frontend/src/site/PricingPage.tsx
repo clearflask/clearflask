@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Box, Grid, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
@@ -22,19 +22,22 @@ import { isProd } from '../common/util/detectEnv';
 import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
 import Background from './landing/Background';
+import { LandingCustomers } from './LandingPages';
 import PricingPlan from './PricingPlan';
+import PricingSlider from './PricingSlider';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
 export const EstimatedPercUsersBecomeTracked = 0.05;
+export const FlatYearlyStartingPrice = 1000;
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
-    heading: 'Open-Source, Non-Profit or Non-Commercial?',
+    heading: 'Are you really Open-Source?',
     body: (
       <>
         <p>
-          We offer free plans for eligible organizations including open-source, non-profit or non-commercial projects. Contact us with your use case to see if you are eligible.
+          Our entire stack is open sourced under the Apache-2.0 license and free to use. The commercial cloud hosting and the self-hosted installations are from the same repository.
         </p>
       </>
     ),
@@ -116,6 +119,9 @@ const styles = (theme: Theme) => createStyles({
   faqItem: {
     margin: theme.spacing(4),
   },
+  tab: {
+    textTransform: 'initial',
+  },
 });
 
 interface Props {
@@ -126,11 +132,13 @@ interface ConnectProps {
   featuresTable?: Admin.FeaturesTable;
 }
 interface State {
+  tab: 'business' | 'starter',
   highlightedBasePlanid?: string;
-  callForQuote?: boolean;
 }
 class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
-  state: State = {};
+  state: State = {
+    tab: 'business',
+  };
 
   constructor(props) {
     super(props);
@@ -139,19 +147,21 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   }
 
   render() {
-    const communityPlan = (
+    const communityPlan: Admin.Plan = {
+      basePlanId: 'community',
+      title: 'Community',
+      pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+      perks: [
+        { desc: 'Open-source' },
+        { desc: 'Quickstart deploy' },
+        { desc: 'Community supported' },
+      ],
+    };
+    const communityPlanCmpt = (
       <PricingPlan
-        key='community'
-        plan={{
-          basePlanId: 'community',
-          title: 'Community',
-          pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
-          perks: [
-            { desc: 'Open-source' },
-            { desc: 'Quickstart deploy' },
-            { desc: 'Community supported' },
-          ],
-        }}
+        key={communityPlan.basePlanId}
+        plan={communityPlan}
+        selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
         overrideMauTerms={[
           'Self-hosted',
           'Own your data',
@@ -170,19 +180,25 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         actionToExt='https://github.com/clearflask/clearflask#self-hosting'
       />
     );
-    const plansAll: JSX.Element[] = [communityPlan];
+    const pricingSlider = (
+      <PricingSlider
+        key='pricingSlider'
+        className={this.props.classes.pricingSlider}
+        plans={[communityPlan, ...(this.props.plans || [])]}
+      />
+    );
+    const plansAll: JSX.Element[] = [];
     for (const plan of this.props.plans || []) {
       const pricingPlan = (
         <PricingPlan
           key={plan.basePlanId}
-          customPrice={plan.basePlanId === 'flat-yearly' ? '1000+' : undefined}
+          customPrice={plan.basePlanId === 'flat-yearly' ? FlatYearlyStartingPrice + '+' : undefined}
           overrideMauTerms={plan.basePlanId === 'starter-unlimited' ? [
             'Free forever',
             'Upgrade anytime',
           ] : undefined}
           plan={plan}
-          selected={this.state.highlightedBasePlanid === plan.basePlanId
-            || this.state.callForQuote && plan.basePlanId === 'flat-yearly'}
+          selected={this.state.highlightedBasePlanid === plan.basePlanId}
           actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
           remark={plan.basePlanId === 'starter-unlimited'
             ? this.props.t('free-forever')
@@ -209,7 +225,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       plansAll.push(pricingPlan);
     }
 
-    const plansAllGrouped = this.groupPlans(plansAll);
+    const plansStarterGrouped = this.groupPlans([
+      communityPlanCmpt,
+      pricingSlider,
+    ]);
+    const plansBusinessGrouped = this.groupPlans(plansAll);
 
     return (
       <>
@@ -236,20 +256,24 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <Loader loaded={!!this.props.plans} skipFade>
+            <Tabs
+              centered
+              variant='standard'
+              scrollButtons='off'
+              value={this.state.tab}
+              onChange={(e, newTab) => this.setState({ tab: newTab as any })}
+            >
+              <Tab value='business' label='For most businesses' className={this.props.classes.tab} />
+              <Tab value='starter' label='For very Small businesses' className={this.props.classes.tab} />
+            </Tabs>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {plansAllGrouped}
+              {this.state.tab === 'starter' && plansStarterGrouped}
+              {this.state.tab === 'business' && plansBusinessGrouped}
+              {/* <Slide unmountOnExit mountOnEnter direction='right' in={this.state.tab === 'business'}><div>{plansBusinessGrouped}</div></Slide>
+              <Slide unmountOnExit mountOnEnter direction='left' in={this.state.tab === 'starter'}><div>{plansStarterGrouped}</div></Slide> */}
             </div>
-            {/* TODO remove this, at the removal of tracked users from plans, I have retired the pricing slider, but I can't let go of it just yet. Please let's keep it commented for some time until I have the courage to delete it permanently.
-            <PricingSlider
-              className={this.props.classes.pricingSlider}
-              plans={this.props.plans || []}
-              onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
-                highlightedBasePlanid: callForQuote ? undefined : basePlanId,
-                callForQuote,
-              })}
-            /> */}
           </Loader>
-          <br />
+          <LandingCustomers />
           <br />
           <br />
           {this.props.featuresTable && (

@@ -35,6 +35,7 @@ import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
+import { SUPPORT_MESSAGE_FIELD_CONTACT, SUPPORT_MESSAGE_FIELD_TYPE } from './ContactPage';
 import AnimBubble from './landing/AnimBubble';
 import PricingPlan from './PricingPlan';
 
@@ -42,12 +43,14 @@ import PricingPlan from './PricingPlan';
 export const SIGNUP_PROD_ENABLED = true;
 
 export const PRE_SELECTED_BASE_PLAN_ID = 'preSelectedPlanId';
+export const PRE_SELECTED_PLAN_PRICE = 'preSelectedPlanPrice';
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 export const ADMIN_ENTER_INVITATION_ID = 'ADMIN_ENTER_INVITATION_ID';
 export const ADMIN_ENTER_COUPON_ID = 'ADMIN_ENTER_COUPON_ID';
 interface LocationState {
   [ADMIN_LOGIN_REDIRECT_TO]?: string;
   [PRE_SELECTED_BASE_PLAN_ID]?: string;
+  [PRE_SELECTED_PLAN_PRICE]?: string;
   [ADMIN_ENTER_INVITATION_ID]?: string;
   [ADMIN_ENTER_COUPON_ID]?: string;
 }
@@ -733,7 +736,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
       const couponId = this.props.location.state?.[ADMIN_ENTER_COUPON_ID];
-      await dispatchAdmin.accountSignupAdmin({
+      const account = await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           name: this.state.name!,
           email: this.state.email!,
@@ -743,6 +746,20 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
           couponId,
         }
       });
+      const preSelectedPlanPrice = this.props.location.state?.[PRE_SELECTED_PLAN_PRICE];
+      if (preSelectedPlanPrice !== undefined) {
+        dispatchAdmin.supportMessage({
+          supportMessage: {
+            content: {
+              details: 'Pay what you can request',
+              amount: preSelectedPlanPrice,
+              accountId: account.accountId,
+              [SUPPORT_MESSAGE_FIELD_CONTACT]: account.email,
+              [SUPPORT_MESSAGE_FIELD_TYPE]: 'price-increase',
+            }
+          },
+        });
+      }
       this.setState({
         isSubmitting: false,
         accountWasCreated: true,

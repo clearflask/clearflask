@@ -1,19 +1,24 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Slider, Typography } from '@material-ui/core';
+import { Slider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { RouteComponentProps, withRouter } from 'react-router';
-import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
-import { EstimatedPercUsersBecomeTracked } from './PricingPage';
+import { isProd } from '../common/util/detectEnv';
+import { trackingBlock } from '../common/util/trackingDelay';
+import { PRE_SELECTED_BASE_PLAN_ID, PRE_SELECTED_PLAN_PRICE, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
+import { FlatYearlyStartingPrice } from './PricingPage';
+import PricingPlan from './PricingPlan';
 
-type Marks = Array<{ val: number, basePlanId: string }>;
-const quadrupleStepAfterIteration = 100;
-const maxMau = 5001;
-const startingStep = 10;
-const callForQuoteCount = 5;
+type Marks = Array<{ val: number, basePlanId?: string }>;
+const startingStep = 12;
+const pricePoints = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200];
+const SliderHangs = true;
+const SliderHeight = 138;
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -27,26 +32,27 @@ const styles = (theme: Theme) => createStyles({
     marginTop: theme.spacing(1),
     display: 'flex',
     alignItems: 'baseline',
+    textAlign: 'left',
   },
   sliderContainer: {
     flex: '1',
-    height: '100%',
+    height: SliderHeight,
     width: '100%',
     position: 'relative',
     display: 'flex',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    padding: theme.spacing(4, 0),
+    padding: SliderHangs ? theme.spacing(4, 0) : undefined,
   },
   slider: {
   },
   floating: {
     position: 'relative',
-    transition: theme.transitions.create(['bottom'], {
+    transition: theme.transitions.create(['bottom', 'transform'], {
       duration: theme.transitions.duration.shortest,
       easing: theme.transitions.easing.easeOut,
     }),
-    transform: 'translateY(50%)',
+    transform: SliderHangs ? 'translateY(50%)' : undefined,
     flex: '1',
     overflow: 'visible',
   },
@@ -65,101 +71,100 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   className: string;
   plans: Admin.Plan[];
-  onSelectedPlanChange: (basePlanId: string, callForQuote: boolean) => void;
 }
 interface State {
   mauIndex: number;
   marks: Marks;
 }
-class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class PricingSlider extends Component<Props & RouteComponentProps & WithTranslation<'site'> & WithStyles<typeof styles, true>, State> {
   state: State = {
     mauIndex: startingStep,
     marks: this.getMarks(),
   };
   lastSelectedPlanid?: string;
-  lastCallForQuote?: boolean;
 
   render() {
     if (this.props.plans.length === 0) return null;
 
     const mauIndex = this.state.mauIndex;
-
-    const callForQuote = mauIndex >= this.state.marks.length - callForQuoteCount;
     const mauMark = this.state.marks[mauIndex];
-    const mau = mauMark.val;
-
-    const plan = this.props.plans.find(p => p.basePlanId === mauMark.basePlanId);
-    if (!plan) return null;
-
-    if (this.lastSelectedPlanid !== plan.basePlanId
-      || this.lastCallForQuote !== callForQuote) {
-      this.props.onSelectedPlanChange(plan.basePlanId, callForQuote);
-      this.lastSelectedPlanid = plan.basePlanId;
-      this.lastCallForQuote = callForQuote;
-    }
-
-    const pricing: Admin.PlanPricing = plan.pricing!;
-
-    const monthlyUsers = Math.round(mau / EstimatedPercUsersBecomeTracked);
-
-    const addtPrice = Math.ceil(Math.max(0, mau - pricing.baseMau) / pricing.unitMau) * pricing.unitPrice;
-    const price = pricing.basePrice + addtPrice;
-
+    const standardPlan = this.props.plans.slice()
+      .reverse()
+      .find(p => !!p.pricing)!;
+    const price = mauMark.val;
     const min = 0;
     const max = this.state.marks.length - 1;
+    const sliderPercentage = `${mauIndex / (max - min) * 100}%`;
 
-    const bottom = `${mauIndex / (max - min) * 100}%`;
     return (
-      <div className={classNames(this.props.className, this.props.classes.container)}>
-        <div className={this.props.classes.sliderContainer}>
-          <div className={classNames(this.props.classes.floating, this.props.classes.info)} style={{ bottom }}>
-            <div className={this.props.classes.valueHorizontal}>
-              <Typography variant='h6' component='div' style={{ visibility: 'hidden' }}>+</Typography>
-              <Typography variant='h6' component='div'>{this.formatNumber(monthlyUsers)}</Typography>
-              <Typography variant='h6' component='div' style={{ visibility: (callForQuote && (mauIndex === this.state.marks.length - 1)) ? 'visible' : 'hidden' }}>+</Typography>
-            </div>
-            <div className={this.props.classes.valueHorizontal}>
-              <Typography variant='caption' component='div'>Total users</Typography>
-            </div>
-          </div>
-          <Slider
-            key='slider'
-            className={this.props.classes.slider}
-            value={mauIndex}
-            min={min}
-            step={1}
-            orientation='vertical'
-            max={max}
-            onChange={(e, val) => {
-              this.setState({ mauIndex: (val as any as number) })
-            }}
-          />
-          <div className={classNames(this.props.classes.floating, this.props.classes.info)} style={{ bottom }}>
-            {callForQuote ? (
-              <Button
-                color='primary'
-                component={Link}
-                to='/contact/sales'
-              >Talk to us</Button>
-            ) : (
-              <>
+      <PricingPlan
+        plan={standardPlan}
+        customPrice={(
+          <div>
+            <div className={this.props.classes.sliderContainer}>
+              <div className={classNames(this.props.classes.floating, this.props.classes.info)}
+                style={{
+                  bottom: sliderPercentage,
+                  ...(SliderHangs ? {} : {
+                    transform: `translateY(${sliderPercentage})`,
+                  }),
+                }}>
                 <div className={this.props.classes.valueHorizontal}>
                   <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
                   <Typography component='div' variant='h4'>{this.formatNumber(price)}</Typography>
                   <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
                 </div>
-                <Typography component='div' variant='subtitle2' color='textSecondary'>{this.formatNumber(mau)}&nbsp;tracked*</Typography>
-              </>
-            )}
+                <Typography component='div' variant='subtitle2' color='textSecondary'>Billed annually</Typography>
+              </div>
+              <Slider
+                key='slider'
+                className={this.props.classes.slider}
+                value={mauIndex}
+                min={min}
+                step={1}
+                orientation='vertical'
+                max={max}
+                onChange={(e, val) => {
+                  this.setState({ mauIndex: (val as any as number) })
+                }}
+              />
+            </div>
           </div>
-        </div>
-        <div className={this.props.classes.disclaimer}>
-          <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
-          <Typography variant='caption' component='div' color='textSecondary'>
-            Typically about {EstimatedPercUsersBecomeTracked * 100}% of your total users will become tracked
-          </Typography>
-        </div>
-      </div>
+        )}
+        overridePerks={[
+          { desc: 'Pay what you can afford' },
+        ]}
+        actionTitle={this.props.t('get-started') + '*'}
+        remark={(
+          <div className={this.props.classes.disclaimer}>
+            <Typography variant='caption' component='div' color='textSecondary'>*&nbsp;</Typography>
+            <Typography variant='caption' component='div' color='textSecondary'>
+              Start a trial and we will approve<br />
+              your price request shortly by email.
+            </Typography>
+          </div>
+        )}
+        actionOnClick={() => {
+          trackingBlock(() => {
+            ReactGA.event({
+              category: 'pricing',
+              action: 'click-plan',
+              label: standardPlan.basePlanId,
+              value: price,
+            });
+          });
+        }}
+        actionTo={(SIGNUP_PROD_ENABLED || !isProd())
+          ? {
+            pathname: '/signup',
+            state: {
+              [PRE_SELECTED_BASE_PLAN_ID]: standardPlan.basePlanId,
+              [PRE_SELECTED_PLAN_PRICE]: price,
+            },
+          }
+          : '/contact/sales'}
+
+      />
     );
   }
 
@@ -168,34 +173,20 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
   }
 
   getMarks(): Marks {
-    var fractionsToInclude = 1;
-    var currMaxMau = maxMau;
-    const points = this.props.plans.slice().reverse().flatMap(plan => {
-      var step = 1;
-      const pts: Marks = [];
-      if (!plan.pricing) return pts;
-
-      var currPt: number = plan.pricing.baseMau;
-      while (currPt < currMaxMau) {
-        pts.push({ val: currPt, basePlanId: plan.basePlanId });
-        currPt += plan.pricing.unitMau;
-        if (step++ >= quadrupleStepAfterIteration) {
-          currPt += plan.pricing.unitMau;
-          currPt += plan.pricing.unitMau;
-          currPt += plan.pricing.unitMau;
-        }
+    var lastPlanIndex = 0;
+    const points: Marks = pricePoints.map(price => {
+      const plan = this.props.plans[lastPlanIndex];
+      const planPrice = plan?.basePlanId === 'flat-yearly'
+        ? FlatYearlyStartingPrice
+        : plan?.pricing?.basePrice || 0;
+      if (!!plan && price * 12 > planPrice) {
+        lastPlanIndex++;
       }
-
-      currMaxMau = plan.pricing.baseMau;
-      return pts;
+      return { val: price, basePlanId: this.props.plans[lastPlanIndex]?.basePlanId };
     });
-    points.sort((l, r) => l.val - r.val);
-    while (fractionsToInclude > 0) {
-      points.unshift({ val: points[0].val / 2, basePlanId: points[0].basePlanId });
-      fractionsToInclude--;
-    }
+
     return points;
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(PricingSlider));
+export default withStyles(styles, { withTheme: true })(withRouter(withTranslation('site', { withRef: true })(PricingSlider)));

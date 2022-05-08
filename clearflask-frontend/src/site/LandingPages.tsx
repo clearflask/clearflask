@@ -348,20 +348,7 @@ export function Landing() {
   return (
     <>
       <LandingHero />
-      <Block
-        className={classes.textAlignCenter}
-        type='headingOnly'
-        title={(
-          <div className={classes.customers}>
-            <ImgIso img={CustomerDekra} />
-            <ImgIso img={CustomerLeaseWeb} />
-            <ImgIso img={CustomerCloudStaff} />
-            <ImgIso img={CustomerErpca} />
-            <ImgIso img={CustomerGoodOnYou} />
-            <ImgIso img={CustomerStudios} />
-          </div>
-        )}
-      />
+      <LandingCustomers />
       <Block
         className={classes.textAlignCenter}
         type='headingOnly'
@@ -606,6 +593,26 @@ export function Landing() {
       {/* <LandingSales /> */}
       {/* <LandingGraveyard /> */}
     </>
+  );
+}
+
+export function LandingCustomers() {
+  const classes = useStyles();
+  return (
+    <Block
+      className={classes.textAlignCenter}
+      type='headingOnly'
+      title={(
+        <div className={classes.customers}>
+          <ImgIso img={CustomerDekra} />
+          <ImgIso img={CustomerLeaseWeb} />
+          <ImgIso img={CustomerCloudStaff} />
+          <ImgIso img={CustomerErpca} />
+          <ImgIso img={CustomerGoodOnYou} />
+          <ImgIso img={CustomerStudios} />
+        </div>
+      )}
+    />
   );
 }
 

@@ -19,11 +19,11 @@ import SubmitButton from '../common/SubmitButton';
 import { preloadImage } from '../common/util/imageUtil';
 
 // If changed, also change in SupportResource.java
-const TYPE = 'type';
+export const SUPPORT_MESSAGE_FIELD_TYPE = 'type';
 // If changed, also change in SupportResource.java
-const IMPORTANT = 'important';
+export const SUPPORT_MESSAGE_FIELD_IMPORTANT_FLAG = 'important';
 // If changed, also change in SupportResource.java
-const CONTACT = 'contact';
+export const SUPPORT_MESSAGE_FIELD_CONTACT = 'contact';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -89,7 +89,7 @@ const forms: ContactForm[] = [
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
       { attrName: 'appointment', type: 'datetime', title: 'When are you available?', required: false },
-      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
+      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
   {
@@ -101,7 +101,7 @@ const forms: ContactForm[] = [
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
       { attrName: 'company', title: 'Company/Product name', placeholder: 'Sirius Cybernetics', required: false },
-      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
+      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
   {
@@ -112,8 +112,8 @@ const forms: ContactForm[] = [
     imagePath: '/img/support/support.svg',
     fields: [
       { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
-      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
-      { attrName: IMPORTANT, type: 'checkbox', title: 'Requires immediate attention' },
+      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
+      { attrName: SUPPORT_MESSAGE_FIELD_IMPORTANT_FLAG, type: 'checkbox', title: 'Requires immediate attention' },
     ],
   },
   {
@@ -124,7 +124,7 @@ const forms: ContactForm[] = [
     imagePath: '/img/support/question.svg',
     fields: [
       { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
-      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
+      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
     ],
   },
 ];
@@ -269,7 +269,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                               supportMessage: {
                                 content: {
                                   ...content,
-                                  [TYPE]: form.type,
+                                  [SUPPORT_MESSAGE_FIELD_TYPE]: form.type,
                                 }
                               }
                             }))

@@ -74,14 +74,14 @@ interface Props {
   className?: string;
   plan: Admin.Plan;
   selected?: boolean;
-  customPrice?: string;
+  customPrice?: string | React.ReactNode;
   actionTitle?: string;
   actionType?: 'button' | 'radio';
   actionTo?: LocationDescriptor;
   actionToExt?: string;
   actionOnClick?: () => void;
-  hidePerks?: boolean;
   remark?: React.ReactNode;
+  overridePerks?: Admin.PlanPerk[];
   overrideMauTerms?: Array<string>;
 }
 
@@ -104,7 +104,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         />
         <CardContent>
           {this.renderPriceTag()}
-          {!this.props.hidePerks && this.props.plan.perks.map(perk => (
+          {(this.props.overridePerks || this.props.plan.perks).map(perk => (
             <div key={perk.desc} style={{ display: 'flex', alignItems: 'baseline' }}>
               <CheckIcon fontSize='inherit' />
               &nbsp;
@@ -166,7 +166,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   renderPriceTag() {
-    if (this.props.customPrice !== undefined) {
+    if (typeof this.props.customPrice === 'string') {
       return (
         <>
           <div className={this.props.classes.cardPricing}>
@@ -182,6 +182,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           </div>
         </>
       );
+    } else if (this.props.customPrice !== undefined) {
+      return this.props.customPrice;
     }
 
     var monthlyPrice = this.props.plan.pricing?.basePrice || 0;
