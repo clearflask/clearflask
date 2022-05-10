@@ -77,6 +77,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))
                 .setDefaultHeaders(ImmutableList.of(
+                        // Compatibility headers for ElasticSearch 8+
+                        // https://stackoverflow.com/a/55026495
                         new BasicHeader(HttpHeaders.ACCEPT, "application/vnd.elasticsearch+json;compatible-with=7"),
                         new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.elasticsearch+json;compatible-with=7")
                 ).toArray(Header[]::new))
