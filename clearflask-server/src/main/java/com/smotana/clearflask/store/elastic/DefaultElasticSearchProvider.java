@@ -3,6 +3,7 @@
 package com.smotana.clearflask.store.elastic;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
@@ -22,7 +23,10 @@ import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.util.NetworkUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
@@ -72,6 +76,10 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))
+                .setDefaultHeaders(ImmutableList.of(
+                        new BasicHeader(HttpHeaders.ACCEPT, "application/vnd.elasticsearch+json;compatible-with=7"),
+                        new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.elasticsearch+json;compatible-with=7")
+                ).toArray(Header[]::new))
                 .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
                         .setConnectTimeout(config.requestTimeout())
                         .setSocketTimeout(config.requestTimeout()))));

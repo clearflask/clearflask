@@ -97,9 +97,9 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermsQueryBuilder;
+import org.elasticsearch.index.query.ZeroTermsQueryOption;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -791,7 +791,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     .field("title", 6f)
                     .field("description", 2f)
                     .fuzziness("AUTO")
-                    .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+                    .zeroTermsQuery(ZeroTermsQueryOption.ALL));
         }
 
         if (ideaSearchAdmin.getFilterCategoryIds() != null && !ideaSearchAdmin.getFilterCategoryIds().isEmpty()) {

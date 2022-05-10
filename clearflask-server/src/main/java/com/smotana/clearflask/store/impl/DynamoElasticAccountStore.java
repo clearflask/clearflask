@@ -75,7 +75,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.search.MatchQuery;
+import org.elasticsearch.index.query.ZeroTermsQueryOption;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
@@ -325,7 +325,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             "email", "name")
                     .field("email", 2f)
                     .fuzziness("AUTO")
-                    .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
+                    .zeroTermsQuery(ZeroTermsQueryOption.ALL);
         } else {
             queryBuilder = QueryBuilders.matchAllQuery();
         }
