@@ -658,8 +658,10 @@
                 <groupId>com.github.alexcojocaru</groupId>
                 <artifactId>elasticsearch-maven-plugin</artifactId>
                 <configuration>
-                    <version>${elastic.version}</version>
-                    <flavour>default</flavour>
+                    <!-- 7.12+ needs this plugin 6.20+ which has a problem of "master not discovered yet"
+                         https://github.com/alexcojocaru/elasticsearch-maven-plugin/issues/144-->
+                    <!-- <version>${elasticsearch.version}</version> -->
+                    <version>7.10.0</version>
                     <clusterName>test</clusterName>
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
