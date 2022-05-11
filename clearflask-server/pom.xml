@@ -659,7 +659,7 @@
                 <artifactId>elasticsearch-maven-plugin</artifactId>
                 <configuration>
                     <version>${elasticsearch.version}</version>
-                    <!-- Plugin version + has issues, so we have to specify downloadUrl here,
+                    <!-- Plugin version 6.20+ has issues, so we have to specify downloadUrl here,
                      once upgraded, remove this -->
                     <downloadUrl>
                         https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${elasticsearch.version}-linux-x86_64.tar.gz
