@@ -47,7 +47,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         @NoDefaultValue
         String serviceEndpoint();
 
-        @DefaultValue("true")
+        @DefaultValue("false")
         boolean enableCompatibilityHeaderForVersion7();
 
         @DefaultValue("60000")
