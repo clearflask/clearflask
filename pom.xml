@@ -20,7 +20,7 @@
         <!-- Last recommended version cross compatible for OpenSearch and ElasticSearch
              https://opensearch.org/docs/latest/clients/index/ -->
         <elastic.version>7.13.4</elastic.version>
-        <lucene.version>8.7.0</lucene.version>
+        <lucene.version>8.8.2</lucene.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
         <!-- If I still can't upgrade to 2.27+,
