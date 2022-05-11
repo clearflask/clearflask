@@ -47,6 +47,9 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         @NoDefaultValue
         String serviceEndpoint();
 
+        @DefaultValue("true")
+        boolean enableCompatibilityHeaderForVersion7();
+
         @DefaultValue("60000")
         int requestTimeout();
     }
@@ -76,12 +79,12 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))
-                .setDefaultHeaders(ImmutableList.of(
+                .setDefaultHeaders((config.enableCompatibilityHeaderForVersion7() ? ImmutableList.<Header>of(
                         // Compatibility headers for ElasticSearch 8+
                         // https://stackoverflow.com/a/55026495
                         new BasicHeader(HttpHeaders.ACCEPT, "application/vnd.elasticsearch+json;compatible-with=7"),
                         new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.elasticsearch+json;compatible-with=7")
-                ).toArray(Header[]::new))
+                ) : ImmutableList.<Header>of()).toArray(Header[]::new))
                 .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
                         .setConnectTimeout(config.requestTimeout())
                         .setSocketTimeout(config.requestTimeout()))));

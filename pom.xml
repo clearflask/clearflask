@@ -233,6 +233,7 @@
                     <groupId>com.github.alexcojocaru</groupId>
                     <artifactId>elasticsearch-maven-plugin</artifactId>
                     <!-- Version 6.20+ has problem of "master not discovered yet"
+                         once fixed, also re-add compat header in AbstractIT for override enableCompatibilityHeaderForVersion7
                          https://github.com/alexcojocaru/elasticsearch-maven-plugin/issues/144-->
                     <!-- <version>6.22</version> -->
                     <version>6.19</version>

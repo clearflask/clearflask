@@ -658,10 +658,12 @@
                 <groupId>com.github.alexcojocaru</groupId>
                 <artifactId>elasticsearch-maven-plugin</artifactId>
                 <configuration>
-                    <!-- 7.12+ needs this plugin 6.20+ which has a problem of "master not discovered yet"
-                         https://github.com/alexcojocaru/elasticsearch-maven-plugin/issues/144-->
-                    <!-- <version>${elasticsearch.version}</version> -->
-                    <version>7.10.0</version>
+                    <version>${elasticsearch.version}</version>
+                    <!-- Plugin version + has issues, so we have to specify downloadUrl here,
+                     once upgraded, remove this -->
+                    <downloadUrl>
+                        https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${elasticsearch.version}-linux-x86_64.tar.gz
+                    </downloadUrl>
                     <clusterName>test</clusterName>
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>

@@ -64,6 +64,10 @@ public abstract class AbstractIT extends AbstractTest {
                     om.override(om.id().apiSecret()).withValue(secretKey);
                     om.override(om.id().requireTls()).withValue(false);
                 }));
+                install(ConfigSystem.overrideModule(DefaultElasticSearchProvider.Config.class, om -> {
+                    // Remove once we have ES that supports it, mainly 7.13.4+
+                    om.override(om.id().enableCompatibilityHeaderForVersion7()).withValue(false);
+                }));
             }
         }));
     }
