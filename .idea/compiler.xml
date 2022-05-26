@@ -15,14 +15,9 @@
         <module name="clearflask-logging" />
         <module name="clearflask-server" />
         <module name="clearflask-legal" />
+        <module name="clearflask-release" />
         <module name="clearflask-api" />
         <module name="clearflask-frontend" />
-      </profile>
-      <profile name="Maven default annotation processors profile" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <module name="clearflask-release" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -33,7 +28,7 @@
       <module name="clearflask-legal" target="11" />
       <module name="clearflask-logging" target="1.8" />
       <module name="clearflask-parent" target="11" />
-      <module name="clearflask-release" target="1.5" />
+      <module name="clearflask-release" target="11" />
       <module name="clearflask-server" target="11" />
       <module name="clearflask-sni" target="1.8" />
     </bytecodeTargetLevel>

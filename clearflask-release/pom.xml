@@ -123,7 +123,32 @@
                     </execution>
                 </executions>
             </plugin>
-            docker-compose-local
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/test/resources/</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>nginx.conf</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${project.build.directory}/docker-compose-local/nginx/conf.d
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
