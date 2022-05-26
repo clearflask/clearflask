@@ -8,19 +8,27 @@ import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.web.ApiException;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 
+@Slf4j
 public class ImageNormalizationImpl implements ImageNormalization {
 
     public interface Config {
@@ -32,6 +40,9 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
         @DefaultValue("2048")
         double maxHeight();
+
+        @DefaultValue("true")
+        boolean keepGifsAsIs();
     }
 
     private static final String COMMENT_INDEX = "comment";
@@ -41,16 +52,83 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
     @Override
     public Image normalize(InputStream in) throws ApiException {
-        BufferedImage image;
         try {
-            image = ImageIO.read(in);
-            in.close();
+            byte[] inputBytes = IOUtils.toByteArray(in);
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(inputBytes);
+                 ImageInputStream iis = ImageIO.createImageInputStream(bais)) {
+                Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(iis);
+                if (!imageReaders.hasNext()) {
+                    throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Unsupported format");
+                }
+                ImageReader imageReader = imageReaders.next();
+                String format = imageReader.getFormatName();
+                imageReader.setInput(iis);
+                int numImages = imageReader.getNumImages(true);
+
+                if (numImages < 1) {
+                    throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Empty image");
+                } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
+                    return new Image("image/gif", inputBytes);
+                } else {
+                    return writeJpeg(imageReader.read(0));
+                }
+            } finally {
+                in.close();
+            }
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
         }
-        if (image == null) {
-            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Unsupported format");
+    }
+
+    /**
+     * TODO not working....
+     * For some reason this produces an empty image file.
+     */
+    private Image writeGif(ImageReader imageReader) {
+        byte[] data;
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             ImageOutputStream ios = ImageIO.createImageOutputStream(out)) {
+            final ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
+            writer.setOutput(ios);
+            writer.prepareWriteSequence(null);
+            int numImages = imageReader.getNumImages(true);
+            for (int i = 0; i < numImages; i++) {
+                BufferedImage image = resizeImg(imageReader.read(imageReader.getMinIndex()));
+                writer.writeToSequence(new IIOImage(image, null, null), null);
+            }
+            writer.endWriteSequence();
+            data = out.toByteArray();
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
         }
+        return new Image("image/gif", data);
+    }
+
+    private Image writeJpeg(BufferedImage image) {
+        if (image == null) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "No image");
+        }
+
+        BufferedImage convertedImage = resizeImg(image);
+
+        JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
+        jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        jpegParams.setCompressionQuality(0.8f);
+
+        byte[] data;
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             ImageOutputStream ios = ImageIO.createImageOutputStream(out)) {
+            final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            writer.setOutput(ios);
+            writer.write(null, new IIOImage(convertedImage, null, null), jpegParams);
+            data = out.toByteArray();
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
+        }
+        return new Image("image/jpeg", data);
+    }
+
+    private BufferedImage resizeImg(BufferedImage image) {
         Dimension scaledDimension = getScaledDimension(image.getWidth(), image.getHeight(), config.maxWidth(), config.maxHeight());
         final BufferedImage convertedImage = new BufferedImage(
                 (int) scaledDimension.getWidth(),
@@ -66,21 +144,7 @@ public class ImageNormalizationImpl implements ImageNormalization {
                 Color.WHITE,
                 null);
 
-        JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
-        jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        jpegParams.setCompressionQuality(0.8f);
-
-        byte[] bytesOut;
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
-            writer.setOutput(ImageIO.createImageOutputStream(out));
-            writer.write(null, new IIOImage(convertedImage, null, null), jpegParams);
-            bytesOut = out.toByteArray();
-        } catch (IOException ex) {
-            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
-        }
-
-        return new Image("image/jpeg", bytesOut);
+        return convertedImage;
     }
 
     Dimension getScaledDimension(double imageWidth, double imageHeight, double boundaryWidth, double boundaryHeight) {

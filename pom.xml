@@ -510,6 +510,11 @@
             </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
+                <artifactId>imageio-gif</artifactId>
+                <version>${twelvemonkeys.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.twelvemonkeys.imageio</groupId>
                 <!-- For SVG -->
                 <artifactId>imageio-batik</artifactId>
                 <version>${twelvemonkeys.version}</version>

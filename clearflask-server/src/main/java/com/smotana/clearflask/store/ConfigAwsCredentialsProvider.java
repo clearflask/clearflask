@@ -44,7 +44,7 @@ public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
                           public String getAWSAccessKeyId() {
                               return Strings.emptyToNull(config.awsAccessKeyId());
                           }
-
+    
                           @Override
                           public String getAWSSecretKey() {
                               return Strings.emptyToNull(config.awsSecretKey());

@@ -71,6 +71,7 @@
     <orderEntry type="library" name="Maven: com.twelvemonkeys.imageio:imageio-bmp:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.imageio:imageio-tiff:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.imageio:imageio-psd:3.6.4" level="project" />
+    <orderEntry type="library" name="Maven: com.twelvemonkeys.imageio:imageio-gif:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: com.twelvemonkeys.imageio:imageio-batik:3.6.4" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-rasterizer-ext:1.14" level="project" />
     <orderEntry type="library" name="Maven: org.apache.xmlgraphics:batik-shared-resources:1.14" level="project" />
