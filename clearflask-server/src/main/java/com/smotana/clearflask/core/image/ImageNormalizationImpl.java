@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.store.ContentStore.ContentType;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -68,7 +69,7 @@ public class ImageNormalizationImpl implements ImageNormalization {
                 if (numImages < 1) {
                     throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Empty image");
                 } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
-                    return new Image("image/gif", inputBytes);
+                    return new Image(ContentType.GIF.getMediaType(), inputBytes);
                 } else {
                     return writeJpeg(imageReader.read(0));
                 }
@@ -101,7 +102,7 @@ public class ImageNormalizationImpl implements ImageNormalization {
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
         }
-        return new Image("image/gif", data);
+        return new Image(ContentType.GIF.getMediaType(), data);
     }
 
     private Image writeJpeg(BufferedImage image) {
@@ -125,7 +126,7 @@ public class ImageNormalizationImpl implements ImageNormalization {
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
         }
-        return new Image("image/jpeg", data);
+        return new Image(ContentType.JPEG.getMediaType(), data);
     }
 
     private BufferedImage resizeImg(BufferedImage image) {

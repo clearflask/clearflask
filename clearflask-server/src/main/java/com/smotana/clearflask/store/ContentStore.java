@@ -36,6 +36,7 @@ public interface ContentStore {
 
     enum ContentType {
         JPEG("image/jpeg", "jpeg"),
+        GIF("image/gif", "gif"),
         UNKNOWN("application/octet-stream", "dat");
 
         String mediaType;
