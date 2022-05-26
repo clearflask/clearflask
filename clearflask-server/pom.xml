@@ -159,10 +159,6 @@
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-gif</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
             <!-- For SVG -->
             <artifactId>imageio-batik</artifactId>
         </dependency>
