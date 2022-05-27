@@ -201,13 +201,7 @@ public class KillBillResource extends ManagedService {
         if (!accountOpt.isPresent()) {
             // This happens when account is deleted by user
             // and cancellation events are propagating from KillBill
-            if (ExtBusEventType.SUBSCRIPTION_CANCEL.equals(event.eventType)
-                    || ExtBusEventType.ENTITLEMENT_CANCEL.equals(event.eventType)
-                    || ExtBusEventType.BLOCKING_STATE.equals(event.eventType)) {
-                log.debug("Received event for non-existent account, KillBill account and subscription exist, possibly account was deleted by user, with account id {}", accountId);
-            } else {
-                log.warn("Received event for non-existent account, KillBill account and subscription exist, possibly account was deleted by user, with account id {} event {}", accountId, event);
-            }
+            log.info("Received event for non-existent account, KillBill account and subscription exist, possibly account was deleted by user, with account id {} event {}", accountId, event);
             return;
         }
 
