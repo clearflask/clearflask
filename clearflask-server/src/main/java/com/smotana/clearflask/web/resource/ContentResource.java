@@ -14,16 +14,20 @@ import com.smotana.clearflask.core.image.ImageNormalization.Image;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -58,7 +62,13 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     }
 
     private String doUpload(String projectId, String authorId, InputStream body) {
-        Image imageNormalized = imageNormalization.normalize(body);
+        byte[] imgBytes;
+        try (body) {
+            imgBytes = IOUtils.toByteArray(body);
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
+        }
+        Image imageNormalized = imageNormalization.normalize(imgBytes);
         String signedUrl = contentStore.uploadAndSign(
                 projectId,
                 authorId,

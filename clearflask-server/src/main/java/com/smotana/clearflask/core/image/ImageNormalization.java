@@ -5,8 +5,6 @@ package com.smotana.clearflask.core.image;
 import com.smotana.clearflask.web.ApiException;
 import lombok.Value;
 
-import java.io.InputStream;
-
 public interface ImageNormalization {
 
     /**
@@ -16,7 +14,7 @@ public interface ImageNormalization {
      * - Scale down quality
      * - Common format
      */
-    Image normalize(InputStream in) throws ApiException;
+    Image normalize(byte[] imgBytes) throws ApiException;
 
     @Value
     class Image {

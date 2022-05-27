@@ -82,7 +82,7 @@ public class ImageNormalizationTest extends AbstractTest {
         int width = exampleImgBuffered.getWidth();
         int height = exampleImgBuffered.getHeight();
 
-        ImageNormalization.Image normalized = normalization.normalize(new ByteArrayInputStream(exampleImgBytes));
+        ImageNormalization.Image normalized = normalization.normalize(exampleImgBytes);
         writeFileToTempFolder(normalized, "1");
         assertEquals(isGif ? "image/gif" : "image/jpeg", normalized.getMediaType());
         BufferedImage normalizedBuffered = ImageIO.read(new ByteArrayInputStream(normalized.getData()));
@@ -90,7 +90,7 @@ public class ImageNormalizationTest extends AbstractTest {
         assertEquals(height, normalizedBuffered.getHeight());
 
         configSet(ImageNormalizationImpl.Config.class, "maxWidth", String.valueOf(width / 2));
-        normalized = normalization.normalize(new ByteArrayInputStream(exampleImgBytes));
+        normalized = normalization.normalize(exampleImgBytes);
         writeFileToTempFolder(normalized, "2");
         normalizedBuffered = ImageIO.read(new ByteArrayInputStream(normalized.getData()));
         assertEquals(isGif ? width : width / 2, normalizedBuffered.getWidth());
@@ -98,7 +98,7 @@ public class ImageNormalizationTest extends AbstractTest {
 
         configSet(ImageNormalizationImpl.Config.class, "maxWidth", String.valueOf(width));
         configSet(ImageNormalizationImpl.Config.class, "maxHeight", String.valueOf(height / 2));
-        normalized = normalization.normalize(new ByteArrayInputStream(exampleImgBytes));
+        normalized = normalization.normalize(exampleImgBytes);
         writeFileToTempFolder(normalized, "3");
         normalizedBuffered = ImageIO.read(new ByteArrayInputStream(normalized.getData()));
         assertEquals(isGif ? width : width / 2, normalizedBuffered.getWidth());

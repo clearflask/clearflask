@@ -10,7 +10,6 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.ContentStore.ContentType;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -26,7 +25,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 
 @Slf4j
@@ -52,29 +50,24 @@ public class ImageNormalizationImpl implements ImageNormalization {
     private Config config;
 
     @Override
-    public Image normalize(InputStream in) throws ApiException {
-        try {
-            byte[] inputBytes = IOUtils.toByteArray(in);
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(inputBytes);
-                 ImageInputStream iis = ImageIO.createImageInputStream(bais)) {
-                Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(iis);
-                if (!imageReaders.hasNext()) {
-                    throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Unsupported format");
-                }
-                ImageReader imageReader = imageReaders.next();
-                String format = imageReader.getFormatName();
-                imageReader.setInput(iis);
-                int numImages = imageReader.getNumImages(true);
+    public Image normalize(byte[] imgBytes) throws ApiException {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
+             ImageInputStream iis = ImageIO.createImageInputStream(bais)) {
+            Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(iis);
+            if (!imageReaders.hasNext()) {
+                throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Unsupported format");
+            }
+            ImageReader imageReader = imageReaders.next();
+            String format = imageReader.getFormatName();
+            imageReader.setInput(iis);
+            int numImages = imageReader.getNumImages(true);
 
-                if (numImages < 1) {
-                    throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Empty image");
-                } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
-                    return new Image(ContentType.GIF.getMediaType(), inputBytes);
-                } else {
-                    return writeJpeg(imageReader.read(0));
-                }
-            } finally {
-                in.close();
+            if (numImages < 1) {
+                throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Empty image");
+            } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
+                return new Image(ContentType.GIF.getMediaType(), imgBytes);
+            } else {
+                return writeJpeg(imageReader.read(0));
             }
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
