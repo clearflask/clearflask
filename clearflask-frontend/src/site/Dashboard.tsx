@@ -740,7 +740,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     type: 'dropdown', title: (!!activeProject && projects.length > 1) ? activeProject.editor.getConfig().name : this.props.account.name,
                     color: 'primary', items: [
                       ...(projects.map(p => ({
-                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: p.editor.getConfig().name || 'Project',
+                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: p.editor.getConfig().name || p.editor.getConfig().slug || p.editor.getConfig().domain || p.editor.getConfig().projectId || 'Unnamed project',
 
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined
                       }))),
