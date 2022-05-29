@@ -21,14 +21,14 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 var self = this || /* istanbul ignore next */ {};
 try {
-  self.WeakRef = WeakRef;
+  self.WeakRef = WeakRef; // eslint-disable-line no-use-before-define
   /* istanbul ignore next */
-  self.FinalizationGroup = FinalizationGroup;
+  self.FinalizationGroup = FinalizationGroup; // eslint-disable-line no-use-before-define
 }
 catch (o_O) {
   // requires a global WeakMap (IE11+)
   (function (WeakMap, defineProperties) {
-    var wr = new WeakMap;
+    var wr = new WeakMap();
     function WeakRef(value) {
       wr.set(this, value);
     }
@@ -43,7 +43,7 @@ catch (o_O) {
       }
     );
 
-    var fg = new WeakMap;
+    var fg = new WeakMap();
     function FinalizationGroup(fn) {
       fg.set(this, []);
     }
