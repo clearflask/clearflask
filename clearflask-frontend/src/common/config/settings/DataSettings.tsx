@@ -20,6 +20,7 @@ import UserSelection from '../../../site/dashboard/UserSelection';
 import { contentScrollApplyStyles, Orientation } from '../../ContentScroll';
 import SubmitButton from '../../SubmitButton';
 import { csvPreviewLines } from '../../util/csvUtil';
+import { getProjectName } from '../../util/projectUtil';
 
 const PreviewLines = 6;
 
@@ -122,7 +123,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   render() {
-    const projectName = this.props.server.getStore().getState().conf.conf?.name || 'project';
+    const projectName = getProjectName(this.props.server.getStore().getState().conf.conf);
     const DropzoneIcon = this.state.importFile ? FileIcon : UploadIcon;
     return (
       <div>

@@ -13,7 +13,7 @@ import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import DynamicMuiIcon from '../common/icon/DynamicMuiIcon';
 import RichViewer from '../common/RichViewer';
 import { preserveEmbed } from '../common/util/historyUtil';
-import { getProjectLink } from '../site/Dashboard';
+import { getProjectLink } from '../common/util/projectUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction, PanelTitle } from './comps/Panel';
 import PanelPost from './comps/PanelPost';

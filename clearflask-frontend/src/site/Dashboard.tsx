@@ -50,7 +50,7 @@ import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuItems } from '../common/menus';
 import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
-import { escapeHtml } from '../common/util/htmlUtil';
+import { getProjectLink, getProjectName } from '../common/util/projectUtil';
 import { createMutableRef, MutableRef } from '../common/util/refUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
 import { initialWidth } from '../common/util/screenUtil';
@@ -74,10 +74,6 @@ import { renderUsers } from './dashboard/dashboardUsers';
 import DemoApp from './DemoApp';
 import { LandingEmbedFeedbackPage } from './LandingPages';
 import Logo from './Logo';
-
-export const getProjectLink = (config: Pick<AdminClient.Config, 'domain' | 'slug'>): string => {
-  return `${windowIso.location.protocol}//${escapeHtml(config.domain) || `${escapeHtml(config.slug)}.${windowIso.location.host}`}`
-}
 
 export interface ShowSnackbarProps {
   message: string;
@@ -412,7 +408,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     });
 
     const projectOptions: Label[] = projects.map(p => ({
-      label: p.editor.getConfig().name,
+      label: getProjectName(p.editor.getConfig()),
       filterString: p.editor.getConfig().name,
       value: p.projectId
     }));
@@ -433,7 +429,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     if (activePath === 'create') {
       selectedLabel = undefined;
     } else if (!selectedLabel && projects.length > 0) {
-      selectedLabel = { label: projects[0].editor.getConfig().name, value: projects[0].projectId };
+      selectedLabel = { label: getProjectName(projects[0].editor.getConfig()), value: projects[0].projectId };
     }
     const activeProjectId: string | undefined = selectedLabel?.value;
     const activeProject = projects.find(p => p.projectId === activeProjectId);
@@ -737,10 +733,10 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }, title: this.props.t('visit'), icon: VisitIcon
                   }] : []),
                   {
-                    type: 'dropdown', title: (!!activeProject && projects.length > 1) ? activeProject.editor.getConfig().name : this.props.account.name,
+                    type: 'dropdown', title: (!!activeProject && projects.length > 1) ? getProjectName(activeProject.editor.getConfig()) : this.props.account.name,
                     color: 'primary', items: [
                       ...(projects.map(p => ({
-                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: p.editor.getConfig().name || p.editor.getConfig().slug || p.editor.getConfig().domain || p.editor.getConfig().projectId || 'Unnamed project',
+                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: getProjectName(p.editor.getConfig()),
 
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined
                       }))),
