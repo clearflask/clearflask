@@ -26,6 +26,7 @@ export const renderIndexSsr = (props: {
       apiBasePath={connectConfig.apiBasePath}
       url={props.requestedUrl}
       setTitle={newTitle => props.renderResult.title = newTitle}
+      setFaviconUrl={newFaviconUrl => props.renderResult.faviconUrl = newFaviconUrl}
       setMaxAge={maxAge => props.renderResult.maxAge = maxAge}
       storesState={props.storesState}
       awaitPromises={props.awaitPromises}

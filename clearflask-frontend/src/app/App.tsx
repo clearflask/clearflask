@@ -25,6 +25,7 @@ import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
 import ErrorPage from './ErrorPage';
 import Header from './Header';
+import SetAppFavicon from './SetAppFavicon';
 import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
@@ -173,6 +174,7 @@ class App extends Component<Props> {
 
     return (
       <Provider store={this.server.getStore()}>
+        {!this.props.isInsideContainer && (<SetAppFavicon />)}
         <SentryIdentifyUser />
         <IframeBroadcastPathname />
         <AppThemeProvider

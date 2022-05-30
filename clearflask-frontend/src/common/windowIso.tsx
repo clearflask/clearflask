@@ -45,6 +45,7 @@ export const WindowIsoSsrProvider = (props: {
   apiBasePath: string;
   url: string;
   setTitle: (title: string) => void;
+  setFaviconUrl: (title: string) => void;
   setMaxAge: (maxAge: number) => void;
   storesState: StoresState;
   awaitPromises: Array<Promise<any>>;
@@ -56,6 +57,7 @@ export const WindowIsoSsrProvider = (props: {
   const url = new URL(props.url);
   win['location'] = url;
   win['setTitle'] = props.setTitle;
+  win['setFaviconUrl'] = props.setFaviconUrl;
   win['setMaxAge'] = props.setMaxAge;
   win['storesState'] = props.storesState;
   win['awaitPromises'] = props.awaitPromises;
@@ -79,6 +81,7 @@ export type WindowIso = {
       apiBasePath: string;
       location: URL;
       setTitle: (title: string) => void;
+      setFaviconUrl: (faviconUrl: string) => void;
       setMaxAge: (maxAge: number) => void;
       storesState: StoresState;
       awaitPromises: Array<Promise<any>>;

@@ -15,6 +15,7 @@ import { renderIndexSsr } from '../index-ssr';
 import connectConfig from './config';
 
 export interface RenderResult {
+  faviconUrl?: string;
   title: string;
   extractor: ChunkExtractor;
   muiSheets: ServerStyleSheets;
@@ -24,6 +25,7 @@ export interface RenderResult {
 
 const PH_ENV = '%ENV%';
 const PH_PARENT_DOMAIN = '%PARENT_DOMAIN%';
+const PH_FAVICON_URL = '%FAVICON_URL%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
 const PH_LINK_TAGS = '%LINK_TAGS%';
 const PH_STYLE_TAGS = '%STYLE_TAGS%';
@@ -34,11 +36,15 @@ const PH_STORE_CONTENT = '%STORE_CONTENT%';
 const PH_I18N_INIT_LNG = '%I18N_INIT_LNG%';
 const PH_I18N_INIT_STORE = '%I18N_INIT_STORE%';
 
+export const getParentDomainUrl = () => {
+  return `${connectConfig.forceRedirectHttpToHttps ? 'https' : 'http'}://${connectConfig.parentDomain}`;
+}
+
 export const replaceParentDomain = (html) => {
   if (connectConfig.parentDomain === 'clearflask.com') return html;
   return html.replace(
     /https:\/\/clearflask\.com/g,
-    `${connectConfig.forceRedirectHttpToHttps ? 'https' : 'http'}://${connectConfig.parentDomain}`)
+    getParentDomainUrl());
 }
 
 // Cache index.html in memory
@@ -57,6 +63,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('#loader-css').remove();
   $('noscript').remove();
   $('#loadingScreen').remove();
+  $('#favicon').attr('href', PH_FAVICON_URL);
   $('title').text(PH_PAGE_TITLE);
   $('#mainScreen').text(PH_MAIN_SCREEN);
   $('head').append(PH_STYLE_TAGS);
@@ -164,6 +171,9 @@ export default function render(): Handler {
       } else {
         html = html.replace(PH_PARENT_DOMAIN, '');
       }
+
+      // Favicon
+      html = html.replace(PH_FAVICON_URL, renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`);
 
       // Page title
       html = html.replace(PH_PAGE_TITLE, renderResult.title);
