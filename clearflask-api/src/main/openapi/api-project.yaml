@@ -58,7 +58,7 @@ components:
           title: LangWhitelist
           type: object
           required:
-          - langs
+            - langs
           properties:
             langs:
               x-clearflask-prop: { order: 6, subType: 'language', name: 'Languages', description: 'Only allows users to select these langauges. Keep blank to hide language selection. If user locale is outside of this list, that language will also be shown.' }
@@ -66,7 +66,7 @@ components:
               items:
                 type: string
         noIndex:
-          x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed'  }
+          x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed' }
           type: boolean
         cookieConsent:
           $ref: 'api-project.yaml#/components/schemas/cookieConsent'
@@ -173,7 +173,7 @@ components:
         visibility:
           x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'Whether project and content is visible to the public. Private projects require viewers to first sign-in.' }
           type: string
-          enum: [Public, Private]
+          enum: [ Public, Private ]
         accountFields:
           x-clearflask-hide: true
           x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
@@ -185,7 +185,7 @@ components:
             displayName:
               x-clearflask-prop: { order: 1, name: 'Display name', description: 'Whether to ask for a display name during sign-up. Unless necessary, it is recommended to not ask for a display name. Users will be encouraged to fill out their display name after signing up.', defaultValue: 'None' }
               type: string
-              enum: [None, Optional, Required]
+              enum: [ None, Optional, Required ]
         notificationMethods:
           x-clearflask-prop: { order: 1, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you so it is essential to ask for a way to notify your users of updates. Anonymous sign up is also possible but not recommended.' }
           title: NotificationMethods
@@ -212,22 +212,22 @@ components:
               type: object
               title: EmailSignup
               required:
-              - mode
-              - verification
+                - mode
+                - verification
               properties:
                 mode:
-                  x-clearflask-prop: { order: 1, name: 'Allow Signups', enumNames: ['Login Only', 'Signups & Login'], defaultValue: 'SignupAndLogin', description: 'Allows you to only allow login for existing users if you plan on creating user accounts yourself.' }
+                  x-clearflask-prop: { order: 1, name: 'Allow Signups', enumNames: [ 'Login Only', 'Signups & Login' ], defaultValue: 'SignupAndLogin', description: 'Allows you to only allow login for existing users if you plan on creating user accounts yourself.' }
                   type: string
-                  enum: [LoginOnly, SignupAndLogin]
+                  enum: [ LoginOnly, SignupAndLogin ]
                 password:
                   x-clearflask-hide: true
                   x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                   type: string
-                  enum: [None, Optional, Required]
+                  enum: [ None, Optional, Required ]
                 verification:
                   x-clearflask-prop: { order: 1, name: 'Verification', defaultValue: 'None', description: 'Choose whether users must be required to verify their email before letting them inside. If not required, no initial email will be sent.' }
                   type: string
-                  enum: [None, Required]
+                  enum: [ None, Required ]
                 allowedDomains:
                   x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify a list of allowed domains that must match before giving access to content. User will be forced to verify email prior to access.' }
                   type: array
@@ -239,11 +239,11 @@ components:
                   maxItems: 10
             sso:
               x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
-              x-clearflask-additional-children: { children: [{ path: ['ssoSecretKey'] }] }
+              x-clearflask-additional-children: { children: [ { path: [ 'ssoSecretKey' ] } ] }
               type: object
               title: SsoSignup
               required:
-              - redirectUrl
+                - redirectUrl
               properties:
                 buttonTitle:
                   x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
@@ -259,17 +259,17 @@ components:
               type: array
               title: OAuthSignup
               items:
-                x-clearflask-additional-children: { children: [{ path: ['oauthClientSecrets', '<&>'], dynamicIdPropName: 'oauthId' }] }
+                x-clearflask-additional-children: { children: [ { path: [ 'oauthClientSecrets', '<&>' ], dynamicIdPropName: 'oauthId' } ] }
                 type: object
                 required:
-                - oauthId
-                - buttonTitle
-                - clientId
-                - authorizeUrl
-                - tokenUrl
-                - scope
-                - userProfileUrl
-                - guidJsonPath
+                  - oauthId
+                  - buttonTitle
+                  - clientId
+                  - authorizeUrl
+                  - tokenUrl
+                  - scope
+                  - userProfileUrl
+                  - guidJsonPath
                 properties:
                   oauthId:
                     x-clearflask-prop: { order: 0, name: 'OAuth ID', description: 'For use in API calls', subType: 'id' }
@@ -379,7 +379,7 @@ components:
             expressionColor:
               x-clearflask-prop: { order: 8, name: 'Expression color', description: 'Color shading of expression emojis.' }
               type: string
-              enum: [Color, Washed, Gray]
+              enum: [ Color, Washed, Gray ]
             funding:
               x-clearflask-prop: { order: 7, subType: 'color', name: 'Funding color', description: 'Funding progress bar color.' }
               type: string
@@ -401,7 +401,7 @@ components:
           title: Template
           type: object
           required:
-          - pages
+            - pages
           properties:
             header:
               x-clearflask-prop: { order: 1, name: 'Header', description: 'Replaces top part of every page including logo, menu and account settings', subType: 'multiline' }
@@ -418,7 +418,7 @@ components:
                 properties:
                   pageId:
                     x-clearflask-prop: { order: 1, name: 'Page', description: 'Select the page to replace' }
-                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
+                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
                     type: string
                   template:
                     x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
@@ -436,7 +436,7 @@ components:
             poweredBy:
               x-clearflask-prop: { order: 0, name: 'Powered by ClearFlask', defaultValue: 'Show', description: 'Consider supporting us by keeping the Powered-By link as it is one of our primary ways to reach new customers. Minimal option shows the link on the front page only when not embedded.' }
               type: string
-              enum: [Show, Minimal, Hidden]
+              enum: [ Show, Minimal, Hidden ]
     subscription:
       x-clearflask-page: { order: 45, name: 'Subscription', description: 'Allow users to subscribe to new content, typically used for a blog or changelog.' }
       title: Subscription
@@ -497,7 +497,7 @@ components:
           title: Expressing
           type: object
           required:
-          - limitEmojiPerIdea
+            - limitEmojiPerIdea
           properties:
             limitEmojiPerIdea:
               x-clearflask-prop: { order: 1, name: 'Only one', description: 'If set, a user can only set a single emoji per content.', defaultValue: true }
@@ -556,7 +556,7 @@ components:
                 type: string
               pageIds:
                 x-clearflask-prop: { order: 2, name: 'Tab links', description: 'Pages this tab will link to. If more than one, a dropdown will be displayed.' }
-                x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
+                x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
                 type: array
                 items:
                   type: string
@@ -567,7 +567,7 @@ components:
                 x-clearflask-prop: { order: 3, subType: 'icon', name: 'Icon', description: 'Icon name to display. Defaults to page icon if only a sigle page is linked. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
                 type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames: ['name', 'slug'], description: 'List of all pages. After creating a page, you may add the page to the menu below.'}
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames: [ 'name', 'slug' ], description: 'List of all pages. After creating a page, you may add the page to the menu below.' }
           type: array
           items:
             x-clearflask-page: { name: 'Page', description: 'Create and customize this page. Each page typically consists of one or more of the four components: description, panels, board and explorer.', nameFromProp: 'name' }
@@ -585,7 +585,7 @@ components:
                 x-clearflask-hide: true
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, subType: 'i18n', name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, subType: 'i18n', name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete: { path: [ '.', 'slug' ], skipFirst: 2 } }
                 type: string
               pageTitle:
                 x-clearflask-prop: { order: 3, subType: 'i18n', name: 'Page Title', description: 'Page title that appears on your browser window or tab when this page is open.' }
@@ -606,7 +606,7 @@ components:
                 x-clearflask-prop: { order: 5, name: 'Landing', description: 'Intended for a landing page, hide the navigation menu and instead show a set of large links for each page.' }
                 type: object
                 required:
-                - links
+                  - links
                 properties:
                   links:
                     x-clearflask-prop: { order: 1, name: 'Additional links', description: 'Add additional custom links.' }
@@ -615,7 +615,7 @@ components:
                       title: LandingLink
                       type: object
                       required:
-                      - title
+                        - title
                       properties:
                         title:
                           x-clearflask-prop: { order: 0, subType: 'i18n', name: 'Name', description: 'Headline to show for this link', placeholder: 'Name' }
@@ -628,13 +628,13 @@ components:
                           type: string
                         linkToPageId:
                           x-clearflask-prop: { order: 3, name: 'Page Link', description: 'Interal link to another page.' }
-                          x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
+                          x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
                           type: string
                         url:
                           x-clearflask-prop: { order: 4, name: 'External Link', description: 'External link where to direct your users to an external link such as your website or an email address.', placeholder: 'https://' }
                           type: string
               panels:
-                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: ['title'] }
+                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: [ 'title' ] }
                 type: array
                 items:
                   $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
@@ -653,10 +653,10 @@ components:
       properties:
         entryStatus:
           x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['.', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ '.', 'statuses' ], displayPropName: 'name', colorPropName: 'color' }
           type: string
         statuses:
-          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames: ['name', 'color', 'nextStatusIds'] }
+          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames: [ 'name', 'color', 'nextStatusIds' ] }
           type: array
           items:
             x-clearflask-page: { name: 'Status', nameFromProp: 'name', colorFromProp: 'color' }
@@ -679,7 +679,7 @@ components:
                 type: string
               nextStatusIds:
                 x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
-                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['..', '..', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ '..', '..', 'statuses' ], displayPropName: 'name', colorPropName: 'color' }
                 type: array
                 items:
                   type: string
@@ -729,7 +729,7 @@ components:
                 x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Assign a color for displaying this tag' }
                 type: string
         tagGroups:
-          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames: ['name', 'tagIds'] }
+          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames: [ 'name', 'tagIds' ] }
           type: array
           items:
             x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
@@ -761,7 +761,7 @@ components:
                 type: boolean
               tagIds:
                 x-clearflask-prop: { order: 5, name: 'Tags', description: 'Select tags that belong to this group' }
-                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['..', '..', 'tags'], displayPropName: 'name', colorPropName: 'color'}
+                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ '..', '..', 'tags' ], displayPropName: 'name', colorPropName: 'color' }
                 type: array
                 items:
                   type: string
@@ -773,7 +773,7 @@ components:
         - categories
       properties:
         categories:
-          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames: ['name', 'color', 'userCreatable'], disableReordering: true }
+          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames: [ 'name', 'color', 'userCreatable' ], disableReordering: true }
           type: array
           items:
             x-clearflask-page: { name: 'Category', nameFromProp: 'name', colorFromProp: 'color' }
@@ -802,7 +802,7 @@ components:
                 type: boolean
               userMergeableCategoryIds:
                 x-clearflask-prop: { order: 40, name: 'User mergeable', description: 'Which categories can user merge content into from this category. Mainly used for merging own feedback into related feedback.' }
-                x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+                x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
                 type: array
                 items:
                   type: string
@@ -815,11 +815,11 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/workflow'
               support:
                 $ref: 'api-project.yaml#/components/schemas/support'
-              tagging: 
+              tagging:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
     integrations:
       x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
-      x-clearflask-additional-children: { children: [{ path: ['github'] }] }
+      x-clearflask-additional-children: { children: [ { path: [ 'github' ] } ] }
       title: Integrations
       type: object
       properties:
@@ -858,7 +858,7 @@ components:
       title: GoogleAnalytics
       type: object
       required:
-      - trackingCode
+        - trackingCode
       properties:
         trackingCode:
           x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit Google Analytics, create a new property and paste your tracking code here.', placeholder: 'UA-000000000' }
@@ -868,18 +868,18 @@ components:
       title: Hotjar
       type: object
       required:
-      - trackingCode
+        - trackingCode
       properties:
         trackingCode:
           x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit HotJar and create a new site. Paste your tracking number here.', placeholder: '0000000' }
           type: string
     intercom:
       x-clearflask-page: { order: 2, name: 'Intercom', description: 'Add Intercom messenger.' }
-      x-clearflask-additional-children: { children: [{ path: ['intercomIdentityVerificationSecret'] }] }
+      x-clearflask-additional-children: { children: [ { path: [ 'intercomIdentityVerificationSecret' ] } ] }
       title: Intercom
       type: object
       required:
-      - appId
+        - appId
       properties:
         appId:
           x-clearflask-prop: { order: 0, name: 'App ID', description: 'Visit Intercom and paste your App ID here. Please ensure you add ClearFlask as part of your trusted domains in Intercom.', placeholder: 'xxxxxxxx' }
@@ -889,7 +889,7 @@ components:
       title: CookieYes
       type: object
       required:
-      - clientId
+        - clientId
       properties:
         clientId:
           x-clearflask-prop: { order: 0, name: 'Client ID', description: 'Visit app.cookieyes.com/site-settings, click "Get Script" and copy the characters between "client_data/" and "/script.js".', placeholder: 'A0A0A0A0A0A0A0A0A0A0A0A0' }
@@ -925,10 +925,10 @@ components:
               title: GitHub
               type: object
               required:
-              - installationId
-              - repositoryId
-              - name
-              - createWithCategoryId
+                - installationId
+                - repositoryId
+                - name
+                - createWithCategoryId
               properties:
                 installationId:
                   x-clearflask-prop: { order: 0, name: 'Installation ID', description: 'Linked GitHub installation ID. Can only be changed by authenticating and proving ownership.' }
@@ -943,15 +943,15 @@ components:
                   type: string
                 createWithCategoryId:
                   x-clearflask-prop: { order: 20, name: 'Create as', description: 'Pick which category should be used to create ClearFlask posts when a GitHub issue is created.', subType: 'id' }
-                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
                   type: string
                 initialStatusId:
                   x-clearflask-prop: { order: 30, name: 'Status', description: 'Pick which status should be used when creating a new post in ClearFlask in response to a new GitHub issue. Otherwise default initial status is used.' }
-                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
                   type: string
                 createWithTags:
                   x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Optionally add these tags to post created from GitHub' }
-                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
                   type: array
                   items:
                     type: string
@@ -961,17 +961,17 @@ components:
                   properties:
                     closedStatuses:
                       x-clearflask-prop: { order: 20, name: 'CF -> GH Closed statuses', description: 'List which ClearFlask statuses should trigger GitHub issue to close. Leave empty to disable.' }
-                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
                       type: array
                       items:
                         type: string
                     closedStatus:
                       x-clearflask-prop: { order: 20, name: 'GH -> CF Closed status', description: 'List which ClearFlask status should be used when GitHub issue is closed. Leave empty to disable.' }
-                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
                       type: string
                     openStatus:
                       x-clearflask-prop: { order: 20, name: 'GH -> CF Open status', description: 'Which ClearFlask status should be used when GitHub issue is re-opened. Leave empty to disable.' }
-                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['..', 'createWithCategoryId'], filterIdPropName: 'categoryId', filterShowAllIfNone: false}
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
                       type: string
                 responseSync:
                   x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create a comment on GitHub Issue when Response changes in ClearFlask.', falseAsUndefined: true }
@@ -984,32 +984,32 @@ components:
       type: object
       properties:
         title:
-          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Board title'}
+          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Board title' }
           type: string
         panels:
-          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames: ['title'] }
+          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames: [ 'title' ] }
           type: array
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
       required:
         - panels
     PostDisplay:
-      x-clearflask-prop: { order: 200, name: 'Customize look', description: 'Customize how this panel should look. The default look is automatically determined.', defaultValue: true}
+      x-clearflask-prop: { order: 200, name: 'Customize look', description: 'Customize how this panel should look. The default look is automatically determined.', defaultValue: true }
       type: object
       title: PanelDisplay
       properties:
         titleTruncateLines:
-          x-clearflask-prop: { order: 1, name: 'Title lines', description: 'Maximum number of lines to display for title otherwise an elipsis will be shown.', placeholder: 1}
+          x-clearflask-prop: { order: 1, name: 'Title lines', description: 'Maximum number of lines to display for title otherwise an elipsis will be shown.', placeholder: 1 }
           type: integer
           format: int64
           minimum: 1
         descriptionTruncateLines:
-          x-clearflask-prop: { order: 2, name: 'Description lines', description: 'Maximum number of lines to display for description otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 2}
+          x-clearflask-prop: { order: 2, name: 'Description lines', description: 'Maximum number of lines to display for description otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 2 }
           type: integer
           format: int64
           minimum: 0
         responseTruncateLines:
-          x-clearflask-prop: { order: 2, name: 'Response lines', description: 'Maximum number of lines to display for a response otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 1}
+          x-clearflask-prop: { order: 2, name: 'Response lines', description: 'Maximum number of lines to display for a response otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 1 }
           type: integer
           format: int64
           minimum: 0
@@ -1066,13 +1066,13 @@ components:
             - hideIfEmpty
           properties:
             title:
-              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to display above content'}
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to display above content' }
               type: string
             color:
               x-clearflask-prop: { subType: 'color', order: 2, name: 'Title color', description: 'Optional display color for title' }
               type: string
             hideIfEmpty:
-              x-clearflask-prop: { order: 3, name: 'Hide if empty', description: 'If this panel has no results, it will be hidden', defaultValue: false}
+              x-clearflask-prop: { order: 3, name: 'Hide if empty', description: 'If this panel has no results, it will be hidden', defaultValue: false }
               type: boolean
     PageExplorer:
       allOf:
@@ -1084,55 +1084,55 @@ components:
               x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
               type: object
               required:
-              - enableSort
-              - enableSearchText
-              - enableSearchByCategory
-              - enableSearchByStatus
-              - enableSearchByTag
+                - enableSort
+                - enableSearchText
+                - enableSearchByCategory
+                - enableSearchByStatus
+                - enableSearchByTag
               properties:
                 enableSort:
-                  x-clearflask-prop: { order: 1, name: 'Sort', description: 'Enable sorting', defaultValue: true}
+                  x-clearflask-prop: { order: 1, name: 'Sort', description: 'Enable sorting', defaultValue: true }
                   type: boolean
                 enableSearchText:
-                  x-clearflask-prop: { order: 2, name: 'Type to search', description: 'Enable searching by text', defaultValue: true}
+                  x-clearflask-prop: { order: 2, name: 'Type to search', description: 'Enable searching by text', defaultValue: true }
                   type: boolean
                 enableSearchByCategory:
-                  x-clearflask-prop: { order: 3, name: 'Category', description: 'Enable filtering by categories if present', defaultValue: true}
+                  x-clearflask-prop: { order: 3, name: 'Category', description: 'Enable filtering by categories if present', defaultValue: true }
                   type: boolean
                 enableSearchByStatus:
-                  x-clearflask-prop: { order: 4, name: 'Status', description: 'Enable filtering by statuses if present', defaultValue: true}
+                  x-clearflask-prop: { order: 4, name: 'Status', description: 'Enable filtering by statuses if present', defaultValue: true }
                   type: boolean
                 enableSearchByTag:
-                  x-clearflask-prop: { order: 5, name: 'Tag', description: 'Enable filtering by tags if present', defaultValue: true}
+                  x-clearflask-prop: { order: 5, name: 'Tag', description: 'Enable filtering by tags if present', defaultValue: true }
                   type: boolean
             allowCreate:
               x-clearflask-prop: { order: 2, name: 'Create form', description: 'Determine whether to show a form for adding new content.', defaultValue: true }
               type: object
               properties:
                 actionTitle:
-                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add'}
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add' }
                   type: string
                 actionTitleLong:
-                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post'}
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post' }
                   type: string
     PageFeedback:
       x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
       type: object
       required:
-      - categoryId
+        - categoryId
       properties:
         categoryId:
           x-clearflask-prop: { order: 5, name: 'Feedback Category', description: 'Select which category sshould be submitted by user. Must be set to user-creatable', subType: 'id' }
-          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
           type: string
         labelTitle:
-          x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea'}
+          x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea' }
           type: string
         labelDescription:
-          x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)'}
+          x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)' }
           type: string
         labelSubmit:
-          x-clearflask-prop: { order: 25, subType: 'i18n', name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea'}
+          x-clearflask-prop: { order: 25, subType: 'i18n', name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea' }
           type: string
         help:
           x-clearflask-page: { order: 30, name: 'Help', description: 'Shown as you type to entice user to solve their own problem by showing help articles' }
@@ -1216,13 +1216,13 @@ components:
 /slug/{slug}/bind/configAndUser:
   post:
     operationId: configAndUserBindSlug
-    tags: [Project]
+    tags: [ Project ]
     parameters:
-    - name: slug
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -1237,7 +1237,7 @@ components:
               title: ConfigAndUserBindSlugResult
               type: object
               required:
-              - projectId
+                - projectId
               properties:
                 projectId:
                   type: string
@@ -1252,13 +1252,13 @@ components:
 /slug/{slug}/bind/config:
   post:
     operationId: configBindSlug
-    tags: [Project]
+    tags: [ Project ]
     parameters:
-    - name: slug
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -1267,7 +1267,7 @@ components:
               title: ConfigBindSlugResult
               type: object
               required:
-              - projectId
+                - projectId
               properties:
                 projectId:
                   type: string
@@ -1280,13 +1280,13 @@ components:
 /slug/{slug}/bind/user:
   post:
     operationId: userBindSlug
-    tags: [Project]
+    tags: [ Project ]
     parameters:
-    - name: slug
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -1306,7 +1306,7 @@ components:
 /project/config/admin:
   get:
     operationId: configGetAllAndUserBindAllAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
     responses:
       '200':
@@ -1316,16 +1316,16 @@ components:
               title: ConfigAndBindAllResult
               type: object
               required:
-              - byProjectId
+                - byProjectId
               properties:
                 byProjectId:
                   type: object
                   additionalProperties:
                     type: object
                     required:
-                    - config
-                    - user
-                    - isExternal
+                      - config
+                      - user
+                      - isExternal
                     properties:
                       config:
                         $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
@@ -1336,7 +1336,7 @@ components:
 /project/admin:
   post:
     operationId: projectCreateAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     requestBody:
       required: true
       content:
@@ -1364,7 +1364,7 @@ components:
 /project/{projectId}/admin:
   delete:
     operationId: projectDeleteAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1377,7 +1377,7 @@ components:
 /project/{projectId}/admin/config:
   get:
     operationId: configGetAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1394,7 +1394,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   put:
     operationId: configSetAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1424,63 +1424,68 @@ components:
 /project/{projectId}/admin/import/post:
   post:
     operationId: projectImportPostAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: firstRowIsHeader
-      in: query
-      schema:
-        type: boolean
-    - name: categoryId
-      in: query
-      required: true
-      schema:
-        type: string
-    - name: authorUserId
-      in: query
-      required: true
-      schema:
-        type: string
-    - name: indexTitle
-      in: query
-      required: true
-      schema:
-        type: integer
-        format: int64
-    - name: indexDescription
-      in: query
-      schema:
-        type: integer
-        format: int64
-    - name: indexStatusId
-      in: query
-      schema:
-        type: integer
-        format: int64
-    - name: indexStatusName
-      in: query
-      schema:
-        type: integer
-        format: int64
-    - name: indexTagIds
-      in: query
-      schema:
-        type: integer
-        format: int64
-    - name: indexTagNames
-      in: query
-      schema:
-        type: integer
-        format: int64
-    - name: indexVoteValue
-      in: query
-      schema:
-        type: integer
-        format: int64
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: firstRowIsHeader
+        in: query
+        schema:
+          type: boolean
+      - name: categoryId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: authorUserId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: indexTitle
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: indexDescription
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexStatusId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexStatusName
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexTagIds
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexTagNames
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexVoteValue
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexDateTime
+        in: query
+        schema:
+          type: integer
+          format: int64
     requestBody:
       required: true
       content:
@@ -1503,25 +1508,25 @@ components:
 /project/{projectId}/admin/export:
   get:
     operationId: projectExportAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: includePosts
-      in: query
-      schema:
-        type: boolean
-    - name: includeUsers
-      in: query
-      schema:
-        type: boolean
-    - name: includeComments
-      in: query
-      schema:
-        type: boolean
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: includePosts
+        in: query
+        schema:
+          type: boolean
+      - name: includeUsers
+        in: query
+        schema:
+          type: boolean
+      - name: includeComments
+        in: query
+        schema:
+          type: boolean
     responses:
       '200':
         content:
@@ -1532,13 +1537,13 @@ components:
 /project/{projectId}/admin/admins:
   get:
     operationId: projectAdminsListAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -1547,8 +1552,8 @@ components:
               title: ProjectAdminsListResult
               type: object
               required:
-              - admins
-              - invitations
+                - admins
+                - invitations
               properties:
                 admins:
                   type: array
@@ -1560,18 +1565,18 @@ components:
                     $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
   post:
     operationId: projectAdminsInviteAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: email
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -1580,29 +1585,29 @@ components:
               title: ProjectAdminsInviteResult
               type: object
               required:
-              - invitation
+                - invitation
               properties:
                 invitation:
                   $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
   delete:
     operationId: projectAdminsRemoveAdmin
-    tags: [ProjectAdmin]
+    tags: [ ProjectAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: accountId
-      in: query
-      required: false
-      schema:
-        type: string
-    - name: invitationId
-      in: query
-      required: false
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: accountId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: invitationId
+        in: query
+        required: false
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'

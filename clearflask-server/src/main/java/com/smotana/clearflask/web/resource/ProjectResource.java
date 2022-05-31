@@ -7,7 +7,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -88,6 +87,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -97,6 +98,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -106,6 +108,9 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 @Singleton
 @Path(Application.RESOURCE_VERSION)
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
+    private static final ImmutableSet<DateTimeFormatter> IMPORT_DATETIME_FORMATS = ImmutableSet.of(
+            DateTimeFormatter.ISO_ZONED_DATE_TIME,
+            DateTimeFormatter.ISO_DATE);
 
     public interface Config {
         @DefaultValue("100")
@@ -609,6 +614,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         };
     }
 
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 100, challengeAfter = 10)
     @Override
     public ImportResponse projectImportPostAdmin(String projectId,
                                                  String categoryId,
@@ -621,7 +628,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                                  @Nullable Long indexStatusName,
                                                  @Nullable Long indexTagIds,
                                                  @Nullable Long indexTagNames,
-                                                 @Nullable Long indexVoteValue) {
+                                                 @Nullable Long indexVoteValue,
+                                                 @Nullable Long indexDateTime) {
         RateLimiter limiter = RateLimiter.create(config.importRateLimitPerSecond());
 
         Optional<UserModel> authorOpt = userStore.getUser(projectId, authorUserId);
@@ -658,7 +666,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         AtomicLong counter = new AtomicLong(0);
         try (CSVParser csvFileParser = CSVParser.parse(body, Charsets.UTF_8, format)) {
-            ideaStore.createIdeas(Iterables.transform(csvFileParser, record -> {
+            ideaStore.createIdeas(StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
                 limiter.acquire();
                 counter.incrementAndGet();
 
@@ -707,13 +715,25 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 }
 
                 Optional<Long> voteValueOpt = Optional.ofNullable(indexVoteValue).map(Long::intValue).map(record::get).map(Long::valueOf);
+
+                Optional<Instant> createdOpt = Optional.ofNullable(indexDateTime).map(Long::intValue).map(record::get).map(dateTimeStr -> {
+                    for (DateTimeFormatter formatter : IMPORT_DATETIME_FORMATS) {
+                        try {
+                            return Instant.from(formatter.parse(dateTimeStr));
+                        } catch (DateTimeParseException ex) {
+                            // Try next one
+                        }
+                    }
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time: " + dateTimeStr);
+                });
+
                 return new IdeaModel(
                         projectId,
                         ideaStore.genIdeaId(title),
                         authorOpt.get().getUserId(),
                         authorOpt.get().getName(),
                         authorOpt.get().getIsMod(),
-                        Instant.now(),
+                        createdOpt.orElseGet(Instant::now),
                         title,
                         Optional.ofNullable(indexDescription).map(Long::intValue).map(record::get).orElse(null),
                         null,
@@ -741,7 +761,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         null,
                         null,
                         null);
-            })).get();
+            }).collect(Collectors.toList())).get();
         } catch (ApiException ex) {
             throw ex;
         } catch (Exception ex) {

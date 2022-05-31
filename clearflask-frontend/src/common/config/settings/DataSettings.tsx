@@ -103,6 +103,7 @@ interface State {
   importIndexTagIds?: number;
   importIndexTagNames?: number;
   importIndexVoteValue?: number;
+  importIndexDateTime?: number;
   exportIsSubmitting?: boolean;
   exportIncludePosts?: boolean;
   exportIncludeUsers?: boolean;
@@ -131,8 +132,16 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
           description={(
             <>
               Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping of your columns.
-              <p>Supported fields are title, description, status, tags, and vote value.</p>
+              <p>Supported fields are title, description, created date/time, status, tags, and vote value.</p>
               <p>Status and Tags can be imported by ID or by Name; make sure you create them in project settings before importing.</p>
+              <p>Date/time field is expected in the ISO-8601 format. We strongly suggest to use a timezone. Examples:</p>
+              <ul>
+                <li>2011-12-03T10:15:30+01:00[Europe/Paris]</li>
+                <li>2011-12-03T10:15:30+01:00</li>
+                <li>2011-12-03T10:15:30</li>
+                <li>2011-12-03+01:00</li>
+                <li>2011-12-03</li>
+              </ul>
             </>
           )}
           preview={(
@@ -215,6 +224,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                           if (this.state.importIndexTagIds === index) selected = [{ label: 'Tag IDs', value: 'tagIds' }];
                           if (this.state.importIndexTagNames === index) selected = [{ label: 'Tag Names', value: 'tagNames' }];
                           if (this.state.importIndexVoteValue === index) selected = [{ label: 'Vote Value', value: 'voteValue' }];
+                          if (this.state.importIndexDateTime === index) selected = [{ label: 'Date/Time', value: 'dateTime' }];
                           return (
                             <TableCell>
                               <SelectionPicker
@@ -237,6 +247,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                                   { label: 'Tag IDs', value: 'importIndexTagIds' },
                                   { label: 'Tag Names', value: 'importIndexTagNames' },
                                   { label: 'Vote Value', value: 'importIndexVoteValue' },
+                                  { label: 'Date/Time', value: 'importIndexDateTime' },
                                 ]}
                                 onValueChange={labels => {
                                   const stateUpdate = {};
@@ -319,6 +330,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                       indexTagIds: this.state.importIndexTagIds,
                       indexTagNames: this.state.importIndexTagNames,
                       indexVoteValue: this.state.importIndexVoteValue,
+                      indexDateTime: this.state.importIndexDateTime,
                       body: this.state.importFile!.file,
                     })
                       .then(result => {
@@ -340,6 +352,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                             importIndexTagIds: undefined,
                             importIndexTagNames: undefined,
                             importIndexVoteValue: undefined,
+                            importIndexDateTime: undefined,
                           });
                         }
                       })
