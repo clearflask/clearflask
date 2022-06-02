@@ -492,23 +492,24 @@ public class KillBilling extends ManagedService implements Billing {
             log.warn("Failed to retrieve KillBill Overdue State from account id {}", account.getAccountId(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process", ex);
         }
-        // TODO All of this needs to be verified
         final SubscriptionStatus status;
         boolean hasOutstandingBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
-        boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
+        // When user pays, outstanding balance goes to zero while
+        // it takes some time for overdue unpaid to clear.
+        // Use isUnpaid that covers this scenario.
+        boolean isUnpaid = hasOutstandingBalance && isOverdueUnpaid;
+        boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent())::get;
         Supplier<Boolean> isLimited = Suppliers.memoize(() -> isAccountLimited(account.getExternalKey(), subscription.getPlanName()))::get;
-
-        if (EntitlementState.BLOCKED.equals(subscription.getState()) || isOverdueCancelled) {
+        if (EntitlementState.BLOCKED.equals(subscription.getState())
+                || isOverdueCancelled) {
             status = BLOCKED;
         } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
             status = isLimited.get() ? LIMITED : ACTIVETRIAL;
-        } else if (subscription.getState() == EntitlementState.ACTIVE
+        } else if (EntitlementState.ACTIVE.equals(subscription.getState())
                 && subscription.getCancelledDate() == null
-                && !hasOutstandingBalance
-                && !isOverdueUnpaid
-                && !isOverdueCancelled) {
+                && !isUnpaid) {
             status = isLimited.get() ? LIMITED : ACTIVE;
         } else if (EntitlementState.CANCELLED.equals(subscription.getState())) {
             status = CANCELLED;
@@ -516,15 +517,15 @@ public class KillBilling extends ManagedService implements Billing {
                 && subscription.getCancelledDate() != null) {
             status = isLimited.get() ? LIMITED : ACTIVENORENEWAL;
         } else if (hasPaymentMethod.get()
-                && hasOutstandingBalance) {
+                && isUnpaid) {
             status = ACTIVEPAYMENTRETRY;
         } else if (!hasPaymentMethod.get()
-                && hasOutstandingBalance) {
+                && isUnpaid) {
             status = NOPAYMENTMETHOD;
         } else {
             status = ACTIVE;
-            log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
-                    status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get());
+            log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}\n -- isLimited {}",
+                    status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get(), isLimited.get());
         }
         if (log.isTraceEnabled()) {
             log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
