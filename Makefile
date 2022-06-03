@@ -117,6 +117,17 @@ deploy-rotate-instances:
 	tools/instance-refresh-and-wait.sh clearflask-server
 	aws autoscaling describe-auto-scaling-instances --no-paginate --output table --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server']"
 
+deploy-running-configs:
+	make $(foreach server, \
+		$(shell aws ec2 describe-instances --no-paginate --output text \
+			--instance-ids $(shell aws autoscaling describe-auto-scaling-instances --output text --query "AutoScalingInstances[?AutoScalingGroupName=='clearflask-server'].InstanceId") \
+			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		deploy-running-config-$(server) )
+
+deploy-running-config-%: get-project-version
+	echo "Syncing config to $*"
+	ssh $* "sudo aws s3 cp s3://clearflask-secret/config-prod.cfg /opt/clearflask/config-prod.cfg && sudo aws s3 cp s3://clearflask-secret/connect.config.json /opt/clearflask/connect.config.json && sudo service connect restart"
+
 deploy-running-servers:
 	make $(foreach server, \
 		$(shell aws ec2 describe-instances --no-paginate --output text \
