@@ -56,6 +56,7 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.util.DateUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -86,15 +87,17 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,9 +111,6 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 @Singleton
 @Path(Application.RESOURCE_VERSION)
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
-    private static final ImmutableSet<DateTimeFormatter> IMPORT_DATETIME_FORMATS = ImmutableSet.of(
-            DateTimeFormatter.ISO_ZONED_DATE_TIME,
-            DateTimeFormatter.ISO_DATE);
 
     public interface Config {
         @DefaultValue("100")
@@ -154,6 +154,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private Billing billing;
     @Inject
     private NotificationService notificationService;
+    @Inject
+    private DateUtil dateUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -629,7 +631,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                                  @Nullable Long indexTagIds,
                                                  @Nullable Long indexTagNames,
                                                  @Nullable Long indexVoteValue,
-                                                 @Nullable Long indexDateTime) {
+                                                 @Nullable Long indexDateTime,
+                                                 @Nullable Long tzOffInMin) {
         RateLimiter limiter = RateLimiter.create(config.importRateLimitPerSecond());
 
         Optional<UserModel> authorOpt = userStore.getUser(projectId, authorUserId);
@@ -665,6 +668,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .toImmutableMap(Tag::getName, Tag::getTagId));
 
         AtomicLong counter = new AtomicLong(0);
+        AtomicReference<DateTimeFormatter> lastDateTimeFormatter = new AtomicReference<>();
         try (CSVParser csvFileParser = CSVParser.parse(body, Charsets.UTF_8, format)) {
             ideaStore.createIdeas(StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
                 limiter.acquire();
@@ -716,16 +720,28 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
                 Optional<Long> voteValueOpt = Optional.ofNullable(indexVoteValue).map(Long::intValue).map(record::get).map(Long::valueOf);
 
-                Optional<Instant> createdOpt = Optional.ofNullable(indexDateTime).map(Long::intValue).map(record::get).map(dateTimeStr -> {
-                    for (DateTimeFormatter formatter : IMPORT_DATETIME_FORMATS) {
-                        try {
-                            return Instant.from(formatter.parse(dateTimeStr));
-                        } catch (DateTimeParseException ex) {
-                            // Try next one
-                        }
-                    }
-                    throw new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time: " + dateTimeStr);
-                });
+                Optional<Instant> createdOpt = Optional.ofNullable(indexDateTime)
+                        .map(Long::intValue)
+                        .map(record::get)
+                        .map(dateTimeStr -> {
+                            if (lastDateTimeFormatter.get() != null) {
+                                try {
+                                    return dateUtil.parse(dateTimeStr, lastDateTimeFormatter.get())
+                                            .plus(tzOffInMin == null ? 0L : tzOffInMin, ChronoUnit.MINUTES);
+                                } catch (Exception ex) {
+                                    // Failed to parse using last format, continue to find new one
+                                }
+                            }
+                            DateTimeFormatter dateTimeFormatter = dateUtil.determineDateFormat(dateTimeStr)
+                                    .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time: " + dateTimeStr));
+                            lastDateTimeFormatter.set(dateTimeFormatter);
+                            try {
+                                return dateUtil.parse(dateTimeStr, dateTimeFormatter)
+                                        .plus(tzOffInMin == null ? 0L : tzOffInMin, ChronoUnit.MINUTES);
+                            } catch (ParseException ex) {
+                                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time: " + dateTimeStr, ex);
+                            }
+                        });
 
                 return new IdeaModel(
                         projectId,

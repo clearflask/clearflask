@@ -1486,6 +1486,11 @@ components:
         schema:
           type: integer
           format: int64
+      - name: tzOffInMin
+        in: query
+        schema:
+          type: integer
+          format: int64
     requestBody:
       required: true
       content:

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Table, TableBody, TableCell, TableHead, TableRow, TextField } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import UploadIcon from '@material-ui/icons/CloudUpload';
 import FileIcon from '@material-ui/icons/InsertDriveFile';
@@ -20,6 +20,8 @@ import UserSelection from '../../../site/dashboard/UserSelection';
 import { contentScrollApplyStyles, Orientation } from '../../ContentScroll';
 import SubmitButton from '../../SubmitButton';
 import { csvPreviewLines } from '../../util/csvUtil';
+import { getTimezoneOffsetInMin } from '../../util/dateUtil';
+import { downloadBlobFile } from '../../util/fileUtil';
 import { getProjectName } from '../../util/projectUtil';
 
 const PreviewLines = 6;
@@ -104,6 +106,7 @@ interface State {
   importIndexTagNames?: number;
   importIndexVoteValue?: number;
   importIndexDateTime?: number;
+  tzOffInMin?: number;
   exportIsSubmitting?: boolean;
   exportIncludePosts?: boolean;
   exportIncludeUsers?: boolean;
@@ -132,16 +135,17 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
           description={(
             <>
               Import posts into this project from another provider by uploading a Comma-Separated Value (CSV) file and then choose a mapping of your columns.
-              <p>Supported fields are title, description, created date/time, status, tags, and vote value.</p>
-              <p>Status and Tags can be imported by ID or by Name; make sure you create them in project settings before importing.</p>
-              <p>Date/time field is expected in the ISO-8601 format. We strongly suggest to use a timezone. Examples:</p>
-              <ul>
-                <li>2011-12-03T10:15:30+01:00[Europe/Paris]</li>
-                <li>2011-12-03T10:15:30+01:00</li>
-                <li>2011-12-03T10:15:30</li>
-                <li>2011-12-03+01:00</li>
-                <li>2011-12-03</li>
-              </ul>
+              <p>
+                <Button
+                  onClick={e => downloadBlobFile('clearflask-import-template.csv',
+                    new Blob([
+                      new Uint8Array([0xEF, 0xBB, 0xBF]), // UTF-8 BOM
+                      'Created,Title,Description\n'
+                      + '2019-04-01 00:00,First post,This is my first post\n'
+                      + '2021-10-05 00:00,Second post,This is my second post\n',
+                    ], { type: 'text/csv' }))}
+                >Download template</Button>
+              </p>
             </>
           )}
           preview={(
@@ -219,12 +223,12 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                           var selected: Label[] = [];
                           if (this.state.importIndexTitle === index) selected = [{ label: 'Title', value: 'title' }];
                           if (this.state.importIndexDescription === index) selected = [{ label: 'Description', value: 'description' }];
+                          if (this.state.importIndexDateTime === index) selected = [{ label: 'Date/Time', value: 'dateTime' }];
                           if (this.state.importIndexStatusId === index) selected = [{ label: 'Status ID', value: 'statusId' }];
                           if (this.state.importIndexStatusName === index) selected = [{ label: 'Status Name', value: 'statusName' }];
                           if (this.state.importIndexTagIds === index) selected = [{ label: 'Tag IDs', value: 'tagIds' }];
                           if (this.state.importIndexTagNames === index) selected = [{ label: 'Tag Names', value: 'tagNames' }];
                           if (this.state.importIndexVoteValue === index) selected = [{ label: 'Vote Value', value: 'voteValue' }];
-                          if (this.state.importIndexDateTime === index) selected = [{ label: 'Date/Time', value: 'dateTime' }];
                           return (
                             <TableCell>
                               <SelectionPicker
@@ -242,12 +246,12 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                                 options={[
                                   { label: 'Title', value: 'importIndexTitle' },
                                   { label: 'Description', value: 'importIndexDescription' },
+                                  { label: 'Date/Time', value: 'importIndexDateTime' },
                                   { label: 'Status ID', value: 'importIndexStatusId' },
                                   { label: 'Status Name', value: 'importIndexStatusName' },
                                   { label: 'Tag IDs', value: 'importIndexTagIds' },
                                   { label: 'Tag Names', value: 'importIndexTagNames' },
                                   { label: 'Vote Value', value: 'importIndexVoteValue' },
-                                  { label: 'Date/Time', value: 'importIndexDateTime' },
                                 ]}
                                 onValueChange={labels => {
                                   const stateUpdate = {};
@@ -287,7 +291,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                   <div className={this.props.classes.importSelectionRow}>
                     <CategorySelectWithConnect
                       className={this.props.classes.importProperty}
-                      width={150}
+                      width={180}
                       variant='outlined'
                       size='small'
                       label='Category'
@@ -298,7 +302,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                     />
                     <UserSelection
                       className={this.props.classes.importProperty}
-                      width={150}
+                      width={180}
                       variant='outlined'
                       size='small'
                       server={this.props.server}
@@ -307,6 +311,18 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                       disabled={this.state.importIsSubmitting}
                       onChange={selectedUserLabel => this.setState({ importAuthorUserId: selectedUserLabel?.value })}
                       allowCreate
+                    />
+                    <TextField
+                      className={this.props.classes.importProperty}
+                      style={{ width: 180 }}
+                      variant='outlined'
+                      size='small'
+                      label='Timezone offset (min)'
+                      helperText={this.state.tzOffInMin === undefined
+                        ? Intl?.DateTimeFormat?.()?.resolvedOptions?.()?.timeZone
+                        : undefined}
+                      value={this.state.tzOffInMin !== undefined ? this.state.tzOffInMin : getTimezoneOffsetInMin()}
+                      onChange={e => this.setState({ tzOffInMin: parseInt(e.target.value) || 0 })}
                     />
                   </div>
                 </Provider>
@@ -331,6 +347,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                       indexTagNames: this.state.importIndexTagNames,
                       indexVoteValue: this.state.importIndexVoteValue,
                       indexDateTime: this.state.importIndexDateTime,
+                      tzOffInMin: this.state.tzOffInMin,
                       body: this.state.importFile!.file,
                     })
                       .then(result => {
@@ -353,6 +370,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                             importIndexTagNames: undefined,
                             importIndexVoteValue: undefined,
                             importIndexDateTime: undefined,
+                            tzOffInMin: undefined,
                           });
                         }
                       })
@@ -360,10 +378,10 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                   }}
                 >Import</SubmitButton>
               </Collapse>
+              <NeedHelpInviteTeammate server={this.props.server} />
             </>
           )}
         />
-        <NeedHelpInviteTeammate server={this.props.server} />
         <Section title='Export data'
           description="Export this project's data in a CSV format. Useful if you'd like to analyze your data yourself or move to another provider."
           preview={(
