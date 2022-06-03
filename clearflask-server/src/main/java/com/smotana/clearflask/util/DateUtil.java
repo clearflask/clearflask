@@ -8,6 +8,7 @@ import com.google.inject.Singleton;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
@@ -64,14 +65,16 @@ public class DateUtil {
                 return Optional.of(new DateTimeFormatterBuilder()
                         .appendPattern(entry.getValue())
                         .parseDefaulting(ChronoField.NANO_OF_DAY, 0)
-                        .toFormatter());
+                        .toFormatter()
+                        .withZone(ZoneOffset.UTC));
             }
         }
         for (Map.Entry<String, String> entry : dateTimeFormats.entrySet()) {
             if (dateString.matches(entry.getKey())) {
                 return Optional.of(new DateTimeFormatterBuilder()
                         .appendPattern(entry.getValue())
-                        .toFormatter());
+                        .toFormatter()
+                        .withZone(ZoneOffset.UTC));
             }
         }
         return Optional.empty();

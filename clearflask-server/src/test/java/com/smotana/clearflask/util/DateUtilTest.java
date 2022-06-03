@@ -9,8 +9,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.Optional;
@@ -52,5 +54,12 @@ public class DateUtilTest extends AbstractTest {
                 DateTimeFormatter.ofPattern("yyyy-MM-dd").format(now),
                 DateTimeFormatter.ofPattern("yyyy-MM-dd").format(parsed));
         assertEquals(nowStr, formatter.format(parsed));
+
+        Instant instActual = dateUtil.parse(nowStr, formatterActualOpt.get());
+        assertEquals(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd").format(now),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                        .withZone(ZoneOffset.UTC)
+                        .format(instActual));
     }
 }
