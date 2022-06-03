@@ -49,8 +49,8 @@ public class DateUtilTest extends AbstractTest {
         assertTrue(formatterActualOpt.isPresent());
         TemporalAccessor parsed = formatterActualOpt.get().parse(nowStr);
         assertEquals(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(now),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(parsed));
+                DateTimeFormatter.ofPattern("yyyy-MM-dd").format(now),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd").format(parsed));
         assertEquals(nowStr, formatter.format(parsed));
     }
 }
