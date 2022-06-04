@@ -669,6 +669,12 @@
                     <httpPort>9200</httpPort>
                     <skip>${skipTests}${skipITs}</skip>
                     <timeout>120</timeout>
+                    <instanceCount>1</instanceCount>
+                    <instanceSettings>
+                        <properties>
+                            <xpack.ml.enabled>false</xpack.ml.enabled>
+                        </properties>
+                    </instanceSettings>
                 </configuration>
                 <executions>
                     <execution>
