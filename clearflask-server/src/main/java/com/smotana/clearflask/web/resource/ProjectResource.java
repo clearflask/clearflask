@@ -751,7 +751,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         authorOpt.get().getIsMod(),
                         createdOpt.orElseGet(Instant::now),
                         title,
-                        Optional.ofNullable(indexDescription).map(Long::intValue).map(record::get).orElse(null),
+                        Optional.ofNullable(indexDescription).map(Long::intValue).map(record::get)
+                                .map(desc -> sanitizer.richHtml(desc, "idea", "import", projectId, true))
+                                .orElse(null),
                         null,
                         null,
                         null,
