@@ -739,7 +739,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                 return dateUtil.parse(dateTimeStr, dateTimeFormatter)
                                         .plus(tzOffInMin == null ? 0L : tzOffInMin, ChronoUnit.MINUTES);
                             } catch (ParseException ex) {
-                                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time: " + dateTimeStr, ex);
+                                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot parse date/time " + dateTimeStr + " usig format " + dateTimeFormatter, ex);
                             }
                         });
 
