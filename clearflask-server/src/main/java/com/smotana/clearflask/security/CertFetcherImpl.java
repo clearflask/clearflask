@@ -209,19 +209,21 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             authorize(auth);
         }
 
-        // Generate a CSR for all of the domains, and sign it with the domain key pair.
-        CSRBuilder csrBuilder = new CSRBuilder();
-        csrBuilder.addDomains(domains);
-        csrBuilder.sign(domainKeypair.toJavaKeyPair());
+        if (!Status.VALID.equals(order.getStatus())) {
+            // Generate a CSR for all of the domains, and sign it with the domain key pair.
+            CSRBuilder csrBuilder = new CSRBuilder();
+            csrBuilder.addDomains(domains);
+            csrBuilder.sign(domainKeypair.toJavaKeyPair());
 
-        // Order the certificate
-        order.execute(csrBuilder.getEncoded());
+            // Order the certificate
+            order.execute(csrBuilder.getEncoded());
+        }
 
         // Wait for the order to complete
         int attempts = 10;
-        while (order.getStatus() != Status.VALID && attempts-- > 0) {
+        while (!Status.VALID.equals(order.getStatus()) && attempts-- > 0) {
             // Did the order fail?
-            if (order.getStatus() == Status.INVALID) {
+            if (Status.INVALID.equals(order.getStatus())) {
                 log.warn("Order has failed, reason: {}", order.getError());
                 throw new Exception("Order failed... Giving up.");
             }
