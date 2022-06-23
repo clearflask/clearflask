@@ -273,10 +273,8 @@ public class Sanitizer {
         }
 
         if (!discarded.isEmpty()) {
-            if (!silenceViolations && LogUtil.rateLimitAllowLog("sanitizer-html-violation")) {
-                log.warn("HTML Policy violation(s) for {} {} id {}, element-attribute violations(s): {}",
-                        projectId, identifierType, identifierId, discarded);
-            }
+            log.info("HTML Policy violation(s) for {} {} id {}, element-attribute violations(s): {}",
+                    projectId, identifierType, identifierId, discarded);
         }
         return sanitizedHtmlBuilder.toString();
     }
