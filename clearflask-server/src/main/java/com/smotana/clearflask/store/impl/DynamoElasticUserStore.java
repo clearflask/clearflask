@@ -371,10 +371,16 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     @Override
     public Optional<UserModel> getUser(String projectId, String userId) {
+        return getUser(projectId, userId, false)
+                .or(() -> getUser(projectId, userId, true));
+    }
+
+    private Optional<UserModel> getUser(String projectId, String userId, boolean consistentRead) {
         return Optional.ofNullable(userSchema.fromItem(userSchema.table().getItem(new GetItemSpec()
                 .withPrimaryKey(userSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "userId", userId))))));
+                        "userId", userId)))
+                .withConsistentRead(consistentRead))));
     }
 
     @Override

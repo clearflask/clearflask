@@ -804,10 +804,16 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     @Override
     public Optional<AccountSession> getSession(String sessionId) {
+        return getSession(sessionId, false)
+                .or(() -> getSession(sessionId, true));
+    }
+
+    private Optional<AccountSession> getSession(String sessionId, boolean consistentRead) {
         return Optional.ofNullable(sessionBySessionIdSchema
                         .fromItem(sessionBySessionIdSchema
-                                .table().getItem(sessionBySessionIdSchema
-                                        .primaryKey(Map.of("sessionId", sessionId)))))
+                                .table().getItem(new GetItemSpec()
+                                        .withPrimaryKey(sessionBySessionIdSchema.primaryKey(Map.of("sessionId", sessionId)))
+                                        .withConsistentRead(consistentRead))))
                 .filter(session -> {
                     if (session.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
                         log.debug("DynamoDB has an expired account session with expiry {}", session.getTtlInEpochSec());
