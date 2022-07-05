@@ -37,7 +37,7 @@ public class AuthCookieImpl implements AuthCookie {
                 .secure(config.authCookieSecure())
                 .httpOnly(true)
                 .ttlInEpochSec(ttlInEpochSec)
-                .sameSite(RealCookie.SameSite.STRICT)
+                .sameSite(RealCookie.SameSite.NONE)
                 .build()
                 .addToResponse(response);
     }
@@ -52,7 +52,7 @@ public class AuthCookieImpl implements AuthCookie {
                 .secure(config.authCookieSecure())
                 .httpOnly(true)
                 .ttlInEpochSec(0L)
-                .sameSite(RealCookie.SameSite.STRICT)
+                .sameSite(RealCookie.SameSite.NONE)
                 .build()
                 .addToResponse(response);
     }
