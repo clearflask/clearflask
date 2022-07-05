@@ -23,6 +23,9 @@
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} [%thread] - %msg%n</pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
     </appender>
 
     <appender name="EMAIL_SES" class="com.smotana.clearflask.logging.EmailSesAppender">
@@ -43,18 +46,23 @@
             <level>WARN</level>
         </filter>
     </appender>
+
     <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
         <options>
             <dsn>https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409</dsn>
         </options>
+        <minimumBreadcrumbLevel>TRACE</minimumBreadcrumbLevel>
         <minimumEventLevel>WARN</minimumEventLevel>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
     </appender>
 
     <logger name="ch.qos.logback" level="INFO"/>
     <logger name="com.kik.config.ice" level="INFO"/>
     <logger name="org.reflections.Reflections" level="INFO"/>
 
-    <root level="INFO">
+    <root level="TRACE">
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>
         <appender-ref ref="SENTRY"/>
