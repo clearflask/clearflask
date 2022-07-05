@@ -52,6 +52,7 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.util.RealCookie.SameSite;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -303,7 +304,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserSession session = userStore.createSession(
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec(), SameSite.NONE);
 
         if (balance > 0L) {
             voteStore.balanceAdjustTransaction(
@@ -452,7 +453,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserSession session = userStore.createSession(
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec(), SameSite.NONE);
 
         Project project = projectStore.getProject(projectId, true).get();
         return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());

@@ -8,6 +8,7 @@ import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.RealCookie;
+import com.smotana.clearflask.util.RealCookie.SameSite;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,8 +29,13 @@ public class AuthCookieImpl implements AuthCookie {
 
     @Override
     public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
-        log.trace("Setting {} auth cookie for session id {} ttl {}",
-                cookieName, sessionId, ttlInEpochSec);
+        this.setAuthCookie(response, cookieName, sessionId, ttlInEpochSec, SameSite.STRICT);
+    }
+
+    @Override
+    public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec, SameSite sameSite) {
+        log.trace("Setting {} auth cookie for session id {} ttl {} sameSite {}",
+                cookieName, sessionId, ttlInEpochSec, sameSite);
         RealCookie.builder()
                 .name(cookieName)
                 .value(sessionId)
@@ -37,14 +43,20 @@ public class AuthCookieImpl implements AuthCookie {
                 .secure(config.authCookieSecure())
                 .httpOnly(true)
                 .ttlInEpochSec(ttlInEpochSec)
-                .sameSite(RealCookie.SameSite.NONE)
+                .sameSite(sameSite)
                 .build()
                 .addToResponse(response);
     }
 
     @Override
     public void unsetAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName) {
-        log.trace("Removing account auth cookie");
+        this.unsetAuthCookie(response, cookieName, SameSite.STRICT);
+    }
+
+    @Override
+    public void unsetAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, SameSite sameSite) {
+        log.trace("Removing account auth cookie for cookie name {} sameSite {}",
+                cookieName, sameSite);
         RealCookie.builder()
                 .name(cookieName)
                 .value("")
@@ -52,7 +64,7 @@ public class AuthCookieImpl implements AuthCookie {
                 .secure(config.authCookieSecure())
                 .httpOnly(true)
                 .ttlInEpochSec(0L)
-                .sameSite(RealCookie.SameSite.NONE)
+                .sameSite(sameSite)
                 .build()
                 .addToResponse(response);
     }
