@@ -958,7 +958,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "userId", userModel.getUserId())))
                 .toArray(PrimaryKey[]::new))));
 
-        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(identifierToUserIdSchema.tableName()).withPrimaryKeysToDelete(users.stream()
+        PrimaryKey[] identifiersToDelete = users.stream()
                 .map(this::getUserIdentifiers)
                 .map(ImmutableMap::entrySet)
                 .flatMap(Collection::stream)
@@ -966,7 +966,10 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "projectId", projectId,
                         "type", e.getKey().getType(),
                         "identifierHash", e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue())))
-                .toArray(PrimaryKey[]::new))));
+                .toArray(PrimaryKey[]::new);
+        if (identifiersToDelete.length > 0) {
+            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(identifierToUserIdSchema.tableName()).withPrimaryKeysToDelete(identifiersToDelete)));
+        }
 
         updateUserCountForProject(projectId, -users.stream()
                 .filter(user -> user.getIsTracked() == Boolean.TRUE)
