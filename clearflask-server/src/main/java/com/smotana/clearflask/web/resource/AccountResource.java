@@ -421,10 +421,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         emailValidator.assertValid(email);
         sanitizer.accountName(name);
 
-        if (env == Environment.PRODUCTION_SELF_HOST && !superAdminPredicate.isEmailSuperAdmin(email)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Email not allowed, check configuration of 'superAdminEmailRegex', by default only 'admin@localhost' can sign up.");
-        }
-
         String accountId = accountStore.genAccountId();
 
         // Accept coupon
