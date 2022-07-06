@@ -248,6 +248,9 @@ public interface IdeaStore {
 
         /**
          * Expression counts; map of expression display to count.
+         *
+         * NonNull: Some old entries in Dynamo may have this null,
+         * but it shouldn't be null going forward.
          */
         ImmutableMap<String, Long> expressions;
 
