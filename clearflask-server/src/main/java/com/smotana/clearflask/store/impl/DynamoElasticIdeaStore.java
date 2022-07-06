@@ -406,10 +406,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Extern
     @Override
     public Optional<IdeaModel> getIdea(String projectId, String ideaId) {
-        return Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
+        Optional<IdeaModel> postOpt = Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId))))));
+        postOpt.ifPresent(this::upgradeExpressionsProperty);
+        return postOpt;
     }
 
     @Override
@@ -417,7 +419,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (ideaIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+        ImmutableMap<String, IdeaModel> posts = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId)))
@@ -426,6 +428,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
                         i -> i));
+        posts.values().forEach(this::upgradeExpressionsProperty);
+        return posts;
     }
 
     @Override
@@ -1195,7 +1199,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         valMap.put(":one", 1);
         valMap.put(":zero", 0);
 
-        double expressionsValueDiff = 0;
+        double expressionsValueDiff = 0d;
         List<String> setUpdates = Lists.newArrayList();
 
         int expressionAddedCounter = 0;
@@ -1527,6 +1531,29 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         } else {
             elastic.indexAsync(ideaToEsIndexRequest(ideaOpt.get(), true),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        }
+    }
+
+    private void upgradeExpressionsProperty(IdeaModel post) {
+        if (post.getExpressions() != null) {
+            return;
+        }
+
+        log.info("Updating post {} in project {} with missing expressions property",
+                post.getIdeaId(), post.getProjectId());
+        try {
+            IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                            .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                    "projectId", post.getProjectId(),
+                                    "ideaId", post.getIdeaId())))
+                            .withReturnValues(ReturnValue.NONE)
+                            .withNameMap(ImmutableMap.of("#expressions", "expressions"))
+                            .withValueMap(ImmutableMap.of(":expressions", ideaSchema.toDynamoValue("expressions", ImmutableMap.of())))
+                            .withConditionExpression("attribute_not_exists(#expressions)")
+                            .withUpdateExpression("SET #expressions = :expressions"))
+                    .getItem());
+        } catch (ConditionalCheckFailedException ex) {
+            // Nothing to do, already fixed
         }
     }
 

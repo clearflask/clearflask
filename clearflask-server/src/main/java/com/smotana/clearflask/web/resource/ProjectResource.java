@@ -769,7 +769,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         voteValueOpt.orElse(null),
                         voteValueOpt.map(Math::abs).orElse(null),
                         null,
-                        null,
+                        ImmutableMap.of(),
                         null,
                         ImmutableSet.of(),
                         ImmutableSet.of(),

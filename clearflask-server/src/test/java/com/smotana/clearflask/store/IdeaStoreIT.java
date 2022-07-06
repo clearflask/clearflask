@@ -46,8 +46,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 @Slf4j
 public class IdeaStoreIT extends AbstractIT {
@@ -595,5 +594,26 @@ public class IdeaStoreIT extends AbstractIT {
         store.fundIdea(projectId, idea.getIdeaId(), userId1, -5L, "transactionType", "summary").getIndexingFuture().get();
         assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(7L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+    }
+
+
+    @Test(timeout = 30_000L)
+    public void testExpressionsNullAutoFill() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                // In the past, some posts were created with empty expressions
+                // which causes expressions to fail when updating non existent expressions map
+                // Test that it gets created
+                .expressions(null)
+                .build();
+        store.createIdea(idea).get();
+        userStore.createIndex(projectId);
+        String userId = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+
+        assertNotNull(store.getIdea(projectId, idea.getIdeaId()).get().getExpressions());
+
+        store.expressIdeaSet(projectId, idea.getIdeaId(), userId, e -> e.equals("👀") ? 2d : 1d, Optional.of("👀")).getIndexingFuture().get();
     }
 }

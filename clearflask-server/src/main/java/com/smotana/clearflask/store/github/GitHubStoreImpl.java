@@ -432,7 +432,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         null,
                         null,
                         null,
-                        null,
+                        ImmutableMap.of(),
                         null,
                         ImmutableSet.of(),
                         ImmutableSet.of(),
