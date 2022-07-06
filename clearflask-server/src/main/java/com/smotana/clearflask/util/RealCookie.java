@@ -151,8 +151,11 @@ public class RealCookie {
 
     public static class RealCookieBuilder {
         private static final long VERSION = 1;
-        private final Map<String, String> additionalProperties = Maps.newHashMap();
+        @SuppressWarnings("FieldMayBeFinal")
+        private Map<String, String> additionalProperties = Maps.newHashMap();
 
+        public RealCookieBuilder() {
+        }
 
         public RealCookieBuilder(@NonNull Cookie cookie) {
             name(cookie.getName());
