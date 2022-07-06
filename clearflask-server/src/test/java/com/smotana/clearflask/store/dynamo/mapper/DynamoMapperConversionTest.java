@@ -140,8 +140,8 @@ public class DynamoMapperConversionTest extends AbstractTest {
                 {"immutableList", ImmutableList.of()},
                 {"immutableMap", ImmutableMap.of()},
                 {"immutableSet", ImmutableSet.of()},
-                {"bigDecimal", new BigDecimal("3243289.3428490324809320000")},
-                {"bigInteger", new BigInteger("000032432893428490324809320000")}
+                {"bigDecimal", new BigDecimal("3243289.342849032480932")},
+                {"bigInteger", new BigInteger("32432893428490324809320000")}
         });
     }
 
