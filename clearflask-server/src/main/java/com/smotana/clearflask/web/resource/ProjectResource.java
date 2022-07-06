@@ -280,7 +280,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                     UserModel user = userStore.accountCreateOrGet(project.getProjectId(), account);
                                     UserStore.UserSession session = userStore.createSession(user,
                                             Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
-                                    authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + project.getProjectId(), session.getSessionId(), session.getTtlInEpochSec());
+                                    authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + project.getProjectId(), session.getSessionId(), session.getTtlInEpochSec());
                                     return user;
                                 })
                                 .toUserMeWithBalance(project.getIntercomEmailToIdentityFun()),
@@ -442,7 +442,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         UserStore.UserSession session = userStore.createSession(
                 accountUser,
                 Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
         return new NewProjectResult(
                 projectId,

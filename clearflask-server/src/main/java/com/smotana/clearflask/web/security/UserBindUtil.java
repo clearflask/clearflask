@@ -61,7 +61,7 @@ public class UserBindUtil {
         if (!userOpt.isPresent() && userSessionOpt.isPresent()) {
             log.debug("User bind on valid session to non-existent user, revoking all sessions for userId {}", userSessionOpt.get().getUserId());
             userStore.revokeSessions(projectId, userSessionOpt.get().getUserId(), Optional.empty());
-            authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId);
+            authCookie.unsetAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId);
             userSessionOpt = Optional.empty();
         }
 
@@ -70,7 +70,7 @@ public class UserBindUtil {
             userSessionOpt = Optional.of(userStore.refreshSession(
                     userSessionOpt.get(),
                     Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond()));
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
+            authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
         }
 
         // Auto login using auth token
@@ -163,7 +163,7 @@ public class UserBindUtil {
             UserSession session = userStore.createSession(
                     userOpt.get(),
                     Instant.now().plus(configUserResource.sessionExpiry()).getEpochSecond());
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
+            authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
         }
 
         return userOpt;

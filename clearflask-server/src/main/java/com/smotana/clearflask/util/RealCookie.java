@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.message.internal.HttpDateFormat;
 import org.glassfish.jersey.message.internal.StringBuilderUtils;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Date;
 import java.time.Instant;
@@ -80,6 +81,10 @@ public class RealCookie {
         this.additionalProperties = additionalProperties;
     }
 
+    public static RealCookieBuilder builderFromCookie(Cookie cookie) {
+        return new RealCookieBuilder(cookie);
+    }
+
     public void addToResponse(HttpServletResponse response) {
         response.addHeader("Set-Cookie", toHeaderString());
     }
@@ -145,8 +150,22 @@ public class RealCookie {
     }
 
     public static class RealCookieBuilder {
-        private static long VERSION = 1;
-        private Map<String, String> additionalProperties = Maps.newHashMap();
+        private static final long VERSION = 1;
+        private final Map<String, String> additionalProperties = Maps.newHashMap();
+
+
+        public RealCookieBuilder(@NonNull Cookie cookie) {
+            name(cookie.getName());
+            value(cookie.getValue());
+            path(cookie.getPath());
+            version(cookie.getVersion());
+            domain(cookie.getDomain());
+            httpOnly(cookie.isHttpOnly());
+            secure(cookie.getSecure());
+            maxAge((long) cookie.getMaxAge());
+            comment(cookie.getComment());
+        }
+
 
         public RealCookieBuilder value(@NonNull String value) {
             this.value = value;

@@ -10,10 +10,10 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.util.RealCookie.SameSite;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -39,12 +39,7 @@ public class MockAuthCookie implements AuthCookie {
     private Optional<UserSession> userSession = Optional.empty();
 
     @Override
-    public void setAuthCookie(HttpServletResponse response, String cookieName, String sessionId, long ttlInEpochSec) {
-        setAuthCookie(response, cookieName, sessionId, ttlInEpochSec, SameSite.STRICT);
-    }
-
-    @Override
-    public void setAuthCookie(HttpServletResponse response, String cookieName, String sessionId, long ttlInEpochSec, SameSite sameSite) {
+    public void setAuthCookie(HttpServletRequest request, HttpServletResponse response, String cookieName, String sessionId, long ttlInEpochSec) {
         if (mockExtendedSecurityContext != null) {
             if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
                 if (accountStore != null) {
@@ -66,12 +61,7 @@ public class MockAuthCookie implements AuthCookie {
     }
 
     @Override
-    public void unsetAuthCookie(HttpServletResponse response, String cookieName) {
-        unsetAuthCookie(response, cookieName, SameSite.STRICT);
-    }
-
-    @Override
-    public void unsetAuthCookie(HttpServletResponse response, String cookieName, SameSite sameSite) {
+    public void unsetAuthCookie(HttpServletRequest request, HttpServletResponse response, String cookieName) {
         if (mockExtendedSecurityContext != null) {
             if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
                 accountSessionOpt = Optional.empty();

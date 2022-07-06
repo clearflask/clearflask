@@ -13,7 +13,9 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 
 @Slf4j
 @Singleton
@@ -28,14 +30,9 @@ public class AuthCookieImpl implements AuthCookie {
     private Config config;
 
     @Override
-    public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
-        this.setAuthCookie(response, cookieName, sessionId, ttlInEpochSec, SameSite.STRICT);
-    }
-
-    @Override
-    public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec, SameSite sameSite) {
-        log.trace("Setting {} auth cookie for session id {} ttl {} sameSite {}",
-                cookieName, sessionId, ttlInEpochSec, sameSite);
+    public void setAuthCookie(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
+        log.trace("Setting {} auth cookie for session id {} ttl {}",
+                cookieName, sessionId, ttlInEpochSec);
         RealCookie.builder()
                 .name(cookieName)
                 .value(sessionId)
@@ -43,30 +40,23 @@ public class AuthCookieImpl implements AuthCookie {
                 .secure(config.authCookieSecure())
                 .httpOnly(true)
                 .ttlInEpochSec(ttlInEpochSec)
-                .sameSite(sameSite)
+                .sameSite(SameSite.NONE)
+                .domain(request.getServerName())
                 .build()
                 .addToResponse(response);
     }
 
     @Override
-    public void unsetAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName) {
-        this.unsetAuthCookie(response, cookieName, SameSite.STRICT);
-    }
-
-    @Override
-    public void unsetAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, SameSite sameSite) {
-        log.trace("Removing account auth cookie for cookie name {} sameSite {}",
-                cookieName, sameSite);
-        RealCookie.builder()
-                .name(cookieName)
-                .value("")
-                .path("/")
-                .secure(config.authCookieSecure())
-                .httpOnly(true)
-                .ttlInEpochSec(0L)
-                .sameSite(sameSite)
-                .build()
-                .addToResponse(response);
+    public void unsetAuthCookie(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull String cookieName) {
+        log.trace("Removing account auth cookie for cookie name {}", cookieName);
+        Arrays.stream(request.getCookies())
+                .filter(cookie -> cookie.getName().equalsIgnoreCase(cookieName))
+                .forEach(cookie -> RealCookie.builderFromCookie(cookie)
+                        .value("")
+                        .ttlInEpochSec(0L)
+                        .sameSite(SameSite.NONE)
+                        .build()
+                        .addToResponse(response));
     }
 
     public static Module module() {

@@ -195,7 +195,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSessionOpt.get(),
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond()));
 
-            authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSessionOpt.get().getSessionId(), accountSessionOpt.get().getTtlInEpochSec());
+            authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSessionOpt.get().getSessionId(), accountSessionOpt.get().getTtlInEpochSec());
         }
         Optional<AccountSession> superAccountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAccountSessionOpt);
         if (superAccountSessionOpt.isPresent()) {
@@ -204,7 +204,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         superAccountSessionOpt.get(),
                         Instant.now().plus(config.sessionExpiry()).getEpochSecond()));
 
-                authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, superAccountSessionOpt.get().getSessionId(), superAccountSessionOpt.get().getTtlInEpochSec());
+                authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, superAccountSessionOpt.get().getSessionId(), superAccountSessionOpt.get().getTtlInEpochSec());
             }
         }
 
@@ -306,9 +306,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     AccountStore.AccountSession accountSession = accountStore.createSession(
                             accountOpt.get(),
                             Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-                    authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+                    authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
                     if (superAdminPredicate.isEmailSuperAdmin(accountOpt.get().getEmail())) {
-                        authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+                        authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
                     }
                 }
             }
@@ -350,9 +350,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
-            authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+            authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
@@ -373,17 +373,17 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         && !Strings.isNullOrEmpty(c.getValue()))
                 .forEach(c -> {
                     userStore.revokeSession(c.getValue());
-                    authCookie.unsetAuthCookie(response, c.getName());
+                    authCookie.unsetAuthCookie(request, response, c.getName());
                 });
 
         accountSessionIdOpt.ifPresent(accountStore::revokeSession);
         accountSessionIdOpt.ifPresent(accountSessionId ->
-                authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME));
+                authCookie.unsetAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME));
 
         if (!accountSessionIdOpt.equals(superAdminSessionIdOpt)) {
             superAdminSessionIdOpt.ifPresent(accountStore::revokeSession);
             superAdminSessionIdOpt.ifPresent(superAdminSessionId ->
-                    authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME));
+                    authCookie.unsetAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME));
         }
     }
 
@@ -487,9 +487,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
-            authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+            authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
         notificationService.onAccountSignup(account);
@@ -934,7 +934,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
