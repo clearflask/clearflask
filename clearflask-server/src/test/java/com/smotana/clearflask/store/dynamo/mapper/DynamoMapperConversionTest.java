@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -100,6 +102,8 @@ public class DynamoMapperConversionTest extends AbstractTest {
         private final ImmutableMap<String, Long> immutableMap;
         @NonNull
         private final ImmutableSet<String> immutableSet;
+        private final BigDecimal bigDecimal;
+        private final BigInteger bigInteger;
     }
 
     @Parameters(name = "{0} {1}")
@@ -135,7 +139,9 @@ public class DynamoMapperConversionTest extends AbstractTest {
                 {"immutableSet", ImmutableSet.of("a", "c", "b")},
                 {"immutableList", ImmutableList.of()},
                 {"immutableMap", ImmutableMap.of()},
-                {"immutableSet", ImmutableSet.of()}
+                {"immutableSet", ImmutableSet.of()},
+                {"bigDecimal", new BigDecimal("3243289.3428490324809320000")},
+                {"bigInteger", new BigInteger("000032432893428490324809320000")}
         });
     }
 
@@ -194,8 +200,8 @@ public class DynamoMapperConversionTest extends AbstractTest {
                 .withItem(attrMapExpected));
 
         Map<String, AttributeValue> attrMapActual = dynamo.getItem(new GetItemRequest()
-                .withTableName(schema.tableName())
-                .withKey(ItemUtils.toAttributeValueMap(schema.primaryKey(Map.of("id", dataExpected.getId())))))
+                        .withTableName(schema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(schema.primaryKey(Map.of("id", dataExpected.getId())))))
                 .getItem();
         Data dataActual = schema.fromAttrMap(attrMapActual);
 
@@ -211,8 +217,8 @@ public class DynamoMapperConversionTest extends AbstractTest {
         schema.table().putItem(itemExpected);
 
         Map<String, AttributeValue> attrMapActual = dynamo.getItem(new GetItemRequest()
-                .withTableName(schema.tableName())
-                .withKey(ItemUtils.toAttributeValueMap(schema.primaryKey(Map.of("id", dataExpected.getId())))))
+                        .withTableName(schema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(schema.primaryKey(Map.of("id", dataExpected.getId())))))
                 .getItem();
         Data dataActual = schema.fromAttrMap(attrMapActual);
 

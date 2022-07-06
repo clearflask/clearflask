@@ -4,9 +4,11 @@ package com.smotana.clearflask.store.dynamo.mapper;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.util.Modules;
@@ -102,5 +104,68 @@ public class DynamoMapperTest extends AbstractTest {
         assertEquals(Optional.of(data), StreamSupport.stream(lsi1.index().query(lsi1.partitionKey(data)).pages().spliterator(), false).flatMap(p -> StreamSupport.stream(p.spliterator(), false)).map(lsi1::fromItem).findAny());
         assertEquals(Optional.of(data), StreamSupport.stream(gsi1.index().query(gsi1.partitionKey(data)).pages().spliterator(), false).flatMap(p -> StreamSupport.stream(p.spliterator(), false)).map(gsi1::fromItem).findAny());
         assertEquals(Optional.of(data), StreamSupport.stream(gsi2.index().query(gsi2.partitionKey(data)).pages().spliterator(), false).flatMap(p -> StreamSupport.stream(p.spliterator(), false)).map(gsi2::fromItem).findAny());
+    }
+
+    @Value
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = {"id"}, rangePrefix = "prefixDataNonNullNullableTest")
+    public static class DataNullable {
+        @NonNull
+        private final String id;
+        private final String f1;
+        private final Long f2;
+        private final ImmutableMap<String, String> f3;
+        private final Instant f4;
+    }
+
+    @Value
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = {"id"}, rangePrefix = "prefixDataNonNullNullableTest")
+    public static class DataNonNull {
+        @NonNull
+        private final String id;
+        @NonNull
+        @InitWithDefault
+        private final String f1;
+        @NonNull
+        @InitWithDefault
+        private final Long f2;
+        @NonNull
+        @InitWithDefault
+        private final ImmutableMap<String, String> f3;
+        @NonNull
+        @InitWithDefault
+        private final Instant f4;
+    }
+
+    @Test(timeout = 20_000L)
+    public void testNullableToNonNull() throws Exception {
+        TableSchema<DataNullable> mapperNullable = mapper.parseTableSchema(DataNullable.class);
+
+        DataNullable dataNullWithNull = new DataNullable("myId", null, null, null, null);
+
+        PrimaryKey primaryKey = mapperNullable.primaryKey(dataNullWithNull);
+
+        assertNull(mapperNullable.fromItem(mapperNullable.table().putItem(new PutItemSpec()
+                .withItem(mapperNullable.toItem(dataNullWithNull)).withReturnValues(ReturnValue.ALL_OLD)).getItem()));
+        assertEquals(dataNullWithNull, mapperNullable.fromItem(
+                mapperNullable.table().getItem(primaryKey)));
+
+        // Circumvent detection of duplicate schema prefix
+        ((DynamoMapperImpl) mapper).rangePrefixToDynamoTable.clear();
+        // Get same schema with all fields NonNull this time
+        TableSchema<DataNonNull> mapperNonNull = mapper.parseTableSchema(DataNonNull.class);
+
+        DataNonNull dataNonNull = new DataNonNull("myId", "", 0L, ImmutableMap.of(), Instant.EPOCH);
+
+        assertEquals(primaryKey, mapperNonNull.primaryKey(dataNonNull));
+        assertEquals(dataNonNull, mapperNonNull.fromItem(
+                mapperNonNull.table().getItem(primaryKey)));
+
+        assertEquals(dataNonNull, mapperNonNull.fromItem(mapperNonNull.table().putItem(new PutItemSpec()
+                .withItem(mapperNonNull.toItem(dataNonNull)).withReturnValues(ReturnValue.ALL_OLD)).getItem()));
+        DataNullable dataNullWithNonNull = new DataNullable("myId", null, 0L, ImmutableMap.of(), Instant.EPOCH);
+        assertEquals(dataNullWithNonNull, mapperNullable.fromItem(
+                mapperNullable.table().getItem(primaryKey)));
     }
 }

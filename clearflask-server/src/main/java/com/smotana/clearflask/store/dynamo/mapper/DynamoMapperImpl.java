@@ -18,9 +18,9 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -43,6 +43,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.Collecti
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerItem;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.DefaultInstanceGetter;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerItem;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
@@ -107,7 +108,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
     private final MarshallerAttrVal gsonMarshallerAttrVal = o -> new AttributeValue().withS(gson.toJson(o));
     private final Function<Class, UnMarshallerAttrVal> gsonUnMarshallerAttrVal = k -> a -> gson.fromJson(a.getS(), k);
     private final Function<Class, UnMarshallerItem> gsonUnMarshallerItem = k -> (a, i) -> gson.fromJson(i.getString(a), k);
-    private final Map<String, DynamoTable> rangePrefixToDynamoTable = Maps.newHashMap();
+    @VisibleForTesting
+    final Map<String, DynamoTable> rangePrefixToDynamoTable = Maps.newHashMap();
 
     @Override
     protected void serviceStart() throws Exception {
@@ -246,32 +248,48 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             Optional<Class> collectionClazz = getCollectionClazz(field.getType());
             Class fieldClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
 
+            // Sets and strings are special in that dynamo doesnt support
+            // empty sets an empty strings so they require special handling
+            boolean isSet = Set.class.isAssignableFrom(field.getType());
+            boolean isString = String.class.isAssignableFrom(field.getType());
+
+            boolean initWithDefault = field.isAnnotationPresent(InitWithDefault.class);
+            Optional<DefaultInstanceGetter> defaultInstanceGetterOpt = !initWithDefault
+                    ? Optional.empty() : findInClassSet(collectionClazz.orElse(fieldClazz), converters.di);
+            if (initWithDefault && defaultInstanceGetterOpt.isEmpty()) {
+                log.warn("Field {} with @NonNull missing default instance getter, please update DynamoConvertersProxy for class {}",
+                        fieldName, collectionClazz.orElse(fieldClazz));
+            }
+
             Function<T, Object> objToFieldVal = obj -> {
+                Object o;
                 try {
-                    return field.get(obj);
+                    o = field.get(obj);
                 } catch (IllegalAccessException ex) {
                     throw new RuntimeException(ex);
                 }
+                if (defaultInstanceGetterOpt.isPresent() && o == null) {
+                    o = defaultInstanceGetterOpt.get().getDefaultInstance();
+                }
+                return o;
             };
             objToFieldValsBuilder.put(fieldName, objToFieldVal);
 
             // fromItem
             UnMarshallerItem unMarshallerItem = findUnMarshallerItem(collectionClazz, fieldClazz);
             fromItemToCtorArgsListBuilder.add((item) ->
-                    (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
-                            ? null
+                    (!isSet && (!item.isPresent(fieldName) || item.isNull(fieldName)))
+                            ? defaultInstanceGetterOpt.map(DefaultInstanceGetter::getDefaultInstance).orElse(null)
                             : unMarshallerItem.unmarshall(fieldName, item));
 
             // fromAttrMap
             UnMarshallerAttrVal unMarshallerAttrVal = findUnMarshallerAttrVal(collectionClazz, fieldClazz);
             fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
                 AttributeValue attrVal = attrMap.get(fieldName);
-                return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
-                        ? null
+                return (!isSet && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
+                        ? defaultInstanceGetterOpt.map(DefaultInstanceGetter::getDefaultInstance).orElse(null)
                         : unMarshallerAttrVal.unmarshall(attrVal);
             });
-
-            boolean isSet = Set.class.isAssignableFrom(field.getType());
 
             // toItem toAttrVal
             for (int i = 0; i < partitionKeys.length; i++) {
@@ -294,6 +312,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                                     " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
                             fieldName, object.getClass().getSimpleName());
                 }
+                if (isString && val != null && ((String) val).isEmpty() && LogUtil.rateLimitAllowLog("dynamomapper-string-is-empty")) {
+                    log.warn("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
+                                    " empty string is not allowed by DynamoDB and there is no distinction between null and empty string.",
+                            fieldName, object.getClass().getSimpleName());
+                    val = null;
+                }
                 if (val == null) {
                     return; // Omit null
                 }
@@ -308,6 +332,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
                                     " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
                             fieldName, object.getClass().getSimpleName());
+                }
+                if (isString && val != null && ((String) val).isEmpty() && LogUtil.rateLimitAllowLog("dynamomapper-string-is-empty")) {
+                    log.warn("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
+                                    " empty string is not allowed by DynamoDB and there is no distinction between null and empty string.",
+                            fieldName, object.getClass().getSimpleName());
+                    val = null;
                 }
                 if (val == null) {
                     return; // Omit null
@@ -726,10 +756,6 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         throw new IllegalStateException("Cannot find constructor for class " + objectClazz.getSimpleName());
     }
 
-    private boolean isSetClazz(Class<?> clazz) {
-        return Set.class.isAssignableFrom(clazz);
-    }
-
     private Optional<Class> getCollectionClazz(Class<?> clazz) {
         return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz)
                 ? Optional.of(clazz)
@@ -1044,10 +1070,11 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             if (item == null) {
                 return null;
             }
+            Object[] args = fromItemToCtorArgs.apply(item);
             try {
-                return objCtor.newInstance(fromItemToCtorArgs.apply(item));
+                return objCtor.newInstance(args);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                throw new RuntimeException("Failed to construct, item: " + item.toJSON() + " objCtor: " + objCtor.toString(), ex);
+                throw new RuntimeException("Failed to construct, item: " + item.toJSON() + " objCtor: " + objCtor + " args: " + Arrays.toString(args), ex);
             }
         }
 

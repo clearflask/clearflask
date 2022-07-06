@@ -70,6 +70,8 @@ public class DynamoConvertersProxy {
         public final ImmutableSet<Map.Entry<Class<?>, CollectionMarshallerAttrVal>> mac;
         /** UnMarshaller for AttributeValue Collection */
         public final ImmutableSet<Map.Entry<Class<?>, CollectionUnMarshallerAttrVal>> uac;
+        /** Default instance */
+        public final ImmutableSet<Map.Entry<Class<?>, DefaultInstanceGetter>> di;
     }
 
     public static Converters proxy() {
@@ -85,41 +87,73 @@ public class DynamoConvertersProxy {
         ImmutableMap.Builder<Class<?>, CollectionUnMarshallerItem> uic = new ImmutableMap.Builder<>();
         ImmutableMap.Builder<Class<?>, CollectionMarshallerAttrVal> mac = new ImmutableMap.Builder<>();
         ImmutableMap.Builder<Class<?>, CollectionUnMarshallerAttrVal> uac = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, DefaultInstanceGetter> di = new ImmutableMap.Builder<>();
 
         map.put(Date.class, DateToStringMarshaller.instance()::marshall);
         mip.put(Date.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date((Date) o)));
+        di.put(Date.class, () -> new Date(0L));
         map.put(Calendar.class, CalendarToStringMarshaller.instance()::marshall);
         mip.put(Calendar.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date(((Calendar) o).getTime())));
+        di.put(Calendar.class, Calendar::getInstance);
         map.put(Boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
         mip.put(Boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
+        di.put(Boolean.class, () -> Boolean.FALSE);
         map.put(boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
         mip.put(boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
+        di.put(boolean.class, () -> false);
         map.put(Number.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(Number.class, (o, a, i) -> i.withNumber(a, (Number) o));
+        di.put(Number.class, () -> 0L);
         map.put(byte.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(byte.class, (o, a, i) -> i.withNumber(a, (byte) o));
+        di.put(byte.class, () -> 0);
         map.put(short.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(short.class, (o, a, i) -> i.withNumber(a, (short) o));
+        di.put(short.class, () -> 0);
         map.put(int.class, NumberToNumberMarshaller.instance()::marshall);
-        mip.put(int.class, (o, a, i) -> i.withNumber(a, (int) o));
+        mip.put(int.class, (o, a, i) -> i.withInt(a, (int) o));
+        di.put(int.class, () -> 0);
+        map.put(Integer.class, o -> new AttributeValue().withN(o.toString()));
+        mip.put(Integer.class, (o, a, i) -> i.withNumber(a, (Integer) o));
+        di.put(Integer.class, () -> Integer.valueOf(0));
         map.put(long.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(long.class, (o, a, i) -> i.withNumber(a, (long) o));
+        di.put(long.class, () -> 0L);
         map.put(float.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(float.class, (o, a, i) -> i.withNumber(a, (float) o));
+        di.put(float.class, () -> 0f);
         map.put(double.class, NumberToNumberMarshaller.instance()::marshall);
         mip.put(double.class, (o, a, i) -> i.withDouble(a, (double) o));
+        di.put(double.class, () -> 0d);
+        map.put(BigDecimal.class, o -> new AttributeValue().withN(((BigDecimal) o).toPlainString()));
+        mip.put(BigDecimal.class, (o, a, i) -> i.withNumber(a, (BigDecimal) o));
+        di.put(BigDecimal.class, () -> BigInteger.ZERO);
+        map.put(BigInteger.class, o -> new AttributeValue().withN(o.toString()));
+        mip.put(BigInteger.class, (o, a, i) -> i.withBigInteger(a, (BigInteger) o));
+        di.put(BigInteger.class, () -> BigInteger.ZERO);
         map.put(String.class, StringToStringMarshaller.instance()::marshall);
-        mip.put(String.class, (o, a, i) -> i.withString(a, (String) o));
+        mip.put(String.class, (o, a, i) -> {
+            // Dynamo doesn't support empty strings, store empty as null
+            if (o != null && !((String) o).isEmpty()) {
+                i.withString(a, (String) o);
+            }
+        });
+        di.put(String.class, () -> "");
         map.put(UUID.class, ObjectToStringMarshaller.instance()::marshall);
         mip.put(UUID.class, (o, a, i) -> i.withString(a, o.toString()));
+        di.put(UUID.class, () -> new UUID(0, 0));
         map.put(ByteBuffer.class, ByteBufferToBinaryMarshaller.instance()::marshall);
         mip.put(ByteBuffer.class, (o, a, i) -> i.withBinary(a, (ByteBuffer) o));
+        di.put(ByteBuffer.class, () -> ByteBuffer.allocate(0));
         map.put(byte[].class, ByteArrayToBinaryMarshaller.instance()::marshall);
         mip.put(byte[].class, (o, a, i) -> i.withBinary(a, (byte[]) o));
+        di.put(byte[].class, () -> new byte[]{});
         map.put(Byte[].class, o -> ByteArrayToBinaryMarshaller.instance().marshall(ArrayUtils.toPrimitive((Byte[]) o)));
         mip.put(Byte[].class, (o, a, i) -> i.withBinary(a, ArrayUtils.toPrimitive((Byte[]) o)));
+        di.put(Byte[].class, () -> new Byte[]{});
         map.put(Instant.class, o -> new AttributeValue().withS(((Instant) o).toString()));
         mip.put(Instant.class, (o, a, i) -> i.withString(a, ((Instant) o).toString()));
+        di.put(Instant.class, () -> Instant.EPOCH);
 
         uap.put(double.class, DoubleUnmarshaller.instance()::unmarshall);
         uip.put(double.class, (a, i) -> i.getDouble(a));
@@ -205,6 +239,7 @@ public class DynamoConvertersProxy {
         uac.put(List.class, (a, u) -> a == null || a.getNULL() == Boolean.TRUE ? null : a.getL().stream()
                 .map(u::unmarshall)
                 .collect(ImmutableList.toImmutableList()));
+        di.put(List.class, ImmutableList::of);
 
         mic.put(Map.class, (o, a, i, m) -> {
             if (o == null) {
@@ -246,7 +281,7 @@ public class DynamoConvertersProxy {
                         e -> (String) e.getKey(),
                         e -> u.unmarshall(e.getValue())
                 )));
-
+        di.put(Map.class, ImmutableMap::of);
 
         mic.put(Set.class, (o, a, i, m) -> {
             // Empty set not allowed by DynamoDB, also null value prevents from adding to set, so:
@@ -327,6 +362,7 @@ public class DynamoConvertersProxy {
                 return ImmutableSet.of();
             }
         });
+        di.put(Set.class, ImmutableSet::of);
 
         convertersCache = new Converters(
                 mip.build().entrySet(),
@@ -336,7 +372,8 @@ public class DynamoConvertersProxy {
                 mic.build().entrySet(),
                 uic.build().entrySet(),
                 mac.build().entrySet(),
-                uac.build().entrySet());
+                uac.build().entrySet(),
+                di.build().entrySet());
         return convertersCache;
     }
 
@@ -379,4 +416,10 @@ public class DynamoConvertersProxy {
     public interface CollectionUnMarshallerItem {
         Object unmarshall(String attrName, Item item, UnMarshallerItem unMarshaller);
     }
+
+    @FunctionalInterface
+    public interface DefaultInstanceGetter {
+        Object getDefaultInstance();
+    }
+
 }
