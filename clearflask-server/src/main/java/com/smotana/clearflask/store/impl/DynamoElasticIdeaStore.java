@@ -406,12 +406,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Extern
     @Override
     public Optional<IdeaModel> getIdea(String projectId, String ideaId) {
-        Optional<IdeaModel> postOpt = Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId))))));
-        postOpt.ifPresent(this::upgradeExpressionsProperty);
-        return postOpt;
+        return Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
+                        .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId))))))
+                .map(this::upgradeExpressionsProperty);
     }
 
     @Override
@@ -419,17 +418,16 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (ideaIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        ImmutableMap<String, IdeaModel> posts = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId)))
                         .toArray(PrimaryKey[]::new))))
                 .map(ideaSchema::fromItem)
+                .map(this::upgradeExpressionsProperty)
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
                         i -> i));
-        posts.values().forEach(this::upgradeExpressionsProperty);
-        return posts;
     }
 
     @Override
@@ -1534,19 +1532,19 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
     }
 
-    private void upgradeExpressionsProperty(IdeaModel post) {
+    private IdeaModel upgradeExpressionsProperty(IdeaModel post) {
         if (post.getExpressions() != null) {
-            return;
+            return post;
         }
 
         log.info("Updating post {} in project {} with missing expressions property",
                 post.getIdeaId(), post.getProjectId());
         try {
-            IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+            return ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                             .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                                     "projectId", post.getProjectId(),
                                     "ideaId", post.getIdeaId())))
-                            .withReturnValues(ReturnValue.NONE)
+                            .withReturnValues(ReturnValue.ALL_NEW)
                             .withNameMap(ImmutableMap.of("#expressions", "expressions"))
                             .withValueMap(ImmutableMap.of(":expressions", ideaSchema.toDynamoValue("expressions", ImmutableMap.of())))
                             .withConditionExpression("attribute_not_exists(#expressions)")
@@ -1554,6 +1552,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     .getItem());
         } catch (ConditionalCheckFailedException ex) {
             // Nothing to do, already fixed
+            return post;
         }
     }
 
