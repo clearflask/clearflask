@@ -150,7 +150,10 @@ public class Sanitizer {
     }
 
     public void postTitle(String postTitle) {
-        if (postTitle != null && postTitle.length() > POST_TITLE_MAX_LENGTH) {
+        if (Strings.isNullOrEmpty(postTitle)) {
+            throw new ApiException(BAD_REQUEST, "Title cannot be empty");
+        }
+        if (postTitle.length() > POST_TITLE_MAX_LENGTH) {
             throw new ApiException(BAD_REQUEST, "Title is too long, must be at most " + POST_TITLE_MAX_LENGTH + " characters");
         }
     }
