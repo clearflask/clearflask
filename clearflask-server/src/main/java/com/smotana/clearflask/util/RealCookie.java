@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.util;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import lombok.Builder;
@@ -17,12 +18,14 @@ import java.sql.Date;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @Value
 public class RealCookie {
+    private static final long DEFAULT_VERSION = 1L;
 
     public enum SameSite {
         NONE,
@@ -34,10 +37,8 @@ public class RealCookie {
     String name;
     @NonNull
     String value;
-    @NonNull
     String path;
-    @NonNull
-    long version;
+    Long version;
     String domain;
 
     boolean httpOnly;
@@ -57,7 +58,7 @@ public class RealCookie {
             @NonNull String name,
             @NonNull String value,
             @NonNull String path,
-            @NonNull long version,
+            long version,
             String domain,
             boolean httpOnly,
             boolean secure,
@@ -96,7 +97,7 @@ public class RealCookie {
         b.append('=');
         StringBuilderUtils.appendQuotedIfWhitespace(b, getValue());
 
-        b.append("; Version=").append(getVersion());
+        b.append("; Version=").append(Optional.ofNullable(getVersion()).orElse(DEFAULT_VERSION));
 
         if (getComment() != null) {
             b.append("; Comment=");
@@ -150,7 +151,6 @@ public class RealCookie {
     }
 
     public static class RealCookieBuilder {
-        private static final long VERSION = 1;
         @SuppressWarnings("FieldMayBeFinal")
         private Map<String, String> additionalProperties = Maps.newHashMap();
 
@@ -160,13 +160,19 @@ public class RealCookie {
         public RealCookieBuilder(@NonNull Cookie cookie) {
             name(cookie.getName());
             value(cookie.getValue());
-            path(cookie.getPath());
+            if (!Strings.isNullOrEmpty(cookie.getPath())) {
+                path(cookie.getPath());
+            }
             version(cookie.getVersion());
-            domain(cookie.getDomain());
+            if (!Strings.isNullOrEmpty(cookie.getDomain())) {
+                domain(cookie.getDomain());
+            }
             httpOnly(cookie.isHttpOnly());
             secure(cookie.getSecure());
             maxAge((long) cookie.getMaxAge());
-            comment(cookie.getComment());
+            if (!Strings.isNullOrEmpty(cookie.getComment())) {
+                comment(cookie.getComment());
+            }
         }
 
 
@@ -190,7 +196,7 @@ public class RealCookie {
         }
 
         public RealCookie build() {
-            return new RealCookie(name, value, path, VERSION, domain, httpOnly, secure, sameSite, maxAge, ttlInEpochSec, comment, ImmutableMap.copyOf(additionalProperties));
+            return new RealCookie(name, value, path, version, domain, httpOnly, secure, sameSite, maxAge, ttlInEpochSec, comment, ImmutableMap.copyOf(additionalProperties));
         }
     }
 }
