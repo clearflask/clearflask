@@ -6,12 +6,16 @@ import DownvoteIcon from '@material-ui/icons/ArrowDownwardRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowUpwardRounded';
 import PositiveSelectedIcon from '@material-ui/icons/Favorite';
 import PositiveIcon from '@material-ui/icons/FavoriteBorder';
+import VotersIcon from '@material-ui/icons/PeopleAlt';
 import NegativeSelectedIcon from '@material-ui/icons/ThumbDown';
 import NegativeIcon from '@material-ui/icons/ThumbDownOutlined';
 import React, { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import * as Client from '../../api/client';
+import { Server } from '../../api/server';
+import ClosablePopper from '../../common/ClosablePopper';
 import MyButton from './MyButton';
+import VotersList from './VotersList';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -48,6 +52,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  server: Server;
   className?: string;
   vote?: Client.VoteOption;
   hidden?: boolean;
@@ -58,9 +63,13 @@ interface Props {
   onUpvote?: () => void;
   iWantThis?: Client.VotingIWantThis;
   onDownvote?: () => void;
+  showVotersForPostId?: string;
 }
-
-class VotingControl extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>> {
+interface State {
+  votersAnchorEl?: HTMLElement;
+}
+class VotingControl extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
   render() {
     if (!this.props.votingAllowed || this.props.onlyShowCount || !this.props.onUpvote) {
@@ -91,37 +100,34 @@ class VotingControl extends Component<Props & WithTranslation<'app'> & WithStyle
     const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
     const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
 
-    const upvote = (
-      <MyButton
-        buttonVariant='post'
-        Icon={UpvoteIcon}
-        color={this.props.theme.palette.primary.main}
-        colorHide={!upvoted}
-        onClick={this.props.onUpvote}
-      >
-        {this.props.onDownvote === undefined ? this.props.voteValue || 0 : undefined}
-      </MyButton>
-    );
-
-    if (this.props.onDownvote === undefined) {
-      return upvote;
-    }
-
     return (
       <>
-        {upvote}
-        <span className={this.props.classes.voteValueStandalone}>
-          {this.props.voteValue || 0}
-        </span>
         <MyButton
           buttonVariant='post'
-          Icon={DownvoteIcon}
-          color={this.props.theme.palette.type === 'dark'
-            ? lighten(this.props.theme.palette.error.dark, 0.3)
-            : darken(this.props.theme.palette.error.dark, 0.3)}
-          colorHide={!downvoted}
-          onClick={this.props.onDownvote}
-        />
+          Icon={UpvoteIcon}
+          color={this.props.theme.palette.primary.main}
+          colorHide={!upvoted}
+          onClick={this.props.onUpvote}
+        >
+          {this.props.onDownvote === undefined ? this.props.voteValue || 0 : undefined}
+        </MyButton>
+        {!!this.props.onDownvote && (
+          <>
+            <span className={this.props.classes.voteValueStandalone}>
+              {this.props.voteValue || 0}
+            </span>
+            <MyButton
+              buttonVariant='post'
+              Icon={DownvoteIcon}
+              color={this.props.theme.palette.type === 'dark'
+                ? lighten(this.props.theme.palette.error.dark, 0.3)
+                : darken(this.props.theme.palette.error.dark, 0.3)}
+              colorHide={!downvoted}
+              onClick={this.props.onDownvote}
+            />
+          </>
+        )}
+        {this.renderVotersList(false)}
       </>
     );
   }
@@ -130,36 +136,66 @@ class VotingControl extends Component<Props & WithTranslation<'app'> & WithStyle
     const upvoted: boolean = this.props.vote === Client.VoteOption.Upvote;
     const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
 
-    const upvote = (
-      <MyButton
-        buttonVariant='post'
-        color={this.props.theme.palette.primary.main}
-        colorHide={!upvoted}
-        Icon={upvoted ? PositiveSelectedIcon : PositiveIcon}
-        onClick={this.props.onUpvote}
-      >
-        {this.props.t(this.props.iWantThis?.positiveLabel as any || 'want')}
-      </MyButton>
-    );
-
-    if (this.props.onDownvote === undefined) {
-      return upvote;
-    }
-
     return (
       <>
-        {upvote}
         <MyButton
           buttonVariant='post'
-          color={this.props.theme.palette.type === 'dark'
-            ? lighten(this.props.theme.palette.error.dark, 0.3)
-            : darken(this.props.theme.palette.error.dark, 0.3)}
-          colorHide={!downvoted}
-          Icon={downvoted ? NegativeSelectedIcon : NegativeIcon}
-          onClick={this.props.onDownvote}
+          color={this.props.theme.palette.primary.main}
+          colorHide={!upvoted}
+          Icon={upvoted ? PositiveSelectedIcon : PositiveIcon}
+          onClick={this.props.onUpvote}
         >
-          {this.props.t(this.props.iWantThis?.negativeLabel as any || 'hate')}
+          {this.props.t(this.props.iWantThis?.positiveLabel as any || 'want')}
         </MyButton>
+        {!!this.props.onDownvote && (
+          <MyButton
+            buttonVariant='post'
+            color={this.props.theme.palette.type === 'dark'
+              ? lighten(this.props.theme.palette.error.dark, 0.3)
+              : darken(this.props.theme.palette.error.dark, 0.3)}
+            colorHide={!downvoted}
+            Icon={downvoted ? NegativeSelectedIcon : NegativeIcon}
+            onClick={this.props.onDownvote}
+          >
+            {this.props.t(this.props.iWantThis?.negativeLabel as any || 'hate')}
+          </MyButton>
+        )}
+        {this.renderVotersList(true)}
+      </>
+    );
+  }
+
+  renderVotersList(showCount: boolean): React.ReactNode {
+    if (!this.props.showVotersForPostId || !this.props.server.isModOrAdminLoggedIn()) {
+      return null;
+    }
+    return (
+      <>
+        <MyButton
+          buttonVariant='post'
+          Icon={VotersIcon}
+          onClick={e => this.setState({ votersAnchorEl: !!this.state.votersAnchorEl ? undefined : e.currentTarget })}
+        >
+          {showCount ? this.props.voteValue || 0 : undefined}
+        </MyButton>
+        <ClosablePopper
+          anchorType='element'
+          anchor={this.state.votersAnchorEl}
+          open={!!this.state.votersAnchorEl}
+          onClose={() => this.setState({ votersAnchorEl: undefined })}
+          placement='bottom-end'
+          arrow
+          clickAway
+          closeButtonPosition='disable'
+        >
+          {!!this.state.votersAnchorEl && (
+            <VotersList
+              postId={this.props.showVotersForPostId}
+              server={this.props.server}
+              isInsidePaper
+            />
+          )}
+        </ClosablePopper>
       </>
     );
   }

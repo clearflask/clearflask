@@ -36,6 +36,7 @@ import com.smotana.clearflask.api.model.IdeaSearchResponse;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaVotersAdminResponse;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
 import com.smotana.clearflask.api.model.SubscriptionListenerIdea;
@@ -494,6 +495,27 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             webhookService.eventPostResponseChanged(idea);
         }
         return idea.toIdea(sanitizer);
+    }
+    
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaVotersAdminResponse ideaVotersGetAdmin(String projectId, String ideaId, String cursor) {
+        Project project = projectStore.getProject(projectId, true).get();
+        VoteStore.ListResponse<VoteStore.VoteModel> votesBatch = voteStore.voteListByTarget(
+                projectId,
+                ideaId,
+                Optional.ofNullable(Strings.emptyToNull(cursor)));
+        ImmutableMap<String, UserModel> usersBatch = userStore.getUsers(
+                projectId,
+                votesBatch.getItems().stream()
+                        .map(VoteStore.VoteModel::getUserId)
+                        .collect(ImmutableList.toImmutableList()));
+        return new IdeaVotersAdminResponse(
+                votesBatch.getCursorOpt().orElse(null),
+                usersBatch.values().stream()
+                        .map(user -> user.toUserAdmin(project.getIntercomEmailToIdentityFun()))
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     @RolesAllowed({Role.IDEA_OWNER})

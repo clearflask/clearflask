@@ -17,7 +17,7 @@ components:
             - DragAndDrop
         filterCategoryIds:
           x-clearflask-prop: { order: 1, name: 'Category', description: 'Display only posts from these categories' }
-          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
           type: array
           items:
             type: string
@@ -26,7 +26,7 @@ components:
           type: boolean
         filterStatusIds:
           x-clearflask-prop: { order: 4, name: 'Status', description: 'Display only ideas having these statuses' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'filterCategoryIds' ], filterIdPropName: 'categoryId', filterShowAllIfNone: true }
           type: array
           items:
             type: string
@@ -35,7 +35,7 @@ components:
           type: boolean
         filterTagIds:
           x-clearflask-prop: { order: 6, name: 'Tag', description: 'Display only posts with these tags' }
-          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'filterCategoryIds' ], filterIdPropName: 'categoryId', filterShowAllIfNone: true }
           type: array
           items:
             type: string
@@ -81,11 +81,11 @@ components:
     HistogramInterval:
       type: string
       enum:
-      - DAY
-      - WEEK
-      - MONTH
-      - QUARTER
-      - YEAR
+        - DAY
+        - WEEK
+        - MONTH
+        - QUARTER
+        - YEAR
     HistogramSearchAdmin:
       type: object
       properties:
@@ -123,16 +123,16 @@ components:
     HistogramResponse:
       type: object
       required:
-      - points
-      - hits
+        - points
+        - hits
       properties:
         points:
           type: array
           items:
             type: object
             required:
-            - ts
-            - cnt
+              - ts
+              - cnt
             properties:
               ts:
                 type: string
@@ -243,8 +243,8 @@ components:
     IdeaConnectResponse:
       type: object
       required:
-      - idea
-      - parentIdea
+        - idea
+        - parentIdea
       properties:
         idea:
           $ref: 'api-idea.yaml#/components/schemas/Idea'
@@ -303,8 +303,8 @@ components:
               title: NotifySubscribers
               type: object
               required:
-              - title
-              - body
+                - title
+                - body
               properties:
                 title:
                   type: string
@@ -324,8 +324,8 @@ components:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
         - type: object
           required:
-          - lastSaved
-          - draftId
+            - lastSaved
+            - draftId
           properties:
             draftId:
               type: string
@@ -368,7 +368,7 @@ components:
     Hits:
       type: object
       required:
-      - value
+        - value
       properties:
         value:
           type: integer
@@ -378,8 +378,8 @@ components:
     SubscriptionListenerIdea:
       type: object
       required:
-      - listenerUrl
-      - eventType
+        - listenerUrl
+        - eventType
       properties:
         listenerUrl:
           type: string
@@ -388,17 +388,17 @@ components:
     SubscriptionEventTypeIdea:
       type: string
       enum:
-      - NEW
-      - VOTE_CHANGED
-      - FUNDING_CHANGED
-      - EXPRESSIONS_CHANGED
-      - RESPONSE_CHANGED
-      - STATUS_CHANGED
-      - TAG_CHANGED
+        - NEW
+        - VOTE_CHANGED
+        - FUNDING_CHANGED
+        - EXPRESSIONS_CHANGED
+        - RESPONSE_CHANGED
+        - STATUS_CHANGED
+        - TAG_CHANGED
     IdeaGetAll:
       type: object
       required:
-      - postIds
+        - postIds
       properties:
         postIds:
           type: array
@@ -408,17 +408,17 @@ components:
 /project/{projectId}/ideasearch:
   post:
     operationId: ideaSearch
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -433,7 +433,7 @@ components:
               title: IdeaWithVoteSearchResponse
               type: object
               required:
-              - results
+                - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -447,7 +447,7 @@ components:
 /project/{projectId}/idea:
   post:
     operationId: ideaCreate
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
       - name: projectId
         in: path
@@ -469,13 +469,13 @@ components:
 /project/{projectId}/ideagetall:
   post:
     operationId: ideaGetAll
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -490,7 +490,7 @@ components:
               title: IdeaGetAllResponse
               type: object
               required:
-              - results
+                - results
               properties:
                 results:
                   type: array
@@ -499,7 +499,7 @@ components:
 /project/{projectId}/idea/{ideaId}:
   get:
     operationId: ideaGet
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
       - name: projectId
         in: path
@@ -521,7 +521,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: ideaUpdate
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
       - name: projectId
         in: path
@@ -549,7 +549,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: ideaDelete
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
       - name: projectId
         in: path
@@ -569,7 +569,7 @@ components:
 /project/{projectId}/idea/{ideaId}/merge/{parentIdeaId}:
   patch:
     operationId: ideaMerge
-    tags: [Idea]
+    tags: [ Idea ]
     parameters:
       - name: projectId
         in: path
@@ -594,10 +594,45 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaConnectResponse'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/idea/{ideaId}/voters:
+  get:
+    operationId: ideaVotersGetAdmin
+    tags: [ IdeaAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaVotersAdminResponse
+              type: object
+              required:
+                - results
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-user.yaml#/components/schemas/UserAdmin'
 /project/{projectId}/admin/idea/{ideaId}/merge/{parentIdeaId}:
   patch:
     operationId: ideaMergeAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -625,7 +660,7 @@ components:
 /project/{projectId}/admin/idea/{ideaId}/unmerge/{parentIdeaId}:
   patch:
     operationId: ideaUnMergeAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -653,7 +688,7 @@ components:
 /project/{projectId}/admin/idea/{ideaId}/link/{parentIdeaId}:
   patch:
     operationId: ideaLinkAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -681,7 +716,7 @@ components:
 /project/{projectId}/admin/idea/{ideaId}/unlink/{parentIdeaId}:
   patch:
     operationId: ideaUnLinkAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -709,13 +744,13 @@ components:
 /project/{projectId}/admin/subscription/idea:
   post:
     operationId: ideaSubscribeAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -727,13 +762,13 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
   delete:
     operationId: ideaUnsubscribeAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -746,17 +781,17 @@ components:
 /project/{projectId}/admin/idea/search:
   post:
     operationId: ideaSearchAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -771,7 +806,7 @@ components:
               title: IdeaSearchResponse
               type: object
               required:
-              - results
+                - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -784,18 +819,18 @@ components:
 /project/{projectId}/admin/idea/category/{categoryId}/aggregate:
   post:
     operationId: ideaCategoryAggregateAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: categoryId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -804,9 +839,9 @@ components:
               title: IdeaAggregateResponse
               type: object
               required:
-              - total
-              - statuses
-              - tags
+                - total
+                - statuses
+                - tags
               properties:
                 total:
                   type: integer
@@ -824,13 +859,13 @@ components:
 /project/{projectId}/admin/idea/histogram:
   post:
     operationId: ideaHistogramAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -846,13 +881,13 @@ components:
 /project/{projectId}/admin/idea/draft:
   post:
     operationId: ideaDraftCreateAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -868,17 +903,17 @@ components:
 /project/{projectId}/admin/idea/draft/search:
   post:
     operationId: ideaDraftSearchAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -893,7 +928,7 @@ components:
               title: IdeaDraftSearchResponse
               type: object
               required:
-              - results
+                - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -904,18 +939,18 @@ components:
 /project/{projectId}/admin/idea/draft/{draftId}:
   get:
     operationId: ideaDraftGetAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: draftId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: draftId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -924,18 +959,18 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaDraftAdmin'
   patch:
     operationId: ideaDraftUpdateAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: draftId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: draftId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -947,35 +982,35 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
   delete:
     operationId: ideaDraftDeleteAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: draftId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: draftId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: deleteDraftId
-      in: query
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: deleteDraftId
+        in: query
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -990,7 +1025,7 @@ components:
               $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
   delete:
     operationId: ideaDeleteBulkAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1011,7 +1046,7 @@ components:
 /project/{projectId}/admin/idea/{ideaId}:
   get:
     operationId: ideaGetAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1033,7 +1068,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: ideaUpdateAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -1061,7 +1096,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: ideaDeleteAdmin
-    tags: [IdeaAdmin]
+    tags: [ IdeaAdmin ]
     parameters:
       - name: projectId
         in: path

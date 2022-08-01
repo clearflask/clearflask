@@ -1040,12 +1040,14 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
 
     return (
       <VotingControl
+        server={this.props.server}
         onlyShowCount
         className={this.props.classes.itemCount}
         vote={this.props.vote}
         voteValue={this.props.idea?.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}
         iWantThis={this.props.category?.support.vote?.iWantThis}
+        showVotersForPostId={this.props.idea?.ideaId}
       />
     );
   }
@@ -1072,6 +1074,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
         onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
       >
         <VotingControl
+          server={this.props.server}
           className={this.props.classes.votingControl}
           vote={this.props.vote}
           voteValue={this.props.idea?.voteValue || 0}
@@ -1080,6 +1083,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
           onUpvote={() => this.upvote()}
           iWantThis={this.props.category?.support.vote?.iWantThis}
           onDownvote={!this.props.category?.support.vote?.enableDownvotes ? undefined : () => this.downvote()}
+          showVotersForPostId={this.props.idea?.ideaId}
         />
       </div>
     );

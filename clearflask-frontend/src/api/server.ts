@@ -1405,6 +1405,21 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           }
         },
       };
+    case Admin.ideaVotersGetAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (usersById, user) => {
+              usersById[user.userId] = {
+                user,
+                status: Status.FULFILLED,
+              };
+              return usersById;
+            }, {}),
+        },
+      };
     case Admin.userUpdateAdminActionStatus.Pending:
     case Client.userGetActionStatus.Pending:
     case Admin.userGetAdminActionStatus.Pending:
@@ -1531,12 +1546,20 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
 export interface StateVotes {
   statusByIdeaId: { [ideaId: string]: Status };
   votesByIdeaId: { [ideaId: string]: Client.VoteOption };
+  votersSearchByIdeaId: {
+    [ideaId: string]: {
+      status?: Status;
+      voters?: Admin.UserAdmin[];
+      cursor?: string;
+    }
+  };
   expressionByIdeaId: { [ideaId: string]: Array<string> };
   fundAmountByIdeaId: { [ideaId: string]: number };
 }
 const stateVotesDefault = {
   statusByIdeaId: {},
   votesByIdeaId: {},
+  votersSearchByIdeaId: {},
   expressionByIdeaId: {},
   fundAmountByIdeaId: {},
 };
@@ -1732,6 +1755,47 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
             }, {}),
         },
       };
+    case Admin.ideaVotersGetAdminActionStatus.Pending:
+      return {
+        ...state,
+        votersSearchByIdeaId: {
+          ...state.votersSearchByIdeaId,
+          [action.meta.request.ideaId]: {
+            ...state.votersSearchByIdeaId[action.meta.request.ideaId],
+            status: Status.PENDING,
+          },
+        },
+      };
+    case Admin.ideaVotersGetAdminActionStatus.Rejected:
+      return {
+        ...state,
+        votersSearchByIdeaId: {
+          ...state.votersSearchByIdeaId,
+          [action.meta.request.ideaId]: {
+            ...state.votersSearchByIdeaId[action.meta.request.ideaId],
+            status: Status.REJECTED,
+          },
+        },
+      };
+    case Admin.ideaVotersGetAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        votersSearchByIdeaId: {
+          ...state.votersSearchByIdeaId,
+          [action.meta.request.ideaId]: {
+            ...state.votersSearchByIdeaId[action.meta.request.ideaId],
+            status: Status.FULFILLED,
+            voters: (action.meta.request.cursor !== undefined && action.meta.request.cursor === state.votersSearchByIdeaId[action.meta.request.ideaId]?.cursor)
+              ? [ // Append results
+                ...(state.votersSearchByIdeaId[action.meta.request.ideaId]?.voters || []),
+                ...action.payload.results,
+              ] : ( // Replace results
+                action.payload.results
+              ),
+            cursor: action.payload.cursor,
+          },
+        },
+      };
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
@@ -1739,6 +1803,7 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
       return { // Clear on login/logout
         statusByIdeaId: {},
         votesByIdeaId: {},
+        votersSearchByIdeaId: {},
         expressionByIdeaId: {},
         fundAmountByIdeaId: {},
       };

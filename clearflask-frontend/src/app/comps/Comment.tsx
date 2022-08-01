@@ -242,6 +242,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     if (!this.props.comment?.content) return null;
     return (
       <VotingControl
+        server={this.props.server}
         vote={this.props.comment.vote}
         voteValue={this.props.comment.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}

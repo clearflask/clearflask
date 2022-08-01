@@ -1117,6 +1117,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     parentIdea.linkedFromPostIds = parentIdea.linkedFromPostIds?.filter(ideaId => ideaId !== idea.ideaId);
     return this.returnLater({ idea, parentIdea });
   }
+  ideaVotersGetAdmin(request: Admin.IdeaVotersGetAdminRequest): Promise<Admin.IdeaVotersAdminResponse> {
+    return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
+      , this.DEFAULT_LIMIT, request.cursor));
+  }
   ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {
     return this.ideaMergeAdmin(request);
   }

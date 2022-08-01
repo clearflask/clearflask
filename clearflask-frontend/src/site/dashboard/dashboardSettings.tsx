@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from '@material-ui/core';
-import React from 'react';
 import ServerAdmin from '../../api/serverAdmin';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Menu, { MenuHeading, MenuItem } from '../../common/config/settings/Menu';
@@ -237,7 +236,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
   if (activeSubPath[0] === 'project') {
     barBottom = (activeProject?.hasUnsavedChanges()) ? (
       <div className={this.props.classes.unsavedChangesBar}>
-        <Typography style={{ flexGrow: 100 }}>You have unsaved changes</Typography>
+        <Typography style={{ flexGrow: 100 }}>{this.props.t('you-have-unsaved-changes')}</Typography>
         {!this.state.settingsPreviewChanges && (
           <Button
             variant='text'

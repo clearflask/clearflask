@@ -471,11 +471,11 @@ class DataMock {
     });
   }
 
-  mockNotification(userMe: Admin.User): Promise<any> {
+  mockNotification(userMe: Admin.User, text?: string): Promise<any> {
     ServerMock.get().addNotification(
       this.projectId,
       userMe,
-      'Welcome to your first notification',
+      text || 'Welcome to your first notification',
     );
     return Promise.resolve();
   }

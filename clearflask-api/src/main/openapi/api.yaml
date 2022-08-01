@@ -135,6 +135,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /project/{projectId}/admin/idea/{ideaId}/voters:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1voters'
   /project/{projectId}/admin/idea/{ideaId}/merge/{parentIdeaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1merge~1{parentIdeaId}'
   /project/{projectId}/admin/idea/{ideaId}/unmerge/{parentIdeaId}:

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -72,14 +72,15 @@ class NotificationList extends Component<Props & ConnectProps & WithTranslation<
                 <TableRow
                   key={notification.notificationId}
                   hover
+                  component={Link}
+                  {...{
+                    style: { textDecoration: 'none' },
+                    to: this.getNotificationTo(notification),
+                    onClick: () => this.clearNotification(notification),
+                  }}
                 >
-                  <Link
-                    to={this.getNotificationTo(notification)}
-                    onClick={() => this.clearNotification(notification)}
-                  >
-                    <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
-                    <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
-                  </Link>
+                  <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
+                  <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
                 </TableRow>
               ))}
             </TableBody>

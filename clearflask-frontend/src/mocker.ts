@@ -46,6 +46,7 @@ export async function mock(slug: string = 'product'): Promise<VersionedConfigAdm
   const userMe = await dataMock.mockLoggedIn(1000, true);
   await dataMock.mockItems(userMe);
   await dataMock.mockNotification(userMe);
+  await dataMock.mockNotification(userMe, 'Second one');
   // ServerMock.get().accountLogoutAdmin();
 
   if (windowIso.location.hash && windowIso.location.hash.substring(1) === 'latency') {
