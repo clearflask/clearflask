@@ -213,5 +213,10 @@
     "webpack": "4.44.2",
     "webpack-cli": "4.5.0",
     "webpack-permissions-plugin": "1.0.8"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "material-ui-color-picker@3.5.0.patch": "patches/material-ui-color-picker+3.5.0.patch"
+    }
   }
 }
