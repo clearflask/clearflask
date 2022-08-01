@@ -97,5 +97,6 @@
   "cookie-consent": "Cookieに関する同意事項",
   "we-use-cookies-to": "私たちは、コンテンツをパーソナライズし、ユーザーをよりよく理解するためにクッキーを使用します。",
   "accept-cookie": "同意する",
-  "reject-cookie": "拒否"
+  "reject-cookie": "拒否",
+  "no-voters": "有権者なし"
 }
