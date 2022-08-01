@@ -28,8 +28,8 @@
  */
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DOMPurify from 'dompurify';
-import marked from 'marked';
-import React, { Component } from 'react';
+import { Lexer, MarkedOptions, Renderer } from 'marked';
+import { Component } from 'react';
 import { highlight } from './prism';
 import textToHash from './textToHash';
 
@@ -47,7 +47,7 @@ import textToHash from './textToHash';
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // Monkey patch to preserve non-breaking spaces
-marked.Lexer.prototype.lex = function lex(src) {
+Lexer.prototype.lex = function lex(src) {
   src = src
     .replace(/\r\n|\r/g, '\n')
     .replace(/\t/g, '    ')
@@ -55,7 +55,7 @@ marked.Lexer.prototype.lex = function lex(src) {
   return this.token(src, true);
 };
 
-const renderer = new marked.Renderer();
+const renderer = new Renderer();
 renderer.heading = (text, level) => {
   // Small title. No need for an anchor.
   // It's reducing the risk of duplicated id and it's fewer elements in the DOM.
@@ -79,7 +79,7 @@ renderer.heading = (text, level) => {
 
 renderer.link = (href, title, text) => `<a href="${href}" target="_blank" rel="noopener nofollow">${text}</a>`;
 
-const markedOptions: marked.MarkedOptions = {
+const markedOptions: MarkedOptions = {
   gfm: true,
   breaks: false,
   pedantic: false,
