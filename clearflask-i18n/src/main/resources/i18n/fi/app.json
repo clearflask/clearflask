@@ -97,5 +97,6 @@
   "cookie-consent": "Evästeen suostumus",
   "we-use-cookies-to": "Käytämme evästeitä sisällön personointiin ja käyttäjien parempaan ymmärtämiseen.",
   "accept-cookie": "Hyväksy",
-  "reject-cookie": "Hylkää"
+  "reject-cookie": "Hylkää",
+  "no-voters": "Ei äänestäjiä"
 }

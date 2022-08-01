@@ -97,5 +97,6 @@
   "cookie-consent": "Cookie 同意",
   "we-use-cookies-to": "我们使用 cookie 个性化内容并更好地了解我们的用户。",
   "accept-cookie": "接受",
-  "reject-cookie": "拒绝"
+  "reject-cookie": "拒绝",
+  "no-voters": "没有投票"
 }
