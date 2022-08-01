@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import OpenIcon from '@material-ui/icons/OpenInNew';
-import { FontWeightProperty } from 'csstype';
 import QueryString from 'query-string';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { RouteComponentProps } from 'react-router';
 import * as Client from '../api/client';
 import { Server } from '../api/server';
@@ -18,7 +17,7 @@ export class PostStatusConfigDef {
   fontFamily?: string;
   color?: string;
   backgroundColor?: string;
-  fontWeight?: FontWeightProperty;
+  fontWeight?: string | number;
   alignItems?: string;
   justifyContent?: string;
   textTransform?: string;

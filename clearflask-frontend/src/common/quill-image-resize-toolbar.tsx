@@ -47,9 +47,9 @@ class ImageFormat extends BaseImageFormat {
   format(name, value) {
     if (ImageFormatAttributesList.indexOf(name) > -1) {
       if (value) {
-        this.domNode.setAttribute(name, value);
+        this['domNode'].setAttribute(name, value);
       } else {
-        this.domNode.removeAttribute(name);
+        this['domNode'].removeAttribute(name);
       }
     } else {
       super.format(name, value);

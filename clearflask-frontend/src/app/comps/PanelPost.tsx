@@ -3,7 +3,6 @@
 import { Collapse, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import { MarginProperty } from 'csstype';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createSelector } from 'reselect';
@@ -71,7 +70,7 @@ export interface Props {
   overrideTitle?: React.ReactNode;
   preContent?: React.ReactNode;
   widthExpand?: boolean;
-  margins?: MarginProperty<string | number>;
+  margins?: string | number;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
   searchOverrideAdmin?: Partial<Admin.IdeaSearchAdmin>;

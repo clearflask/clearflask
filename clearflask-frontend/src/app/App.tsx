@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { History, Location } from 'history';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Route } from 'react-router-dom';

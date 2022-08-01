@@ -4,9 +4,8 @@ import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, R
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
-import { LocationDescriptor } from 'history';
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, LinkProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
 
@@ -77,7 +76,7 @@ interface Props {
   customPrice?: string | React.ReactNode;
   actionTitle?: string;
   actionType?: 'button' | 'radio';
-  actionTo?: LocationDescriptor;
+  actionTo?: LinkProps['to'];
   actionToExt?: string;
   actionOnClick?: () => void;
   remark?: React.ReactNode;

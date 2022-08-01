@@ -57,15 +57,15 @@ export default class QuillFormatLinkExtended extends Inline {
   }
 
   format(name, value) {
-    if (name !== this.statics.blotName || !value) {
+    if (name !== this['statics'].blotName || !value) {
       super.format(name, value);
     } else {
-      this.domNode.setAttribute('href', sanitize(value));
+      this['domNode'].setAttribute('href', sanitize(value));
     }
   }
 }
-QuillFormatLinkExtended.blotName = 'link';
-QuillFormatLinkExtended.tagName = 'A';
+QuillFormatLinkExtended['blotName'] = 'link';
+QuillFormatLinkExtended['tagName'] = 'A';
 /** If changed, also change in Sanitizer.java */
 const PROTOCOL_WHITELIST = ['http', 'https', 'mailto', 'tel'];
 

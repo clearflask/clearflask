@@ -775,12 +775,12 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       editor.updateContents(new Delta()
         .retain(retainCount)
         .delete(1)
-        .insert({ image: imageLink }, op.attributes),
+        .insert({ image: imageLink }, op.attributes) as any,
         'silent');
     } else {
       editor.updateContents(new Delta()
         .retain(retainCount)
-        .delete(1),
+        .delete(1) as any,
         'silent');
     }
   }

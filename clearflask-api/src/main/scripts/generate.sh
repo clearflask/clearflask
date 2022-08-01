@@ -10,10 +10,9 @@ TEMPLATE_SOURCE_DIR=$4
 
 PATH="$PWD/node/":$PATH
 NODE="node/node"
-NPM="${NODE} node/node_modules/npm/bin/npm-cli.js"
-NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
+NPM="${NODE} node/node_modules/pnpm/bin/pnpm.cjs"
 
-OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
+OPENAPI_GENERATOR="${NPM} --package=@openapitools/openapi-generator-cli@cli-4.1.3 dlx openapi-generator"
 
 # Frontend Client API
 ${OPENAPI_GENERATOR} generate \
