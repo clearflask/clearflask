@@ -171,7 +171,6 @@
     "build": "./node/node_modules/pnpm/bin/pnpm.cjs run build-frontend && ./node/node_modules/pnpm/bin/pnpm.cjs run build-connect",
     "build-frontend": "GENERATE_SOURCEMAP=true BUILD_PATH='./target/public' react-app-rewired build",
     "build-connect": "rm -fR target/dist && webpack --node-env production -c webpack.config.connect.js",
-    "postinstall": "patch-package",
     "eject": "react-scripts eject",
     "test": "NODE_ENV=test ENV=test ./node/node --unhandled-rejections=strict --trace-warnings src/connect/test.js",
     "analyze": "GENERATE_SOURCEMAP=true react-app-rewired build && source-map-explorer 'build/static/js/*.js'"
@@ -204,7 +203,6 @@
     "nodemon": "2.0.6",
     "npm-force-resolutions": "0.0.3",
     "npx": "10.2.2",
-    "patch-package": "6.2.2",
     "react-app-rewired": "2.1.8",
     "react-dev-utils": "11.0.4",
     "terser-webpack-plugin": "4.2.3",
