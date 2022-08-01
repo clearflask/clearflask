@@ -308,12 +308,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             toItemArgsBuilder.add((item, object) -> {
                 Object val = objToFieldVal.apply(object);
                 if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                    log.info("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
                                     " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
                             fieldName, object.getClass().getSimpleName());
                 }
                 if (isString && val != null && ((String) val).isEmpty() && LogUtil.rateLimitAllowLog("dynamomapper-string-is-empty")) {
-                    log.warn("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
+                    log.info("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
                                     " empty string is not allowed by DynamoDB and there is no distinction between null and empty string.",
                             fieldName, object.getClass().getSimpleName());
                     val = null;
@@ -329,12 +329,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             toAttrMapArgsBuilder.add((mapBuilder, object) -> {
                 Object val = objToFieldVal.apply(object);
                 if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                    log.info("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
                                     " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
                             fieldName, object.getClass().getSimpleName());
                 }
                 if (isString && val != null && ((String) val).isEmpty() && LogUtil.rateLimitAllowLog("dynamomapper-string-is-empty")) {
-                    log.warn("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
+                    log.info("Field {} in class {} set as empty string. All Strings are required to be either null or non empty since" +
                                     " empty string is not allowed by DynamoDB and there is no distinction between null and empty string.",
                             fieldName, object.getClass().getSimpleName());
                     val = null;
