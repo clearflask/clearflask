@@ -1,7 +1,7 @@
-diff --git a/node_modules/material-ui-color-picker/lib/components/ColorPicker.js b/node_modules/material-ui-color-picker/lib/components/ColorPicker.js
+diff --git a/lib/components/ColorPicker.js b/lib/components/ColorPicker.js
 index 26a96b5..537affe 100644
---- a/node_modules/material-ui-color-picker/lib/components/ColorPicker.js
-+++ b/node_modules/material-ui-color-picker/lib/components/ColorPicker.js
+--- a/lib/components/ColorPicker.js
++++ b/lib/components/ColorPicker.js
 @@ -121,6 +121,7 @@ var ColorPickerField = function ColorPickerField(_ref3) {
    }, restInput, restProps));
  };
