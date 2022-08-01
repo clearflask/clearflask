@@ -1,7 +1,7 @@
-diff --git a/node_modules/component-classes/index.js b/node_modules/component-classes/index.js
+diff --git a/index.js b/index.js
 index eb9d292..a484984 100644
---- a/node_modules/component-classes/index.js
-+++ b/node_modules/component-classes/index.js
+--- a/index.js
++++ b/index.js
 @@ -2,11 +2,7 @@
   * Module dependencies.
   */

@@ -3,7 +3,6 @@
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
-const webpack = require('webpack');
 const PermissionsOutputPlugin = require('webpack-permissions-plugin');
 
 module.exports = {
