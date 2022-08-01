@@ -28,7 +28,7 @@
  */
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DOMPurify from 'dompurify';
-import { Lexer, MarkedOptions, Renderer } from 'marked';
+import { Lexer, marked, MarkedOptions, Renderer } from 'marked';
 import { Component } from 'react';
 import { highlight } from './prism';
 import textToHash from './textToHash';
