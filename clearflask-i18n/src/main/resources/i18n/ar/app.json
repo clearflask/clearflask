@@ -97,5 +97,6 @@
   "cookie-consent": "موافقة الكوكي",
   "we-use-cookies-to": "نحن نستخدم ملفات تعريف الارتباط لتخصيص المحتوى ولفهم مستخدمينا بشكل أفضل.",
   "accept-cookie": "قبول",
-  "reject-cookie": "رفض"
+  "reject-cookie": "رفض",
+  "no-voters": "لا يوجد ناخبين"
 }
