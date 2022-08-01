@@ -97,5 +97,6 @@
   "cookie-consent": "Aceptación de cookies",
   "we-use-cookies-to": "Utilizamos cookies para personalizar el contenido y para comprender mejor de nuestros usuarios.",
   "accept-cookie": "Aceptar",
-  "reject-cookie": "Rechazar"
+  "reject-cookie": "Rechazar",
+  "no-voters": "No hay votantes"
 }
