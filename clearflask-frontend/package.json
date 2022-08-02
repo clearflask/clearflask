@@ -204,7 +204,7 @@
     "@types/node": "14.14.12",
     "babel-plugin-transform-class-properties": "6.24.1",
     "copy-webpack-plugin": "6.4.1",
-    "css-loader": "^6.7.1",
+    "css-loader": "5.2.7",
     "html-webpack-plugin": "4.5.0",
     "nodemon": "2.0.6",
     "npm-force-resolutions": "0.0.3",
