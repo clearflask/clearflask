@@ -21,6 +21,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -68,7 +69,8 @@ public class UserStoreIT extends AbstractIT {
                 WebhookServiceImpl.module(),
                 DynamoProjectStore.module(),
                 ProjectUpgraderImpl.module(),
-                IntercomUtil.module()
+                IntercomUtil.module(),
+                ChatwootUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
@@ -238,7 +240,7 @@ public class UserStoreIT extends AbstractIT {
         assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
         assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
         store.updateUser(projectId, user1.getUserId(), UserUpdate.builder()
-                .name("bubbby").build())
+                        .name("bubbby").build())
                 .getIndexingFuture().get();
         assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
 

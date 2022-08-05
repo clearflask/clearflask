@@ -22,6 +22,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -72,7 +73,8 @@ public class CommentStoreIT extends AbstractIT {
                 WebhookServiceImpl.module(),
                 DynamoProjectStore.module(),
                 ProjectUpgraderImpl.module(),
-                IntercomUtil.module()
+                IntercomUtil.module(),
+                ChatwootUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

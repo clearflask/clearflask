@@ -19,6 +19,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
@@ -53,7 +54,8 @@ public class ProjectStoreTest extends AbstractTest {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 Sanitizer.module(),
-                IntercomUtil.module()
+                IntercomUtil.module(),
+                ChatwootUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

@@ -76,6 +76,7 @@ import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.AutoCreateKikConfigFile;
 import com.smotana.clearflask.util.BeanUtil;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -296,6 +297,7 @@ public enum ServiceInjector {
                 install(AuthCookieImpl.module());
                 install(Sanitizer.module());
                 install(IntercomUtil.module());
+                install(ChatwootUtil.module());
                 install(ImageNormalizationImpl.module());
                 bind(ConfigSchemaUpgrader.class);
                 install(ProjectUpgraderImpl.module());

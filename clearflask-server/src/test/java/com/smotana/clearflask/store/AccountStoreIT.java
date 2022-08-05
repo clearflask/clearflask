@@ -20,6 +20,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -64,6 +65,7 @@ public class AccountStoreIT extends AbstractIT {
                 ProjectUpgraderImpl.module(),
                 Application.module(),
                 IntercomUtil.module(),
+                ChatwootUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 DefaultServerSecret.module(Names.named("cursor")),

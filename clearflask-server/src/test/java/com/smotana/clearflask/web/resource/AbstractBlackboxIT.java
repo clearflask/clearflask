@@ -85,6 +85,7 @@ import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
@@ -227,6 +228,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnAccountSignup.module(),
                 OnTeammateInvite.module(),
                 IntercomUtil.module(),
+                ChatwootUtil.module(),
                 OnModInvite.module(),
                 OnEmailChanged.module(),
                 EmailVerify.module(),
