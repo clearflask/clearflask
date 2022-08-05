@@ -66,6 +66,7 @@ import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.OAuthUtil;
@@ -174,6 +175,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private NotificationService notificationService;
     @Inject
     private IntercomUtil intercomUtil;
+    @Inject
+    private ChatwootUtil chatwootUtil;
     @Inject
     private EmailValidator emailValidator;
 
@@ -316,7 +319,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         return new AccountBindAdminResponse(
                 accountOpt.or(() -> superAccountOpt)
-                        .map(account -> account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate))
+                        .map(account -> account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate))
                         .orElse(null),
                 superAccountOpt.isPresent(),
                 created);
@@ -355,7 +358,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @PermitAll
@@ -401,7 +404,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Optional.of(signup.getBasePlanId())
         );
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     private Account createAccount(
@@ -593,7 +596,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
             account = changePlan(account, newPlanid, ImmutableMap.of());
         }
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @PermitAll
@@ -674,7 +677,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         return accountStore.getAccount(account.getAccountId(), false).get()
-                .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+                .toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
@@ -769,7 +772,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         account = changePlan(account, planWithAddons.getPlan().getBasePlanId(), planWithAddons.getAddons());
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -800,7 +803,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateAttrs(account.getAccountId(), accountAttrsUpdateAdmin.getAttrs(), account.getAttrs() == null || account.getAttrs().isEmpty());
         }
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -936,7 +939,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
-        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

@@ -199,6 +199,8 @@ components:
           type: string
         intercomIdentity:
           type: string
+        chatwootIdentity:
+          type: string
         apiKey:
           type: string
         isSuperAdmin:

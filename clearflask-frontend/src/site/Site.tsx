@@ -18,7 +18,7 @@ import BlogIcon from '@material-ui/icons/RssFeed';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps } from 'react-router';
@@ -39,7 +39,6 @@ import windowIso from '../common/windowIso';
 import { LanguageSelect } from '../LanguageSelect';
 import { importFailed, importSuccess } from '../Main';
 import { urlAddCfJwt } from './AccountEnterPage';
-import { ClearFlaskEmbedHoverFeedback } from './ClearFlaskEmbed';
 import { Project } from './DemoApp';
 import Logo from './Logo';
 
@@ -227,7 +226,6 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
-        <ClearFlaskEmbedHoverFeedback path='embed/feedback' Icon={FeedbackIcon} />
         <AppBar position='fixed' color='inherit' elevation={0} variant='elevation' className={this.props.classes.appBar}>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>

@@ -13,6 +13,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
@@ -208,7 +209,7 @@ public interface AccountStore {
                     getEmail());
         }
 
-        public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
+        public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, ChatwootUtil chatwootUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
             return new AccountAdmin(
                     getAccountId(),
                     planStore.getBasePlanId(getPlanid()),
@@ -217,6 +218,7 @@ public interface AccountStore {
                     getEmail(),
                     cfSso.generateToken(this),
                     intercomUtil.getIdentity(getEmail()).orElse(null),
+                    chatwootUtil.getIdentity(getEmail()).orElse(null),
                     getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
                     getAttrs(),

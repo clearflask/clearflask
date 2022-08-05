@@ -30,8 +30,8 @@ import { SetTitle } from './common/util/titleUtil';
 import { trackingBlock, trackingImplicitConsent } from './common/util/trackingDelay';
 import windowIso from './common/windowIso';
 import { CrowdInInlineEditing } from './LanguageSelect';
+import ChatwootWrapperMain from './site/ChatwootWrapperMain';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
-import IntercomWrapperMain from './site/IntercomWrapperMain';
 import { SentryIdentifyAccount } from './site/SentryIdentify';
 
 const notistackRef = React.createRef<SnackbarProvider>();
@@ -200,7 +200,8 @@ class Main extends Component<Props> {
                                 <NoSsr>
                                   <Dashboard {...props} />
                                 </NoSsr>
-                                <IntercomWrapperMain suppressBind />
+                                {/* <IntercomWrapperMain suppressBind /> */}
+                                <ChatwootWrapperMain suppressBind />
                                 <HotjarWrapperMain />
                               </Provider>
                             )} />
@@ -255,7 +256,8 @@ class Main extends Component<Props> {
                                 <SentryIdentifyAccount />
                                 <SetMaxAge val={24 * 60 * 60} />
                                 <Site {...props} />
-                                <IntercomWrapperMain />
+                                {/* <IntercomWrapperMain /> */}
+                                <ChatwootWrapperMain />
                                 <HotjarWrapperMain />
                               </Provider>
                             )} />

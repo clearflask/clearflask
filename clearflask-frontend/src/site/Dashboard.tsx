@@ -15,7 +15,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { Stripe } from '@stripe/stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import { VariantType, withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { DragDropContext, SensorAPI } from 'react-beautiful-dnd';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect, Provider } from 'react-redux';
