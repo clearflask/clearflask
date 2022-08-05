@@ -58,10 +58,10 @@
     </modules>
 
     <scm>
-        <url>git@github.com:clearflask/clearflask.git</url>
+        <url>https://github.com/clearflask/clearflask</url>
         <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
         <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
-        <tag>1.2.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
@@ -190,7 +190,7 @@
                 <inherited>false</inherited>
                 <groupId>de.jutzig</groupId>
                 <artifactId>github-release-plugin</artifactId>
-                <version>1.1.1</version>
+                <version>1.4.0</version>
                 <configuration>
                     <releaseName>${githubReleaseVersion}</releaseName>
                     <tag>${githubReleaseVersion}</tag>
