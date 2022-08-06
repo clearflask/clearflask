@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>1.5.11-SNAPSHOT</version>
+    <version>1.5.12</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
@@ -42,8 +41,8 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests/>
-        <skipITs/>
+        <skipTests />
+        <skipITs />
     </properties>
 
 
@@ -61,7 +60,7 @@
         <url>https://github.com/clearflask/clearflask</url>
         <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
         <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>1.5.12</tag>
     </scm>
 
     <distributionManagement>
