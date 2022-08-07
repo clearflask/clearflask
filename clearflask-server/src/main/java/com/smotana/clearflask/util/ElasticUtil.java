@@ -28,7 +28,6 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -51,7 +50,6 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR;
@@ -312,10 +310,6 @@ public class ElasticUtil {
                 && ((ResponseException) th).getResponse().getStatusLine().getStatusCode() == 400
                 && (th.getMessage().contains("index_already_exists_exception")
                 || th.getMessage().contains("IndexAlreadyExistsException"));
-    }
-
-    public Future<CreateIndexRequest> allowIndexAlreadyExists(Future<CreateIndexRequest> future) {
-        return new
     }
 
     private PaginationType choosePaginationType(
