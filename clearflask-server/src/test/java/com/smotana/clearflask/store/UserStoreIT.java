@@ -231,7 +231,7 @@ public class UserStoreIT extends AbstractIT {
                 null,
                 ImmutableSet.of());
 
-        store.createIndex(projectId).get().index();
+        store.createIndex(projectId).get();
         store.createUser(user1).getIndexingFuture().get();
         store.createUser(user2).getIndexingFuture().get();
         store.createUser(user3).getIndexingFuture().get();
