@@ -61,7 +61,7 @@ public interface IdeaStore {
 
     Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
 
-    ListenableFuture<CreateIndexResponse> createIndex(String projectId);
+    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
 
     void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
 

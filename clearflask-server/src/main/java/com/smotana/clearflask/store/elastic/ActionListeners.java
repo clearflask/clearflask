@@ -2,23 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store.elastic;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.SettableFuture;
 import com.smotana.clearflask.util.LogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.xcontent.XContentType;
+import rx.exceptions.CompositeException;
 
+import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static com.smotana.clearflask.util.ExplicitNull.orNull;
+import java.util.function.Predicate;
 
 @Slf4j
 public class ActionListeners {
@@ -36,6 +28,31 @@ public class ActionListeners {
 
             @Override
             public void onFailure(Exception ex) {
+                if (LogUtil.rateLimitAllowLog("actionListeners-failure")) {
+                    log.warn("Unknown Elasticsearch failure", ex);
+                }
+                settableFuture.setException(ex);
+            }
+        };
+    }
+
+    public static <T extends I, I> ActionListener<T> fromFuture(SettableFuture<Optional<I>> settableFuture, Predicate<Exception> exceptionsAllowed) {
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(T o) {
+                settableFuture.set(Optional.of(o));
+            }
+
+            @Override
+            public void onFailure(Exception ex) {
+                try {
+                    if (exceptionsAllowed.test(ex)) {
+                        settableFuture.set(Optional.empty());
+                        return;
+                    }
+                } catch (Throwable th2) {
+                    settableFuture.setException(new CompositeException(ex, th2));
+                }
                 if (LogUtil.rateLimitAllowLog("actionListeners-failure")) {
                     log.warn("Unknown Elasticsearch failure", ex);
                 }

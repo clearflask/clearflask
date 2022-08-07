@@ -49,7 +49,7 @@ public interface UserStore {
         return nameOpt.map(IdUtil::contentUnique).orElseGet(IdUtil::randomId);
     }
 
-    ListenableFuture<CreateIndexResponse> createIndex(String projectId);
+    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
 
     void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
 

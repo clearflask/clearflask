@@ -50,7 +50,8 @@ CommentStore {
         return "github-" + commentId;
     }
 
-    ListenableFuture<CreateIndexResponse> createIndex(String projectId);
+    /** Returns optional empty if index already exists */
+    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
 
     void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
 

@@ -26,7 +26,9 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -49,6 +51,7 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR;
@@ -299,6 +302,20 @@ public class ElasticUtil {
                         search.getHits().getTotalHits().value,
                         search.getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO
                                 ? true : null));
+    }
+
+    /**
+     * Based on: https://github.com/elastic/elasticsearch/issues/19862#issuecomment-238263267
+     */
+    public boolean isIndexAlreadyExistsException(Throwable th) {
+        return ResponseException.class.isAssignableFrom(th.getClass())
+                && ((ResponseException) th).getResponse().getStatusLine().getStatusCode() == 400
+                && (th.getMessage().contains("index_already_exists_exception")
+                || th.getMessage().contains("IndexAlreadyExistsException"));
+    }
+
+    public Future<CreateIndexRequest> allowIndexAlreadyExists(Future<CreateIndexRequest> future) {
+        return new
     }
 
     private PaginationType choosePaginationType(

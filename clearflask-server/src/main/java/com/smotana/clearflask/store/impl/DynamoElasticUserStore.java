@@ -258,8 +258,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Extern
     @Override
-    public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
-        SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
+    public ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId) {
+        SettableFuture<Optional<CreateIndexResponse>> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
                         .settings(gson.toJson(ImmutableMap.of(
                                 "index", ImmutableMap.of(
@@ -294,7 +294,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                                 "type", "boolean"))
                                         .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
-                ActionListeners.fromFuture(indexingFuture));
+                ActionListeners.fromFuture(indexingFuture, elasticUtil::isIndexAlreadyExistsException));
         return indexingFuture;
     }
 

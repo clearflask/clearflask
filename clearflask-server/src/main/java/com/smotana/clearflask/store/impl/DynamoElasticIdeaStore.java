@@ -202,8 +202,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Extern
     @Override
-    public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
-        SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
+    public ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId) {
+        SettableFuture<Optional<CreateIndexResponse>> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                         "dynamic", "false",
                         "properties", ImmutableMap.builder()
@@ -266,7 +266,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                         "type", "double"))
                                 .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
-                ActionListeners.fromFuture(indexingFuture));
+                ActionListeners.fromFuture(indexingFuture, elasticUtil::isIndexAlreadyExistsException));
         return indexingFuture;
     }
 

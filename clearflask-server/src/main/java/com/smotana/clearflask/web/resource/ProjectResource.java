@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.web.resource;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -57,6 +61,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.DateUtil;
+import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -92,10 +97,10 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -156,6 +161,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private NotificationService notificationService;
     @Inject
     private DateUtil dateUtil;
+    @Inject
+    private ElasticUtil elasticUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -428,13 +435,19 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 configAdmin);
 
         Project project = projectStore.createProject(account.getAccountId(), projectId, new VersionedConfigAdmin(configAdmin, "new"));
-        ListenableFuture<CreateIndexResponse> commentIndexFuture = commentStore.createIndex(projectId);
-        ListenableFuture<CreateIndexResponse> userIndexFuture = userStore.createIndex(projectId);
-        ListenableFuture<CreateIndexResponse> ideaIndexFuture = ideaStore.createIndex(projectId);
-        accountStore.addProject(account.getAccountId(), projectId);
         try {
-            Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
-        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
+            RetryerBuilder.<List<Optional<CreateIndexResponse>>>newBuilder()
+                    .withStopStrategy(StopStrategies.stopAfterDelay(3, TimeUnit.MINUTES))
+                    .withWaitStrategy(WaitStrategies.exponentialWait(50, 15, TimeUnit.SECONDS))
+                    .build()
+                    .call(() -> {
+                        ListenableFuture<Optional<CreateIndexResponse>> commentIndexFuture = commentStore.createIndex(projectId);
+                        ListenableFuture<Optional<CreateIndexResponse>> userIndexFuture = userStore.createIndex(projectId);
+                        ListenableFuture<Optional<CreateIndexResponse>> ideaIndexFuture = ideaStore.createIndex(projectId);
+                        accountStore.addProject(account.getAccountId(), projectId);
+                        return Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
+                    });
+        } catch (ExecutionException | RetryException ex) {
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
         }
 
