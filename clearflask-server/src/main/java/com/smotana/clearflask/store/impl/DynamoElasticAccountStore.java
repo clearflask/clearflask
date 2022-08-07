@@ -232,9 +232,11 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         }
         Optional<Account> accountOpt = Optional.ofNullable(accountSchema
                 .fromItem(accountSchema
-                        .table().getItem(accountSchema
-                                .primaryKey(Map.of(
-                                        "accountId", accountId)))));
+                        .table().getItem(new GetItemSpec()
+                                .withPrimaryKey(accountSchema
+                                        .primaryKey(Map.of(
+                                                "accountId", accountId)))
+                                .withConsistentRead(!useCache))));
         accountCache.put(accountId, accountOpt);
         return accountOpt;
     }
