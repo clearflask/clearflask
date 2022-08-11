@@ -68,10 +68,6 @@ import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -80,6 +76,9 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.OAuthUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.util.WebhookService;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -211,9 +210,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private RestHighLevelClient elastic;
     @Inject
@@ -234,13 +231,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Inject
     private void setup() {
-        userSchema = dynamoMapper.parseTableSchema(UserModel.class);
-        userByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, UserModel.class);
-        identifierToUserIdSchema = dynamoMapper.parseTableSchema(IdentifierUser.class);
-        identifierByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
-        sessionByIdSchema = dynamoMapper.parseTableSchema(UserSession.class);
-        sessionByUserSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, UserSession.class);
-        userCounterSchema = dynamoMapper.parseTableSchema(UserCounter.class);
+        userSchema = singleTable.parseTableSchema(UserModel.class);
+        userByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, UserModel.class);
+        identifierToUserIdSchema = singleTable.parseTableSchema(IdentifierUser.class);
+        identifierByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
+        sessionByIdSchema = singleTable.parseTableSchema(UserSession.class);
+        sessionByUserSchema = singleTable.parseGlobalSecondaryIndexSchema(1, UserSession.class);
+        userCounterSchema = singleTable.parseTableSchema(UserCounter.class);
     }
 
     @Override
@@ -388,7 +385,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (userIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(userIds.stream()
+        return singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(userIds.stream()
                         .map(userId -> userSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "userId", userId)))
@@ -952,7 +949,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (users.isEmpty()) {
             return Futures.immediateFuture(Optional.empty());
         }
-        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(userSchema.tableName()).withPrimaryKeysToDelete(users.stream()
+        singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(userSchema.tableName()).withPrimaryKeysToDelete(users.stream()
                 .map(userModel -> userSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "userId", userModel.getUserId())))
@@ -968,7 +965,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "identifierHash", e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue())))
                 .toArray(PrimaryKey[]::new);
         if (identifiersToDelete.length > 0) {
-            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(identifierToUserIdSchema.tableName()).withPrimaryKeysToDelete(identifiersToDelete)));
+            singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(identifierToUserIdSchema.tableName()).withPrimaryKeysToDelete(identifiersToDelete)));
         }
 
         updateUserCountForProject(projectId, -users.stream()
@@ -1309,7 +1306,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                             .map(sessionId -> sessionByIdSchema.primaryKey(Map.of(
                                     "sessionId", sessionId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 
@@ -1336,7 +1333,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                     "userId", userId,
                                     "projectId", projectId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete user identifiers
@@ -1359,7 +1356,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                     "type", identifier.getType(),
                                     "projectId", projectId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete user counter
@@ -1377,7 +1374,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .forEach(userCounterShardPrimaryKeys -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(userSchema.tableName());
                     userCounterShardPrimaryKeys.forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete user index

@@ -17,7 +17,7 @@ import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractIT;
@@ -61,7 +61,7 @@ public class UserStoreIT extends AbstractIT {
         install(Modules.override(
                 Application.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 DynamoElasticUserStore.module(),
                 Sanitizer.module(),
                 ElasticUtil.module(),

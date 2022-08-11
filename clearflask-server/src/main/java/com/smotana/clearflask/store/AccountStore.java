@@ -12,11 +12,11 @@ import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -29,8 +29,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface AccountStore {
 

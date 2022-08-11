@@ -6,7 +6,7 @@ import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface CertStore {
 

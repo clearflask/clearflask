@@ -31,13 +31,12 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
 import com.smotana.clearflask.api.model.IdeaDraftSearch;
 import com.smotana.clearflask.store.DraftStore;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.Response;
@@ -66,9 +65,7 @@ public class DynamoDraftStore implements DraftStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
@@ -78,8 +75,8 @@ public class DynamoDraftStore implements DraftStore {
 
     @Inject
     private void setup() {
-        draftSchema = dynamoMapper.parseTableSchema(DraftModel.class);
-        draftByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, DraftModel.class);
+        draftSchema = singleTable.parseTableSchema(DraftModel.class);
+        draftByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, DraftModel.class);
     }
 
     @Override
@@ -205,7 +202,7 @@ public class DynamoDraftStore implements DraftStore {
                                     "userId", draft.getUserId(),
                                     "projectId", projectId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

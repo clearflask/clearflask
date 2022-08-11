@@ -56,7 +56,7 @@ import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
@@ -201,7 +201,7 @@ public enum ServiceInjector {
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());
                 install(ResourceLegalStore.module());
-                install(DynamoMapperImpl.module());
+                install(SingleTableProvider.module());
                 install(ElasticUtil.module());
                 install(DefaultServerSecret.module(Names.named("cursor")));
                 install(WebhookServiceImpl.module());

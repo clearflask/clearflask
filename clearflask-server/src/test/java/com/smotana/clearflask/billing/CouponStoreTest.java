@@ -9,8 +9,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -22,8 +21,6 @@ import static org.junit.Assert.*;
 @Slf4j
 public class CouponStoreTest extends AbstractTest {
 
-    @Inject
-    private DynamoMapper mapper;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -39,7 +36,7 @@ public class CouponStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoCouponStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module()
+                SingleTableProvider.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

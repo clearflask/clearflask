@@ -12,9 +12,14 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.store.VoteStore.*;
+import com.smotana.clearflask.store.VoteStore.ExpressModel;
+import com.smotana.clearflask.store.VoteStore.FundModel;
+import com.smotana.clearflask.store.VoteStore.ListResponse;
+import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import com.smotana.clearflask.store.VoteStore.VoteModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.testutil.RetryUtil;
@@ -24,7 +29,11 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Optional;
+import java.util.UUID;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static org.junit.Assert.*;
@@ -42,7 +51,7 @@ public class VoteStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoVoteStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override

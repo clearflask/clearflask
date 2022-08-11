@@ -47,11 +47,6 @@ import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -61,6 +56,10 @@ import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.Expression;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -149,9 +148,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private RestHighLevelClient elastic;
     @Inject
@@ -176,8 +173,8 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Inject
     private void setup() {
-        commentSchema = dynamoMapper.parseTableSchema(CommentModel.class);
-        commentByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, CommentModel.class);
+        commentSchema = singleTable.parseTableSchema(CommentModel.class);
+        commentByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, CommentModel.class);
 
         config.scoreWilsonConfidenceLevelObservable().subscribe(scoreWilsonConfidenceLevel -> wilsonScoreInterval =
                 new WilsonScoreInterval(scoreWilsonConfidenceLevel));
@@ -329,7 +326,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         if (commentIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
+        return singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
                         .withPrimaryKeys(commentIds.stream()
                                 .map(commentId -> commentSchema.primaryKey(ImmutableMap.of(
                                         "projectId", projectId,
@@ -448,7 +445,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                 return new SearchCommentsResponse(ImmutableList.of(), Optional.empty());
             }
 
-            ImmutableList<CommentModel> comments = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
+            ImmutableList<CommentModel> comments = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
                             .withPrimaryKeys(Arrays.stream(hits)
                                     .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
                                             "projectId", projectId,
@@ -722,7 +719,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                     "projectId", projectId,
                                     "commentId", commentId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         SettableFuture<BulkByScrollResponse> indexingFuture = SettableFuture.create();
@@ -755,7 +752,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                     "projectId", projectId,
                                     "commentId", comment.getCommentId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete idea index

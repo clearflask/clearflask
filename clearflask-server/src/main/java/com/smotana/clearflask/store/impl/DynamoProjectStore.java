@@ -53,10 +53,6 @@ import com.smotana.clearflask.api.model.Voting;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
@@ -66,6 +62,9 @@ import com.smotana.clearflask.util.StringSerdeUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -125,9 +124,7 @@ public class DynamoProjectStore implements ProjectStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private Gson gson;
     @Inject
@@ -156,11 +153,11 @@ public class DynamoProjectStore implements ProjectStore {
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
-        projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
-        slugSchema = dynamoMapper.parseTableSchema(SlugModel.class);
-        slugByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, SlugModel.class);
-        invitationSchema = dynamoMapper.parseTableSchema(InvitationModel.class);
-        invitationByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, InvitationModel.class);
+        projectSchema = singleTable.parseTableSchema(ProjectModel.class);
+        slugSchema = singleTable.parseTableSchema(SlugModel.class);
+        slugByProjectSchema = singleTable.parseGlobalSecondaryIndexSchema(2, SlugModel.class);
+        invitationSchema = singleTable.parseTableSchema(InvitationModel.class);
+        invitationByProjectSchema = singleTable.parseGlobalSecondaryIndexSchema(1, InvitationModel.class);
     }
 
     @Extern
@@ -237,7 +234,7 @@ public class DynamoProjectStore implements ProjectStore {
         if (projectIds.isEmpty()) {
             return ImmutableSet.of();
         }
-        ImmutableSet<Project> projects = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new BatchGetItemSpec()
+        ImmutableSet<Project> projects = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new BatchGetItemSpec()
                         .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
                                 .withConsistentRead(!useCache)
                                 .withPrimaryKeys(projectIds.stream()
@@ -475,7 +472,7 @@ public class DynamoProjectStore implements ProjectStore {
                             .map(slugModel -> slugSchema.primaryKey(Map.of(
                                     "slug", slugModel.getSlug())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

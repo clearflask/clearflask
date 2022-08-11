@@ -22,9 +22,9 @@ import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,8 +45,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 
 public interface IdeaStore {

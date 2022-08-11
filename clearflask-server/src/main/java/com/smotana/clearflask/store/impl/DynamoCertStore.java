@@ -24,10 +24,10 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Action1;
@@ -57,7 +57,7 @@ public class DynamoCertStore implements CertStore {
     @Inject
     private Config config;
     @Inject
-    private DynamoMapper dynamoMapper;
+    private SingleTable singleTable;
     @Inject(optional = true)
     private AmazonRoute53 route53;
 
@@ -68,9 +68,9 @@ public class DynamoCertStore implements CertStore {
 
     @Inject
     private void setup() {
-        keypairSchema = dynamoMapper.parseTableSchema(KeypairModel.class);
-        challengeSchema = dynamoMapper.parseTableSchema(ChallengeModel.class);
-        certSchema = dynamoMapper.parseTableSchema(CertModel.class);
+        keypairSchema = singleTable.parseTableSchema(KeypairModel.class);
+        challengeSchema = singleTable.parseTableSchema(ChallengeModel.class);
+        certSchema = singleTable.parseTableSchema(CertModel.class);
 
         Action1<String> compileAllowedDnsHostRegex = r -> allowedHostPredicate = Pattern.compile(r).asPredicate();
         config.allowedDnsHostRegexObservable().subscribe(compileAllowedDnsHostRegex);

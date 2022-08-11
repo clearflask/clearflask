@@ -19,9 +19,9 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -40,8 +40,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface UserStore {
 

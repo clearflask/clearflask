@@ -52,12 +52,6 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.ExpressionBuilder;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -69,6 +63,11 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.Expression;
+import io.dataspray.singletable.ExpressionBuilder;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
@@ -159,9 +158,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private RestHighLevelClient elastic;
     @Inject
@@ -181,8 +178,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Inject
     private void setup() {
-        ideaSchema = dynamoMapper.parseTableSchema(IdeaModel.class);
-        ideaByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdeaModel.class);
+        ideaSchema = singleTable.parseTableSchema(IdeaModel.class);
+        ideaByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, IdeaModel.class);
 
         expDecayScoreWeek = new ExpDecayScore(EXP_DECAY_PERIOD_MILLIS);
     }
@@ -386,7 +383,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     public ListenableFuture<List<BulkResponse>> createIdeas(Iterable<IdeaModel> ideas) {
         ArrayList<ListenableFuture<BulkResponse>> indexingFutures = Lists.newArrayList();
         Iterables.partition(ideas, DYNAMO_WRITE_BATCH_MAX_SIZE).forEach(ideasBatch -> {
-            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
+            singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
                     .withItemsToPut(ideasBatch.stream()
                             .map(ideaSchema::toItem)
                             .collect(ImmutableList.toImmutableList()))));
@@ -418,7 +415,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (ideaIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+        return singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId)))
@@ -1469,7 +1466,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds) {
-        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
+        singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
                 .withPrimaryKeysToDelete(ideaIds.stream()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
@@ -1510,7 +1507,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                     "ideaId", ideaId,
                                     "projectId", projectId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete idea index

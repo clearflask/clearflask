@@ -10,8 +10,8 @@ import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.Transaction;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VoteOption;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -20,8 +20,8 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface VoteStore {
 

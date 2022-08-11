@@ -49,17 +49,16 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.ExpressionBuilder;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.Expression;
+import io.dataspray.singletable.ExpressionBuilder;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -128,9 +127,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private Gson gson;
     @Inject
@@ -158,12 +155,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
-        accountSchema = dynamoMapper.parseTableSchema(Account.class);
-        accountByApiKeySchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, Account.class);
-        accountByOauthGuidSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, Account.class);
-        accountIdByEmailSchema = dynamoMapper.parseTableSchema(AccountEmail.class);
-        sessionBySessionIdSchema = dynamoMapper.parseTableSchema(AccountSession.class);
-        sessionByAccountIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
+        accountSchema = singleTable.parseTableSchema(Account.class);
+        accountByApiKeySchema = singleTable.parseGlobalSecondaryIndexSchema(1, Account.class);
+        accountByOauthGuidSchema = singleTable.parseGlobalSecondaryIndexSchema(2, Account.class);
+        accountIdByEmailSchema = singleTable.parseTableSchema(AccountEmail.class);
+        sessionBySessionIdSchema = singleTable.parseTableSchema(AccountSession.class);
+        sessionByAccountIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
 
         if (config.createIndexOnStartup()) {
             boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
@@ -344,12 +341,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
         }
 
-        ImmutableList<Account> accounts = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
+        ImmutableList<Account> accounts = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
                         .withPrimaryKeys(Arrays.stream(hits)
                                 .map(hit -> accountSchema.primaryKey(ImmutableMap.of(
                                         "accountId", hit.getId())))
                                 .toArray(PrimaryKey[]::new))))
-                .map(i -> accountSchema.fromItem(i))
+                .map(accountSchema::fromItem)
                 .collect(ImmutableList.toImmutableList());
         accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
 
@@ -877,7 +874,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             .map(sessionId -> sessionBySessionIdSchema.primaryKey(Map.of(
                                     "sessionId", sessionId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

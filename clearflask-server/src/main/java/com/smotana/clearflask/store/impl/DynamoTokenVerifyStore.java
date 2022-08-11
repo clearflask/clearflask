@@ -13,9 +13,9 @@ import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.TokenVerifyStore;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -36,13 +36,13 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
     @Inject
     private Config config;
     @Inject
-    private DynamoMapper dynamoMapper;
+    private SingleTable singleTable;
 
     private TableSchema<Token> tokenSchema;
 
     @Inject
     private void setup() {
-        tokenSchema = dynamoMapper.parseTableSchema(Token.class);
+        tokenSchema = singleTable.parseTableSchema(Token.class);
     }
 
     @Extern
@@ -65,10 +65,10 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
     public boolean useToken(String tokenStr, String... targetIdParts) {
         String targetId = String.join("-", targetIdParts);
         Token deletedToken = tokenSchema.fromItem(tokenSchema.table().deleteItem(new DeleteItemSpec()
-                .withPrimaryKey(tokenSchema.primaryKey(ImmutableMap.of(
-                        "targetId", targetId,
-                        "token", tokenStr)))
-                .withReturnValues(ReturnValue.ALL_OLD))
+                        .withPrimaryKey(tokenSchema.primaryKey(ImmutableMap.of(
+                                "targetId", targetId,
+                                "token", tokenStr)))
+                        .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem());
 
         return deletedToken != null

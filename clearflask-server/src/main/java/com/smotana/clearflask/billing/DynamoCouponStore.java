@@ -22,12 +22,11 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.Expression;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.ExpressionBuilder;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.Expression;
+import io.dataspray.singletable.ExpressionBuilder;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -60,15 +59,13 @@ public class DynamoCouponStore extends ManagedService implements CouponStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
 
     private TableSchema<CouponModel> couponSchema;
 
     @Override
     protected void serviceStart() throws Exception {
-        couponSchema = dynamoMapper.parseTableSchema(CouponModel.class);
+        couponSchema = singleTable.parseTableSchema(CouponModel.class);
     }
 
     @Override
@@ -96,7 +93,7 @@ public class DynamoCouponStore extends ManagedService implements CouponStore {
                 amountLeft--;
             }
             ImmutableSet<String> couponIdsBatch = couponIdsBatchBuilder.build();
-            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(couponSchema.tableName())
+            singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(couponSchema.tableName())
                     .withItemsToPut(couponIdsBatch.stream()
                             .map(couponId -> new CouponModel(
                                     couponId,

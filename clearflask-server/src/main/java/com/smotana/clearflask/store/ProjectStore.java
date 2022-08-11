@@ -13,9 +13,9 @@ import com.smotana.clearflask.api.model.InvitationAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.Application;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface ProjectStore {
 

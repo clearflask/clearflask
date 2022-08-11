@@ -5,7 +5,6 @@ package com.smotana.clearflask.store.dynamo.mapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableMap;
@@ -14,9 +13,11 @@ import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
@@ -27,23 +28,19 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.*;
+import static io.dataspray.singletable.TableType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @Slf4j
 public class DynamoMapperTest extends AbstractTest {
 
-    private static final String TEST_TABLE = "test";
-
     @Inject
-    private DynamoMapper mapper;
+    private SingleTable singleTable;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoDB dynamoDoc;
-
-    private Table testTable;
 
     @Override
     protected void configure() {
@@ -51,14 +48,14 @@ public class DynamoMapperTest extends AbstractTest {
 
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module()
+                SingleTableProvider.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(DynamoMapperImpl.Config.class, om -> {
+                install(ConfigSystem.overrideModule(SingleTableProvider.Config.class, om -> {
                     om.override(om.id().createTables()).withValue(true);
-                    om.override(om.id().lsiCount()).withValue(2L);
-                    om.override(om.id().gsiCount()).withValue(2L);
+                    om.override(om.id().lsiCount()).withValue(2);
+                    om.override(om.id().gsiCount()).withValue(2);
                 }));
             }
         }));
@@ -87,10 +84,10 @@ public class DynamoMapperTest extends AbstractTest {
 
     @Test(timeout = 20_000L)
     public void test() throws Exception {
-        TableSchema<Data> primary = mapper.parseTableSchema(Data.class);
-        IndexSchema<Data> lsi1 = mapper.parseLocalSecondaryIndexSchema(1, Data.class);
-        IndexSchema<Data> gsi1 = mapper.parseGlobalSecondaryIndexSchema(1, Data.class);
-        IndexSchema<Data> gsi2 = mapper.parseGlobalSecondaryIndexSchema(2, Data.class);
+        TableSchema<Data> primary = singleTable.parseTableSchema(Data.class);
+        IndexSchema<Data> lsi1 = singleTable.parseLocalSecondaryIndexSchema(1, Data.class);
+        IndexSchema<Data> gsi1 = singleTable.parseGlobalSecondaryIndexSchema(1, Data.class);
+        IndexSchema<Data> gsi2 = singleTable.parseGlobalSecondaryIndexSchema(2, Data.class);
 
 
         Data data = new Data("f1", 2L, "f3", 4, Instant.ofEpochMilli(5), "f6");

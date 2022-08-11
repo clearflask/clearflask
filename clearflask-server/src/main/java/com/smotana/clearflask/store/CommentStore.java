@@ -14,9 +14,9 @@ import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface
 CommentStore {

@@ -7,7 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.smotana.clearflask.store.TokenVerifyStore.Token;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
@@ -29,7 +29,7 @@ public class DynamoTokenVerifyStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoTokenVerifyStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module()
+                SingleTableProvider.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

@@ -27,11 +27,10 @@ import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.NotificationStore;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
@@ -57,9 +56,7 @@ public class DynamoNotificationStore implements NotificationStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoUtil dynamoUtil;
-    @Inject
-    private DynamoMapper dynamoMapper;
+    private SingleTable singleTable;
     @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
@@ -68,7 +65,7 @@ public class DynamoNotificationStore implements NotificationStore {
 
     @Inject
     private void setup() {
-        notificationSchema = dynamoMapper.parseTableSchema(NotificationModel.class);
+        notificationSchema = singleTable.parseTableSchema(NotificationModel.class);
     }
 
     @Override
@@ -81,7 +78,7 @@ public class DynamoNotificationStore implements NotificationStore {
     public void notificationsCreate(Collection<NotificationModel> notifications) {
 
         Iterables.partition(notifications, DYNAMO_WRITE_BATCH_MAX_SIZE).forEach(batch -> {
-            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(notificationSchema.tableName())
+            singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(notificationSchema.tableName())
                     .withItemsToPut(batch.stream()
                             .map(notificationSchema::toItem)
                             .collect(ImmutableList.toImmutableList()))));
@@ -156,7 +153,7 @@ public class DynamoNotificationStore implements NotificationStore {
                                     "projectId", projectId,
                                     "notificationId", notificationId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                    singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

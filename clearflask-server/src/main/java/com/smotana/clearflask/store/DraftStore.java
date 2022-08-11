@@ -8,9 +8,9 @@ import com.smotana.clearflask.api.model.IdeaCreateAdmin;
 import com.smotana.clearflask.api.model.IdeaDraftAdmin;
 import com.smotana.clearflask.api.model.IdeaDraftSearch;
 import com.smotana.clearflask.api.model.NotifySubscribers;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +21,8 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Gsi;
+import static io.dataspray.singletable.TableType.Primary;
 
 
 public interface DraftStore {

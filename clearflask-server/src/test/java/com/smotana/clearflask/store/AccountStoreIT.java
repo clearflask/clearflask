@@ -13,7 +13,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
@@ -57,7 +57,7 @@ public class AccountStoreIT extends AbstractIT {
 
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoElasticAccountStore.module(),
                 DynamoProjectStore.module(),

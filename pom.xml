@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -8,6 +9,14 @@
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <java.version>11</java.version>
@@ -41,10 +50,9 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
-
 
     <modules>
         <module>clearflask-i18n</module>
@@ -322,6 +330,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.dataspray</groupId>
+                <artifactId>single-table</artifactId>
+                <version>0.0.4</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>

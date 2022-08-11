@@ -8,9 +8,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.ProjectModel;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.web.resource.AbstractBlackboxIT;
+import io.dataspray.singletable.DynamoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.GetMappingsRequest;
@@ -93,7 +93,7 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
     }
 
     private void setProjectVersion(String projectId, long projectVersion) {
-        DynamoMapper.TableSchema<ProjectModel> projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
+        DynamoMapper.TableSchema<ProjectModel> projectSchema = singleTable.parseTableSchema(ProjectModel.class);
         projectSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(projectSchema.primaryKey(Map.of(
                         "projectId", projectId)))
@@ -103,7 +103,7 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
     }
 
     private void assertProjectVersion(String projectId, Optional<Long> projectVersionOpt) {
-        DynamoMapper.TableSchema<ProjectModel> projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
+        DynamoMapper.TableSchema<ProjectModel> projectSchema = singleTable.parseTableSchema(ProjectModel.class);
         Optional<ProjectModel> projectOpt = Optional.ofNullable(projectSchema.fromItem(projectSchema.table()
                 .getItem(new GetItemSpec()
                         .withPrimaryKey(projectSchema

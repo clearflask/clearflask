@@ -50,9 +50,6 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.dynamo.DynamoUtil;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
@@ -61,6 +58,8 @@ import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.GitHubResource;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -141,9 +140,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private DynamoUtil dynamoUtil;
+    private SingleTable singleTable;
     @Inject
     private IdeaStore ideaStore;
     @Inject
@@ -165,7 +162,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
 
     @Override
     protected void serviceStart() throws Exception {
-        gitHubAuthorizationSchema = dynamoMapper.parseTableSchema(GitHubAuthorization.class);
+        gitHubAuthorizationSchema = singleTable.parseTableSchema(GitHubAuthorization.class);
 
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
                 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
@@ -239,7 +236,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             return;
         }
         Iterables.partition(repositoryAndInstallationIds.entrySet(), DYNAMO_WRITE_BATCH_MAX_SIZE).forEach(batch -> {
-            dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(gitHubAuthorizationSchema.tableName())
+            singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(gitHubAuthorizationSchema.tableName())
                     .withItemsToPut(batch.stream()
                             .map(entry -> new GitHubAuthorization(
                                     accountId,

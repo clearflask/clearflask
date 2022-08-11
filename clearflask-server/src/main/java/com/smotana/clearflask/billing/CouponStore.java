@@ -3,7 +3,7 @@
 package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableCollection;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface CouponStore {
 

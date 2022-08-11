@@ -4,8 +4,8 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.Notification;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface NotificationStore {
 

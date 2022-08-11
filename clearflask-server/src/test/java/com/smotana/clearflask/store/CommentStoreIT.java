@@ -15,7 +15,7 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
@@ -62,7 +62,7 @@ public class CommentStoreIT extends AbstractIT {
         install(Modules.override(
                 Application.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 DynamoElasticCommentStore.module(),
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),

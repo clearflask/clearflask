@@ -11,7 +11,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.NotificationStore.NotificationListResponse;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoNotificationStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -39,7 +39,7 @@ public class NotificationStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoNotificationStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override

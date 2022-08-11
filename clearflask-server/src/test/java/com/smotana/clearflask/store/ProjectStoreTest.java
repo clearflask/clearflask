@@ -14,9 +14,7 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.ProjectStore.SlugModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.ChatwootUtil;
@@ -26,6 +24,8 @@ import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -39,7 +39,7 @@ public class ProjectStoreTest extends AbstractTest {
     @Inject
     private ProjectStore store;
     @Inject
-    private DynamoMapper mapper;
+    private SingleTable singleTable;
 
     @Override
     protected void configure() {
@@ -52,7 +52,7 @@ public class ProjectStoreTest extends AbstractTest {
                 Application.module(),
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 Sanitizer.module(),
                 IntercomUtil.module(),
                 ChatwootUtil.module()
@@ -181,7 +181,7 @@ public class ProjectStoreTest extends AbstractTest {
 
     @Test(timeout = 10_000L)
     public void testAutoDeleteSlugWithoutProject() throws Exception {
-        TableSchema<SlugModel> slugSchema = mapper.parseTableSchema(SlugModel.class);
+        TableSchema<SlugModel> slugSchema = singleTable.parseTableSchema(SlugModel.class);
 
         SlugModel slugModel = new SlugModel("mySlug", "myProject", null);
         slugSchema.table().putItem(slugSchema.toItem(slugModel));

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -10,7 +10,7 @@ import lombok.Value;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface TokenVerifyStore {
 

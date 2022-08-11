@@ -19,10 +19,12 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.TableSchema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -46,7 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -54,7 +56,7 @@ import static org.junit.Assert.assertEquals;
 public class DynamoMapperConversionTest extends AbstractTest {
 
     @Inject
-    private DynamoMapper mapper;
+    private SingleTable singleTable;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -156,14 +158,14 @@ public class DynamoMapperConversionTest extends AbstractTest {
 
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module()
+                SingleTableProvider.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(DynamoMapperImpl.Config.class, om -> {
+                install(ConfigSystem.overrideModule(SingleTableProvider.Config.class, om -> {
                     om.override(om.id().createTables()).withValue(true);
-                    om.override(om.id().lsiCount()).withValue(2L);
-                    om.override(om.id().gsiCount()).withValue(2L);
+                    om.override(om.id().lsiCount()).withValue(2);
+                    om.override(om.id().gsiCount()).withValue(2);
                 }));
             }
         }));
@@ -173,7 +175,7 @@ public class DynamoMapperConversionTest extends AbstractTest {
     public void setup() throws Exception {
         super.setup();
 
-        schema = mapper.parseTableSchema(Data.class);
+        schema = singleTable.parseTableSchema(Data.class);
     }
 
     @Test(timeout = 20_000L)

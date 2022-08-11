@@ -11,7 +11,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -23,7 +23,7 @@ import org.kohsuke.github.GHIssueComment;
 import java.io.IOException;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static io.dataspray.singletable.TableType.Primary;
 
 public interface GitHubStore {
     AvailableRepos getReposForUser(String accountId, String code);

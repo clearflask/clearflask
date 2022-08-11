@@ -67,8 +67,7 @@ import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
@@ -103,6 +102,7 @@ import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
+import io.dataspray.singletable.SingleTable;
 import io.jsonwebtoken.security.Keys;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -156,7 +156,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected AmazonDynamoDB dynamo;
     @Inject
-    protected DynamoMapper dynamoMapper;
+    protected SingleTable singleTable;
     @Inject
     protected AccountStore accountStore;
     @Inject
@@ -215,7 +215,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 StripeClientSetup.module(),
                 KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
+                SingleTableProvider.module(),
                 NotificationServiceImpl.module(),
                 EmailTemplates.module(),
                 OnCreditChange.module(),
@@ -558,7 +558,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void dumpDynamoTable() {
         log.info("DynamoScan starting");
-        String tableName = dynamoMapper.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
+        String tableName = singleTable.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
         dynamo.scan(new ScanRequest()
                         .withTableName(tableName))
                 .getItems()
