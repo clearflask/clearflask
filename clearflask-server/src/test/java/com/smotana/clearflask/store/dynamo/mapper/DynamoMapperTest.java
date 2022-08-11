@@ -15,8 +15,11 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
+import io.dataspray.singletable.DynamoTable;
 import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.InitWithDefault;
 import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.SingleTableTestUtil;
 import io.dataspray.singletable.TableSchema;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -137,7 +140,7 @@ public class DynamoMapperTest extends AbstractTest {
 
     @Test(timeout = 20_000L)
     public void testNullableToNonNull() throws Exception {
-        TableSchema<DataNullable> mapperNullable = mapper.parseTableSchema(DataNullable.class);
+        TableSchema<DataNullable> mapperNullable = singleTable.parseTableSchema(DataNullable.class);
 
         DataNullable dataNullWithNull = new DataNullable("myId", null, null, null, null);
 
@@ -149,9 +152,9 @@ public class DynamoMapperTest extends AbstractTest {
                 mapperNullable.table().getItem(primaryKey)));
 
         // Circumvent detection of duplicate schema prefix
-        ((DynamoMapperImpl) mapper).rangePrefixToDynamoTable.clear();
+        SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);
         // Get same schema with all fields NonNull this time
-        TableSchema<DataNonNull> mapperNonNull = mapper.parseTableSchema(DataNonNull.class);
+        TableSchema<DataNonNull> mapperNonNull = singleTable.parseTableSchema(DataNonNull.class);
 
         DataNonNull dataNonNull = new DataNonNull("myId", "", 0L, ImmutableMap.of(), Instant.EPOCH);
 
