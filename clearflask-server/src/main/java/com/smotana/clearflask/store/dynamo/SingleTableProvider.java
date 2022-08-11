@@ -60,7 +60,7 @@ public class SingleTableProvider extends ManagedService implements Provider<Sing
         return new AbstractModule() {
             @Override
             protected void configure() {
-                Provider<SingleTable> singleTableProvider = getProvider(SingleTable.class);
+                bind(SingleTable.class).toProvider(SingleTableProvider.class).asEagerSingleton();
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(SingleTableProvider.class);
                 install(ConfigSystem.configModule(Config.class));
             }
