@@ -79,7 +79,7 @@ module.exports = {
                   'node': '14.15.1'
                 }
               }],
-              '@babel/preset-react',
+              ["@babel/preset-react", { "runtime": "automatic" }], // https://stackoverflow.com/a/64994595
               '@babel/preset-typescript'
             ],
             plugins: [
