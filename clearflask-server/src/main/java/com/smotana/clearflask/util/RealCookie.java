@@ -160,9 +160,7 @@ public class RealCookie {
         public RealCookieBuilder(@NonNull Cookie cookie) {
             name(cookie.getName());
             value(cookie.getValue());
-            if (!Strings.isNullOrEmpty(cookie.getPath())) {
-                path(cookie.getPath());
-            }
+            path(!Strings.isNullOrEmpty(cookie.getPath()) ? cookie.getPath() : "/");
             version(cookie.getVersion());
             if (!Strings.isNullOrEmpty(cookie.getDomain())) {
                 domain(cookie.getDomain());
