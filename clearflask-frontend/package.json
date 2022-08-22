@@ -184,9 +184,7 @@
     "extends": "react-app",
     "rules": {
       "no-mixed-operators": "off",
-      "no-labels": "off",
-      "react/jsx-uses-react": "on",
-      "react/react-in-jsx-scope": "on"
+      "no-labels": "off"
     }
   },
   "browserslist": {
