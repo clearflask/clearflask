@@ -113,7 +113,7 @@
     "material-ui-color-picker": "3.5.0",
     "memoizee": "0.4.15",
     "moment": "2.29.4",
-    "moment-timezone": "0.5.31",
+    "moment-timezone": "0.5.35",
     "node-fetch": "2.6.7",
     "notistack": "1.0.10",
     "oidc-client": "1.10.1",
