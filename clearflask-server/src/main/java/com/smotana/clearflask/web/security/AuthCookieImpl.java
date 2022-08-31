@@ -55,6 +55,7 @@ public class AuthCookieImpl implements AuthCookie {
                         .value("")
                         .ttlInEpochSec(0L)
                         .sameSite(config.authCookieSecure() ? SameSite.NONE : SameSite.STRICT)
+                        .secure(config.authCookieSecure())
                         .build()
                         .addToResponse(response));
     }
