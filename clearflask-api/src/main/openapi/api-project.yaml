@@ -53,6 +53,9 @@ components:
         domain:
           x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
           type: string
+        langDefault:
+          x-clearflask-prop: { order: 6, subType: 'language', name: 'Default language', description: 'If selected, this language will initially be selected. If left blank, the language preference will be auto-detected from browser settings.' }
+          type: string
         langWhitelist:
           x-clearflask-prop: { order: 10, name: 'Whitelist languages', description: 'Configure which languages to show and select a default language.' }
           title: LangWhitelist
@@ -60,9 +63,6 @@ components:
           required:
             - langs
           properties:
-            langDefault:
-              x-clearflask-prop: { order: 6, subType: 'language', name: 'Default', description: 'If selected, this language will initially be selected. If left blank, the user locale language is initially selected even if it is outside of the whitelisted set of languages.' }
-              type: string
             langs:
               x-clearflask-prop: { order: 6, subType: 'language', name: 'Languages', description: 'Only allows users to select these langauges. Keep blank to hide language selection. If no default language is selected and the user locale is outside of this list, that language will also be shown in this list.' }
               type: array
