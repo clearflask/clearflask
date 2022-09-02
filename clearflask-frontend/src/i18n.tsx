@@ -146,7 +146,7 @@ export const getLangIsUserSelected = (): boolean => langIsUserSelected;
 export const T = <N extends Namespace>(key: TFuncKey<N>): string => key;
 
 export const ProjectForcedLanguageDetection = () => {
-  const langDefault = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.langWhitelist?.langDefault, shallowEqual);
+  const langDefault = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.langDefault, shallowEqual);
   const translation = useTranslation();
 
   if (!!langDefault
