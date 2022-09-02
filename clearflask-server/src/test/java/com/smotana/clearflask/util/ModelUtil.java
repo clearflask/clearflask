@@ -45,6 +45,7 @@ public class ModelUtil {
                 null,
                 null,
                 null,
+                null,
                 new CookieConsent(null, null),
                 new Layout(null, ImmutableList.of(), ImmutableList.of()),
                 new Content(ImmutableList.of(new Category(
