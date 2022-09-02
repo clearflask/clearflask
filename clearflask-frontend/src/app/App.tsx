@@ -15,6 +15,7 @@ import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
+import { ProjectForcedLanguageDetection } from '../i18n';
 import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import { SentryIdentifyUser } from '../site/SentryIdentify';
 import AccountPage from './AccountPage';
@@ -70,7 +71,7 @@ class App extends Component<Props> {
         windowIso.awaitPromises.push(this.initSsr());
       }
     } else {
-      this.init().finally(() => {
+      this.initCsr().finally(() => {
         // Start render since we received our configuration
         this.forceUpdate();
       });
@@ -96,7 +97,7 @@ class App extends Component<Props> {
     });
   }
 
-  async init() {
+  async initCsr() {
     const params = new URL(windowIso.location.href).searchParams;
     // Used for links within emails
     const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
@@ -175,6 +176,7 @@ class App extends Component<Props> {
     return (
       <Provider store={this.server.getStore()}>
         {!this.props.isInsideContainer && (<SetAppFavicon />)}
+        <ProjectForcedLanguageDetection />
         <SentryIdentifyUser />
         <IframeBroadcastPathname />
         <AppThemeProvider

@@ -90,7 +90,6 @@ export default function render(): Handler {
 
       // From i18next-http-middleware
       const i18n = req.i18n as i18n;
-      const lng = i18n.language;
 
       var renderResult: RenderResult | undefined;
       var isFinished = false;
@@ -201,6 +200,7 @@ export default function render(): Handler {
       }
 
       // I18N initial language and in-memory store
+      const lng = i18n.language;
       html = html.replace(PH_I18N_INIT_LNG, htmlDataCreate('__SSR_I18N_INIT_LNG__', lng));
       const i18nStore: Resource = { [lng]: {} };
       (lng === 'en' ? ['en'] : ['en', lng]).forEach(l => {

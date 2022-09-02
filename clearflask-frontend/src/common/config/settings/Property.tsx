@@ -97,6 +97,51 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
       return null;
     }
 
+
+    const getLanguageSelector = (): React.ReactElement | null => {
+      if (prop.type !== ConfigEditor.PropertyType.String
+        && prop.type !== ConfigEditor.PropertyType.Array) {
+        return null;
+      }
+      const values: Label[] = [];
+      const options: Label[] = [];
+      const selected = prop.type === ConfigEditor.PropertyType.String
+        ? new Set(!!prop.value ? [prop.value] : [])
+        : new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.StringProperty).value));
+      supportedLanguages.forEach(lang => {
+        const label = { label: lang.label, value: lang.code };
+        options.push(label);
+        if (selected.has(lang.code)) {
+          values.push(label);
+        }
+      });
+      return (
+        <SelectionPicker
+          TextFieldProps={{
+            variant: 'outlined',
+            size: 'small',
+            ...this.props.TextFieldProps,
+          }}
+          label={this.props.bare ? undefined : name}
+          helperText={this.props.bare ? undefined : description}
+          placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
+          errorMsg={prop.errorMsg}
+          value={values}
+          options={options}
+          isMulti={prop.type === ConfigEditor.PropertyType.Array}
+          showTags
+          bareTags={prop.type === ConfigEditor.PropertyType.String}
+          clearOnBlur
+          width={this.props.width || 'max-content'}
+          minWidth={inputMinWidth}
+          onValueChange={labels => prop.type === ConfigEditor.PropertyType.String
+            ? prop.set(labels[0]?.value)
+            : prop.setRaw(labels.map(label => label.value))}
+          {...this.props.SelectionPickerProps}
+        />
+      );
+    }
+
     OUTER: switch (prop.type) {
       case ConfigEditor.PropertyType.Number:
       case ConfigEditor.PropertyType.Integer:
@@ -141,6 +186,9 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
                 {(!this.props.bare && description || prop.errorMsg) && (<FormHelperText style={{ minWidth: inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || description}</FormHelperText>)}
               </div>
             );
+            break OUTER;
+          case ConfigEditor.PropSubType.Language:
+            propertySetter = getLanguageSelector();
             break OUTER;
           default:
           // Fall through to below
@@ -410,38 +458,7 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
       case ConfigEditor.PageGroupType:
       case ConfigEditor.PropertyType.Array:
         if (prop.type === ConfigEditor.PropertyType.Array && prop.subType === ConfigEditor.PropSubType.Language) {
-          const values: Label[] = [];
-          const options: Label[] = [];
-          const selected = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.StringProperty).value));
-          supportedLanguages.forEach(lang => {
-            const label = { label: lang.label, value: lang.code };
-            options.push(label);
-            if (selected.has(lang.code)) {
-              values.push(label);
-            }
-          });
-          propertySetter = (
-            <SelectionPicker
-              TextFieldProps={{
-                variant: 'outlined',
-                size: 'small',
-                ...this.props.TextFieldProps,
-              }}
-              label={this.props.bare ? undefined : name}
-              helperText={this.props.bare ? undefined : description}
-              placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
-              errorMsg={prop.errorMsg}
-              value={values}
-              options={options}
-              isMulti
-              clearOnBlur
-              width={this.props.width || 'max-content'}
-              minWidth={inputMinWidth}
-              onValueChange={labels => prop
-                .setRaw(labels.map(label => label.value))}
-              {...this.props.SelectionPickerProps}
-            />
-          );
+          propertySetter = getLanguageSelector();
         } else if (prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
           const values: Label[] = [];
           const options: Label[] = [];

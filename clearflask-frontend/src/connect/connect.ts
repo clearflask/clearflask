@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/node";
 import { Integrations } from "@sentry/tracing";
 import cluster from 'cluster';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import fs from 'fs';
 import http from 'http';
@@ -144,6 +145,7 @@ function createApp(serverApi) {
   const serverApp = express();
   const reactRender = reactRenderer();
 
+  serverApp.use(cookieParser());
   serverApp.use(compression());
 
   if (connectConfig.forceRedirectHttpToHttps) {

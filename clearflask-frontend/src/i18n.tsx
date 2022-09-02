@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// <reference path="./@types/transform-media-imports.d.ts"/>
-import i18n, { InitOptions } from 'i18next';
+import i18n, { Callback, InitOptions, TFunction } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
-import { initReactI18next, Namespace, TFuncKey } from 'react-i18next';
+import { initReactI18next, Namespace, TFuncKey, useTranslation } from 'react-i18next';
+import { shallowEqual, useSelector } from 'react-redux';
 import FlagAdd from '../public/img/flag/add.png';
 import FlagAr from '../public/img/flag/ar.svg';
 import FlagCn from '../public/img/flag/cn.svg';
@@ -31,6 +32,7 @@ import FlagSk from '../public/img/flag/sk.svg';
 import FlagTr from '../public/img/flag/tr.svg';
 import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
+import { ReduxState } from './api/server';
 import { isProd } from './common/util/detectEnv';
 
 export const defaultLanguage = 'en';
@@ -41,6 +43,7 @@ export type SupportedLanguage = {
   img: Img;
   isContribute?: boolean;
 };
+export const LANGUAGE_SELECTION_COOKIE_NAME = 'x-cf-lang';
 /**
  * Indicates how many texts on the whole site are translatable.
  */
@@ -92,6 +95,7 @@ export const supportedLanguagesSet = new Set(supportedLanguages.map(l => l.code)
 export const getI18n = (
   prepare: (i: typeof i18n) => typeof i18n,
   opts?: InitOptions,
+  onChangeHook?: (lng?: string) => void,
 ) => {
   prepare(i18n).use(
     initReactI18next
@@ -122,8 +126,35 @@ export const getI18n = (
       ...opts?.react,
     },
   });
+
+  const changeLanguage = i18n.changeLanguage;
+  i18n.changeLanguage = (lng?: string, callback?: Callback): Promise<TFunction> => {
+    const result = changeLanguage(lng, callback);
+    setLangIsUserSelected();
+    if (!!onChangeHook) onChangeHook(lng);
+    return result;
+  }
+
   return i18n;
 };
 
+var langIsUserSelected = false;
+export const setLangIsUserSelected = (): void => { langIsUserSelected = true };
+export const getLangIsUserSelected = (): boolean => langIsUserSelected;
+
 // For type-checking standalone strings without the use of t function
 export const T = <N extends Namespace>(key: TFuncKey<N>): string => key;
+
+export const ProjectForcedLanguageDetection = () => {
+  const langDefault = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.langWhitelist?.langDefault, shallowEqual);
+  const translation = useTranslation();
+
+  if (!!langDefault
+    && supportedLanguagesSet.has(langDefault)
+    && translation.i18n.language !== langDefault
+    && !getLangIsUserSelected()) {
+    translation.i18n.changeLanguage(langDefault);
+  }
+
+  return null;
+}

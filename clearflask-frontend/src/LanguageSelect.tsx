@@ -3,7 +3,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Table, TableBody, TableRow } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import TranslateIcon from '@material-ui/icons/Translate';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClosablePopper from './common/ClosablePopper';
 import { contentScrollApplyStyles, Orientation } from './common/ContentScroll';
