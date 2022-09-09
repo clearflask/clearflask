@@ -40,7 +40,7 @@ public class TieredWebLimiter implements Limiter {
 
         Observable<Set<Duration>> tiersObservable();
 
-        @DefaultValue("PT1H")
+        @DefaultValue("PT10M")
         Duration prechargedPeriod();
 
         Observable<Duration> prechargedPeriodObservable();
@@ -50,10 +50,7 @@ public class TieredWebLimiter implements Limiter {
 
         Observable<Double> qpsBaseObservable();
 
-        /**
-         * Default: sqrt(10)
-         */
-        @DefaultValue("3.16")
+        @DefaultValue("10")
         double qpsStepUpMultiplier();
 
         Observable<Double> qpsStepUpMultiplierObservable();
@@ -88,10 +85,10 @@ public class TieredWebLimiter implements Limiter {
                 config.qpsStepUpMultiplier(),
                 config.prechargedPeriod());
         Stream.of(
-                config.tiersObservable(),
-                config.qpsBaseObservable(),
-                config.qpsStepUpMultiplierObservable(),
-                config.prechargedPeriodObservable())
+                        config.tiersObservable(),
+                        config.qpsBaseObservable(),
+                        config.qpsStepUpMultiplierObservable(),
+                        config.prechargedPeriodObservable())
                 .forEach(o -> o.subscribe(v -> computeAltPermitsCapacityCallable.run()));
         computeAltPermitsCapacityCallable.run();
     }
