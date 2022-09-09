@@ -17,6 +17,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.base.Strings;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -104,6 +106,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import rx.Observable;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -120,6 +123,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -142,6 +146,19 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         @DefaultValue("true")
         boolean enableHistograms();
+
+        @DefaultValue("true")
+        boolean enableSearchCache();
+
+        @DefaultValue("PT5M")
+        Duration searchCacheExpireAfterWritePeriod();
+
+        Observable<Duration> searchCacheExpireAfterWritePeriodObservable();
+
+        @DefaultValue("PT1M")
+        Duration searchCacheExpireAfterAccessPeriod();
+
+        Observable<Duration> searchCacheExpireAfterAccessPeriodObservable();
     }
 
     public static final String IDEA_INDEX = "idea";
@@ -175,6 +192,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private TableSchema<IdeaModel> ideaSchema;
     private IndexSchema<IdeaModel> ideaByProjectIdSchema;
     private ExpDecayScore expDecayScoreWeek;
+    private Cache<IdeaSearchKey, SearchResponse> ideaSearchCache;
 
     @Inject
     private void setup() {
@@ -182,6 +200,19 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         ideaByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, IdeaModel.class);
 
         expDecayScoreWeek = new ExpDecayScore(EXP_DECAY_PERIOD_MILLIS);
+
+        Stream.of(config.searchCacheExpireAfterAccessPeriodObservable(),
+                        config.searchCacheExpireAfterWritePeriodObservable())
+                .forEach(o -> o.subscribe(v -> setupIdeaSearchCache()));
+        setupIdeaSearchCache();
+    }
+
+    private void setupIdeaSearchCache() {
+        ideaSearchCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(config.searchCacheExpireAfterWritePeriod())
+                .expireAfterAccess(config.searchCacheExpireAfterAccessPeriod())
+                .weakValues()
+                .<IdeaSearchKey, SearchResponse>build();
     }
 
     @Extern
@@ -849,6 +880,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         return query;
     }
 
+    @Value
+    class IdeaSearchKey {
+        String projectId;
+        IdeaSearchAdmin ideaSearchAdmin;
+        Optional<String> requestorUserIdOpt;
+    }
 
     private SearchResponse searchIdeas(
             String projectId,
@@ -863,6 +900,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     Optional.empty(),
                     0L,
                     false);
+        }
+
+        IdeaSearchKey key = new IdeaSearchKey(projectId, ideaSearchAdmin, requestorUserIdOpt);
+        if (config.enableSearchCache()) {
+            SearchResponse cachedResponse = ideaSearchCache.getIfPresent(key);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
         }
 
         QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
@@ -917,23 +962,29 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         log.trace("searchIdeas hitsSize {} query {}", hits.length, ideaSearchAdmin);
+
+        SearchResponse searchResponse;
         if (hits.length == 0) {
-            return new SearchResponse(
+            searchResponse = new SearchResponse(
                     ImmutableList.of(),
                     Optional.empty(),
                     0L,
                     false);
+        } else {
+            searchResponse = new SearchResponse(
+                    Arrays.stream(hits)
+                            .map(SearchHit::getId)
+                            .collect(ImmutableList.toImmutableList()),
+                    searchResponseWithCursor.getCursorOpt(),
+                    searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
+                    searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
         }
 
-        ImmutableList<String> ideaIds = Arrays.stream(hits)
-                .map(SearchHit::getId)
-                .collect(ImmutableList.toImmutableList());
+        if (config.enableSearchCache()) {
+            ideaSearchCache.put(key, searchResponse);
+        }
 
-        return new SearchResponse(
-                ideaIds,
-                searchResponseWithCursor.getCursorOpt(),
-                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
-                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
+        return searchResponse;
     }
 
     @Override
