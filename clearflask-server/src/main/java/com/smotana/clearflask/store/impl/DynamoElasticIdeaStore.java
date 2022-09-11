@@ -884,7 +884,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     class IdeaSearchKey {
         String projectId;
         IdeaSearchAdmin ideaSearchAdmin;
-        Optional<String> requestorUserIdOpt;
     }
 
     private SearchResponse searchIdeas(
@@ -902,8 +901,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     false);
         }
 
-        IdeaSearchKey key = new IdeaSearchKey(projectId, ideaSearchAdmin, requestorUserIdOpt);
-        if (config.enableSearchCache()) {
+        boolean useCache = config.enableSearchCache()
+                && ideaSearchAdmin.getFundedByMeAndActive() != Boolean.TRUE
+                && ideaSearchAdmin.getSearchText() == null;
+        IdeaSearchKey key = new IdeaSearchKey(projectId, ideaSearchAdmin);
+        if (useCache) {
             SearchResponse cachedResponse = ideaSearchCache.getIfPresent(key);
             if (cachedResponse != null) {
                 return cachedResponse;
@@ -980,7 +982,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
         }
 
-        if (config.enableSearchCache()) {
+        if (useCache) {
             ideaSearchCache.put(key, searchResponse);
         }
 
