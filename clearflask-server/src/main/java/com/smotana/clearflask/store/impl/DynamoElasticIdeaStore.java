@@ -212,7 +212,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .expireAfterWrite(config.searchCacheExpireAfterWritePeriod())
                 .expireAfterAccess(config.searchCacheExpireAfterAccessPeriod())
                 .weakValues()
-                .<IdeaSearchKey, SearchResponse>build();
+                .build();
     }
 
     @Extern
