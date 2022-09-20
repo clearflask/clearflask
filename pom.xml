@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -40,7 +41,7 @@
         <sqlite4java>1.0.392</sqlite4java>
         <node.version>v14.15.1</node.version>
         <frontend-maven-plugin.version>1.12.1</frontend-maven-plugin.version>
-        <pnpm.version>v7.8.0</pnpm.version>
+        <pnpm.version>v7.12.1</pnpm.version>
         <license-maven-plugin.version>4.1</license-maven-plugin.version>
         <projectlombok.version>1.18.22</projectlombok.version>
         <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
@@ -49,8 +50,8 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>

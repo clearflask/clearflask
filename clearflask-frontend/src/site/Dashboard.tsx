@@ -7,7 +7,7 @@ import AccountIcon from '@material-ui/icons/AccountCircle';
 import AddIcon from '@material-ui/icons/Add';
 import EmptyIcon from '@material-ui/icons/BlurOn';
 import CheckIcon from '@material-ui/icons/Check';
-import CodeIcon from '@material-ui/icons/Code';
+import { default as ApiIcon, default as CodeIcon } from '@material-ui/icons/Code';
 import SettingsIcon from '@material-ui/icons/Settings';
 import SuperAccountIcon from '@material-ui/icons/SupervisedUserCircle';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -24,6 +24,7 @@ import { Link } from 'react-router-dom';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { Project as AdminProject, ReduxStateAdmin } from '../api/serverAdmin';
+import ApiDocs from '../ApiDocs';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import LogIn from '../app/comps/LogIn';
 import { PanelPostNavigator } from '../app/comps/PanelPost';
@@ -586,6 +587,15 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       case 'settings':
         this.renderSettings(context);
         break;
+      case 'api':
+        context.sections.push({
+          name: 'main',
+          noPaper: true,
+          collapseTopBottom: true, collapseLeft: true, collapseRight: true,
+          size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
+          content: (<ApiDocs projectId={activeProjectId} />)
+        });
+        break;
       case 'contact':
         context.sections.push({
           name: 'main',
@@ -743,12 +753,13 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/create', title: this.props.t('add-project'), icon: AddIcon },
                       { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
+                      { type: 'button', link: '/dashboard/api', title: 'API', icon: ApiIcon },
                       { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
-                      { type: 'button', link: '/dashboard/contact', title: this.props.t('contact') },
-                      { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
-                      { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
-                      { type: 'divider' },
+                      // { type: 'button', link: '/dashboard/contact', title: this.props.t('contact') },
+                      // { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
+                      // { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
+                      // { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
                       ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [
                         { type: 'button' as 'button', link: '/dashboard/settings/super/loginas', title: 'Super Admin', icon: SuperAccountIcon },

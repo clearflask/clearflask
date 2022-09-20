@@ -20,6 +20,7 @@ import React, { Component, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
+import { Link } from 'react-router-dom';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf, Status } from '../../api/server';
 import ServerAdmin, { DemoUpdateDelay, Project as AdminProject, ReduxStateAdmin } from '../../api/serverAdmin';
@@ -3459,12 +3460,10 @@ export const ProjectSettingsApi = () => {
           Programmatically access and make changes or use Zapier to integrate with your workflow.
           <p>
             Check out the&nbsp;
-            <MuiLink
-              underline='none'
+            <Link
               color='primary'
-              target="_blank"
-              href={`${windowIso.location.protocol}//${windowIso.location.host}/api`}
-            >API documentation</MuiLink>
+              to='/dashboard/api'
+            >API documentation</Link>
             &nbsp;to get familiar.
           </p>
         </>

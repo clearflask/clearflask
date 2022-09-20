@@ -1,0 +1,12 @@
+diff --git a/index.d.ts b/index.d.ts
+index 14e7431ba32a7f0e7e98246071e8dc8941d3a1a7..13a1265faea8b4c10fbda5c19b3b5386ccdb598c 100755
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -46,6 +46,7 @@ export interface SwaggerUIProps {
+     displayRequestDuration?: boolean;
+     persistAuthorization?: boolean;
+     withCredentials?: boolean;
++    parameterMacro?: (operation: any, parameter: any) => void;
+ }
+ 
+ declare class SwaggerUI extends React.PureComponent<SwaggerUIProps> {}
