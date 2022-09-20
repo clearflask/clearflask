@@ -115,7 +115,7 @@ specifiers:
   material-ui-color-picker: 3.5.0
   memoizee: 0.4.15
   moment: 2.29.4
-  moment-timezone: 0.5.31
+  moment-timezone: 0.5.35
   node-fetch: 2.6.7
   nodemon: 2.0.6
   notistack: 1.0.10
@@ -294,7 +294,7 @@ dependencies:
   material-ui-color-picker: 3.5.0_kodxqvqsrmdbfxpx7m22a4ddpm
   memoizee: 0.4.15
   moment: 2.29.4
-  moment-timezone: 0.5.31
+  moment-timezone: 0.5.35
   node-fetch: 2.6.7
   notistack: 1.0.10_nkua6g3orn3ke5pbuxdhtydsza
   oidc-client: 1.10.1
@@ -13671,8 +13671,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  /moment-timezone/0.5.31:
-    resolution: {integrity: sha512-+GgHNg8xRhMXfEbv81iDtrVeTcWt0kWmTEY1XQK14dICTXnWJnT0dxdlPspwqF3keKMVPXwayEsk1DI0AA/jdA==}
+  /moment-timezone/0.5.35:
+    resolution: {integrity: sha512-cY/pBOEXepQvlgli06ttCTKcIf8cD1nmNwOKQQAdHBqYApQSpAqotBMX0RJZNgMp6i0PlZuf1mFtnlyEkwyvFw==}
     dependencies:
       moment: 2.29.4
     dev: false
