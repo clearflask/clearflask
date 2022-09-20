@@ -181,7 +181,9 @@ class Main extends Component<Props> {
                           (
                             <Route key='api-docs' path='/api' render={props => (
                               <NoSsr>
-                                <ApiDocs />
+                                <Provider store={ServerAdmin.get().getStore()}>
+                                  <ApiDocs />
+                                </Provider>
                               </NoSsr>
                             )} />
                           ),
