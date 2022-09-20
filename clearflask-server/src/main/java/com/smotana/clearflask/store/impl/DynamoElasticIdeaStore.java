@@ -1004,7 +1004,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
         org.elasticsearch.action.search.SearchResponse response;
         try {
-            response = elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
+            response = elasticUtil.retry(() -> elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             .fetchSource(false)
                             .query(QueryBuilders.termQuery("categoryId", categoryId))
@@ -1013,7 +1013,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                     .field("statusId"))
                             .aggregation(AggregationBuilders
                                     .terms("tags")
-                                    .field("tagIds"))), RequestOptions.DEFAULT);
+                                    .field("tagIds"))), RequestOptions.DEFAULT));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

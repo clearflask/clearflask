@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.util;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -21,6 +25,7 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -50,6 +55,9 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR;
@@ -108,6 +116,27 @@ public class ElasticUtil {
 
     public String getIndexName(String indexName, String projectId) {
         return indexName + "-" + projectId;
+    }
+
+    public <T> T retry(Callable<T> callable) {
+        try {
+            return RetryerBuilder.<T>newBuilder()
+                    .retryIfException(th -> {
+                        if (th.getClass().isAssignableFrom(ElasticsearchStatusException.class)) {
+                            ElasticsearchStatusException ex = (ElasticsearchStatusException) th;
+                            return ex.status().getStatus() == 429;
+                        }
+                        return false;
+                    })
+                    .withStopStrategy(StopStrategies.stopAfterDelay(3, TimeUnit.MINUTES))
+                    .withWaitStrategy(WaitStrategies.exponentialWait(5, 20, TimeUnit.SECONDS))
+                    .build()
+                    .call(callable);
+        } catch (ExecutionException ex) {
+            log.warn("Successfully failed", ex);
+        } catch (RetryException ex) {
+            log.warn("Failed all retry attempts", ex);
+        }
     }
 
     public SearchResponseWithCursor searchWithCursor(
@@ -170,7 +199,7 @@ public class ElasticUtil {
                 }
 
                 // Finally run the search
-                searchResponse = elastic.search(searchRequest, RequestOptions.DEFAULT);
+                searchResponse = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -272,7 +301,7 @@ public class ElasticUtil {
 
         org.elasticsearch.action.search.SearchResponse search;
         try {
-            search = elastic.search(searchRequest, RequestOptions.DEFAULT);
+            search = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

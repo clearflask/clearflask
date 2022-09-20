@@ -504,7 +504,7 @@ public class DynamoElasticCommentStore implements CommentStore {
 
         SearchResponse searchResponse;
         try {
-            searchResponse = elastic.search(searchRequest, RequestOptions.DEFAULT);
+            searchResponse = elasticUtil.retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
