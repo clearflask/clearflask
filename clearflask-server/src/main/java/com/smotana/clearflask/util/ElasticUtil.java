@@ -133,9 +133,9 @@ public class ElasticUtil {
                     .build()
                     .call(callable);
         } catch (ExecutionException ex) {
-            log.warn("Successfully failed", ex);
+            throw new RuntimeException("Successfully failed", ex);
         } catch (RetryException ex) {
-            log.warn("Failed all retry attempts", ex);
+            throw new RuntimeException("Failed all retry attempts", ex);
         }
     }
 
@@ -299,12 +299,7 @@ public class ElasticUtil {
 
         log.trace("Histogram query: {}", searchRequest);
 
-        org.elasticsearch.action.search.SearchResponse search;
-        try {
-            search = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        org.elasticsearch.action.search.SearchResponse search = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
 
         return new HistogramResponse(Optional.ofNullable(search.getAggregations())
                 .flatMap(ags -> {

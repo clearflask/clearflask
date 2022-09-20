@@ -1002,21 +1002,16 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
-        org.elasticsearch.action.search.SearchResponse response;
-        try {
-            response = elasticUtil.retry(() -> elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
-                    .source(new SearchSourceBuilder()
-                            .fetchSource(false)
-                            .query(QueryBuilders.termQuery("categoryId", categoryId))
-                            .aggregation(AggregationBuilders
-                                    .terms("statuses")
-                                    .field("statusId"))
-                            .aggregation(AggregationBuilders
-                                    .terms("tags")
-                                    .field("tagIds"))), RequestOptions.DEFAULT));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
+                .source(new SearchSourceBuilder()
+                        .fetchSource(false)
+                        .query(QueryBuilders.termQuery("categoryId", categoryId))
+                        .aggregation(AggregationBuilders
+                                .terms("statuses")
+                                .field("statusId"))
+                        .aggregation(AggregationBuilders
+                                .terms("tags")
+                                .field("tagIds"))), RequestOptions.DEFAULT));
 
         long total = response.getHits().getTotalHits().value;
         ImmutableMap.Builder<String, Long> statusesBuilder = ImmutableMap.builder();

@@ -89,7 +89,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import rx.Observable;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -503,11 +502,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                         .query(queryBuilder));
 
         SearchResponse searchResponse;
-        try {
-            searchResponse = elasticUtil.retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        searchResponse = elasticUtil.retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
 
         // If we have a post with merged posts, we need to query them individually
         Map<String, Set<String>> postIdToCommentIds = Maps.newHashMap();
