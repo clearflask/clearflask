@@ -24,6 +24,7 @@ import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.ConnectionClosedException;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.ClearScrollRequest;
@@ -125,6 +126,8 @@ public class ElasticUtil {
                         if (th.getClass().isAssignableFrom(ElasticsearchStatusException.class)) {
                             ElasticsearchStatusException ex = (ElasticsearchStatusException) th;
                             return ex.status().getStatus() == 429;
+                        } else if (th.getClass().isAssignableFrom(ConnectionClosedException.class)) {
+                            return true;
                         }
                         return false;
                     })
@@ -132,9 +135,7 @@ public class ElasticUtil {
                     .withWaitStrategy(WaitStrategies.exponentialWait(5, 20, TimeUnit.SECONDS))
                     .build()
                     .call(callable);
-        } catch (ExecutionException ex) {
-            throw new RuntimeException("Successfully failed", ex);
-        } catch (RetryException ex) {
+        } catch (ExecutionException | RetryException ex) {
             throw new RuntimeException("Failed all retry attempts", ex);
         }
     }
