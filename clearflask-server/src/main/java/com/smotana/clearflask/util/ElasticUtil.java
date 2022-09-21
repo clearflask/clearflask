@@ -125,7 +125,8 @@ public class ElasticUtil {
                     .retryIfException(th -> {
                         if (th.getClass().isAssignableFrom(ElasticsearchStatusException.class)) {
                             ElasticsearchStatusException ex = (ElasticsearchStatusException) th;
-                            return ex.status().getStatus() == 429;
+                            return ex.status().getStatus() == 429
+                                    || ex.status().getStatus() == 502;
                         } else if (th.getClass().isAssignableFrom(ConnectionClosedException.class)) {
                             return true;
                         }
