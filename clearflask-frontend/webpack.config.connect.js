@@ -73,7 +73,8 @@ module.exports = {
             presets: [
               ['@babel/preset-env', {
                 include: [
-                  '@babel/plugin-proposal-optional-chaining'
+                  '@babel/plugin-proposal-optional-chaining',
+                  '@babel/plugin-proposal-nullish-coalescing-operator'
                 ],
                 targets: {
                   'node': '14.15.1'

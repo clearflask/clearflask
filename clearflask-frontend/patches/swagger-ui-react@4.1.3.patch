@@ -1,0 +1,20 @@
+diff --git a/index.js b/index.js
+index d9af2f176a18569c1ec0e778bce3cba23668a41b..fe742f27dd692152cbc0afa469639c65e6fb2583 100644
+--- a/index.js
++++ b/index.js
+@@ -59,6 +59,7 @@ var SwaggerUI = /*#__PURE__*/function (_React$Component) {
+       var _context, _context2;
+ 
+       var ui = swaggerUIConstructor({
++        parameterMacro: this.props.parameterMacro,
+         plugins: this.props.plugins,
+         spec: this.props.spec,
+         url: this.props.url,
+@@ -120,6 +121,7 @@ var SwaggerUI = /*#__PURE__*/function (_React$Component) {
+ 
+ export { SwaggerUI as default };
+ SwaggerUI.propTypes = {
++  parameterMacro: PropTypes.func,
+   spec: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+   url: PropTypes.string,
+   layout: PropTypes.string,
