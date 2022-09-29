@@ -337,4 +337,33 @@ public class AccountStoreIT extends AbstractIT {
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
     }
+
+    @Test(timeout = 30_000L)
+    public void testShouldSendTrialEnded() throws Exception {
+        Account account = new Account(
+                store.genAccountId(),
+                "my@email.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "name",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                // Prior to adding attrs, all accounts have this as null
+                // test the creation of this map
+                null,
+                null);
+        account = store.createAccount(account).getAccount();
+
+        assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+        assertFalse(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+        assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan2"));
+        assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan3"));
+        assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan2"));
+        assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+        assertFalse(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+    }
 }

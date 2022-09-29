@@ -420,6 +420,25 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Override
+    public boolean shouldSendTrialEndedNotification(String accountId, String planId) {
+        try {
+            accountSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                    .withConditionExpression("attribute_exists(#partitionKey) and #trialEndedNotificationSentForPlanId <> :planId")
+                    .withUpdateExpression("SET #trialEndedNotificationSentForPlanId = :planId")
+                    .withNameMap(new NameMap()
+                            .with("#trialEndedNotificationSentForPlanId", "trialEndedNotificationSentForPlanId")
+                            .with("#partitionKey", accountSchema.partitionKeyName()))
+                    .withValueMap(new ValueMap()
+                            .with(":planId", planId))
+                    .withReturnValues(ReturnValue.NONE));
+        } catch (ConditionalCheckFailedException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public Account updateAddons(String accountId, Map<String, String> addons, boolean overwriteMap) {
         if (addons == null) {
             addons = ImmutableMap.of();

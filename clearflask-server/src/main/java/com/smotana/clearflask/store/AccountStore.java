@@ -62,6 +62,8 @@ public interface AccountStore {
 
     AccountAndIndexingFuture setPlan(String accountId, String planid, Optional<ImmutableMap<String, String>> addons);
 
+    boolean shouldSendTrialEndedNotification(String accountId, String planId);
+
     Account updateAddons(String accountId, Map<String, String> addons, boolean overwriteMap);
 
     AccountAndIndexingFuture addProject(String accountId, String projectId);
