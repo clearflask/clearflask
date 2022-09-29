@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
+/** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import LogoImg from '../../public/img/clearflask-logo.png';
 import ImgIso from '../common/ImgIso';
 

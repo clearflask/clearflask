@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-
+/** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
