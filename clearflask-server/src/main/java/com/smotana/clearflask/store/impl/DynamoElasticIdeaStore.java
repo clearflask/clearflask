@@ -447,6 +447,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             return ImmutableMap.of();
         }
         return singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+                        .distinct()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId)))
