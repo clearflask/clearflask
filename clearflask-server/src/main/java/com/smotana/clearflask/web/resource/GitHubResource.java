@@ -20,6 +20,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
 import javax.inject.Inject;
@@ -40,6 +41,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -94,7 +96,13 @@ public class GitHubResource {
                 GHEventPayload.Installation installation = parseEventPayload(GitHub.offline(), payload, GHEventPayload.Installation.class);
                 log.info("Detected installation {}, installationId {}",
                         event.getAction(), installation.getInstallation().getId());
-                installation.getRepositories().forEach(ghRepository -> log.info(
+                List<GHRepository> repositories;
+                try {
+                    repositories = installation.getRepositories();
+                } catch (NullPointerException ex) {
+                    break; // Silly GitHub library has an NPE in certain cases
+                }
+                repositories.forEach(ghRepository -> log.info(
                         "Detected repository {} as part of installation, name {} repoId {} installationId {}",
                         event.getAction(), ghRepository.getFullName(), ghRepository.getId(), installation.getInstallation().getId()));
                 break;
