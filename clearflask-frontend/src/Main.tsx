@@ -203,7 +203,8 @@ class Main extends Component<Props> {
                                   <Dashboard {...props} />
                                 </NoSsr>
                                 {/* <IntercomWrapperMain suppressBind /> */}
-                                <ChatwootWrapperMain suppressBind />
+                                {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+                                  <ChatwootWrapperMain suppressBind />)}
                                 <HotjarWrapperMain />
                               </Provider>
                             )} />
@@ -259,7 +260,8 @@ class Main extends Component<Props> {
                                 <SetMaxAge val={24 * 60 * 60} />
                                 <Site {...props} />
                                 {/* <IntercomWrapperMain /> */}
-                                <ChatwootWrapperMain />
+                                {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+                                  <ChatwootWrapperMain />)}
                                 <HotjarWrapperMain />
                               </Provider>
                             )} />
