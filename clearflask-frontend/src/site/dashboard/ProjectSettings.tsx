@@ -3136,7 +3136,7 @@ export const ProjectSettingsGitHub = (props: {
   }
 
   return (
-    <ProjectSettingsBase title='GitHub Integration' description='Mirror GitHub Issues in ClearFlask. Resolve them right from within ClearFlask.'>
+    <ProjectSettingsBase title='GitHub Integration' description='Mirror GitHub Issues and Releases into ClearFlask. Resolve issues from ClearFlask and mirror into GitHub.'>
       <UpgradeWrapper
         accountBasePlanId={accountBasePlanId}
         accountAddons={accountAddons}
@@ -3159,6 +3159,8 @@ export const ProjectSettingsGitHub = (props: {
                 <PropertyByPath server={props.server} editor={props.editor} path={['github', 'statusSync']} />
                 <PropertyByPath server={props.server} editor={props.editor} path={['github', 'responseSync']} />
                 <PropertyByPath server={props.server} editor={props.editor} path={['github', 'commentSync']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createReleaseWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'releaseNotifyAll']} />
                 <p>
                   <Button
                     style={{ color: theme.palette.error.dark }}
@@ -3217,11 +3219,11 @@ export const ProjectSettingsGitHub = (props: {
                 </p>
               </Collapse>
               {!!repos && (repos.length ? (
-                <TemplateWrapper<FeedbackInstance | undefined>
-                  key='feedback'
+                <TemplateWrapper<[FeedbackInstance | undefined, ChangelogInstance | undefined]>
+                  key='feedback-changelog'
                   editor={props.editor}
-                  mapper={templater => templater.feedbackGet()}
-                  renderResolved={(templater, feedback) => (
+                  mapper={templater => Promise.all([templater.feedbackGet(), templater.changelogGet()])}
+                  renderResolved={(templater, [feedback, changelog]) => (
                     <Collapse in={!!repos} appear>
                       <Table className={classes.githubReposTable}>
                         <TableBody>
@@ -3254,7 +3256,7 @@ export const ProjectSettingsGitHub = (props: {
                                           var openStatus: string | undefined;
                                           if (feedback) {
                                             category = feedback.categoryAndIndex.category;
-                                          } else {
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
                                             category = props.editor.getConfig().content.categories[0];
                                           }
                                           closedStatuses = [
@@ -3274,6 +3276,16 @@ export const ProjectSettingsGitHub = (props: {
                                             .set(closedStatus);
                                           openStatus && (props.editor.getProperty(['github', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
                                             .set(openStatus);
+
+                                          // Release sync
+                                          var releaseCategory: Admin.Category | undefined;
+                                          if (changelog) {
+                                            releaseCategory = changelog.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            releaseCategory = props.editor.getConfig().content.categories[props.editor.getConfig().content.categories.length - 1];
+                                          }
+                                          releaseCategory && (props.editor.getProperty(['github', 'createReleaseWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(releaseCategory.categoryId);
                                         }
                                         (props.editor.getProperty(['github', 'name']) as ConfigEditor.StringProperty)
                                           .set(repo.name);

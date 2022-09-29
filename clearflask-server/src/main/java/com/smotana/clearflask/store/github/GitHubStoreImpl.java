@@ -37,8 +37,10 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.GitHubStatusSync;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.CommentStore.CommentAndIndexingFuture;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
@@ -69,6 +71,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.kohsuke.github.GHAppInstallation;
 import org.kohsuke.github.GHEvent;
+import org.kohsuke.github.GHEventPayload;
 import org.kohsuke.github.GHEventPayload.Issue;
 import org.kohsuke.github.GHEventPayload.IssueComment;
 import org.kohsuke.github.GHHook;
@@ -155,7 +158,10 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     private ColorUtil colorUtil;
     @Inject
     private Billing billing;
+    @Inject
+    private NotificationService notificationService;
 
+    private final JsonPath changesNameJsonPath = JsonPath.compile("changes.name");
     private final JsonPath changesBodyJsonPath = JsonPath.compile("changes.body");
     private TableSchema<GitHubAuthorization> gitHubAuthorizationSchema;
     private ListeningExecutorService executor;
@@ -357,7 +363,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             "secret", configGitHubResource.webhookSecret()),
                     ImmutableSet.of(
                             GHEvent.ISSUES,
-                            GHEvent.ISSUE_COMMENT),
+                            GHEvent.ISSUE_COMMENT,
+                            GHEvent.RELEASE),
                     true);
         } catch (IOException ex) {
             log.warn("Linking repo failed, could not create webhook. projectId {}, authorization {}",
@@ -534,6 +541,91 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     return Optional.of(commentStore.markAsDeletedComment(project.getProjectId(), postId, commentId));
                 } catch (ConditionalCheckFailedException ex) {
                     // Issue comment was probably created before integration was setup and doesn't exist
+                }
+                break;
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<IdeaAndIndexingFuture> ghReleaseEvent(Project project, GHEventPayload.Release ghRelease, String payload) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return Optional.empty();
+        }
+        com.smotana.clearflask.api.model.GitHub integration = project.getGitHubIntegration().get();
+        String ideaId = ideaStore.genDeterministicIdeaIdForGithubRelease(ghRelease.getRelease().getId(), ghRelease.getRepository().getId());
+        switch (ghRelease.getAction()) {
+            case "published":
+            case "released":
+            case "edited":
+                UserModel user = getCfUserFromGhUser(project.getProjectId(), ghRelease.getSender());
+                Optional<IdeaModel> ideaOpt = ideaStore.getIdea(project.getProjectId(), ideaId);
+                if (ideaOpt.isEmpty()) {
+                    IdeaAndIndexingFuture ideaAndIndexingFuture = ideaStore.createIdeaAndUpvote(new IdeaModel(
+                            project.getProjectId(),
+                            ideaId,
+                            user.getUserId(),
+                            user.getName(),
+                            user.getIsMod(),
+                            Instant.now(),
+                            ghRelease.getRelease().getName(),
+                            markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghRelease.getRelease().getBody()),
+                            null,
+                            null,
+                            null,
+                            null,
+                            integration.getCreateReleaseWithCategoryId(),
+                            null,
+                            ImmutableSet.of(),
+                            0L,
+                            0L,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            ImmutableMap.of(),
+                            null,
+                            ImmutableSet.of(),
+                            ImmutableSet.of(),
+                            null,
+                            null,
+                            ImmutableSet.of(),
+                            null,
+                            ghRelease.getRelease().getHtmlUrl().toExternalForm(),
+                            null));
+                    if (Boolean.TRUE.equals(integration.getReleaseNotifyAll())) {
+                        notificationService.onPostCreated(
+                                project,
+                                ideaAndIndexingFuture.getIdea(),
+                                new NotifySubscribers(
+                                        ideaAndIndexingFuture.getIdea().getTitle(),
+                                        ideaAndIndexingFuture.getIdea().getDescriptionAsText(sanitizer)),
+                                user);
+                    }
+                    return Optional.of(ideaAndIndexingFuture);
+                } else {
+                    boolean updated = false;
+                    IdeaUpdateAdmin.IdeaUpdateAdminBuilder updateBuilder = IdeaUpdateAdmin.builder();
+                    // GitHub client is missing "changes" parsing so we cannot do:
+                    // ghRelease.getChanges().getBody()
+                    // https://github.com/hub4j/github-api/issues/1243
+                    // Need to extract it ourselves here
+                    if (changesNameJsonPath.read(payload) != null) {
+                        updateBuilder.title(ghRelease.getRelease().getName());
+                        updated = true;
+                    }
+                    String bodyQuill = markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghRelease.getRelease().getBody());
+                    if (changesBodyJsonPath.read(payload) != null) {
+                        updateBuilder.description(bodyQuill);
+                        updated = true;
+                    }
+                    if (updated) {
+                        return Optional.of(ideaStore.updateIdea(project.getProjectId(), ideaId, updateBuilder.build(), Optional.empty()));
+                    }
                 }
                 break;
         }

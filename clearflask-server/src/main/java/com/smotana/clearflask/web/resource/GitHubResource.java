@@ -174,6 +174,10 @@ public class GitHubResource {
                 GHEventPayload.IssueComment issueComment = parseEventPayload(installation.getClient(), payload, GHEventPayload.IssueComment.class);
                 gitHubStore.ghIssueCommentEvent(project, issueComment, payload);
                 break;
+            case "release":
+                GHEventPayload.Release release = parseEventPayload(installation.getClient(), payload, GHEventPayload.Release.class);
+                gitHubStore.ghReleaseEvent(project, release, payload);
+                break;
             default:
                 if (LogUtil.rateLimitAllowLog("github-resource-uninteresting-event")) {
                     log.warn("Received uninteresting event {}", eventType);

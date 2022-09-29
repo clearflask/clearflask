@@ -38,6 +38,8 @@ public interface GitHubStore {
 
     Optional<CommentAndIndexingFuture<?>> ghIssueCommentEvent(Project project, GHEventPayload.IssueComment ghIssueComment, String payload) throws IOException;
 
+    Optional<IdeaAndIndexingFuture> ghReleaseEvent(Project project, GHEventPayload.Release ghRelease, String payload);
+
     ListenableFuture<Optional<GHIssueComment>> cfCommentCreatedAsync(Project project, IdeaModel idea, CommentModel comment, UserModel user);
 
     ListenableFuture<Optional<StatusAndOrResponse>> cfStatusAndOrResponseChangedAsync(Project project, IdeaModel idea, boolean statusChanged, boolean responseChanged);

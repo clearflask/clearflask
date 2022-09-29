@@ -59,6 +59,10 @@ public interface IdeaStore {
         return "github-" + issueNumber + "-" + issueId + "-" + repositoryId;
     }
 
+    default String genDeterministicIdeaIdForGithubRelease(long releaseId, long repositoryId) {
+        return "github-release-" + releaseId + "-" + repositoryId;
+    }
+
     Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
 
     ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
