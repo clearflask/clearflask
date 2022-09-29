@@ -186,6 +186,8 @@ public class GitHubResource {
                 GHEventPayload.Release release = parseEventPayload(installation.getClient(), payload, GHEventPayload.Release.class);
                 gitHubStore.ghReleaseEvent(project, release, payload);
                 break;
+            case "ping":
+                break;
             default:
                 if (LogUtil.rateLimitAllowLog("github-resource-uninteresting-event")) {
                     log.warn("Received uninteresting event {}", eventType);

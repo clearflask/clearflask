@@ -259,8 +259,12 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
         Optional<com.smotana.clearflask.api.model.GitHub> integrationOpt = Optional.ofNullable(configAdmin.getGithub());
         Optional<com.smotana.clearflask.api.model.GitHub> integrationPreviousOpt = configPrevious.flatMap(c -> Optional.ofNullable(c.getGithub()));
 
+
         if (integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId))
-                && integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId))) {
+                && integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId))
+                // Also update webhook if we enabled Releases since we need to update the webhook event list
+                && (integrationPreviousOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isPresent()
+                || integrationOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isEmpty())) {
             return;
         }
 
@@ -320,12 +324,11 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     .getClient()
                     .getRepositoryById(repositoryId);
             URL webhookUrl = getWebhookUrl(projectId, installationId, repositoryId);
-            ImmutableList<GHHook> hooksToDelete = repository.getHooks()
-                    .stream()
-                    .filter(GHHook::isActive)
-                    .filter(hook -> webhookUrl.equals(hook.getUrl()))
-                    .collect(ImmutableList.toImmutableList());
-            for (GHHook hook : hooksToDelete) {
+            for (GHHook hook : repository.getHooks()) {
+                if (!webhookUrl.toExternalForm().equals(hook.getConfig().get("url"))) {
+                    continue;
+                }
+                log.info("Removing webhook with url {}", webhookUrl);
                 hook.delete();
             }
         } catch (IOException ex) {
