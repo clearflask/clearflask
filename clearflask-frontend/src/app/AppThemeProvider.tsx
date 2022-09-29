@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
 import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';

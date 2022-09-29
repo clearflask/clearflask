@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Badge, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';

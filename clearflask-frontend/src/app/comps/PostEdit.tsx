@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, fade, FormControlLabel, Grid, IconButton, Switch, TextField } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';

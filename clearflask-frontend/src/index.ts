@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-// As a first thing, we need to set the public path before any imports
 declare var __webpack_public_path__: any;
 declare var __webpack_require__: any;
 if (!!window['parentDomain'] && window['parentDomain'] !== 'clearflask.com') {

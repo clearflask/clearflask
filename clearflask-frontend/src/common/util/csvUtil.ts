@@ -1,9 +1,5 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-// Borrowed and modified from
-// - https://stackoverflow.com/questions/39479090/read-n-lines-of-a-big-text-file
-// - https://stackoverflow.com/questions/1293147/example-javascript-code-to-parse-csv-data
-
 export function csvPreviewLines(file: File, maxlines: number, encoding = 'utf-8'): Promise<string[][]> {
   return new Promise<string[][]>((onComplete, onError) => {
     var CHUNK_SIZE = 32768;

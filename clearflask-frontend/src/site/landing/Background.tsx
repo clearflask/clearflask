@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, fade, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';

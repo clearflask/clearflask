@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2019-2021 Matus Faro <matus@smotana.com>
+// SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Originally from: https://raw.githubusercontent.com/mui-org/material-ui/2f6a982aa74ffa46680798089ad20ed67ed0c5ae/docs/src/modules/components/MarkdownElement.js
