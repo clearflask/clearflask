@@ -26,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.impl.DefaultConnectionReuseStrategy;
+import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -52,6 +55,12 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
         @DefaultValue("60000")
         int requestTimeout();
+
+        @DefaultValue("true")
+        boolean connectionReuse();
+
+        @DefaultValue("60000")
+        long connectionMaxIdleTime();
     }
 
     @Inject
@@ -85,6 +94,19 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
                         new BasicHeader(HttpHeaders.ACCEPT, "application/vnd.elasticsearch+json;compatible-with=7"),
                         new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.elasticsearch+json;compatible-with=7")
                 ) : ImmutableList.<Header>of()).toArray(Header[]::new))
+                .setHttpClientConfigCallback(httpClientConfigCallback -> httpClientConfigCallback
+                        .setConnectionReuseStrategy((response, context) -> (config.connectionReuse()
+                                ? DefaultConnectionReuseStrategy.INSTANCE
+                                : NoConnectionReuseStrategy.INSTANCE)
+                                .keepAlive(response, context))
+                        .setKeepAliveStrategy((response, context) -> {
+                            long duration = DefaultConnectionKeepAliveStrategy.INSTANCE.getKeepAliveDuration(response, context);
+                            long maxIdleTime = config.connectionMaxIdleTime();
+                            if (0 < duration && duration < maxIdleTime) {
+                                return duration;
+                            }
+                            return maxIdleTime;
+                        }))
                 .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
                         .setConnectTimeout(config.requestTimeout())
                         .setSocketTimeout(config.requestTimeout()))));
