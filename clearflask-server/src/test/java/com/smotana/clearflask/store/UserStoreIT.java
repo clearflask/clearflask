@@ -14,16 +14,18 @@ import com.smotana.clearflask.api.model.HistogramResponsePoints;
 import com.smotana.clearflask.api.model.HistogramSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
@@ -35,6 +37,8 @@ import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -47,7 +51,19 @@ import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.*;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class UserStoreIT extends AbstractIT {
+
+    @Parameterized.Parameter(0)
+    public SearchSource searchSource;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {SearchSource.READWRITE_ELASTICSEARCH},
+                {SearchSource.READWRITE_MYSQL},
+        };
+    }
 
     @Inject
     private UserStore store;
@@ -64,6 +80,7 @@ public class UserStoreIT extends AbstractIT {
                 SingleTableProvider.module(),
                 DynamoElasticUserStore.module(),
                 Sanitizer.module(),
+                MysqlUtil.module(),
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
@@ -74,6 +91,9 @@ public class UserStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
@@ -237,12 +257,18 @@ public class UserStoreIT extends AbstractIT {
         store.createUser(user3).getIndexingFuture().get();
         assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
         assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
-        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
+        if (searchSource.isReadElastic()) {
+            assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+            assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
+        }
         store.updateUser(projectId, user1.getUserId(), UserUpdate.builder()
                         .name("bubbby").build())
                 .getIndexingFuture().get();
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+        if (searchSource.isReadElastic()) {
+            assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+        } else {
+            assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bubbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+        }
 
         {
             configSet(ElasticUtil.ConfigSearch.class, "pageSizeDefault", "2", "user");
@@ -306,7 +332,11 @@ public class UserStoreIT extends AbstractIT {
                         new HistogramResponsePoints(nowDate.minusDays(3), 2L),
                         new HistogramResponsePoints(nowDate.minusDays(1), 1L)),
                 histogram.getPoints());
-        assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
+        if (Boolean.TRUE.equals(histogram.getHits().getIsGte())) {
+            assertTrue(5 >= histogram.getHits().getValue());
+        } else {
+            assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
+        }
     }
 
     @Test(timeout = 10_000L)

@@ -42,8 +42,11 @@ public class IdUtil {
     }
 
     public static String randomId(int charCount) {
-        return UUID.randomUUID().toString().replace("-", "")
-                .substring(0, charCount);
+        StringBuilder idFullSize = new StringBuilder(randomId());
+        while (charCount > idFullSize.length()) {
+            idFullSize.append(randomId());
+        }
+        return idFullSize.substring(0, charCount);
     }
 
     public static UUID parseDashlessUuid(String uuidStr) {

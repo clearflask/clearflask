@@ -9,8 +9,10 @@ import com.google.inject.Module;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +23,13 @@ import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
+@Singleton
 @ApplicationPath("/")
 public class Application extends ResourceConfig {
     public static final String RESOURCE_VERSION = "/v1";
@@ -36,6 +41,16 @@ public class Application extends ResourceConfig {
 
         @DefaultValue("false")
         boolean startupWaitUntilDeps();
+
+        /** Create Global ElasticSearch and/or Mysql indexes/tables on app startup */
+        @DefaultValue("true")
+        boolean createIndexesOnStartup();
+
+        @DefaultValue("READWRITE_ELASTICSEARCH")
+        SearchSource defaultSearchSource();
+
+        @NoDefaultValue(innerType = SearchSource.class)
+        Optional<SearchSource> forceSearchSource();
     }
 
     @Inject

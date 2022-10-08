@@ -18,6 +18,7 @@ import com.smotana.clearflask.web.Application;
 import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
@@ -43,6 +45,8 @@ public interface ProjectStore {
     Optional<Project> getProject(String projectId, boolean useCache);
 
     ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);
+
+    SearchSource getSearchSource(String projectId);
 
     Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin);
 
@@ -121,6 +125,8 @@ public interface ProjectStore {
         }
 
         Optional<GitHub> getGitHubIntegration();
+
+        Optional<SearchSource> getSearchSourceOverride();
     }
 
     @Value
@@ -161,6 +167,9 @@ public interface ProjectStore {
          * Currently only for ElasticSearch schema updates
          */
         Long projectVersion;
+
+        /** Override for {@link SearchSource} enum as string */
+        String searchSourceOverride;
     }
 
     @Value
@@ -234,6 +243,29 @@ public interface ProjectStore {
             return new InvitationAdmin(
                     getInvitationId(),
                     getInvitedEmail());
+        }
+    }
+
+    @Getter
+    enum SearchSource {
+        READWRITE_ELASTICSEARCH(true, false, true, false),
+        READWRITE_MYSQL(false, true, false, true),
+        READ_ELASTICSEARCH_WRITE_BOTH(true, false, true, true),
+        READ_MYSQL_WRITE_BOTH(false, true, true, true);
+        private final boolean isReadElastic;
+        private final boolean isReadMysql;
+        private final boolean isWriteElastic;
+        private final boolean isWriteMysql;
+
+        SearchSource(boolean isReadElastic, boolean isReadMysql, boolean isWriteElastic, boolean isWriteMysql) {
+            checkArgument(isReadElastic != isReadMysql, "Can only read from one source");
+            checkArgument(isWriteElastic || isWriteMysql, "Must write to at least one source");
+            checkArgument(!isReadElastic || isWriteElastic, "Cannot read from elastic source we're not writing to");
+            checkArgument(!isReadMysql || isWriteMysql, "Cannot read from mysql source we're not writing to");
+            this.isReadElastic = isReadElastic;
+            this.isReadMysql = isReadMysql;
+            this.isWriteElastic = isWriteElastic;
+            this.isWriteMysql = isWriteMysql;
         }
     }
 }

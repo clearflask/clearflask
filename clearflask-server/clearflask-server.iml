@@ -143,6 +143,13 @@
     <orderEntry type="library" name="Maven: org.elasticsearch.plugin:lang-mustache-client:7.13.4" level="project" />
     <orderEntry type="library" name="Maven: com.github.spullara.mustache.java:compiler:0.9.6" level="project" />
     <orderEntry type="library" name="Maven: org.apache.lucene:lucene-core:8.8.2" level="project" />
+    <orderEntry type="library" name="Maven: org.jooq:jooq:3.16.10" level="project" />
+    <orderEntry type="library" name="Maven: io.r2dbc:r2dbc-spi:0.9.0.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
+    <orderEntry type="library" name="Maven: jakarta.xml.bind:jakarta.xml.bind-api:3.0.0" level="project" />
+    <orderEntry type="library" name="Maven: com.sun.activation:jakarta.activation:2.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.jooq:jooq-meta:3.16.10" level="project" />
+    <orderEntry type="library" name="Maven: mysql:mysql-connector-java:8.0.30" level="project" />
     <orderEntry type="library" name="Maven: com.amazonaws:aws-java-sdk-dynamodb:1.12.75" level="project" />
     <orderEntry type="library" name="Maven: com.amazonaws:aws-java-sdk-s3:1.12.75" level="project" />
     <orderEntry type="library" name="Maven: com.amazonaws:aws-java-sdk-kms:1.12.75" level="project" />
@@ -156,7 +163,6 @@
     <orderEntry type="library" name="Maven: org.simplejavamail:simple-java-mail:6.6.1" level="project" />
     <orderEntry type="library" name="Maven: org.simplejavamail:core-module:6.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.sun.mail:jakarta.mail:1.6.5" level="project" />
-    <orderEntry type="library" name="Maven: com.sun.activation:jakarta.activation:1.2.1" level="project" />
     <orderEntry type="library" name="Maven: jakarta.annotation:jakarta.annotation-api:1.3.5" level="project" />
     <orderEntry type="library" name="Maven: com.github.bbottema:emailaddress-rfc2822:2.2.0" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: com.github.bbottema:jetbrains-runtime-annotations:1.0.0" level="project" />
@@ -184,8 +190,6 @@
     <orderEntry type="library" name="Maven: org.kill-bill.billing:killbill-api:0.53.15" level="project" />
     <orderEntry type="library" name="Maven: org.kill-bill.billing.plugin:killbill-plugin-api-notification:0.26.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.kill-bill.billing:killbill-catalog:0.22.20" level="project" />
-    <orderEntry type="library" name="Maven: jakarta.xml.bind:jakarta.xml.bind-api:2.3.3" level="project" />
-    <orderEntry type="library" name="Maven: jakarta.activation:jakarta.activation-api:1.2.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.kill-bill.billing:killbill-internal-api:0.22.20" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.github.spotbugs:spotbugs-annotations:4.2.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.kill-bill.billing.plugin:killbill-plugin-api-invoice:0.26.4" level="project" />
@@ -211,7 +215,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-transport-native-epoll:linux-x86_64:4.1.48.Final" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-transport-native-unix-common:4.1.48.Final" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-transport-native-kqueue:osx-x86_64:4.1.48.Final" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.typesafe.netty:netty-reactive-streams:2.0.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.ehcache:ehcache:3.9.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.glassfish.jaxb:jaxb-runtime:2.3.1" level="project" />
@@ -395,5 +398,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-handler:4.1.6.Final" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-resolver:4.1.6.Final" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: io.netty:netty-transport:4.1.6.Final" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.jooq:jooq-codegen:3.16.10" level="project" />
   </component>
 </module>

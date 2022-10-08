@@ -22,10 +22,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.google.inject.MoreTypeLiteral;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.util.Types;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Urgency;
 
 import javax.crypto.SecretKey;
@@ -37,11 +40,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.kik.config.ice.convert.ConfigValueConverters.toOptional;
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 
 /**
  * Extends {@link com.kik.config.ice.convert.ConfigValueConverters} with additional converters.
  */
+@Slf4j
 public class MoreConfigValueConverters {
 
     public static final SignatureAlgorithm TOKEN_ALGO = HS512;
@@ -89,7 +94,8 @@ public class MoreConfigValueConverters {
 
     public static Module module() {
         return module(ImmutableSet.of(
-                Urgency.class
+                Urgency.class,
+                SearchSource.class
         ));
     }
 
@@ -126,16 +132,19 @@ public class MoreConfigValueConverters {
                 mapBinder.addBinding(TypeLiteral.get(convertToType)).toInstance(converterInstance);
 
                 // Bind for individual injection
-                bind((TypeLiteral<ConfigValueConverter<T>>) TypeLiteral.get(Types.newParameterizedType(ConfigValueConverter.class, convertToType))).toInstance(converterInstance);
+                bind((TypeLiteral<ConfigValueConverter<T>>) TypeLiteral.get(
+                        Types.newParameterizedType(
+                                ConfigValueConverter.class,
+                                convertToType)))
+                        .toInstance(converterInstance);
             }
 
             private <T, I> void bindOptionalConverter(
-                    TypeLiteral<T> convertToType,
                     Class<I> innerConverterType,
                     MapBinder<TypeLiteral<?>, ConfigValueConverter<?>> mapBinder,
                     ConfigValueConverter<T> converterInstance) {
                 // Bind into map binder
-                mapBinder.addBinding(convertToType).toInstance(converterInstance);
+                mapBinder.addBinding(MoreTypeLiteral.optionalOf(innerConverterType)).toInstance(converterInstance);
 
                 // Bind for individual injection
                 bind((TypeLiteral<ConfigValueConverter<T>>) TypeLiteral.get(
@@ -159,6 +168,7 @@ public class MoreConfigValueConverters {
                     MapBinder<TypeLiteral<?>, ConfigValueConverter<?>> mapBinder) {
                 ConfigValueConverter<T> converterInstance = s -> MoreConfigValueConverters.toGenericEnum(enumClazz, s);
                 bindConverter(enumClazz, mapBinder, converterInstance);
+                bindOptionalConverter(enumClazz, mapBinder, v -> toOptional(converterInstance, v));
             }
 
         };

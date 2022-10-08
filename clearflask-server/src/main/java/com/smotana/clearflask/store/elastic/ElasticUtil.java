@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-package com.smotana.clearflask.util;
+package com.smotana.clearflask.store.elastic;
 
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryerBuilder;
@@ -21,7 +21,8 @@ import com.smotana.clearflask.api.model.HistogramInterval;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramResponsePoints;
 import com.smotana.clearflask.api.model.Hits;
-import com.smotana.clearflask.store.elastic.ActionListeners;
+import com.smotana.clearflask.util.MathUtil;
+import com.smotana.clearflask.util.ServerSecret;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.ConnectionClosedException;
@@ -303,7 +304,7 @@ public class ElasticUtil {
 
         org.elasticsearch.action.search.SearchResponse search = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
 
-        return new HistogramResponse(Optional.ofNullable(search.getAggregations())
+        ImmutableList<HistogramResponsePoints> points = Optional.ofNullable(search.getAggregations())
                 .flatMap(ags -> {
                     Iterator<Aggregation> iter = ags.iterator();
                     if (!iter.hasNext()) {
@@ -321,7 +322,9 @@ public class ElasticUtil {
                 .map((Histogram.Bucket b) -> new HistogramResponsePoints(
                         ((ZonedDateTime) b.getKey()).toLocalDate(),
                         b.getDocCount()))
-                .collect(ImmutableList.toImmutableList()),
+                .collect(ImmutableList.toImmutableList());
+
+        return new HistogramResponse(points,
                 new Hits(
                         search.getHits().getTotalHits().value,
                         search.getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO

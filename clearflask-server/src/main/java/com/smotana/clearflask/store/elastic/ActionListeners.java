@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.ActionListener;
 import rx.exceptions.CompositeException;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -19,11 +18,32 @@ public class ActionListeners {
         // disable ctor
     }
 
-    public static <T extends I, I> ActionListener<T> fromFuture(SettableFuture<I> settableFuture) {
+    public static <T extends I, I> ActionListener<T> logFailure() {
         return new ActionListener<>() {
             @Override
             public void onResponse(T o) {
-                settableFuture.set(o);
+                // Nothing to do
+            }
+
+            @Override
+            public void onFailure(Exception ex) {
+                if (LogUtil.rateLimitAllowLog("actionListeners-failure")) {
+                    log.warn("Unknown Elasticsearch failure", ex);
+                }
+            }
+        };
+    }
+
+    public static <T extends I, I> ActionListener<T> fromFuture(Predicate<Exception> exceptionsAllowed) {
+        return fromFuture(SettableFuture.create(), exceptionsAllowed);
+    }
+
+    public static <T extends I, I> ActionListener<T> fromFuture(SettableFuture<Void> settableFuture) {
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(T o) {
+                log.trace("ElasticSearch result: {}", o);
+                settableFuture.set(null);
             }
 
             @Override
@@ -36,18 +56,20 @@ public class ActionListeners {
         };
     }
 
-    public static <T extends I, I> ActionListener<T> fromFuture(SettableFuture<Optional<I>> settableFuture, Predicate<Exception> exceptionsAllowed) {
+    public static <T extends I, I> ActionListener<T> fromFuture(SettableFuture<Void> settableFuture, Predicate<Exception> exceptionsAllowed) {
         return new ActionListener<>() {
             @Override
             public void onResponse(T o) {
-                settableFuture.set(Optional.of(o));
+                log.trace("ElasticSearch result: {}", o);
+                settableFuture.set(null);
             }
 
             @Override
             public void onFailure(Exception ex) {
                 try {
                     if (exceptionsAllowed.test(ex)) {
-                        settableFuture.set(Optional.empty());
+                        log.trace("ElasticSearch acceptable failure", ex);
+                        settableFuture.set(null);
                         return;
                     }
                 } catch (Throwable th2) {
@@ -75,13 +97,14 @@ public class ActionListeners {
         };
     }
 
-    public static <T extends I, I> ActionListener<T> onFailureRetry(
-            SettableFuture<I> settableFuture,
-            Consumer<SettableFuture<I>> retryRequest) {
+    public static <T> ActionListener<T> onFailureRetry(
+            SettableFuture<Void> settableFuture,
+            Consumer<SettableFuture<Void>> retryRequest) {
         return new ActionListener<>() {
             @Override
             public void onResponse(T o) {
-                settableFuture.set(o);
+                log.trace("ElasticSearch result: {}", o);
+                settableFuture.set(null);
             }
 
             @Override
@@ -91,6 +114,25 @@ public class ActionListeners {
                 }
 
                 retryRequest.accept(settableFuture);
+            }
+        };
+    }
+
+    public static <T> ActionListener<T> onFailureRetry(
+            Runnable retryRequest) {
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(T o) {
+                log.trace("ElasticSearch result: {}", o);
+            }
+
+            @Override
+            public void onFailure(Exception ex) {
+                if (LogUtil.rateLimitAllowLog("actionListeners-failure-retry")) {
+                    log.info("Retrying an unknown Elasticsearch failure", ex);
+                }
+
+                retryRequest.run();
             }
         };
     }

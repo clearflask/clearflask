@@ -27,15 +27,10 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -49,9 +44,9 @@ public interface UserStore {
         return nameOpt.map(IdUtil::contentUnique).orElseGet(IdUtil::randomId);
     }
 
-    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
+    ListenableFuture<Void> createIndex(String projectId);
 
-    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+    void repopulateIndex(String projectId, boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
 
     UserAndIndexingFuture createUser(UserModel user);
 
@@ -87,7 +82,7 @@ public interface UserStore {
 
     UserAndIndexingFuture updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
 
-    Future<Optional<BulkResponse>> deleteUsers(String projectId, ImmutableCollection<String> userIds);
+    ListenableFuture<Void> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
     String createToken(String projectId, String userId, Duration ttl);
 
@@ -133,7 +128,7 @@ public interface UserStore {
 
     void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt);
 
-    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+    ListenableFuture<Void> deleteAllForProject(String projectId);
 
     @Value
     class SearchUsersResponse {
@@ -146,7 +141,7 @@ public interface UserStore {
     @Value
     class UserAndIndexingFuture {
         UserModel user;
-        ListenableFuture<WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     enum IdentifierType {

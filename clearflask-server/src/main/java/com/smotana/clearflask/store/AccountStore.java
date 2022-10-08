@@ -22,8 +22,6 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.support.WriteResponse;
 
 import java.time.Instant;
 import java.util.Map;
@@ -88,7 +86,7 @@ public interface AccountStore {
 
     Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap);
 
-    ListenableFuture<DeleteResponse> deleteAccount(String accountId);
+    ListenableFuture<Void> deleteAccount(String accountId);
 
     default String genSessionId() {
         return IdUtil.randomAscId();
@@ -116,7 +114,7 @@ public interface AccountStore {
     @Value
     class AccountAndIndexingFuture {
         Account account;
-        ListenableFuture<WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     @Value

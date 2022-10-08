@@ -142,8 +142,7 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
 
-        /** TODO temporarily disabled by default until confirmed to be working fine */
-        @DefaultValue("false")
+        @DefaultValue("true")
         boolean enableDeleteProjectForBlockedAccount();
     }
 

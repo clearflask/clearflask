@@ -31,19 +31,40 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class BlackboxIT extends AbstractBlackboxIT {
+
+    @Parameterized.Parameter(0)
+    public SearchSource searchSource;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {SearchSource.READWRITE_ELASTICSEARCH},
+                {SearchSource.READWRITE_MYSQL},
+        };
+    }
+
+    @Override
+    protected Optional<SearchSource> getSearchSource() {
+        return Optional.ofNullable(searchSource);
+    }
 
     @Test(timeout = 300_000L)
     public void test() throws Exception {

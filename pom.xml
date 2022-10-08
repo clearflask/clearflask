@@ -29,6 +29,8 @@
              https://opensearch.org/docs/latest/clients/index/ -->
         <elasticsearch.version>7.13.4</elasticsearch.version>
         <lucene.version>8.8.2</lucene.version>
+        <!-- 3.16 is last minor version supporting Java 11 -->
+        <jooq.version>3.16.10</jooq.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
         <!-- If I still can't upgrade to 2.27+,
@@ -611,6 +613,26 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-meta</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>8.0.30</version>
             </dependency>
             <dependency>
                 <!-- Ensures all AWS SDKs are version compatible -->

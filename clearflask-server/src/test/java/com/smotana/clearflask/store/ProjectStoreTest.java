@@ -59,6 +59,9 @@ public class ProjectStoreTest extends AbstractTest {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().defaultSearchSource()).withValue(ProjectStore.SearchSource.READ_ELASTICSEARCH_WRITE_BOTH);
+                }));
                 install(ConfigSystem.overrideModule(DynamoProjectStore.Config.class, om -> {
                     om.override(om.id().enableConfigCacheRead()).withValue(true);
                     om.override(om.id().enableSlugCacheRead()).withValue(true);

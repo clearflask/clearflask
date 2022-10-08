@@ -31,12 +31,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Instant;
 import java.util.List;
@@ -65,15 +59,15 @@ public interface IdeaStore {
 
     Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
 
-    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
+    ListenableFuture<Void> createIndex(String projectId);
 
-    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+    void repopulateIndex(String projectId, boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
 
-    ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
+    ListenableFuture<Void> createIdea(IdeaModel idea);
 
     IdeaAndIndexingFuture createIdeaAndUpvote(IdeaModel idea);
 
-    ListenableFuture<List<BulkResponse>> createIdeas(Iterable<IdeaModel> ideas);
+    ListenableFuture<List<Void>> createIdeas(String projectId, Iterable<IdeaModel> ideas);
 
     Optional<IdeaModel> getIdea(String projectId, String ideaId);
 
@@ -114,11 +108,11 @@ public interface IdeaStore {
      */
     IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
-    ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId, boolean deleteMerged);
+    ListenableFuture<Void> deleteIdea(String projectId, String ideaId, boolean deleteMerged);
 
-    ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
+    ListenableFuture<Void> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
-    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+    ListenableFuture<Void> deleteAllForProject(String projectId);
 
     @Value
     class GitHubIssueMetadata {
@@ -138,7 +132,7 @@ public interface IdeaStore {
     @Value
     class IdeaAndIndexingFuture {
         IdeaModel idea;
-        ListenableFuture<? extends WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     @Value
@@ -151,14 +145,14 @@ public interface IdeaStore {
     class MergeResponse {
         IdeaModel idea;
         IdeaModel parentIdea;
-        ListenableFuture<? extends WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     @Value
     class IdeaAndExpressionsAndIndexingFuture {
         ImmutableSet<String> expressions;
         IdeaModel idea;
-        ListenableFuture<? extends WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     @Value
@@ -166,7 +160,7 @@ public interface IdeaStore {
         long ideaFundAmount;
         IdeaModel idea;
         TransactionModel transaction;
-        ListenableFuture<? extends WriteResponse> indexingFuture;
+        ListenableFuture<Void> indexingFuture;
     }
 
     @Value

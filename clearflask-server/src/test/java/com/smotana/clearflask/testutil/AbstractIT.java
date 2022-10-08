@@ -13,6 +13,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -45,6 +46,7 @@ public abstract class AbstractIT extends AbstractTest {
 
         install(Modules.override(
                 DefaultElasticSearchProvider.module(),
+                DefaultMysqlProvider.module(),
                 KillBillClientProvider.module()
         ).with(new AbstractModule() {
             @Override
@@ -63,6 +65,16 @@ public abstract class AbstractIT extends AbstractTest {
                     om.override(om.id().apiKey()).withValue(apiKey);
                     om.override(om.id().apiSecret()).withValue(secretKey);
                     om.override(om.id().requireTls()).withValue(false);
+                }));
+                String databaseName = "clearflask" + IdUtil.randomId(5);
+                log.info("IT test with mysql database name {}", databaseName);
+                install(ConfigSystem.overrideModule(DefaultMysqlProvider.Config.class, om -> {
+                    om.override(om.id().host()).withValue("localhost");
+                    om.override(om.id().user()).withValue("root");
+                    om.override(om.id().pass()).withValue("killbill");
+                    om.override(om.id().databaseName()).withValue(databaseName);
+                    om.override(om.id().createDatabase()).withValue(true);
+                    om.override(om.id().dropDatabase()).withValue(true);
                 }));
             }
         }));

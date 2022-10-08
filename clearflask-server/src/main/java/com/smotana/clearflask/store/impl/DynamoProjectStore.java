@@ -25,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
+import com.google.common.base.Enums;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -248,6 +249,14 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
+    public SearchSource getSearchSource(String projectId) {
+        return configApp.forceSearchSource()
+                .orElse(getProject(projectId, true)
+                        .flatMap(Project::getSearchSourceOverride)
+                        .orElseGet(() -> configApp.defaultSearchSource()));
+    }
+
+    @Override
     public Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin) {
         String subdomain = versionedConfigAdmin.getConfig().getSlug();
         Optional<String> domainOpt = Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
@@ -259,7 +268,8 @@ public class DynamoProjectStore implements ProjectStore {
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
                 ImmutableSet.of(),
                 gson.toJson(versionedConfigAdmin.getConfig()),
-                PROJECT_VERSION_LATEST);
+                PROJECT_VERSION_LATEST,
+                null);
         try {
             ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.<TransactWriteItem>builder()
                     .add(new TransactWriteItem().withPut(new Put()
@@ -906,6 +916,19 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public Optional<GitHub> getGitHubIntegration() {
             return Optional.ofNullable(versionedConfigAdmin.getConfig().getGithub());
+        }
+
+        @Override
+        public Optional<SearchSource> getSearchSourceOverride() {
+            return Optional.ofNullable(Strings.emptyToNull(getModel().getSearchSourceOverride()))
+                    .flatMap(searchSourceOverrideStr -> {
+                        Optional<SearchSource> searchSourceOpt = Enums.getIfPresent(SearchSource.class, searchSourceOverrideStr).toJavaUtil();
+                        if (searchSourceOpt.isEmpty() && LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchSourceOverride")) {
+                            log.warn("Invalid value for searchSourceOverride '{}' for project {}",
+                                    getModel().getSearchSourceOverride(), getProjectId());
+                        }
+                        return searchSourceOpt;
+                    });
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {

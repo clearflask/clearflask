@@ -13,18 +13,20 @@ import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
@@ -33,8 +35,9 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.support.WriteResponse;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.time.Instant;
 import java.util.List;
@@ -44,7 +47,19 @@ import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.*;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class CommentStoreIT extends AbstractIT {
+
+    @Parameterized.Parameter(0)
+    public SearchSource searchSource;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {SearchSource.READWRITE_ELASTICSEARCH},
+                {SearchSource.READWRITE_MYSQL},
+        };
+    }
 
     @Inject
     private CommentStore store;
@@ -67,6 +82,7 @@ public class CommentStoreIT extends AbstractIT {
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
+                MysqlUtil.module(),
                 ElasticUtil.module(),
                 DynamoElasticIdeaStore.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
@@ -78,6 +94,9 @@ public class CommentStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                }));
                 install(ConfigSystem.overrideModule(DynamoElasticCommentStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
@@ -134,7 +153,7 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().content(textToSimpleHtml("newContent")).build();
-        CommentStore.CommentAndIndexingFuture<WriteResponse> writeResponseCommentAndIndexingFuture = store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContentAsUnsafeHtml()));
+        CommentStore.CommentAndIndexingFuture<Void> writeResponseCommentAndIndexingFuture = store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContentAsUnsafeHtml()));
         writeResponseCommentAndIndexingFuture.getIndexingFuture().get();
         c = c.toBuilder().edited(writeResponseCommentAndIndexingFuture.getCommentModel().getEdited()).build();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
@@ -215,7 +234,7 @@ public class CommentStoreIT extends AbstractIT {
     }
 
     private CommentModel createRandomComment(String projectId, String ideaId, ImmutableList<String> parentCommentIds) throws Exception {
-        CommentStore.CommentAndIndexingFuture<List<WriteResponse>> commentAndFuture = store.createCommentAndUpvote(getRandomComment(projectId, ideaId, parentCommentIds));
+        CommentStore.CommentAndIndexingFuture<List<Void>> commentAndFuture = store.createCommentAndUpvote(getRandomComment(projectId, ideaId, parentCommentIds));
         commentAndFuture.getIndexingFuture().get();
         return commentAndFuture.getCommentModel();
     }

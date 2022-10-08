@@ -30,7 +30,6 @@ import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.message.BasicHeader;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -118,7 +117,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         checkState(restClientOpt.isPresent());
         Futures.allAsList(Arrays.stream(ElasticScript.values())
                         .map(script -> {
-                            SettableFuture<AcknowledgedResponse> scriptsFuture = SettableFuture.create();
+                            SettableFuture<Void> scriptsFuture = SettableFuture.create();
                             restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(gson),
                                     RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
                             return scriptsFuture;

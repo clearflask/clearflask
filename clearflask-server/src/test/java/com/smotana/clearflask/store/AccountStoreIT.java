@@ -2,18 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
@@ -22,29 +27,44 @@ import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.*;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class AccountStoreIT extends AbstractIT {
+
+    @Parameter(0)
+    public SearchSource searchSource;
+
+    @Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {SearchSource.READWRITE_ELASTICSEARCH},
+                {SearchSource.READWRITE_MYSQL},
+        };
+    }
 
     @Inject
     private AccountStore store;
@@ -77,8 +97,9 @@ public class AccountStoreIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
-                log.trace("Using generated priv key: {}", privKey);
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                }));
                 install(ConfigSystem.overrideModule(DynamoElasticAccountStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
@@ -336,6 +357,83 @@ public class AccountStoreIT extends AbstractIT {
                 // Same as in AccountResource.accountUpdateAdmin
                 account.getAttrs() == null || account.getAttrs().isEmpty());
         assertEquals(attrsExpected, account.getAttrs());
+    }
+
+    @Test(timeout = 30_000L)
+    public void testAccountSearch() throws Exception {
+        String accountId1 = store.genAccountId();
+        Account account1 = new Account(
+                accountId1,
+                "whateveryo@example.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "Adsfagregerghrthshgfdsg",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                ImmutableMap.of(),
+                null);
+        String accountId2 = store.genAccountId();
+        Account account2 = new Account(
+                accountId2,
+                "mysomethingemail@gmail.io",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "POIPLMQWPEEBQWNBENWQMNVEM",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                ImmutableMap.of(),
+                null);
+
+        store.createAccount(account1).getIndexingFuture().get();
+        assertAccountSearch(1, accountId1);
+        store.createAccount(account2).getIndexingFuture().get();
+        assertAccountSearch(1, accountId1, accountId2);
+
+        Stream.of(account1, account2).forEach(account -> {
+            assertAccountSearch(account.getEmail(), 1, account.getAccountId());
+            assertAccountSearch(account.getName(), 1, account.getAccountId());
+            assertAccountSearch(account.getEmail().substring(0, account.getEmail().length() - 2), 1, account.getAccountId());
+            assertAccountSearch(account.getName().substring(0, account.getName().length() - 2), 1, account.getAccountId());
+        });
+
+        store.updateName(accountId1, "NewName").getIndexingFuture().get();
+        assertAccountSearch(account1.getName(), 1);
+        assertAccountSearch("NewName", 1, accountId1);
+    }
+
+    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(int pageSize, String... expectedAccountIds) {
+        return assertAccountSearch(AccountSearchSuperAdmin.builder().build(), pageSize, expectedAccountIds);
+    }
+
+    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(String searchText, int pageSize, String... expectedAccountIds) {
+        return assertAccountSearch(AccountSearchSuperAdmin.builder()
+                .searchText(searchText).build(), pageSize, expectedAccountIds);
+    }
+
+    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(AccountSearchSuperAdmin search, int pageSize, String... expectedAccountIds) {
+        Optional<String> cursorOpt = Optional.empty();
+        Set<Object> actualAccountIds = Sets.newHashSet();
+        ImmutableList.Builder<com.smotana.clearflask.api.model.Account> actualAccountsBuilder = ImmutableList.builder();
+        do {
+            AccountStore.SearchAccountsResponse response = store.searchAccounts(search, true, cursorOpt, Optional.of(pageSize));
+            assertTrue("Result size " + response.getAccountIds().size() + " is higher than page size " + pageSize,
+                    response.getAccountIds().size() <= pageSize);
+            assertEquals(response.getAccountIds(),
+                    response.getAccounts().stream().map(com.smotana.clearflask.api.model.Account::getAccountId).collect(Collectors.toList()));
+            cursorOpt = response.getCursorOpt();
+            response.getAccountIds().forEach(accountId -> assertTrue("Already contained: " + accountId, actualAccountIds.add(accountId)));
+            actualAccountsBuilder.addAll(response.getAccounts());
+        } while (cursorOpt.isPresent());
+        assertEquals(ImmutableSet.copyOf(expectedAccountIds), actualAccountIds);
+        return actualAccountsBuilder.build();
     }
 
     @Test(timeout = 30_000L)

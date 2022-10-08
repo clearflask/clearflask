@@ -65,9 +65,11 @@ import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
@@ -82,11 +84,11 @@ import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
@@ -256,6 +258,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ImageNormalizationImpl.module(),
                 MockAuthCookie.module(),
                 UserBindUtil.module(),
+                MysqlUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 SimpleEmailValidator.module(),
@@ -264,6 +267,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    getSearchSource().ifPresent(searchSource -> om.override(om.id().defaultSearchSource()).withValue(searchSource));
                     om.override(om.id().startupWaitUntilDeps()).withValue(Boolean.TRUE);
                     om.override(om.id().domain()).withValue("localhost:8080");
                 }));
@@ -317,6 +321,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 }));
             }
         }));
+    }
+
+    protected Optional<SearchSource> getSearchSource() {
+        return Optional.empty();
     }
 
     @Before

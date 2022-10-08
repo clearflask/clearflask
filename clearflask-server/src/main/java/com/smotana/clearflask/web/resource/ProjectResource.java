@@ -60,8 +60,8 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.util.DateUtil;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -74,9 +74,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.joda.time.DateTime;
 
 import javax.annotation.Nullable;
@@ -436,14 +433,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         Project project = projectStore.createProject(account.getAccountId(), projectId, new VersionedConfigAdmin(configAdmin, "new"));
         try {
-            RetryerBuilder.<List<Optional<CreateIndexResponse>>>newBuilder()
+            RetryerBuilder.<List<Void>>newBuilder()
                     .withStopStrategy(StopStrategies.stopAfterDelay(3, TimeUnit.MINUTES))
                     .withWaitStrategy(WaitStrategies.exponentialWait(50, 15, TimeUnit.SECONDS))
                     .build()
                     .call(() -> {
-                        ListenableFuture<Optional<CreateIndexResponse>> commentIndexFuture = commentStore.createIndex(projectId);
-                        ListenableFuture<Optional<CreateIndexResponse>> userIndexFuture = userStore.createIndex(projectId);
-                        ListenableFuture<Optional<CreateIndexResponse>> ideaIndexFuture = ideaStore.createIndex(projectId);
+                        ListenableFuture<Void> commentIndexFuture = commentStore.createIndex(projectId);
+                        ListenableFuture<Void> userIndexFuture = userStore.createIndex(projectId);
+                        ListenableFuture<Void> ideaIndexFuture = ideaStore.createIndex(projectId);
                         accountStore.addProject(account.getAccountId(), projectId);
                         return Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
                     });
@@ -482,13 +479,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     public void projectDeleteAdmin(Account account, String projectId) {
         try {
-            ListenableFuture<WriteResponse> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
+            ListenableFuture<Void> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
-            ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
-            ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> userFuture = userStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> ideaFuture = ideaStore.deleteAllForProject(projectId);
             billing.recordUsage(Billing.UsageType.POST_DELETED, account.getAccountId(), projectId);
             draftStore.deleteAllForProject(projectId);
-            ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> commentFuture = commentStore.deleteAllForProject(projectId);
             voteStore.deleteAllForProject(projectId);
         } catch (Throwable th) {
             log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
@@ -683,7 +680,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         AtomicLong counter = new AtomicLong(0);
         AtomicReference<DateTimeFormatter> lastDateTimeFormatter = new AtomicReference<>();
         try (CSVParser csvFileParser = CSVParser.parse(body, Charsets.UTF_8, format)) {
-            ideaStore.createIdeas(StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
+            ideaStore.createIdeas(projectId, StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
                 limiter.acquire();
                 counter.incrementAndGet();
 
@@ -834,9 +831,18 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Extern
     private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
-        ideaStore.reindex(projectId, deleteExistingIndices);
-        userStore.reindex(projectId, deleteExistingIndices);
-        commentStore.reindex(projectId, deleteExistingIndices);
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        reindexProject(projectId,
+                deleteExistingIndices,
+                searchSource.isWriteElastic(),
+                searchSource.isWriteMysql());
+    }
+
+    @Extern
+    private void reindexProject(String projectId, boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        userStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+        ideaStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+        commentStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
     }
 
     public static Module module() {

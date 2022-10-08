@@ -67,14 +67,22 @@ import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.elastic.ActionListeners;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
+import com.smotana.clearflask.store.mysql.CompletionStageUtil;
+import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
+import com.smotana.clearflask.store.mysql.MoreSQLDataType;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
+import com.smotana.clearflask.store.mysql.model.tables.JooqUser;
+import com.smotana.clearflask.store.mysql.model.tables.records.JooqUserRecord;
 import com.smotana.clearflask.util.BloomFilters;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.OAuthUtil;
 import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.util.WebhookService;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
@@ -96,18 +104,14 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -116,10 +120,16 @@ import org.elasticsearch.index.query.ZeroTermsQueryOption;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Query;
+import org.jooq.SortField;
+import org.jooq.impl.SQLDataType;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -129,14 +139,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.util.ElasticUtil.*;
+import static com.smotana.clearflask.store.elastic.ElasticUtil.*;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
@@ -203,6 +214,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     @Named("user")
     private ConfigSearch configSearch;
     @Inject
@@ -219,6 +232,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private Gson gson;
     @Inject
     private WebhookService webhookService;
+    @Inject
+    private ProjectStore projectStore;
+    @Inject
+    private DSLContext mysql;
+    @Inject
+    private MysqlUtil mysqlUtil;
 
     private TableSchema<UserModel> userSchema;
     private IndexSchema<UserModel> userByProjectIdSchema;
@@ -241,10 +260,17 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    protected void serviceStart() throws Exception {
-        client = HttpClientBuilder.create().build();
+    protected ImmutableSet<Class> serviceDependencies() {
+        return ImmutableSet.of(DefaultMysqlProvider.class);
     }
 
+    @Override
+    protected void serviceStart() throws Exception {
+        client = HttpClientBuilder.create().build();
+        if (configApp.createIndexesOnStartup() && configApp.defaultSearchSource().isWriteMysql()) {
+            createIndexMysql();
+        }
+    }
 
     @Override
     protected void serviceStop() throws Exception {
@@ -255,8 +281,34 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Extern
     @Override
-    public ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId) {
-        SettableFuture<Optional<CreateIndexResponse>> indexingFuture = SettableFuture.create();
+    public ListenableFuture<Void> createIndex(String projectId) {
+        if (projectStore.getSearchSource(projectId).isWriteElastic()) {
+            return createIndexElasticSearch(projectId);
+        } else {
+            return Futures.immediateFuture(null);
+        }
+    }
+
+    @Extern
+    private void createIndexMysql() {
+        log.debug("Creating Mysql table {}", USER_INDEX);
+        mysql.createTableIfNotExists(USER_INDEX)
+                .column("projectId", SQLDataType.VARCHAR(255).notNull())
+                .column("userId", SQLDataType.VARCHAR(255).notNull())
+                .column("name", SQLDataType.VARCHAR(255))
+                .column("email", SQLDataType.VARCHAR(255))
+                .column("created", MoreSQLDataType.DATETIME(6).notNull())
+                .column("balance", SQLDataType.BIGINT)
+                .column("isMod", SQLDataType.BOOLEAN)
+                .primaryKey("projectId", "userId")
+                .execute();
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqUser.USER, JooqUser.USER.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqUser.USER, JooqUser.USER.ISMOD));
+    }
+
+    @Extern
+    private ListenableFuture<Void> createIndexElasticSearch(String projectId) {
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
                         .settings(gson.toJson(ImmutableMap.of(
                                 "index", ImmutableMap.of(
@@ -297,17 +349,26 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Extern
     @Override
-    public void reindex(String projectId, boolean deleteExistingIndex) throws Exception {
-        boolean indexAlreadyExists = elastic.indices().exists(
-                new GetIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
-                RequestOptions.DEFAULT);
-        if (indexAlreadyExists && deleteExistingIndex) {
-            elastic.indices().delete(
-                    new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+    public void repopulateIndex(String projectId, boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        log.info("Repopulating index for project {} deleteExistingIndex {} repopulateElasticSearch {} repopulateMysql {}",
+                projectId, deleteExistingIndex, repopulateElasticSearch, repopulateMysql);
+        if (repopulateElasticSearch) {
+            boolean indexAlreadyExists = elastic.indices().exists(
+                    new GetIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                     RequestOptions.DEFAULT);
+            if (indexAlreadyExists && deleteExistingIndex) {
+                elastic.indices().delete(
+                        new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+                        RequestOptions.DEFAULT);
+            }
+            if (!indexAlreadyExists || deleteExistingIndex) {
+                createIndexElasticSearch(projectId).get();
+            }
         }
-        if (!indexAlreadyExists || deleteExistingIndex) {
-            createIndex(projectId).get();
+        if (repopulateMysql && deleteExistingIndex) {
+            mysql.deleteFrom(JooqUser.USER)
+                    .where(JooqUser.USER.PROJECTID.eq(projectId))
+                    .execute();
         }
 
         StreamSupport.stream(userByProjectIdSchema.index().query(new QuerySpec()
@@ -320,12 +381,20 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(userByProjectIdSchema::fromItem)
                 .filter(user -> projectId.equals(user.getProjectId()))
-                .forEach(user -> elastic.indexAsync(userToEsIndexRequest(user),
-                        RequestOptions.DEFAULT, ActionListeners.onFailure(ex -> {
+                .forEach(user -> {
+                    if (repopulateElasticSearch) {
+                        try {
+                            elastic.index(userToEsIndexRequest(user), RequestOptions.DEFAULT);
+                        } catch (IOException ex) {
                             if (LogUtil.rateLimitAllowLog("dynamoelsaticuserstore-reindex-failure")) {
                                 log.warn("Failed to re-index user {}", user.getUserId(), ex);
                             }
-                        })));
+                        }
+                    }
+                    if (repopulateMysql) {
+                        userToMysqlQuery(user).execute();
+                    }
+                });
     }
 
     @Override
@@ -356,7 +425,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             throw ex;
         }
 
-        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
         indexUser(indexingFuture, user);
 
         // This should really be in the IdeaResource, but there are too many references to create a user
@@ -413,89 +482,160 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
         }
 
-        return elasticUtil.histogram(
-                elasticUtil.getIndexName(USER_INDEX, projectId),
-                "created",
-                Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
-                Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
-                Optional.ofNullable(searchAdmin.getInterval()),
-                Optional.empty());
+        if (projectStore.getSearchSource(projectId).isReadElastic()) {
+            return elasticUtil.histogram(
+                    elasticUtil.getIndexName(USER_INDEX, projectId),
+                    "created",
+                    Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
+                    Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
+                    Optional.ofNullable(searchAdmin.getInterval()),
+                    Optional.empty());
+        } else {
+            return mysqlUtil.histogram(
+                    JooqUser.USER,
+                    JooqUser.USER.CREATED,
+                    Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
+                    Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
+                    Optional.ofNullable(searchAdmin.getInterval()),
+                    Optional.empty());
+        }
     }
 
     @Override
     public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        Optional<SortOrder> sortOrderOpt;
-        if (userSearchAdmin.getSortOrder() != null) {
-            switch (userSearchAdmin.getSortOrder()) {
-                case ASC:
-                    sortOrderOpt = Optional.of(SortOrder.ASC);
-                    break;
-                case DESC:
-                    sortOrderOpt = Optional.of(SortOrder.DESC);
-                    break;
-                default:
-                    throw new ApiException(Response.Status.BAD_REQUEST,
-                            "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
+        if (projectStore.getSearchSource(projectId).isReadElastic()) {
+            Optional<SortOrder> sortOrderOpt;
+            if (userSearchAdmin.getSortOrder() != null) {
+                switch (userSearchAdmin.getSortOrder()) {
+                    case ASC:
+                        sortOrderOpt = Optional.of(SortOrder.ASC);
+                        break;
+                    case DESC:
+                        sortOrderOpt = Optional.of(SortOrder.DESC);
+                        break;
+                    default:
+                        throw new ApiException(Response.Status.BAD_REQUEST,
+                                "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
+                }
+            } else {
+                sortOrderOpt = Optional.empty();
             }
-        } else {
-            sortOrderOpt = Optional.empty();
-        }
 
-        ImmutableList<String> sortFields;
-        if (userSearchAdmin.getSortBy() != null) {
-            switch (userSearchAdmin.getSortBy()) {
-                case CREATED:
-                    sortFields = ImmutableList.of("created");
-                    break;
-                case FUNDSAVAILABLE:
-                    sortFields = ImmutableList.of("balance");
-                    break;
-                case FUNDEDIDEAS:
-                case SUPPORTEDIDEAS:
-                case FUNDEDAMOUNT:
-                case LASTACTIVE:
-                default:
-                    throw new ApiException(Response.Status.BAD_REQUEST,
-                            "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
+            ImmutableList<String> sortFields;
+            if (userSearchAdmin.getSortBy() != null) {
+                switch (userSearchAdmin.getSortBy()) {
+                    case CREATED:
+                        sortFields = ImmutableList.of("created");
+                        break;
+                    case FUNDSAVAILABLE:
+                        sortFields = ImmutableList.of("balance");
+                        break;
+                    case FUNDEDIDEAS:
+                    case SUPPORTEDIDEAS:
+                    case FUNDEDAMOUNT:
+                    case LASTACTIVE:
+                    default:
+                        throw new ApiException(Response.Status.BAD_REQUEST,
+                                "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
+                }
+            } else {
+                sortFields = ImmutableList.of();
             }
-        } else {
-            sortFields = ImmutableList.of();
-        }
 
-        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        if (userSearchAdmin.getIsMod() != null) {
-            queryBuilder.must(QueryBuilders.termQuery("isMod", userSearchAdmin.getIsMod().booleanValue()));
-        }
-        if (!Strings.isNullOrEmpty(userSearchAdmin.getSearchText())) {
-            queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                    .fuzziness("AUTO").zeroTermsQuery(ZeroTermsQueryOption.ALL));
-        }
-        log.trace("User search query: {}", queryBuilder);
-        ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
-                new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
-                        .source(new SearchSourceBuilder()
-                                .fetchSource(false)
-                                .query(queryBuilder)),
-                cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, pageSizeOpt, configSearch, ImmutableSet.of());
+            BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+            if (userSearchAdmin.getIsMod() != null) {
+                queryBuilder.must(QueryBuilders.termQuery("isMod", userSearchAdmin.getIsMod().booleanValue()));
+            }
+            if (!Strings.isNullOrEmpty(userSearchAdmin.getSearchText())) {
+                queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                        .fuzziness("AUTO").zeroTermsQuery(ZeroTermsQueryOption.ALL));
+            }
+            log.trace("User search query: {}", queryBuilder);
+            ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
+                    new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
+                            .source(new SearchSourceBuilder()
+                                    .fetchSource(false)
+                                    .query(queryBuilder)),
+                    cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, pageSizeOpt, configSearch, ImmutableSet.of());
 
-        SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
-        if (hits.length == 0) {
+            SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
+            if (hits.length == 0) {
+                return new SearchUsersResponse(
+                        ImmutableList.of(),
+                        Optional.empty(),
+                        0L,
+                        false);
+            }
+
+            ImmutableList<String> userIds = Arrays.stream(hits)
+                    .map(SearchHit::getId)
+                    .collect(ImmutableList.toImmutableList());
+
             return new SearchUsersResponse(
-                    ImmutableList.of(),
-                    Optional.empty(),
-                    0L,
-                    false);
+                    userIds,
+                    searchResponseWithCursor.getCursorOpt(),
+                    searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
+                    searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
+        } else {
+            org.jooq.SortOrder sortOrder;
+            if (userSearchAdmin.getSortOrder() != null) {
+                switch (userSearchAdmin.getSortOrder()) {
+                    case ASC:
+                        sortOrder = org.jooq.SortOrder.ASC;
+                        break;
+                    case DESC:
+                        sortOrder = org.jooq.SortOrder.DESC;
+                        break;
+                    default:
+                        throw new ApiException(Response.Status.BAD_REQUEST,
+                                "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
+                }
+            } else {
+                sortOrder = org.jooq.SortOrder.DEFAULT;
+            }
+
+            ImmutableList<SortField<?>> sortFields;
+            if (userSearchAdmin.getSortBy() != null) {
+                switch (userSearchAdmin.getSortBy()) {
+                    case CREATED:
+                        sortFields = ImmutableList.of(JooqUser.USER.CREATED.sort(sortOrder));
+                        break;
+                    case FUNDSAVAILABLE:
+                        sortFields = ImmutableList.of(JooqUser.USER.BALANCE.sort(sortOrder));
+                        break;
+                    case FUNDEDIDEAS:
+                    case SUPPORTEDIDEAS:
+                    case FUNDEDAMOUNT:
+                    case LASTACTIVE:
+                    default:
+                        throw new ApiException(Response.Status.BAD_REQUEST,
+                                "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
+                }
+            } else {
+                sortFields = ImmutableList.of();
+            }
+
+            Optional<Condition> conditionIsModOpt = Optional.ofNullable(userSearchAdmin.getIsMod())
+                    .map(JooqUser.USER.ISMOD::eq);
+
+            Optional<Condition> conditionSearchTextOpt = Optional.ofNullable(Strings.emptyToNull(userSearchAdmin.getSearchText()))
+                    .map(searchText -> JooqUser.USER.NAME.like("%" + searchText + "%")
+                            .or(JooqUser.USER.EMAIL.like("%" + searchText + "%")));
+
+            List<String> userIds = mysql.select(JooqUser.USER.USERID)
+                    .from(JooqUser.USER)
+                    .where(mysqlUtil.and(conditionIsModOpt, conditionSearchTextOpt))
+                    .orderBy(sortFields)
+                    .offset(mysqlUtil.offset(cursorOpt))
+                    .limit(mysqlUtil.limit(configSearch, pageSizeOpt))
+                    .fetch(JooqUser.USER.USERID);
+
+            return new SearchUsersResponse(
+                    ImmutableList.copyOf(userIds),
+                    mysqlUtil.nextCursor(configSearch, cursorOpt, pageSizeOpt, userIds.size()),
+                    userIds.size(),
+                    true);
         }
-
-        ImmutableList<String> userIds = Arrays.stream(hits)
-                .map(SearchHit::getId)
-                .collect(ImmutableList.toImmutableList());
-
-        return new SearchUsersResponse(
-                userIds,
-                searchResponseWithCursor.getCursorOpt(),
-                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
-                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
     }
 
     @Override
@@ -631,6 +771,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         List<String> removeUpdates = Lists.newArrayList();
         ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.builder();
         Map<String, Object> indexUpdates = Maps.newHashMap();
+        JooqUserRecord mysqlUpdates = JooqUser.USER.newRecord();
         boolean updateAuthTokenValidityStart = false;
         UpdateIdentifierFunction updateIdentifier = (type, oldVal, newVal) -> {
             if (!Strings.isNullOrEmpty(newVal)) {
@@ -665,6 +806,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             valMap.put(":name", userSchema.toAttrValue("name", updates.getName()));
             setUpdates.add("#name = :name");
             indexUpdates.put("name", updates.getName());
+            mysqlUpdates.setName(updates.getName());
             userUpdatedBuilder.name(updates.getName());
         }
         if (updates.getEmail() != null) {
@@ -681,6 +823,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             valMap.put(":emailLastUpdated", userSchema.toAttrValue("emailLastUpdated", emailLastUpdated));
             setUpdates.add("#emailLastUpdated = :emailLastUpdated");
             indexUpdates.put("email", updates.getEmail());
+            mysqlUpdates.setEmail(updates.getEmail());
             updateIdentifier.apply(IdentifierType.EMAIL, user.getEmail(), updates.getEmail());
             userUpdatedBuilder.email(updates.getEmail())
                     .emailLastUpdated(emailLastUpdated);
@@ -748,6 +891,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             }
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
+            mysqlUpdates.setIsmod(updates.getIsMod());
             // TODO update all sessions that user is mod instead of revoking
             revokeSessions(projectId, userId, Optional.empty());
         }
@@ -790,18 +934,36 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             throw ex;
         }
 
-        UserModel userUpdated = userUpdatedBuilder.build();
-        if (!indexUpdates.isEmpty()) {
-            SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
-                            .doc(gson.toJson(indexUpdates), XContentType.JSON)
-                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT,
-                    ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId)));
-            return new UserAndIndexingFuture(userUpdated, indexingFuture);
-        } else {
-            return new UserAndIndexingFuture(userUpdated, Futures.immediateFuture(null));
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        if (searchSource.isWriteElastic()) {
+            if (indexUpdates.size() > 0) {
+                elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
+                                .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                                .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                        RequestOptions.DEFAULT,
+                        searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
+                                : ActionListeners.onFailureRetry(() -> indexUser(projectId, userId)));
+            } else if (searchSource.isReadElastic()) {
+                indexingFuture.set(null);
+            }
         }
+        if (searchSource.isWriteMysql()) {
+            if (mysqlUpdates.changed()) {
+                CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
+                        .set(mysqlUpdates)
+                        .where(JooqUser.USER.PROJECTID.eq(projectId)
+                                .and(JooqUser.USER.USERID.eq(userId)))
+                        .executeAsync();
+                if (searchSource.isReadMysql()) {
+                    CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                }
+            } else if (searchSource.isReadMysql()) {
+                indexingFuture.set(null);
+            }
+        }
+
+        return new UserAndIndexingFuture(userUpdatedBuilder.build(), indexingFuture);
     }
 
     @Override
@@ -931,23 +1093,38 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             throw new ApiException(Response.Status.BAD_REQUEST, "Not enough credits");
         }
 
-        SettableFuture<WriteResponse> indexingFuture = SettableFuture.create();
-        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
-                        .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                RequestOptions.DEFAULT,
-                ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId)));
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        if (searchSource.isWriteElastic()) {
+            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
+                            .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                    RequestOptions.DEFAULT,
+                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
+                            : ActionListeners.onFailureRetry(() -> indexUser(projectId, userId)));
+        }
+        if (searchSource.isWriteMysql()) {
+            CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
+                    .set(JooqUser.USER.BALANCE, userModel.getBalance())
+                    .where(JooqUser.USER.PROJECTID.eq(projectId)
+                            .and(JooqUser.USER.USERID.eq(userId)))
+                    .executeAsync();
+            if (searchSource.isReadMysql()) {
+                CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            }
+        }
+
         return new UserAndIndexingFuture(userModel, indexingFuture);
     }
 
     @Override
-    public Future<Optional<BulkResponse>> deleteUsers(String projectId, ImmutableCollection<String> userIds) {
+    public ListenableFuture<Void> deleteUsers(String projectId, ImmutableCollection<String> userIds) {
         if (userIds.isEmpty()) {
-            return Futures.immediateFuture(Optional.empty());
+            return Futures.immediateFuture(null);
         }
         ImmutableCollection<UserModel> users = getUsers(projectId, userIds).values();
         if (users.isEmpty()) {
-            return Futures.immediateFuture(Optional.empty());
+            return Futures.immediateFuture(null);
         }
         singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(userSchema.tableName()).withPrimaryKeysToDelete(users.stream()
                 .map(userModel -> userSchema.primaryKey(Map.of(
@@ -976,15 +1153,31 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .map(UserModel::getUserId)
                 .forEach(userId -> revokeSessions(projectId, userId, Optional.empty()));
 
-        SettableFuture<BulkResponse> indexingFuture = SettableFuture.create();
-        elastic.bulkAsync(new BulkRequest()
-                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                        .add(users.stream()
-                                .map(user -> new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId()))
-                                .collect(ImmutableList.toImmutableList())),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        if (searchSource.isWriteElastic()) {
+            elastic.bulkAsync(new BulkRequest()
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                            .add(users.stream()
+                                    .map(user -> new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId()))
+                                    .collect(ImmutableList.toImmutableList())),
+                    RequestOptions.DEFAULT,
+                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                            : ActionListeners.logFailure());
+        }
+        if (searchSource.isWriteMysql()) {
+            CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+                    .where(JooqUser.USER.PROJECTID.eq(projectId)
+                            .and(JooqUser.USER.USERID.in(users.stream()
+                                    .map(UserModel::getUserId)
+                                    .collect(Collectors.toList()))))
+                    .executeAsync();
+            if (searchSource.isReadMysql()) {
+                CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            }
+        }
 
-        return Futures.lazyTransform(indexingFuture, Optional::of);
+        return indexingFuture;
     }
 
     @Override
@@ -1312,7 +1505,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Extern
     @Override
-    public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
+    public ListenableFuture<Void> deleteAllForProject(String projectId) {
         // Delete users
         Iterables.partition(StreamSupport.stream(userByProjectIdSchema.index().query(new QuerySpec()
                                         .withHashKey(userByProjectIdSchema.partitionKey(Map.of(
@@ -1378,28 +1571,91 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 });
 
         // Delete user index
-        SettableFuture<AcknowledgedResponse> deleteFuture = SettableFuture.create();
-        elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
+        SettableFuture<Void> indexingFuture = SettableFuture.create();
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        if (searchSource.isWriteElastic()) {
+            elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+                    RequestOptions.DEFAULT,
+                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                            : ActionListeners.logFailure());
+        }
+        if (searchSource.isWriteMysql()) {
+            CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+                    .where(JooqUser.USER.PROJECTID.eq(projectId))
+                    .executeAsync();
+            if (searchSource.isReadMysql()) {
+                CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            }
+        }
 
         // Note: not deleting sessions, they will expire themselves eventually
 
-        return deleteFuture;
+        return indexingFuture;
     }
 
-    private void indexUser(SettableFuture<WriteResponse> indexingFuture, String projectId, String userId) {
+    private void indexUser(String projectId, String userId) {
+        indexUser(SettableFuture.create(), projectId, userId);
+    }
+
+    private void indexUser(SettableFuture<Void> indexingFuture, String projectId, String userId) {
         Optional<UserModel> userOpt = getUser(projectId, userId);
         if (!userOpt.isPresent()) {
-            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+            ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+            if (searchSource.isWriteElastic()) {
+                elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
+                        RequestOptions.DEFAULT,
+                        searchSource.isReadElastic()
+                                ? ActionListeners.fromFuture(indexingFuture)
+                                : ActionListeners.logFailure());
+            }
+            if (searchSource.isWriteMysql()) {
+                CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+                        .where(JooqUser.USER.PROJECTID.eq(projectId)
+                                .and(JooqUser.USER.USERID.eq(userId)))
+                        .executeAsync();
+                if (searchSource.isReadMysql()) {
+                    CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                }
+            }
         } else {
             indexUser(indexingFuture, userOpt.get());
         }
     }
 
-    private void indexUser(SettableFuture<WriteResponse> indexingFuture, UserModel user) {
-        elastic.indexAsync(userToEsIndexRequest(user),
-                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+    private void indexUser(UserModel user) {
+        indexUser(SettableFuture.create(), user);
+    }
+
+    private void indexUser(SettableFuture<Void> indexingFuture, UserModel user) {
+        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(user.getProjectId());
+        if (searchSource.isWriteElastic()) {
+            elastic.indexAsync(userToEsIndexRequest(user),
+                    RequestOptions.DEFAULT,
+                    searchSource.isReadElastic()
+                            ? ActionListeners.fromFuture(indexingFuture)
+                            : ActionListeners.logFailure());
+        }
+        if (searchSource.isWriteMysql()) {
+            CompletionStage<Integer> completionStage = userToMysqlQuery(user).executeAsync();
+            if (searchSource.isReadMysql()) {
+                CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            }
+        }
+    }
+
+    private Query userToMysqlQuery(UserModel user) {
+        JooqUserRecord record = JooqUser.USER.newRecord().values(
+                user.getProjectId(),
+                user.getUserId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreated(),
+                user.getBalance(),
+                user.getIsMod());
+        return mysql.insertInto(JooqUser.USER, JooqUser.USER.fields())
+                .values(record)
+                .onDuplicateKeyUpdate()
+                .set(record);
     }
 
     private IndexRequest userToEsIndexRequest(UserModel user) {

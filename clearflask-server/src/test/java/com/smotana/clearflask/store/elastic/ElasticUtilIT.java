@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-package com.smotana.clearflask.util;
+package com.smotana.clearflask.store.elastic;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -13,9 +13,13 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.ContentStore;
+import com.smotana.clearflask.store.elastic.ElasticUtil.ConfigSearch;
+import com.smotana.clearflask.store.elastic.ElasticUtil.PaginationType;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
-import com.smotana.clearflask.util.ElasticUtil.PaginationType;
+import com.smotana.clearflask.util.DefaultServerSecret;
+import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;

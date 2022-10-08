@@ -18,16 +18,18 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
@@ -37,6 +39,8 @@ import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -50,7 +54,19 @@ import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.*;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class IdeaStoreIT extends AbstractIT {
+
+    @Parameterized.Parameter(0)
+    public SearchSource searchSource;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {SearchSource.READWRITE_ELASTICSEARCH},
+                {SearchSource.READWRITE_MYSQL},
+        };
+    }
 
     @Inject
     private IdeaStore store;
@@ -71,6 +87,7 @@ public class IdeaStoreIT extends AbstractIT {
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
+                MysqlUtil.module(),
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
@@ -81,6 +98,9 @@ public class IdeaStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
@@ -380,6 +400,7 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea7).get();
 
         LocalDate nowDate = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        // Should match idea[1-3] only
         HistogramResponse histogram = store.histogram(projectId, IdeaHistogramSearchAdmin.builder()
                 .filterCategoryIds(ImmutableList.of("c1"))
                 .filterStatusIds(ImmutableList.of("s1"))
@@ -392,7 +413,11 @@ public class IdeaStoreIT extends AbstractIT {
                         new HistogramResponsePoints(nowDate.minusDays(3), 2L),
                         new HistogramResponsePoints(nowDate.minusDays(1), 1L)),
                 histogram.getPoints());
-        assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
+        if (Boolean.TRUE.equals(histogram.getHits().getIsGte())) {
+            assertTrue(5 >= histogram.getHits().getValue());
+        } else {
+            assertEquals(Long.valueOf(5L), histogram.getHits().getValue());
+        }
     }
 
     @Test(timeout = 30_000L)
