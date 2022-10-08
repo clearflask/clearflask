@@ -279,6 +279,15 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
+            if (Optional.ofNullable(ex.getBillingException()).flatMap(ex2 -> Optional.ofNullable(ex2.getCode()))
+                    .filter(code -> code.equals(ErrorCode.SUB_CREATE_BP_EXISTS.getCode()))
+                    .isPresent()) {
+                // If already exists, return it
+                Optional<Subscription> subscriptionOpt = getSubscriptionByBundleExternalKey(accountInDyn.getAccountId(), false);
+                if (subscriptionOpt.isPresent()) {
+                    return subscriptionOpt.get();
+                }
+            }
             log.warn("Failed to create KillBill Subscription for accountId {} email {} name {}",
                     account.getAccountId(), accountInDyn.getEmail(), accountInDyn.getName(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
