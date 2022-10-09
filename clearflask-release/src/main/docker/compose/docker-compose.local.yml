@@ -51,7 +51,7 @@ services:
       - 8082:8080
     environment:
       - KILLBILL_DAO_URL=jdbc:mysql://mysql-db:3306/killbill
-      - KILLBILL_DAO_USER=killbill
+      - KILLBILL_DAO_USER=root
       - KILLBILL_DAO_PASSWORD=killbill
       - KILLBILL_SERVER_TEST_MODE=true
       - KILLBILL_NOTIFICATIONQ_ANALYTICS_TABLE_NAME=analytics_notifications
@@ -71,7 +71,7 @@ services:
       - 8081:8080
     environment:
       - KAUI_CONFIG_DAO_URL=jdbc:mysql://mysql-db:3306/kaui
-      - KAUI_CONFIG_DAO_USER=killbill
+      - KAUI_CONFIG_DAO_USER=root
       - KAUI_CONFIG_DAO_PASSWORD=killbill
       - KAUI_KILLBILL_URL=http://killbill-engine:8080
   mysql-db:
