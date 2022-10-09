@@ -88,6 +88,7 @@ public class ModelUtil {
                 null,
                 null,
                 null,
+                null,
                 null
         ), IdUtil.randomAscId());
     }

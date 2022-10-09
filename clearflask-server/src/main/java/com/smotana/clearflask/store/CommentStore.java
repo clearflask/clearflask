@@ -34,8 +34,7 @@ import java.util.function.Consumer;
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
-public interface
-CommentStore {
+public interface CommentStore {
 
     default String genCommentId(String content) {
         return IdUtil.contentUnique(content);

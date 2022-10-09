@@ -47,6 +47,7 @@ public class ProjectStoreTest extends AbstractTest {
 
         bindMock(ContentStore.class);
         bindMock(ProjectUpgrader.class);
+        bindMock(AccountStore.class);
 
         install(Modules.override(
                 Application.module(),

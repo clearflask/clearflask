@@ -331,6 +331,13 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 log.info("Removing webhook with url {}", webhookUrl);
                 hook.delete();
             }
+        } catch (HttpException ex) {
+            if (ex.getResponseCode() == 403) {
+                log.info("Failed to remove webhook, no permission to do so for project {} installation {} repository {}",
+                        projectId, installationId, repositoryId);
+                return;
+            }
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to remove webhook", ex);
         } catch (IOException ex) {
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to remove webhook", ex);
         }

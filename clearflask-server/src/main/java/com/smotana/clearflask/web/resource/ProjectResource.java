@@ -328,7 +328,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             }
         }
         boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
-        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfigAdmin()), configAdmin);
+        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 accountId,

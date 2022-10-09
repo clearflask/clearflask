@@ -25,7 +25,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
-import com.google.common.base.Enums;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -87,7 +86,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ProjectUpgraderImpl.PROJECT_VERSION_LATEST;
-
+ 
 @Slf4j
 @Singleton
 public class DynamoProjectStore implements ProjectStore {
@@ -946,15 +945,17 @@ public class DynamoProjectStore implements ProjectStore {
             return Optional.ofNullable(getVersionedConfigAdmin().getConfig().getForceSearchEngine())
                     .flatMap(forceSearchEngine -> {
                         switch (forceSearchEngine) {
-
+                            case ELASTICSEARCH:
+                                return Optional.of(SearchEngine.READWRITE_ELASTICSEARCH);
+                            case MYSQL:
+                                return Optional.of(SearchEngine.READWRITE_MYSQL);
                             default:
-                                if (searchSourceOpt.isEmpty() && LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchEngineOverride")) {
+                                if (LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchEngineOverride")) {
                                     log.warn("Invalid value for forceSearchEngine '{}' for project {}",
-                                            searchSourceOverrideStr, getProjectId());
+                                            forceSearchEngine, getProjectId());
                                 }
                                 return Optional.empty();
                         }
-                        return searchSourceOpt;
                     });
         }
 

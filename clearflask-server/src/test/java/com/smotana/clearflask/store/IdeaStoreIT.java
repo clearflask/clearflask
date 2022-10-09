@@ -21,6 +21,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
@@ -83,6 +84,7 @@ public class IdeaStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 DynamoElasticIdeaStore.module(),
+                DynamoElasticAccountStore.module(),
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
