@@ -8,6 +8,10 @@ import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -90,6 +94,24 @@ public class NetworkUtil {
 
                 } catch (IOException e) {
                     return false;
+                }
+            });
+        } catch (ExecutionException | RetryException ex) {
+            throw new IOException(ex);
+        }
+    }
+
+    public static void waitUntil200(String url) throws IOException {
+        Retryer<Integer> retryer = RetryerBuilder.<Integer>newBuilder()
+                .retryIfResult(result -> result < 200 || result > 299)
+                .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.MINUTES))
+                .withWaitStrategy(WaitStrategies.exponentialWait(50, 5, TimeUnit.SECONDS))
+                .build();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            retryer.call(() -> {
+                HttpGet req = new HttpGet(url);
+                try (CloseableHttpResponse res = client.execute(req)) {
+                    return res.getStatusLine().getStatusCode();
                 }
             });
         } catch (ExecutionException | RetryException ex) {
