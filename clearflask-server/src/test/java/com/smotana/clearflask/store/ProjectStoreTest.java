@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.ProjectStore.SlugModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -22,7 +23,6 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgrader;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -42,6 +42,11 @@ public class ProjectStoreTest extends AbstractTest {
     private SingleTable singleTable;
 
     @Override
+    protected SearchEngine overrideSearchEngine() {
+        return SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH;
+    }
+
+    @Override
     protected void configure() {
         super.configure();
 
@@ -59,9 +64,6 @@ public class ProjectStoreTest extends AbstractTest {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchEngine()).withValue(ProjectStore.SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH);
-                }));
                 install(ConfigSystem.overrideModule(DynamoProjectStore.Config.class, om -> {
                     om.override(om.id().enableConfigCacheRead()).withValue(true);
                     om.override(om.id().enableSlugCacheRead()).withValue(true);
