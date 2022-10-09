@@ -65,7 +65,6 @@ import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -96,7 +95,6 @@ import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.PaymentTestPluginConfigure.PaymentTestPluginAction;
 import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
@@ -265,11 +263,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    getSearchEngine().ifPresent(searchEngine -> om.override(om.id().defaultSearchEngine()).withValue(searchEngine));
-                    om.override(om.id().startupWaitUntilDeps()).withValue(Boolean.TRUE);
-                    om.override(om.id().domain()).withValue("localhost:8080");
-                }));
                 install(ConfigSystem.overrideModule(KillBilling.Config.class, om -> {
                     om.override(om.id().reuseDraftInvoices()).withValue(false);
                 }));
@@ -320,10 +313,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 }));
             }
         }));
-    }
-
-    protected Optional<SearchEngine> getSearchEngine() {
-        return Optional.empty();
     }
 
     @Before

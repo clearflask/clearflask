@@ -31,7 +31,6 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +64,11 @@ public class AccountStoreIT extends AbstractIT {
         };
     }
 
+    @Override
+    protected ProjectStore.SearchEngine overrideSearchEngine() {
+        return searchEngine;
+    }
+
     @Inject
     private AccountStore store;
 
@@ -94,9 +98,6 @@ public class AccountStoreIT extends AbstractIT {
             protected void configure() {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
-                }));
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
                 }));
                 install(ConfigSystem.overrideModule(DynamoElasticAccountStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);

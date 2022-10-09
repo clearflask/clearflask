@@ -32,7 +32,6 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +59,11 @@ public class CommentStoreIT extends AbstractIT {
                 {ProjectStore.SearchEngine.READWRITE_ELASTICSEARCH},
                 {SearchEngine.READWRITE_MYSQL},
         };
+    }
+
+    @Override
+    protected ProjectStore.SearchEngine overrideSearchEngine() {
+        return searchEngine;
     }
 
     @Inject
@@ -95,9 +99,6 @@ public class CommentStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
-                }));
                 install(ConfigSystem.overrideModule(DynamoElasticCommentStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));

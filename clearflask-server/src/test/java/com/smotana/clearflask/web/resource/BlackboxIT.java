@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.InputStream;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
@@ -62,8 +61,8 @@ public class BlackboxIT extends AbstractBlackboxIT {
     }
 
     @Override
-    protected Optional<SearchEngine> getSearchEngine() {
-        return Optional.ofNullable(searchEngine);
+    protected SearchEngine overrideSearchEngine() {
+        return searchEngine;
     }
 
     @Test(timeout = 300_000L)

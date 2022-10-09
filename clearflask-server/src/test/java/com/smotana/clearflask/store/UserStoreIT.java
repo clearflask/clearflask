@@ -34,7 +34,6 @@ import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
@@ -68,6 +67,11 @@ public class UserStoreIT extends AbstractIT {
         };
     }
 
+    @Override
+    protected ProjectStore.SearchEngine overrideSearchEngine() {
+        return searchEngine;
+    }
+
     @Inject
     private UserStore store;
 
@@ -96,9 +100,6 @@ public class UserStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
-                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));

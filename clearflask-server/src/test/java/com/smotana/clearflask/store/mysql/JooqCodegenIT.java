@@ -19,7 +19,6 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +46,11 @@ public class JooqCodegenIT extends AbstractIT {
     private DefaultMysqlProvider.Config configMysql;
 
     @Override
+    protected ProjectStore.SearchEngine overrideSearchEngine() {
+        return ProjectStore.SearchEngine.READ_MYSQL_WRITE_BOTH;
+    }
+
+    @Override
     protected void configure() {
         super.configure();
 
@@ -69,10 +73,6 @@ public class JooqCodegenIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchEngine()).withValue(ProjectStore.SearchEngine.READ_MYSQL_WRITE_BOTH);
-                    om.override(om.id().createIndexesOnStartup()).withValue(true);
-                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
