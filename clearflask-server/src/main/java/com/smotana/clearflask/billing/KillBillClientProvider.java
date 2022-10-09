@@ -82,7 +82,7 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
             log.info("Waiting for KillBill to be up {}", serviceEndpoint);
             try {
                 NetworkUtil.waitUntilPortOpen(config.host(), config.port());
-                NetworkUtil.waitUntil200(serviceEndpoint + "/healthcheck");
+                NetworkUtil.waitUntil200(serviceEndpoint + "/1.0/healthcheck");
             } catch (IOException ex) {
                 throw new ProvisionException("Failed to wait until KillBill port opened", ex);
             }
