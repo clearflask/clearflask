@@ -4,6 +4,7 @@ package com.smotana.clearflask.store.elastic;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
@@ -37,7 +38,7 @@ public enum ElasticScript {
             checkArgument(split.length == 2);
             this.name = split[0];
             this.lang = split[1];
-            URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("elastic/" + fileName);
+            URL fileUrl = Resources.getResource("elastic/" + fileName);
             checkState(fileUrl != null);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
@@ -52,9 +53,9 @@ public enum ElasticScript {
         PutStoredScriptRequest request = new PutStoredScriptRequest();
         request.id(getScriptName());
         request.content(new BytesArray(gson.toJson(ImmutableMap.of(
-                "script", ImmutableMap.of(
-                        "lang", lang,
-                        "source", source)))),
+                        "script", ImmutableMap.of(
+                                "lang", lang,
+                                "source", source)))),
                 XContentType.JSON);
         return request;
     }

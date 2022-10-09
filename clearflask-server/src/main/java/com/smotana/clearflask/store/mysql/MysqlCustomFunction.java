@@ -3,6 +3,7 @@
 package com.smotana.clearflask.store.mysql;
 
 import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ public enum MysqlCustomFunction {
 
     public String getSource() {
         try {
-            URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("mysql/" + getFilename());
+            URL fileUrl = Resources.getResource("mysql/" + getFilename());
             checkState(fileUrl != null);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());

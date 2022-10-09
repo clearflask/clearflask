@@ -20,6 +20,7 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -79,6 +80,7 @@ public class UserStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 DynamoElasticUserStore.module(),
+                DynamoElasticAccountStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
                 ElasticUtil.module(),

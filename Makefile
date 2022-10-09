@@ -127,7 +127,7 @@ deploy-running-configs:
 			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
 		deploy-running-config-$(server) )
 
-deploy-running-config-%: get-project-version
+deploy-running-config-%:
 	echo "Syncing config to $*"
 	ssh $* "sudo aws s3 cp s3://clearflask-secret/config-prod.cfg /opt/clearflask/config-prod.cfg && sudo aws s3 cp s3://clearflask-secret/connect.config.json /opt/clearflask/connect.config.json && sudo service connect restart"
 

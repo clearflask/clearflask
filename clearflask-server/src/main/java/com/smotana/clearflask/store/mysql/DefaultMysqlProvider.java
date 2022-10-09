@@ -79,6 +79,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
         log.info("Opening Mysql client on {}:{}", config.host(), config.port());
 
         if (clientOpt.isEmpty()) {
+            Class.forName("com.mysql.cj.jdbc.Driver");
             System.setProperty("org.jooq.no-logo", "true");
             MysqlDataSource dataSource = new MysqlDataSource();
             dataSource.setURL(getConnectionUrl(true));
