@@ -65,7 +65,7 @@ import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -267,7 +267,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    getSearchSource().ifPresent(searchSource -> om.override(om.id().defaultSearchSource()).withValue(searchSource));
+                    getSearchEngine().ifPresent(searchEngine -> om.override(om.id().defaultSearchEngine()).withValue(searchEngine));
                     om.override(om.id().startupWaitUntilDeps()).withValue(Boolean.TRUE);
                     om.override(om.id().domain()).withValue("localhost:8080");
                 }));
@@ -323,7 +323,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         }));
     }
 
-    protected Optional<SearchSource> getSearchSource() {
+    protected Optional<SearchEngine> getSearchEngine() {
         return Optional.empty();
     }
 

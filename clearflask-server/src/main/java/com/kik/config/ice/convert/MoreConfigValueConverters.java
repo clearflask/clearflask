@@ -26,7 +26,7 @@ import com.google.inject.MoreTypeLiteral;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.util.Types;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Urgency;
@@ -95,7 +95,7 @@ public class MoreConfigValueConverters {
     public static Module module() {
         return module(ImmutableSet.of(
                 Urgency.class,
-                SearchSource.class
+                SearchEngine.class
         ));
     }
 

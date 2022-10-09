@@ -31,6 +31,8 @@ export enum OpenApiTags {
   PropLink = 'x-clearflask-prop-link',
   /** Hide */
   Hide = 'x-clearflask-hide',
+  /** Hide unless super admin */
+  SuperAdminOnly = 'x-clearflask-super-admin-only',
   /**
    * Adds an additional property located somewhere else into this object/page
    * as if it was part of it in the first place. Useful When you want to
@@ -392,10 +394,12 @@ export interface Editor {
 
 export class EditorImpl implements Editor {
   config: ConfigAdmin;
+  isSuperAdmin: boolean;
   cache: any = {};
   globalSubscribers: { [subscriberId: string]: () => void } = {};
 
-  constructor(config?: ConfigAdmin) {
+  constructor(isSuperAdmin: boolean, config?: ConfigAdmin) {
+    this.isSuperAdmin = isSuperAdmin;
     if (config !== undefined) {
       this.config = cloneDeep(config);
     } else {
@@ -406,6 +410,7 @@ export class EditorImpl implements Editor {
 
   clone(): Editor {
     return new EditorImpl(
+      this.isSuperAdmin,
       cloneDeep(this.config));
   }
 
@@ -956,7 +961,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
-      hide: !!pageSchema[OpenApiTags.Hide],
+      hide: !!pageSchema[OpenApiTags.Hide] || (!!pageSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xPage,
       type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1090,7 +1095,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
-      hide: !!pageGroupSchema[OpenApiTags.Hide],
+      hide: !!pageGroupSchema[OpenApiTags.Hide] || (!!pageGroupSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xPageGroup,
       type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1257,7 +1262,7 @@ export class EditorImpl implements Editor {
     const base = {
       key: randomUuid(),
       name: pathStr,
-      hide: !!propSchema[OpenApiTags.Hide],
+      hide: !!propSchema[OpenApiTags.Hide] || (!!propSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
       path: path,

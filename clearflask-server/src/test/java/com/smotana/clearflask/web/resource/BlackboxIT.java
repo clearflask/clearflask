@@ -31,7 +31,7 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -51,19 +51,19 @@ import static org.junit.Assert.assertEquals;
 public class BlackboxIT extends AbstractBlackboxIT {
 
     @Parameterized.Parameter(0)
-    public SearchSource searchSource;
+    public SearchEngine searchEngine;
 
     @Parameterized.Parameters(name = "{0}")
     public static Object[][] data() {
         return new Object[][]{
-                {SearchSource.READWRITE_ELASTICSEARCH},
-                {SearchSource.READWRITE_MYSQL},
+                {SearchEngine.READWRITE_ELASTICSEARCH},
+                {SearchEngine.READWRITE_MYSQL},
         };
     }
 
     @Override
-    protected Optional<SearchSource> getSearchSource() {
-        return Optional.ofNullable(searchSource);
+    protected Optional<SearchEngine> getSearchEngine() {
+        return Optional.ofNullable(searchEngine);
     }
 
     @Test(timeout = 300_000L)

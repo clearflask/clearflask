@@ -13,7 +13,7 @@ import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -51,13 +51,13 @@ import static org.junit.Assert.*;
 public class CommentStoreIT extends AbstractIT {
 
     @Parameterized.Parameter(0)
-    public SearchSource searchSource;
+    public SearchEngine searchEngine;
 
     @Parameterized.Parameters(name = "{0}")
     public static Object[][] data() {
         return new Object[][]{
-                {SearchSource.READWRITE_ELASTICSEARCH},
-                {SearchSource.READWRITE_MYSQL},
+                {ProjectStore.SearchEngine.READWRITE_ELASTICSEARCH},
+                {SearchEngine.READWRITE_MYSQL},
         };
     }
 
@@ -95,7 +95,7 @@ public class CommentStoreIT extends AbstractIT {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
                 }));
                 install(ConfigSystem.overrideModule(DynamoElasticCommentStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);

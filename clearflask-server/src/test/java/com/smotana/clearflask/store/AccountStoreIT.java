@@ -15,7 +15,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -46,7 +46,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -56,13 +55,13 @@ import static org.junit.Assert.*;
 public class AccountStoreIT extends AbstractIT {
 
     @Parameter(0)
-    public SearchSource searchSource;
+    public SearchEngine searchEngine;
 
     @Parameters(name = "{0}")
     public static Object[][] data() {
         return new Object[][]{
-                {SearchSource.READWRITE_ELASTICSEARCH},
-                {SearchSource.READWRITE_MYSQL},
+                {ProjectStore.SearchEngine.READWRITE_ELASTICSEARCH},
+                {ProjectStore.SearchEngine.READWRITE_MYSQL},
         };
     }
 
@@ -98,7 +97,7 @@ public class AccountStoreIT extends AbstractIT {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
                 }));
                 install(ConfigSystem.overrideModule(DynamoElasticAccountStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
@@ -409,27 +408,25 @@ public class AccountStoreIT extends AbstractIT {
         assertAccountSearch("NewName", 1, accountId1);
     }
 
-    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(int pageSize, String... expectedAccountIds) {
+    private ImmutableList<Account> assertAccountSearch(int pageSize, String... expectedAccountIds) {
         return assertAccountSearch(AccountSearchSuperAdmin.builder().build(), pageSize, expectedAccountIds);
     }
 
-    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(String searchText, int pageSize, String... expectedAccountIds) {
+    private ImmutableList<Account> assertAccountSearch(String searchText, int pageSize, String... expectedAccountIds) {
         return assertAccountSearch(AccountSearchSuperAdmin.builder()
                 .searchText(searchText).build(), pageSize, expectedAccountIds);
     }
 
-    private ImmutableList<com.smotana.clearflask.api.model.Account> assertAccountSearch(AccountSearchSuperAdmin search, int pageSize, String... expectedAccountIds) {
+    private ImmutableList<Account> assertAccountSearch(AccountSearchSuperAdmin search, int pageSize, String... expectedAccountIds) {
         Optional<String> cursorOpt = Optional.empty();
-        Set<Object> actualAccountIds = Sets.newHashSet();
-        ImmutableList.Builder<com.smotana.clearflask.api.model.Account> actualAccountsBuilder = ImmutableList.builder();
+        Set<String> actualAccountIds = Sets.newHashSet();
+        ImmutableList.Builder<Account> actualAccountsBuilder = ImmutableList.builder();
         do {
             AccountStore.SearchAccountsResponse response = store.searchAccounts(search, true, cursorOpt, Optional.of(pageSize));
-            assertTrue("Result size " + response.getAccountIds().size() + " is higher than page size " + pageSize,
-                    response.getAccountIds().size() <= pageSize);
-            assertEquals(response.getAccountIds(),
-                    response.getAccounts().stream().map(com.smotana.clearflask.api.model.Account::getAccountId).collect(Collectors.toList()));
+            assertTrue("Result size " + response.getAccounts().size() + " is higher than page size " + pageSize,
+                    response.getAccounts().size() <= pageSize);
             cursorOpt = response.getCursorOpt();
-            response.getAccountIds().forEach(accountId -> assertTrue("Already contained: " + accountId, actualAccountIds.add(accountId)));
+            response.getAccounts().forEach(account -> assertTrue("Already contained: " + account, actualAccountIds.add(account.getAccountId())));
             actualAccountsBuilder.addAll(response.getAccounts());
         } while (cursorOpt.isPresent());
         assertEquals(ImmutableSet.copyOf(expectedAccountIds), actualAccountIds);

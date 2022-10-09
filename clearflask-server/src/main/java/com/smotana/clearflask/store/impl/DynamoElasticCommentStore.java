@@ -222,53 +222,16 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     @Override
     protected void serviceStart() throws Exception {
         if (configApp.createIndexesOnStartup()) {
-            createIndexGlobal();
-        }
-    }
-
-    private void createIndexGlobal() {
-        ProjectStore.SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteMysql()) {
-            log.info("Creating Mysql table {}", COMMENT_INDEX);
-            mysql.createTableIfNotExists(COMMENT_INDEX)
-                    .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                    .column("postId", SQLDataType.VARCHAR(255).notNull())
-                    .column("commentId", SQLDataType.VARCHAR(255).notNull())
-                    .column("parentCommentIds", SQLDataType.VARCHAR(10000).notNull())
-                    .column("level", SQLDataType.BIGINT.notNull())
-                    .column("childCommentCount", SQLDataType.BIGINT.notNull())
-                    .column("authorUserId", SQLDataType.VARCHAR(255))
-                    .column("authorName", SQLDataType.VARCHAR(255))
-                    .column("authorIsMod", SQLDataType.BOOLEAN)
-                    .column("created", MoreSQLDataType.DATETIME(6).notNull())
-                    .column("edited", MoreSQLDataType.DATETIME(6))
-                    .column("content", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
-                    .column("upvotes", SQLDataType.BIGINT.notNull())
-                    .column("downvotes", SQLDataType.BIGINT.notNull())
-                    .column("score", SQLDataType.DOUBLE.notNull())
-                    .primaryKey("projectId", "postId", "commentId")
-                    .execute();
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID));
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID));
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.AUTHORUSERID));
-            mysql.createTableIfNotExists(COMMENT_PARENT_ID_INDEX)
-                    .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                    .column("postId", SQLDataType.VARCHAR(255).notNull())
-                    .column("commentId", SQLDataType.VARCHAR(255).notNull())
-                    .column("parentCommentId", SQLDataType.VARCHAR(255).notNull())
-                    .primaryKey("projectId", "postId", "commentId", "parentCommentId")
-                    .constraints(DSL.foreignKey(JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID, JooqCommentParentId.COMMENT_PARENT_ID.COMMENTID)
-                            .references(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
-                            .onDeleteCascade())
-                    .execute();
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID));
-            mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.WILSON);
+            ProjectStore.SearchEngine searchEngine = configApp.defaultSearchEngine();
+            if (searchEngine.isWriteMysql()) {
+                createIndexMysql();
+            }
         }
     }
 
     @Override
     public ListenableFuture<Void> createIndex(String projectId) {
-        if (projectStore.getSearchSource(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
             return createIndexElasticSearch(projectId);
         } else {
             return Futures.immediateFuture(null);
@@ -276,9 +239,47 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     }
 
     @Extern
-    private ListenableFuture<Void> createIndexElasticSearch(String projectId) {
+    public void createIndexMysql() {
+        log.info("Creating Mysql table {}", COMMENT_INDEX);
+        mysql.createTableIfNotExists(COMMENT_INDEX)
+                .column("projectId", SQLDataType.VARCHAR(255).notNull())
+                .column("postId", SQLDataType.VARCHAR(255).notNull())
+                .column("commentId", SQLDataType.VARCHAR(255).notNull())
+                .column("parentCommentIds", SQLDataType.VARCHAR(10000).notNull())
+                .column("level", SQLDataType.BIGINT.notNull())
+                .column("childCommentCount", SQLDataType.BIGINT.notNull())
+                .column("authorUserId", SQLDataType.VARCHAR(255))
+                .column("authorName", SQLDataType.VARCHAR(255))
+                .column("authorIsMod", SQLDataType.BOOLEAN)
+                .column("created", MoreSQLDataType.DATETIME(6).notNull())
+                .column("edited", MoreSQLDataType.DATETIME(6))
+                .column("content", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
+                .column("upvotes", SQLDataType.BIGINT.notNull())
+                .column("downvotes", SQLDataType.BIGINT.notNull())
+                .column("score", SQLDataType.DOUBLE.notNull())
+                .primaryKey("projectId", "postId", "commentId")
+                .execute();
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID));
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.AUTHORUSERID));
+        mysql.createTableIfNotExists(COMMENT_PARENT_ID_INDEX)
+                .column("projectId", SQLDataType.VARCHAR(255).notNull())
+                .column("postId", SQLDataType.VARCHAR(255).notNull())
+                .column("commentId", SQLDataType.VARCHAR(255).notNull())
+                .column("parentCommentId", SQLDataType.VARCHAR(255).notNull())
+                .primaryKey("projectId", "postId", "commentId", "parentCommentId")
+                .constraints(DSL.foreignKey(JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID, JooqCommentParentId.COMMENT_PARENT_ID.COMMENTID)
+                        .references(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
+                        .onDeleteCascade())
+                .execute();
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID));
+        mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.WILSON);
+    }
+
+    @Extern
+    public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        if (projectStore.getSearchSource(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
             elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                             "dynamic", "false",
                             "properties", ImmutableMap.builder()
@@ -403,25 +404,25 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .getLong("childCommentCount");
 
             SettableFuture<Void> parentIndexingFuture = SettableFuture.create();
-            ProjectStore.SearchSource searchSource = projectStore.getSearchSource(commentWithVote.getProjectId());
-            if (searchSource.isWriteElastic()) {
+            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(commentWithVote.getProjectId());
+            if (searchEngine.isWriteElastic()) {
                 elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, commentWithVote.getProjectId()), parentCommentId)
                                 .doc(gson.toJson(ImmutableMap.of(
                                         "childCommentCount", parentChildCommentCount
                                 )), XContentType.JSON)
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                         RequestOptions.DEFAULT,
-                        searchSource.isReadElastic() ? ActionListeners.onFailureRetry(parentIndexingFuture, f -> indexComment(f, commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getCommentId()))
+                        searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(parentIndexingFuture, f -> indexComment(f, commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getCommentId()))
                                 : ActionListeners.onFailureRetry(() -> indexComment(commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getCommentId())));
             }
-            if (searchSource.isWriteMysql()) {
+            if (searchEngine.isWriteMysql()) {
                 CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
                         .set(JooqComment.COMMENT.CHILDCOMMENTCOUNT, parentChildCommentCount)
                         .where(JooqComment.COMMENT.PROJECTID.eq(commentWithVote.getProjectId())
                                 .and(JooqComment.COMMENT.POSTID.eq(commentWithVote.getIdeaId()))
                                 .and(JooqComment.COMMENT.COMMENTID.eq(commentWithVote.getCommentId())))
                         .executeAsync();
-                if (searchSource.isReadMysql()) {
+                if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(parentIndexingFuture, completionStage);
                 }
             }
@@ -475,7 +476,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
         }
 
-        if (projectStore.getSearchSource(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
             return elasticUtil.histogram(
                     elasticUtil.getIndexName(COMMENT_INDEX, projectId),
                     "created",
@@ -575,7 +576,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             // For complex searches, fallback to elasticsearch/mysql
             final PrimaryKey[] primaryKeys;
             final Optional<String> nextCursorOpt;
-            if (projectStore.getSearchSource(projectId).isReadElastic()) {
+            if (projectStore.getSearchEngine(projectId).isReadElastic()) {
                 BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
                 if (!Strings.isNullOrEmpty(commentSearchAdmin.getFilterAuthorId())) {
                     queryBuilder.must(QueryBuilders.termQuery("authorUserId", commentSearchAdmin.getFilterAuthorId()));
@@ -647,8 +648,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 ? config.searchInitialFetchMax()
                 : config.searchSubsequentFetchMax();
 
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isReadElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isReadElastic()) {
             BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
             if (parentCommentIdOpt.isPresent() && mergedPostIds.contains(parentCommentIdOpt.get())) {
                 // parent comment id is actually a merged post
@@ -791,8 +792,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "edited", comment.getEdited().getEpochSecond(),
@@ -800,10 +801,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
                             : ActionListeners.onFailureRetry(() -> indexComment(comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.EDITED, comment.getEdited())
                     .set(JooqComment.COMMENT.CONTENT, comment.getContentAsText(sanitizer))
@@ -811,7 +812,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             .and(JooqComment.COMMENT.POSTID.eq(comment.getIdeaId()))
                             .and(JooqComment.COMMENT.COMMENTID.eq(comment.getCommentId())))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -872,8 +873,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .script(ElasticScript.WILSON.toScript(ImmutableMap.of(
                                     "upvoteDiff", upvoteDiff,
@@ -881,10 +882,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                                     "z", wilsonScoreInterval.getZ())))
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
                             : ActionListeners.onFailureRetry(() -> indexComment(comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             JooqVoteWilson voteWilsonRoutine = new JooqVoteWilson();
             voteWilsonRoutine.setUpvotes(JooqComment.COMMENT.UPVOTES.plus(upvoteDiff));
             voteWilsonRoutine.setDownvotes(JooqComment.COMMENT.DOWNVOTES.plus(downvoteDiff));
@@ -897,7 +898,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             .and(JooqComment.COMMENT.POSTID.eq(comment.getIdeaId()))
                             .and(JooqComment.COMMENT.COMMENTID.eq(comment.getCommentId())))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -928,8 +929,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             // Use a hashmap to allow null values
             Map<String, Object> updates = Maps.newHashMap();
             updates.put("authorUserId", null);
@@ -940,10 +941,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             .doc(gson.toJson(updates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, comment.getProjectId(), comment.getIdeaId(), comment.getCommentId()))
                             : ActionListeners.onFailureRetry(() -> indexComment(comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.AUTHORUSERID, (String) null)
                     .set(JooqComment.COMMENT.AUTHORNAME, (String) null)
@@ -954,7 +955,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             .and(JooqComment.COMMENT.POSTID.eq(comment.getIdeaId()))
                             .and(JooqComment.COMMENT.COMMENTID.eq(comment.getCommentId())))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -973,21 +974,21 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         "commentId", commentId))));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, projectId, ideaId, commentId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexComment(f, projectId, ideaId, commentId))
                             : ActionListeners.onFailureRetry(() -> indexComment(projectId, ideaId, commentId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                             .and(JooqComment.COMMENT.POSTID.eq(ideaId))
                             .and(JooqComment.COMMENT.COMMENTID.eq(commentId)))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1022,20 +1023,20 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 });
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.deleteByQueryAsync(new DeleteByQueryRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
                             .setQuery(QueryBuilders.termQuery("ideaId", ideaId)),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                             .and(JooqComment.COMMENT.POSTID.eq(ideaId)))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1071,18 +1072,18 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
 
         // Delete idea index
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1097,21 +1098,21 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     private void indexComment(SettableFuture<Void> indexingFuture, String projectId, String ideaId, String commentId) {
         Optional<CommentModel> commentOpt = getComment(projectId, ideaId, commentId);
         if (!commentOpt.isPresent()) {
-            ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-            if (searchSource.isWriteElastic()) {
+            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId),
                         RequestOptions.DEFAULT,
-                        searchSource.isReadElastic()
+                        searchEngine.isReadElastic()
                                 ? ActionListeners.fromFuture(indexingFuture)
                                 : ActionListeners.logFailure());
             }
-            if (searchSource.isWriteMysql()) {
+            if (searchEngine.isWriteMysql()) {
                 CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqComment.COMMENT)
                         .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                                 .and(JooqComment.COMMENT.POSTID.eq(ideaId))
                                 .and(JooqComment.COMMENT.COMMENTID.eq(commentId)))
                         .executeAsync();
-                if (searchSource.isReadMysql()) {
+                if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
                 }
             }
@@ -1125,17 +1126,17 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     }
 
     private void indexComment(SettableFuture<Void> indexingFuture, CommentModel comment) {
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(comment.getProjectId());
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(comment.getProjectId());
+        if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(commentToEsIndexRequest(comment),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic()
+                    searchEngine.isReadElastic()
                             ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysqlUtil.sequentialBatch(commentToMysqlQuery(comment));
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }

@@ -267,7 +267,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     protected void serviceStart() throws Exception {
         client = HttpClientBuilder.create().build();
-        if (configApp.createIndexesOnStartup() && configApp.defaultSearchSource().isWriteMysql()) {
+        if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteMysql()) {
             createIndexMysql();
         }
     }
@@ -282,7 +282,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     @Override
     public ListenableFuture<Void> createIndex(String projectId) {
-        if (projectStore.getSearchSource(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
             return createIndexElasticSearch(projectId);
         } else {
             return Futures.immediateFuture(null);
@@ -290,7 +290,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Extern
-    private void createIndexMysql() {
+    public void createIndexMysql() {
         log.debug("Creating Mysql table {}", USER_INDEX);
         mysql.createTableIfNotExists(USER_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(255).notNull())
@@ -307,7 +307,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Extern
-    private ListenableFuture<Void> createIndexElasticSearch(String projectId) {
+    public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
                         .settings(gson.toJson(ImmutableMap.of(
@@ -482,7 +482,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
         }
 
-        if (projectStore.getSearchSource(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
             return elasticUtil.histogram(
                     elasticUtil.getIndexName(USER_INDEX, projectId),
                     "created",
@@ -503,7 +503,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Override
     public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        if (projectStore.getSearchSource(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
             Optional<SortOrder> sortOrderOpt;
             if (userSearchAdmin.getSortOrder() != null) {
                 switch (userSearchAdmin.getSortOrder()) {
@@ -935,30 +935,30 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             if (indexUpdates.size() > 0) {
                 elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
                                 .doc(gson.toJson(indexUpdates), XContentType.JSON)
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                         RequestOptions.DEFAULT,
-                        searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
+                        searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
                                 : ActionListeners.onFailureRetry(() -> indexUser(projectId, userId)));
-            } else if (searchSource.isReadElastic()) {
+            } else if (searchEngine.isReadElastic()) {
                 indexingFuture.set(null);
             }
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             if (mysqlUpdates.changed()) {
                 CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
                         .set(mysqlUpdates)
                         .where(JooqUser.USER.PROJECTID.eq(projectId)
                                 .and(JooqUser.USER.USERID.eq(userId)))
                         .executeAsync();
-                if (searchSource.isReadMysql()) {
+                if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
                 }
-            } else if (searchSource.isReadMysql()) {
+            } else if (searchEngine.isReadMysql()) {
                 indexingFuture.set(null);
             }
         }
@@ -1094,22 +1094,22 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
                             .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexUser(f, projectId, userId))
                             : ActionListeners.onFailureRetry(() -> indexUser(projectId, userId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
                     .set(JooqUser.USER.BALANCE, userModel.getBalance())
                     .where(JooqUser.USER.PROJECTID.eq(projectId)
                             .and(JooqUser.USER.USERID.eq(userId)))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1154,25 +1154,25 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .forEach(userId -> revokeSessions(projectId, userId, Optional.empty()));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.bulkAsync(new BulkRequest()
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                             .add(users.stream()
                                     .map(user -> new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId()))
                                     .collect(ImmutableList.toImmutableList())),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
                     .where(JooqUser.USER.PROJECTID.eq(projectId)
                             .and(JooqUser.USER.USERID.in(users.stream()
                                     .map(UserModel::getUserId)
                                     .collect(Collectors.toList()))))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1572,18 +1572,18 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         // Delete user index
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        if (searchEngine.isWriteElastic()) {
             elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
+                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
                     .where(JooqUser.USER.PROJECTID.eq(projectId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1600,20 +1600,20 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private void indexUser(SettableFuture<Void> indexingFuture, String projectId, String userId) {
         Optional<UserModel> userOpt = getUser(projectId, userId);
         if (!userOpt.isPresent()) {
-            ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
-            if (searchSource.isWriteElastic()) {
+            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
                         RequestOptions.DEFAULT,
-                        searchSource.isReadElastic()
+                        searchEngine.isReadElastic()
                                 ? ActionListeners.fromFuture(indexingFuture)
                                 : ActionListeners.logFailure());
             }
-            if (searchSource.isWriteMysql()) {
+            if (searchEngine.isWriteMysql()) {
                 CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
                         .where(JooqUser.USER.PROJECTID.eq(projectId)
                                 .and(JooqUser.USER.USERID.eq(userId)))
                         .executeAsync();
-                if (searchSource.isReadMysql()) {
+                if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
                 }
             }
@@ -1627,17 +1627,17 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     private void indexUser(SettableFuture<Void> indexingFuture, UserModel user) {
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(user.getProjectId());
-        if (searchSource.isWriteElastic()) {
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(user.getProjectId());
+        if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(userToEsIndexRequest(user),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic()
+                    searchEngine.isReadElastic()
                             ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = userToMysqlQuery(user).executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }

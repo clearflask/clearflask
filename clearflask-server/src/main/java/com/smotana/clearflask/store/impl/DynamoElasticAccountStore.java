@@ -48,7 +48,7 @@ import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -184,18 +184,18 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         sessionByAccountIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
 
         if (configApp.createIndexesOnStartup()) {
-            SearchSource searchSource = configApp.defaultSearchSource();
-            if (searchSource.isWriteElastic()) {
+            SearchEngine searchEngine = configApp.defaultSearchEngine();
+            if (searchEngine.isWriteElastic()) {
                 createIndexElasticSearch();
             }
-            if (searchSource.isWriteMysql()) {
+            if (searchEngine.isWriteMysql()) {
                 createIndexMysql();
             }
         }
     }
 
     @Extern
-    private void createIndexElasticSearch() throws IOException {
+    public void createIndexElasticSearch() throws IOException {
         boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
         if (!exists) {
             log.info("Creating ElasticSearch index {}", ACCOUNT_INDEX);
@@ -229,7 +229,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Extern
-    private void createIndexMysql() throws IOException {
+    public void createIndexMysql() throws IOException {
         log.info("Creating Mysql table {}", ACCOUNT_INDEX);
         mysql.createTableIfNotExists(ACCOUNT_INDEX)
                 .column("accountId", SQLDataType.VARCHAR(255).notNull())
@@ -368,7 +368,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private SearchAccountsResponse searchAccounts(Optional<String> searchTextOpt, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
         final Stream<String> accountIdsStream;
         final Optional<String> cursorOptNext;
-        if (configApp.defaultSearchSource().isReadElastic()) {
+        if (configApp.defaultSearchEngine().isReadElastic()) {
             QueryBuilder queryBuilder;
             if (searchTextOpt.isPresent()) {
                 queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
@@ -389,7 +389,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
             SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
             if (hits.length == 0) {
-                return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
+                return new SearchAccountsResponse(ImmutableList.of(), Optional.empty());
             }
             accountIdsStream = Arrays.stream(hits).map(SearchHit::getId);
             cursorOptNext = searchResponseWithCursor.getCursorOpt();
@@ -407,7 +407,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .limit(pageSize)
                     .fetch(JooqAccount.ACCOUNT.ACCOUNTID);
             if (accountIds.isEmpty()) {
-                return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
+                return new SearchAccountsResponse(ImmutableList.of(), Optional.empty());
             }
             accountIdsStream = accountIds.stream();
             cursorOptNext = mysqlUtil.nextCursor(configSearch, cursorOpt, pageSizeOpt, accountIds.size());
@@ -423,8 +423,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
 
         return new SearchAccountsResponse(
-                accounts.stream().map(Account::getAccountId).collect(ImmutableList.toImmutableList()),
-                accounts.stream().map(Account::toAccount).collect(ImmutableList.toImmutableList()),
+                accounts,
                 cursorOptNext);
     }
 
@@ -480,23 +479,23 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "planid", planid
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.PLANID, planid)
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -586,18 +585,18 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "projectIds", orNull(account.getProjectIds())
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql() && searchSource.isReadMysql()) {
+        if (searchEngine.isWriteMysql() && searchEngine.isReadMysql()) {
             indexingFuture.set(null); // Nothing to update on Mysql
         }
 
@@ -620,18 +619,18 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "projectIds", orNull(account.getProjectIds())
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql() && searchSource.isReadMysql()) {
+        if (searchEngine.isWriteMysql() && searchEngine.isReadMysql()) {
             indexingFuture.set(null); // Nothing to update on Mysql
         }
 
@@ -712,23 +711,23 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "name", account.getName()
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.NAME, account.getName())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -790,23 +789,23 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "email", account.getEmail()
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.EMAIL, account.getEmail())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -854,23 +853,23 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "status", account.getStatus()
                             )), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.STATUS, account.getStatus().name())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -941,19 +940,19 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         revokeSessions(accountId);
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
+                    searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.delete(JooqAccount.ACCOUNT)
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }
@@ -1055,12 +1054,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private void indexAccount(SettableFuture<Void> indexingFuture, String accountId) {
         Optional<Account> accountOpt = getAccount(accountId, true);
         if (!accountOpt.isPresent()) {
-            SearchSource searchSource = configApp.defaultSearchSource();
-            if (searchSource.isWriteElastic()) {
+            SearchEngine searchEngine = configApp.defaultSearchEngine();
+            if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId),
                         RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             }
-            if (searchSource.isWriteMysql()) {
+            if (searchEngine.isWriteMysql()) {
                 mysql.delete(JooqAccount.ACCOUNT)
                         .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                         .executeAsync();
@@ -1071,8 +1070,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     private void indexAccount(SettableFuture<Void> indexingFuture, Account account) {
-        SearchSource searchSource = configApp.defaultSearchSource();
-        if (searchSource.isWriteElastic()) {
+        SearchEngine searchEngine = configApp.defaultSearchEngine();
+        if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(new IndexRequest(ACCOUNT_INDEX)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                             .id(account.getAccountId())
@@ -1085,9 +1084,9 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                     .put("projectIds", orNull(account.getProjectIds()))
                                     .build()), XContentType.JSON),
                     RequestOptions.DEFAULT,
-                    searchSource.isReadElastic() ? ActionListeners.fromFuture(indexingFuture) : ActionListeners.logFailure());
+                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture) : ActionListeners.logFailure());
         }
-        if (searchSource.isWriteMysql()) {
+        if (searchEngine.isWriteMysql()) {
             JooqAccountRecord record = mysql.newRecord(JooqAccount.ACCOUNT);
             record.setAccountid(account.getAccountId());
             record.setName(account.getName());
@@ -1096,7 +1095,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             record.setPlanid(account.getPlanid());
             record.setCreated(account.getCreated());
             CompletionStage<int[]> completionStage = mysql.batchInsert(record).executeAsync();
-            if (searchSource.isReadMysql()) {
+            if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             }
         }

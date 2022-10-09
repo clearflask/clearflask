@@ -8,6 +8,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import MenuIcon from '@material-ui/icons/Menu';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ServerAdmin from '../api/serverAdmin';
 import * as ConfigEditor from './config/configEditor';
 import { contentScrollApplyStyles, Orientation } from './ContentScroll';
 import HelpPopper from './HelpPopper';
@@ -248,7 +249,7 @@ interface State {
   mobileMenuOpen: boolean;
 }
 class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof styles, true> & WithWidthProps, State> {
-  readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
+  readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
 
   constructor(props) {
     super(props);

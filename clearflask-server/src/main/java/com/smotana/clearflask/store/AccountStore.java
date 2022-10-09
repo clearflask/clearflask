@@ -106,8 +106,7 @@ public interface AccountStore {
 
     @Value
     class SearchAccountsResponse {
-        ImmutableList<String> accountIds;
-        ImmutableList<com.smotana.clearflask.api.model.Account> accounts;
+        ImmutableList<Account> accounts;
         Optional<String> cursorOpt;
     }
 

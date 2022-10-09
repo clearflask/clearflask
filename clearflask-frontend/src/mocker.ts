@@ -9,7 +9,7 @@ import Templater, { createTemplateV2OptionsDefault } from './common/config/confi
 import windowIso from './common/windowIso';
 
 export async function mock(slug: string = 'product'): Promise<VersionedConfigAdmin> {
-  const editor = new ConfigEditor.EditorImpl();
+  const editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   const isGreatProduct = slug === 'greatproduct';

@@ -3,6 +3,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -953,7 +954,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         return new AccountSearchResponse(
                 searchAccountsResponse.getCursorOpt().orElse(null),
-                searchAccountsResponse.getAccounts());
+                searchAccountsResponse.getAccounts().stream()
+                        .map(Account::toAccount)
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     @PermitAll

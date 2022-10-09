@@ -51,6 +51,7 @@ import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.api.model.Voting;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -73,10 +74,12 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -136,6 +139,8 @@ public class DynamoProjectStore implements ProjectStore {
     private ProjectUpgrader projectUpgrader;
     @Inject
     private IntercomUtil intercomUtil;
+    @Inject
+    private AccountStore accountStore;
 
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
@@ -249,11 +254,30 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public SearchSource getSearchSource(String projectId) {
-        return configApp.forceSearchSource()
+    public void listAllProjectIds(Consumer<String> consumer) {
+        Optional<String> cursorOpt = Optional.empty();
+        do {
+            AccountStore.SearchAccountsResponse searchAccountsResponse = accountStore.listAccounts(true, cursorOpt, Optional.empty());
+            cursorOpt = searchAccountsResponse.getCursorOpt();
+            searchAccountsResponse.getAccounts().stream()
+                    .map(AccountStore.Account::getProjectIds)
+                    .flatMap(Collection::stream)
+                    .distinct()
+                    .forEach(consumer);
+        } while (cursorOpt.isPresent());
+    }
+
+    @Override
+    public void listAllProjects(Consumer<Project> consumer, boolean useCache) {
+        listAllProjectIds(projectId -> consumer.accept(getProject(projectId, useCache).get()));
+    }
+
+    @Override
+    public SearchEngine getSearchEngine(String projectId) {
+        return configApp.forceSearchEngine()
                 .orElse(getProject(projectId, true)
-                        .flatMap(Project::getSearchSourceOverride)
-                        .orElseGet(() -> configApp.defaultSearchSource()));
+                        .flatMap(Project::getSearchEngineOverride)
+                        .orElseGet(() -> configApp.defaultSearchEngine()));
     }
 
     @Override
@@ -268,8 +292,7 @@ public class DynamoProjectStore implements ProjectStore {
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
                 ImmutableSet.of(),
                 gson.toJson(versionedConfigAdmin.getConfig()),
-                PROJECT_VERSION_LATEST,
-                null);
+                PROJECT_VERSION_LATEST);
         try {
             ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.<TransactWriteItem>builder()
                     .add(new TransactWriteItem().withPut(new Put()
@@ -919,13 +942,17 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
-        public Optional<SearchSource> getSearchSourceOverride() {
-            return Optional.ofNullable(Strings.emptyToNull(getModel().getSearchSourceOverride()))
-                    .flatMap(searchSourceOverrideStr -> {
-                        Optional<SearchSource> searchSourceOpt = Enums.getIfPresent(SearchSource.class, searchSourceOverrideStr).toJavaUtil();
-                        if (searchSourceOpt.isEmpty() && LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchSourceOverride")) {
-                            log.warn("Invalid value for searchSourceOverride '{}' for project {}",
-                                    getModel().getSearchSourceOverride(), getProjectId());
+        public Optional<SearchEngine> getSearchEngineOverride() {
+            return Optional.ofNullable(getVersionedConfigAdmin().getConfig().getForceSearchEngine())
+                    .flatMap(forceSearchEngine -> {
+                        switch (forceSearchEngine) {
+
+                            default:
+                                if (searchSourceOpt.isEmpty() && LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchEngineOverride")) {
+                                    log.warn("Invalid value for forceSearchEngine '{}' for project {}",
+                                            searchSourceOverrideStr, getProjectId());
+                                }
+                                return Optional.empty();
                         }
                         return searchSourceOpt;
                     });

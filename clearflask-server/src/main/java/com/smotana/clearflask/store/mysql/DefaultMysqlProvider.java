@@ -15,6 +15,7 @@ import com.kik.config.ice.annotations.NoDefaultValue;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.NetworkUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.SneakyThrows;
@@ -92,16 +93,14 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
 
     @Override
     protected void serviceStart() throws Exception {
-        if (config.createDatabase() && configApp.defaultSearchSource().isWriteMysql()) {
-            try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
-                context.createDatabaseIfNotExists(config.databaseName()).execute();
-            }
+        if (config.createDatabase() && configApp.defaultSearchEngine().isWriteMysql()) {
+            createDatabase();
         }
     }
 
     @Override
     protected void serviceStop() throws Exception {
-        if (config.dropDatabase() && configApp.defaultSearchSource().isWriteMysql()) {
+        if (config.dropDatabase() && configApp.defaultSearchEngine().isWriteMysql()) {
             if (env.isProduction()) {
                 log.error("Refusing to drop database in production");
             } else {
@@ -109,6 +108,13 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
                     context.dropDatabase(config.databaseName()).execute();
                 }
             }
+        }
+    }
+
+    @Extern
+    public void createDatabase() {
+        try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
+            context.createDatabaseIfNotExists(config.databaseName()).execute();
         }
     }
 

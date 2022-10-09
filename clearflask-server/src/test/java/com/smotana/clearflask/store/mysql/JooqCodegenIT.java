@@ -71,7 +71,7 @@ public class JooqCodegenIT extends AbstractIT {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchSource()).withValue(ProjectStore.SearchSource.READ_MYSQL_WRITE_BOTH);
+                    om.override(om.id().defaultSearchEngine()).withValue(ProjectStore.SearchEngine.READ_MYSQL_WRITE_BOTH);
                     om.override(om.id().createIndexesOnStartup()).withValue(true);
                 }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {

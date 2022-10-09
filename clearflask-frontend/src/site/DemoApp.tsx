@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { MemoryRouter, Route, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Admin from "../api/admin";
 import DataMock from '../api/dataMock';
 import { Server, StateSettings } from '../api/server';
+import ServerAdmin from '../api/serverAdmin';
 import ServerMock from '../api/serverMock';
 import App from '../app/App';
 import * as ConfigEditor from '../common/config/configEditor';
@@ -28,7 +29,7 @@ export async function getProject(
   const slug = `demo-${randomUuid().substring(0, 5)}`;
   const projectId = `${slug}-${randomUuid().substring(0, 3)}`
   const server = new Server(projectId, settings, ServerMock.get());
-  const editor = new ConfigEditor.EditorImpl();
+  const editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
   editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);

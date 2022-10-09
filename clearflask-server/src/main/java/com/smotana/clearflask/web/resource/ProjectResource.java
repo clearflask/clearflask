@@ -45,6 +45,7 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
+import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -61,6 +62,11 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.util.DateUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
@@ -321,13 +327,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 throw ex;
             }
         }
+        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
+        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfigAdmin()), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
 
-        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
                 projectId,
@@ -425,6 +432,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 throw ex;
             }
         }
+        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 account.getAccountId(),
@@ -813,9 +821,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                     true,
                     searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt),
                     Optional.empty()));
-            searchAccountsResponseOpt.get().getAccountIds()
+            searchAccountsResponseOpt.get().getAccounts()
                     .stream()
-                    .flatMap(accountId -> accountStore.getAccount(accountId, true).stream())
                     .filter(account -> SubscriptionStatus.BLOCKED.equals(account.getStatus()))
                     .forEach(account -> {
                         for (String projectId : account.getProjectIds()) {
@@ -830,12 +837,49 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @Extern
+    private void createIndexes(boolean createElasticSearch, boolean createMysql) throws Exception {
+        if (createMysql) {
+            ServiceInjector.INSTANCE.get().getInstance(DefaultMysqlProvider.class).createDatabase();
+            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticAccountStore.class).createIndexMysql();
+            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticUserStore.class).createIndexMysql();
+            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class).createIndexMysql();
+            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticCommentStore.class).createIndexMysql();
+        }
+        if (createMysql) {
+            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticAccountStore.class).createIndexElasticSearch();
+            DynamoElasticUserStore dynamoElasticUserStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticUserStore.class);
+            DynamoElasticIdeaStore dynamoElasticIdeaStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class);
+            DynamoElasticCommentStore dynamoElasticCommentStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticCommentStore.class);
+            projectStore.listAllProjectIds(projectId -> {
+                try {
+                    dynamoElasticUserStore.createIndexElasticSearch(projectId);
+                    dynamoElasticIdeaStore.createIndexElasticSearch(projectId);
+                    dynamoElasticCommentStore.createIndexElasticSearch(projectId);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+        }
+    }
+
+    @Extern
+    private void reindexProjects(boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        projectStore.listAllProjectIds(projectId -> {
+            try {
+                reindexProject(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+    }
+
+    @Extern
     private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
-        ProjectStore.SearchSource searchSource = projectStore.getSearchSource(projectId);
+        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
         reindexProject(projectId,
                 deleteExistingIndices,
-                searchSource.isWriteElastic(),
-                searchSource.isWriteMysql());
+                searchEngine.isWriteElastic(),
+                searchEngine.isWriteMysql());
     }
 
     @Extern

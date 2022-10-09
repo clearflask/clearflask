@@ -18,7 +18,6 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -58,13 +57,13 @@ import static org.junit.Assert.*;
 public class IdeaStoreIT extends AbstractIT {
 
     @Parameterized.Parameter(0)
-    public SearchSource searchSource;
+    public ProjectStore.SearchEngine searchEngine;
 
     @Parameterized.Parameters(name = "{0}")
     public static Object[][] data() {
         return new Object[][]{
-                {SearchSource.READWRITE_ELASTICSEARCH},
-                {SearchSource.READWRITE_MYSQL},
+                {ProjectStore.SearchEngine.READWRITE_ELASTICSEARCH},
+                {ProjectStore.SearchEngine.READWRITE_MYSQL},
         };
     }
 
@@ -99,7 +98,7 @@ public class IdeaStoreIT extends AbstractIT {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().defaultSearchSource()).withValue(searchSource);
+                    om.override(om.id().defaultSearchEngine()).withValue(searchEngine);
                 }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());

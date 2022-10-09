@@ -24,6 +24,7 @@ import lombok.Value;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -46,7 +47,11 @@ public interface ProjectStore {
 
     ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);
 
-    SearchSource getSearchSource(String projectId);
+    void listAllProjectIds(Consumer<String> consumer);
+
+    void listAllProjects(Consumer<Project> consumer, boolean useCache);
+
+    SearchEngine getSearchEngine(String projectId);
 
     Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin);
 
@@ -126,7 +131,7 @@ public interface ProjectStore {
 
         Optional<GitHub> getGitHubIntegration();
 
-        Optional<SearchSource> getSearchSourceOverride();
+        Optional<SearchEngine> getSearchEngineOverride();
     }
 
     @Value
@@ -167,9 +172,6 @@ public interface ProjectStore {
          * Currently only for ElasticSearch schema updates
          */
         Long projectVersion;
-
-        /** Override for {@link SearchSource} enum as string */
-        String searchSourceOverride;
     }
 
     @Value
@@ -247,7 +249,7 @@ public interface ProjectStore {
     }
 
     @Getter
-    enum SearchSource {
+    enum SearchEngine {
         READWRITE_ELASTICSEARCH(true, false, true, false),
         READWRITE_MYSQL(false, true, false, true),
         READ_ELASTICSEARCH_WRITE_BOTH(true, false, true, true),
@@ -257,7 +259,7 @@ public interface ProjectStore {
         private final boolean isWriteElastic;
         private final boolean isWriteMysql;
 
-        SearchSource(boolean isReadElastic, boolean isReadMysql, boolean isWriteElastic, boolean isWriteMysql) {
+        SearchEngine(boolean isReadElastic, boolean isReadMysql, boolean isWriteElastic, boolean isWriteMysql) {
             checkArgument(isReadElastic != isReadMysql, "Can only read from one source");
             checkArgument(isWriteElastic || isWriteMysql, "Must write to at least one source");
             checkArgument(!isReadElastic || isWriteElastic, "Cannot read from elastic source we're not writing to");

@@ -115,7 +115,7 @@ export default class ServerAdmin {
       const server = new Server(
         projectId,
         { suppressSetTitle: true });
-      const editor = new ConfigEditor.EditorImpl(versionedConfigAdmin.config);
+      const editor = new ConfigEditor.EditorImpl(this.isSuperAdminLoggedIn(), versionedConfigAdmin.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, DemoUpdateDelay);
       const subscribers: (() => void)[] = [];

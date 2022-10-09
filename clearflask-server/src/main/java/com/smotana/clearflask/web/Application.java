@@ -12,7 +12,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
-import com.smotana.clearflask.store.ProjectStore.SearchSource;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
@@ -47,10 +47,10 @@ public class Application extends ResourceConfig {
         boolean createIndexesOnStartup();
 
         @DefaultValue("READWRITE_ELASTICSEARCH")
-        SearchSource defaultSearchSource();
+        SearchEngine defaultSearchEngine();
 
-        @NoDefaultValue(innerType = SearchSource.class)
-        Optional<SearchSource> forceSearchSource();
+        @NoDefaultValue(innerType = SearchEngine.class)
+        Optional<SearchEngine> forceSearchEngine();
     }
 
     @Inject
