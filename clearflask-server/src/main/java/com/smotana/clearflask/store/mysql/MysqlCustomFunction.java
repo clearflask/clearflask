@@ -4,7 +4,6 @@ package com.smotana.clearflask.store.mysql;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,19 +15,18 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @Getter
-@AllArgsConstructor
 public enum MysqlCustomFunction {
     WILSON("comment-vote-wilson.sql"),
     EXP_DECAY("exp-decay.sql");
 
-    private final String filename;
+    private final String source;
 
-    public String getSource() {
+    MysqlCustomFunction(String filename) {
         try {
-            URL fileUrl = Resources.getResource("mysql/" + getFilename());
+            URL fileUrl = Resources.getResource("mysql/" + filename);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
-            return Files.readString(file.toPath(), Charsets.UTF_8);
+            source = Files.readString(file.toPath(), Charsets.UTF_8);
         } catch (Exception ex) {
             ex.printStackTrace(System.err);
             throw new RuntimeException(ex);

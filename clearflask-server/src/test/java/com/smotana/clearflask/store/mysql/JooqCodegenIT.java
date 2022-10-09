@@ -63,7 +63,6 @@ public class JooqCodegenIT extends AbstractIT {
                 DynamoElasticCommentStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                Application.module(),
                 Sanitizer.module(),
                 IntercomUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor"))

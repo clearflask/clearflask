@@ -20,7 +20,6 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexRequest;
@@ -70,7 +69,6 @@ public class ElasticUtilIT extends AbstractIT {
 
         install(Modules.override(
                 ElasticUtil.module(),
-                Application.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 Sanitizer.module(),
                 GsonProvider.module(),

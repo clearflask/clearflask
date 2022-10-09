@@ -50,7 +50,6 @@ public class ProjectStoreTest extends AbstractTest {
         bindMock(AccountStore.class);
 
         install(Modules.override(
-                Application.module(),
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),

@@ -76,7 +76,6 @@ public class CommentStoreIT extends AbstractIT {
         bindMock(ContentStore.class);
 
         install(Modules.override(
-                Application.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 DynamoElasticCommentStore.module(),

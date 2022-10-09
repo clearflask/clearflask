@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.testutil;
 
+import com.google.common.io.Resources;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
@@ -10,34 +11,57 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.naming.ConfigNamingStrategy;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
+import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.ServiceManagerProvider;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
+
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 public abstract class AbstractTest extends AbstractModule {
+
+    public interface Config {
+        @DefaultValue("false")
+        boolean testConfigInjectionAndOverridePassed();
+    }
 
     @Inject
     protected Injector injector;
     @Inject
     protected DebugDynamicConfigSource configSource;
+
+    @Inject
+    private Config config;
     @Inject
     private ServiceManager serviceManager;
     @Inject
     private ConfigNamingStrategy configNamingStrategy;
+
+    /** Override in subclass to set value of Application.Config.searchEngine */
+    protected @Nullable
+    SearchEngine overrideSearchEngine() {
+        return null;
+    }
 
     @Before
     public void setup() throws Exception {
@@ -62,6 +86,8 @@ public abstract class AbstractTest extends AbstractModule {
         });
         injector.injectMembers(this);
 
+        assertTrue(config.testConfigInjectionAndOverridePassed());
+
         log.info("starting services");
         serviceManager.startAsync().awaitHealthy();
         log.info("started services");
@@ -82,6 +108,22 @@ public abstract class AbstractTest extends AbstractModule {
 
     protected void configure() {
         super.configure();
+
+        install(ConfigSystem.configModule(Config.class));
+        install(FileDynamicConfigSource.module());
+        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME))
+                .toInstance(Resources.getResource("config-test.cfg").getFile());
+
+        install(Modules.override(
+                Application.module()
+        ).with(new AbstractModule() {
+            @Override
+            protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    Optional.ofNullable(overrideSearchEngine()).ifPresent(searchEngine -> om.override(om.id().defaultSearchEngine()).withValue(searchEngine));
+                }));
+            }
+        }));
     }
 
     protected void configUnset(Class configClass, String methodName) throws NoSuchMethodException, ConfigException {

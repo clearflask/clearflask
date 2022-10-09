@@ -78,7 +78,6 @@ public class UserStoreIT extends AbstractIT {
         bindMock(ContentStore.class);
 
         install(Modules.override(
-                Application.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 DynamoElasticUserStore.module(),

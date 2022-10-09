@@ -82,7 +82,6 @@ public class AccountStoreIT extends AbstractIT {
                 DynamoProjectStore.module(),
                 DynamoVoteStore.module(),
                 ProjectUpgraderImpl.module(),
-                Application.module(),
                 IntercomUtil.module(),
                 ChatwootUtil.module(),
                 ElasticUtil.module(),

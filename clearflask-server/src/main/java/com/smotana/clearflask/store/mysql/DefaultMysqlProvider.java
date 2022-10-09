@@ -110,7 +110,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     }
 
     @Extern
-    public void createDatabase() {
+    public void createDatabase() throws Exception {
         try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
             context.createDatabaseIfNotExists(config.databaseName()).execute();
         }

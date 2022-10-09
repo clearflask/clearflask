@@ -189,7 +189,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         bindMock(AmazonRoute53.class);
 
         install(Modules.override(
-                Application.module(),
                 MockExtendedSecurityContext.module(),
                 ClearFlaskSso.module(),
                 HealthResource.module(),
