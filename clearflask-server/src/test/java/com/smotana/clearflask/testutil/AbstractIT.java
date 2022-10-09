@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.mockito.Mockito;
+import org.mockito.internal.stubbing.answers.ThrowsException;
 
 import java.net.ConnectException;
 import java.util.Optional;
@@ -95,9 +96,9 @@ public abstract class AbstractIT extends AbstractTest {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(DSLContext.class).toInstance(Mockito.mock(DSLContext.class, invocation -> {
-                    throw new RuntimeException("Mysql client is disabled, it should never be used");
-                }));
+                bind(DSLContext.class).toInstance(Mockito.mock(DSLContext.class, new ThrowsException(
+                        new RuntimeException("Mysql client is disabled, it should never be used")
+                )));
             }
         };
     }
@@ -106,9 +107,9 @@ public abstract class AbstractIT extends AbstractTest {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(RestHighLevelClient.class).toInstance(Mockito.mock(RestHighLevelClient.class, invocation -> {
-                    throw new RuntimeException("ElasticSearch client is disabled, it should never be used");
-                }));
+                bind(RestHighLevelClient.class).toInstance(Mockito.mock(RestHighLevelClient.class, new ThrowsException(
+                        new RuntimeException("ElasticSearch client is disabled, it should never be used")
+                )));
             }
         };
     }
