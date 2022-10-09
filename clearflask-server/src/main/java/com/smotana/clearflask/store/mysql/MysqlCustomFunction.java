@@ -21,12 +21,12 @@ public enum MysqlCustomFunction {
     WILSON("comment-vote-wilson.sql"),
     EXP_DECAY("exp-decay.sql");
 
-    String filename;
+    private final String filename;
 
     public String getSource() {
         try {
             URL fileUrl = Resources.getResource("mysql/" + getFilename());
-            checkState(fileUrl != null);
+            checkState(fileUrl != null, "Cannot find resource " + getFilename());
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             return Files.readString(file.toPath(), Charsets.UTF_8);
