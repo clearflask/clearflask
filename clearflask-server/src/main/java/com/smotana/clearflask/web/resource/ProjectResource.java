@@ -61,6 +61,7 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
@@ -845,7 +846,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class).createIndexMysql();
             ServiceInjector.INSTANCE.get().getInstance(DynamoElasticCommentStore.class).createIndexMysql();
         }
-        if (createMysql) {
+        if (createElasticSearch) {
+            ServiceInjector.INSTANCE.get().getInstance(DefaultElasticSearchProvider.class).putScripts();
             ServiceInjector.INSTANCE.get().getInstance(DynamoElasticAccountStore.class).createIndexElasticSearch();
             DynamoElasticUserStore dynamoElasticUserStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticUserStore.class);
             DynamoElasticIdeaStore dynamoElasticIdeaStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class);

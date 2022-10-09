@@ -20,6 +20,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.NetworkUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
@@ -114,7 +115,21 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     protected void serviceStart() throws Exception {
-        checkState(restClientOpt.isPresent());
+        checkState(restClientOpt.isPresent() && configApp.defaultSearchEngine().isWriteElastic());
+        if (configApp.createIndexesOnStartup()) {
+            putScripts();
+        }
+    }
+
+    @Override
+    protected void serviceStop() throws Exception {
+        if (this.restClientOpt.isPresent()) {
+            restClientOpt.get().close();
+        }
+    }
+
+    @Extern
+    public void putScripts() throws Exception {
         Futures.allAsList(Arrays.stream(ElasticScript.values())
                         .map(script -> {
                             SettableFuture<Void> scriptsFuture = SettableFuture.create();
@@ -124,13 +139,6 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
                         })
                         .collect(ImmutableSet.toImmutableSet()))
                 .get(1, TimeUnit.MINUTES);
-    }
-
-    @Override
-    protected void serviceStop() throws Exception {
-        if (this.restClientOpt.isPresent()) {
-            restClientOpt.get().close();
-        }
     }
 
     public static Module module() {

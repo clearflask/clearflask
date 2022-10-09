@@ -43,7 +43,7 @@ public class Application extends ResourceConfig {
         boolean startupWaitUntilDeps();
 
         /** Create Global ElasticSearch and/or Mysql indexes/tables on app startup */
-        @DefaultValue("true")
+        @DefaultValue("false")
         boolean createIndexesOnStartup();
 
         @DefaultValue("READWRITE_ELASTICSEARCH")

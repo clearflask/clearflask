@@ -39,7 +39,6 @@ public enum ElasticScript {
             this.name = split[0];
             this.lang = split[1];
             URL fileUrl = Resources.getResource("elastic/" + fileName);
-            checkState(fileUrl != null, "Cannot find resource " + fileName);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             this.source = new String(Files.readAllBytes(file.toPath()), Charsets.UTF_8);

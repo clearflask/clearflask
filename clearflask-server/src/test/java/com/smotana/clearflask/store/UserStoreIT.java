@@ -24,6 +24,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
+import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
@@ -83,6 +84,7 @@ public class UserStoreIT extends AbstractIT {
                 DynamoElasticUserStore.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoElasticAccountStore.module(),
+                DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
                 ElasticUtil.module(),

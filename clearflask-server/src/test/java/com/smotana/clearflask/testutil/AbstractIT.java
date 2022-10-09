@@ -15,6 +15,7 @@ import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -51,6 +52,9 @@ public abstract class AbstractIT extends AbstractTest {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().createIndexesOnStartup()).withValue(true);
+                }));
                 install(ConfigSystem.overrideModule(DefaultElasticSearchProvider.Config.class, om -> {
                     om.override(om.id().serviceEndpoint()).withValue("http://localhost:9200");
                 }));
@@ -73,7 +77,6 @@ public abstract class AbstractIT extends AbstractTest {
                     om.override(om.id().user()).withValue("root");
                     om.override(om.id().pass()).withValue("killbill");
                     om.override(om.id().databaseName()).withValue(databaseName);
-                    om.override(om.id().createDatabase()).withValue(true);
                     om.override(om.id().dropDatabase()).withValue(true);
                 }));
             }

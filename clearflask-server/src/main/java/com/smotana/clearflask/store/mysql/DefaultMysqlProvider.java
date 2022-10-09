@@ -48,9 +48,6 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
         @DefaultValue("clearflask")
         String databaseName();
 
-        @DefaultValue("false")
-        boolean createDatabase();
-
         /** For testing only */
         @DefaultValue("false")
         boolean dropDatabase();
@@ -94,7 +91,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
 
     @Override
     protected void serviceStart() throws Exception {
-        if (config.createDatabase() && configApp.defaultSearchEngine().isWriteMysql()) {
+        if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteMysql()) {
             createDatabase();
         }
     }

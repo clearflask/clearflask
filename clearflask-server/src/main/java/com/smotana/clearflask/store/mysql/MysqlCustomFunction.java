@@ -26,7 +26,6 @@ public enum MysqlCustomFunction {
     public String getSource() {
         try {
             URL fileUrl = Resources.getResource("mysql/" + getFilename());
-            checkState(fileUrl != null, "Cannot find resource " + getFilename());
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             return Files.readString(file.toPath(), Charsets.UTF_8);
