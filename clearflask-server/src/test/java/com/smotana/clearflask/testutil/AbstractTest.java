@@ -3,6 +3,8 @@
 package com.smotana.clearflask.testutil;
 
 import com.google.common.io.Resources;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -76,7 +78,8 @@ public abstract class AbstractTest extends AbstractModule {
                                 bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.TEST);
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
-                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class).asEagerSingleton();
+                                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class).asEagerSingleton();
+                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpManagedService.class).asEagerSingleton();
                                 install(ConfigConfigurator.testModules());
                                 install(MoreConfigValueConverters.module());
                             }
@@ -152,6 +155,19 @@ public abstract class AbstractTest extends AbstractModule {
     }
 
     @Singleton
-    private static final class NoOpService extends ManagedService {
+    private static final class NoOpService extends AbstractIdleService {
+        @Override
+        protected void startUp() throws Exception {
+            // No-op
+        }
+
+        @Override
+        protected void shutDown() throws Exception {
+            // No-op
+        }
+    }
+
+    @Singleton
+    private static final class NoOpManagedService extends ManagedService {
     }
 }
