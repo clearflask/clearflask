@@ -3,7 +3,6 @@
 package com.smotana.clearflask.testutil;
 
 import com.google.common.io.Resources;
-import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -77,7 +76,6 @@ public abstract class AbstractTest extends AbstractModule {
                                 bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.TEST);
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
-                                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);
                                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class).asEagerSingleton();
                                 install(ConfigConfigurator.testModules());
                                 install(MoreConfigValueConverters.module());
