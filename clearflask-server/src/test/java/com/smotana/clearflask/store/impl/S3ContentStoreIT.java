@@ -69,8 +69,6 @@ public class S3ContentStoreIT extends AbstractTest {
 
     @Before
     public void setup() throws Exception {
-        super.setup();
-
         s3.createBucket(bucketName);
     }
 

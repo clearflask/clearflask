@@ -115,8 +115,7 @@ public abstract class AbstractIT extends AbstractTest {
     }
 
     @Before
-    public void setup() throws Exception {
-        super.setup();
+    public void setupAbstractIT() throws Exception {
         try {
             elastic.indices().delete(new DeleteIndexRequest()
                     .indices("_all"), RequestOptions.DEFAULT);

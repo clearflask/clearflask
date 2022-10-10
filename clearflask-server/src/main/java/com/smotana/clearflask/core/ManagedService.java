@@ -97,22 +97,18 @@ public abstract class ManagedService extends AbstractIdleService {
         // Wait for dependencies
         ImmutableSet<Class> dependencies = serviceDependencies();
         if (!dependencies.isEmpty()) {
-            ImmutableSet<Service> dependantServices = Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
+            Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
                     .filter(not(this::equals))
                     .filter(s -> {
                         Class<? extends Service> sClazz = s.getClass();
                         return dependencies.stream().anyMatch(dClazz -> dClazz.isAssignableFrom(sClazz));
                     })
-                    .collect(ImmutableSet.toImmutableSet());
-            if (dependencies.size() != dependantServices.size()) {
-                throw new RuntimeException(this.getClass().getSimpleName() + " depends on " + dependencies + " but only found bindings for " + dependantServices);
-            }
-            dependantServices.forEach(managedService -> {
-                log.debug("Service {} awaiting dependency {} before {}",
-                        getClass().getSimpleName(), managedService.getClass().getSimpleName(),
-                        isStarting ? "starting up" : "shutting down");
-                awaitService(managedService, isStarting);
-            });
+                    .forEach(managedService -> {
+                        log.debug("Service {} awaiting dependency {} before {}",
+                                getClass().getSimpleName(), managedService.getClass().getSimpleName(),
+                                isStarting ? "starting up" : "shutting down");
+                        awaitService(managedService, isStarting);
+                    });
         }
     }
 

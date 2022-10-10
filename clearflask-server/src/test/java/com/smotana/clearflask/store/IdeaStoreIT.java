@@ -2,6 +2,26 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
+import static com.smotana.clearflask.store.VoteStore.VoteValue.Downvote;
+import static com.smotana.clearflask.store.VoteStore.VoteValue.None;
+import static com.smotana.clearflask.store.VoteStore.VoteValue.Upvote;
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -36,21 +56,8 @@ import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
+
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
-import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
-import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
-import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(Parameterized.class)

@@ -317,7 +317,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     @Before
     public void setup() throws Exception {
-        super.setup();
         HttpServletRequestImpl request = HttpServletRequestImpl.create();
         HttpServletResponseImpl response = HttpServletResponseImpl.create();
         ImmutableSet.of(

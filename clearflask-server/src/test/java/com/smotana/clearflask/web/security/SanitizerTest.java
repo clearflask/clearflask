@@ -50,7 +50,6 @@ public class SanitizerTest extends AbstractTest {
 
     @Before
     public void setup() throws Exception {
-        super.setup();
         Mockito.when(contentStoreMock.getScheme()).thenReturn("https");
     }
 

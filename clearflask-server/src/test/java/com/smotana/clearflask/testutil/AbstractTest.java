@@ -62,7 +62,7 @@ public abstract class AbstractTest extends AbstractModule {
     }
 
     @Before
-    public void setup() throws Exception {
+    public void setupAbstractTest() throws Exception {
         injector = Guice.createInjector(Stage.DEVELOPMENT, new AbstractModule() {
             @Override
             protected void configure() {

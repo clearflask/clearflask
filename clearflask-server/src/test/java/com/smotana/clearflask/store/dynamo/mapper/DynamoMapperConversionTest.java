@@ -174,8 +174,6 @@ public class DynamoMapperConversionTest extends AbstractTest {
 
     @Before
     public void setup() throws Exception {
-        super.setup();
-
         schema = singleTable.parseTableSchema(Data.class);
     }
 

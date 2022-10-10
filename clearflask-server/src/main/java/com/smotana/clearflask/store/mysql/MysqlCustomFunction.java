@@ -6,6 +6,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.net.URL;
@@ -16,20 +17,25 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 @Getter
 public enum MysqlCustomFunction {
-    WILSON("comment-vote-wilson.sql"),
-    EXP_DECAY("exp-decay.sql");
+    WILSON("mysql/comment-vote-wilson.sql"),
+    EXP_DECAY("mysql/exp-decay.sql");
 
+    private final String name;
     private final String source;
 
-    MysqlCustomFunction(String filename) {
+    MysqlCustomFunction(String pathStr) {
         try {
-            URL fileUrl = Resources.getResource("mysql/" + filename);
+            this.name = FilenameUtils.getBaseName(pathStr);
+            URL fileUrl = Resources.getResource(pathStr);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             source = Files.readString(file.toPath(), Charsets.UTF_8);
         } catch (Exception ex) {
-            ex.printStackTrace(System.err);
             throw new RuntimeException(ex);
         }
+    }
+
+    public String getSource() {
+        return this.source;
     }
 }
