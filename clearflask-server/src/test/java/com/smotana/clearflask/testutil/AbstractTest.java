@@ -3,16 +3,12 @@
 package com.smotana.clearflask.testutil;
 
 import com.google.common.io.Resources;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
 import com.google.inject.Stage;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
@@ -24,7 +20,6 @@ import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.naming.ConfigNamingStrategy;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
 import com.kik.config.ice.source.FileDynamicConfigSource;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.ServiceManagerProvider;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
@@ -78,8 +73,6 @@ public abstract class AbstractTest extends AbstractModule {
                                 bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.TEST);
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
-                                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class).asEagerSingleton();
-                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpManagedService.class).asEagerSingleton();
                                 install(ConfigConfigurator.testModules());
                                 install(MoreConfigValueConverters.module());
                             }
@@ -152,22 +145,5 @@ public abstract class AbstractTest extends AbstractModule {
         // TODO support scope as well
         String configName = configNamingStrategy.methodToFlatName(configClass.getMethod(methodName), scopeOpt);
         configSource.fireEvent(configName, valueOpt);
-    }
-
-    @Singleton
-    private static final class NoOpService extends AbstractIdleService {
-        @Override
-        protected void startUp() throws Exception {
-            // No-op
-        }
-
-        @Override
-        protected void shutDown() throws Exception {
-            // No-op
-        }
-    }
-
-    @Singleton
-    private static final class NoOpManagedService extends ManagedService {
     }
 }
