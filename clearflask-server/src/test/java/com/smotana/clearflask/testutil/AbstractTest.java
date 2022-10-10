@@ -16,6 +16,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.convert.FileDynamicConfigSourceManagedService;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.naming.ConfigNamingStrategy;
@@ -110,7 +111,7 @@ public abstract class AbstractTest extends AbstractModule {
         super.configure();
 
         install(ConfigSystem.configModule(Config.class));
-        install(FileDynamicConfigSource.module());
+        install(FileDynamicConfigSourceManagedService.module());
         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME))
                 .toInstance(Resources.getResource("config-test.cfg").getFile());
 

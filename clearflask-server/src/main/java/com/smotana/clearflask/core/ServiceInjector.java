@@ -13,6 +13,7 @@ import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.convert.ConfigValueConverters;
+import com.kik.config.ice.convert.FileDynamicConfigSourceManagedService;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.interceptor.NoopConfigValueInterceptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
@@ -257,7 +258,7 @@ public enum ServiceInjector {
                 MBeanServer mBeanServer = BeanUtil.wrapOverwriteRegister(ManagementFactory.getPlatformMBeanServer());
                 bind(MBeanServer.class).toInstance(mBeanServer);
                 install(JmxDynamicConfigSource.module());
-                install(FileDynamicConfigSource.module());
+                install(FileDynamicConfigSourceManagedService.module());
                 bind(Duration.class).annotatedWith(Names.named(FileDynamicConfigSource.POLL_INTERVAL_NAME)).toInstance(Duration.ofSeconds(10));
 
                 // API endpoints

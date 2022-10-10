@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkState;
+import static java.util.function.Predicate.not;
 
 public abstract class ManagedService extends AbstractIdleService {
 
@@ -25,6 +25,14 @@ public abstract class ManagedService extends AbstractIdleService {
     protected ImmutableSet<Class> serviceDependencies() {
         // Default no dependencies
         return ImmutableSet.of();
+    }
+
+    /**
+     * Start this service first blocking all other services
+     * and don't stop this service until all other services stopped.
+     */
+    protected boolean serviceStartFirstStopLast() {
+        return false;
     }
 
     /** Override to start service */
@@ -49,17 +57,36 @@ public abstract class ManagedService extends AbstractIdleService {
         serviceStop();
     }
 
-    private void awaitDependencies(boolean awaitRunning) {
+    private void awaitDependencies(boolean isStarting) {
+        // Wait for core services to start this non-core service
+        if (isStarting && !serviceStartFirstStopLast()) {
+            ImmutableSet<ManagedService> dependantServices = managedServicesProvider.get().stream()
+                    .filter(ManagedService::serviceStartFirstStopLast)
+                    .collect(ImmutableSet.toImmutableSet());
+            dependantServices.forEach(Service::awaitRunning);
+        }
+
+        // Wait for non-core services to stop before this core service
+        if (!isStarting && serviceStartFirstStopLast()) {
+            ImmutableSet<ManagedService> dependantServices = managedServicesProvider.get().stream()
+                    .filter(not(ManagedService::serviceStartFirstStopLast))
+                    .collect(ImmutableSet.toImmutableSet());
+            dependantServices.forEach(Service::awaitTerminated);
+        }
+
+        // Wait for dependencies
         ImmutableSet<Class> dependencies = serviceDependencies();
-        for (Class dependency : dependencies) {
+        if (!dependencies.isEmpty()) {
             ImmutableSet<Service> dependantServices = Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
                     .filter(s -> {
                         Class<? extends Service> sClazz = s.getClass();
                         return dependencies.stream().anyMatch(dClazz -> dClazz.isAssignableFrom(sClazz));
                     })
                     .collect(ImmutableSet.toImmutableSet());
-            checkState(!dependantServices.isEmpty(), this.getClass().getSimpleName() + " depends on " + dependency.getSimpleName() + " but no service was found");
-            dependantServices.forEach(awaitRunning ? Service::awaitRunning : Service::awaitTerminated);
+            if (dependencies.size() != dependantServices.size()) {
+                throw new RuntimeException(this.getClass().getSimpleName() + " depends on " + dependencies + " but only found bindings for " + dependantServices);
+            }
+            dependantServices.forEach(isStarting ? Service::awaitRunning : Service::awaitTerminated);
         }
     }
 
