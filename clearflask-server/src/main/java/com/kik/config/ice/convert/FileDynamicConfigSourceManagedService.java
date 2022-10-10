@@ -1,6 +1,5 @@
 package com.kik.config.ice.convert;
 
-import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -69,7 +68,7 @@ public class FileDynamicConfigSourceManagedService extends ManagedService {
                 bind(FileDynamicConfigSource.class);
 
                 // Bind inner class as a service to ensure resource cleanup
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(FileDynamicConfigSourceManagedService.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(FileDynamicConfigSourceManagedService.class);
             }
         };
     }

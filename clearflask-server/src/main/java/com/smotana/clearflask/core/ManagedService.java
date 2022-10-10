@@ -66,6 +66,7 @@ public abstract class ManagedService extends AbstractIdleService {
         // Wait for core services to start this non-core service
         if (isStarting && !serviceStartFirstStopLast()) {
             managedServicesProvider.get().stream()
+                    .filter(not(this::equals))
                     .filter(ManagedService::serviceStartFirstStopLast)
                     .forEach(managedService -> {
                         log.debug("Service {} awaiting core service {} before starting up",
@@ -76,8 +77,10 @@ public abstract class ManagedService extends AbstractIdleService {
 
         // Wait for non-core services to stop before this core service
         if (!isStarting && serviceStartFirstStopLast()) {
-            managedServicesProvider.get().stream()
-                    .filter(not(ManagedService::serviceStartFirstStopLast))
+            Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
+                    .filter(not(this::equals))
+                    .filter(service -> !service.getClass().isAssignableFrom(ManagedService.class)
+                            || !((ManagedService) service).serviceStartFirstStopLast())
                     .forEach(managedService -> {
                         log.debug("Core service {} awaiting {} before shutting down",
                                 getClass().getSimpleName(), managedService.getClass().getSimpleName());
@@ -95,6 +98,7 @@ public abstract class ManagedService extends AbstractIdleService {
         ImmutableSet<Class> dependencies = serviceDependencies();
         if (!dependencies.isEmpty()) {
             ImmutableSet<Service> dependantServices = Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
+                    .filter(not(this::equals))
                     .filter(s -> {
                         Class<? extends Service> sClazz = s.getClass();
                         return dependencies.stream().anyMatch(dClazz -> dClazz.isAssignableFrom(sClazz));
