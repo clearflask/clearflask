@@ -1206,7 +1206,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 bind(CommentStore.class).to(DynamoElasticCommentStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("comment")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticCommentStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticCommentStore.class).asEagerSingleton();
             }
         };
     }

@@ -148,7 +148,7 @@ public class DynamoCouponStore extends ManagedService implements CouponStore {
             protected void configure() {
                 bind(CouponStore.class).to(DynamoCouponStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoCouponStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoCouponStore.class).asEagerSingleton();
             }
         };
     }

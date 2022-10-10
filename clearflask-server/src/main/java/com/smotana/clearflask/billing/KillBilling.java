@@ -1446,7 +1446,7 @@ public class KillBilling extends ManagedService implements Billing {
             protected void configure() {
                 bind(Billing.class).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
             }
         };
     }

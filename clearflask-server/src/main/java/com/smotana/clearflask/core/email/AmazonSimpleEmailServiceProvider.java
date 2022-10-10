@@ -82,7 +82,7 @@ public class AmazonSimpleEmailServiceProvider extends ManagedService implements 
             @Override
             protected void configure() {
                 bind(AmazonSimpleEmailServiceV2.class).toProvider(AmazonSimpleEmailServiceProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(AmazonSimpleEmailServiceProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(AmazonSimpleEmailServiceProvider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

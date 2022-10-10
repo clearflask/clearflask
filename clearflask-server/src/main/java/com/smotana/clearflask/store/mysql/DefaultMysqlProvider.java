@@ -128,7 +128,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
             protected void configure() {
                 bind(DSLContext.class).toProvider(DefaultMysqlProvider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultMysqlProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultMysqlProvider.class).asEagerSingleton();
             }
         };
     }

@@ -1702,7 +1702,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("user")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class).asEagerSingleton();
             }
         };
     }

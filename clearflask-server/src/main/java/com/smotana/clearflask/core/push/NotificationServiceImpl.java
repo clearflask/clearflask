@@ -696,7 +696,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             protected void configure() {
                 bind(NotificationService.class).to(NotificationServiceImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NotificationServiceImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NotificationServiceImpl.class).asEagerSingleton();
             }
         };
     }

@@ -9,6 +9,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Singleton;
 import com.google.inject.Stage;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
@@ -77,7 +78,7 @@ public abstract class AbstractTest extends AbstractModule {
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
                                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);
-                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class);
+                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class).asEagerSingleton();
                                 install(ConfigConfigurator.testModules());
                                 install(MoreConfigValueConverters.module());
                             }
@@ -152,6 +153,7 @@ public abstract class AbstractTest extends AbstractModule {
         configSource.fireEvent(configName, valueOpt);
     }
 
+    @Singleton
     private static final class NoOpService extends ManagedService {
     }
 }

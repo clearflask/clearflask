@@ -1108,7 +1108,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 bind(AccountStore.class).to(DynamoElasticAccountStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("account")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticAccountStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticAccountStore.class).asEagerSingleton();
             }
         };
     }

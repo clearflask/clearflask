@@ -2265,7 +2265,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 bind(IdeaStore.class).to(DynamoElasticIdeaStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("idea")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticIdeaStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticIdeaStore.class).asEagerSingleton();
             }
         };
     }

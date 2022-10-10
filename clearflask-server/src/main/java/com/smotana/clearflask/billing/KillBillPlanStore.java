@@ -906,7 +906,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             @Override
             protected void configure() {
                 bind(PlanStore.class).to(KillBillPlanStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class).asEagerSingleton();
             }
         };
     }

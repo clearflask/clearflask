@@ -42,7 +42,7 @@ public class InMemoryDynamoDbProvider extends ManagedService implements Provider
             @Override
             protected void configure() {
                 bind(AmazonDynamoDB.class).toProvider(InMemoryDynamoDbProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(InMemoryDynamoDbProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(InMemoryDynamoDbProvider.class).asEagerSingleton();
 
                 install(DocumentDynamoDbProvider.module());
             }

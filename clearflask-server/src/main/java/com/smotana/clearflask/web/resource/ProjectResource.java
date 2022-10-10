@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
@@ -45,7 +46,6 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
-import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -131,6 +131,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Context
     private HttpHeaders headers;
+    @Inject
+    private Injector injector;
     @Inject
     private Config config;
     @Inject
@@ -840,18 +842,18 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Extern
     private void createIndexes(boolean createElasticSearch, boolean createMysql) throws Exception {
         if (createMysql) {
-            ServiceInjector.INSTANCE.get().getInstance(DefaultMysqlProvider.class).createDatabase();
-            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticAccountStore.class).createIndexMysql();
-            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticUserStore.class).createIndexMysql();
-            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class).createIndexMysql();
-            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticCommentStore.class).createIndexMysql();
+            injector.getInstance(DefaultMysqlProvider.class).createDatabase();
+            injector.getInstance(DynamoElasticAccountStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticUserStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticIdeaStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticCommentStore.class).createIndexMysql();
         }
         if (createElasticSearch) {
-            ServiceInjector.INSTANCE.get().getInstance(DefaultElasticSearchProvider.class).putScripts();
-            ServiceInjector.INSTANCE.get().getInstance(DynamoElasticAccountStore.class).createIndexElasticSearch();
-            DynamoElasticUserStore dynamoElasticUserStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticUserStore.class);
-            DynamoElasticIdeaStore dynamoElasticIdeaStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticIdeaStore.class);
-            DynamoElasticCommentStore dynamoElasticCommentStore = ServiceInjector.INSTANCE.get().getInstance(DynamoElasticCommentStore.class);
+            injector.getInstance(DefaultElasticSearchProvider.class).putScripts();
+            injector.getInstance(DynamoElasticAccountStore.class).createIndexElasticSearch();
+            DynamoElasticUserStore dynamoElasticUserStore = injector.getInstance(DynamoElasticUserStore.class);
+            DynamoElasticIdeaStore dynamoElasticIdeaStore = injector.getInstance(DynamoElasticIdeaStore.class);
+            DynamoElasticCommentStore dynamoElasticCommentStore = injector.getInstance(DynamoElasticCommentStore.class);
             projectStore.listAllProjectIds(projectId -> {
                 try {
                     dynamoElasticUserStore.createIndexElasticSearch(projectId);

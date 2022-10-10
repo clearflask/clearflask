@@ -852,7 +852,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             protected void configure() {
                 bind(GitHubStore.class).to(GitHubStoreImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(GitHubStoreImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(GitHubStoreImpl.class).asEagerSingleton();
             }
         };
     }
