@@ -425,6 +425,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(parentIndexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             }
 
@@ -815,6 +817,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -901,6 +905,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -958,6 +964,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -991,6 +999,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1039,6 +1049,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1086,6 +1098,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1115,6 +1129,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             }
         } else {
@@ -1139,6 +1155,8 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             CompletionStage<Integer> completionStage = mysqlUtil.sequentialBatch(commentToMysqlQuery(comment));
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
     }

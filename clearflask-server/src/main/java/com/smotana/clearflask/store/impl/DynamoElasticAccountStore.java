@@ -497,6 +497,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -729,6 +731,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -807,6 +811,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -871,6 +877,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -954,6 +962,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1097,6 +1107,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             CompletionStage<int[]> completionStage = mysql.batchInsert(record).executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
     }

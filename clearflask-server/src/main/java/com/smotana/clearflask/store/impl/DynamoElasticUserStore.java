@@ -958,6 +958,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             } else if (searchEngine.isReadMysql()) {
                 indexingFuture.set(null);
@@ -1112,6 +1114,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1175,6 +1179,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1586,6 +1592,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1616,6 +1624,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             }
         } else {
@@ -1640,6 +1650,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             CompletionStage<Integer> completionStage = userToMysqlQuery(user).executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
     }

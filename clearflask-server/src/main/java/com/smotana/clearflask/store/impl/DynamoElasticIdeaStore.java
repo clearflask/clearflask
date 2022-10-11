@@ -298,7 +298,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("title", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.POST_TITLE_MAX_LENGTH)).notNull())
                 .column("description", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
                 .column("response", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
-                .column("responseAuthorUserId", SQLDataType.VARCHAR(255).notNull())
+                .column("responseAuthorUserId", SQLDataType.VARCHAR(255))
                 .column("responseAuthorName", SQLDataType.VARCHAR(255))
                 .column("categoryId", SQLDataType.VARCHAR(255).notNull())
                 .column("statusId", SQLDataType.VARCHAR(255))
@@ -613,6 +613,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .collect(Collectors.toList());
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStages);
+                } else {
+                    CompletionStageUtil.logFailure(completionStages);
                 }
             }
             indexingFutures.add(indexingFuture);
@@ -679,6 +681,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1636,6 +1640,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 } else {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStages);
                 }
+            } else {
+                CompletionStageUtil.logFailure(completionStages);
             }
         }
 
@@ -1732,6 +1738,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             } else if (searchEngine.isReadMysql()) {
                 indexingFuture.set(null);
@@ -1834,6 +1842,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             } else if (searchEngine.isReadMysql()) {
                 indexingFuture.set(null);
@@ -1902,6 +1912,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -1964,6 +1976,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -2083,6 +2097,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStages);
+            } else {
+                CompletionStageUtil.logFailure(completionStages);
             }
         }
 
@@ -2133,6 +2149,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -2173,6 +2191,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -2207,6 +2227,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -2253,6 +2275,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
 
@@ -2281,6 +2305,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .executeAsync();
                 if (searchEngine.isReadMysql()) {
                     CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+                } else {
+                    CompletionStageUtil.logFailure(completionStage);
                 }
             }
         } else {
@@ -2305,6 +2331,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             CompletionStage<Integer> completionStage = mysqlUtil.sequentialBatch(ideaToMysqlRecords(idea));
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
+            } else {
+                CompletionStageUtil.logFailure(completionStage);
             }
         }
     }
