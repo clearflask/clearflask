@@ -81,7 +81,7 @@ public class MysqlUtil {
         CompletionStage<Integer> completionStage = qs[0].executeAsync();
         for (int i = 1; i < qs.length; i++) {
             Query nextQuery = qs[i];
-            completionStage = completionStage.thenCompose(count -> nextQuery.executeAsync());
+            completionStage = completionStage.thenComposeAsync(count -> nextQuery.executeAsync());
         }
         return completionStage;
     }

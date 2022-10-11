@@ -17,7 +17,7 @@ public class CompletionStageUtil {
     }
 
     public static SettableFuture<Void> toSettableFuture(SettableFuture<Void> settableFuture, CompletionStage<?> completionStage) {
-        completionStage.whenComplete((result, th) -> {
+        completionStage.whenCompleteAsync((result, th) -> {
             if (th != null) {
                 settableFuture.setException(th);
             } else {
