@@ -93,7 +93,7 @@ public class MysqlUtil {
                     .map(SQLException::getMessage);
             @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
             if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
-                    && causeSqlExMessageOpt.filter("Duplicate key name"::contains).isPresent()) {
+                    && causeSqlExMessageOpt.filter(msg -> msg.contains("Duplicate key name")).isPresent()) {
                 log.debug("Index already exists: {}", ex.getMessage());
             } else {
                 throw new RuntimeException("Failed to create index with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlExMessageOpt, ex);
@@ -114,7 +114,7 @@ public class MysqlUtil {
                     .map(SQLException::getMessage);
             @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
             if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
-                    && causeSqlExMessageOpt.filter("already exists"::contains).isPresent()) {
+                    && causeSqlExMessageOpt.filter(msg -> msg.contains("already exists")).isPresent()) {
                 log.debug("Function already exists: {}", ex.getMessage());
             } else {
                 throw new RuntimeException("Failed to create function with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlExMessageOpt, ex);
