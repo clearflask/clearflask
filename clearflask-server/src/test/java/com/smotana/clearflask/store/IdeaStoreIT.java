@@ -26,7 +26,9 @@ import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
+import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -37,6 +39,7 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.DSLContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -71,6 +74,10 @@ public class IdeaStoreIT extends AbstractIT {
     private IdeaStore store;
     @Inject
     private UserStore userStore;
+    @Inject
+    private DSLContext mysql;
+    @Inject
+    private MysqlUtil mysqlUtil;
 
     @Override
     protected void configure() {
@@ -620,7 +627,6 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Long.valueOf(7L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
     }
 
-
     @Test(timeout = 30_000L)
     public void testExpressionsNullAutoFill() throws Exception {
         String projectId = IdUtil.randomId();
@@ -639,5 +645,13 @@ public class IdeaStoreIT extends AbstractIT {
         assertNotNull(store.getIdea(projectId, idea.getIdeaId()).get().getExpressions());
 
         store.expressIdeaSet(projectId, idea.getIdeaId(), userId, e -> e.equals("👀") ? 2d : 1d, Optional.of("👀")).getIndexingFuture().get();
+    }
+
+    @Test(timeout = 30_000L)
+    public void testDontFailDuplicateFunctionIndexCreation() throws Exception {
+        mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+        mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
     }
 }

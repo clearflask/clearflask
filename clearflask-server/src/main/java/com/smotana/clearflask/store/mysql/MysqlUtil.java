@@ -33,6 +33,7 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.exception.SQLStateClass;
 import org.jooq.impl.DSL;
 
+import javax.annotation.Nullable;
 import java.io.Reader;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -88,11 +89,14 @@ public class MysqlUtil {
         try {
             query.execute();
         } catch (DataAccessException ex) {
-            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(ex.sqlStateClass())
-                    && ex.getMessage().contains("Duplicate key name")) {
+            Optional<String> causeSqlExMessageOpt = Optional.ofNullable(ex.getCause(SQLException.class))
+                    .map(SQLException::getMessage);
+            @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
+            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
+                    && causeSqlExMessageOpt.filter("Duplicate key name"::contains).isPresent()) {
                 log.debug("Index already exists: {}", ex.getMessage());
             } else {
-                throw ex;
+                throw new RuntimeException("Failed to create index with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlExMessageOpt, ex);
             }
         }
     }
@@ -106,14 +110,14 @@ public class MysqlUtil {
                 }
             });
         } catch (DataAccessException ex) {
-            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(ex.sqlStateClass())
-                    && Optional.ofNullable(ex.getCause(SQLException.class))
-                    .map(Throwable::getMessage)
-                    .filter("already exists"::contains)
-                    .isPresent()) {
+            Optional<String> causeSqlExMessageOpt = Optional.ofNullable(ex.getCause(SQLException.class))
+                    .map(SQLException::getMessage);
+            @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
+            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
+                    && causeSqlExMessageOpt.filter("already exists"::contains).isPresent()) {
                 log.debug("Function already exists: {}", ex.getMessage());
             } else {
-                throw ex;
+                throw new RuntimeException("Failed to create function with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlExMessageOpt, ex);
             }
         }
     }
