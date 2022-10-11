@@ -52,6 +52,7 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -277,7 +278,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Extern
     @Override
     public ListenableFuture<Void> createIndex(String projectId) {
-        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isWriteElastic()) {
             return createIndexElasticSearch(projectId);
         } else {
             return Futures.immediateFuture(null);
@@ -593,7 +594,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             .collect(ImmutableList.toImmutableList()))));
 
             SettableFuture<Void> indexingFuture = SettableFuture.create();
-            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
                 elastic.bulkAsync(new BulkRequest()
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
@@ -657,7 +658,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         ConnectResponse connectResponse = connectIdeas(projectId, ideaId, parentIdeaId, true, undo, categoryExpressionToWeightMapper);
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
             updates.put("mergedToPostId", orNull(connectResponse.getIdea().getMergedToPostId()));
@@ -948,7 +949,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 null,
                 null,
                 null);
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             return elasticUtil.histogram(
                     elasticUtil.getIndexName(IDEA_INDEX, projectId),
                     "created",
@@ -1226,7 +1227,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         final SearchResponse searchResponse;
         Optional<Integer> limitOpt = Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue);
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
 
             Optional<SortOrder> sortOrderOpt;
@@ -1352,7 +1353,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public long countIdeas(String projectId) {
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             try {
                 return elastic.count(new CountRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                                 RequestOptions.DEFAULT)
@@ -1367,7 +1368,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             .fetchSource(false)
@@ -1554,7 +1555,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             if (indexUpdates.size() > 0) {
                 elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
@@ -1655,7 +1656,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             if (!indexUpdatesElastic.isEmpty() || updateTrend) {
                 UpdateRequest updateRequest = new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId());
@@ -1765,7 +1766,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
@@ -1819,7 +1820,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             Map<String, Object> indexUpdates = Maps.newHashMap();
             indexUpdates.put("expressions", idea.getExpressions().keySet());
@@ -1889,7 +1890,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             Map<String, Object> indexUpdates = Maps.newHashMap();
             indexUpdates.put("expressions", idea.getExpressions().keySet());
@@ -1987,7 +1988,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         scriptParamsBuilder.put("extraUpdates", indexUpdatesElastic);
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(scriptParamsBuilder.build()))
@@ -2035,7 +2036,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
             updates.put("commentCount", idea.getCommentCount());
@@ -2083,7 +2084,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .withNameMap(expression.nameMap().orElse(null)));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
@@ -2114,7 +2115,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .toArray(PrimaryKey[]::new))));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.bulkAsync(new BulkRequest()
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
@@ -2165,7 +2166,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 });
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                     RequestOptions.DEFAULT,
@@ -2191,7 +2192,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     private void indexIdea(SettableFuture<Void> indexingFuture, String projectId, String ideaId) {
         Optional<IdeaModel> ideaOpt = getIdea(projectId, ideaId);
         if (!ideaOpt.isPresent()) {
-            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId),
                         RequestOptions.DEFAULT,
@@ -2218,7 +2219,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     private void indexIdea(SettableFuture<Void> indexingFuture, IdeaModel idea) {
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(idea.getProjectId());
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(idea.getProjectId());
         if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(ideaToEsIndexRequest(idea, true),
                     RequestOptions.DEFAULT,

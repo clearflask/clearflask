@@ -48,6 +48,7 @@ import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -222,7 +223,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     @Override
     protected void serviceStart() throws Exception {
         if (configApp.createIndexesOnStartup()) {
-            ProjectStore.SearchEngine searchEngine = configApp.defaultSearchEngine();
+            SearchEngine searchEngine = configApp.defaultSearchEngine();
             if (searchEngine.isWriteMysql()) {
                 createIndexMysql();
             }
@@ -231,7 +232,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
 
     @Override
     public ListenableFuture<Void> createIndex(String projectId) {
-        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isWriteElastic()) {
             return createIndexElasticSearch(projectId);
         } else {
             return Futures.immediateFuture(null);
@@ -279,7 +280,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     @Extern
     public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isWriteElastic()) {
             elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                             "dynamic", "false",
                             "properties", ImmutableMap.builder()
@@ -404,7 +405,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                     .getLong("childCommentCount");
 
             SettableFuture<Void> parentIndexingFuture = SettableFuture.create();
-            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(commentWithVote.getProjectId());
+            SearchEngine searchEngine = projectStore.getSearchEngineForProject(commentWithVote.getProjectId());
             if (searchEngine.isWriteElastic()) {
                 elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, commentWithVote.getProjectId()), parentCommentId)
                                 .doc(gson.toJson(ImmutableMap.of(
@@ -476,7 +477,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
         }
 
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             return elasticUtil.histogram(
                     elasticUtil.getIndexName(COMMENT_INDEX, projectId),
                     "created",
@@ -576,7 +577,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             // For complex searches, fallback to elasticsearch/mysql
             final PrimaryKey[] primaryKeys;
             final Optional<String> nextCursorOpt;
-            if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+            if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
                 BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
                 if (!Strings.isNullOrEmpty(commentSearchAdmin.getFilterAuthorId())) {
                     queryBuilder.must(QueryBuilders.termQuery("authorUserId", commentSearchAdmin.getFilterAuthorId()));
@@ -648,7 +649,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 ? config.searchInitialFetchMax()
                 : config.searchSubsequentFetchMax();
 
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isReadElastic()) {
             BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
             if (parentCommentIdOpt.isPresent() && mergedPostIds.contains(parentCommentIdOpt.get())) {
@@ -792,7 +793,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .doc(gson.toJson(ImmutableMap.of(
@@ -873,7 +874,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .script(ElasticScript.WILSON.toScript(ImmutableMap.of(
@@ -929,7 +930,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .getItem());
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             // Use a hashmap to allow null values
             Map<String, Object> updates = Maps.newHashMap();
@@ -974,7 +975,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         "commentId", commentId))));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
@@ -1023,7 +1024,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 });
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.deleteByQueryAsync(new DeleteByQueryRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
                             .setQuery(QueryBuilders.termQuery("ideaId", ideaId)),
@@ -1072,7 +1073,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
 
         // Delete idea index
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
                     RequestOptions.DEFAULT,
@@ -1098,7 +1099,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     private void indexComment(SettableFuture<Void> indexingFuture, String projectId, String ideaId, String commentId) {
         Optional<CommentModel> commentOpt = getComment(projectId, ideaId, commentId);
         if (!commentOpt.isPresent()) {
-            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId),
                         RequestOptions.DEFAULT,
@@ -1126,7 +1127,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     }
 
     private void indexComment(SettableFuture<Void> indexingFuture, CommentModel comment) {
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(comment.getProjectId());
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(comment.getProjectId());
         if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(commentToEsIndexRequest(comment),
                     RequestOptions.DEFAULT,

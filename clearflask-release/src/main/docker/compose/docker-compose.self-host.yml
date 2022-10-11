@@ -22,6 +22,9 @@ services:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:
       - 8080:8080
+      # JMX (Disabled by default)
+      # - 9950:9950
+      # - 9951:9951
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
@@ -32,19 +35,33 @@ services:
       interval: 5s
       timeout: 15s
       retries: 2
-  # ElasticSearch
-  elasticsearch:
-    profiles:
-      - with-deps
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    expose:
-      - 9200
-    environment:
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
-      - discovery.type=single-node
-    mem_limit: 4g
+  # MySQL (enabled by default as an alternative to ElasticSearch)
+  mysql-db:
+    image: mysql:5.7
+    command:
+      - 'mysqld'
+      - '--sql-mode=IGNORE_SPACE'
+      - '--explicit-defaults-for-timestamp'
+      - '--secure-file-priv=/tmp'
     volumes:
-      - ./data/elasticsearch:/usr/share/elasticsearch/data
+      - ./killbill-db:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=killbill
+  # ElasticSearch (disabled by default)
+  #  elasticsearch:
+  #    profiles:
+  #      - with-deps
+  #    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+  #    expose:
+  #      - 9200
+  #    environment:
+  #      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+  #      - discovery.type=single-node
+  #    mem_limit: 4g
+  #    volumes:
+  #      - ./data/elasticsearch:/usr/share/elasticsearch/data
   # For DynamoDB, S3 and SES alternative
   localstack:
     profiles:

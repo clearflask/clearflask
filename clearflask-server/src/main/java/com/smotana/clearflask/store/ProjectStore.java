@@ -51,7 +51,11 @@ public interface ProjectStore {
 
     void listAllProjects(Consumer<Project> consumer, boolean useCache);
 
-    SearchEngine getSearchEngine(String projectId);
+    /** Get global search engine */
+    SearchEngine getSearchEngine();
+
+    /** Get global search engine */
+    SearchEngine getSearchEngineForProject(String projectId);
 
     Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin);
 

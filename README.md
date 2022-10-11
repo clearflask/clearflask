@@ -46,6 +46,8 @@ Listen to your users during product development with [ClearFlask](https://clearf
     - [Deploy ClearFlask](#deploy-clearflask)
         - [Setup](#setup)
         - [Run](#run)
+    - [Maintenance](#maintenance)
+        - [Migration between Elasticsearch/MySQL](#migration-between-elasticsearchmysql)
 - [Contributing](#contributing)
     - [Code quality](#code-quality)
     - [Building](#building)
@@ -231,6 +233,100 @@ After you sign-up, disable further signups using:
 1. Run `docker-compose up` or `docker-compose --profile with-deps up` to also start dependencies.
 2. Point your browser at `http://localhost` or if you configured your DNS `https://yoursite.com`.
 3. Create an account using `admin@localhost` email or based on your configuration of `superAdminEmailRegex`.
+
+## Maintenance
+
+### Migration between ElasticSearch/MySQL
+
+Source of truth data is stored in a NoSQL DynamoDB compatible database. For searching/filtering, you have a choice of
+using a separate database:
+
+ElasticSearch:
+
+- Intended for large projects
+- Searching is great (example: searching for 'Johnny' will find 'Jonathan')
+
+MySQL:
+
+- Intended for small projects
+- Lightweight
+- Cheap to host
+- Searching is idential match only (example: searching for 'Jon' will find 'Jonathan')
+
+#### Migration prerequisites
+
+To check what you are using now, open your configuration file `config-selfhost.cfg` for the
+property `com.smotana.clearflask.web.Application$Config.defaultSearchEngine`. If you can't find it, the default value
+uses ElasticSearch.
+
+You will need a JMX client such
+as [jconsole](https://docs.oracle.com/javase/7/docs/technotes/guides/management/jconsole.html) probably already bundled
+with your JRE/JDK on your system or [VisualVM](https://visualvm.github.io/). To connect to your running instance, you
+need to enable port forwarding in your `docker-compose.yml` file by uncommenting the `JMX` ports and restarting. Then
+you can connect to `service:jmx:rmi:///jndi/rmi://localhost:9950/jmxrmi` without credentials and without SSL.
+
+During the migration, you should be checking the logs for any warnings or errors. Especially when starting up or
+invoking a JMX method. If you run in to issues, document it, open an issue on GitHub and optionally rolback by undoing
+all the steps in reverse order.
+
+#### Migrate from Mysql to ElasticSearch
+
+1. Double check you are using MySQL, you should have this property
+   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`: `READWRITE_MYSQL`
+2. Edit `docker-compose.yml`:
+    1. Uncomment `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
+    2. Uncomment `elasticsearch` container
+    3. Restart the server
+3. Using JMX, invoke `com.smotana.clearflask.web.resource.ProjectResource`.`createIndexes`(`true`, `false`); On failure,
+   check the logs
+4. Edit `docker-compose.yml`
+    1. Change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine` to `READ_MYSQL_WRITE_BOTH`
+    2. Restart the server
+5. Using JMX, invoke `com.smotana.clearflask.web.resource.ProjectResource`.`reindexProjects`(`true`, `true`, `false`)
+6. At this point you are using both ElasticSearch and MySQL but reading only from MySQL. To test a single project with
+   ElasticSearch, as super admin open `https://<your_domain>/dashboard/settings/project/advanced` and at the bottom of
+   the page force override the search engine to ElasticSearch. Remember to unset this property before continuing.
+7. Edit `docker-compose.yml`
+    1. Change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine` to `READ_ELASTICSEARCH_WRITE_BOTH`
+    2. Restart the server and ensure every project is working well.
+8. Edit `docker-compose.yml` and change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine`
+   to `READWRITE_ELASTICSEARCH`
+9. Edit `docker-compose.yml`:
+    1. Comment out `mysql-db` container to prevent it from starting up.
+    2. Comment out `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
+    3. Restart the server
+10. Remove the leftover data stored by the now non-functional MySQL container.
+
+#### Migrate from ElasticSearch to Mysql
+
+1. Double check you are using ElasticSearch, you may have this property
+   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`: `READWRITE_ELASTICSEARCH`
+   . If it is missing, the default is ElasticSearch
+2. Edit `docker-compose.yml`:
+    1. Uncomment `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
+    2. Uncomment `mysql-db` container
+    3. Restart the server
+3. Using JMX, invoke `com.smotana.clearflask.web.resource.ProjectResource`.`createIndexes`(`false`, `true`); On failure,
+   check the logs
+4. Edit `docker-compose.yml`
+    1. Change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine`
+       to `READ_ELASTICSEARCH_WRITE_BOTH`
+    2. Restart the server
+5. Using JMX, invoke `com.smotana.clearflask.web.resource.ProjectResource`.`reindexProjects`(`true`, `false`, `true`)
+6. At this point you are using both ElasticSearch and MySQL but reading only from ElasticSearch. To test a single
+   project with MySQL, as super admin open `https://<your_domain>/dashboard/settings/project/advanced` and at the bottom
+   of the page force override the search engine to MySQL. Remember to unset this property before continuing.
+7. Edit `docker-compose.yml`
+    1. Change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine`
+       to `READ_MYSQL_WRITE_BOTH`
+    2. Restart the server and ensure every project is working well.
+8. Edit `docker-compose.yml` and change `com.smotana.clearflask.web.Application$Config.defaultSearchEngine`
+   to `READWRITE_MYSQL`
+9. Edit `docker-compose.yml`:
+    1. Comment out `elasticsearch` container to prevent it from starting up.
+    2. Comment out `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
+    3. Restart the server
+10. Remove the leftover data stored by the now non-functional ElasticSearch container.
 
 # Contributing
 

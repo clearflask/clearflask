@@ -58,6 +58,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -879,7 +880,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Extern
     private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         reindexProject(projectId,
                 deleteExistingIndices,
                 searchEngine.isWriteElastic(),

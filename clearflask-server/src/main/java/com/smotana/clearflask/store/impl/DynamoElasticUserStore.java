@@ -68,6 +68,7 @@ import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -282,7 +283,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     @Override
     public ListenableFuture<Void> createIndex(String projectId) {
-        if (projectStore.getSearchEngine(projectId).isWriteElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isWriteElastic()) {
             return createIndexElasticSearch(projectId);
         } else {
             return Futures.immediateFuture(null);
@@ -482,7 +483,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             return new HistogramResponse(ImmutableList.of(), new Hits(0L, null));
         }
 
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             return elasticUtil.histogram(
                     elasticUtil.getIndexName(USER_INDEX, projectId),
                     "created",
@@ -503,7 +504,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Override
     public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        if (projectStore.getSearchEngine(projectId).isReadElastic()) {
+        if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             Optional<SortOrder> sortOrderOpt;
             if (userSearchAdmin.getSortOrder() != null) {
                 switch (userSearchAdmin.getSortOrder()) {
@@ -935,7 +936,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             if (indexUpdates.size() > 0) {
                 elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
@@ -1094,7 +1095,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
                             .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
@@ -1154,7 +1155,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .forEach(userId -> revokeSessions(projectId, userId, Optional.empty()));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.bulkAsync(new BulkRequest()
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
@@ -1572,7 +1573,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         // Delete user index
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                     RequestOptions.DEFAULT,
@@ -1600,7 +1601,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private void indexUser(SettableFuture<Void> indexingFuture, String projectId, String userId) {
         Optional<UserModel> userOpt = getUser(projectId, userId);
         if (!userOpt.isPresent()) {
-            ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(projectId);
+            SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
                 elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
                         RequestOptions.DEFAULT,
@@ -1627,7 +1628,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     private void indexUser(SettableFuture<Void> indexingFuture, UserModel user) {
-        ProjectStore.SearchEngine searchEngine = projectStore.getSearchEngine(user.getProjectId());
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(user.getProjectId());
         if (searchEngine.isWriteElastic()) {
             elastic.indexAsync(userToEsIndexRequest(user),
                     RequestOptions.DEFAULT,

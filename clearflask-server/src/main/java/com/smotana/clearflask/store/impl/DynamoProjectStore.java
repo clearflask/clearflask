@@ -86,7 +86,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ProjectUpgraderImpl.PROJECT_VERSION_LATEST;
- 
+
 @Slf4j
 @Singleton
 public class DynamoProjectStore implements ProjectStore {
@@ -272,11 +272,17 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public SearchEngine getSearchEngine(String projectId) {
+    public SearchEngine getSearchEngine() {
+        return configApp.forceSearchEngine()
+                .orElseGet(configApp::defaultSearchEngine);
+    }
+
+    @Override
+    public SearchEngine getSearchEngineForProject(String projectId) {
         return configApp.forceSearchEngine()
                 .orElse(getProject(projectId, true)
                         .flatMap(Project::getSearchEngineOverride)
-                        .orElseGet(() -> configApp.defaultSearchEngine()));
+                        .orElseGet(configApp::defaultSearchEngine));
     }
 
     @Override
