@@ -37,6 +37,7 @@ import javax.annotation.Nullable;
 import java.io.Reader;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -89,7 +90,7 @@ public class MysqlUtil {
         try {
             query.execute();
         } catch (DataAccessException ex) {
-            Optional<String> causeSqlExMessageOpt = Optional.ofNullable(ex.getCause(SQLException.class))
+            Optional<String> causeSqlExMessageOpt = Optional.ofNullable(ex.getCause(SQLSyntaxErrorException.class))
                     .map(SQLException::getMessage);
             @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
             if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
@@ -110,14 +111,15 @@ public class MysqlUtil {
                 }
             });
         } catch (DataAccessException ex) {
-            Optional<String> causeSqlExMessageOpt = Optional.ofNullable(ex.getCause(SQLException.class))
+            Optional<String> causeSqlSyntaxExMessageOpt = Optional.ofNullable(ex.getCause(SQLSyntaxErrorException.class))
                     .map(SQLException::getMessage);
             @Nullable SQLStateClass sqlStateClass = ex.sqlStateClass();
-            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
-                    && causeSqlExMessageOpt.filter(msg -> msg.contains("already exists")).isPresent()) {
+            if ((SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(sqlStateClass)
+                    || SQLStateClass.NONE.equals(sqlStateClass))
+                    && causeSqlSyntaxExMessageOpt.filter(msg -> msg.contains("already exists")).isPresent()) {
                 log.debug("Function already exists: {}", ex.getMessage());
             } else {
-                throw new RuntimeException("Failed to create function with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlExMessageOpt, ex);
+                throw new RuntimeException("Failed to create function with SQL cause " + Optional.ofNullable(sqlStateClass) + " msg " + causeSqlSyntaxExMessageOpt, ex);
             }
         }
     }
