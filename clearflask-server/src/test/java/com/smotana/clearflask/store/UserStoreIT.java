@@ -2,22 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import static io.jsonwebtoken.SignatureAlgorithm.HS512;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -36,9 +20,9 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -52,9 +36,21 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+
+import static io.jsonwebtoken.SignatureAlgorithm.HS512;
+import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -71,16 +67,12 @@ public class UserStoreIT extends AbstractIT {
         };
     }
 
-    @Override
-    protected ProjectStore.SearchEngine overrideSearchEngine() {
-        return searchEngine;
-    }
-
     @Inject
     private UserStore store;
 
     @Override
     protected void configure() {
+        overrideSearchEngine = searchEngine;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -88,9 +80,9 @@ public class UserStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticUserStore.module(),
-                DynamoElasticIdeaStore.module(),
-                DynamoElasticAccountStore.module(),
+                DynamoElasticMysqlUserStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
@@ -109,7 +101,7 @@ public class UserStoreIT extends AbstractIT {
                 }));
                 StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
                 log.trace("Using generated priv key: {}", privKey);
-                install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlUserStore.Config.class, om -> {
                     om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));

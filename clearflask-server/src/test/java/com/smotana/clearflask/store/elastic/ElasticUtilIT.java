@@ -52,7 +52,6 @@ public class ElasticUtilIT extends AbstractIT {
     @Named("ElasticUtilIT")
     private ConfigSearch configSearch;
 
-
     @Parameter(0)
     public PaginationType paginationType;
 
@@ -63,6 +62,7 @@ public class ElasticUtilIT extends AbstractIT {
 
     @Override
     protected void configure() {
+        enableKillBillClient = false;
         super.configure();
 
         bindMock(ContentStore.class);

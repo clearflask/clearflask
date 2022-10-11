@@ -9,7 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.JsonPathException;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.CookieSpecs;
@@ -64,7 +64,7 @@ public class OAuthUtil {
                     new BasicNameValuePair("redirect_uri", redirectUrl),
                     new BasicNameValuePair("code", code)),
                     Charsets.UTF_8));
-            DynamoElasticUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
+            DynamoElasticMysqlUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
             try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
                 if (res.getStatusLine().getStatusCode() < 200
                         || res.getStatusLine().getStatusCode() > 299) {
@@ -73,7 +73,7 @@ public class OAuthUtil {
                     return Optional.empty();
                 }
                 try {
-                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticMysqlUserStore.OAuthAuthorizationResponse.class);
                 } catch (JsonSyntaxException | JsonIOException ex) {
                     log.warn("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
                             projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);

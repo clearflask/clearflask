@@ -55,14 +55,11 @@ public abstract class AbstractTest extends AbstractModule {
     @Inject
     private ConfigNamingStrategy configNamingStrategy;
 
-    /** Override in subclass to set value of Application.Config.searchEngine */
-    protected @Nullable
-    SearchEngine overrideSearchEngine() {
-        return null;
-    }
+    @Nullable
+    protected SearchEngine overrideSearchEngine = null;
 
     @Before
-    public void setupAbstractTest() throws Exception {
+    public void setup() throws Exception {
         injector = Guice.createInjector(Stage.DEVELOPMENT, new AbstractModule() {
             @Override
             protected void configure() {
@@ -116,7 +113,7 @@ public abstract class AbstractTest extends AbstractModule {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    Optional.ofNullable(overrideSearchEngine()).ifPresent(searchEngine -> om.override(om.id().defaultSearchEngine()).withValue(searchEngine));
+                    Optional.ofNullable(overrideSearchEngine).ifPresent(searchEngine -> om.override(om.id().defaultSearchEngine()).withValue(searchEngine));
                     om.override(om.id().startupWaitUntilDeps()).withValue(Boolean.TRUE);
                     om.override(om.id().domain()).withValue("localhost:8080");
                     om.override(om.id().createIndexesOnStartup()).withValue(true);

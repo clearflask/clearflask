@@ -13,7 +13,7 @@ import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramResponsePoints;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.store.elastic.ElasticUtil.ConfigSearch;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore.SearchIdeasConditions;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore.SearchIdeasConditions;
 import com.smotana.clearflask.util.MathUtil;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;

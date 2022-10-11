@@ -73,10 +73,10 @@ import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.store.impl.DynamoNotificationStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
@@ -238,15 +238,15 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ResourceLegalStore.module(),
                 KillBillPlanStore.module(),
                 SuperAdminPredicate.module(),
-                DynamoElasticCommentStore.module(),
-                DynamoElasticAccountStore.module(),
+                DynamoElasticMysqlCommentStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
                 DynamoNotificationStore.module(),
                 DynamoDraftStore.module(),
-                DynamoElasticIdeaStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
                 DynamoProjectStore.module(),
                 DynamoCouponStore.module(),
                 ProjectUpgraderImpl.module(),
-                DynamoElasticUserStore.module(),
+                DynamoElasticMysqlUserStore.module(),
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
                 DynamoCertStore.module(),
@@ -275,7 +275,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(CertFetcherImpl.Config.class, om -> {
                     om.override(om.id().enabled()).withValue(Boolean.FALSE);
                 }));
-                install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
                 install(ConfigSystem.overrideModule(ClearFlaskSso.Config.class, om -> {
@@ -283,7 +283,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 }));
                 StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
                 log.trace("Using generated priv key: {}", privKey);
-                install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlUserStore.Config.class, om -> {
                     om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
@@ -317,6 +317,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     @Before
     public void setup() throws Exception {
+        super.setup();
         HttpServletRequestImpl request = HttpServletRequestImpl.create();
         HttpServletResponseImpl response = HttpServletResponseImpl.create();
         ImmutableSet.of(

@@ -46,7 +46,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlCommentStore;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -75,7 +75,7 @@ import java.util.stream.Stream;
 public class CommentResource extends AbstractResource implements CommentAdminApi, CommentApi {
 
     @Inject
-    private DynamoElasticCommentStore.Config configCommentStore;
+    private DynamoElasticMysqlCommentStore.Config configCommentStore;
     @Inject
     private CommentStore commentStore;
     @Inject

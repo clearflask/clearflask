@@ -18,10 +18,10 @@ import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -61,11 +61,6 @@ public class CommentStoreIT extends AbstractIT {
         };
     }
 
-    @Override
-    protected ProjectStore.SearchEngine overrideSearchEngine() {
-        return searchEngine;
-    }
-
     @Inject
     private CommentStore store;
     @Inject
@@ -75,6 +70,7 @@ public class CommentStoreIT extends AbstractIT {
 
     @Override
     protected void configure() {
+        overrideSearchEngine = searchEngine;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -82,14 +78,14 @@ public class CommentStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticCommentStore.module(),
-                DynamoElasticAccountStore.module(),
-                DynamoElasticUserStore.module(),
+                DynamoElasticMysqlCommentStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
+                DynamoElasticMysqlUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
                 ElasticUtil.module(),
-                DynamoElasticIdeaStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
                 DynamoProjectStore.module(),
@@ -99,13 +95,13 @@ public class CommentStoreIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(DynamoElasticCommentStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlCommentStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
             }

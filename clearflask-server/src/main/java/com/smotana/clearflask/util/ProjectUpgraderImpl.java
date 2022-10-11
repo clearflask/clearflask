@@ -11,7 +11,7 @@ import com.google.inject.Singleton;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.client.RequestOptions;
@@ -46,7 +46,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
 
             // Add idea order field
             if (projectVersion <= 0L) {
-                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
+                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticMysqlIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
                                 "properties", ImmutableMap.builder()
                                         .put("order", ImmutableMap.of(
                                                 "type", "double"))
@@ -57,7 +57,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
 
             // Add post's mergedToPostId
             if (projectVersion <= 1L) {
-                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
+                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticMysqlIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
                                 "properties", ImmutableMap.builder()
                                         .put("mergedToPostId", ImmutableMap.of(
                                                 "type", "keyword"))

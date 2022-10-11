@@ -42,12 +42,8 @@ public class ProjectStoreTest extends AbstractTest {
     private SingleTable singleTable;
 
     @Override
-    protected SearchEngine overrideSearchEngine() {
-        return SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH;
-    }
-
-    @Override
     protected void configure() {
+        overrideSearchEngine = SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH;
         super.configure();
 
         bindMock(ContentStore.class);

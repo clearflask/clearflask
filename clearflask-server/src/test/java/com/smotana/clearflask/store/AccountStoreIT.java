@@ -19,9 +19,9 @@ import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
@@ -64,16 +64,12 @@ public class AccountStoreIT extends AbstractIT {
         };
     }
 
-    @Override
-    protected ProjectStore.SearchEngine overrideSearchEngine() {
-        return searchEngine;
-    }
-
     @Inject
     private AccountStore store;
 
     @Override
     protected void configure() {
+        overrideSearchEngine = searchEngine;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -81,8 +77,8 @@ public class AccountStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticIdeaStore.module(),
-                DynamoElasticAccountStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
                 DynamoProjectStore.module(),
                 DynamoVoteStore.module(),
                 ProjectUpgraderImpl.module(),
@@ -92,14 +88,14 @@ public class AccountStoreIT extends AbstractIT {
                 Sanitizer.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
-                DynamoElasticUserStore.module()
+                DynamoElasticMysqlUserStore.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                install(ConfigSystem.overrideModule(DynamoElasticAccountStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlAccountStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
             }

@@ -28,8 +28,13 @@ public class CompletionStageUtil {
     }
 
     public static SettableFuture<Void> toSettableFuture(SettableFuture<Void> settableFuture, Collection<CompletionStage<?>> completionStages) {
-        return toSettableFuture(settableFuture, CompletableFuture.allOf(completionStages.stream()
-                .map(CompletionStage::toCompletableFuture)
-                .toArray(CompletableFuture[]::new)));
+        if (completionStages.isEmpty()) {
+            settableFuture.set(null);
+        } else {
+            toSettableFuture(settableFuture, CompletableFuture.allOf(completionStages.stream()
+                    .map(CompletionStage::toCompletableFuture)
+                    .toArray(CompletableFuture[]::new)));
+        }
+        return settableFuture;
     }
 }

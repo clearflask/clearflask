@@ -7,13 +7,14 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.IntercomUtil;
@@ -46,12 +47,9 @@ public class JooqCodegenIT extends AbstractIT {
     private DefaultMysqlProvider.Config configMysql;
 
     @Override
-    protected ProjectStore.SearchEngine overrideSearchEngine() {
-        return ProjectStore.SearchEngine.READ_MYSQL_WRITE_BOTH;
-    }
-
-    @Override
     protected void configure() {
+        overrideSearchEngine = SearchEngine.READWRITE_MYSQL;
+        enableKillBillClient = false;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -61,10 +59,10 @@ public class JooqCodegenIT extends AbstractIT {
         bindMock(ProjectStore.class);
 
         install(Modules.override(
-                DynamoElasticIdeaStore.module(),
-                DynamoElasticAccountStore.module(),
-                DynamoElasticUserStore.module(),
-                DynamoElasticCommentStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
+                DynamoElasticMysqlUserStore.module(),
+                DynamoElasticMysqlCommentStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 Sanitizer.module(),
@@ -80,7 +78,7 @@ public class JooqCodegenIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 30_000L)
+    @Test(timeout = 300_000L)
     public void generate() throws Exception {
         Path sourcesPath = Path.of("src", "main", "java");
         assertTrue(sourcesPath.toFile().isDirectory());

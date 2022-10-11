@@ -61,8 +61,9 @@ public class BlackboxIT extends AbstractBlackboxIT {
     }
 
     @Override
-    protected SearchEngine overrideSearchEngine() {
-        return searchEngine;
+    protected void configure() {
+        overrideSearchEngine = searchEngine;
+        super.configure();
     }
 
     @Test(timeout = 300_000L)

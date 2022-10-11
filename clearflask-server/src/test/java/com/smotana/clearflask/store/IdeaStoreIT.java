@@ -2,26 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import static com.smotana.clearflask.store.VoteStore.VoteValue.Downvote;
-import static com.smotana.clearflask.store.VoteStore.VoteValue.None;
-import static com.smotana.clearflask.store.VoteStore.VoteValue.Upvote;
-import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -41,9 +21,9 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -56,8 +36,21 @@ import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
+import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
+import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -74,11 +67,6 @@ public class IdeaStoreIT extends AbstractIT {
         };
     }
 
-    @Override
-    protected ProjectStore.SearchEngine overrideSearchEngine() {
-        return searchEngine;
-    }
-
     @Inject
     private IdeaStore store;
     @Inject
@@ -86,6 +74,7 @@ public class IdeaStoreIT extends AbstractIT {
 
     @Override
     protected void configure() {
+        overrideSearchEngine = searchEngine;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -93,9 +82,9 @@ public class IdeaStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticIdeaStore.module(),
-                DynamoElasticAccountStore.module(),
-                DynamoElasticUserStore.module(),
+                DynamoElasticMysqlIdeaStore.module(),
+                DynamoElasticMysqlAccountStore.module(),
+                DynamoElasticMysqlUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
@@ -112,7 +101,7 @@ public class IdeaStoreIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticMysqlIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
             }
