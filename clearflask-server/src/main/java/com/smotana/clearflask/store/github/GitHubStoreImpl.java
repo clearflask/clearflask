@@ -52,7 +52,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
@@ -198,7 +198,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     new BasicNameValuePair("redirect_uri", "https://" + configApp.domain() + "/dashboard/settings/project/github"),
                     new BasicNameValuePair("code", code)),
                     Charsets.UTF_8));
-            DynamoElasticMysqlUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
+            DynamoElasticUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
             try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
                 if (res.getStatusLine().getStatusCode() < 200
                         || res.getStatusLine().getStatusCode() > 299) {
@@ -207,7 +207,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize");
                 }
                 try {
-                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticMysqlUserStore.OAuthAuthorizationResponse.class);
+                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
                 } catch (JsonSyntaxException | JsonIOException ex) {
                     log.warn("GitHub provider authorization response cannot parse, url {} response status {}",
                             reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);

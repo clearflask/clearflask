@@ -11,10 +11,10 @@ import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.IntercomUtil;
@@ -59,10 +59,10 @@ public class JooqCodegenIT extends AbstractIT {
         bindMock(ProjectStore.class);
 
         install(Modules.override(
-                DynamoElasticMysqlIdeaStore.module(),
-                DynamoElasticMysqlAccountStore.module(),
-                DynamoElasticMysqlUserStore.module(),
-                DynamoElasticMysqlCommentStore.module(),
+                DynamoElasticIdeaStore.module(),
+                DynamoElasticAccountStore.module(),
+                DynamoElasticUserStore.module(),
+                DynamoElasticCommentStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 Sanitizer.module(),

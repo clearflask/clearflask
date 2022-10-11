@@ -109,7 +109,7 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
 @Singleton
-public class DynamoElasticMysqlAccountStore extends ManagedService implements AccountStore {
+public class DynamoElasticAccountStore extends ManagedService implements AccountStore {
 
     private static final String ACCOUNT_INDEX = "account";
 
@@ -1105,10 +1105,10 @@ public class DynamoElasticMysqlAccountStore extends ManagedService implements Ac
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(AccountStore.class).to(DynamoElasticMysqlAccountStore.class).asEagerSingleton();
+                bind(AccountStore.class).to(DynamoElasticAccountStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("account")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticMysqlAccountStore.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticAccountStore.class).asEagerSingleton();
             }
         };
     }

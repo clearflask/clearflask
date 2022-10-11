@@ -153,7 +153,7 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
 @Singleton
-public class DynamoElasticMysqlUserStore extends ManagedService implements UserStore {
+public class DynamoElasticUserStore extends ManagedService implements UserStore {
 
     @Value
     public static class OAuthAuthorizationResponse {
@@ -1700,10 +1700,10 @@ public class DynamoElasticMysqlUserStore extends ManagedService implements UserS
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(UserStore.class).to(DynamoElasticMysqlUserStore.class).asEagerSingleton();
+                bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("user")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticMysqlUserStore.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class).asEagerSingleton();
             }
         };
     }

@@ -20,9 +20,9 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -80,9 +80,9 @@ public class UserStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticMysqlUserStore.module(),
-                DynamoElasticMysqlIdeaStore.module(),
-                DynamoElasticMysqlAccountStore.module(),
+                DynamoElasticUserStore.module(),
+                DynamoElasticIdeaStore.module(),
+                DynamoElasticAccountStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
@@ -101,7 +101,7 @@ public class UserStoreIT extends AbstractIT {
                 }));
                 StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
                 log.trace("Using generated priv key: {}", privKey);
-                install(ConfigSystem.overrideModule(DynamoElasticMysqlUserStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
                     om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));

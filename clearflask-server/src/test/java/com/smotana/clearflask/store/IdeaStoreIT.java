@@ -21,9 +21,9 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlUserStore;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -82,9 +82,9 @@ public class IdeaStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
-                DynamoElasticMysqlIdeaStore.module(),
-                DynamoElasticMysqlAccountStore.module(),
-                DynamoElasticMysqlUserStore.module(),
+                DynamoElasticIdeaStore.module(),
+                DynamoElasticAccountStore.module(),
+                DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 MysqlUtil.module(),
@@ -101,7 +101,7 @@ public class IdeaStoreIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                install(ConfigSystem.overrideModule(DynamoElasticMysqlIdeaStore.Config.class, om -> {
+                install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
             }

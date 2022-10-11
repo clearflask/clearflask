@@ -134,7 +134,7 @@ import static org.jooq.SortOrder.DESC;
 
 @Slf4j
 @Singleton
-public class DynamoElasticMysqlCommentStore extends ManagedService implements CommentStore {
+public class DynamoElasticCommentStore extends ManagedService implements CommentStore {
 
     public interface Config {
         /**
@@ -1204,10 +1204,10 @@ public class DynamoElasticMysqlCommentStore extends ManagedService implements Co
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(CommentStore.class).to(DynamoElasticMysqlCommentStore.class).asEagerSingleton();
+                bind(CommentStore.class).to(DynamoElasticCommentStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("comment")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticMysqlCommentStore.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticCommentStore.class).asEagerSingleton();
             }
         };
     }

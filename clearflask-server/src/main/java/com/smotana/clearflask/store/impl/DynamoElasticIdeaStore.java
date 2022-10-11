@@ -157,7 +157,7 @@ import static org.jooq.SortOrder.DESC;
 
 @Slf4j
 @Singleton
-public class DynamoElasticMysqlIdeaStore extends ManagedService implements IdeaStore {
+public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore {
 
     public interface Config {
         /**
@@ -252,7 +252,7 @@ public class DynamoElasticMysqlIdeaStore extends ManagedService implements IdeaS
 
     @Override
     protected ImmutableSet<Class> serviceDependencies() {
-        return ImmutableSet.of(DefaultMysqlProvider.class, DynamoElasticMysqlUserStore.class);
+        return ImmutableSet.of(DefaultMysqlProvider.class, DynamoElasticUserStore.class);
     }
 
     @Override
@@ -2337,10 +2337,10 @@ public class DynamoElasticMysqlIdeaStore extends ManagedService implements IdeaS
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(IdeaStore.class).to(DynamoElasticMysqlIdeaStore.class).asEagerSingleton();
+                bind(IdeaStore.class).to(DynamoElasticIdeaStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("idea")));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticMysqlIdeaStore.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticIdeaStore.class).asEagerSingleton();
             }
         };
     }

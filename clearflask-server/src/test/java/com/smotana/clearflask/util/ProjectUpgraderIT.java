@@ -9,7 +9,7 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.ProjectModel;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticMysqlIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.web.resource.AbstractBlackboxIT;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -42,14 +42,14 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
         setProjectVersion(accountAndProject.getProject().getProjectId(), 0L);
 
         // Undo version 2 -> 1
-        updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticMysqlIdeaStore.IDEA_INDEX, ImmutableMap.of(
+        updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "mergedToPostId", ImmutableMap.of(
                         "type", "keyword",
                         // This should be deleted as part of the upgrade
                         "meta", ImmutableMap.of("expect_this", "to_be_deleted"))));
 
         // Undo version 1 -> 0
-        updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticMysqlIdeaStore.IDEA_INDEX, ImmutableMap.of(
+        updateElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "order", ImmutableMap.of(
                         "type", "double",
                         // This should be deleted as part of the upgrade
@@ -60,12 +60,12 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
         assertProjectVersion(accountAndProject.getProject().getProjectId(), Optional.of(PROJECT_VERSION_LATEST));
 
         // Assert version 0 -> 1
-        assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticMysqlIdeaStore.IDEA_INDEX, ImmutableMap.of(
+        assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "order", ImmutableMap.of(
                         "type", "double")));
 
         // Assert version 1 -> 2
-        assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticMysqlIdeaStore.IDEA_INDEX, ImmutableMap.of(
+        assertElasticSearchMapping(accountAndProject.getProject().getProjectId(), DynamoElasticIdeaStore.IDEA_INDEX, ImmutableMap.of(
                 "mergedToPostId", ImmutableMap.of(
                         "type", "keyword")));
     }
