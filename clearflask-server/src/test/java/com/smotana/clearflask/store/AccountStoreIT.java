@@ -24,6 +24,9 @@ import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
+import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -34,6 +37,7 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.DSLContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -66,6 +70,12 @@ public class AccountStoreIT extends AbstractIT {
 
     @Inject
     private AccountStore store;
+    @Inject
+    private DynamoElasticAccountStore storeImpl;
+    @Inject
+    private DSLContext mysql;
+    @Inject
+    private MysqlUtil mysqlUtil;
 
     @Override
     protected void configure() {
@@ -456,5 +466,23 @@ public class AccountStoreIT extends AbstractIT {
         assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan2"));
         assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
         assertFalse(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+    }
+
+    @Test(timeout = 30_000L)
+    public void testDontFailDuplicateFunctionOrTableOrIndexCreation() throws Exception {
+        if (searchEngine.isWriteMysql()) {
+            storeImpl.createIndexMysql();
+            storeImpl.createIndexMysql();
+
+            mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+            mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+
+            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+        }
+        if (searchEngine.isWriteElastic()) {
+            storeImpl.createIndexElasticSearch();
+            storeImpl.createIndexElasticSearch();
+        }
     }
 }
