@@ -597,9 +597,6 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         cursorOpt, sortFieldsElastic, sortOrderElasticOpt, useAccurateCursor, Optional.of(pageSize), configSearch, ImmutableSet.of("ideaId"));
 
                 SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
-                if (hits.length == 0) {
-                    return new SearchCommentsResponse(ImmutableList.of(), Optional.empty());
-                }
                 primaryKeys = Arrays.stream(hits)
                         .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
                                 "projectId", projectId,
@@ -630,6 +627,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                                 "commentId", hit.component2())))
                         .toArray(PrimaryKey[]::new);
                 nextCursorOpt = mysqlUtil.nextCursor(configSearch, cursorOpt, Optional.empty(), primaryKeys.length);
+            }
+
+            if (primaryKeys.length == 0) {
+                return new SearchCommentsResponse(ImmutableList.of(), cursorOpt);
             }
 
             ImmutableList<CommentModel> comments = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
