@@ -465,7 +465,11 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
           const enumValues = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.EnumProperty)
             .value));
           prop.childEnumItems.forEach(enumItem => {
-            const label = { label: enumItem!.name, value: enumItem!.value };
+            if (enumItem?.value === undefined) {
+              // Skip default no value choice
+              return;
+            }
+            const label: Label = { label: enumItem.name, value: enumItem.value! };
             options.push(label);
             if (enumValues.has(enumItem.value)) {
               values.push(label);

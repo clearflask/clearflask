@@ -275,7 +275,7 @@ export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
 }
 export interface EnumItem {
   name: string;
-  value: string;
+  value?: string;
 }
 
 /**
@@ -665,13 +665,19 @@ export class EditorImpl implements Editor {
     }
   }
 
-  getEnumItems(propSchema: any): EnumItem[] {
+  getEnumItems(propSchema: any, isRequired: boolean): EnumItem[] {
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
     if (!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
     if (xProp && xProp.enumNames && xProp.enumNames.length !== propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
-    const items: EnumItem[] = new Array(propSchema.enum.length);
+    const items: EnumItem[] = new Array((isRequired ? 0 : 1) + propSchema.enum.length);
+    if (isRequired) {
+      items[0] = {
+        name: 'Default',
+        value: undefined,
+      }
+    }
     for (let i = 0; i < propSchema.enum.length; i++) {
-      items[i] = {
+      items[(isRequired ? 0 : 1) + i] = {
         name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
         value: propSchema.enum[i],
       };
@@ -1279,7 +1285,7 @@ export class EditorImpl implements Editor {
     switch (propSchema.type || 'object') {
       case 'string':
         if (propSchema.enum) {
-          const items: EnumItem[] = this.getEnumItems(propSchema);
+          const items: EnumItem[] = this.getEnumItems(propSchema, isRequired);
           property = {
             defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? propSchema.enum[0] : undefined),
             ...base,
@@ -1590,7 +1596,7 @@ export class EditorImpl implements Editor {
           maxItems: propSchema.maxItems,
           uniqueItems: propSchema.uniqueItems,
           childType: propSchema.items.enum ? 'enum' : (propSchema.items.type || 'object'),
-          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items) : undefined,
+          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items, isRequired) : undefined,
           childProperties: fetchChildPropertiesArray(),
           set: (val: true | undefined): void => {
             if (!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
