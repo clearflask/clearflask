@@ -3,7 +3,8 @@
 package com.smotana.clearflask.store.mysql;
 
 import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
+import com.smotana.clearflask.store.elastic.ElasticScript;
+import com.smotana.clearflask.util.MoreResources;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -26,7 +27,11 @@ public enum MysqlCustomFunction {
     MysqlCustomFunction(String pathStr) {
         try {
             this.name = FilenameUtils.getBaseName(pathStr);
-            URL fileUrl = Resources.getResource(pathStr);
+            URL fileUrl = MoreResources.getResource(pathStr,
+                    // For some weird reason, need to use ElasticScript classloader
+                    // since this class is not referenced on startup it somehow cannot
+                    // find the resource. I blame the Guice classloader blindly and my inexperience
+                    ElasticScript.class.getClassLoader());
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             source = Files.readString(file.toPath(), Charsets.UTF_8);

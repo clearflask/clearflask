@@ -37,6 +37,7 @@
     <logger name="ch.qos.logback" level="INFO"/>
     <logger name="com.kik.config.ice" level="INFO"/>
     <logger name="org.reflections.Reflections" level="INFO"/>
+    <logger name="org.jooq.Constants" level="WARN"/>
 
     <root level="TRACE">
         <!-- Log to STDERR also for docker to pick up -->

@@ -4,8 +4,8 @@ package com.smotana.clearflask.store.elastic;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Resources;
 import com.google.gson.Gson;
+import com.smotana.clearflask.util.MoreResources;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -38,7 +38,7 @@ public enum ElasticScript {
             this.version = version;
             this.name = FilenameUtils.getBaseName(pathStr);
             this.lang = FilenameUtils.getExtension(pathStr);
-            URL fileUrl = Resources.getResource(pathStr);
+            URL fileUrl = MoreResources.getResource(pathStr);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
             this.source = Files.readString(file.toPath(), Charsets.UTF_8);

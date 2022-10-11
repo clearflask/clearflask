@@ -17,6 +17,7 @@
     <logger name="com.kik.config.ice" level="INFO"/>
     <logger name="org.reflections.Reflections" level="INFO"/>
     <logger name="com.smotana" level="trace"/>
+    <logger name="org.jooq.Constants" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
