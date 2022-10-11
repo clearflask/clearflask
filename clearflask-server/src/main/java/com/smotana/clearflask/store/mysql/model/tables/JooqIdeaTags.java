@@ -122,8 +122,7 @@ public class JooqIdeaTags extends TableImpl<JooqIdeaTagsRecord> {
     private transient JooqIdea _idea;
 
     /**
-     * Get the implicit join path to the <code>clearflask81000.idea</code>
-     * table.
+     * Get the implicit join path to the <code>clearflask.idea</code> table.
      */
     public JooqIdea idea() {
         if (_idea == null)

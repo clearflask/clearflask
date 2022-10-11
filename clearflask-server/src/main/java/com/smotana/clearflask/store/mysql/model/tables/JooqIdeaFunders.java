@@ -130,8 +130,7 @@ public class JooqIdeaFunders extends TableImpl<JooqIdeaFundersRecord> {
     private transient JooqUser _user;
 
     /**
-     * Get the implicit join path to the <code>clearflask81000.idea</code>
-     * table.
+     * Get the implicit join path to the <code>clearflask.idea</code> table.
      */
     public JooqIdea idea() {
         if (_idea == null)
@@ -141,8 +140,7 @@ public class JooqIdeaFunders extends TableImpl<JooqIdeaFundersRecord> {
     }
 
     /**
-     * Get the implicit join path to the <code>clearflask81000.user</code>
-     * table.
+     * Get the implicit join path to the <code>clearflask.user</code> table.
      */
     public JooqUser user() {
         if (_user == null)

@@ -50,6 +50,11 @@ public class JooqCodegenIT extends AbstractIT {
     protected void configure() {
         overrideSearchEngine = SearchEngine.READWRITE_MYSQL;
         enableKillBillClient = false;
+        // Codegen requires database name to be same as prod
+        // In this case, drop it before starting, but don't drop after shutdown
+        // just in case this is a local instance running
+        mysqlRandomizeDatabaseName = false;
+        mysqlDropDatabaseOnShutdown = false;
         super.configure();
 
         bindMock(ContentStore.class);

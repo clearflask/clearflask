@@ -112,7 +112,7 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
     /**
      * The column <code>idea.responseAuthorUserId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> RESPONSEAUTHORUSERID = createField(DSL.name("responseAuthorUserId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> RESPONSEAUTHORUSERID = createField(DSL.name("responseAuthorUserId"), SQLDataType.VARCHAR(255), this, "");
 
     /**
      * The column <code>idea.responseAuthorName</code>.

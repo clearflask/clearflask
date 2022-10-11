@@ -45,6 +45,9 @@ public abstract class AbstractIT extends AbstractTest {
     protected KillBillHttpClient kbClient;
 
     protected boolean enableKillBillClient = true;
+    protected boolean mysqlRandomizeDatabaseName = true;
+    protected boolean mysqlRecreateDatabaseOnStartup = true;
+    protected boolean mysqlDropDatabaseOnShutdown = true;
 
     @Override
     protected void configure() {
@@ -82,14 +85,21 @@ public abstract class AbstractIT extends AbstractTest {
                     }));
                 }
                 if (enableMysqlClient) {
-                    String databaseName = "clearflask" + IdUtil.randomId(5);
-                    log.info("IT test with mysql database name {}", databaseName);
                     install(ConfigSystem.overrideModule(DefaultMysqlProvider.Config.class, om -> {
                         om.override(om.id().host()).withValue("localhost");
                         om.override(om.id().user()).withValue("root");
                         om.override(om.id().pass()).withValue("killbill");
-                        om.override(om.id().databaseName()).withValue(databaseName);
-                        om.override(om.id().dropDatabase()).withValue(true);
+                        if (mysqlRandomizeDatabaseName) {
+                            String databaseName = "clearflask_it_" + IdUtil.randomId(5);
+                            log.info("IT test with mysql database name {}", databaseName);
+                            om.override(om.id().databaseName()).withValue(databaseName);
+                        }
+                        if (mysqlRecreateDatabaseOnStartup) {
+                            om.override(om.id().recreateDatabaseOnStartup()).withValue(true);
+                        }
+                        if (mysqlDropDatabaseOnShutdown) {
+                            om.override(om.id().dropDatabaseOnShutdown()).withValue(true);
+                        }
                     }));
                 }
             }

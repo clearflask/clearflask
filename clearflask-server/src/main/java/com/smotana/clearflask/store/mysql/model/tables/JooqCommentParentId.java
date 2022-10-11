@@ -134,8 +134,7 @@ public class JooqCommentParentId extends TableImpl<JooqCommentParentIdRecord> {
     private transient JooqComment _comment;
 
     /**
-     * Get the implicit join path to the <code>clearflask81000.comment</code>
-     * table.
+     * Get the implicit join path to the <code>clearflask.comment</code> table.
      */
     public JooqComment comment() {
         if (_comment == null)

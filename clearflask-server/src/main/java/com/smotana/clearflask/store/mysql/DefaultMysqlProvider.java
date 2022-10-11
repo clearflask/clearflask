@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store.mysql;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -50,7 +51,11 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
 
         /** For testing only */
         @DefaultValue("false")
-        boolean dropDatabase();
+        boolean recreateDatabaseOnStartup();
+
+        /** For testing only */
+        @DefaultValue("false")
+        boolean dropDatabaseOnShutdown();
     }
 
     @Inject
@@ -92,20 +97,17 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     @Override
     protected void serviceStart() throws Exception {
         if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteMysql()) {
+            if (config.recreateDatabaseOnStartup()) {
+                dropDatabase();
+            }
             createDatabase();
         }
     }
 
     @Override
     protected void serviceStop() throws Exception {
-        if (config.dropDatabase() && configApp.defaultSearchEngine().isWriteMysql()) {
-            if (env.isProduction()) {
-                log.error("Refusing to drop database in production");
-            } else {
-                try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
-                    context.dropDatabase(config.databaseName()).execute();
-                }
-            }
+        if (config.dropDatabaseOnShutdown() && configApp.defaultSearchEngine().isWriteMysql()) {
+            dropDatabase();
         }
     }
 
@@ -113,6 +115,18 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     public void createDatabase() throws Exception {
         try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
             context.createDatabaseIfNotExists(config.databaseName()).execute();
+        }
+    }
+
+    @VisibleForTesting
+    public void dropDatabase() throws Exception {
+        if (env.isProduction()) {
+            log.error("Refusing to drop database in production");
+            throw new RuntimeException("Refusing to drop database in production");
+        } else {
+            try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
+                context.dropDatabaseIfExists(config.databaseName()).execute();
+            }
         }
     }
 
