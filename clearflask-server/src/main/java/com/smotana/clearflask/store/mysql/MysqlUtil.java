@@ -35,6 +35,7 @@ import org.jooq.impl.DSL;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -105,8 +106,11 @@ public class MysqlUtil {
                 }
             });
         } catch (DataAccessException ex) {
-            if (SQLStateClass.NONE.equals(ex.sqlStateClass())
-                    && ex.getMessage().contains("already exists")) {
+            if (SQLStateClass.C42_SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.equals(ex.sqlStateClass())
+                    && Optional.ofNullable(ex.getCause(SQLException.class))
+                    .map(Throwable::getMessage)
+                    .filter("already exists"::contains)
+                    .isPresent()) {
                 log.debug("Function already exists: {}", ex.getMessage());
             } else {
                 throw ex;
