@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkState;
-
 @Slf4j
 @Singleton
 public class DefaultElasticSearchProvider extends ManagedService implements Provider<RestHighLevelClient> {
@@ -115,8 +113,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     protected void serviceStart() throws Exception {
-        checkState(restClientOpt.isPresent() && configApp.defaultSearchEngine().isWriteElastic());
-        if (configApp.createIndexesOnStartup()) {
+        if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteElastic()) {
             putScripts();
         }
     }
@@ -133,7 +130,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         Futures.allAsList(Arrays.stream(ElasticScript.values())
                         .map(script -> {
                             SettableFuture<Void> scriptsFuture = SettableFuture.create();
-                            restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(gson),
+                            get().putScriptAsync(script.toPutStoredScriptRequest(gson),
                                     RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
                             return scriptsFuture;
                         })

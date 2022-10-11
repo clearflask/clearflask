@@ -46,9 +46,11 @@ public class Application extends ResourceConfig {
         @DefaultValue("false")
         boolean createIndexesOnStartup();
 
+        /** Unless otherwise override by below force config or project-specific value, this takes effect */
         @DefaultValue("READWRITE_ELASTICSEARCH")
         SearchEngine defaultSearchEngine();
 
+        /** Force engine regardless of default or project-specific value, this takes effect if set */
         @NoDefaultValue(innerType = SearchEngine.class)
         Optional<SearchEngine> forceSearchEngine();
     }
