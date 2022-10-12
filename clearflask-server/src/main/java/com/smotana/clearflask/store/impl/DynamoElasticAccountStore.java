@@ -40,6 +40,7 @@ import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -153,7 +154,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Inject
     private ElasticUtil elasticUtil;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
     @Inject
     private DSLContext mysql;
     @Inject
@@ -206,11 +207,11 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     public void createIndexElasticSearch() throws IOException {
-        boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
+        boolean exists = elastic.get().indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
         if (!exists) {
             log.info("Creating ElasticSearch index {}", ACCOUNT_INDEX);
             try {
-                elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
+                elastic.get().indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
                                 "dynamic", "false",
                                 "properties", ImmutableMap.builder()
                                         .put("name", ImmutableMap.of(
@@ -557,7 +558,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "planid", planid
                             )), XContentType.JSON)
@@ -665,7 +666,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "projectIds", orNull(account.getProjectIds())
                             )), XContentType.JSON)
@@ -699,7 +700,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "projectIds", orNull(account.getProjectIds())
                             )), XContentType.JSON)
@@ -791,7 +792,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "name", account.getName()
                             )), XContentType.JSON)
@@ -871,7 +872,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "email", account.getEmail()
                             )), XContentType.JSON)
@@ -937,7 +938,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
                             .doc(gson.toJson(ImmutableMap.of(
                                     "status", account.getStatus()
                             )), XContentType.JSON)
@@ -1026,7 +1027,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId)
+            elastic.get().deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexAccount(f, accountId))
@@ -1142,7 +1143,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         if (!accountOpt.isPresent()) {
             SearchEngine searchEngine = configApp.defaultSearchEngine();
             if (searchEngine.isWriteElastic()) {
-                elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId),
+                elastic.get().deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId),
                         RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             }
             if (searchEngine.isWriteMysql()) {
@@ -1158,7 +1159,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private void indexAccount(SettableFuture<Void> indexingFuture, Account account) {
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.indexAsync(new IndexRequest(ACCOUNT_INDEX)
+            elastic.get().indexAsync(new IndexRequest(ACCOUNT_INDEX)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                             .id(account.getAccountId())
                             .source(gson.toJson(ImmutableMap.builder()

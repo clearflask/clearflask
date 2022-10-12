@@ -35,6 +35,7 @@ import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -208,7 +209,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Inject
     private SingleTable singleTable;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
     @Inject
     private ElasticUtil elasticUtil;
     @Inject
@@ -968,6 +969,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         } else {
             return mysqlUtil.histogram(
                     JooqIdea.IDEA,
+                    JooqIdea.IDEA.PROJECTID.eq(projectId),
                     JooqIdea.IDEA.CREATED,
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
@@ -1382,7 +1384,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Override
     public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
-            org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
+            org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.get().search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             .fetchSource(false)
                             .query(QueryBuilders.termQuery("categoryId", categoryId))
@@ -2079,7 +2081,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(scriptParamsBuilder.build()))
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
@@ -2140,7 +2142,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             if (incrementChildCount) {
                 updates.put("childCommentCount", idea.getChildCommentCount());
             }
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .doc(gson.toJson(updates.build()), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
@@ -2185,7 +2187,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
+            elastic.get().deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, ideaId))
@@ -2218,7 +2220,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.bulkAsync(new BulkRequest()
+            elastic.get().bulkAsync(new BulkRequest()
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                             .add(ideaIds.stream()
                                     .map(ideaId -> new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId))
@@ -2271,7 +2273,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+            elastic.get().indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
@@ -2299,7 +2301,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         if (!ideaOpt.isPresent()) {
             SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
-                elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId),
+                elastic.get().deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId),
                         RequestOptions.DEFAULT,
                         searchEngine.isReadElastic()
                                 ? ActionListeners.fromFuture(indexingFuture)
@@ -2328,7 +2330,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     private void indexIdea(SettableFuture<Void> indexingFuture, IdeaModel idea) {
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(idea.getProjectId());
         if (searchEngine.isWriteElastic()) {
-            elastic.indexAsync(ideaToEsIndexRequest(idea, true),
+            elastic.get().indexAsync(ideaToEsIndexRequest(idea, true),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic()
                             ? ActionListeners.fromFuture(indexingFuture)

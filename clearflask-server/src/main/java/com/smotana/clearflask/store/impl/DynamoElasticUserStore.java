@@ -50,6 +50,7 @@ import com.google.gson.annotations.SerializedName;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -227,7 +228,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private SingleTable singleTable;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
     @Inject
     private ElasticUtil elasticUtil;
     @Inject
@@ -311,7 +312,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
+        elastic.get().indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
                         .settings(gson.toJson(ImmutableMap.of(
                                 "index", ImmutableMap.of(
                                         "analysis", ImmutableMap.of(
@@ -355,11 +356,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         log.info("Repopulating index for project {} deleteExistingIndex {} repopulateElasticSearch {} repopulateMysql {}",
                 projectId, deleteExistingIndex, repopulateElasticSearch, repopulateMysql);
         if (repopulateElasticSearch) {
-            boolean indexAlreadyExists = elastic.indices().exists(
+            boolean indexAlreadyExists = elastic.get().indices().exists(
                     new GetIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                     RequestOptions.DEFAULT);
             if (indexAlreadyExists && deleteExistingIndex) {
-                elastic.indices().delete(
+                elastic.get().indices().delete(
                         new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                         RequestOptions.DEFAULT);
             }
@@ -386,7 +387,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .forEach(user -> {
                     if (repopulateElasticSearch) {
                         try {
-                            elastic.index(userToEsIndexRequest(user), RequestOptions.DEFAULT);
+                            elastic.get().index(userToEsIndexRequest(user), RequestOptions.DEFAULT);
                         } catch (IOException ex) {
                             if (LogUtil.rateLimitAllowLog("dynamoelsaticuserstore-reindex-failure")) {
                                 log.warn("Failed to re-index user {}", user.getUserId(), ex);
@@ -495,6 +496,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         } else {
             return mysqlUtil.histogram(
                     JooqUser.USER,
+                    JooqUser.USER.PROJECTID.eq(projectId),
                     JooqUser.USER.CREATED,
                     Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
@@ -942,7 +944,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
             if (indexUpdates.size() > 0) {
-                elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
+                elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
                                 .doc(gson.toJson(indexUpdates), XContentType.JSON)
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                         RequestOptions.DEFAULT,
@@ -1102,7 +1104,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
                             .doc(gson.toJson(Map.of("balance", userModel.getBalance())), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
@@ -1164,7 +1166,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.bulkAsync(new BulkRequest()
+            elastic.get().bulkAsync(new BulkRequest()
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                             .add(users.stream()
                                     .map(user -> new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId()))
@@ -1584,7 +1586,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+            elastic.get().indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture)
                             : ActionListeners.logFailure());
@@ -1614,7 +1616,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (!userOpt.isPresent()) {
             SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
-                elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
+                elastic.get().deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId),
                         RequestOptions.DEFAULT,
                         searchEngine.isReadElastic()
                                 ? ActionListeners.fromFuture(indexingFuture)

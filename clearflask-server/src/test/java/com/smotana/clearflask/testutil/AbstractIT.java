@@ -10,6 +10,7 @@ import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.billing.KillBillClientProvider;
@@ -40,7 +41,7 @@ import static org.junit.Assert.fail;
 public abstract class AbstractIT extends AbstractTest {
 
     @Inject
-    protected RestHighLevelClient elastic;
+    protected Provider<RestHighLevelClient> elastic;
     @Inject
     protected KillBillHttpClient kbClient;
 

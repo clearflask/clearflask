@@ -32,6 +32,7 @@ import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
@@ -180,7 +181,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     @Inject
     private SingleTable singleTable;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
     @Inject
     private ElasticUtil elasticUtil;
     @Inject
@@ -282,7 +283,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         if (projectStore.getSearchEngineForProject(projectId).isWriteElastic()) {
-            elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
+            elastic.get().indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                             "dynamic", "false",
                             "properties", ImmutableMap.builder()
                                     .put("ideaId", ImmutableMap.of(
@@ -329,11 +330,11 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         log.info("Repopulating index for project {} deleteExistingIndex {} repopulateElasticSearch {} repopulateMysql {}",
                 projectId, deleteExistingIndex, repopulateElasticSearch, repopulateMysql);
         if (repopulateElasticSearch) {
-            boolean indexAlreadyExists = elastic.indices().exists(
+            boolean indexAlreadyExists = elastic.get().indices().exists(
                     new GetIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
                     RequestOptions.DEFAULT);
             if (indexAlreadyExists && deleteExistingIndex) {
-                elastic.indices().delete(
+                elastic.get().indices().delete(
                         new DeleteIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
                         RequestOptions.DEFAULT);
             }
@@ -360,7 +361,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .forEach(comment -> {
                     if (repopulateElasticSearch) {
                         try {
-                            elastic.index(commentToEsIndexRequest(comment), RequestOptions.DEFAULT);
+                            elastic.get().index(commentToEsIndexRequest(comment), RequestOptions.DEFAULT);
                         } catch (IOException ex) {
                             if (LogUtil.rateLimitAllowLog("dynamoelasticcommentstore-reindex-failure")) {
                                 log.warn("Failed to re-index comment id {} projectId {}", comment.getCommentId(), projectId, ex);
@@ -408,7 +409,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             SettableFuture<Void> parentIndexingFuture = SettableFuture.create();
             SearchEngine searchEngine = projectStore.getSearchEngineForProject(commentWithVote.getProjectId());
             if (searchEngine.isWriteElastic()) {
-                elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, commentWithVote.getProjectId()), parentCommentId)
+                elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, commentWithVote.getProjectId()), parentCommentId)
                                 .doc(gson.toJson(ImmutableMap.of(
                                         "childCommentCount", parentChildCommentCount
                                 )), XContentType.JSON)
@@ -491,6 +492,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         } else {
             return mysqlUtil.histogram(
                     JooqComment.COMMENT,
+                    JooqComment.COMMENT.PROJECTID.eq(projectId),
                     JooqComment.COMMENT.CREATED,
                     Optional.ofNullable(searchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(searchAdmin.getFilterCreatedEnd()),
@@ -694,7 +696,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             .query(queryBuilder));
 
             SearchResponse searchResponse;
-            searchResponse = elasticUtil.retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
+            searchResponse = elasticUtil.retry(() -> elastic.get().search(searchRequest, RequestOptions.DEFAULT));
 
             for (SearchHit hit : searchResponse.getHits().getHits()) {
                 String postId = hit.field("ideaId").getValue();

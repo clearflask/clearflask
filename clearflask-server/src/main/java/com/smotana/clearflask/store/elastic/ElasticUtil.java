@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -114,7 +115,7 @@ public class ElasticUtil {
     @Inject
     private Gson gson;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
 
     public String getIndexName(String indexName, String projectId) {
         return indexName + "-" + projectId;
@@ -166,7 +167,7 @@ public class ElasticUtil {
         SearchResponse searchResponse;
         try {
             if (useAccurateCursor && cursorDecryptedOpt.isPresent()) {
-                searchResponse = elastic.scroll(new SearchScrollRequest()
+                searchResponse = elastic.get().scroll(new SearchScrollRequest()
                                 .scrollId(cursorDecryptedOpt.get())
                                 .scroll(TimeValue.timeValueMillis(configSearch.elasticScrollKeepAlive().toMillis())),
                         RequestOptions.DEFAULT);
@@ -202,7 +203,7 @@ public class ElasticUtil {
                 }
 
                 // Finally run the search
-                searchResponse = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
+                searchResponse = retry(() -> elastic.get().search(searchRequest, RequestOptions.DEFAULT));
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -221,7 +222,7 @@ public class ElasticUtil {
                 } else {
                     ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
                     clearScrollRequest.addScrollId(searchResponse.getScrollId());
-                    elastic.clearScrollAsync(clearScrollRequest, RequestOptions.DEFAULT,
+                    elastic.get().clearScrollAsync(clearScrollRequest, RequestOptions.DEFAULT,
                             ActionListeners.onFailure(ex -> log.warn("Failed to clear scroll", ex)));
                 }
                 break;
@@ -302,7 +303,7 @@ public class ElasticUtil {
 
         log.trace("Histogram query: {}", searchRequest);
 
-        org.elasticsearch.action.search.SearchResponse search = retry(() -> elastic.search(searchRequest, RequestOptions.DEFAULT));
+        org.elasticsearch.action.search.SearchResponse search = retry(() -> elastic.get().search(searchRequest, RequestOptions.DEFAULT));
 
         ImmutableList<HistogramResponsePoints> points = Optional.ofNullable(search.getAggregations())
                 .flatMap(ags -> {

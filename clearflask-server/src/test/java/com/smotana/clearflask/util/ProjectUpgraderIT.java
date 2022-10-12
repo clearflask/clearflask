@@ -71,14 +71,14 @@ public class ProjectUpgraderIT extends AbstractBlackboxIT {
     }
 
     private void updateElasticSearchMapping(String projectId, String index, ImmutableMap<String, Object> properties) throws IOException {
-        elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(index, projectId)).source(gson.toJson(ImmutableMap.of(
+        elastic.get().indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(index, projectId)).source(gson.toJson(ImmutableMap.of(
                         "properties", properties)), XContentType.JSON),
                 RequestOptions.DEFAULT);
     }
 
 
     private void assertElasticSearchMapping(String projectId, String index, ImmutableMap<String, Map<String, Object>> properties) throws IOException {
-        GetMappingsResponse mappings = elastic.indices().getMapping(new GetMappingsRequest()
+        GetMappingsResponse mappings = elastic.get().indices().getMapping(new GetMappingsRequest()
                         .indices(elasticUtil.getIndexName(index, projectId)),
                 RequestOptions.DEFAULT);
         Map<String, Object> indexMappings = (Map<String, Object>) mappings

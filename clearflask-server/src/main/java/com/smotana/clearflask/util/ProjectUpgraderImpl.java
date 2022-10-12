@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.ProjectStore;
@@ -34,7 +35,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
     @Inject
     private Gson gson;
     @Inject
-    private RestHighLevelClient elastic;
+    private Provider<RestHighLevelClient> elastic;
     @Inject
     private ElasticUtil elasticUtil;
 
