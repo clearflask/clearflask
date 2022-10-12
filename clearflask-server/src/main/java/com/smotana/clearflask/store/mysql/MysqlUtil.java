@@ -28,7 +28,6 @@ import org.jooq.JoinType;
 import org.jooq.Queries;
 import org.jooq.Query;
 import org.jooq.Record;
-import org.jooq.Record4;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.exception.DataAccessException;
@@ -49,10 +48,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @Slf4j
 @Singleton
@@ -182,7 +179,9 @@ public class MysqlUtil {
                         .toInstant())
                 .map(aggregateFieldName::lessThan);
         HistogramResponse.HistogramResponseBuilder histogramBuilder = HistogramResponse.builder();
-        try (Stream<Record4<Integer, Integer, Integer, Integer>> stream = mysql.select(
+
+
+        CompletionStage<Void> pointsCompletionStage = mysql.select(
                         DSL.year(aggregateFieldName),
                         DSL.month(aggregateFieldName),
                         DSL.day(aggregateFieldName),
@@ -190,17 +189,22 @@ public class MysqlUtil {
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
                 .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions), startBoundOpt, endBoundOpt))
                 .groupBy(intervalField)
-                .stream()) {
-            AtomicLong count = new AtomicLong(0);
-            histogramBuilder.points(stream.map(record -> {
-                        count.addAndGet(record.component4());
-                        return new HistogramResponsePoints(
+                .fetchAsync()
+                .thenAcceptAsync(result -> histogramBuilder.points(result.stream()
+                        .map(record -> new HistogramResponsePoints(
                                 LocalDate.of(record.component1(), record.component2(), record.component3()),
-                                record.component4().longValue());
-                    })
-                    .collect(ImmutableList.toImmutableList()));
-            histogramBuilder.hits(new Hits(count.get(), true));
-        }
+                                record.component4().longValue()))
+                        .collect(ImmutableList.toImmutableList())));
+
+        CompletionStage<Void> hitsCompletionStage = mysql.select(
+                        DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
+                .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
+                .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions), startBoundOpt, endBoundOpt))
+                .fetchAsync()
+                .thenAcceptAsync(result -> histogramBuilder.hits(
+                        new Hits(result.get(0).component1().longValue(), null)));
+
+        CompletionStageUtil.toSettableFuture(pointsCompletionStage, hitsCompletionStage).get();
         return histogramBuilder.build();
     }
 

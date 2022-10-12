@@ -1232,9 +1232,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 return cachedResponse;
             }
         }
+        Optional<Integer> limitOpt = Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue);
 
         final SearchResponse searchResponse;
-        Optional<Integer> limitOpt = Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue);
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
 
