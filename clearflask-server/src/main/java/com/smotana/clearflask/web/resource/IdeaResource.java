@@ -76,6 +76,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -348,10 +349,13 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (idea == null || parentIdea == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Does not exist");
         }
-        Optional<List<String>> userMergeableCategoryIdsOpt = project.getCategory(idea.getCategoryId())
-                .map(Category::getUserMergeableCategoryIds);
-        if (userMergeableCategoryIdsOpt.map(cIds -> cIds.contains(parentIdea.getCategoryId())).orElse(false)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to merge");
+        boolean isUserMergeable = project.getCategory(idea.getCategoryId())
+                .flatMap(c -> Optional.ofNullable(c.getUserMergeableCategoryIds()))
+                .stream()
+                .flatMap(Collection::stream)
+                .anyMatch(parentIdea.getCategoryId()::equals);
+        if (!isUserMergeable) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot merge into this category");
         }
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
         return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
@@ -496,7 +500,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
         return idea.toIdea(sanitizer);
     }
-    
+
     @RolesAllowed({Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 1)
     @Override
