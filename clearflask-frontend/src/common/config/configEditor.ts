@@ -670,7 +670,7 @@ export class EditorImpl implements Editor {
     if (!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
     if (xProp && xProp.enumNames && xProp.enumNames.length !== propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
     const items: EnumItem[] = new Array((isRequired ? 0 : 1) + propSchema.enum.length);
-    if (isRequired) {
+    if (!isRequired) {
       items[0] = {
         name: 'Default',
         value: undefined,
