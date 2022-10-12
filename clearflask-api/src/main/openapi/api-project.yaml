@@ -994,7 +994,7 @@ components:
               x-clearflask-super-admin-only: true
               x-clearflask-prop: { subType: 'Search Engine', order: 2, name: 'Which search engine to use' }
               type: string
-              enum: [ ElasticSearch, Mysql ]
+              enum: [ ElasticSearch, Mysql, ElasticSearchWriteBoth, MysqlWriteBoth ]
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object

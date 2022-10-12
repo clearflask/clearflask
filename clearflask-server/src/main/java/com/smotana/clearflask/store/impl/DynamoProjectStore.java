@@ -971,6 +971,10 @@ public class DynamoProjectStore implements ProjectStore {
                                 return Optional.of(SearchEngine.READWRITE_ELASTICSEARCH);
                             case MYSQL:
                                 return Optional.of(SearchEngine.READWRITE_MYSQL);
+                            case ELASTICSEARCHWRITEBOTH:
+                                return Optional.of(SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH);
+                            case MYSQLWRITEBOTH:
+                                return Optional.of(SearchEngine.READ_MYSQL_WRITE_BOTH);
                             default:
                                 if (LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchEngineOverride")) {
                                     log.warn("Invalid value for forceSearchEngine '{}' for project {}",
