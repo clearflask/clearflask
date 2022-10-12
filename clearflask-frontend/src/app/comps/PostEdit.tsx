@@ -438,6 +438,7 @@ export const PostEditDescriptionInline = (props: {
 
 export const PostEditTitle = (props: {
   value?: string;
+  onAboutToChange?: () => void;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
   bare?: boolean;
@@ -447,7 +448,8 @@ export const PostEditTitle = (props: {
 }) => {
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
-    newValue => props.onChange(newValue === undefined ? '' : newValue));
+    newValue => props.onChange(newValue === undefined ? '' : newValue),
+    () => props.onAboutToChange?.());
   const TextFieldCmpt = props.bare ? BareTextField : TextField;
   return (
     <TextFieldCmpt
@@ -475,6 +477,7 @@ export const PostEditDescription = (props: {
   value?: string;
   postAuthorId?: string;
   server: Server;
+  onAboutToChange?: () => void;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
   bare?: boolean;
@@ -484,7 +487,8 @@ export const PostEditDescription = (props: {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
-    newValue => props.onChange(newValue === undefined ? '' : newValue));
+    newValue => props.onChange(newValue === undefined ? '' : newValue),
+    () => props.onAboutToChange?.());
   return (
     <>
       <RichEditor
@@ -582,6 +586,7 @@ export const PostEditStatusAndResponseInline = (props: {
 export const PostEditResponse = (props: {
   value?: string;
   server: Server;
+  onAboutToChange?: () => void;
   onChange: (value: string) => void;
   isSubmitting?: boolean;
   autoFocusAndSelect?: boolean;
@@ -592,7 +597,8 @@ export const PostEditResponse = (props: {
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
-    newValue => props.onChange(newValue === undefined ? '' : newValue));
+    newValue => props.onChange(newValue === undefined ? '' : newValue),
+    () => props.onAboutToChange?.());
 
   return (
     <>

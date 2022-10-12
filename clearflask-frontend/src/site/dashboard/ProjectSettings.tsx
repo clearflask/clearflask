@@ -4101,16 +4101,27 @@ const DebouncedTextFieldWithColorPicker = (props: React.ComponentProps<typeof Te
   );
 }
 
-export const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void): [T, (val: T) => void] => {
+export const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void, onAboutToChange?: () => void): [T, (val: T) => void] => {
+  const [inProgress, setInProgress] = useState<number>(0);
   const [val, setVal] = useState<T>(initialValue);
 
   const setterDebouncedRef = useRef(setter);
   useEffect(() => {
-    setterDebouncedRef.current = debounce(setter, DemoUpdateDelay);
+    setterDebouncedRef.current = debounce(val => {
+      setInProgress(0);
+      setter(val);
+    }, DemoUpdateDelay);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  React.useEffect(() => {
+    if (inProgress === 1) {
+      onAboutToChange?.();
+    }
+  }, [inProgress]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return [val, val => {
+    setInProgress(inProgress + 1);
     setVal(val);
-    setterDebouncedRef.current?.(val);
+    setterDebouncedRef.current(val);
   }];
 }

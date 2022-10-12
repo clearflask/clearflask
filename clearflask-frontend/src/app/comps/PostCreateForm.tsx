@@ -20,6 +20,7 @@ import debounce, { SearchTypeDebounceTime, SimilarTypeDebounceTime } from '../..
 import { customShouldComponentUpdate } from '../../common/util/reactUtil';
 import { MutableRef } from '../../common/util/refUtil';
 import { initialWidth } from '../../common/util/screenUtil';
+import StateAwait from '../../common/util/stateAwait';
 import Subscription from '../../common/util/subscriptionUtil';
 import PostSelection from '../../site/dashboard/PostSelection';
 import UserSelection from '../../site/dashboard/UserSelection';
@@ -170,6 +171,8 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
   readonly searchSimilarDebounced?: (title?: string, categoryId?: string) => void;
   externalSubmitEnabled: boolean = false;
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
+  readonly stateAwait = new StateAwait();
+  lastDraft?: Draft;
 
   constructor(props) {
     super(props);
@@ -199,7 +202,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     this.props.callOnMount?.();
   }
 
-  render() {
+  combineDraft(): [Draft, Client.Category[], Client.Category] {
     // Merge defaults, server draft, and local changes into one draft
     const draft: Draft = {
       authorUserId: this.props.loggedInUserId,
@@ -220,10 +223,9 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     if (this.state.draftFieldChosenCategoryId !== undefined) draft.categoryId = this.state.draftFieldChosenCategoryId;
     var selectedCategory = categoryOptions.find(c => c.categoryId === draft.categoryId);
     if (!selectedCategory) {
-      selectedCategory = categoryOptions[0];
-      draft.categoryId = selectedCategory?.categoryId;
+      selectedCategory = categoryOptions[0]!;
+      draft.categoryId = selectedCategory.categoryId;
     }
-    if (!selectedCategory) return null;
     if (this.state.draftFieldAuthorId !== undefined) draft.authorUserId = this.state.draftFieldAuthorId;
     if (this.state.draftFieldTitle !== undefined) draft.title = this.state.draftFieldTitle;
     if (draft.title === undefined && this.props.type === 'post') draft.title = `New ${selectedCategory.name}`;
@@ -246,6 +248,12 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         body: this.state.draftFieldNotifyBody,
       } : {}),
     };
+    return [draft, categoryOptions, selectedCategory];
+  }
+
+  render() {
+    const [draft, categoryOptions, selectedCategory] = this.combineDraft();
+    if (!draft) return null;
 
     // External control update
     this.props.externalControlRef?.current?.subscription.notify(draft);
@@ -253,7 +261,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     const enableSubmit = !!draft.title && !!draft.categoryId && !this.state.tagSelectHasError;
     if (this.props.externalSubmit && this.externalSubmitEnabled !== enableSubmit) {
       this.externalSubmitEnabled = enableSubmit;
-      this.props.externalSubmit(enableSubmit ? () => this.createClickSubmit(draft) : undefined);
+      this.props.externalSubmit(enableSubmit ? async () => {
+        await this.stateAwait.waitFor();
+        const [draft] = this.combineDraft();
+        return this.createClickSubmit(draft);
+      } : undefined);
     }
 
     if (this.props.type !== 'post') {
@@ -494,8 +506,9 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     return (
       <PostEditTitle
         value={draft.title || ''}
+        onAboutToChange={() => this.stateAwait.incrementStateChange()}
         onChange={value => {
-          this.setState({ draftFieldTitle: value })
+          this.setState({ draftFieldTitle: value }, () => this.stateAwait.decrementStateChange())
           if ((draft.title || '') !== value) {
             this.searchSimilarDebounced?.(value, draft.categoryId);
           }
@@ -520,12 +533,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         postAuthorId={draft.authorUserId}
         isSubmitting={this.state.isSubmitting}
         value={draft.description || ''}
+        onAboutToChange={() => this.stateAwait.incrementStateChange()}
         onChange={value => {
           if (draft.description === value
             || (!draft.description && !value)) {
             return;
           }
-          this.setState({ draftFieldDescription: value });
+          this.setState({ draftFieldDescription: value }, () => this.stateAwait.decrementStateChange());
         }}
         {...PostEditDescriptionProps}
         RichEditorProps={{
@@ -555,7 +569,8 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         onChange={categoryId => {
           if (categoryId === draft.categoryId) return;
           this.searchSimilarDebounced?.(draft.title, categoryId);
-          this.setState({ draftFieldChosenCategoryId: categoryId });
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldChosenCategoryId: categoryId }, () => this.stateAwait.decrementStateChange());
         }}
         errorText={!selectedCategory ? 'Choose a category' : undefined}
         disabled={this.state.isSubmitting}
@@ -578,7 +593,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         initialStatusId={selectedCategory.workflow.entryStatus}
         statusId={draft.statusId}
-        onChange={(statusId) => this.setState({ draftFieldChosenStatusId: statusId })}
+        onChange={(statusId) => {
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldChosenStatusId: statusId }, () => this.stateAwait.decrementStateChange());
+        }}
         {...StatusSelectProps}
       />
     );
@@ -597,10 +615,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         category={selectedCategory}
         tagIds={draft.tagIds}
         isModOrAdminLoggedIn={this.showModOptions()}
-        onChange={(tagIds, errorStr) => this.setState({
-          draftFieldChosenTagIds: tagIds,
-          tagSelectHasError: !!errorStr,
-        })}
+        onChange={(tagIds, errorStr) => {
+          this.stateAwait.incrementStateChange();
+          this.setState({
+            draftFieldChosenTagIds: tagIds,
+            tagSelectHasError: !!errorStr,
+          }, () => this.stateAwait.decrementStateChange());
+        }}
         disabled={this.state.isSubmitting}
         mandatoryTagIds={this.props.mandatoryTagIds}
         {...TagSelectProps}
@@ -623,7 +644,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           <PostCoverEdit
             server={this.props.server}
             content={img}
-            onUploaded={coverUrl => this.setState({ draftFieldCoverImage: coverUrl })}
+            onUploaded={coverUrl => {
+              this.stateAwait.incrementStateChange();
+              this.setState({ draftFieldCoverImage: coverUrl }, () => this.stateAwait.decrementStateChange());
+            }}
           />
         )}
       />
@@ -645,7 +669,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         suppressInitialOnChange
         initialUserId={draft.authorUserId}
-        onChange={selectedUserLabel => this.setState({ draftFieldAuthorId: selectedUserLabel?.value })}
+        onChange={selectedUserLabel => {
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldAuthorId: selectedUserLabel?.value }, () => this.stateAwait.decrementStateChange());
+        }}
         allowCreate
         {...UserSelectionProps}
       />
@@ -665,11 +692,14 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         control={(
           <Switch
             checked={!!draft.notifySubscribers}
-            onChange={(e, checked) => this.setState({
-              draftFieldNotifySubscribers: !draft.notifySubscribers,
-              draftFieldNotifyTitle: undefined,
-              draftFieldNotifyBody: undefined,
-            })}
+            onChange={(e, checked) => {
+              this.stateAwait.incrementStateChange();
+              this.setState({
+                draftFieldNotifySubscribers: !draft.notifySubscribers,
+                draftFieldNotifyTitle: undefined,
+                draftFieldNotifyBody: undefined,
+              }, () => this.stateAwait.decrementStateChange());
+            }}
             color='primary'
             {...SwitchProps}
           />
@@ -696,7 +726,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         disabled={this.state.isSubmitting}
         label='Notification Title'
         value={draft.notifySubscribers.title || ''}
-        onChange={e => this.setState({ draftFieldNotifyTitle: e.target.value })}
+        onChange={e => {
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldNotifyTitle: e.target.value }, () => this.stateAwait.decrementStateChange());
+        }}
         autoFocus
         {...TextFieldProps}
         inputProps={{
@@ -724,7 +757,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         label='Notification Body'
         multiline
         value={draft.notifySubscribers.body || ''}
-        onChange={e => this.setState({ draftFieldNotifyBody: e.target.value })}
+        onChange={e => {
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldNotifyBody: e.target.value }, () => this.stateAwait.decrementStateChange());
+        }}
         {...TextFieldProps}
         inputProps={{
           maxLength: PostTitleMaxLength,
@@ -748,7 +784,10 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
         label='Link to'
         isMulti
         initialPostIds={draft.linkedFromPostIds}
-        onChange={postIds => this.setState({ draftFieldLinkedFromPostIds: postIds })}
+        onChange={postIds => {
+          this.stateAwait.incrementStateChange();
+          this.setState({ draftFieldLinkedFromPostIds: postIds }, () => this.stateAwait.decrementStateChange());
+        }}
         {...PostSelectionProps}
       />
     );
@@ -773,10 +812,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             containerPost={draft}
             type='link'
             direction='from'
-            onDisconnect={() => this.setState({
-              draftFieldLinkedFromPostIds: (this.state.draftFieldLinkedFromPostIds || [])
-                .filter(id => id !== linkedFromPostId),
-            })}
+            onDisconnect={() => {
+              this.stateAwait.incrementStateChange();
+              this.setState({
+                draftFieldLinkedFromPostIds: (this.state.draftFieldLinkedFromPostIds || [])
+                  .filter(id => id !== linkedFromPostId),
+              }, () => this.stateAwait.decrementStateChange());
+            }}
             PostProps={{
               expandable: false,
             }}
@@ -813,10 +855,13 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
           server={this.props.server}
           open={!!this.state.connectDialogOpen}
           onClose={() => this.setState({ connectDialogOpen: false })}
-          onSubmit={(selectedPostId, action, directionReversed) => this.setState({
-            connectDialogOpen: false,
-            draftFieldLinkedFromPostIds: [...(new Set([...(this.state.draftFieldLinkedFromPostIds || []), selectedPostId]))],
-          })}
+          onSubmit={(selectedPostId, action, directionReversed) => {
+            this.stateAwait.incrementStateChange();
+            this.setState({
+              connectDialogOpen: false,
+              draftFieldLinkedFromPostIds: [...(new Set([...(this.state.draftFieldLinkedFromPostIds || []), selectedPostId]))],
+            }, () => this.stateAwait.decrementStateChange());
+          }}
           defaultSearch={this.props.defaultConnectSearch}
         />
       </>
@@ -926,8 +971,12 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
               disableElevation
               isSubmitting={this.state.isSubmitting}
               disabled={!enableSubmit}
-              onClick={e => {
-                enableSubmit && this.createClickSubmit(draft);
+              onClick={async e => {
+                if (enableSubmit) {
+                  await this.stateAwait.waitFor();
+                  const [draft] = this.combineDraft();
+                  this.createClickSubmit(draft);
+                }
                 next();
               }}
               {...SubmitButtonProps}
