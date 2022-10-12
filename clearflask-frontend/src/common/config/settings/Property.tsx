@@ -393,7 +393,7 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
           break;
         }
         var items: ConfigEditor.EnumItem[];
-        var currentItem;
+        var currentItem: ConfigEditor.EnumItem | undefined;
         if (prop.type === ConfigEditor.PropertyType.Boolean) {
           items = [
             { name: 'Default', value: 'undefined' },
@@ -424,7 +424,7 @@ class Property extends Component<Props & WithTranslation<'app'>, State> {
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
               label={!this.props.bare ? name : undefined}
-              value={this.state.value !== undefined && currentItem.value ? currentItem.value : ''}
+              value={(this.state.value !== undefined && currentItem?.value !== undefined) ? currentItem.value : ''}
               onChange={e => {
                 if (prop.type === ConfigEditor.PropertyType.Boolean) {
                   switch (e.target.value) {
