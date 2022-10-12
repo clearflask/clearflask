@@ -7,13 +7,16 @@ import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
+import com.google.common.base.Charsets;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -22,6 +25,7 @@ import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 @Slf4j
 public class NetworkUtil {
@@ -112,6 +116,25 @@ public class NetworkUtil {
                 HttpGet req = new HttpGet(url);
                 try (CloseableHttpResponse res = client.execute(req)) {
                     return res.getStatusLine().getStatusCode();
+                }
+            });
+        } catch (ExecutionException | RetryException ex) {
+            throw new IOException(ex);
+        }
+    }
+
+    public static void waitUntilResponse(String url, Predicate<String> bodyPredicate) throws IOException {
+        Retryer<String> retryer = RetryerBuilder.<String>newBuilder()
+                .retryIfResult(bodyPredicate.negate()::test)
+                .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.MINUTES))
+                .withWaitStrategy(WaitStrategies.exponentialWait(50, 5, TimeUnit.SECONDS))
+                .build();
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            retryer.call(() -> {
+                HttpGet req = new HttpGet(url);
+                try (CloseableHttpResponse res = client.execute(req);
+                     InputStream bodyStream = res.getEntity().getContent()) {
+                    return IOUtils.toString(bodyStream, Charsets.UTF_8);
                 }
             });
         } catch (ExecutionException | RetryException ex) {
