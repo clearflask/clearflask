@@ -49,6 +49,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -514,6 +515,8 @@ public class AccountStoreIT extends AbstractIT {
         String accountId;
     }
 
+    /** Upgrade completed, ignoring test */
+    @Ignore
     @Test(timeout = 30_000L)
     public void testUpgradeAddGsi2ToAccountEmail() throws Exception {
         SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);

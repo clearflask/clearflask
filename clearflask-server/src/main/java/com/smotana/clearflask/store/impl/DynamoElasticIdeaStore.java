@@ -126,6 +126,7 @@ import org.jooq.Query;
 import org.jooq.SortField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
+import org.jooq.util.mysql.MySQLDataType;
 import rx.Observable;
 
 import javax.ws.rs.core.Response;
@@ -151,7 +152,6 @@ import java.util.stream.StreamSupport;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.CONTENT_MAX_LENGTH;
 import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 import static org.jooq.SortOrder.ASC;
@@ -297,9 +297,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("authorIsMod", SQLDataType.BOOLEAN)
                 .column("created", MoreSQLDataType.DATETIME(6).notNull())
                 .column("lastActivity", MoreSQLDataType.DATETIME_AUTO_UPDATE(6).notNull())
-                .column("title", SQLDataType.CLOB(Math.max(255, (int) Sanitizer.POST_TITLE_MAX_LENGTH)).notNull())
-                .column("description", SQLDataType.CLOB(CONTENT_MAX_LENGTH))
-                .column("response", SQLDataType.CLOB(CONTENT_MAX_LENGTH))
+                .column("title", MySQLDataType.TEXT.notNull())
+                .column("description", MySQLDataType.MEDIUMTEXT)
+                .column("response", MySQLDataType.MEDIUMTEXT)
                 .column("responseAuthorUserId", SQLDataType.VARCHAR(255))
                 .column("responseAuthorName", SQLDataType.VARCHAR(255))
                 .column("categoryId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())

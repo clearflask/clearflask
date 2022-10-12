@@ -33,6 +33,7 @@ import org.jooq.meta.jaxb.Logging;
 import org.jooq.meta.jaxb.OnError;
 import org.jooq.meta.jaxb.Strategy;
 import org.jooq.meta.jaxb.Target;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -83,6 +84,12 @@ public class JooqCodegenIT extends AbstractIT {
         }));
     }
 
+    /**
+     * Re-Generates code in {@link com.smotana.clearflask.store.mysql.model} based on tables defined in stores.
+     *
+     * Only re-generate changes if you are also making the change in production.
+     */
+    @Ignore
     @Test(timeout = 300_000L)
     public void generate() throws Exception {
         Path sourcesPath = Path.of("src", "main", "java");

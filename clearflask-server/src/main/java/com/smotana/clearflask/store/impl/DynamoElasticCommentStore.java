@@ -106,6 +106,7 @@ import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
+import org.jooq.util.mysql.MySQLDataType;
 import rx.Observable;
 
 import javax.ws.rs.core.Response;
@@ -128,7 +129,6 @@ import java.util.stream.StreamSupport;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.CONTENT_MAX_LENGTH;
 import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 import static org.jooq.SortOrder.ASC;
@@ -255,7 +255,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .column("authorIsMod", SQLDataType.BOOLEAN)
                 .column("created", MoreSQLDataType.DATETIME(6).notNull())
                 .column("edited", MoreSQLDataType.DATETIME(6))
-                .column("content", SQLDataType.CLOB(CONTENT_MAX_LENGTH))
+                .column("content", MySQLDataType.MEDIUMTEXT)
                 .column("upvotes", SQLDataType.BIGINT.notNull())
                 .column("downvotes", SQLDataType.BIGINT.notNull())
                 .column("score", SQLDataType.DOUBLE.notNull())

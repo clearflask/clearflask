@@ -8,6 +8,7 @@ import org.jooq.impl.SQLDataType;
 import java.time.LocalDateTime;
 
 public class MoreSQLDataType {
+
     public static DataType<LocalDateTime> DATETIME() {
         return DATETIME;
     }
