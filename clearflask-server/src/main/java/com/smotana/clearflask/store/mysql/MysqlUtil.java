@@ -17,6 +17,7 @@ import com.smotana.clearflask.store.elastic.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore.SearchIdeasConditions;
 import com.smotana.clearflask.util.MathUtil;
 import com.smotana.clearflask.util.ServerSecret;
+import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -142,6 +143,7 @@ public class MysqlUtil {
         return (Table<R>) returnTable;
     }
 
+    @SneakyThrows
     public <R extends Record> HistogramResponse histogram(
             Table<R> table,
             Field<Instant> aggregateFieldName,
