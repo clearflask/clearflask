@@ -8,6 +8,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.smotana.clearflask.api.model.HistogramInterval;
 import com.smotana.clearflask.api.model.HistogramResponse;
 import com.smotana.clearflask.api.model.HistogramResponsePoints;
@@ -15,6 +16,7 @@ import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.store.elastic.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore.SearchIdeasConditions;
 import com.smotana.clearflask.util.MathUtil;
+import com.smotana.clearflask.util.ServerSecret;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +59,9 @@ import java.util.stream.Stream;
 public class MysqlUtil {
     @Inject
     private DSLContext mysql;
+    @Inject
+    @Named("cursor")
+    private ServerSecret serverSecretCursor;
 
     private final Pattern similarTextExtractor = Pattern.compile("(\\w{4,})");
 
@@ -218,7 +223,9 @@ public class MysqlUtil {
     }
 
     public int offset(Optional<String> cursorOpt) {
-        return cursorOpt.map(Ints::tryParse)
+        return cursorOpt
+                .map(serverSecretCursor::decryptString)
+                .map(Ints::tryParse)
                 .filter(Objects::nonNull)
                 .orElse(0);
     }
@@ -234,7 +241,10 @@ public class MysqlUtil {
     public Optional<String> nextCursor(ConfigSearch configSearch, Optional<String> cursorOpt, Optional<Integer> sizeOpt, int resultSize) {
         int limit = limit(configSearch, sizeOpt);
         int offset = offset(cursorOpt);
-        return resultSize < limit ? Optional.empty() : Optional.of(String.valueOf(offset + limit));
+        return resultSize < limit
+                ? Optional.empty()
+                : Optional.of(String.valueOf(offset + limit))
+                .map(serverSecretCursor::encryptString);
     }
 
     public static Module module() {

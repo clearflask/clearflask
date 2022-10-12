@@ -257,6 +257,8 @@ public class UserStoreIT extends AbstractIT {
         store.createUser(user1).getIndexingFuture().get();
         store.createUser(user2).getIndexingFuture().get();
         store.createUser(user3).getIndexingFuture().get();
+        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
+        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
         assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
         assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
         if (searchEngine.isReadElastic()) {

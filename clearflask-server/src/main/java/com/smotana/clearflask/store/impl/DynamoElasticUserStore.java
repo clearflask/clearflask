@@ -617,16 +617,18 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 sortFields = ImmutableList.of();
             }
 
-            Optional<Condition> conditionIsModOpt = Optional.ofNullable(userSearchAdmin.getIsMod())
-                    .map(JooqUser.USER.ISMOD::eq);
-
-            Optional<Condition> conditionSearchTextOpt = Optional.ofNullable(Strings.emptyToNull(userSearchAdmin.getSearchText()))
-                    .map(searchText -> JooqUser.USER.NAME.like("%" + searchText + "%")
-                            .or(JooqUser.USER.EMAIL.like("%" + searchText + "%")));
+            Condition conditions = JooqUser.USER.PROJECTID.eq(projectId);
+            if (userSearchAdmin.getIsMod() != null) {
+                conditions = conditions.and(JooqUser.USER.ISMOD.eq(userSearchAdmin.getIsMod()));
+            }
+            if (!Strings.isNullOrEmpty(userSearchAdmin.getSearchText())) {
+                conditions = conditions.and(JooqUser.USER.NAME.like("%" + userSearchAdmin.getSearchText() + "%")
+                        .or(JooqUser.USER.EMAIL.like("%" + userSearchAdmin.getSearchText() + "%")));
+            }
 
             List<String> userIds = mysql.select(JooqUser.USER.USERID)
                     .from(JooqUser.USER)
-                    .where(mysqlUtil.and(conditionIsModOpt, conditionSearchTextOpt))
+                    .where(conditions)
                     .orderBy(sortFields)
                     .offset(mysqlUtil.offset(cursorOpt))
                     .limit(mysqlUtil.limit(configSearch, pageSizeOpt))
