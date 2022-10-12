@@ -27,6 +27,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
 import java.io.IOException;
+import java.sql.PreparedStatement;
 import java.util.Optional;
 
 @Slf4j
@@ -114,7 +115,11 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     @Extern
     public void createDatabase() throws Exception {
         try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
-            context.createDatabaseIfNotExists(config.databaseName()).execute();
+            context.connection(connection -> {
+                PreparedStatement statement = connection.prepareStatement("CREATE DATABASE IF NOT EXISTS ? CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                statement.setString(0, config.databaseName());
+                statement.execute();
+            });
         }
     }
 
