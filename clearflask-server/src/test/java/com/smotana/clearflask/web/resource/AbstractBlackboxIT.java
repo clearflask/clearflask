@@ -3,7 +3,9 @@
 package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
@@ -121,6 +123,7 @@ import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -555,10 +558,14 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected void dumpDynamoTable() {
         log.info("DynamoScan starting");
         String tableName = singleTable.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
-        dynamo.scan(new ScanRequest()
-                        .withTableName(tableName))
-                .getItems()
-                .forEach(item -> log.info("DynamoScan: {}", item));
+        Map<String, AttributeValue> exclusiveStartKey = null;
+        do {
+            ScanResult result = dynamo.scan(new ScanRequest()
+                    .withTableName(tableName)
+                    .withExclusiveStartKey(exclusiveStartKey));
+            exclusiveStartKey = result.getLastEvaluatedKey();
+            result.getItems().forEach(item -> log.info("DynamoScan: {}", item));
+        } while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
         log.info("DynamoScan finished");
     }
 

@@ -47,9 +47,9 @@ public interface ProjectStore {
 
     ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);
 
-    void listAllProjectIds(Consumer<String> consumer);
+    void listAllProjects(Consumer<Project> consumer);
 
-    void listAllProjects(Consumer<Project> consumer, boolean useCache);
+    ListResponse listProjects(Optional<String> cursorOpt, int pageSize, boolean populateCache);
 
     /** Get global search engine */
     SearchEngine getSearchEngine();
@@ -87,6 +87,11 @@ public interface ProjectStore {
 
     Project removeAdmin(String projectId, String adminAccountId);
 
+    @Value
+    class ListResponse {
+        ImmutableList<Project> projects;
+        Optional<String> cursorOpt;
+    }
 
     interface Project {
         ProjectModel getModel();
@@ -142,6 +147,7 @@ public interface ProjectStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "projectId", rangePrefix = "project")
+    @DynamoTable(type = Gsi, indexNumber = 2, shardKeys = "projectId", shardCount = 30, rangePrefix = "projectSharded", rangeKeys = "projectId")
     class ProjectModel {
         @NonNull
         String accountId;

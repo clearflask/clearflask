@@ -115,6 +115,7 @@ import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME_PREFIX;
 
 @Slf4j
@@ -818,26 +819,22 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     /** One-off method to clean up projects on blocked accounts. */
     @Extern
-    private void deleteProjectsForBlockedAccounts() {
-        Optional<AccountStore.SearchAccountsResponse> searchAccountsResponseOpt = Optional.empty();
-        do {
-            searchAccountsResponseOpt = Optional.of(accountStore.listAccounts(
-                    true,
-                    searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt),
-                    Optional.empty()));
-            searchAccountsResponseOpt.get().getAccounts()
-                    .stream()
-                    .filter(account -> SubscriptionStatus.BLOCKED.equals(account.getStatus()))
-                    .forEach(account -> {
-                        for (String projectId : account.getProjectIds()) {
-                            log.info("Deleting project for blocked account id {}, projectId {}",
-                                    account.getAccountId(), projectId);
-                            projectDeleteAdmin(account, projectId);
-                        }
-                    });
-        } while (searchAccountsResponseOpt
-                .flatMap(AccountStore.SearchAccountsResponse::getCursorOpt)
-                .isPresent());
+    private void deleteProjectsForBlockedAccounts(boolean dryRun) {
+        accountStore.listAllAccounts(account -> {
+            if (!SubscriptionStatus.BLOCKED.equals(account.getStatus())) {
+                return;
+            }
+            for (String projectId : account.getProjectIds()) {
+                if (dryRun) {
+                    log.info("Running in dry-run: would have deleted project for blocked account id {}, projectId {}",
+                            account.getAccountId(), projectId);
+                } else {
+                    log.info("Deleting project for blocked account id {}, projectId {}",
+                            account.getAccountId(), projectId);
+                    projectDeleteAdmin(account, projectId);
+                }
+            }
+        });
     }
 
     @Extern
@@ -855,11 +852,11 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             DynamoElasticUserStore dynamoElasticUserStore = injector.getInstance(DynamoElasticUserStore.class);
             DynamoElasticIdeaStore dynamoElasticIdeaStore = injector.getInstance(DynamoElasticIdeaStore.class);
             DynamoElasticCommentStore dynamoElasticCommentStore = injector.getInstance(DynamoElasticCommentStore.class);
-            projectStore.listAllProjectIds(projectId -> {
+            projectStore.listAllProjects(project -> {
                 try {
-                    dynamoElasticUserStore.createIndexElasticSearch(projectId);
-                    dynamoElasticIdeaStore.createIndexElasticSearch(projectId);
-                    dynamoElasticCommentStore.createIndexElasticSearch(projectId);
+                    dynamoElasticUserStore.createIndexElasticSearch(project.getProjectId());
+                    dynamoElasticIdeaStore.createIndexElasticSearch(project.getProjectId());
+                    dynamoElasticCommentStore.createIndexElasticSearch(project.getProjectId());
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -869,9 +866,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Extern
     private void reindexProjects(boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
-        projectStore.listAllProjectIds(projectId -> {
+        projectStore.listAllProjects(project -> {
             try {
-                reindexProject(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+                reindexProject(project.getProjectId(), deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -889,6 +886,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Extern
     private void reindexProject(String projectId, boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        checkArgument(projectStore.getProject(projectId, false).isPresent(), "Project id does not exist: " + projectId);
         userStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         ideaStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         commentStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);

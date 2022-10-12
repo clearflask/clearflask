@@ -15,6 +15,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.AccountStore.AccountEmail;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -36,6 +37,16 @@ import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
+import io.dataspray.singletable.DynamoTable;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.ShardPageResult;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.SingleTableTestUtil;
+import io.dataspray.singletable.TableSchema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.junit.Test;
@@ -51,6 +62,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static io.dataspray.singletable.TableType.Primary;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -73,12 +85,15 @@ public class AccountStoreIT extends AbstractIT {
     @Inject
     private DynamoElasticAccountStore storeImpl;
     @Inject
+    private SingleTable singleTable;
+    @Inject
     private DSLContext mysql;
     @Inject
     private MysqlUtil mysqlUtil;
 
     @Override
     protected void configure() {
+        enableKillBillClient = false; // TODO remove me
         overrideSearchEngine = searchEngine;
         super.configure();
 
@@ -484,5 +499,48 @@ public class AccountStoreIT extends AbstractIT {
             storeImpl.createIndexElasticSearch();
             storeImpl.createIndexElasticSearch();
         }
+    }
+
+    /** Excludes GSI 2 for testing upgrade */
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "accountIdByEmail")
+    public static class AccountEmailOld {
+        @NonNull
+        String email;
+
+        @NonNull
+        String accountId;
+    }
+
+    @Test(timeout = 30_000L)
+    public void testUpgradeAddGsi2ToAccountEmail() throws Exception {
+        SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);
+        TableSchema<AccountEmailOld> accountIdByEmailOldSchema = singleTable.parseTableSchema(AccountEmailOld.class);
+        SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);
+        TableSchema<AccountEmail> accountIdByEmailSchema = singleTable.parseTableSchema(AccountEmail.class);
+        IndexSchema<AccountEmail> accountIdShardedSchema = singleTable.parseGlobalSecondaryIndexSchema(2, AccountEmail.class);
+
+        assertEquals(0, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+
+        AccountEmailOld acctOld1 = new AccountEmailOld("email1", "account1");
+        AccountEmailOld acctOld2 = new AccountEmailOld("email2", "account2");
+        AccountEmail acct1 = new AccountEmail(acctOld1.getEmail(), acctOld1.getAccountId());
+        AccountEmail acct2 = new AccountEmail(acctOld2.getEmail(), acctOld2.getAccountId());
+
+        accountIdByEmailOldSchema.table().putItem(accountIdByEmailOldSchema.toItem(acctOld1));
+        accountIdByEmailOldSchema.table().putItem(accountIdByEmailOldSchema.toItem(acctOld2));
+        assertEquals(acct1, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct1))));
+        assertEquals(acct2, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct2))));
+        assertEquals(new ShardPageResult(ImmutableList.of(), Optional.empty()), singleTable.fetchShardNextPage(accountIdShardedSchema, Optional.empty(), 100));
+
+        assertEquals(2, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+        assertEquals(0, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+        assertEquals(acctOld1, accountIdByEmailOldSchema.fromItem(accountIdByEmailOldSchema.table().getItem(accountIdByEmailOldSchema.primaryKey(acctOld1))));
+        assertEquals(acctOld2, accountIdByEmailOldSchema.fromItem(accountIdByEmailOldSchema.table().getItem(accountIdByEmailOldSchema.primaryKey(acctOld2))));
+        assertEquals(acct1, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct1))));
+        assertEquals(acct2, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct2))));
+        assertEquals(new ShardPageResult<>(ImmutableList.of(acct1, acct2), Optional.empty()), singleTable.fetchShardNextPage(accountIdShardedSchema, Optional.empty(), 100));
     }
 }

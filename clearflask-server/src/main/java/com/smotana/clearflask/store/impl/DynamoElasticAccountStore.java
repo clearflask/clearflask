@@ -16,13 +16,17 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.Update;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -66,6 +70,7 @@ import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.Expression;
 import io.dataspray.singletable.ExpressionBuilder;
 import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -99,10 +104,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
@@ -161,6 +168,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private IndexSchema<Account> accountByApiKeySchema;
     private IndexSchema<Account> accountByOauthGuidSchema;
     private TableSchema<AccountEmail> accountIdByEmailSchema;
+    private IndexSchema<AccountEmail> accountIdShardedSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
     private IndexSchema<AccountSession> sessionByAccountIdSchema;
     private Cache<String, Optional<Account>> accountCache;
@@ -180,6 +188,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountByApiKeySchema = singleTable.parseGlobalSecondaryIndexSchema(1, Account.class);
         accountByOauthGuidSchema = singleTable.parseGlobalSecondaryIndexSchema(2, Account.class);
         accountIdByEmailSchema = singleTable.parseTableSchema(AccountEmail.class);
+        accountIdShardedSchema = singleTable.parseGlobalSecondaryIndexSchema(2, AccountEmail.class);
         sessionBySessionIdSchema = singleTable.parseTableSchema(AccountSession.class);
         sessionByAccountIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
 
@@ -287,6 +296,41 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Override
+    public ImmutableMap<String, Account> getAccounts(Collection<String> accountIds, boolean useCache) {
+        if (accountIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        ImmutableMap.Builder<String, Account> resultBuilder = ImmutableMap.builder();
+        singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
+                        .withPrimaryKeys(accountIds.stream()
+                                .filter(accountId -> {
+                                    if (!useCache) {
+                                        return true;
+                                    }
+                                    Optional<Optional<Account>> accountOptOpt = Optional.ofNullable(accountCache.getIfPresent(accountId));
+                                    if (accountOptOpt.isEmpty()) {
+                                        return true;
+                                    }
+                                    if (accountOptOpt.get().isPresent()) {
+                                        resultBuilder.put(accountId, accountOptOpt.get().get());
+                                    }
+                                    return false;
+                                })
+                                .map(accountId -> accountSchema
+                                        .primaryKey(Map.of(
+                                                "accountId", accountId)))
+                                .toArray(PrimaryKey[]::new))))
+                .map(i -> accountSchema.fromItem(i))
+                .forEach(account -> {
+                    if (useCache) {
+                        accountCache.put(account.getAccountId(), Optional.of(account));
+                    }
+                    resultBuilder.put(account.getAccountId(), account);
+                });
+        return resultBuilder.build();
+    }
+
+    @Override
     public Optional<Account> getAccountByApiKey(String apiKey) {
         ImmutableList<Account> accountsByApiKey = StreamSupport.stream(accountByApiKeySchema.index().query(new QuerySpec()
                                 .withHashKey(accountByApiKeySchema.partitionKey(Map.of(
@@ -358,6 +402,37 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Override
     public SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
         return searchAccounts(Optional.empty(), useAccurateCursor, cursorOpt, pageSizeOpt);
+    }
+
+    @Override
+    public void listAllAccounts(Consumer<Account> consumer) {
+        Optional<String> cursorOpt = Optional.empty();
+        do {
+            ShardPageResult<AccountEmail> result = singleTable.fetchShardNextPage(
+                    accountIdShardedSchema,
+                    cursorOpt,
+                    DYNAMO_READ_BATCH_MAX_SIZE);
+            cursorOpt = result.getCursorOpt();
+
+            getAccounts(result.getItems().stream()
+                    .map(AccountEmail::getAccountId)
+                    .collect(Collectors.toList()), false)
+                    .values()
+                    .forEach(consumer);
+        } while (cursorOpt.isPresent());
+    }
+
+    @Override
+    public SearchAccountsResponse listAccounts(Optional<String> cursorOpt, int pageSize, boolean useCache) {
+        ShardPageResult<AccountEmail> shardPageResult = singleTable.fetchShardNextPage(
+                accountIdShardedSchema,
+                cursorOpt,
+                pageSize);
+        return new SearchAccountsResponse(
+                getAccounts(shardPageResult.getItems().stream()
+                        .map(AccountEmail::getAccountId)
+                        .collect(Collectors.toList()), useCache).values().asList(),
+                shardPageResult.getCursorOpt());
     }
 
     @Override
@@ -1111,6 +1186,38 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                 CompletionStageUtil.logFailure(completionStage);
             }
         }
+    }
+
+    /**
+     * One time operation to add AccountEmail's GSI 2 keys
+     */
+    @Extern
+    @VisibleForTesting
+    public long upgradeAddGsi2ToAccountEmailSchema() {
+        Map<String, AttributeValue> exclusiveStartKey = null;
+        long migrated = 0;
+        do {
+            ScanResult result = dynamo.scan(new ScanRequest()
+                    .withLimit(DYNAMO_WRITE_BATCH_MAX_SIZE)
+                    .withFilterExpression("#primaryRangeKeyName = :primaryRangeValue AND attribute_not_exists(#gsiRangeKeyName)")
+                    .withExpressionAttributeNames(Map.of(
+                            "#primaryRangeKeyName", accountIdByEmailSchema.rangeKeyName(),
+                            "#gsiRangeKeyName", accountIdShardedSchema.rangeKeyName()))
+                    .withExpressionAttributeValues(Map.of(
+                            ":primaryRangeValue", new AttributeValue(accountIdByEmailSchema.rangeKey(Map.of()).getValue().toString())))
+                    .withTableName(accountIdByEmailSchema.tableName())
+                    .withExclusiveStartKey(exclusiveStartKey));
+            exclusiveStartKey = result.getLastEvaluatedKey();
+            if (!result.getItems().isEmpty()) {
+                migrated += result.getItems().size();
+                singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(accountIdByEmailSchema.tableName())
+                        .withItemsToPut(result.getItems().stream()
+                                .map(accountIdByEmailSchema::fromAttrMap)
+                                .map(accountIdByEmailSchema::toItem)
+                                .collect(ImmutableList.toImmutableList()))));
+            }
+        } while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
+        return migrated;
     }
 
     public static Module module() {

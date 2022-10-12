@@ -24,8 +24,10 @@ import lombok.ToString;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
@@ -40,6 +42,8 @@ public interface AccountStore {
 
     Optional<Account> getAccount(String accountId, boolean useCache);
 
+    ImmutableMap<String, Account> getAccounts(Collection<String> accountIds, boolean useCache);
+
     Optional<Account> getAccountByApiKey(String apiKey);
 
     Optional<Account> getAccountByOauthGuid(String oauthGuid);
@@ -49,6 +53,10 @@ public interface AccountStore {
     boolean isEmailAvailable(String email);
 
     SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
+
+    void listAllAccounts(Consumer<Account> consumer);
+
+    SearchAccountsResponse listAccounts(Optional<String> cursorOpt, int pageSize, boolean populateCache);
 
     SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
@@ -142,6 +150,7 @@ public interface AccountStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "accountIdByEmail")
+    @DynamoTable(type = Gsi, indexNumber = 2, shardKeys = "accountId", shardCount = 30, rangePrefix = "accountIdSharded", rangeKeys = "accountId")
     class AccountEmail {
         @NonNull
         String email;
