@@ -146,6 +146,7 @@ public class MysqlUtil {
     @SneakyThrows
     public <R extends Record> HistogramResponse histogram(
             Table<R> table,
+            Condition projectIdCondition,
             Field<Instant> aggregateFieldName,
             Optional<LocalDate> startOpt,
             Optional<LocalDate> endOpt,
