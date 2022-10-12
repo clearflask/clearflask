@@ -35,11 +35,17 @@ clearflask-release/target/run-docker-compose-local/docker-compose.yml: get-proje
 		&& echo IMPORTANT: Created connect.config.json please adjust settings for local deployment || true
 	cp ./connect.config-local.json clearflask-release/target/run-docker-compose-local/connect/connect.config.json
 local-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
-	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml up -d
-	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml logs -f
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch up -d
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch logs -f
 local-down: clearflask-release/target/run-docker-compose-local/docker-compose.yml
-	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml down -t 0
-	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml rm
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch down -t 0
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch rm
+local-full-up: clearflask-release/target/run-docker-compose-local/docker-compose.yml
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch,with-kaui,with-kabana up -d
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch,with-kaui,with-kabana logs -f
+local-full-down: clearflask-release/target/run-docker-compose-local/docker-compose.yml
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch,with-kaui,with-kabana down -t 0
+	docker-compose -f clearflask-release/target/run-docker-compose-local/docker-compose.yml --profile with-elasticsearch,with-kaui,with-kabana rm
 
 clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml: get-project-version
 	test -f clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-self-host.tar.gz

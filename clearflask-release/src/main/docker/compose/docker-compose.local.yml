@@ -63,6 +63,8 @@ services:
       - ./killbill-engine/killbill.sh:/var/lib/killbill/killbill.sh
       - ./killbill-engine/autoload:/var/lib/killbill/bundles/autoload
   killbill-kaui:
+    profiles:
+      - with-kaui
     image: killbill/kaui:2.0.5
     depends_on:
       - killbill-engine
@@ -88,6 +90,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=killbill
   elasticsearch:
+    profiles:
+      - with-elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
     ports:
       - 9200:9200
@@ -96,6 +100,8 @@ services:
       - discovery.type=single-node
     mem_limit: 4g
   kibana:
+    profiles:
+      - with-kibana
     image: docker.elastic.co/kibana/kibana:7.10.0
     depends_on:
       - elasticsearch
