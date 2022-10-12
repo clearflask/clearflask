@@ -61,17 +61,17 @@ public class JooqIdeaFunders extends TableImpl<JooqIdeaFundersRecord> {
     /**
      * The column <code>idea_funders.projectId</code>.
      */
-    public final TableField<JooqIdeaFundersRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaFundersRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea_funders.postId</code>.
      */
-    public final TableField<JooqIdeaFundersRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaFundersRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea_funders.funderUserId</code>.
      */
-    public final TableField<JooqIdeaFundersRecord, String> FUNDERUSERID = createField(DSL.name("funderUserId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaFundersRecord, String> FUNDERUSERID = createField(DSL.name("funderUserId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     private JooqIdeaFunders(Name alias, Table<JooqIdeaFundersRecord> aliased) {
         this(alias, aliased, null);

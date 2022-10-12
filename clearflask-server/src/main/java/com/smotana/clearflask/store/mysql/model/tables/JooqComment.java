@@ -21,7 +21,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row15;
+import org.jooq.Row14;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -63,22 +63,17 @@ public class JooqComment extends TableImpl<JooqCommentRecord> {
     /**
      * The column <code>comment.projectId</code>.
      */
-    public final TableField<JooqCommentRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment.postId</code>.
      */
-    public final TableField<JooqCommentRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment.commentId</code>.
      */
-    public final TableField<JooqCommentRecord, String> COMMENTID = createField(DSL.name("commentId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
-
-    /**
-     * The column <code>comment.parentCommentIds</code>.
-     */
-    public final TableField<JooqCommentRecord, String> PARENTCOMMENTIDS = createField(DSL.name("parentCommentIds"), SQLDataType.VARCHAR(10000).nullable(false), this, "");
+    public final TableField<JooqCommentRecord, String> COMMENTID = createField(DSL.name("commentId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment.level</code>.
@@ -93,7 +88,7 @@ public class JooqComment extends TableImpl<JooqCommentRecord> {
     /**
      * The column <code>comment.authorUserId</code>.
      */
-    public final TableField<JooqCommentRecord, String> AUTHORUSERID = createField(DSL.name("authorUserId"), SQLDataType.VARCHAR(255), this, "");
+    public final TableField<JooqCommentRecord, String> AUTHORUSERID = createField(DSL.name("authorUserId"), SQLDataType.VARCHAR(54), this, "");
 
     /**
      * The column <code>comment.authorName</code>.
@@ -118,7 +113,7 @@ public class JooqComment extends TableImpl<JooqCommentRecord> {
     /**
      * The column <code>comment.content</code>.
      */
-    public final TableField<JooqCommentRecord, String> CONTENT = createField(DSL.name("content"), SQLDataType.VARCHAR(10000), this, "");
+    public final TableField<JooqCommentRecord, String> CONTENT = createField(DSL.name("content"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>comment.upvotes</code>.
@@ -210,11 +205,11 @@ public class JooqComment extends TableImpl<JooqCommentRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row15 type methods
+    // Row14 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row15<String, String, String, String, Long, Long, String, String, Boolean, Instant, Instant, String, Long, Long, Double> fieldsRow() {
-        return (Row15) super.fieldsRow();
+    public Row14<String, String, String, Long, Long, String, String, Boolean, Instant, Instant, String, Long, Long, Double> fieldsRow() {
+        return (Row14) super.fieldsRow();
     }
 }

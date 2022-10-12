@@ -59,17 +59,17 @@ public class JooqIdeaTags extends TableImpl<JooqIdeaTagsRecord> {
     /**
      * The column <code>idea_tags.projectId</code>.
      */
-    public final TableField<JooqIdeaTagsRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaTagsRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea_tags.postId</code>.
      */
-    public final TableField<JooqIdeaTagsRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaTagsRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea_tags.tagId</code>.
      */
-    public final TableField<JooqIdeaTagsRecord, String> TAGID = createField(DSL.name("tagId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaTagsRecord, String> TAGID = createField(DSL.name("tagId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     private JooqIdeaTags(Name alias, Table<JooqIdeaTagsRecord> aliased) {
         this(alias, aliased, null);

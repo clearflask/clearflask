@@ -63,12 +63,12 @@ public class JooqUser extends TableImpl<JooqUserRecord> {
     /**
      * The column <code>user.projectId</code>.
      */
-    public final TableField<JooqUserRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqUserRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>user.userId</code>.
      */
-    public final TableField<JooqUserRecord, String> USERID = createField(DSL.name("userId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqUserRecord, String> USERID = createField(DSL.name("userId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>user.name</code>.

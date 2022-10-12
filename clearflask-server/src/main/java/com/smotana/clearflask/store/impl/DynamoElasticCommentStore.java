@@ -128,6 +128,7 @@ import java.util.stream.StreamSupport;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 import static org.jooq.SortOrder.ASC;
 import static org.jooq.SortOrder.DESC;
@@ -243,18 +244,17 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     public void createIndexMysql() {
         log.info("Creating Mysql table {}", COMMENT_INDEX);
         mysql.createTableIfNotExists(COMMENT_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("postId", SQLDataType.VARCHAR(255).notNull())
-                .column("commentId", SQLDataType.VARCHAR(255).notNull())
-                .column("parentCommentIds", SQLDataType.VARCHAR(10000).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("commentId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("level", SQLDataType.BIGINT.notNull())
                 .column("childCommentCount", SQLDataType.BIGINT.notNull())
-                .column("authorUserId", SQLDataType.VARCHAR(255))
+                .column("authorUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH))
                 .column("authorName", SQLDataType.VARCHAR(255))
                 .column("authorIsMod", SQLDataType.BOOLEAN)
                 .column("created", MoreSQLDataType.DATETIME(6).notNull())
                 .column("edited", MoreSQLDataType.DATETIME(6))
-                .column("content", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
+                .column("content", SQLDataType.CLOB(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
                 .column("upvotes", SQLDataType.BIGINT.notNull())
                 .column("downvotes", SQLDataType.BIGINT.notNull())
                 .column("score", SQLDataType.DOUBLE.notNull())
@@ -264,10 +264,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID));
         mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.AUTHORUSERID));
         mysql.createTableIfNotExists(COMMENT_PARENT_ID_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("postId", SQLDataType.VARCHAR(255).notNull())
-                .column("commentId", SQLDataType.VARCHAR(255).notNull())
-                .column("parentCommentId", SQLDataType.VARCHAR(255).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("commentId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("parentCommentId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .primaryKey("projectId", "postId", "commentId", "parentCommentId")
                 .constraints(DSL.foreignKey(JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID, JooqCommentParentId.COMMENT_PARENT_ID.COMMENTID)
                         .references(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
@@ -1167,7 +1167,6 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 comment.getProjectId(),
                 comment.getIdeaId(),
                 comment.getCommentId(),
-                String.join(";", comment.getParentCommentIds()),
                 (long) comment.getLevel(),
                 comment.getChildCommentCount(),
                 comment.getAuthorUserId(),

@@ -62,17 +62,17 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
     /**
      * The column <code>idea.projectId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea.postId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea.authorUserId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> AUTHORUSERID = createField(DSL.name("authorUserId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> AUTHORUSERID = createField(DSL.name("authorUserId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea.authorName</code>.
@@ -97,17 +97,17 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
     /**
      * The column <code>idea.title</code>.
      */
-    public final TableField<JooqIdeaRecord, String> TITLE = createField(DSL.name("title"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> TITLE = createField(DSL.name("title"), SQLDataType.CLOB.nullable(false), this, "");
 
     /**
      * The column <code>idea.description</code>.
      */
-    public final TableField<JooqIdeaRecord, String> DESCRIPTION = createField(DSL.name("description"), SQLDataType.VARCHAR(10000), this, "");
+    public final TableField<JooqIdeaRecord, String> DESCRIPTION = createField(DSL.name("description"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>idea.response</code>.
      */
-    public final TableField<JooqIdeaRecord, String> RESPONSE = createField(DSL.name("response"), SQLDataType.VARCHAR(10000), this, "");
+    public final TableField<JooqIdeaRecord, String> RESPONSE = createField(DSL.name("response"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>idea.responseAuthorUserId</code>.
@@ -122,12 +122,12 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
     /**
      * The column <code>idea.categoryId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> CATEGORYID = createField(DSL.name("categoryId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqIdeaRecord, String> CATEGORYID = createField(DSL.name("categoryId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>idea.statusId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> STATUSID = createField(DSL.name("statusId"), SQLDataType.VARCHAR(255), this, "");
+    public final TableField<JooqIdeaRecord, String> STATUSID = createField(DSL.name("statusId"), SQLDataType.VARCHAR(54), this, "");
 
     /**
      * The column <code>idea.commentCount</code>.
@@ -177,7 +177,7 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
     /**
      * The column <code>idea.mergedToPostId</code>.
      */
-    public final TableField<JooqIdeaRecord, String> MERGEDTOPOSTID = createField(DSL.name("mergedToPostId"), SQLDataType.VARCHAR(255), this, "");
+    public final TableField<JooqIdeaRecord, String> MERGEDTOPOSTID = createField(DSL.name("mergedToPostId"), SQLDataType.VARCHAR(54), this, "");
 
     /**
      * The column <code>idea.order</code>.

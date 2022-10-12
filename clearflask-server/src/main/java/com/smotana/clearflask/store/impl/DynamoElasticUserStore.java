@@ -149,6 +149,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.elastic.ElasticUtil.*;
+import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
@@ -294,8 +295,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     public void createIndexMysql() {
         log.debug("Creating Mysql table {}", USER_INDEX);
         mysql.createTableIfNotExists(USER_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("userId", SQLDataType.VARCHAR(255).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("userId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("name", SQLDataType.VARCHAR(255))
                 .column("email", SQLDataType.VARCHAR(255))
                 .column("created", MoreSQLDataType.DATETIME(6).notNull())

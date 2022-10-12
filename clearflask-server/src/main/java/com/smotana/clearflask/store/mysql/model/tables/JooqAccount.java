@@ -59,7 +59,7 @@ public class JooqAccount extends TableImpl<JooqAccountRecord> {
     /**
      * The column <code>account.accountId</code>.
      */
-    public final TableField<JooqAccountRecord, String> ACCOUNTID = createField(DSL.name("accountId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqAccountRecord, String> ACCOUNTID = createField(DSL.name("accountId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>account.name</code>.

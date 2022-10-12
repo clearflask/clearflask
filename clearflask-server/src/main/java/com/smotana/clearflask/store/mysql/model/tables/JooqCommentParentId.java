@@ -61,22 +61,22 @@ public class JooqCommentParentId extends TableImpl<JooqCommentParentIdRecord> {
     /**
      * The column <code>comment_parent_id.projectId</code>.
      */
-    public final TableField<JooqCommentParentIdRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentParentIdRecord, String> PROJECTID = createField(DSL.name("projectId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment_parent_id.postId</code>.
      */
-    public final TableField<JooqCommentParentIdRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentParentIdRecord, String> POSTID = createField(DSL.name("postId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment_parent_id.commentId</code>.
      */
-    public final TableField<JooqCommentParentIdRecord, String> COMMENTID = createField(DSL.name("commentId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentParentIdRecord, String> COMMENTID = createField(DSL.name("commentId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     /**
      * The column <code>comment_parent_id.parentCommentId</code>.
      */
-    public final TableField<JooqCommentParentIdRecord, String> PARENTCOMMENTID = createField(DSL.name("parentCommentId"), SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<JooqCommentParentIdRecord, String> PARENTCOMMENTID = createField(DSL.name("parentCommentId"), SQLDataType.VARCHAR(54).nullable(false), this, "");
 
     private JooqCommentParentId(Name alias, Table<JooqCommentParentIdRecord> aliased) {
         this(alias, aliased, null);

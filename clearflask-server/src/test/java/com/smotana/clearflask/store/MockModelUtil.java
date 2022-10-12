@@ -24,7 +24,7 @@ public class MockModelUtil {
                 IdUtil.randomId(),
                 null,
                 false,
-                IdUtil.randomId(),
+                "\uD83E\uDD23" + IdUtil.randomId(),
                 IdUtil.randomId() + "@example.com",
                 null,
                 null,
@@ -47,14 +47,14 @@ public class MockModelUtil {
     public static IdeaModel getRandomIdea() {
         return new IdeaModel(
                 IdUtil.randomId(),
-                IdUtil.contentUnique(" this !@#$%^&*()is my title 9032 "),
+                IdUtil.contentUnique(" this !@#$%^&*()is my\uD83E\uDD23 title 9032 "),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 null,
                 Instant.now(),
-                "title",
-                textToSimpleHtml("description"),
-                textToSimpleHtml("response"),
+                "title\uD83E\uDD23",
+                textToSimpleHtml("description\uD83E\uDD23"),
+                textToSimpleHtml("response\uD83E\uDD23"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 Instant.now(),
@@ -94,7 +94,7 @@ public class MockModelUtil {
                 false,
                 Instant.now(),
                 null,
-                textToSimpleHtml("This is a comment " + IdUtil.randomId()),
+                textToSimpleHtml("This is a \uD83E\uDD23 comment " + IdUtil.randomId()),
                 0,
                 0);
     }
@@ -108,7 +108,7 @@ public class MockModelUtil {
                 10,
                 TransactionType.VOTE.name(),
                 IdUtil.randomId(),
-                "This is my transaction summary",
+                "This is my transaction \uD83E\uDD23 summary",
                 TimeUnit.DAYS.toSeconds(300));
     }
 }

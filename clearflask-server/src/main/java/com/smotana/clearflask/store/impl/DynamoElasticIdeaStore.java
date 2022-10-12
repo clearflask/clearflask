@@ -151,6 +151,7 @@ import java.util.stream.StreamSupport;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 import static org.jooq.SortOrder.ASC;
 import static org.jooq.SortOrder.DESC;
@@ -288,20 +289,20 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public void createIndexMysql() {
         log.info("Creating Mysql table {}", IDEA_INDEX);
         mysql.createTableIfNotExists(IDEA_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("postId", SQLDataType.VARCHAR(255).notNull())
-                .column("authorUserId", SQLDataType.VARCHAR(255).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("authorUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("authorName", SQLDataType.VARCHAR(255))
                 .column("authorIsMod", SQLDataType.BOOLEAN)
                 .column("created", MoreSQLDataType.DATETIME(6).notNull())
                 .column("lastActivity", MoreSQLDataType.DATETIME_AUTO_UPDATE(6).notNull())
-                .column("title", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.POST_TITLE_MAX_LENGTH)).notNull())
-                .column("description", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
-                .column("response", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
+                .column("title", SQLDataType.CLOB(Math.max(255, (int) Sanitizer.POST_TITLE_MAX_LENGTH)).notNull())
+                .column("description", SQLDataType.CLOB(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
+                .column("response", SQLDataType.CLOB(Math.max(255, (int) Sanitizer.CONTENT_MAX_LENGTH)))
                 .column("responseAuthorUserId", SQLDataType.VARCHAR(255))
                 .column("responseAuthorName", SQLDataType.VARCHAR(255))
-                .column("categoryId", SQLDataType.VARCHAR(255).notNull())
-                .column("statusId", SQLDataType.VARCHAR(255))
+                .column("categoryId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("statusId", SQLDataType.VARCHAR(ID_MAX_LENGTH))
                 .column("commentCount", SQLDataType.BIGINT)
                 .column("childCommentCount", SQLDataType.BIGINT)
                 .column("funded", SQLDataType.BIGINT)
@@ -311,7 +312,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("votersCount", SQLDataType.BIGINT)
                 .column("expressionsValue", SQLDataType.DOUBLE)
                 .column("trendScore", SQLDataType.DOUBLE)
-                .column("mergedToPostId", SQLDataType.VARCHAR(255))
+                .column("mergedToPostId", SQLDataType.VARCHAR(ID_MAX_LENGTH))
                 .column("order", SQLDataType.DOUBLE)
                 .primaryKey("projectId", "postId")
                 .execute();
@@ -323,18 +324,18 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.LASTACTIVITY));
         mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.MERGEDTOPOSTID));
         mysql.createTableIfNotExists(IDEA_TAGS_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("postId", SQLDataType.VARCHAR(255).notNull())
-                .column("tagId", SQLDataType.VARCHAR(255).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("tagId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .primaryKey("projectId", "postId", "tagId")
                 .constraints(DSL.foreignKey(JooqIdeaTags.IDEA_TAGS.PROJECTID, JooqIdeaTags.IDEA_TAGS.POSTID)
                         .references(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID, JooqIdea.IDEA.POSTID)
                         .onDeleteCascade())
                 .execute();
         mysql.createTableIfNotExists(IDEA_FUNDERS_INDEX)
-                .column("projectId", SQLDataType.VARCHAR(255).notNull())
-                .column("postId", SQLDataType.VARCHAR(255).notNull())
-                .column("funderUserId", SQLDataType.VARCHAR(255).notNull())
+                .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
+                .column("funderUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .primaryKey("projectId", "postId", "funderUserId")
                 .constraint(DSL.foreignKey(JooqIdeaFunders.IDEA_FUNDERS.PROJECTID, JooqIdeaFunders.IDEA_FUNDERS.POSTID)
                         .references(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID, JooqIdea.IDEA.POSTID)

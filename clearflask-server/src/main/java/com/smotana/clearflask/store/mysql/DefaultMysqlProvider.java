@@ -27,12 +27,16 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
 import java.io.IOException;
-import java.sql.PreparedStatement;
 import java.util.Optional;
+
+import static com.smotana.clearflask.util.IdUtil.CONTENT_UNIQUE_MAX_LENGTH;
+import static com.smotana.clearflask.util.IdUtil.UUID_DASHLESS_MAX_LENGTH;
 
 @Slf4j
 @Singleton
 public class DefaultMysqlProvider extends ManagedService implements Provider<DSLContext> {
+
+    public static final int ID_MAX_LENGTH = Math.max(CONTENT_UNIQUE_MAX_LENGTH, UUID_DASHLESS_MAX_LENGTH);
 
     public interface Config {
         @NoDefaultValue
@@ -116,9 +120,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     public void createDatabase() throws Exception {
         try (CloseableDSLContext context = DSL.using(getConnectionUrl(false), config.user(), config.pass())) {
             context.connection(connection -> {
-                PreparedStatement statement = connection.prepareStatement("CREATE DATABASE IF NOT EXISTS ? CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                statement.setString(0, config.databaseName());
-                statement.execute();
+                connection.prepareStatement("CREATE DATABASE IF NOT EXISTS " + config.databaseName() + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci").execute();
             });
         }
     }

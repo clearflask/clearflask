@@ -13,6 +13,10 @@ import java.util.UUID;
  */
 @Slf4j
 public class IdUtil {
+    private static final int CONTENT_UNIQUE_CONTENT_MAX_LENGTH = 50;
+    public static final int CONTENT_UNIQUE_MAX_LENGTH = CONTENT_UNIQUE_CONTENT_MAX_LENGTH + 4;
+    public static final int UUID_DASHLESS_MAX_LENGTH = 32;
+
     public static String randomId() {
         return UUID.randomUUID().toString().replace("-", "");
     }
@@ -22,7 +26,7 @@ public class IdUtil {
     }
 
     public static String contentUnique(String content) {
-        String contentPart = StringUtils.left(content, 50)
+        String contentPart = StringUtils.left(content, CONTENT_UNIQUE_CONTENT_MAX_LENGTH)
                 .toLowerCase()
                 .replaceAll("[^0-9a-z ]+", "")
                 .replaceAll(" +", "-")
