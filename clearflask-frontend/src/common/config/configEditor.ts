@@ -275,7 +275,7 @@ export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
 }
 export interface EnumItem {
   name: string;
-  value?: string;
+  value: string;
 }
 
 /**
@@ -673,7 +673,7 @@ export class EditorImpl implements Editor {
     if (!isRequired) {
       items[0] = {
         name: 'Default',
-        value: undefined,
+        value: '_undefined',
       }
     }
     for (let i = 0; i < propSchema.enum.length; i++) {
@@ -1292,8 +1292,9 @@ export class EditorImpl implements Editor {
             type: PropertyType.Enum,
             value: value,
             items: items,
+            set: (val: any): void => setFun(val === '_undefined' ? undefined : val),
             validateValue: (val: string | undefined): void => {
-              if (val === undefined) {
+              if (val === undefined || val === '_undefined') {
                 validateRequiredFun(val);
               } else if (!propSchema.enum.includes(val)) {
                 property.errorMsg = `Can only be one of: ${JSON.stringify(propSchema.enum)}`;
@@ -1596,7 +1597,7 @@ export class EditorImpl implements Editor {
           maxItems: propSchema.maxItems,
           uniqueItems: propSchema.uniqueItems,
           childType: propSchema.items.enum ? 'enum' : (propSchema.items.type || 'object'),
-          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items, isRequired) : undefined,
+          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items, true) : undefined,
           childProperties: fetchChildPropertiesArray(),
           set: (val: true | undefined): void => {
             if (!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
