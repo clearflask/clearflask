@@ -19,6 +19,7 @@ import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.NetworkUtil;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.CloseableDSLContext;
@@ -37,6 +38,7 @@ import static com.smotana.clearflask.util.IdUtil.UUID_DASHLESS_MAX_LENGTH;
 public class DefaultMysqlProvider extends ManagedService implements Provider<DSLContext> {
 
     public static final int ID_MAX_LENGTH = Math.max(CONTENT_UNIQUE_MAX_LENGTH, UUID_DASHLESS_MAX_LENGTH);
+    public static final int CONTENT_MAX_LENGTH = (int) Math.max(/* MySQL TEXT max length */65_535L, Sanitizer.CONTENT_MAX_LENGTH);
 
     public interface Config {
         @NoDefaultValue
