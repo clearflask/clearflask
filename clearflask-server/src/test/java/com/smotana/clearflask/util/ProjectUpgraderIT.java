@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.ProjectModel;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.web.resource.AbstractBlackboxIT;
 import io.dataspray.singletable.TableSchema;

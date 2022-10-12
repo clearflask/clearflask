@@ -3,7 +3,9 @@
 package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
@@ -68,6 +70,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
@@ -82,11 +85,11 @@ import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
@@ -94,7 +97,6 @@ import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.PaymentTestPluginConfigure.PaymentTestPluginAction;
 import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
@@ -121,6 +123,7 @@ import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -187,7 +190,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         bindMock(AmazonRoute53.class);
 
         install(Modules.override(
-                Application.module(),
                 MockExtendedSecurityContext.module(),
                 ClearFlaskSso.module(),
                 HealthResource.module(),
@@ -256,6 +258,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ImageNormalizationImpl.module(),
                 MockAuthCookie.module(),
                 UserBindUtil.module(),
+                MysqlUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 SimpleEmailValidator.module(),
@@ -263,10 +266,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().startupWaitUntilDeps()).withValue(Boolean.TRUE);
-                    om.override(om.id().domain()).withValue("localhost:8080");
-                }));
                 install(ConfigSystem.overrideModule(KillBilling.Config.class, om -> {
                     om.override(om.id().reuseDraftInvoices()).withValue(false);
                 }));
@@ -559,10 +558,14 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected void dumpDynamoTable() {
         log.info("DynamoScan starting");
         String tableName = singleTable.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
-        dynamo.scan(new ScanRequest()
-                        .withTableName(tableName))
-                .getItems()
-                .forEach(item -> log.info("DynamoScan: {}", item));
+        Map<String, AttributeValue> exclusiveStartKey = null;
+        do {
+            ScanResult result = dynamo.scan(new ScanRequest()
+                    .withTableName(tableName)
+                    .withExclusiveStartKey(exclusiveStartKey));
+            exclusiveStartKey = result.getLastEvaluatedKey();
+            result.getItems().forEach(item -> log.info("DynamoScan: {}", item));
+        } while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
         log.info("DynamoScan finished");
     }
 

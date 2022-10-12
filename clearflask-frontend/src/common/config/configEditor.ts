@@ -31,6 +31,8 @@ export enum OpenApiTags {
   PropLink = 'x-clearflask-prop-link',
   /** Hide */
   Hide = 'x-clearflask-hide',
+  /** Hide unless super admin */
+  SuperAdminOnly = 'x-clearflask-super-admin-only',
   /**
    * Adds an additional property located somewhere else into this object/page
    * as if it was part of it in the first place. Useful When you want to
@@ -273,7 +275,7 @@ export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
 }
 export interface EnumItem {
   name: string;
-  value: string;
+  value?: string;
 }
 
 /**
@@ -392,10 +394,12 @@ export interface Editor {
 
 export class EditorImpl implements Editor {
   config: ConfigAdmin;
+  isSuperAdmin: boolean;
   cache: any = {};
   globalSubscribers: { [subscriberId: string]: () => void } = {};
 
-  constructor(config?: ConfigAdmin) {
+  constructor(isSuperAdmin: boolean, config?: ConfigAdmin) {
+    this.isSuperAdmin = isSuperAdmin;
     if (config !== undefined) {
       this.config = cloneDeep(config);
     } else {
@@ -406,6 +410,7 @@ export class EditorImpl implements Editor {
 
   clone(): Editor {
     return new EditorImpl(
+      this.isSuperAdmin,
       cloneDeep(this.config));
   }
 
@@ -660,13 +665,19 @@ export class EditorImpl implements Editor {
     }
   }
 
-  getEnumItems(propSchema: any): EnumItem[] {
+  getEnumItems(propSchema: any, isRequired: boolean): EnumItem[] {
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
     if (!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
     if (xProp && xProp.enumNames && xProp.enumNames.length !== propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
-    const items: EnumItem[] = new Array(propSchema.enum.length);
+    const items: EnumItem[] = new Array((isRequired ? 0 : 1) + propSchema.enum.length);
+    if (isRequired) {
+      items[0] = {
+        name: 'Default',
+        value: undefined,
+      }
+    }
     for (let i = 0; i < propSchema.enum.length; i++) {
-      items[i] = {
+      items[(isRequired ? 0 : 1) + i] = {
         name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
         value: propSchema.enum[i],
       };
@@ -956,7 +967,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
-      hide: !!pageSchema[OpenApiTags.Hide],
+      hide: !!pageSchema[OpenApiTags.Hide] || (!!pageSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xPage,
       type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1090,7 +1101,7 @@ export class EditorImpl implements Editor {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
-      hide: !!pageGroupSchema[OpenApiTags.Hide],
+      hide: !!pageGroupSchema[OpenApiTags.Hide] || (!!pageGroupSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xPageGroup,
       type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -1257,7 +1268,7 @@ export class EditorImpl implements Editor {
     const base = {
       key: randomUuid(),
       name: pathStr,
-      hide: !!propSchema[OpenApiTags.Hide],
+      hide: !!propSchema[OpenApiTags.Hide] || (!!propSchema[OpenApiTags.SuperAdminOnly] && !this.isSuperAdmin),
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
       path: path,
@@ -1274,7 +1285,7 @@ export class EditorImpl implements Editor {
     switch (propSchema.type || 'object') {
       case 'string':
         if (propSchema.enum) {
-          const items: EnumItem[] = this.getEnumItems(propSchema);
+          const items: EnumItem[] = this.getEnumItems(propSchema, isRequired);
           property = {
             defaultValue: xProp?.defaultValue !== undefined ? xProp.defaultValue : (isRequired ? propSchema.enum[0] : undefined),
             ...base,
@@ -1585,7 +1596,7 @@ export class EditorImpl implements Editor {
           maxItems: propSchema.maxItems,
           uniqueItems: propSchema.uniqueItems,
           childType: propSchema.items.enum ? 'enum' : (propSchema.items.type || 'object'),
-          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items) : undefined,
+          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items, isRequired) : undefined,
           childProperties: fetchChildPropertiesArray(),
           set: (val: true | undefined): void => {
             if (!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)

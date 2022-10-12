@@ -95,7 +95,7 @@ public class ExternController extends ManagedService {
             protected void configure() {
                 bind(ExternController.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(ExternController.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(ExternController.class).asEagerSingleton();
             }
         };
     }

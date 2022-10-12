@@ -17,14 +17,18 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -63,6 +67,7 @@ import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.ShardPageResult;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.EqualsAndHashCode;
@@ -76,11 +81,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ProjectUpgraderImpl.PROJECT_VERSION_LATEST;
 
@@ -137,6 +144,7 @@ public class DynamoProjectStore implements ProjectStore {
     private IntercomUtil intercomUtil;
 
     private TableSchema<ProjectModel> projectSchema;
+    private IndexSchema<ProjectModel> projectShardedSchema;
     private TableSchema<SlugModel> slugSchema;
     private IndexSchema<SlugModel> slugByProjectSchema;
     private TableSchema<InvitationModel> invitationSchema;
@@ -154,6 +162,7 @@ public class DynamoProjectStore implements ProjectStore {
                 .build();
 
         projectSchema = singleTable.parseTableSchema(ProjectModel.class);
+        projectShardedSchema = singleTable.parseGlobalSecondaryIndexSchema(2, ProjectModel.class);
         slugSchema = singleTable.parseTableSchema(SlugModel.class);
         slugByProjectSchema = singleTable.parseGlobalSecondaryIndexSchema(2, SlugModel.class);
         invitationSchema = singleTable.parseTableSchema(InvitationModel.class);
@@ -245,6 +254,51 @@ public class DynamoProjectStore implements ProjectStore {
                 .collect(ImmutableSet.toImmutableSet());
         projects.forEach(project -> projectCache.put(project.getProjectId(), Optional.of(project)));
         return projects;
+    }
+
+    @Override
+    public void listAllProjects(Consumer<Project> consumer) {
+        Optional<String> cursorOpt = Optional.empty();
+        do {
+            ShardPageResult<ProjectModel> result = singleTable.fetchShardNextPage(
+                    projectShardedSchema,
+                    cursorOpt,
+                    DYNAMO_READ_BATCH_MAX_SIZE);
+            cursorOpt = result.getCursorOpt();
+            result.getItems().stream()
+                    .map(this::getProjectWithUpgrade)
+                    .forEach(consumer);
+        } while (cursorOpt.isPresent());
+    }
+
+    @Override
+    public ListResponse listProjects(Optional<String> cursorOpt, int pageSize, boolean populateCache) {
+        ShardPageResult<ProjectModel> shardPageResult = singleTable.fetchShardNextPage(
+                projectShardedSchema,
+                cursorOpt,
+                pageSize);
+        ImmutableList<Project> projects = shardPageResult.getItems().stream()
+                .map(this::getProjectWithUpgrade)
+                .collect(ImmutableList.toImmutableList());
+        if (populateCache) {
+            projectCache.putAll(projects.stream()
+                    .collect(Collectors.toMap(Project::getProjectId, Optional::of)));
+        }
+        return new ListResponse(projects, shardPageResult.getCursorOpt());
+    }
+
+    @Override
+    public SearchEngine getSearchEngine() {
+        return configApp.forceSearchEngine()
+                .orElseGet(configApp::defaultSearchEngine);
+    }
+
+    @Override
+    public SearchEngine getSearchEngineForProject(String projectId) {
+        return configApp.forceSearchEngine()
+                .orElse(getProject(projectId, true)
+                        .flatMap(Project::getSearchEngineOverride)
+                        .orElseGet(configApp::defaultSearchEngine));
     }
 
     @Override
@@ -908,9 +962,60 @@ public class DynamoProjectStore implements ProjectStore {
             return Optional.ofNullable(versionedConfigAdmin.getConfig().getGithub());
         }
 
+        @Override
+        public Optional<SearchEngine> getSearchEngineOverride() {
+            return Optional.ofNullable(getVersionedConfigAdmin().getConfig().getForceSearchEngine())
+                    .flatMap(forceSearchEngine -> {
+                        switch (forceSearchEngine) {
+                            case ELASTICSEARCH:
+                                return Optional.of(SearchEngine.READWRITE_ELASTICSEARCH);
+                            case MYSQL:
+                                return Optional.of(SearchEngine.READWRITE_MYSQL);
+                            default:
+                                if (LogUtil.rateLimitAllowLog("dynamo-project-store-invalid-searchEngineOverride")) {
+                                    log.warn("Invalid value for forceSearchEngine '{}' for project {}",
+                                            forceSearchEngine, getProjectId());
+                                }
+                                return Optional.empty();
+                        }
+                    });
+        }
+
         private String getStatusLookupKey(String categoryId, String statusId) {
             return categoryId + ":" + statusId;
         }
+    }
+
+    /**
+     * One time operation to add AccountEmail's GSI 2 keys
+     */
+    @Extern
+    @VisibleForTesting
+    public long upgradeAddGsi2ToAProjectSchema() {
+        Map<String, AttributeValue> exclusiveStartKey = null;
+        long migrated = 0;
+        do {
+            ScanResult result = dynamo.scan(new ScanRequest()
+                    .withLimit(DYNAMO_WRITE_BATCH_MAX_SIZE)
+                    .withFilterExpression("#primaryRangeKeyName = :primaryRangeValue AND attribute_not_exists(#gsiRangeKeyName)")
+                    .withExpressionAttributeNames(Map.of(
+                            "#primaryRangeKeyName", projectSchema.rangeKeyName(),
+                            "#gsiRangeKeyName", projectShardedSchema.rangeKeyName()))
+                    .withExpressionAttributeValues(Map.of(
+                            ":primaryRangeValue", new AttributeValue(projectSchema.rangeKey(Map.of()).getValue().toString())))
+                    .withTableName(projectSchema.tableName())
+                    .withExclusiveStartKey(exclusiveStartKey));
+            exclusiveStartKey = result.getLastEvaluatedKey();
+            if (!result.getItems().isEmpty()) {
+                migrated += result.getItems().size();
+                singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(projectSchema.tableName())
+                        .withItemsToPut(result.getItems().stream()
+                                .map(projectSchema::fromAttrMap)
+                                .map(projectSchema::toItem)
+                                .collect(ImmutableList.toImmutableList()))));
+            }
+        } while (exclusiveStartKey != null && !exclusiveStartKey.isEmpty());
+        return migrated;
     }
 
     public static Module module() {

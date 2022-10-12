@@ -5,7 +5,10 @@ package com.smotana.clearflask.store.elastic;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.smotana.clearflask.util.MoreResources;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -17,33 +20,29 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
+@Getter
 public enum ElasticScript {
-    WILSON("comment-vote-wilson.painless", 1),
-    EXP_DECAY("exp-decay.painless", 2);
+    WILSON("elastic/comment-vote-wilson.painless", 1),
+    EXP_DECAY("elastic/exp-decay.painless", 2);
 
     private final String name;
     private final int version;
     private final String lang;
     private final String source;
 
-    ElasticScript(String fileName, int version) {
+    ElasticScript(String pathStr, int version) {
         try {
             this.version = version;
-            String[] split = fileName.split("\\.");
-            checkArgument(split.length == 2);
-            this.name = split[0];
-            this.lang = split[1];
-            URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("elastic/" + fileName);
-            checkState(fileUrl != null);
+            this.name = FilenameUtils.getBaseName(pathStr);
+            this.lang = FilenameUtils.getExtension(pathStr);
+            URL fileUrl = MoreResources.getResource(pathStr);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());
-            this.source = new String(Files.readAllBytes(file.toPath()), Charsets.UTF_8);
+            this.source = Files.readString(file.toPath(), Charsets.UTF_8);
         } catch (Exception ex) {
-            ex.printStackTrace(System.err);
             throw new RuntimeException(ex);
         }
     }
@@ -52,9 +51,9 @@ public enum ElasticScript {
         PutStoredScriptRequest request = new PutStoredScriptRequest();
         request.id(getScriptName());
         request.content(new BytesArray(gson.toJson(ImmutableMap.of(
-                "script", ImmutableMap.of(
-                        "lang", lang,
-                        "source", source)))),
+                        "script", ImmutableMap.of(
+                                "lang", lang,
+                                "source", source)))),
                 XContentType.JSON);
         return request;
     }

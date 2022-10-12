@@ -13,6 +13,7 @@ import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.convert.ConfigValueConverters;
+import com.kik.config.ice.convert.FileDynamicConfigSourceManagedService;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.interceptor.NoopConfigValueInterceptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
@@ -58,6 +59,7 @@ import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
@@ -72,6 +74,8 @@ import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
+import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.AutoCreateKikConfigFile;
@@ -79,7 +83,6 @@ import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.IntercomUtil;
@@ -184,6 +187,7 @@ public enum ServiceInjector {
                 install(DefaultDynamoDbProvider.module());
                 install(DefaultS3ClientProvider.module());
                 install(DefaultElasticSearchProvider.module());
+                install(DefaultMysqlProvider.module());
                 install(S3ContentStore.module());
                 install(DynamoProjectStore.module());
                 install(DynamoElasticAccountStore.module());
@@ -202,6 +206,7 @@ public enum ServiceInjector {
                 install(GitHubStoreImpl.module());
                 install(ResourceLegalStore.module());
                 install(SingleTableProvider.module());
+                install(MysqlUtil.module());
                 install(ElasticUtil.module());
                 install(DefaultServerSecret.module(Names.named("cursor")));
                 install(WebhookServiceImpl.module());
@@ -253,7 +258,7 @@ public enum ServiceInjector {
                 MBeanServer mBeanServer = BeanUtil.wrapOverwriteRegister(ManagementFactory.getPlatformMBeanServer());
                 bind(MBeanServer.class).toInstance(mBeanServer);
                 install(JmxDynamicConfigSource.module());
-                install(FileDynamicConfigSource.module());
+                install(FileDynamicConfigSourceManagedService.module());
                 bind(Duration.class).annotatedWith(Names.named(FileDynamicConfigSource.POLL_INTERVAL_NAME)).toInstance(Duration.ofSeconds(10));
 
                 // API endpoints

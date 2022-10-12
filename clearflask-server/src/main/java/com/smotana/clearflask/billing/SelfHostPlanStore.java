@@ -103,6 +103,11 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
+    public void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin config) throws ApiException {
+        // No-op
+    }
+
+    @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
         // No-op
     }

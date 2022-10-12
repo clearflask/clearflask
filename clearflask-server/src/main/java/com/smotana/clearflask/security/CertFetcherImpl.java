@@ -419,7 +419,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             protected void configure() {
                 bind(CertFetcher.class).to(CertFetcherImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(CertFetcherImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(CertFetcherImpl.class).asEagerSingleton();
             }
         };
     }

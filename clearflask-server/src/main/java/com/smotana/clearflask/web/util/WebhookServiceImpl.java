@@ -276,7 +276,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
             @Override
             protected void configure() {
                 bind(WebhookService.class).to(WebhookServiceImpl.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WebhookServiceImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WebhookServiceImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

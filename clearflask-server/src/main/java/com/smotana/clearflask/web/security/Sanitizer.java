@@ -76,9 +76,9 @@ public class Sanitizer {
     private ContentStore contentStore;
 
     /** If changed, also change in PostCreateForm.tsx */
-    private static final long POST_TITLE_MAX_LENGTH = 100;
-    private static final long CONTENT_MAX_LENGTH = 10_000;
-    private static final long NAME_MAX_LENGTH = 30;
+    public static final long POST_TITLE_MAX_LENGTH = 100;
+    public static final long CONTENT_MAX_LENGTH = 10_000;
+    public static final long NAME_MAX_LENGTH = 30;
     /** If changed, also change in api-project.yaml */
     private static final long SUBDOMAIN_MIN_LENGTH = 1;
     /** If changed, also change in api-project.yaml */

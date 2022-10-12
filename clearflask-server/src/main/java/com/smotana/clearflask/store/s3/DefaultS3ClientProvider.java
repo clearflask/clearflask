@@ -106,7 +106,7 @@ public class DefaultS3ClientProvider extends ManagedService implements Provider<
             @Override
             protected void configure() {
                 bind(AmazonS3.class).toProvider(DefaultS3ClientProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultS3ClientProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultS3ClientProvider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

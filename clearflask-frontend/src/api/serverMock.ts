@@ -13,6 +13,7 @@ import windowIso from '../common/windowIso';
 import { mock } from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
+import ServerAdmin from './serverAdmin';
 
 /** Not really a secret, don't bother stealing this */
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
@@ -1590,7 +1591,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   getProject(projectId: string) {
     var project = this.db[projectId];
     if (project === undefined) {
-      const editor = new ConfigEditor.EditorImpl();
+      const editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
       editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
       editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
       editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);

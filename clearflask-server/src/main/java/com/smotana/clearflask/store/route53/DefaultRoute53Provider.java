@@ -86,7 +86,7 @@ public class DefaultRoute53Provider extends ManagedService implements Provider<A
             @Override
             protected void configure() {
                 bind(AmazonRoute53.class).toProvider(DefaultRoute53Provider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultRoute53Provider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultRoute53Provider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

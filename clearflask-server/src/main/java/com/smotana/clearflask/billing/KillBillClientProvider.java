@@ -2,18 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.billing;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.ProvisionException;
-import com.google.inject.Singleton;
-import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.util.NetworkUtil;
-import com.smotana.clearflask.web.Application;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.AdminApi;
@@ -39,7 +29,21 @@ import org.killbill.billing.client.api.gen.TagDefinitionApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.api.gen.UsageApi;
 
-import java.io.IOException;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.ProvisionException;
+import com.google.inject.Singleton;
+import com.jayway.jsonpath.JsonPath;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
+import com.smotana.clearflask.util.NetworkUtil;
+import com.smotana.clearflask.web.Application;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
@@ -74,14 +78,25 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
     private Config config;
     @Inject
     private Application.Config configApp;
+    @Inject
+    private Environment env;
 
     @Override
     public KillBillHttpClient get() {
         String serviceEndpoint = String.format("%s://%s:%d", config.requireTls() ? "https" : "http", config.host(), config.port());
         if (configApp.startupWaitUntilDeps()) {
             log.info("Waiting for KillBill to be up {}", serviceEndpoint);
+            JsonPath killBillHealthCheck = JsonPath.compile("$.['main.pool.ConnectivityCheck'].healthy");
             try {
                 NetworkUtil.waitUntilPortOpen(config.host(), config.port());
+                if (env.isProduction()) {
+                    NetworkUtil.waitUntil200(serviceEndpoint + "/1.0/healthcheck");
+                } else {
+                    // In non-production, only consider main healthcheck, disregard 99th percentile checks
+                    NetworkUtil.waitUntilResponse(
+                            serviceEndpoint + "/1.0/healthcheck",
+                            body -> Boolean.TRUE.equals(killBillHealthCheck.read(body)));
+                }
             } catch (IOException ex) {
                 throw new ProvisionException("Failed to wait until KillBill port opened", ex);
             }

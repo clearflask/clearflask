@@ -23,11 +23,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
 import javax.annotation.Nullable;
 import java.time.Instant;
@@ -39,8 +34,7 @@ import java.util.function.Consumer;
 import static io.dataspray.singletable.TableType.Gsi;
 import static io.dataspray.singletable.TableType.Primary;
 
-public interface
-CommentStore {
+public interface CommentStore {
 
     default String genCommentId(String content) {
         return IdUtil.contentUnique(content);
@@ -51,13 +45,13 @@ CommentStore {
     }
 
     /** Returns optional empty if index already exists */
-    ListenableFuture<Optional<CreateIndexResponse>> createIndex(String projectId);
+    ListenableFuture<Void> createIndex(String projectId);
 
-    void reindex(String projectId, boolean deleteExistingIndex) throws Exception;
+    void repopulateIndex(String projectId, boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
 
     double computeCommentScore(int upvotes, int downvotes);
 
-    CommentAndIndexingFuture<List<WriteResponse>> createCommentAndUpvote(CommentModel comment);
+    CommentAndIndexingFuture<List<Void>> createCommentAndUpvote(CommentModel comment);
 
     Optional<CommentModel> getComment(String projectId, String ideaId, String commentId);
 
@@ -71,17 +65,17 @@ CommentStore {
 
     void exportAllForProject(String projectId, Consumer<CommentModel> consumer);
 
-    CommentAndIndexingFuture<WriteResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
+    CommentAndIndexingFuture<Void> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
 
-    CommentAndIndexingFuture<WriteResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote);
+    CommentAndIndexingFuture<Void> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote);
 
-    CommentAndIndexingFuture<WriteResponse> markAsDeletedComment(String projectId, String ideaId, String commentId);
+    CommentAndIndexingFuture<Void> markAsDeletedComment(String projectId, String ideaId, String commentId);
 
-    ListenableFuture<DeleteResponse> deleteComment(String projectId, String ideaId, String commentId);
+    ListenableFuture<Void> deleteComment(String projectId, String ideaId, String commentId);
 
-    ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId);
+    ListenableFuture<Void> deleteCommentsForIdea(String projectId, String ideaId);
 
-    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+    ListenableFuture<Void> deleteAllForProject(String projectId);
 
     @Value
     class CommentAndIndexingFuture<T> {

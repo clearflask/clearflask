@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>clearflask-parent</artifactId>
@@ -213,6 +214,18 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -482,6 +495,11 @@
             <artifactId>transport-netty4-client</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -699,13 +717,19 @@
                     <startParallel>true</startParallel>
                     <images>
                         <image>
-                            <alias>killbill-db</alias>
-                            <name>killbill/mariadb:0.22</name>
+                            <alias>mysql-db</alias>
+                            <name>mysql:5.7</name>
                             <run>
+                                <cmd>
+                                    mysqld
+                                    --sql-mode=IGNORE_SPACE
+                                    --explicit-defaults-for-timestamp
+                                    --secure-file-priv=/tmp
+                                </cmd>
                                 <volumes>
                                     <bind>
                                         <volume>
-                                            ${project.build.directory}/kb-ddl/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql
+                                            ${basedir}/src/main/resources/deploy/ddl-history/:/docker-entrypoint-initdb.d/
                                         </volume>
                                     </bind>
                                 </volumes>
@@ -713,15 +737,15 @@
                                     <MYSQL_ROOT_PASSWORD>killbill</MYSQL_ROOT_PASSWORD>
                                 </env>
                                 <ports>
-                                    <port>8306:3306</port>
+                                    <port>3306:3306</port>
                                 </ports>
                                 <wait>
                                     <time>300000</time>
                                     <log>.*mysqld: ready for connections\..*</log>
                                 </wait>
                                 <log>
-                                    <prefix>killbill-db:</prefix>
-                                    <color>cyan</color>
+                                    <prefix>mysql:</prefix>
+                                    <color>yellow</color>
                                 </log>
                             </run>
                         </image>
@@ -730,7 +754,7 @@
                             <name>killbill/killbill:0.22.20</name>
                             <run>
                                 <links>
-                                    <link>killbill-db</link>
+                                    <link>mysql-db</link>
                                 </links>
                                 <volumes>
                                     <bind>
@@ -752,9 +776,9 @@
                                     </bind>
                                 </volumes>
                                 <env>
-                                    <KILLBILL_DAO_URL>jdbc:mysql://killbill-db:3306/killbill
+                                    <KILLBILL_DAO_URL>jdbc:mysql://mysql-db:3306/killbill
                                     </KILLBILL_DAO_URL>
-                                    <KILLBILL_DAO_USER>root</KILLBILL_DAO_USER>
+                                    <KILLBILL_DAO_USER>killbill</KILLBILL_DAO_USER>
                                     <KILLBILL_DAO_PASSWORD>killbill</KILLBILL_DAO_PASSWORD>
                                     <KILLBILL_SERVER_TEST_MODE>true</KILLBILL_SERVER_TEST_MODE>
                                     <KILLBILL_NOTIFICATIONQ_ANALYTICS_TABLE_NAME>analytics_notifications
@@ -843,32 +867,6 @@
                                     <outputDirectory>${project.build.directory}/resources-legal/legal/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>payment-test-plugin</artifactId>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-ddl/sources/payment-test-plugin/
-                                    </outputDirectory>
-                                    <includes>ddl.sql</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>stripe-plugin</artifactId>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-ddl/sources/stripe-plugin/
-                                    </outputDirectory>
-                                    <includes>ddl.sql</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>analytics-plugin</artifactId>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
-                                    </outputDirectory>
-                                    <includes>
-                                        **/ddl.sql,system/**/*.sql,system/**/*.prc,system/**/*.ddl,reports/**/*.sql,reports/**/*.prc,reports/**/*.ddl
-                                    </includes>
-                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -908,25 +906,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>${project.build.scriptSourceDirectory}/prepare-kb-ddl.sh</executable>
-                    <arguments>
-                        <argument>${project.build.directory}/kb-ddl/sources</argument>
-                        <argument>${project.build.directory}/kb-ddl/plugins.sql</argument>
-                    </arguments>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

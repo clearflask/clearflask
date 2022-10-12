@@ -122,7 +122,7 @@ public class ClearFlaskCreditSync extends ManagedService {
             protected void configure() {
                 bind(ClearFlaskCreditSync.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(ClearFlaskCreditSync.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(ClearFlaskCreditSync.class).asEagerSingleton();
             }
         };
     }

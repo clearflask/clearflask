@@ -10,6 +10,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
@@ -36,6 +37,8 @@ public class ServiceManagerProvider implements Provider<ServiceManager> {
         return new AbstractModule() {
             @Override
             protected void configure() {
+                Multibinder.newSetBinder(binder(), Service.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class);
                 bind(ServiceManager.class).toProvider(ServiceManagerProvider.class).asEagerSingleton();
             }
         };

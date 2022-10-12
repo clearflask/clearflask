@@ -29,12 +29,12 @@
             <directory>${project.build.directory}/kb-plugins</directory>
             <outputDirectory>/killbill-engine/autoload</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>${basedir}/src/main/resources/deploy/ddl-history</directory>
+            <outputDirectory>/killbill-db/</outputDirectory>
+        </fileSet>
     </fileSets>
     <files>
-        <file>
-            <source>${project.build.directory}/kb-ddl/plugins.sql</source>
-            <outputDirectory>/killbill-db/</outputDirectory>
-        </file>
         <file>
             <source>${basedir}/src/main/resources/config-local-template.cfg</source>
             <outputDirectory>/server/</outputDirectory>

@@ -142,8 +142,7 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
 
-        /** TODO temporarily disabled by default until confirmed to be working fine */
-        @DefaultValue("false")
+        @DefaultValue("true")
         boolean enableDeleteProjectForBlockedAccount();
     }
 
@@ -280,6 +279,15 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
+            if (Optional.ofNullable(ex.getBillingException()).flatMap(ex2 -> Optional.ofNullable(ex2.getCode()))
+                    .filter(code -> code.equals(ErrorCode.SUB_CREATE_BP_EXISTS.getCode()))
+                    .isPresent()) {
+                // If already exists, return it
+                Optional<Subscription> subscriptionOpt = getSubscriptionByBundleExternalKey(accountInDyn.getAccountId(), false);
+                if (subscriptionOpt.isPresent()) {
+                    return subscriptionOpt.get();
+                }
+            }
             log.warn("Failed to create KillBill Subscription for accountId {} email {} name {}",
                     account.getAccountId(), accountInDyn.getEmail(), accountInDyn.getName(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -1438,7 +1446,7 @@ public class KillBilling extends ManagedService implements Billing {
             protected void configure() {
                 bind(Billing.class).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
             }
         };
     }

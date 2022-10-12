@@ -28,6 +28,10 @@ public class WilsonScoreInterval {
         return z;
     }
 
+    public double getZSquared() {
+        return zSquared;
+    }
+
     public double lowerBound(int numberOfTrials, int numberOfSuccesses) {
         if (numberOfTrials == 0) {
             return 0d;

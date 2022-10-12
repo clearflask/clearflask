@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.ProjectStore.SlugModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -22,7 +23,6 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ProjectUpgrader;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -43,13 +43,14 @@ public class ProjectStoreTest extends AbstractTest {
 
     @Override
     protected void configure() {
+        overrideSearchEngine = SearchEngine.READ_ELASTICSEARCH_WRITE_BOTH;
         super.configure();
 
         bindMock(ContentStore.class);
         bindMock(ProjectUpgrader.class);
+        bindMock(AccountStore.class);
 
         install(Modules.override(
-                Application.module(),
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),

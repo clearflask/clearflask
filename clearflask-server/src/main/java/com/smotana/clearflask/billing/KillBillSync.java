@@ -410,7 +410,7 @@ public class KillBillSync extends ManagedService {
             protected void configure() {
                 bind(KillBillSync.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillSync.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillSync.class).asEagerSingleton();
             }
         };
     }

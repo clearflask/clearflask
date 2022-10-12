@@ -667,7 +667,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
   }
 
   async createConfig(): Promise<{ config: Admin.ConfigAdmin, templates: CreateTemplateV2Result }> {
-    const editor = new ConfigEditor.EditorImpl();
+    const editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
     const templater = Templater.get(editor);
     const templates = await templater.createTemplateV2({
       ...this.state,

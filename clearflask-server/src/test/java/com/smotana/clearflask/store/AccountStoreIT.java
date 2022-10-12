@@ -2,55 +2,100 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.AccountStore.AccountEmail;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
+import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-import io.jsonwebtoken.security.Keys;
+import io.dataspray.singletable.DynamoTable;
+import io.dataspray.singletable.IndexSchema;
+import io.dataspray.singletable.ShardPageResult;
+import io.dataspray.singletable.SingleTable;
+import io.dataspray.singletable.SingleTableTestUtil;
+import io.dataspray.singletable.TableSchema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.DSLContext;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
-import static io.jsonwebtoken.SignatureAlgorithm.HS512;
+import static io.dataspray.singletable.TableType.Primary;
 import static org.junit.Assert.*;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class AccountStoreIT extends AbstractIT {
+
+    @Parameter(0)
+    public SearchEngine searchEngine;
+
+    @Parameters(name = "{0}")
+    public static Object[][] data() {
+        return new Object[][]{
+                {ProjectStore.SearchEngine.READWRITE_ELASTICSEARCH},
+                {ProjectStore.SearchEngine.READWRITE_MYSQL},
+        };
+    }
 
     @Inject
     private AccountStore store;
+    @Inject
+    private DynamoElasticAccountStore storeImpl;
+    @Inject
+    private SingleTable singleTable;
+    @Inject
+    private DSLContext mysql;
+    @Inject
+    private MysqlUtil mysqlUtil;
 
     @Override
     protected void configure() {
+        enableKillBillClient = false; // TODO remove me
+        overrideSearchEngine = searchEngine;
         super.configure();
 
         bindMock(ContentStore.class);
@@ -63,7 +108,6 @@ public class AccountStoreIT extends AbstractIT {
                 DynamoProjectStore.module(),
                 DynamoVoteStore.module(),
                 ProjectUpgraderImpl.module(),
-                Application.module(),
                 IntercomUtil.module(),
                 ChatwootUtil.module(),
                 ElasticUtil.module(),
@@ -77,8 +121,6 @@ public class AccountStoreIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
-                StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
-                log.trace("Using generated priv key: {}", privKey);
                 install(ConfigSystem.overrideModule(DynamoElasticAccountStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
@@ -339,6 +381,81 @@ public class AccountStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 30_000L)
+    public void testAccountSearch() throws Exception {
+        String accountId1 = store.genAccountId();
+        Account account1 = new Account(
+                accountId1,
+                "whateveryo@example.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "Adsfagregerghrthshgfdsg",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                ImmutableMap.of(),
+                null);
+        String accountId2 = store.genAccountId();
+        Account account2 = new Account(
+                accountId2,
+                "mysomethingemail@gmail.io",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "POIPLMQWPEEBQWNBENWQMNVEM",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                ImmutableMap.of(),
+                null);
+
+        store.createAccount(account1).getIndexingFuture().get();
+        assertAccountSearch(1, accountId1);
+        store.createAccount(account2).getIndexingFuture().get();
+        assertAccountSearch(1, accountId1, accountId2);
+
+        Stream.of(account1, account2).forEach(account -> {
+            assertAccountSearch(account.getEmail(), 1, account.getAccountId());
+            assertAccountSearch(account.getName(), 1, account.getAccountId());
+            assertAccountSearch(account.getEmail().substring(0, account.getEmail().length() - 2), 1, account.getAccountId());
+            assertAccountSearch(account.getName().substring(0, account.getName().length() - 2), 1, account.getAccountId());
+        });
+
+        store.updateName(accountId1, "NewName").getIndexingFuture().get();
+        assertAccountSearch(account1.getName(), 1);
+        assertAccountSearch("NewName", 1, accountId1);
+    }
+
+    private ImmutableList<Account> assertAccountSearch(int pageSize, String... expectedAccountIds) {
+        return assertAccountSearch(AccountSearchSuperAdmin.builder().build(), pageSize, expectedAccountIds);
+    }
+
+    private ImmutableList<Account> assertAccountSearch(String searchText, int pageSize, String... expectedAccountIds) {
+        return assertAccountSearch(AccountSearchSuperAdmin.builder()
+                .searchText(searchText).build(), pageSize, expectedAccountIds);
+    }
+
+    private ImmutableList<Account> assertAccountSearch(AccountSearchSuperAdmin search, int pageSize, String... expectedAccountIds) {
+        Optional<String> cursorOpt = Optional.empty();
+        Set<String> actualAccountIds = Sets.newHashSet();
+        ImmutableList.Builder<Account> actualAccountsBuilder = ImmutableList.builder();
+        do {
+            AccountStore.SearchAccountsResponse response = store.searchAccounts(search, true, cursorOpt, Optional.of(pageSize));
+            assertTrue("Result size " + response.getAccounts().size() + " is higher than page size " + pageSize,
+                    response.getAccounts().size() <= pageSize);
+            cursorOpt = response.getCursorOpt();
+            response.getAccounts().forEach(account -> assertTrue("Already contained: " + account, actualAccountIds.add(account.getAccountId())));
+            actualAccountsBuilder.addAll(response.getAccounts());
+        } while (cursorOpt.isPresent());
+        assertEquals(ImmutableSet.copyOf(expectedAccountIds), actualAccountIds);
+        return actualAccountsBuilder.build();
+    }
+
+    @Test(timeout = 30_000L)
     public void testShouldSendTrialEnded() throws Exception {
         Account account = new Account(
                 store.genAccountId(),
@@ -365,5 +482,68 @@ public class AccountStoreIT extends AbstractIT {
         assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan2"));
         assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
         assertFalse(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));
+    }
+
+    @Test(timeout = 30_000L)
+    public void testDontFailDuplicateFunctionOrTableOrIndexCreation() throws Exception {
+        if (searchEngine.isWriteMysql()) {
+            storeImpl.createIndexMysql();
+            storeImpl.createIndexMysql();
+
+            mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+            mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
+
+            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+        }
+        if (searchEngine.isWriteElastic()) {
+            storeImpl.createIndexElasticSearch();
+            storeImpl.createIndexElasticSearch();
+        }
+    }
+
+    /** Excludes GSI 2 for testing upgrade */
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "accountIdByEmail")
+    public static class AccountEmailOld {
+        @NonNull
+        String email;
+
+        @NonNull
+        String accountId;
+    }
+
+    /** Upgrade completed, ignoring test */
+    @Ignore
+    @Test(timeout = 30_000L)
+    public void testUpgradeAddGsi2ToAccountEmail() throws Exception {
+        SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);
+        TableSchema<AccountEmailOld> accountIdByEmailOldSchema = singleTable.parseTableSchema(AccountEmailOld.class);
+        SingleTableTestUtil.clearDuplicateSchemaDetection(singleTable);
+        TableSchema<AccountEmail> accountIdByEmailSchema = singleTable.parseTableSchema(AccountEmail.class);
+        IndexSchema<AccountEmail> accountIdShardedSchema = singleTable.parseGlobalSecondaryIndexSchema(2, AccountEmail.class);
+
+        assertEquals(0, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+
+        AccountEmailOld acctOld1 = new AccountEmailOld("email1", "account1");
+        AccountEmailOld acctOld2 = new AccountEmailOld("email2", "account2");
+        AccountEmail acct1 = new AccountEmail(acctOld1.getEmail(), acctOld1.getAccountId());
+        AccountEmail acct2 = new AccountEmail(acctOld2.getEmail(), acctOld2.getAccountId());
+
+        accountIdByEmailOldSchema.table().putItem(accountIdByEmailOldSchema.toItem(acctOld1));
+        accountIdByEmailOldSchema.table().putItem(accountIdByEmailOldSchema.toItem(acctOld2));
+        assertEquals(acct1, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct1))));
+        assertEquals(acct2, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct2))));
+        assertEquals(new ShardPageResult(ImmutableList.of(), Optional.empty()), singleTable.fetchShardNextPage(accountIdShardedSchema, Optional.empty(), 100));
+
+        assertEquals(2, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+        assertEquals(0, storeImpl.upgradeAddGsi2ToAccountEmailSchema());
+        assertEquals(acctOld1, accountIdByEmailOldSchema.fromItem(accountIdByEmailOldSchema.table().getItem(accountIdByEmailOldSchema.primaryKey(acctOld1))));
+        assertEquals(acctOld2, accountIdByEmailOldSchema.fromItem(accountIdByEmailOldSchema.table().getItem(accountIdByEmailOldSchema.primaryKey(acctOld2))));
+        assertEquals(acct1, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct1))));
+        assertEquals(acct2, accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(accountIdByEmailSchema.primaryKey(acct2))));
+        assertEquals(new ShardPageResult<>(ImmutableList.of(acct1, acct2), Optional.empty()), singleTable.fetchShardNextPage(accountIdShardedSchema, Optional.empty(), 100));
     }
 }

@@ -223,7 +223,7 @@ public class CheckMailOrgEmailValidator extends ManagedService implements EmailV
             protected void configure() {
                 bind(EmailValidator.class).to(CheckMailOrgEmailValidator.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(CheckMailOrgEmailValidator.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(CheckMailOrgEmailValidator.class).asEagerSingleton();
             }
         };
     }

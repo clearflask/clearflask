@@ -9,8 +9,10 @@ import com.google.inject.Module;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +23,13 @@ import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
+@Singleton
 @ApplicationPath("/")
 public class Application extends ResourceConfig {
     public static final String RESOURCE_VERSION = "/v1";
@@ -36,6 +41,18 @@ public class Application extends ResourceConfig {
 
         @DefaultValue("false")
         boolean startupWaitUntilDeps();
+
+        /** Create Global ElasticSearch and/or Mysql indexes/tables on app startup */
+        @DefaultValue("false")
+        boolean createIndexesOnStartup();
+
+        /** Unless otherwise override by below force config or project-specific value, this takes effect */
+        @DefaultValue("READWRITE_ELASTICSEARCH")
+        SearchEngine defaultSearchEngine();
+
+        /** Force engine regardless of default or project-specific value, this takes effect if set */
+        @NoDefaultValue(innerType = SearchEngine.class)
+        Optional<SearchEngine> forceSearchEngine();
     }
 
     @Inject

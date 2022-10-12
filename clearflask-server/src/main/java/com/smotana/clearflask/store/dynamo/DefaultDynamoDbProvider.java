@@ -90,7 +90,7 @@ public class DefaultDynamoDbProvider extends ManagedService implements Provider<
             @Override
             protected void configure() {
                 bind(AmazonDynamoDB.class).toProvider(DefaultDynamoDbProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultDynamoDbProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultDynamoDbProvider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
 
                 install(DocumentDynamoDbProvider.module());

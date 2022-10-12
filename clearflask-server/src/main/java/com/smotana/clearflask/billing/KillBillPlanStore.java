@@ -774,6 +774,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         }
     }
 
+    @Override
+    public void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin configAdmin) throws ApiException {
+        if (!isSuperAdmin && !configAdminPreviousOpt
+                .flatMap(ca -> Optional.ofNullable(ca.getForceSearchEngine()))
+                .equals(Optional.ofNullable(configAdmin.getForceSearchEngine()))) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to change search engine");
+        }
+    }
+
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
@@ -897,7 +906,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             @Override
             protected void configure() {
                 bind(PlanStore.class).to(KillBillPlanStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class).asEagerSingleton();
             }
         };
     }

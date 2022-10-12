@@ -193,7 +193,7 @@ public class S3ContentStore extends ManagedService implements ContentStore {
             protected void configure() {
                 bind(ContentStore.class).to(S3ContentStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(S3ContentStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(S3ContentStore.class).asEagerSingleton();
             }
         };
     }

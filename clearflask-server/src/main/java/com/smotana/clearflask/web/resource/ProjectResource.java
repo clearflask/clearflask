@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
@@ -57,11 +58,18 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.util.DateUtil;
-import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -74,9 +82,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
-import org.elasticsearch.action.support.WriteResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.joda.time.DateTime;
 
 import javax.annotation.Nullable;
@@ -110,6 +115,7 @@ import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME_PREFIX;
 
 @Slf4j
@@ -127,6 +133,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Context
     private HttpHeaders headers;
+    @Inject
+    private Injector injector;
     @Inject
     private Config config;
     @Inject
@@ -324,13 +332,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 throw ex;
             }
         }
+        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
+        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
 
-        boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
                 projectId,
@@ -428,6 +437,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 throw ex;
             }
         }
+        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 account.getAccountId(),
@@ -436,14 +446,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         Project project = projectStore.createProject(account.getAccountId(), projectId, new VersionedConfigAdmin(configAdmin, "new"));
         try {
-            RetryerBuilder.<List<Optional<CreateIndexResponse>>>newBuilder()
+            RetryerBuilder.<List<Void>>newBuilder()
                     .withStopStrategy(StopStrategies.stopAfterDelay(3, TimeUnit.MINUTES))
                     .withWaitStrategy(WaitStrategies.exponentialWait(50, 15, TimeUnit.SECONDS))
                     .build()
                     .call(() -> {
-                        ListenableFuture<Optional<CreateIndexResponse>> commentIndexFuture = commentStore.createIndex(projectId);
-                        ListenableFuture<Optional<CreateIndexResponse>> userIndexFuture = userStore.createIndex(projectId);
-                        ListenableFuture<Optional<CreateIndexResponse>> ideaIndexFuture = ideaStore.createIndex(projectId);
+                        ListenableFuture<Void> commentIndexFuture = commentStore.createIndex(projectId);
+                        ListenableFuture<Void> userIndexFuture = userStore.createIndex(projectId);
+                        ListenableFuture<Void> ideaIndexFuture = ideaStore.createIndex(projectId);
                         accountStore.addProject(account.getAccountId(), projectId);
                         return Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
                     });
@@ -482,13 +492,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     public void projectDeleteAdmin(Account account, String projectId) {
         try {
-            ListenableFuture<WriteResponse> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
+            ListenableFuture<Void> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
-            ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
-            ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> userFuture = userStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> ideaFuture = ideaStore.deleteAllForProject(projectId);
             billing.recordUsage(Billing.UsageType.POST_DELETED, account.getAccountId(), projectId);
             draftStore.deleteAllForProject(projectId);
-            ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
+            ListenableFuture<Void> commentFuture = commentStore.deleteAllForProject(projectId);
             voteStore.deleteAllForProject(projectId);
         } catch (Throwable th) {
             log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
@@ -683,7 +693,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         AtomicLong counter = new AtomicLong(0);
         AtomicReference<DateTimeFormatter> lastDateTimeFormatter = new AtomicReference<>();
         try (CSVParser csvFileParser = CSVParser.parse(body, Charsets.UTF_8, format)) {
-            ideaStore.createIdeas(StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
+            ideaStore.createIdeas(projectId, StreamSupport.stream(csvFileParser.spliterator(), false).map(record -> {
                 limiter.acquire();
                 counter.incrementAndGet();
 
@@ -809,34 +819,77 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     /** One-off method to clean up projects on blocked accounts. */
     @Extern
-    private void deleteProjectsForBlockedAccounts() {
-        Optional<AccountStore.SearchAccountsResponse> searchAccountsResponseOpt = Optional.empty();
-        do {
-            searchAccountsResponseOpt = Optional.of(accountStore.listAccounts(
-                    true,
-                    searchAccountsResponseOpt.flatMap(AccountStore.SearchAccountsResponse::getCursorOpt),
-                    Optional.empty()));
-            searchAccountsResponseOpt.get().getAccountIds()
-                    .stream()
-                    .flatMap(accountId -> accountStore.getAccount(accountId, true).stream())
-                    .filter(account -> SubscriptionStatus.BLOCKED.equals(account.getStatus()))
-                    .forEach(account -> {
-                        for (String projectId : account.getProjectIds()) {
-                            log.info("Deleting project for blocked account id {}, projectId {}",
-                                    account.getAccountId(), projectId);
-                            projectDeleteAdmin(account, projectId);
-                        }
-                    });
-        } while (searchAccountsResponseOpt
-                .flatMap(AccountStore.SearchAccountsResponse::getCursorOpt)
-                .isPresent());
+    private void deleteProjectsForBlockedAccounts(boolean dryRun) {
+        accountStore.listAllAccounts(account -> {
+            if (!SubscriptionStatus.BLOCKED.equals(account.getStatus())) {
+                return;
+            }
+            for (String projectId : account.getProjectIds()) {
+                if (dryRun) {
+                    log.info("Running in dry-run: would have deleted project for blocked account id {}, projectId {}",
+                            account.getAccountId(), projectId);
+                } else {
+                    log.info("Deleting project for blocked account id {}, projectId {}",
+                            account.getAccountId(), projectId);
+                    projectDeleteAdmin(account, projectId);
+                }
+            }
+        });
+    }
+
+    @Extern
+    private void createIndexes(boolean createElasticSearch, boolean createMysql) throws Exception {
+        if (createMysql) {
+            injector.getInstance(DefaultMysqlProvider.class).createDatabase();
+            injector.getInstance(DynamoElasticAccountStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticUserStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticIdeaStore.class).createIndexMysql();
+            injector.getInstance(DynamoElasticCommentStore.class).createIndexMysql();
+        }
+        if (createElasticSearch) {
+            injector.getInstance(DefaultElasticSearchProvider.class).putScripts();
+            injector.getInstance(DynamoElasticAccountStore.class).createIndexElasticSearch();
+            DynamoElasticUserStore dynamoElasticUserStore = injector.getInstance(DynamoElasticUserStore.class);
+            DynamoElasticIdeaStore dynamoElasticIdeaStore = injector.getInstance(DynamoElasticIdeaStore.class);
+            DynamoElasticCommentStore dynamoElasticCommentStore = injector.getInstance(DynamoElasticCommentStore.class);
+            projectStore.listAllProjects(project -> {
+                try {
+                    dynamoElasticUserStore.createIndexElasticSearch(project.getProjectId());
+                    dynamoElasticIdeaStore.createIndexElasticSearch(project.getProjectId());
+                    dynamoElasticCommentStore.createIndexElasticSearch(project.getProjectId());
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+        }
+    }
+
+    @Extern
+    private void reindexProjects(boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        projectStore.listAllProjects(project -> {
+            try {
+                reindexProject(project.getProjectId(), deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 
     @Extern
     private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
-        ideaStore.reindex(projectId, deleteExistingIndices);
-        userStore.reindex(projectId, deleteExistingIndices);
-        commentStore.reindex(projectId, deleteExistingIndices);
+        SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
+        reindexProject(projectId,
+                deleteExistingIndices,
+                searchEngine.isWriteElastic(),
+                searchEngine.isWriteMysql());
+    }
+
+    @Extern
+    private void reindexProject(String projectId, boolean deleteExistingIndices, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        checkArgument(projectStore.getProject(projectId, false).isPresent(), "Project id does not exist: " + projectId);
+        userStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+        ideaStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+        commentStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
     }
 
     public static Module module() {

@@ -48,7 +48,7 @@ public class StripeClientSetup extends ManagedService {
             protected void configure() {
                 bind(StripeClientSetup.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(StripeClientSetup.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(StripeClientSetup.class).asEagerSingleton();
             }
         };
     }
