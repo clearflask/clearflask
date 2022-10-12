@@ -189,7 +189,11 @@ public class MysqlUtil {
                         DSL.day(aggregateFieldName),
                         DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
-                .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions), startBoundOpt, endBoundOpt))
+                .where(and(
+                        searchIdeasOpt.map(SearchIdeasConditions::getConditions),
+                        searchIdeasOpt.map(SearchIdeasConditions::getConditionsRange),
+                        startBoundOpt,
+                        endBoundOpt))
                 .groupBy(intervalField)
                 .fetchAsync()
                 .thenAcceptAsync(result -> histogramBuilder.points(result.stream()
@@ -201,7 +205,7 @@ public class MysqlUtil {
         CompletionStage<Void> hitsCompletionStage = mysql.select(
                         DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
-                .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions), startBoundOpt, endBoundOpt))
+                .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions)))
                 .fetchAsync()
                 .thenAcceptAsync(result -> histogramBuilder.hits(
                         new Hits(result.get(0).component1().longValue(), null)));

@@ -1010,6 +1010,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Value
     public static class SearchIdeasConditions {
         Condition conditions;
+        Condition conditionsRange;
         ImmutableList<Join> joins;
     }
 
@@ -1018,6 +1019,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             IdeaSearchAdmin ideaSearchAdmin,
             Optional<String> requestorUserIdOpt) {
         List<Condition> conditions = Lists.newArrayList();
+        List<Condition> conditionsRange = Lists.newArrayList();
         List<Join> joins = Lists.newArrayList();
 
 
@@ -1087,19 +1089,19 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         if (ideaSearchAdmin.getFilterCreatedStart() != null) {
-            conditions.add(JooqIdea.IDEA.CREATED.greaterOrEqual(ideaSearchAdmin.getFilterCreatedStart()));
+            conditionsRange.add(JooqIdea.IDEA.CREATED.greaterOrEqual(ideaSearchAdmin.getFilterCreatedStart()));
         }
 
         if (ideaSearchAdmin.getFilterCreatedEnd() != null) {
-            conditions.add(JooqIdea.IDEA.CREATED.lessOrEqual(ideaSearchAdmin.getFilterCreatedEnd()));
+            conditionsRange.add(JooqIdea.IDEA.CREATED.lessOrEqual(ideaSearchAdmin.getFilterCreatedEnd()));
         }
 
         if (ideaSearchAdmin.getFilterLastActivityStart() != null) {
-            conditions.add(JooqIdea.IDEA.LASTACTIVITY.greaterOrEqual(ideaSearchAdmin.getFilterLastActivityStart()));
+            conditionsRange.add(JooqIdea.IDEA.LASTACTIVITY.greaterOrEqual(ideaSearchAdmin.getFilterLastActivityStart()));
         }
 
         if (ideaSearchAdmin.getFilterLastActivityEnd() != null) {
-            conditions.add(JooqIdea.IDEA.LASTACTIVITY.lessOrEqual(ideaSearchAdmin.getFilterLastActivityEnd()));
+            conditionsRange.add(JooqIdea.IDEA.LASTACTIVITY.lessOrEqual(ideaSearchAdmin.getFilterLastActivityEnd()));
         }
 
         // Do not look up posts merged into other posts
@@ -1107,6 +1109,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         return new SearchIdeasConditions(
                 mysqlUtil.and(conditions),
+                mysqlUtil.and(conditionsRange),
                 ImmutableList.copyOf(joins));
     }
 
@@ -1339,7 +1342,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
             List<String> postIds = mysql.selectDistinct(JooqIdea.IDEA.POSTID)
                     .from(mysqlUtil.join(JooqIdea.IDEA, searchConditions.getJoins()))
-                    .where(searchConditions.getConditions())
+                    .where(mysqlUtil.and(
+                            searchConditions.getConditions(),
+                            searchConditions.getConditionsRange()))
                     .orderBy(sortFields)
                     .offset(mysqlUtil.offset(cursorOpt))
                     .limit(mysqlUtil.limit(configSearch, Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue)))
