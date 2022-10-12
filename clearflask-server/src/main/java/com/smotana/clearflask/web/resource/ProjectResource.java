@@ -876,7 +876,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @Extern
-    private void reindexProject(String projectId, boolean deleteExistingIndices) throws Exception {
+    private void reindexProjectWithDefaultSource(String projectId, boolean deleteExistingIndices) throws Exception {
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         reindexProject(projectId,
                 deleteExistingIndices,
