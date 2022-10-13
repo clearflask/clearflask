@@ -47,7 +47,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
 
             // Add idea order field
             if (projectVersion <= 0L) {
-                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
+                elastic.get().indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
                                 "properties", ImmutableMap.builder()
                                         .put("order", ImmutableMap.of(
                                                 "type", "double"))
@@ -58,7 +58,7 @@ public class ProjectUpgraderImpl implements ProjectUpgrader {
 
             // Add post's mergedToPostId
             if (projectVersion <= 1L) {
-                elastic.indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
+                elastic.get().indices().putMapping(new PutMappingRequest(elasticUtil.getIndexName(DynamoElasticIdeaStore.IDEA_INDEX, project.getProjectId())).source(gson.toJson(ImmutableMap.of(
                                 "properties", ImmutableMap.builder()
                                         .put("mergedToPostId", ImmutableMap.of(
                                                 "type", "keyword"))

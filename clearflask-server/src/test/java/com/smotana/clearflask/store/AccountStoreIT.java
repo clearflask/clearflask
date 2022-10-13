@@ -88,7 +88,7 @@ public class AccountStoreIT extends AbstractIT {
     @Inject
     private SingleTable singleTable;
     @Inject
-    private DSLContext mysql;
+    private Provider<DSLContext> mysql
     @Inject
     private MysqlUtil mysqlUtil;
 
@@ -493,8 +493,8 @@ public class AccountStoreIT extends AbstractIT {
             mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
             mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
 
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
-            mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
         }
         if (searchEngine.isWriteElastic()) {
             storeImpl.createIndexElasticSearch();

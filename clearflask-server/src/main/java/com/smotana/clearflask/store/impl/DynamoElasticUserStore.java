@@ -238,7 +238,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private ProjectStore projectStore;
     @Inject
-    private DSLContext mysql;
+    private Provider<DSLContext> mysql
     @Inject
     private MysqlUtil mysqlUtil;
 

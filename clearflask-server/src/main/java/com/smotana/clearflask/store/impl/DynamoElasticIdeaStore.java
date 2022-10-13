@@ -223,7 +223,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Inject
     private Sanitizer sanitizer;
     @Inject
-    private DSLContext mysql;
+    private Provider<DSLContext> mysql
     @Inject
     private MysqlUtil mysqlUtil;
 
@@ -290,7 +290,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     public void createIndexMysql() {
         log.info("Creating Mysql table {}", IDEA_INDEX);
-        mysql.createTableIfNotExists(IDEA_INDEX)
+        //noinspection removal
+        mysql.get() createTableIfNotExists(IDEA_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("authorUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -318,14 +319,14 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("order", SQLDataType.DOUBLE)
                 .primaryKey("projectId", "postId")
                 .execute();
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.AUTHORUSERID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CATEGORYID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CREATED));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.LASTACTIVITY));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.MERGEDTOPOSTID));
-        mysql.createTableIfNotExists(IDEA_TAGS_INDEX)
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.AUTHORUSERID));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CATEGORYID));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CREATED));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.LASTACTIVITY));
+        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.MERGEDTOPOSTID));
+        mysql.get() createTableIfNotExists(IDEA_TAGS_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("tagId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -334,7 +335,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .references(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID, JooqIdea.IDEA.POSTID)
                         .onDeleteCascade())
                 .execute();
-        mysql.createTableIfNotExists(IDEA_FUNDERS_INDEX)
+        mysql.get() createTableIfNotExists(IDEA_FUNDERS_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("funderUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -600,7 +601,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             SettableFuture<Void> indexingFuture = SettableFuture.create();
             SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
             if (searchEngine.isWriteElastic()) {
-                elastic.bulkAsync(new BulkRequest()
+                elastic.get().bulkAsync(new BulkRequest()
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                                 .add(ideasBatch.stream()
                                         .map(idea -> ideaToEsIndexRequest(idea, false))
@@ -669,7 +670,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         if (searchEngine.isWriteElastic()) {
             ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
             updates.put("mergedToPostId", orNull(connectResponse.getIdea().getMergedToPostId()));
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
                             .doc(gson.toJson(updates.build()), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT,
@@ -1370,7 +1371,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public long countIdeas(String projectId) {
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             try {
-                return elastic.count(new CountRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+                return elastic.get().count(new CountRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                                 RequestOptions.DEFAULT)
                         .getCount();
             } catch (IOException ex) {

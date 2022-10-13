@@ -156,7 +156,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Inject
     private Provider<RestHighLevelClient> elastic;
     @Inject
-    private DSLContext mysql;
+    private Provider<DSLContext> mysql
     @Inject
     private MysqlUtil mysqlUtil;
     @Inject
@@ -242,7 +242,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     public void createIndexMysql() throws IOException {
         log.info("Creating Mysql table {}", ACCOUNT_INDEX);
-        mysql.createTableIfNotExists(ACCOUNT_INDEX)
+        mysql.get() createTableIfNotExists(ACCOUNT_INDEX)
                 .column("accountId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("name", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.NAME_MAX_LENGTH)).notNull())
                 .column("email", SQLDataType.VARCHAR(255).notNull())
@@ -473,7 +473,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         } else {
             int offset = mysqlUtil.offset(cursorOpt);
             int pageSize = mysqlUtil.limit(configSearch, pageSizeOpt);
-            List<String> accountIds = mysql.select(JooqAccount.ACCOUNT.ACCOUNTID)
+            List<String> accountIds = mysql.get() select(JooqAccount.ACCOUNT.ACCOUNTID)
                     .from(JooqAccount.ACCOUNT)
                     .where(searchTextOpt.map(searchText ->
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
@@ -568,7 +568,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get() update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.PLANID, planid)
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
