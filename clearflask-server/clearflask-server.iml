@@ -16,10 +16,10 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Bundled Protobuf Distribution" level="application" />
-    <orderEntry type="module" module-name="clearflask-api" />
+    <orderEntry type="library" name="Maven: com.smotana.clearflask:clearflask-api:1.5.14-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: javax.validation:validation-api:2.0.0.Final" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:3.0.2" level="project" />
-    <orderEntry type="module" module-name="clearflask-logging" />
+    <orderEntry type="library" name="Maven: com.smotana.clearflask:clearflask-logging:1.5.14-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: javax.mail:mail:1.4.7" level="project" />
     <orderEntry type="library" name="Maven: commons-lang:commons-lang:2.6" level="project" />
     <orderEntry type="library" name="Maven: io.dataspray:single-table:0.0.8" level="project" />

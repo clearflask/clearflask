@@ -207,7 +207,7 @@ public class MysqlUtil {
         CompletionStage<Void> hitsCompletionStage = mysql.get().select(
                         DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
-                .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions)))
+                .where(projectIdCondition, and(searchIdeasOpt.map(SearchIdeasConditions::getConditions)))
                 .fetchAsync()
                 .thenAcceptAsync(result -> histogramBuilder.hits(
                         new Hits(result.get(0).component1().longValue(), null)));
