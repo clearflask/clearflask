@@ -76,6 +76,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     public RestHighLevelClient get() {
+        if (restClientOpt.isPresent()) return restClientOpt.get();
+
         if (configApp.startupWaitUntilDeps() && !Strings.isNullOrEmpty(config.serviceEndpoint())) {
             log.info("Waiting for ElasticSearch to be up {}", config.serviceEndpoint());
             try {
@@ -84,8 +86,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
                 throw new ProvisionException("Failed to wait until ElasticSearch port opened", ex);
             }
         }
+
         log.info("Opening ElasticSearch client on {}", config.serviceEndpoint());
-        if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))
                 .setDefaultHeaders((config.enableCompatibilityHeaderForVersion7() ? ImmutableList.<Header>of(

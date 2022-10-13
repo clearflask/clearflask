@@ -25,12 +25,14 @@ public class ContextListener extends GuiceServletContextListener {
         super.contextInitialized(servletContextEvent);
         log.info("Context initialized, starting services");
         ServiceInjector.INSTANCE.startServices();
+        log.info("All services started");
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
         log.info("Context destroyed, shutting down services");
         ServiceInjector.INSTANCE.shutdownServices();
+        log.info("All services shutdown");
         super.contextDestroyed(servletContextEvent);
     }
 }

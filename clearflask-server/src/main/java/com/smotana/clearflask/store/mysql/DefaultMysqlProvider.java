@@ -77,6 +77,8 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     @SneakyThrows
     @Override
     public DSLContext get() {
+        if (clientOpt.isPresent()) return clientOpt.get();
+
         if (configApp.startupWaitUntilDeps()) {
             log.info("Waiting for Mysql to be up {}:{}", config.host(), config.port());
             try {
@@ -85,19 +87,16 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
                 throw new ProvisionException("Failed to wait until Mysql port opened", ex);
             }
         }
+
         log.info("Opening Mysql client on {}:{}", config.host(), config.port());
-
-        if (clientOpt.isEmpty()) {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            System.setProperty("org.jooq.no-logo", "true");
-            MysqlDataSource dataSource = new MysqlDataSource();
-            dataSource.setURL(getConnectionUrl(true));
-            dataSource.setPassword(config.pass());
-            dataSource.setUser(config.user());
-            dataSource.setDatabaseName(config.databaseName());
-            clientOpt = Optional.of(DSL.using(dataSource, SQLDialect.MYSQL));
-        }
-
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        System.setProperty("org.jooq.no-logo", "true");
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setURL(getConnectionUrl(true));
+        dataSource.setPassword(config.pass());
+        dataSource.setUser(config.user());
+        dataSource.setDatabaseName(config.databaseName());
+        clientOpt = Optional.of(DSL.using(dataSource, SQLDialect.MYSQL));
         return clientOpt.get();
     }
 
