@@ -13,15 +13,13 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.web.Application;
 import io.dataspray.singletable.SingleTable;
 
 @Singleton
 public class SingleTableProvider extends ManagedService implements Provider<SingleTable> {
 
     public interface Config {
-        @DefaultValue("true")
-        boolean createTables();
-
         @DefaultValue("clearflask")
         String tablePrefix();
 
@@ -34,6 +32,8 @@ public class SingleTableProvider extends ManagedService implements Provider<Sing
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private Gson gson;
     @Inject
@@ -52,7 +52,7 @@ public class SingleTableProvider extends ManagedService implements Provider<Sing
 
     @Override
     protected void serviceStart() throws Exception {
-        if (config.createTables()) {
+        if (configApp.createIndexesOnStartup()) {
             singleTableProvider.get().createTableIfNotExists(
                     config.lsiCount(), config.gsiCount());
         }

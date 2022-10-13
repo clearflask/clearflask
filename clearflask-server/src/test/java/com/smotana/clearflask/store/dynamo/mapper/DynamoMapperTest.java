@@ -56,7 +56,6 @@ public class DynamoMapperTest extends AbstractTest {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(SingleTableProvider.Config.class, om -> {
-                    om.override(om.id().createTables()).withValue(true);
                     om.override(om.id().lsiCount()).withValue(2);
                     om.override(om.id().gsiCount()).withValue(2);
                 }));

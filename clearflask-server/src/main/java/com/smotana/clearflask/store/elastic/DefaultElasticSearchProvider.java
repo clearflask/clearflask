@@ -147,8 +147,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(RestHighLevelClient.class).toProvider(DefaultElasticSearchProvider.class); // Not eagerly here
-                bind(DefaultElasticSearchProvider.class).asEagerSingleton(); // Eagerly load the provider and service
+                bind(RestHighLevelClient.class).toProvider(DefaultElasticSearchProvider.class); // Not eagerly here, only if enabled
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultElasticSearchProvider.class).asEagerSingleton();
             }
