@@ -37,7 +37,7 @@ import static com.smotana.clearflask.util.IdUtil.UUID_DASHLESS_MAX_LENGTH;
 public class DefaultMysqlProvider extends ManagedService implements Provider<DSLContext> {
 
     public static final int ID_MAX_LENGTH = Math.max(CONTENT_UNIQUE_MAX_LENGTH, UUID_DASHLESS_MAX_LENGTH);
-    
+
     public interface Config {
         @NoDefaultValue
         String host();
@@ -69,6 +69,8 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
     private Application.Config configApp;
     @Inject
     private Environment env;
+    @Inject
+    private Provider<DSLContext> clientProvider;
 
     private Optional<DSLContext> clientOpt = Optional.empty();
 
@@ -101,11 +103,14 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
 
     @Override
     protected void serviceStart() throws Exception {
-        if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteMysql()) {
-            if (config.recreateDatabaseOnStartup()) {
-                dropDatabase();
+        if (configApp.defaultSearchEngine().isWriteMysql()) {
+            clientProvider.get(); // Load eagerly when enabled
+            if (configApp.createIndexesOnStartup()) {
+                if (config.recreateDatabaseOnStartup()) {
+                    dropDatabase();
+                }
+                createDatabase();
             }
-            createDatabase();
         }
     }
 
@@ -147,7 +152,7 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(DSLContext.class).toProvider(DefaultMysqlProvider.class).asEagerSingleton();
+                bind(DSLContext.class).toProvider(DefaultMysqlProvider.class); // Not eagerly here
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultMysqlProvider.class).asEagerSingleton();
             }

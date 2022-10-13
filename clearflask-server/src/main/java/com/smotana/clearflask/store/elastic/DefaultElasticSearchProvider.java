@@ -69,6 +69,8 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
     private Gson gson;
     @Inject
     private Environment env;
+    @Inject
+    private Provider<RestHighLevelClient> elasticProvider;
 
     private Optional<RestHighLevelClient> restClientOpt = Optional.empty();
 
@@ -113,8 +115,11 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     protected void serviceStart() throws Exception {
-        if (configApp.createIndexesOnStartup() && configApp.defaultSearchEngine().isWriteElastic()) {
-            putScripts();
+        if (configApp.defaultSearchEngine().isWriteElastic()) {
+            elasticProvider.get(); // Load eagerly when enabled
+            if (configApp.createIndexesOnStartup()) {
+                putScripts();
+            }
         }
     }
 
@@ -142,7 +147,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(RestHighLevelClient.class).toProvider(DefaultElasticSearchProvider.class).asEagerSingleton();
+                bind(RestHighLevelClient.class).toProvider(DefaultElasticSearchProvider.class); // Not eagerly here
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultElasticSearchProvider.class).asEagerSingleton();
             }

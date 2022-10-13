@@ -145,7 +145,7 @@ public abstract class AbstractIT extends AbstractTest {
         super.setup();
         if (Optional.ofNullable(overrideSearchEngine).map(SearchEngine::isWriteElastic).orElse(true)) {
             try {
-                elastic.indices().delete(new DeleteIndexRequest()
+                elastic.get().indices().delete(new DeleteIndexRequest()
                         .indices("_all"), RequestOptions.DEFAULT);
             } catch (ConnectException ex) {
                 if ("Connection refused".equals(ex.getMessage())) {

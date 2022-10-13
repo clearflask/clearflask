@@ -223,7 +223,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Inject
     private Sanitizer sanitizer;
     @Inject
-    private Provider<DSLContext> mysql
+    private Provider<DSLContext> mysql;
     @Inject
     private MysqlUtil mysqlUtil;
 
@@ -291,7 +291,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public void createIndexMysql() {
         log.info("Creating Mysql table {}", IDEA_INDEX);
         //noinspection removal
-        mysql.get() createTableIfNotExists(IDEA_INDEX)
+        mysql.get().createTableIfNotExists(IDEA_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("authorUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -319,14 +319,14 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("order", SQLDataType.DOUBLE)
                 .primaryKey("projectId", "postId")
                 .execute();
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.AUTHORUSERID));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CATEGORYID));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CREATED));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.LASTACTIVITY));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.MERGEDTOPOSTID));
-        mysql.get() createTableIfNotExists(IDEA_TAGS_INDEX)
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.AUTHORUSERID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CATEGORYID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.CREATED));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.LASTACTIVITY));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.MERGEDTOPOSTID));
+        mysql.get().createTableIfNotExists(IDEA_TAGS_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("tagId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -335,7 +335,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .references(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID, JooqIdea.IDEA.POSTID)
                         .onDeleteCascade())
                 .execute();
-        mysql.get() createTableIfNotExists(IDEA_FUNDERS_INDEX)
+        mysql.get().createTableIfNotExists(IDEA_FUNDERS_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("funderUserId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -353,7 +353,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Extern
     public ListenableFuture<Void> createIndexElasticSearch(String projectId) {
         SettableFuture<Void> indexingFuture = SettableFuture.create();
-        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
+        elastic.get().indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                         "dynamic", "false",
                         "properties", ImmutableMap.builder()
                                 .put("authorUserId", ImmutableMap.of(
@@ -425,11 +425,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         log.info("Repopulating index for project {} deleteExistingIndex {} repopulateElasticSearch {} repopulateMysql {}",
                 projectId, deleteExistingIndex, repopulateElasticSearch, repopulateMysql);
         if (repopulateElasticSearch) {
-            boolean indexAlreadyExists = elastic.indices().exists(
+            boolean indexAlreadyExists = elastic.get().indices().exists(
                     new GetIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                     RequestOptions.DEFAULT);
             if (indexAlreadyExists && deleteExistingIndex) {
-                elastic.indices().delete(
+                elastic.get().indices().delete(
                         new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
                         RequestOptions.DEFAULT);
             }
@@ -438,7 +438,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
         }
         if (repopulateMysql && deleteExistingIndex) {
-            mysql.deleteFrom(JooqIdea.IDEA)
+            mysql.get().deleteFrom(JooqIdea.IDEA)
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId))
                     .execute();
         }
@@ -456,7 +456,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .forEach(idea -> {
                     if (repopulateElasticSearch) {
                         try {
-                            elastic.index(ideaToEsIndexRequest(idea, false), RequestOptions.DEFAULT);
+                            elastic.get().index(ideaToEsIndexRequest(idea, false), RequestOptions.DEFAULT);
                         } catch (IOException ex) {
                             if (LogUtil.rateLimitAllowLog("dynamoelsaticideastore-reindex-failure")) {
                                 log.warn("Failed to re-index idea {}", idea.getIdeaId(), ex);
@@ -536,11 +536,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 idea.getIdeaId(),
                 tagId));
 
-        return mysql.queries(Stream.concat(Stream.of(mysql.insertInto(JooqIdea.IDEA, JooqIdea.IDEA.fields())
+        return mysql.get().queries(Stream.concat(Stream.of(mysql.get().insertInto(JooqIdea.IDEA, JooqIdea.IDEA.fields())
                                 .values(ideaRecord)
                                 .onDuplicateKeyUpdate()
                                 .set(ideaRecord)),
-                        tagRecords.map(tagRecord -> mysql.insertInto(JooqIdeaTags.IDEA_TAGS, JooqIdeaTags.IDEA_TAGS.fields())
+                        tagRecords.map(tagRecord -> mysql.get().insertInto(JooqIdeaTags.IDEA_TAGS, JooqIdeaTags.IDEA_TAGS.fields())
                                 .values(tagRecord)
                                 .onDuplicateKeyUpdate()
                                 .set(tagRecord)))
@@ -678,7 +678,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.onFailureRetry(() -> indexIdea(connectResponse.getIdea())));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                     .set(JooqIdea.IDEA.MERGEDTOPOSTID, connectResponse.getIdea().getMergedToPostId())
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                             .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
@@ -1041,7 +1041,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
             // TODO Instead of an extra select here, embed this directly into the sql
-            List<String> similarToIdeaTitleList = mysql.select(JooqIdea.IDEA.TITLE)
+            List<String> similarToIdeaTitleList = mysql.get().select(JooqIdea.IDEA.TITLE)
                     .from(JooqIdea.IDEA)
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                             .and(JooqIdea.IDEA.POSTID.eq(ideaSearchAdmin.getSimilarToIdeaId())))
@@ -1343,7 +1343,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 sortFields = ImmutableList.of();
             }
 
-            List<String> postIds = mysql.selectDistinct(JooqIdea.IDEA.POSTID)
+            List<String> postIds = mysql.get().selectDistinct(JooqIdea.IDEA.POSTID)
                     .from(mysqlUtil.join(JooqIdea.IDEA, searchConditions.getJoins()))
                     .where(mysqlUtil.and(
                             searchConditions.getConditions(),
@@ -1378,7 +1378,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 throw new RuntimeException(ex);
             }
         } else {
-            return mysql.fetchCount(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID.eq(projectId));
+            return mysql.get().fetchCount(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID.eq(projectId));
         }
     }
 
@@ -1410,19 +1410,19 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     tagsBuilder.build());
         } else {
             return new IdeaAggregateResponse(
-                    mysql.selectCount()
+                    mysql.get().selectCount()
                             .from(JooqIdea.IDEA)
                             .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                     .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId)))
                             .fetchOne().component1().longValue(),
-                    mysql.select(JooqIdea.IDEA.STATUSID, DSL.count())
+                    mysql.get().select(JooqIdea.IDEA.STATUSID, DSL.count())
                             .from(JooqIdea.IDEA)
                             .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                     .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId))
                                     .and(JooqIdea.IDEA.STATUSID.isNotNull()))
                             .groupBy(JooqIdea.IDEA.STATUSID)
                             .fetchMap(JooqIdea.IDEA.STATUSID, r -> r.component2().longValue()),
-                    mysql.select(JooqIdeaTags.IDEA_TAGS.TAGID, DSL.count())
+                    mysql.get().select(JooqIdeaTags.IDEA_TAGS.TAGID, DSL.count())
                             .from(JooqIdea.IDEA
                                     .join(JooqIdeaTags.IDEA_TAGS, JoinType.JOIN)
                                     .on(JooqIdeaTags.IDEA_TAGS.PROJECTID.eq(JooqIdea.IDEA.PROJECTID)
@@ -1582,12 +1582,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 indexUpdatesElastic.put("tagIds", ideaUpdateAdmin.getTagIds());
             }
             if (searchEngine.isWriteMysql()) {
-                indexQueriesMysql.add(mysql.deleteFrom(JooqIdeaTags.IDEA_TAGS)
+                indexQueriesMysql.add(mysql.get().deleteFrom(JooqIdeaTags.IDEA_TAGS)
                         .where(JooqIdeaTags.IDEA_TAGS.PROJECTID.eq(projectId)
                                 .and(JooqIdeaTags.IDEA_TAGS.POSTID.eq(ideaId))
                                 .and(JooqIdeaTags.IDEA_TAGS.TAGID.notIn(ideaUpdateAdmin.getTagIds()))));
                 indexQueriesMysql.addAll(ideaUpdateAdmin.getTagIds().stream()
-                        .map(tagId -> (Query) mysql.insertInto(JooqIdeaTags.IDEA_TAGS, JooqIdeaTags.IDEA_TAGS.fields())
+                        .map(tagId -> (Query) mysql.get().insertInto(JooqIdeaTags.IDEA_TAGS, JooqIdeaTags.IDEA_TAGS.fields())
                                 .values(projectId, ideaId, tagId)
                                 .onDuplicateKeyIgnore())
                         .collect(Collectors.toList()));
@@ -1619,7 +1619,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         if (searchEngine.isWriteElastic()) {
             if (indexUpdatesElastic.size() > 0) {
-                elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                                 .doc(gson.toJson(indexUpdatesElastic), XContentType.JSON)
                                 .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                         RequestOptions.DEFAULT,
@@ -1637,7 +1637,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .forEach(completionStages::add);
             }
             if (indexUpdatesMysql.changed()) {
-                CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+                CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                         .set(indexUpdatesMysql)
                         .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                 .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
@@ -1731,7 +1731,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 } else {
                     updateRequest.doc(gson.toJson(indexUpdatesElastic), XContentType.JSON);
                 }
-                elastic.updateAsync(updateRequest.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                elastic.get().updateAsync(updateRequest.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                         RequestOptions.DEFAULT,
                         searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, projectId, ideaId))
                                 : ActionListeners.onFailureRetry(() -> indexIdea(projectId, ideaId)));
@@ -1741,7 +1741,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
         if (searchEngine.isWriteMysql()) {
             if (!indexUpdatesMysql.isEmpty()) {
-                CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+                CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                         .set(indexUpdatesMysql)
                         .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                 .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
@@ -1833,7 +1833,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                     "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                     "timeInMillis", System.currentTimeMillis(),
@@ -1845,7 +1845,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
         if (searchEngine.isWriteMysql()) {
             if (!indexUpdatesMysql.isEmpty()) {
-                CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+                CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                         .set(indexUpdatesMysql)
                         .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                 .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
@@ -1892,7 +1892,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             Map<String, Object> indexUpdates = Maps.newHashMap();
             indexUpdates.put("expressions", idea.getExpressions().keySet());
             indexUpdates.put("expressionsValue", idea.getExpressionsValue());
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                     "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                     "timeInMillis", System.currentTimeMillis(),
@@ -1903,15 +1903,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.onFailureRetry(() -> indexIdea(projectId, ideaId)));
         }
         if (searchEngine.isWriteMysql()) {
-            log.info("DEBUGDEBGUDEBUG {}", mysql.update(JooqIdea.IDEA)
-                    .set(JooqIdea.IDEA.EXPRESSIONSVALUE, idea.getExpressionsValue())
-                    .set(JooqIdea.IDEA.TRENDSCORE, JooqRoutines.expDecay(
-                            idea.getTrendScore(),
-                            EXP_DECAY_PERIOD_MILLIS,
-                            System.currentTimeMillis()))
-                    .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
-                            .and(JooqIdea.IDEA.POSTID.eq(ideaId))));
-            CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                     .set(JooqIdea.IDEA.EXPRESSIONSVALUE, idea.getExpressionsValue())
                     .set(JooqIdea.IDEA.TRENDSCORE, JooqRoutines.expDecay(
                             idea.getTrendScore(),
@@ -1964,7 +1956,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             Map<String, Object> indexUpdates = Maps.newHashMap();
             indexUpdates.put("expressions", idea.getExpressions().keySet());
             indexUpdates.put("expressionsValue", idea.getExpressionsValue());
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+            elastic.get().updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
                             .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
                                     "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
                                     "timeInMillis", System.currentTimeMillis(),
@@ -1975,7 +1967,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.onFailureRetry(() -> indexIdea(projectId, ideaId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                     .set(JooqIdea.IDEA.EXPRESSIONSVALUE, idea.getExpressionsValue())
                     .set(JooqIdea.IDEA.TRENDSCORE, JooqRoutines.expDecay(
                             idea.getTrendScore(),
@@ -2060,7 +2052,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
             if (searchEngine.isWriteMysql()) {
                 indexUpdatesMysql.setFunderscount(idea.getFundersCount());
-                indexQueriesMysql.add(mysql.insertInto(JooqIdeaFunders.IDEA_FUNDERS, JooqIdeaFunders.IDEA_FUNDERS.fields())
+                indexQueriesMysql.add(mysql.get().insertInto(JooqIdeaFunders.IDEA_FUNDERS, JooqIdeaFunders.IDEA_FUNDERS.fields())
                         .values(projectId, ideaId, userId)
                         .onDuplicateKeyIgnore());
             }
@@ -2073,7 +2065,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
             if (searchEngine.isWriteMysql()) {
                 indexUpdatesMysql.setFunderscount(idea.getFundersCount());
-                indexQueriesMysql.add(mysql.deleteFrom(JooqIdeaFunders.IDEA_FUNDERS)
+                indexQueriesMysql.add(mysql.get().deleteFrom(JooqIdeaFunders.IDEA_FUNDERS)
                         .where(JooqIdeaFunders.IDEA_FUNDERS.PROJECTID.eq(projectId)
                                 .and(JooqIdeaFunders.IDEA_FUNDERS.POSTID.eq(ideaId))
                                 .and(JooqIdeaFunders.IDEA_FUNDERS.FUNDERUSERID.eq(userId))));
@@ -2091,7 +2083,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
         if (searchEngine.isWriteMysql()) {
             List<CompletionStage<?>> completionStages = Lists.newArrayList();
-            completionStages.add(mysql.update(JooqIdea.IDEA)
+            completionStages.add(mysql.get().update(JooqIdea.IDEA)
                     .set(indexUpdatesMysql)
                     .set(JooqIdea.IDEA.TRENDSCORE, JooqRoutines.expDecay(
                             idea.getTrendScore(),
@@ -2151,7 +2143,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.onFailureRetry(() -> indexIdea(projectId, ideaId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
                     .set(JooqIdea.IDEA.COMMENTCOUNT, idea.getCommentCount())
                     .set(JooqIdea.IDEA.CHILDCOMMENTCOUNT, idea.getChildCommentCount())
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
@@ -2195,7 +2187,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.onFailureRetry(() -> indexIdea(projectId, ideaId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqIdea.IDEA)
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                             .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
                     .executeAsync();
@@ -2231,7 +2223,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqIdea.IDEA)
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                             .and(JooqIdea.IDEA.POSTID.in(ideaIds)))
                     .executeAsync();
@@ -2280,7 +2272,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqIdea.IDEA)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqIdea.IDEA)
                     .where(JooqIdea.IDEA.PROJECTID.eq(projectId))
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
@@ -2309,7 +2301,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                                 : ActionListeners.logFailure());
             }
             if (searchEngine.isWriteMysql()) {
-                CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqIdea.IDEA)
+                CompletionStage<Integer> completionStage = mysql.get().deleteFrom(JooqIdea.IDEA)
                         .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                 .and(JooqIdea.IDEA.POSTID.eq(ideaId)))
                         .executeAsync();

@@ -91,7 +91,7 @@ public class ElasticUtilIT extends AbstractIT {
     @Test(timeout = 10_000L)
     public void testSearchUsers() throws Exception {
         String indexName = elasticUtil.getIndexName("test-elastic-util", IdUtil.randomId());
-        elastic.indices().create(new CreateIndexRequest(indexName).mapping(gson.toJson(ImmutableMap.of(
+        elastic.get().indices().create(new CreateIndexRequest(indexName).mapping(gson.toJson(ImmutableMap.of(
                 "dynamic", "false",
                 "properties", ImmutableMap.builder()
                         .put("name", ImmutableMap.of(
@@ -100,27 +100,27 @@ public class ElasticUtilIT extends AbstractIT {
                         .put("color", ImmutableMap.of(
                                 "type", "text"))
                         .build())), XContentType.JSON), RequestOptions.DEFAULT);
-        elastic.index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+        elastic.get().index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .id(IdUtil.randomId()).source(gson.toJson(ImmutableMap.of(
                         "name", "bob",
                         "color", "green"
                 )), XContentType.JSON), RequestOptions.DEFAULT);
-        elastic.index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+        elastic.get().index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .id(IdUtil.randomId()).source(gson.toJson(ImmutableMap.of(
                         "name", "joe",
                         "color", "green"
                 )), XContentType.JSON), RequestOptions.DEFAULT);
-        elastic.index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+        elastic.get().index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .id(IdUtil.randomId()).source(gson.toJson(ImmutableMap.of(
                         "name", "matt",
                         "color", "green"
                 )), XContentType.JSON), RequestOptions.DEFAULT);
-        elastic.index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+        elastic.get().index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .id(IdUtil.randomId()).source(gson.toJson(ImmutableMap.of(
                         "name", "arya",
                         "color", "green"
                 )), XContentType.JSON), RequestOptions.DEFAULT);
-        elastic.index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+        elastic.get().index(new IndexRequest(indexName).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .id(IdUtil.randomId()).source(gson.toJson(ImmutableMap.of(
                         "name", "ema",
                         "color", "green"

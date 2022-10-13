@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
@@ -88,7 +89,7 @@ public class AccountStoreIT extends AbstractIT {
     @Inject
     private SingleTable singleTable;
     @Inject
-    private Provider<DSLContext> mysql
+    private Provider<DSLContext> mysql;
     @Inject
     private MysqlUtil mysqlUtil;
 
@@ -493,8 +494,8 @@ public class AccountStoreIT extends AbstractIT {
             mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
             mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.EXP_DECAY);
 
-            mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
-            mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
+            mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
         }
         if (searchEngine.isWriteElastic()) {
             storeImpl.createIndexElasticSearch();

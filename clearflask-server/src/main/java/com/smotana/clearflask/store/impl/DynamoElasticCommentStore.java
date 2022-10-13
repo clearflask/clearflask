@@ -246,7 +246,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
     public void createIndexMysql() {
         log.info("Creating Mysql table {}", COMMENT_INDEX);
         //noinspection removal
-        mysql.get() createTableIfNotExists(COMMENT_INDEX)
+        mysql.get().createTableIfNotExists(COMMENT_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("commentId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -263,10 +263,10 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 .column("score", SQLDataType.DOUBLE.notNull())
                 .primaryKey("projectId", "postId", "commentId")
                 .execute();
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID));
-        mysqlUtil.createIndexIfNotExists(mysql.get()createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.AUTHORUSERID));
-        mysql.createTableIfNotExists(COMMENT_PARENT_ID_INDEX)
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqComment.COMMENT, JooqComment.COMMENT.AUTHORUSERID));
+        mysql.get().createTableIfNotExists(COMMENT_PARENT_ID_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("postId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("commentId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
@@ -276,7 +276,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         .references(JooqComment.COMMENT, JooqComment.COMMENT.PROJECTID, JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
                         .onDeleteCascade())
                 .execute();
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.PROJECTID, JooqCommentParentId.COMMENT_PARENT_ID.POSTID));
         mysqlUtil.createFunctionIfNotExists(MysqlCustomFunction.WILSON);
     }
 
@@ -344,7 +344,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             }
         }
         if (repopulateMysql && deleteExistingIndex) {
-            mysql.deleteFrom(JooqComment.COMMENT)
+            mysql.get().deleteFrom(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId))
                     .execute();
         }
@@ -420,7 +420,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                                 : ActionListeners.onFailureRetry(() -> indexComment(commentWithVote.getProjectId(), commentWithVote.getIdeaId(), commentWithVote.getCommentId())));
             }
             if (searchEngine.isWriteMysql()) {
-                CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
+                CompletionStage<Integer> completionStage = mysql.get().update(JooqComment.COMMENT)
                         .set(JooqComment.COMMENT.CHILDCOMMENTCOUNT, parentChildCommentCount)
                         .where(JooqComment.COMMENT.PROJECTID.eq(commentWithVote.getProjectId())
                                 .and(JooqComment.COMMENT.POSTID.eq(commentWithVote.getIdeaId()))
@@ -615,7 +615,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 Optional<Condition> conditionSearchTextOpt = Optional.ofNullable(Strings.emptyToNull(commentSearchAdmin.getSearchText()))
                         .map(searchText -> JooqComment.COMMENT.CONTENT.like("%" + searchText + "%")
                                 .or(JooqComment.COMMENT.AUTHORNAME.like("%" + searchText + "%")));
-                primaryKeys = mysql.select(JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
+                primaryKeys = mysql.get().select(JooqComment.COMMENT.POSTID, JooqComment.COMMENT.COMMENTID)
                         .from(JooqComment.COMMENT)
                         .where(mysqlUtil.and(mysqlUtil.and(
                                         conditionSearchTextOpt,
@@ -745,7 +745,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                 conditions = conditions.and(JooqComment.COMMENT.LEVEL.lt((long) searchInitialDepthLimit));
             }
 
-            mysql.selectDistinct(selectFields)
+            mysql.get().selectDistinct(selectFields)
                     .from(table)
                     .where(conditions)
                     .orderBy(
@@ -813,7 +813,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             : ActionListeners.onFailureRetry(() -> indexComment(comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.EDITED, comment.getEdited())
                     .set(JooqComment.COMMENT.CONTENT, comment.getContentAsText(sanitizer))
                     .where(JooqComment.COMMENT.PROJECTID.eq(comment.getProjectId())
@@ -902,7 +902,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
             voteWilsonRoutine.setZ(wilsonScoreInterval.getZ());
             voteWilsonRoutine.setZsquared(wilsonScoreInterval.getZSquared());
 
-            CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.SCORE, voteWilsonRoutine.asField())
                     .where(JooqComment.COMMENT.PROJECTID.eq(comment.getProjectId())
                             .and(JooqComment.COMMENT.POSTID.eq(comment.getIdeaId()))
@@ -957,7 +957,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             : ActionListeners.onFailureRetry(() -> indexComment(comment.getProjectId(), comment.getIdeaId(), comment.getCommentId())));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.AUTHORUSERID, (String) null)
                     .set(JooqComment.COMMENT.AUTHORNAME, (String) null)
                     .set(JooqComment.COMMENT.AUTHORISMOD, (Boolean) null)
@@ -997,7 +997,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             : ActionListeners.onFailureRetry(() -> indexComment(projectId, ideaId, commentId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                             .and(JooqComment.COMMENT.POSTID.eq(ideaId))
                             .and(JooqComment.COMMENT.COMMENTID.eq(commentId)))
@@ -1048,7 +1048,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                             .and(JooqComment.COMMENT.POSTID.eq(ideaId)))
                     .executeAsync();
@@ -1098,7 +1098,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqComment.COMMENT)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqComment.COMMENT)
                     .where(JooqComment.COMMENT.PROJECTID.eq(projectId))
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
@@ -1127,7 +1127,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                                 : ActionListeners.logFailure());
             }
             if (searchEngine.isWriteMysql()) {
-                CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqComment.COMMENT)
+                CompletionStage<Integer> completionStage = mysql.get().deleteFrom(JooqComment.COMMENT)
                         .where(JooqComment.COMMENT.PROJECTID.eq(projectId)
                                 .and(JooqComment.COMMENT.POSTID.eq(ideaId))
                                 .and(JooqComment.COMMENT.COMMENTID.eq(commentId)))
@@ -1190,11 +1190,11 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                         comment.getCommentId(),
                         commentParentId));
 
-        return mysql.queries(Stream.concat(Stream.of(mysql.insertInto(JooqComment.COMMENT, JooqComment.COMMENT.fields())
+        return mysql.get().queries(Stream.concat(Stream.of(mysql.get().insertInto(JooqComment.COMMENT, JooqComment.COMMENT.fields())
                                 .values(commentRecord)
                                 .onDuplicateKeyUpdate()
                                 .set(commentRecord)),
-                        parentCommentIdRecords.map(parentCommentIdRecord -> mysql.insertInto(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.fields())
+                        parentCommentIdRecords.map(parentCommentIdRecord -> mysql.get().insertInto(JooqCommentParentId.COMMENT_PARENT_ID, JooqCommentParentId.COMMENT_PARENT_ID.fields())
                                 .values(parentCommentIdRecord)
                                 .onDuplicateKeyUpdate()
                                 .set(parentCommentIdRecord)))

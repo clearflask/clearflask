@@ -7,6 +7,7 @@ import com.google.common.primitives.Ints;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.smotana.clearflask.api.model.HistogramInterval;
@@ -56,7 +57,7 @@ import java.util.regex.Pattern;
 @Singleton
 public class MysqlUtil {
     @Inject
-    private Provider<DSLContext> mysql
+    private Provider<DSLContext> mysql;
     @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
@@ -107,7 +108,7 @@ public class MysqlUtil {
 
     public void createFunctionIfNotExists(MysqlCustomFunction fun) {
         try {
-            mysql.get() connection(connection -> {
+            mysql.get().connection(connection -> {
                 try (Reader sourceReader = new StringReader(fun.getSource())) {
                     new ScriptRunner(connection, false, true)
                             .runScript(sourceReader);
@@ -184,11 +185,11 @@ public class MysqlUtil {
         HistogramResponse.HistogramResponseBuilder histogramBuilder = HistogramResponse.builder();
 
 
-        CompletionStage<Void> pointsCompletionStage = mysql.get() select(
-                DSL.year(aggregateFieldName),
-                DSL.month(aggregateFieldName),
-                DSL.day(aggregateFieldName),
-                DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
+        CompletionStage<Void> pointsCompletionStage = mysql.get().select(
+                        DSL.year(aggregateFieldName),
+                        DSL.month(aggregateFieldName),
+                        DSL.day(aggregateFieldName),
+                        DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
                 .where(and(
                         searchIdeasOpt.map(SearchIdeasConditions::getConditions),
@@ -203,8 +204,8 @@ public class MysqlUtil {
                                 record.component4().longValue()))
                         .collect(ImmutableList.toImmutableList())));
 
-        CompletionStage<Void> hitsCompletionStage = mysql.get() select(
-                DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
+        CompletionStage<Void> hitsCompletionStage = mysql.get().select(
+                        DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
                 .where(and(searchIdeasOpt.map(SearchIdeasConditions::getConditions)))
                 .fetchAsync()

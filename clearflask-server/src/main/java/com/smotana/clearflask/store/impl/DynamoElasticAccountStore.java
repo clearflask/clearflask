@@ -156,7 +156,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Inject
     private Provider<RestHighLevelClient> elastic;
     @Inject
-    private Provider<DSLContext> mysql
+    private Provider<DSLContext> mysql;
     @Inject
     private MysqlUtil mysqlUtil;
     @Inject
@@ -242,7 +242,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     public void createIndexMysql() throws IOException {
         log.info("Creating Mysql table {}", ACCOUNT_INDEX);
-        mysql.get() createTableIfNotExists(ACCOUNT_INDEX)
+        mysql.get().createTableIfNotExists(ACCOUNT_INDEX)
                 .column("accountId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("name", SQLDataType.VARCHAR(Math.max(255, (int) Sanitizer.NAME_MAX_LENGTH)).notNull())
                 .column("email", SQLDataType.VARCHAR(255).notNull())
@@ -473,7 +473,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         } else {
             int offset = mysqlUtil.offset(cursorOpt);
             int pageSize = mysqlUtil.limit(configSearch, pageSizeOpt);
-            List<String> accountIds = mysql.get() select(JooqAccount.ACCOUNT.ACCOUNTID)
+            List<String> accountIds = mysql.get().select(JooqAccount.ACCOUNT.ACCOUNTID)
                     .from(JooqAccount.ACCOUNT)
                     .where(searchTextOpt.map(searchText ->
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
@@ -568,7 +568,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.get() update(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.PLANID, planid)
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
@@ -802,7 +802,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.NAME, account.getName())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
@@ -882,7 +882,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.EMAIL, account.getEmail())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
@@ -948,7 +948,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqAccount.ACCOUNT)
                     .set(JooqAccount.ACCOUNT.STATUS, account.getStatus().name())
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
@@ -1034,7 +1034,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             : ActionListeners.onFailureRetry(() -> indexAccount(accountId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.delete(JooqAccount.ACCOUNT)
+            CompletionStage<Integer> completionStage = mysql.get().delete(JooqAccount.ACCOUNT)
                     .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
@@ -1147,7 +1147,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             }
             if (searchEngine.isWriteMysql()) {
-                mysql.delete(JooqAccount.ACCOUNT)
+                mysql.get().delete(JooqAccount.ACCOUNT)
                         .where(JooqAccount.ACCOUNT.ACCOUNTID.eq(accountId))
                         .executeAsync();
             }
@@ -1174,14 +1174,14 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                     searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture) : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            JooqAccountRecord record = mysql.newRecord(JooqAccount.ACCOUNT);
+            JooqAccountRecord record = mysql.get().newRecord(JooqAccount.ACCOUNT);
             record.setAccountid(account.getAccountId());
             record.setName(account.getName());
             record.setEmail(account.getEmail());
             record.setStatus(account.getStatus().name());
             record.setPlanid(account.getPlanid());
             record.setCreated(account.getCreated());
-            CompletionStage<int[]> completionStage = mysql.batchInsert(record).executeAsync();
+            CompletionStage<int[]> completionStage = mysql.get().batchInsert(record).executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             } else {

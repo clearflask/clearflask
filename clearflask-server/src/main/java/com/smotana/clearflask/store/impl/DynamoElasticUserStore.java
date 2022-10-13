@@ -238,7 +238,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private ProjectStore projectStore;
     @Inject
-    private Provider<DSLContext> mysql
+    private Provider<DSLContext> mysql;
     @Inject
     private MysqlUtil mysqlUtil;
 
@@ -295,7 +295,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Extern
     public void createIndexMysql() {
         log.debug("Creating Mysql table {}", USER_INDEX);
-        mysql.createTableIfNotExists(USER_INDEX)
+        mysql.get().createTableIfNotExists(USER_INDEX)
                 .column("projectId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("userId", SQLDataType.VARCHAR(ID_MAX_LENGTH).notNull())
                 .column("name", SQLDataType.VARCHAR(255))
@@ -305,8 +305,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .column("isMod", SQLDataType.BOOLEAN)
                 .primaryKey("projectId", "userId")
                 .execute();
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqUser.USER, JooqUser.USER.PROJECTID));
-        mysqlUtil.createIndexIfNotExists(mysql.createIndex().on(JooqUser.USER, JooqUser.USER.ISMOD));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqUser.USER, JooqUser.USER.PROJECTID));
+        mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqUser.USER, JooqUser.USER.ISMOD));
     }
 
     @Extern
@@ -369,7 +369,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             }
         }
         if (repopulateMysql && deleteExistingIndex) {
-            mysql.deleteFrom(JooqUser.USER)
+            mysql.get().deleteFrom(JooqUser.USER)
                     .where(JooqUser.USER.PROJECTID.eq(projectId))
                     .execute();
         }
@@ -628,7 +628,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         .or(JooqUser.USER.EMAIL.like("%" + userSearchAdmin.getSearchText() + "%")));
             }
 
-            List<String> userIds = mysql.select(JooqUser.USER.USERID)
+            List<String> userIds = mysql.get().select(JooqUser.USER.USERID)
                     .from(JooqUser.USER)
                     .where(conditions)
                     .orderBy(sortFields)
@@ -956,7 +956,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         }
         if (searchEngine.isWriteMysql()) {
             if (mysqlUpdates.changed()) {
-                CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
+                CompletionStage<Integer> completionStage = mysql.get().update(JooqUser.USER)
                         .set(mysqlUpdates)
                         .where(JooqUser.USER.PROJECTID.eq(projectId)
                                 .and(JooqUser.USER.USERID.eq(userId)))
@@ -1112,7 +1112,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                             : ActionListeners.onFailureRetry(() -> indexUser(projectId, userId)));
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.update(JooqUser.USER)
+            CompletionStage<Integer> completionStage = mysql.get().update(JooqUser.USER)
                     .set(JooqUser.USER.BALANCE, userModel.getBalance())
                     .where(JooqUser.USER.PROJECTID.eq(projectId)
                             .and(JooqUser.USER.USERID.eq(userId)))
@@ -1176,7 +1176,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+            CompletionStage<Integer> completionStage = mysql.get().deleteFrom(JooqUser.USER)
                     .where(JooqUser.USER.PROJECTID.eq(projectId)
                             .and(JooqUser.USER.USERID.in(users.stream()
                                     .map(UserModel::getUserId)
@@ -1592,7 +1592,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                             : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+            CompletionStage<Integer> completionStage = mysql.get().deleteFrom(JooqUser.USER)
                     .where(JooqUser.USER.PROJECTID.eq(projectId))
                     .executeAsync();
             if (searchEngine.isReadMysql()) {
@@ -1623,7 +1623,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                 : ActionListeners.logFailure());
             }
             if (searchEngine.isWriteMysql()) {
-                CompletionStage<Integer> completionStage = mysql.deleteFrom(JooqUser.USER)
+                CompletionStage<Integer> completionStage = mysql.get().deleteFrom(JooqUser.USER)
                         .where(JooqUser.USER.PROJECTID.eq(projectId)
                                 .and(JooqUser.USER.USERID.eq(userId)))
                         .executeAsync();
@@ -1645,7 +1645,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private void indexUser(SettableFuture<Void> indexingFuture, UserModel user) {
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(user.getProjectId());
         if (searchEngine.isWriteElastic()) {
-            elastic.indexAsync(userToEsIndexRequest(user),
+            elastic.get().indexAsync(userToEsIndexRequest(user),
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic()
                             ? ActionListeners.fromFuture(indexingFuture)
@@ -1670,7 +1670,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 user.getCreated(),
                 user.getBalance(),
                 user.getIsMod());
-        return mysql.insertInto(JooqUser.USER, JooqUser.USER.fields())
+        return mysql.get().insertInto(JooqUser.USER, JooqUser.USER.fields())
                 .values(record)
                 .onDuplicateKeyUpdate()
                 .set(record);
