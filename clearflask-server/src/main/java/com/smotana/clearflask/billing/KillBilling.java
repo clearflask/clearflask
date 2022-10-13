@@ -302,7 +302,7 @@ public class KillBilling extends ManagedService implements Billing {
     @Extern
     @Override
     public Account getAccount(String accountId) {
-        getAccount(accountId, false);
+        return getAccount(accountId, false);
     }
 
     private Account getAccount(String accountId, boolean isSecondAttempt) {
