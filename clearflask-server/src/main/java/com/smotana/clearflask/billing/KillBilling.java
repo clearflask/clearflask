@@ -302,6 +302,10 @@ public class KillBilling extends ManagedService implements Billing {
     @Extern
     @Override
     public Account getAccount(String accountId) {
+        getAccount(accountId, false);
+    }
+
+    private Account getAccount(String accountId, boolean isSecondAttempt) {
         try {
             Account account = kbAccount.getAccountByKey(
                     accountId,
@@ -310,11 +314,21 @@ public class KillBilling extends ManagedService implements Billing {
                     AuditLevel.NONE,
                     KillBillUtil.roDefault());
             if (account == null) {
-                if (config.createAccountIfNotExists()) {
+                if (!isSecondAttempt && config.createAccountIfNotExists()) {
                     Optional<AccountStore.Account> accountInDynOpt = accountStore.getAccount(accountId, false);
                     if (accountInDynOpt.isPresent()) {
                         log.warn("Account doesn't exist in KB by account id {}, creating...", accountId);
-                        return createAccount(accountInDynOpt.get());
+                        try {
+                            return createAccount(accountInDynOpt.get());
+                        } catch (ApiException ex) {
+                            if (ex.getCause() instanceof KillBillClientException
+                                    && Strings.nullToEmpty(ex.getCause().getMessage()).contains("Account already exists for key")) {
+                                log.warn("Account apparently existed after all so let's fetch it from KB by account id {}, fetching...", accountId);
+                                return getAccount(accountId, true);
+                            } else {
+                                throw ex;
+                            }
+                        }
                     } else {
                         log.warn("Account doesn't exist in KB by account id {}, can't create either it doesnt exist in db either", accountId);
                     }
