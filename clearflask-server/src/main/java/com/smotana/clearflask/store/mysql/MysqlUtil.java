@@ -191,7 +191,7 @@ public class MysqlUtil {
                         DSL.day(aggregateFieldName),
                         DSL.countDistinct(table.getPrimaryKey().getFieldsArray()))
                 .from(join(table, searchIdeasOpt.map(SearchIdeasConditions::getJoins).orElse(ImmutableList.of())))
-                .where(and(
+                .where(projectIdCondition, and(
                         searchIdeasOpt.map(SearchIdeasConditions::getConditions),
                         searchIdeasOpt.map(SearchIdeasConditions::getConditionsRange),
                         startBoundOpt,
