@@ -515,6 +515,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
         String commentId = commentStore.genDeterministicCommentIdForGithubIssueComment(ghIssueComment.getComment().getId());
         switch (ghIssueComment.getAction()) {
             case "created":
+            case "edited":
                 Optional<IdeaModel> ideaOpt = ideaStore.getIdea(project.getProjectId(), postId);
                 if (ideaOpt.isPresent()) {
                     UserModel user = getCfUserFromGhUser(project.getProjectId(), ghIssueComment.getComment().getUser());
@@ -533,17 +534,16 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-comment", commentId, ghIssueComment.getComment().getBody()),
                             0,
                             0)));
-                }
-                break;
-            case "edited":
-                // GitHub client is missing "changes" parsing so we cannot do:
-                // ghIssueComment.getChanges().getBody()
-                // https://github.com/hub4j/github-api/issues/1243
-                // Need to extract it ourselves here
-                boolean bodyChanged = changesBodyJsonPath.read(payload) != null;
-                if (bodyChanged) {
-                    commentStore.updateComment(project.getProjectId(), postId, commentId, ghIssueComment.getComment().getUpdatedAt().toInstant(), CommentUpdate.builder()
-                            .content(markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-comment", commentId, ghIssueComment.getComment().getBody())).build());
+                } else if ("edited".equals(ghIssueComment.getAction())) {
+                    // GitHub client is missing "changes" parsing so we cannot do:
+                    // ghIssueComment.getChanges().getBody()
+                    // https://github.com/hub4j/github-api/issues/1243
+                    // Need to extract it ourselves here
+                    boolean bodyChanged = changesBodyJsonPath.read(payload) != null;
+                    if (bodyChanged) {
+                        commentStore.updateComment(project.getProjectId(), postId, commentId, ghIssueComment.getComment().getUpdatedAt().toInstant(), CommentUpdate.builder()
+                                .content(markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-comment", commentId, ghIssueComment.getComment().getBody())).build());
+                    }
                 }
                 break;
             case "deleted":
@@ -617,7 +617,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                                 user);
                     }
                     return Optional.of(ideaAndIndexingFuture);
-                } else {
+                } else if ("edited".equals(ghRelease.getAction())) {
                     boolean updated = false;
                     IdeaUpdateAdmin.IdeaUpdateAdminBuilder updateBuilder = IdeaUpdateAdmin.builder();
                     // GitHub client is missing "changes" parsing so we cannot do:
