@@ -228,6 +228,7 @@ public enum ServiceInjector {
                 install(OnEmailChanged.module());
                 install(OnTrialEnded.module());
                 install(OnPaymentFailed.module());
+                install(OnInvoicePaymentSuccess.module());
                 install(OnPostCreated.module());
                 install(EmailVerify.module());
                 install(EmailLogin.module());

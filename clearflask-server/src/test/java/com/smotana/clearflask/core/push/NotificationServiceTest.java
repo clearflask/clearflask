@@ -21,6 +21,7 @@ import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
@@ -105,6 +106,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnStatusOrResponseChange.module());
         install(OnTrialEnded.module());
         install(OnPaymentFailed.module());
+        install(OnInvoicePaymentSuccess.module());
         install(OnCreditChange.module());
         install(OnForgotPassword.module());
         install(OnAccountSignup.module());

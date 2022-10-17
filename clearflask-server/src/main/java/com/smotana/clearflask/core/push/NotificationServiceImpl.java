@@ -408,7 +408,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         });
     }
 
-    @Override
+    @Overridecx
     public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
