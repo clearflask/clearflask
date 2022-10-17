@@ -30,6 +30,7 @@ import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnPostCreated;
@@ -120,6 +121,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnTrialEnded onTrialEnded;
     @Inject
     private OnAccountSignup accountSignup;
+    @Inject
+    private OnInvoicePaymentSuccess onInvoicePaymentSuccess;
     @Inject
     private OnPaymentFailed onPaymentFailed;
     @Inject
@@ -399,6 +402,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             try {
                 emailService.send(onTrialEnded.email(link, accountId, accountEmail, hasPaymentMethod));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/invoice/" + invoiceIdStr;
+            checkState(!Strings.isNullOrEmpty(accountEmail));
+
+            try {
+                emailService.send(onInvoicePaymentSuccess.email(link, accountId, accountEmail));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

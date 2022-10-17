@@ -213,7 +213,7 @@ public class KillBillResource extends ManagedService {
         }
 
         if (ExtBusEventType.INVOICE_PAYMENT_SUCCESS.equals(event.eventType)) {
-            processInvoiceCreditSync(accountOpt.get(), event);
+            processInvoicePaymentSuccess(accountOpt.get(), event);
             changesMade = true;
         }
 
@@ -281,7 +281,7 @@ public class KillBillResource extends ManagedService {
                 hasPaymentMethod);
     }
 
-    private void processInvoiceCreditSync(AccountStore.Account account, Event event) {
+    private void processInvoicePaymentSuccess(AccountStore.Account account, Event event) {
 
         if (event.getObjectType() != ObjectType.INVOICE) {
             log.warn("Expected {} event to have object type {}, but found {}",
@@ -304,13 +304,19 @@ public class KillBillResource extends ManagedService {
             return;
         }
 
+        // Invoice payment notification
+        notificationService.onInvoicePaymentSuccess(
+                account.getAccountId(),
+                account.getEmail(),
+                invoice.getInvoiceId().toString());
+
+        // Credit sync
         Optional<String> planNameOpt = invoice.getItems().stream()
                 .map(InvoiceItem::getPrettyPlanName)
                 .filter(p -> !Strings.isNullOrEmpty(p))
                 .map(planStore::prettifyPlanName)
                 .findAny();
         String summary = planNameOpt.map(n -> "Credit for " + n + " plan").orElse("Credit for payment");
-
         try {
             clearFlaskCreditSync.process(
                     invoice.getInvoiceId().toString(),

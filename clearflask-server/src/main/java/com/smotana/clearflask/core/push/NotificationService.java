@@ -28,6 +28,8 @@ public interface NotificationService {
 
     void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
 
+    void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr);
+
     void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod);
 
     void onModInvite(ConfigAdmin configAdmin, UserModel user);
