@@ -84,7 +84,9 @@ There are several dependencies you need for running ClearFlask:
 
 - **ScyllaDB** or **AWS DynamoDB** or API-compatible alternative
 - **MinIO** or **AWS S3** or API-compatible alternative
-- **ElasticSearch** or **OpenSearch**
+- One of:
+  - **MySQL** or **Aurora**
+  - **ElasticSearch** or **OpenSearch**
 - **Email service via SMTP** or **AWS SES**
 
 And a few optional:
@@ -139,7 +141,7 @@ IAM actions:
 
 You can also use an API-compatible alternative service such as Wasabi, MinIO...
 
-##### ElasticSearch
+##### ElasticSearch or MySQL
 
 Recommended is AWS ES, give the proper IAM access
 
@@ -150,7 +152,7 @@ IAM actions, all in these categories:
 - Write
 - Tagging
 
-Alternatively you can deploy it yourself (cheaper) or host it on Elastic
+Alternatively you can deploy it yourself (cheaper) or host it on Elastic. Or you can choose to use MySQL/Aurora as a cheaper alternative.
 
 ##### AWS SES
 
