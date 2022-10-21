@@ -50,6 +50,8 @@ public interface AccountStore {
 
     Optional<Account> getAccountByEmail(String email);
 
+    void repopulateIndex(boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
+
     boolean isEmailAvailable(String email);
 
     SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);

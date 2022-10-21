@@ -498,8 +498,8 @@ public class AccountStoreIT extends AbstractIT {
             mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.STATUSID));
         }
         if (searchEngine.isWriteElastic()) {
-            storeImpl.createIndexElasticSearch();
-            storeImpl.createIndexElasticSearch();
+            storeImpl.createIndexElasticSearch().get();
+            storeImpl.createIndexElasticSearch().get();
         }
     }
 

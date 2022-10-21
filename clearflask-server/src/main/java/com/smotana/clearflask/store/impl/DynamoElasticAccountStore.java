@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
@@ -76,6 +77,7 @@ import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -92,6 +94,7 @@ import org.elasticsearch.index.query.ZeroTermsQueryOption;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jooq.DSLContext;
+import org.jooq.Query;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
@@ -197,7 +200,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         if (configApp.createIndexesOnStartup()) {
             SearchEngine searchEngine = configApp.defaultSearchEngine();
             if (searchEngine.isWriteElastic()) {
-                createIndexElasticSearch();
+                createIndexElasticSearch().get();
             }
             if (searchEngine.isWriteMysql()) {
                 createIndexMysql();
@@ -206,12 +209,13 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Extern
-    public void createIndexElasticSearch() throws IOException {
+    public ListenableFuture<Void> createIndexElasticSearch() throws IOException {
         boolean exists = elastic.get().indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
         if (!exists) {
             log.info("Creating ElasticSearch index {}", ACCOUNT_INDEX);
             try {
-                elastic.get().indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
+                SettableFuture<Void> indexingFuture = SettableFuture.create();
+                elastic.get().indices().createAsync(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
                                 "dynamic", "false",
                                 "properties", ImmutableMap.builder()
                                         .put("name", ImmutableMap.of(
@@ -230,13 +234,16 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                         .put("projectIds", ImmutableMap.of(
                                                 "type", "keyword"))
                                         .build())), XContentType.JSON),
-                        RequestOptions.DEFAULT);
+                        RequestOptions.DEFAULT,
+                        ActionListeners.fromFuture(indexingFuture, elasticUtil::isIndexAlreadyExistsException));
+                return indexingFuture;
             } catch (ElasticsearchStatusException ex) {
                 if (!"resource_already_exists_exception".equals(ex.getResourceType())) {
                     throw ex;
                 }
             }
         }
+        return Futures.immediateFuture(null);
     }
 
     @Extern
@@ -392,6 +399,42 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                 "email", email))))))
                 .map(accountEmail -> getAccount(accountEmail.getAccountId(), false)
                         .orElseThrow(() -> new IllegalStateException("AccountEmail entry exists but Account doesn't for email " + email)));
+    }
+
+    @Extern
+    @Override
+    public void repopulateIndex(boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception {
+        log.info("Repopulating index for accounts deleteExistingIndex {} repopulateElasticSearch {} repopulateMysql {}",
+                deleteExistingIndex, repopulateElasticSearch, repopulateMysql);
+        if (repopulateElasticSearch) {
+            boolean indexAlreadyExists = elastic.get().indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
+            if (indexAlreadyExists && deleteExistingIndex) {
+                elastic.get().indices().delete(
+                        new DeleteIndexRequest(ACCOUNT_INDEX),
+                        RequestOptions.DEFAULT);
+            }
+            if (!indexAlreadyExists || deleteExistingIndex) {
+                createIndexElasticSearch().get();
+            }
+        }
+        if (repopulateMysql && deleteExistingIndex) {
+            mysql.get().deleteFrom(JooqAccount.ACCOUNT).execute();
+        }
+
+        listAllAccounts(account -> {
+            if (repopulateElasticSearch) {
+                try {
+                    elastic.get().index(accountToEsIndexRequest(account), RequestOptions.DEFAULT);
+                } catch (IOException ex) {
+                    if (LogUtil.rateLimitAllowLog("dynamoelsaticaccountstore-reindex-failure")) {
+                        log.warn("Failed to re-index account {}", account.getAccountId(), ex);
+                    }
+                }
+            }
+            if (repopulateMysql) {
+                accountToMysqlQuery(account).execute();
+            }
+        });
     }
 
     @Override
@@ -1159,35 +1202,48 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private void indexAccount(SettableFuture<Void> indexingFuture, Account account) {
         SearchEngine searchEngine = configApp.defaultSearchEngine();
         if (searchEngine.isWriteElastic()) {
-            elastic.get().indexAsync(new IndexRequest(ACCOUNT_INDEX)
-                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
-                            .id(account.getAccountId())
-                            .source(gson.toJson(ImmutableMap.builder()
-                                    .put("name", account.getName())
-                                    .put("email", account.getEmail())
-                                    .put("status", account.getStatus())
-                                    .put("planid", account.getPlanid())
-                                    .put("created", account.getCreated().getEpochSecond())
-                                    .put("projectIds", orNull(account.getProjectIds()))
-                                    .build()), XContentType.JSON),
+            elastic.get().indexAsync(accountToEsIndexRequest(account),
                     RequestOptions.DEFAULT,
-                    searchEngine.isReadElastic() ? ActionListeners.fromFuture(indexingFuture) : ActionListeners.logFailure());
+                    searchEngine.isReadElastic()
+                            ? ActionListeners.fromFuture(indexingFuture)
+                            : ActionListeners.logFailure());
         }
         if (searchEngine.isWriteMysql()) {
-            JooqAccountRecord record = mysql.get().newRecord(JooqAccount.ACCOUNT);
-            record.setAccountid(account.getAccountId());
-            record.setName(account.getName());
-            record.setEmail(account.getEmail());
-            record.setStatus(account.getStatus().name());
-            record.setPlanid(account.getPlanid());
-            record.setCreated(account.getCreated());
-            CompletionStage<int[]> completionStage = mysql.get().batchInsert(record).executeAsync();
+            CompletionStage<Integer> completionStage = accountToMysqlQuery(account).executeAsync();
             if (searchEngine.isReadMysql()) {
                 CompletionStageUtil.toSettableFuture(indexingFuture, completionStage);
             } else {
                 CompletionStageUtil.logFailure(completionStage);
             }
         }
+    }
+
+    private Query accountToMysqlQuery(Account account) {
+        JooqAccountRecord record = mysql.get().newRecord(JooqAccount.ACCOUNT);
+        record.setAccountid(account.getAccountId());
+        record.setName(account.getName());
+        record.setEmail(account.getEmail());
+        record.setStatus(account.getStatus().name());
+        record.setPlanid(account.getPlanid());
+        record.setCreated(account.getCreated());
+        return mysql.get().insertInto(JooqAccount.ACCOUNT, JooqAccount.ACCOUNT.fields())
+                .values(record)
+                .onDuplicateKeyUpdate()
+                .set(record);
+    }
+
+    private IndexRequest accountToEsIndexRequest(Account account) {
+        return new IndexRequest(ACCOUNT_INDEX)
+                .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                .id(account.getAccountId())
+                .source(gson.toJson(ImmutableMap.builder()
+                        .put("name", account.getName())
+                        .put("email", account.getEmail())
+                        .put("status", account.getStatus())
+                        .put("planid", account.getPlanid())
+                        .put("created", account.getCreated().getEpochSecond())
+                        .put("projectIds", orNull(account.getProjectIds()))
+                        .build()), XContentType.JSON);
     }
 
     /**
