@@ -68,6 +68,7 @@ import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
+import { Bag } from '../../common/util/bag';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
 import { OAuthFlow, OAUTH_CODE_PARAM_NAME } from '../../common/util/oauthUtil';
@@ -4102,25 +4103,22 @@ const DebouncedTextFieldWithColorPicker = (props: React.ComponentProps<typeof Te
 }
 
 export const useDebounceProp = <T,>(initialValue: T, setter: (val: T) => void, onAboutToChange?: () => void): [T, (val: T) => void] => {
-  const [inProgress, setInProgress] = useState<number>(0);
+  const inProgressCounter = useRef(new Bag<number>(0));
   const [val, setVal] = useState<T>(initialValue);
 
   const setterDebouncedRef = useRef(setter);
   useEffect(() => {
     setterDebouncedRef.current = debounce(val => {
-      setInProgress(0);
+      inProgressCounter.current.set(0);
       setter(val);
     }, DemoUpdateDelay);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  React.useEffect(() => {
-    if (inProgress === 1) {
+  return [val, val => {
+    inProgressCounter.current.set((inProgressCounter.current.get() || 0) + 1);
+    if (inProgressCounter.current.get() === 1) {
       onAboutToChange?.();
     }
-  }, [inProgress]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return [val, val => {
-    setInProgress(inProgress + 1);
     setVal(val);
     setterDebouncedRef.current(val);
   }];
