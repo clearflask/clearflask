@@ -77,7 +77,7 @@ public class EmailServiceImpl implements EmailService {
 
         Observable<Duration> rateLimitCapacityObservable();
 
-        @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP", innerType = String.class)
+        @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS", innerType = String.class)
         List<String> bccOnTagTypes();
 
         @DefaultValue(value = "events@clearflask.com", innerType = String.class)
@@ -188,7 +188,8 @@ public class EmailServiceImpl implements EmailService {
                     log.warn("Email service account suspended", ex);
                 }
                 return;
-            } catch (MessageRejectedException | MailFromDomainNotVerifiedException | NotFoundException | BadRequestException ex) {
+            } catch (MessageRejectedException | MailFromDomainNotVerifiedException | NotFoundException |
+                     BadRequestException ex) {
                 if (LogUtil.rateLimitAllowLog("emailpush-misconfigured")) {
                     log.warn("Email service misconfigured", ex);
                 }
