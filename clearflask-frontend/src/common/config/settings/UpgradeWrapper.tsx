@@ -47,11 +47,9 @@ const AbPitchGroundRestrictedProperties: Path[] = [
 /** If changed, also change in KillBillPlanStore.java */
 const CdPitchGroundRestrictedProperties: Path[] = [
   ['style', 'whitelabel', 'poweredBy'],
-  ['style', 'templates'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const EPitchGroundRestrictedProperties: Path[] = [
-  ['style', 'templates'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {

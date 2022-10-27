@@ -471,8 +471,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
         Optional<Account> accountOpt = accountIdOpt.flatMap(accountId -> accountStore.getAccount(accountIdOpt.get(), true));
         boolean isStackingProPlan = couponOpt.isPresent()
-                && "pro-lifetime".equals(planOpt.map(Plan::getBasePlanId).orElse(null))
-                && "pro-lifetime".equals(accountOpt.map(Account::getPlanid).orElse(null));
+                && "pro-lifetime" .equals(planOpt.map(Plan::getBasePlanId).orElse(null))
+                && "pro-lifetime" .equals(accountOpt.map(Account::getPlanid).orElse(null));
 
         ImmutableMap<String, String> addons = ImmutableMap.of();
         if (planOpt.isPresent() && accountOpt.isPresent()) {
@@ -536,8 +536,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     private Optional<PlanPerk> getAddonAsPlanPerk(String addonId, String value) {
         if (Strings.isNullOrEmpty(value)
-                || "false".equals(value)
-                || "0".equals(value)) {
+                || "false" .equals(value)
+                || "0" .equals(value)) {
             return Optional.empty();
         }
         switch (addonId) {
@@ -672,8 +672,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
-        boolean hasAddonWhitelabel = "true".equals(addons.get(ADDON_WHITELABEL));
-        boolean hasAddonPrivateProjects = "true".equals(addons.get(ADDON_PRIVATE_PROJECTS));
+        boolean hasAddonWhitelabel = "true" .equals(addons.get(ADDON_WHITELABEL));
+        boolean hasAddonPrivateProjects = "true" .equals(addons.get(ADDON_PRIVATE_PROJECTS));
 
         switch (getBasePlanId(planId)) {
             case TEAMMATE_PLAN_ID:
@@ -735,6 +735,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
                     throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Private visibility on your plan");
                 }
+                // Restrict Site template
+                if (config.getStyle().getTemplates() != null) {
+                    throw new RequiresUpgradeException("standard3-monthly", "Not allowed to use Templates on your plan");
+                }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
                     throw new RequiresUpgradeException("flat-yearly", "Not allowed to use GitHub integration on your plan");
@@ -757,10 +761,6 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 }
                 // rollover to next case
             case "pitchground-e-lifetime":
-                // Restrict Site template
-                if (config.getStyle().getTemplates() != null) {
-                    throw new RequiresUpgradeException("flat-yearly", "Not allowed to use Templates on your plan");
-                }
                 break;
             case "standard-monthly":
             case "standard2-monthly":
