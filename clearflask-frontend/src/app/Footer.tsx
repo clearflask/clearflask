@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
-import { ReduxState } from '../api/server';
+import { ReduxState, Status } from '../api/server';
 import TemplateLiquid from './comps/TemplateLiquid';
 import PoweredBy from './PoweredBy';
 
@@ -38,9 +38,12 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   customPageSlug?: string;
   isFrontPage?: boolean;
+  pageSlug?: string;
 }
 interface ConnectProps {
+  configver?: string;
   config?: Client.Config;
+  page?: Client.Page;
 }
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
@@ -75,8 +78,21 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
-  return {
+  var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
+    page: undefined,
   };
+
+  if (!!ownProps.pageSlug && state.conf.status === Status.FULFILLED && !!state.conf.conf) {
+    if (ownProps.pageSlug === '') {
+      if (state.conf.conf.layout.pages.length > 0) {
+        newProps.page = state.conf.conf.layout.pages[0];
+      }
+    } else {
+      newProps.page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
+    }
+  }
+
+  return newProps;
 })(withStyles(styles, { withTheme: true })(Footer));

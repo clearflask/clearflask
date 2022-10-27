@@ -30,6 +30,7 @@ interface Props {
   customPageSlug?: string;
   isFrontPage?: boolean;
   pageTitle?: string;
+  pageSlug?: string;
   suppressPageTitle?: boolean,
 }
 interface ConnectProps {
@@ -58,6 +59,7 @@ class BasePage extends Component<Props & ConnectProps & WithTranslation<'app'> &
           <Footer
             customPageSlug={this.props.customPageSlug}
             isFrontPage={this.props.isFrontPage}
+            pageSlug={this.props.pageSlug}
           />
         )}
       </>

@@ -232,6 +232,7 @@ class App extends Component<Props> {
                       showFooter={!this.props.settings?.forceEmbed && !props.match.params['embed']}
                       customPageSlug={pageSlug}
                       isFrontPage={!this.props.settings?.forceEmbed && !props.match.params['embed'] && !pageSlug}
+                      pageSlug={pageSlug}
                     >
                       <AppDynamicPage
                         pageSlug={pageSlug}
