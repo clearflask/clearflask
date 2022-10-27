@@ -363,6 +363,9 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
             "      \"darkMode\": false,\n" +
             "      \"background\": \"#ffffff\"\n" +
             "    },\n" +
+            "    \"templates\": {\n" +
+            "      \"pages\": []\n" +
+            "    },\n" +
             "    \"typography\": {}\n" +
             "  },\n" +
             "  \"projectId\": \"mock\",\n" +
@@ -411,5 +414,6 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
                 .build(), config.getStyle().getWhitelabel());
         assertEquals(CookieConsent.builder().build(), config.getCookieConsent());
         assertEquals(ImmutableList.of(), config.getLangWhitelist().getLangs());
+        assertEquals(ImmutableList.of(), config.getStyle().getTemplates().getPageFooters());
     }
 }

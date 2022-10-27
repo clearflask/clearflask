@@ -85,6 +85,15 @@ public class ConfigSchemaUpgrader {
             hasChanged = true;
         }
 
+        // Added pageFooters as required field
+        if (styleObj.has("templates")) {
+            JsonObject templatesObj = styleObj.get("templates").getAsJsonObject();
+            if (!templatesObj.has("pageFooters")) {
+                templatesObj.add("pageFooters", new JsonArray());
+                hasChanged = true;
+            }
+        }
+
         // Important notes:
         // - Make sure the upgrade is idempotent, update hasChanged if necessary
         // - Add a test assertion in ConfigSchemaUpgraderTest.assertUpgraded

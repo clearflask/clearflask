@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
@@ -44,11 +44,13 @@ interface ConnectProps {
 }
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
+    var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => p.pageId === this.props.page?.pageId)?.template
+      || this.props.config?.style.templates?.footer;
     var footer;
-    if (this.props.config?.style.templates?.footer) {
+    if (footerTemplate) {
       footer = (
         <TemplateLiquid
-          template={this.props.config.style.templates.footer}
+          template={footerTemplate}
           customPageSlug={this.props.customPageSlug}
         />
       );

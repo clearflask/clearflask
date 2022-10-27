@@ -400,11 +400,12 @@ components:
               type: number
               format: double
         templates:
-          x-clearflask-prop: { order: 3, name: 'Custom Templates', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating languge.' }
+          x-clearflask-prop: { order: 3, name: 'Custom page HTML/JS/CSS template', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating language.' }
           title: Template
           type: object
           required:
             - pages
+            - pageFooters
           properties:
             header:
               x-clearflask-prop: { order: 1, name: 'Header', description: 'Replaces top part of every page including logo, menu and account settings', subType: 'multiline' }
@@ -426,8 +427,22 @@ components:
                   template:
                     x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
                     type: string
+            pageFooters:
+              x-clearflask-prop: { order: 3, name: 'Page Footers', description: 'Replace specific page footer with custom content, overriding the global footer. This is an ideal place to put page-specific JS/CSS.', disableReordering: true }
+              type: array
+              items:
+                x-clearflask-prop: { name: 'Page' }
+                type: object
+                properties:
+                  pageId:
+                    x-clearflask-prop: { order: 1, name: 'Page', description: 'Select the page to replace its footer' }
+                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
+                    type: string
+                  template:
+                    x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
+                    type: string
             footer:
-              x-clearflask-prop: { order: 4, name: 'Footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden.', subType: 'multiline' }
+              x-clearflask-prop: { order: 4, name: 'Global footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden. This is an ideal place to put global JS/CSS. If page specific footers are set, this global footer is not shown.', subType: 'multiline' }
               type: string
         whitelabel:
           x-clearflask-prop: { order: 1, name: 'Whitelabel' }
