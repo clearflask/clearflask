@@ -184,7 +184,7 @@
     <orderEntry type="library" name="Maven: org.glassfish.hk2:hk2-api:2.5.0-b62" level="project" />
     <orderEntry type="library" name="Maven: com.stripe:stripe-java:20.26.0" level="project" />
     <orderEntry type="library" name="Maven: org.kill-bill.billing:killbill-client-java:1.1.10" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-joda:2.12.5" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.4" level="project" />
     <orderEntry type="library" name="Maven: com.ning:async-http-client:1.9.40" level="project" />
     <orderEntry type="library" name="Maven: joda-time:joda-time:2.9.9" level="project" />
     <orderEntry type="library" name="Maven: org.kill-bill.billing:killbill-api:0.53.15" level="project" />
@@ -257,8 +257,8 @@
     <orderEntry type="library" name="Maven: org.kohsuke:github-api:1.133" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.9" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.13.4.1" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.12.5" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.12.5" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.13.4" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.13.4" level="project" />
     <orderEntry type="library" name="Maven: com.infradna.tool:bridge-method-annotation:1.21" level="project" />
     <orderEntry type="library" name="Maven: org.jenkins-ci:annotation-indexer:1.14" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.8.0" level="project" />
