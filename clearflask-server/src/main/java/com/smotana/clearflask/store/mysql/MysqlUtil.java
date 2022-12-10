@@ -242,7 +242,7 @@ public class MysqlUtil {
                 .orElse(0);
     }
 
-    public int limit(ConfigSearch configSearch, Optional<Integer> sizeOpt) {
+    public int pageSizeMax(ConfigSearch configSearch, Optional<Integer> sizeOpt) {
         if (sizeOpt.isPresent()) {
             return MathUtil.minmax(1, sizeOpt.get(), configSearch.pageSizeMax());
         } else {
@@ -251,7 +251,7 @@ public class MysqlUtil {
     }
 
     public Optional<String> nextCursor(ConfigSearch configSearch, Optional<String> cursorOpt, Optional<Integer> sizeOpt, int resultSize) {
-        int limit = limit(configSearch, sizeOpt);
+        int limit = pageSizeMax(configSearch, sizeOpt);
         int offset = offset(cursorOpt);
         return resultSize < limit
                 ? Optional.empty()

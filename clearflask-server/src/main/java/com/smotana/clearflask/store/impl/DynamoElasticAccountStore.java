@@ -515,7 +515,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             cursorOptNext = searchResponseWithCursor.getCursorOpt();
         } else {
             int offset = mysqlUtil.offset(cursorOpt);
-            int pageSize = mysqlUtil.limit(configSearch, pageSizeOpt);
+            int pageSize = mysqlUtil.pageSizeMax(configSearch, pageSizeOpt);
             List<String> accountIds = mysql.get().select(JooqAccount.ACCOUNT.ACCOUNTID)
                     .from(JooqAccount.ACCOUNT)
                     .where(searchTextOpt.map(searchText ->

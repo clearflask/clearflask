@@ -1211,6 +1211,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     static class IdeaSearchKey {
         String projectId;
         IdeaSearchAdmin ideaSearchAdmin;
+        Optional<String> cursorOpt;
     }
 
     private SearchResponse searchIdeas(
@@ -1229,9 +1230,10 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         boolean useCache = config.enableSearchCache()
+                && cursorOpt.isEmpty()
                 && ideaSearchAdmin.getFundedByMeAndActive() != Boolean.TRUE
                 && ideaSearchAdmin.getSearchText() == null;
-        IdeaSearchKey key = new IdeaSearchKey(projectId, ideaSearchAdmin);
+        IdeaSearchKey key = new IdeaSearchKey(projectId, ideaSearchAdmin, cursorOpt);
         if (useCache) {
             SearchResponse cachedResponse = ideaSearchCache.getIfPresent(key);
             if (cachedResponse != null) {
@@ -1350,7 +1352,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             searchConditions.getConditionsRange()))
                     .orderBy(sortFields)
                     .offset(mysqlUtil.offset(cursorOpt))
-                    .limit(mysqlUtil.limit(configSearch, Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue)))
+                    .limit(mysqlUtil.pageSizeMax(configSearch, Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue)))
                     .fetch(JooqIdea.IDEA.POSTID);
 
             searchResponse = new SearchResponse(

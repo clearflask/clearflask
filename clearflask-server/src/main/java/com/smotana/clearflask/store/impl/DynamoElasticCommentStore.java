@@ -623,7 +623,7 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
                                 JooqComment.COMMENT.PROJECTID.eq(projectId)))
                         .orderBy(sortFieldsMysql)
                         .offset(mysqlUtil.offset(cursorOpt))
-                        .limit(mysqlUtil.limit(configSearch, Optional.empty()))
+                        .limit(mysqlUtil.pageSizeMax(configSearch, Optional.empty()))
                         .stream()
                         .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
                                 "projectId", projectId,

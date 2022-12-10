@@ -633,7 +633,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .where(conditions)
                     .orderBy(sortFields)
                     .offset(mysqlUtil.offset(cursorOpt))
-                    .limit(mysqlUtil.limit(configSearch, pageSizeOpt))
+                    .limit(mysqlUtil.pageSizeMax(configSearch, pageSizeOpt))
                     .fetch(JooqUser.USER.USERID);
 
             return new SearchUsersResponse(
