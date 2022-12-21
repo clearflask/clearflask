@@ -321,7 +321,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             Optional<UserModel> userOpt = userStore.getUser(idea.getProjectId(), userId);
             if (!userOpt.isPresent()) {
-                log.warn("Cannot send comment notification, user disappeared {} commentId {}",
+                log.debug("Cannot send comment notification, user disappeared {} commentId {}",
                         userId, comment.getCommentId());
                 return;
             }
