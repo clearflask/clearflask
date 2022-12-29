@@ -8,7 +8,7 @@
 
 <div align="center">
   <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
-    <img alt="Build Status" src="https://img.shields.io/github/workflow/status/clearflask/clearflask/CI?style=for-the-badge">
+    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/clearflask/clearflask/maven.yml?style=for-the-badge">
   </a>
   <a href="https://github.com/clearflask/clearflask/releases">
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/clearflask/clearflask?include_prereleases&sort=semver&style=for-the-badge">
