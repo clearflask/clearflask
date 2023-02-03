@@ -178,7 +178,6 @@ components:
           type: string
           enum: [ Public, Private ]
         accountFields:
-          x-clearflask-hide: true
           x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
           title: AccountFields
           type: object
