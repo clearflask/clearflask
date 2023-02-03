@@ -46,6 +46,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -202,6 +203,7 @@ public class MysqlUtil {
                         .map(record -> new HistogramResponsePoints(
                                 LocalDate.of(record.component1(), record.component2(), record.component3()),
                                 record.component4().longValue()))
+                        .sorted(Comparator.comparing(HistogramResponsePoints::getTs))
                         .collect(ImmutableList.toImmutableList())));
 
         CompletionStage<Void> hitsCompletionStage = mysql.get().select(

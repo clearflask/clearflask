@@ -56,6 +56,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -323,6 +324,7 @@ public class ElasticUtil {
                 .map((Histogram.Bucket b) -> new HistogramResponsePoints(
                         ((ZonedDateTime) b.getKey()).toLocalDate(),
                         b.getDocCount()))
+                .sorted(Comparator.comparing(HistogramResponsePoints::getTs))
                 .collect(ImmutableList.toImmutableList());
 
         return new HistogramResponse(points,
