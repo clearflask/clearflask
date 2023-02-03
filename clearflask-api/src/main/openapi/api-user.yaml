@@ -76,7 +76,11 @@ components:
         created:
           type: string
           format: date-time
+        # Type of display image, valid options:
+        # ...
         pic:
+          type: string
+        picUrl:
           type: string
     UserMe:
       allOf:

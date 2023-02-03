@@ -81,6 +81,8 @@ paths:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
+  /project/{projectId}/profilepic/upload:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1profilepic~1upload'
   # api-admin.yaml
   /project/{projectId}/admin/subscription/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1subscription~1idea'

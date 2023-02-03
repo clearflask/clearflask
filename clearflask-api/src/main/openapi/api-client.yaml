@@ -119,3 +119,5 @@ paths:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
   /project/{projectId}/content/upload:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
+  /project/{projectId}/profilepic/upload:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1profilepic~1upload'

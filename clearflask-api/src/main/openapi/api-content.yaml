@@ -1,5 +1,7 @@
-## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+## SPDX-FileCopyrightText: 2019-2023 Matus Faro <matus@smotana.com>
 ## SPDX-License-Identifier: Apache-2.0
+
+# Idea content
 /project/{projectId}/content/upload:
   post:
     operationId: contentUpload
@@ -62,4 +64,35 @@
               - url
               properties:
                 url: 
+                  type: string
+
+# Profile picture
+/project/{projectId}/profilepic/upload:
+  post:
+    operationId: profilepicUpload
+    tags: [Content]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        image/*:
+          schema:
+            type: string
+            format: binary
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ContentUploadResponse
+              type: object
+              required:
+                - url
+              properties:
+                url:
                   type: string

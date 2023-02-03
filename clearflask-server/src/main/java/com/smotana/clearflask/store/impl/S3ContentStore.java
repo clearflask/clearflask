@@ -70,7 +70,13 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
     @Override
     public ContentUrl upload(String projectId, String userId, ContentType contentType, InputStream inputStream, int length) {
-        ContentUrl contentUrl = generateContentUrl(projectId, userId, contentType);
+        upload(projectId, userId, contentType, inputStream, length,
+                IdUtil.randomId()  + "." + contentType.getExtension());
+    }
+
+    @Override
+    public ContentUrl upload(String projectId, String userId, ContentType contentType, InputStream inputStream, int length, String fileName) {
+        ContentUrl contentUrl = generateContentUrl(projectId, userId, contentType, fileName);
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(contentType.getMediaType());
         metadata.setContentLength(length);
@@ -81,6 +87,12 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     @Override
     public String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length) {
         ContentUrl contentUrl = upload(projectId, userId, contentType, inputStream, length);
+        return signUrl(contentUrl);
+    }
+
+    @Override
+    public String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length, String fileName) {
+        ContentUrl contentUrl = upload(projectId, userId, contentType, inputStream, length, fileName);
         return signUrl(contentUrl);
     }
 
@@ -179,8 +191,7 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     }
 
     @VisibleForTesting
-    public ContentUrl generateContentUrl(String projectId, String userId, ContentType contentType) {
-        String fileName = IdUtil.randomId() + "." + contentType.getExtension();
+    public ContentUrl generateContentUrl(String projectId, String userId, ContentType contentType, String fileName) {
         String key = KEY_PREFIX + projectId + "/" + userId + "/" + fileName;
         String url = config.scheme() + "://" + config.hostname() + "/" + key;
 

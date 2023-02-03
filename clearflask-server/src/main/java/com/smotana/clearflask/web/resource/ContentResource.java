@@ -61,14 +61,49 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
         return new ContentUploadResponse(doUpload(projectId, authorId, body));
     }
 
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 30, challengeAfter = 20)
+    @Override
+    public ContentUploadResponse profilepicUpload(String projectId, InputStream body) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .get();
+
+        Image imageNormalized = normalizeImage(body);
+
+        // TODO uplload the image to deterministic location for a project/user combination
+        String signedUrl = contentStore.uploadAndSign(
+                projectId,
+                authorId,
+                checkNotNull(ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType())),
+                new ByteArrayInputStream(imageNormalized.getData()),
+                imageNormalized.getData().length,
+                "profilepic");
+
+        // TODO update user profile flag indicating that the profile pic is uploaded
+
+        return new ContentUploadResponse(doUpload(projectId, userId, body));
+    }
+
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 30, challengeAfter = 20)
+    @Override
+    public ContentUploadResponse profilepicDelete(String projectId) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .get();
+
+        // TODO delete the image from s3
+
+        // TODO update user profile flag indicating that the profile pic is uploaded
+
+        return new ContentUploadResponse(doUpload(projectId, userId, body));
+    }
+
     private String doUpload(String projectId, String authorId, InputStream body) {
-        byte[] imgBytes;
-        try (body) {
-            imgBytes = IOUtils.toByteArray(body);
-        } catch (IOException ex) {
-            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
-        }
-        Image imageNormalized = imageNormalization.normalize(imgBytes);
+        Image imageNormalized = normalizeImage(body);
         String signedUrl = contentStore.uploadAndSign(
                 projectId,
                 authorId,
@@ -76,6 +111,17 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
                 new ByteArrayInputStream(imageNormalized.getData()),
                 imageNormalized.getData().length);
         return signedUrl;
+    }
+
+    private Image normalizeImage(InputStream body) {
+        byte[] imgBytes;
+        try (body) {
+            imgBytes = IOUtils.toByteArray(body);
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
+        }
+        Image imageNormalized = imageNormalization.normalize(imgBytes);
+        return imageNormalized;
     }
 
     public static Module module() {
