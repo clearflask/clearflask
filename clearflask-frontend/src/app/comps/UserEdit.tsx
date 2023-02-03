@@ -225,47 +225,39 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
-                {!!user.isExternal ? (
-                  <Tooltip title={this.props.t('cannot-be-changed')} placement='top-start'>
-                    <Typography>{user.name || 'None'}</Typography>
-                  </Tooltip>
-                ) : (
-                  <>
-                    <TextField
-                      id='displayName'
-                      error={!user.name}
-                      value={(this.state.displayName === undefined ? user.name : this.state.displayName) || ''}
-                      onChange={e => this.setState({ displayName: e.target.value })}
-                    />
-                    <Button aria-label={this.props.t('save')} color='primary' style={{
-                      visibility:
-                        !this.state.displayName
-                          || this.state.displayName === user.name
-                          ? 'hidden' : undefined
-                    }} onClick={async () => {
-                      if (!this.state.displayName
-                        || !user
-                        || this.state.displayName === user.name) {
-                        return;
-                      }
-                      if (isModOrAdminLoggedIn) {
-                        const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
-                          projectId: this.props.server.getProjectId(),
-                          userId: userId!,
-                          userUpdateAdmin: { name: this.state.displayName },
-                        });
-                        this.setState({ displayName: undefined, userAdmin: newUserAdmin });
-                      } else {
-                        await (await this.props.server.dispatch()).userUpdate({
-                          projectId: this.props.server.getProjectId(),
-                          userId: userId!,
-                          userUpdate: { name: this.state.displayName },
-                        });
-                        this.setState({ displayName: undefined });
-                      }
-                    }}>{this.props.t('save')}</Button>
-                  </>
-                )}
+                <TextField
+                  id='displayName'
+                  error={!user.name}
+                  value={(this.state.displayName === undefined ? user.name : this.state.displayName) || ''}
+                  onChange={e => this.setState({ displayName: e.target.value })}
+                />
+                <Button aria-label={this.props.t('save')} color='primary' style={{
+                  visibility:
+                    !this.state.displayName
+                      || this.state.displayName === user.name
+                      ? 'hidden' : undefined
+                }} onClick={async () => {
+                  if (!this.state.displayName
+                    || !user
+                    || this.state.displayName === user.name) {
+                    return;
+                  }
+                  if (isModOrAdminLoggedIn) {
+                    const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+                      projectId: this.props.server.getProjectId(),
+                      userId: userId!,
+                      userUpdateAdmin: { name: this.state.displayName },
+                    });
+                    this.setState({ displayName: undefined, userAdmin: newUserAdmin });
+                  } else {
+                    await (await this.props.server.dispatch()).userUpdate({
+                      projectId: this.props.server.getProjectId(),
+                      userId: userId!,
+                      userUpdate: { name: this.state.displayName },
+                    });
+                    this.setState({ displayName: undefined });
+                  }
+                }}>{this.props.t('save')}</Button>
               </Grid>
             </Grid>
             <Grid container alignItems='center' className={this.props.classes.item}>
