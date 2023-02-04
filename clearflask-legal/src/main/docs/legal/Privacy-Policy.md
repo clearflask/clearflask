@@ -149,7 +149,7 @@ You can usually access, correct, or delete your personal data using your account
 
 ### Controllers and Responsible Companies
 
-Smotana’s Services are worldwide. Different Smotana companies are the controller (or co-controller) of personal information, which means that they are the company responsible for processing that information, based on the particular service and the location of the individual using our Services. Depending on the Services you use, more than one company may be the controller of your personal data. Generally, the "controller" is the Smotana company that entered into the contract with you under the Terms of Service for the product or service you use. In addition, Smotana FILLC (Смотана гхоххк), our Mongolia-based company, is the controller for all of the processing activities across all of our Services worldwide.
+Smotana’s Services are worldwide. Different Smotana companies are the controller (or co-controller) of personal information, which means that they are the company responsible for processing that information, based on the particular service and the location of the individual using our Services. Depending on the Services you use, more than one company may be the controller of your personal data. Generally, the "controller" is the Smotana company that entered into the contract with you under the Terms of Service for the product or service you use. In addition, Smotana is the controller for all of the processing activities across all of our Services worldwide.
 
 ### How to Reach Us
 

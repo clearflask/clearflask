@@ -10,7 +10,7 @@ These Terms govern your access to and use of Smotana.com, Veruv.com, and ClearFl
 
 ## 1\. Who’s Who
 
-Throughout these Terms, "you" applies to both individuals and entities that access or use our Services. If you are an individual using our Services on behalf of an entity, you represent and warrant that you have the authority to bind that entity to the Agreement and that by using our Service(s), you are accepting the Agreement on behalf of that entity. Your Agreement is with Smotana FILLC (Смотана гхоххк) residing in Mongolia. We refer to Smotana FILLC (Смотана гхоххк) collectively as "Smotana" or "we" throughout these Terms.
+Throughout these Terms, "you" applies to both individuals and entities that access or use our Services. If you are an individual using our Services on behalf of an entity, you represent and warrant that you have the authority to bind that entity to the Agreement and that by using our Service(s), you are accepting the Agreement on behalf of that entity. Your Agreement is with Smotana. We refer to Smotana collectively as "we" throughout these Terms.
 
 ## 2\. Your Account
 
