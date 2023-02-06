@@ -210,7 +210,11 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
       && (this.props.teammatesCount || 2) >= TeammatesMaxCount[this.props.accountBasePlanId];
   }
 
+  /** If changed, also change in KillBilling.java:tryAutoUpgradePlan */
   canAutoUpgrade(): boolean {
+    // TODO trial period with a CC on file is allowed to auto upgrade here, but server will not allow it
+    // This is most impactful for SSO and OAuth as it takes time to setup and only after the user is prompted to upgrade
+    // Reason why this is not fixed is that it's not easy to check here whether the user has a CC on file
     return this.props.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
       && this.props.accountBasePlanId !== TeammatePlanId;
   }

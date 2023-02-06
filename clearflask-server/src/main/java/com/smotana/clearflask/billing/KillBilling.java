@@ -910,6 +910,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    /** If changed, also change in UpgradeWrapper.tsx:canAutoUpgrade */
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
         boolean allowUpgrade = false;
