@@ -81,4 +81,4 @@ services:
       - FORCE_NONINTERACTIVE=true
       - DATA_DIR=/tmp/localstack/data
     volumes:
-      - ./data/localstack:/tmp/localstack
+      - ./data/localstack:/var/lib/localstack
