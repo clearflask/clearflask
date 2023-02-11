@@ -201,7 +201,7 @@
     "copy-webpack-plugin": "6.4.1",
     "css-loader": "5.2.7",
     "html-webpack-plugin": "4.5.0",
-    "nodemon": "2.0.6",
+    "nodemon": "2.0.20",
     "npm-force-resolutions": "0.0.3",
     "npx": "10.2.2",
     "react-app-rewired": "2.1.8",
