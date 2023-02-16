@@ -1,4 +1,4 @@
-FROM tomcat:8.5-jdk11-openjdk-slim
+FROM tomcat:9-jre11-temurin-focal
 EXPOSE 8080
 # JMX
 EXPOSE 9950
