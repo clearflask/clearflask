@@ -32,7 +32,7 @@
         <!-- 3.16 is last minor version supporting Java 11 -->
         <jooq.version>3.16.10</jooq.version>
         <ice.version>1.0.8</ice.version>
-        <curator.version>4.3.0</curator.version>
+        <curator.version>5.4.0</curator.version>
         <!-- If I still can't upgrade to 2.27+,
              try downgrading to 2.22.2 if this gets resolved:
              https://github.com/oracle/oci-java-sdk/issues/78 -->
