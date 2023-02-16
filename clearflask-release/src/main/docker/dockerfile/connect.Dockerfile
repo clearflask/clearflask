@@ -1,4 +1,4 @@
-FROM node:14.15.1-slim
+FROM node:14.21.2-slim
 EXPOSE 80 3000
 WORKDIR /srv/clearflask-connect
 CMD ./start.sh
