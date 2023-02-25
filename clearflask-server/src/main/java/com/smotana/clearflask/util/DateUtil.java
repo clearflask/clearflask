@@ -34,8 +34,8 @@ public class DateUtil {
                 .put("^\\d{4}-(0?\\d|1[012])-\\d{1,2}$", "yyyy-M-d")
                 .put("^(0?\\d|1[012])/\\d{1,2}/\\d{4}$", "M/d/yyyy")
                 .put("^\\d{4}/(0?\\d|1[012])/\\d{1,2}$", "yyyy/M/d")
-                .put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}$", "d MMM yyyy")
-                .put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}$", "d MMMM yyyy")
+                .put("^\\d{1,2}\\s[a-zA-Z]{3}\\.?\\s\\d{4}$", "d MMM yyyy")
+                .put("^\\d{1,2}\\s[a-zA-Z]{4,}\\s\\d{4}$", "d MMMM yyyy")
                 .build();
         dateTimeFormats = ImmutableMap.<String, String>builder()
                 .put("^\\d{12}$", "yyyyMMddHHmm")
@@ -44,16 +44,16 @@ public class DateUtil {
                 .put("^\\d{4}-(0?\\d|1[012])-\\d{1,2}\\s\\d{1,2}:\\d{1,2}$", "yyyy-M-d H:m")
                 .put("^(0?\\d|1[012])/\\d{1,2}/\\d{4}\\s\\d{1,2}:\\d{1,2}$", "M/d/yyyy H:m")
                 .put("^\\d{4}/(0?\\d|1[012])/\\d{1,2}\\s\\d{1,2}:\\d{1,2}$", "yyyy/M/d H:m")
-                .put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}$", "d MMM yyyy H:m")
-                .put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}$", "d MMMM yyyy H:m")
+                .put("^\\d{1,2}\\s[a-zA-Z]{3}\\.?\\s\\d{4}\\s\\d{1,2}:\\d{1,2}$", "d MMM yyyy H:m")
+                .put("^\\d{1,2}\\s[a-zA-Z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}$", "d MMMM yyyy H:m")
                 .put("^\\d{14}$", "yyyyMMddHHmmss")
                 .put("^\\d{8}\\s\\d{6}$", "yyyyMMdd HHmmss")
                 .put("^\\d{1,2}-(0?\\d|1[012])-\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "d-M-yyyy H:m:s")
                 .put("^\\d{4}-(0?\\d|1[012])-\\d{1,2}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "yyyy-M-d H:m:s")
                 .put("^(0?\\d|1[012])/\\d{1,2}/\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "M/d/yyyy H:m:s")
                 .put("^\\d{4}/(0?\\d|1[012])/\\d{1,2}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "yyyy/M/d H:m:s")
-                .put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "d MMM yyyy H:m:s")
-                .put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "d MMMM yyyy H:m:s")
+                .put("^\\d{1,2}\\s[a-zA-Z]{3}\\.?\\s\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "d MMM yyyy H:m:s")
+                .put("^\\d{1,2}\\s[a-zA-Z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{1,2}:\\d{1,2}$", "d MMMM yyyy H:m:s")
                 .build();
     }
 
