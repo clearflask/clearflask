@@ -146,6 +146,44 @@
                             </outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-dockerfile-connect</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/docker/dockerfile</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>connect.Dockerfile</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${project.build.directory}/docker-root-connect</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-dockerfile-server</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/docker/dockerfile</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>server.Dockerfile</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${project.build.directory}/docker-root-server</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -185,24 +223,42 @@
                             <name>clearflask/clearflask-connect</name>
                             <build>
                                 <contextDir>${project.build.directory}/docker-root-connect</contextDir>
-                                <dockerFile>${basedir}/src/main/docker/dockerfile/connect.Dockerfile</dockerFile>
+                                <dockerFile>connect.Dockerfile</dockerFile>
                                 <filter>@</filter>
                                 <tags>
                                     <tag>latest</tag>
                                     <tag>${project.version}</tag>
                                 </tags>
+                                <createImageOptions>
+                                    <platform>linux/amd64</platform>
+                                </createImageOptions>
+                                <buildx>
+                                    <platforms>
+                                        <platform>linux/arm64</platform>
+                                        <platform>linux/amd64</platform>
+                                    </platforms>
+                                </buildx>
                             </build>
                         </image>
                         <image>
                             <name>clearflask/clearflask-server</name>
                             <build>
                                 <contextDir>${project.build.directory}/docker-root-server</contextDir>
-                                <dockerFile>${basedir}/src/main/docker/dockerfile/server.Dockerfile</dockerFile>
+                                <dockerFile>server.Dockerfile</dockerFile>
                                 <filter>@</filter>
                                 <tags>
                                     <tag>latest</tag>
                                     <tag>${project.version}</tag>
                                 </tags>
+                                <createImageOptions>
+                                    <platform>linux/amd64</platform>
+                                </createImageOptions>
+                                <buildx>
+                                    <platforms>
+                                        <platform>linux/arm64</platform>
+                                        <platform>linux/amd64</platform>
+                                    </platforms>
+                                </buildx>
                             </build>
                         </image>
                     </images>
