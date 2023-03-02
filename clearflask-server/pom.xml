@@ -265,12 +265,6 @@
         </dependency>
         <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>libsqlite4java-osx</artifactId>
-            <type>dylib</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
             <artifactId>libsqlite4java-linux-i386</artifactId>
             <type>so</type>
             <scope>test</scope>
@@ -689,7 +683,8 @@
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
                     <skip>${skipTests}${skipITs}</skip>
-                    <timeout>120</timeout>
+                    <instanceStartupTimeout>120</instanceStartupTimeout>
+                    <clusterStartupTimeout>120</clusterStartupTimeout>
                     <instanceCount>1</instanceCount>
                     <instanceSettings>
                         <properties>
@@ -724,7 +719,13 @@
                         <image>
                             <alias>mysql-db</alias>
                             <name>mysql:5.7</name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${FORCE_DOCKER_PLATFORM}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${FORCE_DOCKER_PLATFORM}</platform>
                                 <cmd>
                                     mysqld
                                     --sql-mode=IGNORE_SPACE
@@ -757,7 +758,13 @@
                         <image>
                             <alias>killbill-engine</alias>
                             <name>killbill/killbill:0.22.20</name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${FORCE_DOCKER_PLATFORM}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${FORCE_DOCKER_PLATFORM}</platform>
                                 <links>
                                     <link>mysql-db</link>
                                 </links>
@@ -807,8 +814,14 @@
                         </image>
                         <image>
                             <alias>aws-services</alias>
-                            <name>localstack/localstack-full</name>
+                            <name>localstack/localstack</name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${FORCE_DOCKER_PLATFORM}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${FORCE_DOCKER_PLATFORM}</platform>
                                 <env>
                                     <LOCALSTACK_HOSTNAME>localhost</LOCALSTACK_HOSTNAME>
                                     <HOSTNAME_EXTERNAL>s3.localhost.localstack.cloud</HOSTNAME_EXTERNAL>
@@ -999,4 +1012,18 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>apple-silicon</id>
+            <activation>
+                <os>
+                    <name>osx</name>
+                    <arch>aarch_64</arch>
+                </os>
+            </activation>
+            <properties>
+                <FORCE_DOCKER_PLATFORM>linux/amd64</FORCE_DOCKER_PLATFORM>
+            </properties>
+        </profile>
+    </profiles>
 </project>
