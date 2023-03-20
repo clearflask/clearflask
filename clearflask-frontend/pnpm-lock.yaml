@@ -65,7 +65,7 @@ specifiers:
   '@types/jsonwebtoken': 8.5.0
   '@types/loadable__component': 5.13.4
   '@types/lodash.clonedeep': 4.5.6
-  '@types/marked': 0.7.2
+  '@types/marked': 4.0.8
   '@types/node': 12.0.8
   '@types/node-fetch': 2.5.7
   '@types/prismjs': 1.16.0
@@ -123,7 +123,7 @@ specifiers:
   lodash.clonedeep: 4.5.0
   lorem-ipsum: 2.0.1
   map-expire: 1.0.2
-  marked: 4.0.10
+  marked: 4.2.12
   material-ui-color-picker: 3.5.0
   memoizee: 0.4.15
   moment: 2.29.4
@@ -249,7 +249,7 @@ dependencies:
   '@types/jsonwebtoken': 8.5.0
   '@types/loadable__component': 5.13.4
   '@types/lodash.clonedeep': 4.5.6
-  '@types/marked': 0.7.2
+  '@types/marked': 4.0.8
   '@types/node': 12.0.8
   '@types/node-fetch': 2.5.7
   '@types/prismjs': 1.16.0
@@ -303,7 +303,7 @@ dependencies:
   lodash.clonedeep: 4.5.0
   lorem-ipsum: 2.0.1
   map-expire: 1.0.2
-  marked: 4.0.10
+  marked: 4.2.12
   material-ui-color-picker: 3.5.0_u6vehrih5h5td45db3ebcca3we_kodxqvqsrmdbfxpx7m22a4ddpm
   memoizee: 0.4.15
   moment: 2.29.4
@@ -4942,8 +4942,8 @@ packages:
     resolution: {integrity: sha512-/THyiqyQAP9AfARo4pF+aCGcyiQ94tX/Is2I7HofNRqoYLgN1PBoOWu2/zTA5zMxzP5EFutMtWtGAFRKUe961Q==}
     dev: false
 
-  /@types/marked/0.7.2:
-    resolution: {integrity: sha512-A3EDyNaq6OCcpaOia2HQ/tu2QYt8DKuj4ExP21VU3cU3HTo2FLslvbqa2T1vux910RHvuSVqpwKnnykSFcRWOA==}
+  /@types/marked/4.0.8:
+    resolution: {integrity: sha512-HVNzMT5QlWCOdeuBsgXP8EZzKUf0+AXzN+sLmjvaB3ZlLqO+e4u0uXrdw9ub69wBKFs+c6/pA4r9sy6cCDvImw==}
     dev: false
 
   /@types/mime/3.0.0:
@@ -12665,8 +12665,8 @@ packages:
     dependencies:
       object-visit: 1.0.1
 
-  /marked/4.0.10:
-    resolution: {integrity: sha512-+QvuFj0nGgO970fySghXGmuw+Fd0gD2x3+MqCWLIPf5oxdv1Ka6b2q+z9RP01P/IaKPMEramy+7cNy/Lw8c3hw==}
+  /marked/4.2.12:
+    resolution: {integrity: sha512-yr8hSKa3Fv4D3jdZmtMMPghgVt6TWbk86WQaWhDloQjRSQhMMYCAro7jP7VDJrjjdV8pxVxMssXS8B8Y5DZ5aw==}
     engines: {node: '>= 12'}
     hasBin: true
     dev: false
