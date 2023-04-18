@@ -30,7 +30,9 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 import org.killbill.billing.ObjectType;
+import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.PaymentApi;
@@ -44,7 +46,6 @@ import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.TenantKeyValue;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
-import org.killbill.billing.notification.plugin.api.PaymentMetadata;
 import rx.Observable;
 
 import javax.inject.Inject;
@@ -58,6 +59,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -360,6 +362,17 @@ public class KillBillResource extends ManagedService {
         UUID accountId;
 
         String metaData;
+    }
+
+    /**
+     * Simplified from {@link org.killbill.billing.notification.plugin.api.PaymentMetadata}
+     */
+    @Value
+    @AllArgsConstructor
+    public static class PaymentMetadata {
+        @NonNull
+        @GsonNonNull
+        UUID paymentTransactionId;
     }
 
     public static Module module() {
