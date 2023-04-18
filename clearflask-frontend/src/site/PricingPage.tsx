@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Box, Grid, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography } from '@material-ui/core';
-import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Theme, WithStyles, createStyles, useTheme, withStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import PricingImg from '../../public/img/landing/pricing.svg';
@@ -21,10 +21,9 @@ import ImgIso from '../common/ImgIso';
 import { isProd } from '../common/util/detectEnv';
 import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
-import Background from './landing/Background';
 import { LandingCustomers } from './LandingPages';
 import PricingPlan from './PricingPlan';
-import PricingSlider from './PricingSlider';
+import Background from './landing/Background';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
@@ -132,13 +131,10 @@ interface ConnectProps {
   featuresTable?: Admin.FeaturesTable;
 }
 interface State {
-  tab: 'business' | 'starter',
   highlightedBasePlanid?: string;
 }
 class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
-  state: State = {
-    tab: 'business',
-  };
+  state: State = {};
 
   constructor(props) {
     super(props);
@@ -147,14 +143,16 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   }
 
   render() {
+
+    // Community self-hosted plan
     const communityPlan: Admin.Plan = {
       basePlanId: 'community',
-      title: 'Community',
+      title: 'Self-host',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
-        { desc: 'Open-source' },
         { desc: 'Quickstart deploy' },
-        { desc: 'Community supported' },
+        { desc: 'Apache 2.0 license' },
+        { desc: 'Own your data' },
       ],
     };
     const communityPlanCmpt = (
@@ -162,31 +160,63 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         key={communityPlan.basePlanId}
         plan={communityPlan}
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
-        overrideMauTerms={[
-          'Self-hosted',
-          'Own your data',
-        ]}
         actionTitle='Install it'
-        remark='Join our community'
+        // remark='Join our community'
         actionOnClick={() => {
           trackingBlock(() => {
             ReactGA.event({
               category: 'pricing',
               action: 'click-plan',
-              label: 'community',
+              label: communityPlan.basePlanId,
             });
           });
         }}
         actionToExt='https://github.com/clearflask/clearflask#self-hosting'
       />
     );
-    const pricingSlider = (
-      <PricingSlider
-        key='pricingSlider'
-        className={this.props.classes.pricingSlider}
-        plans={[communityPlan, ...(this.props.plans || [])]}
+
+    // Extra features talk to us plan
+    const talkPlan: Admin.Plan = {
+      basePlanId: 'talk',
+      title: 'Enterprise',
+      perks: [
+        { desc: 'Support & SLA' },
+        { desc: 'Whitelabel' },
+        { desc: 'Search engine' },
+      ],
+    };
+    const talkPlanCmpt = (
+      <PricingPlan
+        key={talkPlan.basePlanId}
+        customPrice='200+'
+        plan={talkPlan}
+        selected={this.state.highlightedBasePlanid === talkPlan.basePlanId}
+        overrideMauTerms={[
+          'Self-hosted',
+          'Own your data',
+        ]}
+        actionTitle='Talk to us'
+        actionTo='/contact/sales'
+        actionOnClick={() => {
+          trackingBlock(() => {
+            ReactGA.event({
+              category: 'pricing',
+              action: 'click-plan',
+              label: talkPlan.basePlanId,
+            });
+          });
+        }}
       />
     );
+
+    // Pay what you can -- for now not needed
+    // const pricingSlider = (
+    //   <PricingSlider
+    //     key='pricingSlider'
+    //     className={this.props.classes.pricingSlider}
+    //     plans={[communityPlan, ...(this.props.plans || [])]}
+    //   />
+    // );
     const plansAll: JSX.Element[] = [];
     for (const plan of this.props.plans || []) {
       const pricingPlan = (
@@ -200,11 +230,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId}
           actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          remark={plan.basePlanId === 'starter-unlimited'
-            ? this.props.t('free-forever')
-            : (plan.pricing
-              ? this.props.t('free-14-day-trial')
-              : this.props.t('let-us-help-you'))}
+          // remark={plan.basePlanId === 'starter-unlimited'
+          //   ? this.props.t('free-forever')
+          //   : (plan.pricing
+          //     ? this.props.t('free-14-day-trial')
+          //     : this.props.t('let-us-help-you'))}
           actionOnClick={() => {
             trackingBlock(() => {
               ReactGA.event({
@@ -225,11 +255,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       plansAll.push(pricingPlan);
     }
 
-    const plansStarterGrouped = this.groupPlans([
+    const plansGrouped = this.groupPlans([
       communityPlanCmpt,
-      pricingSlider,
+      ...plansAll,
+      talkPlanCmpt,
     ]);
-    const plansBusinessGrouped = this.groupPlans(plansAll);
 
     return (
       <>
@@ -256,21 +286,8 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <Loader loaded={!!this.props.plans} skipFade>
-            <Tabs
-              centered
-              variant='standard'
-              scrollButtons='off'
-              value={this.state.tab}
-              onChange={(e, newTab) => this.setState({ tab: newTab as any })}
-            >
-              <Tab value='business' label='For most businesses' className={this.props.classes.tab} />
-              <Tab value='starter' label='For very Small businesses' className={this.props.classes.tab} />
-            </Tabs>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {this.state.tab === 'starter' && plansStarterGrouped}
-              {this.state.tab === 'business' && plansBusinessGrouped}
-              {/* <Slide unmountOnExit mountOnEnter direction='right' in={this.state.tab === 'business'}><div>{plansBusinessGrouped}</div></Slide>
-              <Slide unmountOnExit mountOnEnter direction='left' in={this.state.tab === 'starter'}><div>{plansStarterGrouped}</div></Slide> */}
+              {plansGrouped}
             </div>
           </Loader>
           <LandingCustomers />

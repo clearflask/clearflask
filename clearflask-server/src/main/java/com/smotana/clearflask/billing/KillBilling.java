@@ -916,10 +916,10 @@ public class KillBilling extends ManagedService implements Billing {
         boolean allowUpgrade = false;
         if (ACTIVETRIAL.equals(accountInDyn.getStatus())
                 && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
-                && "standard3-monthly".equals(requiredPlanId)) {
+                && "standard-unlimited".equals(requiredPlanId)) {
             allowUpgrade = true;
         } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
-                && ImmutableSet.of("starter3-monthly", "standard3-monthly").equals(requiredPlanId)) {
+                && "standard-unlimited".equals(requiredPlanId)) {
             allowUpgrade = true;
         }
 

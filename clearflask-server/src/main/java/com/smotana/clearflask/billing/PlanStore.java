@@ -17,24 +17,33 @@ import java.util.Optional;
 
 public interface PlanStore {
 
-    /** If changed, also update PricingPage.tsx */
+    /**
+     * If changed, also update PricingPage.tsx
+     */
     long STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES = 10;
-    /** If changed, also update PricingPage.tsx */
+    /**
+     * If changed, also update PricingPage.tsx
+     */
     ImmutableSet<String> STOP_TRIAL_FOR_PLANS = ImmutableSet.of("growth-monthly", "standard-monthly");
-    /** If changed, also update PricingPage.tsx */
+    /**
+     * If changed, also update PricingPage.tsx
+     */
     ImmutableSet<String> RECORD_TRACKED_USERS_FOR_PLANS = ImmutableSet.of("growth2-monthly", "standard2-monthly");
-    /** If changed, also update PricingPage.tsx */
+    /**
+     * If changed, also update PricingPage.tsx
+     */
     ImmutableSet<String> RECORD_TEAMMATES_FOR_PLANS = ImmutableSet.of("standard3-monthly");
 
     /**
      * Plan used for accounts with only external accounts.
-     *
+     * <p>
      * If changed, also update UpgradeWrapper.tsx
      */
     String TEAMMATE_PLAN_ID = "teammate-unlimited";
 
     ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(
             "starter-unlimited",
+            "standard-unlimited",
             TEAMMATE_PLAN_ID,
             "pro-lifetime",
             "pitchground-a-lifetime",
@@ -49,13 +58,19 @@ public interface PlanStore {
 
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
 
-    /** If subscription is passed, pricing reflects actual pricing for account */
+    /**
+     * If subscription is passed, pricing reflects actual pricing for account
+     */
     Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt);
 
-    /** Gets plan to be applied if given coupon is used. Takes care of stacking */
+    /**
+     * Gets plan to be applied if given coupon is used. Takes care of stacking
+     */
     Optional<PlanWithAddons> getCouponPlan(CouponModel coupon, Optional<String> accountIdOpt);
 
-    /** Strips suffix from planId appended by KillBill during price override */
+    /**
+     * Strips suffix from planId appended by KillBill during price override
+     */
     String getBasePlanId(String planId);
 
     String prettifyPlanName(String planIdOrPrettyPlanName);

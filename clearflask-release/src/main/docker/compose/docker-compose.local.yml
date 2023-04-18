@@ -78,6 +78,7 @@ services:
       - KAUI_KILLBILL_URL=http://killbill-engine:8080
   mysql-db:
     image: mysql:5.7
+    platform: linux/amd64
     command:
       - 'mysqld'
       - '--sql-mode=IGNORE_SPACE'
@@ -111,7 +112,7 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   localstack:
-    image: localstack/localstack-full
+    image: localstack/localstack
     privileged: true
     ports:
       - 4566:4566

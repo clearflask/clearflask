@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, makeStyles } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { Component, useState } from 'react';
@@ -54,6 +54,7 @@ const EPitchGroundRestrictedProperties: Path[] = [
 /** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'starter-unlimited': GrowthRestrictedProperties,
+  'standard-unlimited': RestrictedPropertiesByDefault,
   'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,

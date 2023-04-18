@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -173,12 +173,12 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             &nbsp;&nbsp;
             <Typography component='h2' variant='h4' className={this.props.classes.customInput}>{this.props.customPrice || 'Custom'}</Typography>
             &nbsp;&nbsp;
-            <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
           </div>
-          <div className={this.props.classes.cardPricingTerms}>
+          {/* <div className={this.props.classes.cardPricingTerms}>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`High-volume`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
-          </div>
+          </div> */}
         </>
       );
     } else if (this.props.customPrice !== undefined) {

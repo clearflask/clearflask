@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import MomentUtils from '@date-io/moment';
-import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid, IconButton, InputAdornment, InputLabel, Link as MuiLink, MenuItem, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
-import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
+import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid, IconButton, InputAdornment, InputLabel, MenuItem, Link as MuiLink, Select, Slider, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { Theme, createStyles, makeStyles, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import AddIcon from '@material-ui/icons/AddRounded';
 import EmailAtIcon from '@material-ui/icons/AlternateEmail';
@@ -23,34 +23,41 @@ import { useHistory } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, StateConf, Status } from '../../api/server';
-import ServerAdmin, { DemoUpdateDelay, Project as AdminProject, ReduxStateAdmin } from '../../api/serverAdmin';
+import ServerAdmin, { Project as AdminProject, DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppDynamicPage, { BoardContainer, BoardPanel, LandingLink, PageTitleDescription } from '../../app/AppDynamicPage';
 import AppThemeProvider from '../../app/AppThemeProvider';
-import { Direction } from '../../app/comps/Panel';
-import PanelPost from '../../app/comps/PanelPost';
-import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
-import TagSelect from '../../app/comps/TagSelect';
 import ErrorMsg from '../../app/ErrorMsg';
 import { HeaderLogo } from '../../app/Header';
 import { PostStatusConfig } from '../../app/PostStatus';
 import { getPostStatusIframeSrc } from '../../app/PostStatusIframe';
+import { Direction } from '../../app/comps/Panel';
+import PanelPost from '../../app/comps/PanelPost';
+import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import TagSelect from '../../app/comps/TagSelect';
 import Loading from '../../app/utils/Loading';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
+import { Orientation, contentScrollApplyStyles } from '../../common/ContentScroll';
+import { Device } from '../../common/DeviceContainer';
+import FakeBrowser from '../../common/FakeBrowser';
+import Message from '../../common/Message';
+import MyAccordion from '../../common/MyAccordion';
+import MyColorPicker from '../../common/MyColorPicker';
+import Promised from '../../common/Promised';
+import SubmitButton from '../../common/SubmitButton';
+import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
+import UpdatableField from '../../common/UpdatableField';
 import * as ConfigEditor from '../../common/config/configEditor';
-import Templater, { configStateEqual, Confirmation, ConfirmationResponseId } from '../../common/config/configTemplater';
+import Templater, { Confirmation, ConfirmationResponseId, configStateEqual } from '../../common/config/configTemplater';
 import DataSettings from '../../common/config/settings/DataSettings';
-import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import Property, { PropertyInputMinWidth } from '../../common/config/settings/Property';
 import TableProp from '../../common/config/settings/TableProp';
 import UpgradeWrapper, { Action } from '../../common/config/settings/UpgradeWrapper';
+import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
 import { ChangelogInstance } from '../../common/config/template/changelog';
 import { FeedbackInstance } from '../../common/config/template/feedback';
 import { LandingInstance } from '../../common/config/template/landing';
 import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { CategoryAndIndex } from '../../common/config/template/templateUtils';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
-import { Device } from '../../common/DeviceContainer';
-import FakeBrowser from '../../common/FakeBrowser';
 import DiscordIcon from '../../common/icon/DiscordIcon';
 import DynamicMuiIcon from '../../common/icon/DynamicMuiIcon';
 import GitlabIcon from '../../common/icon/GitlabIcon';
@@ -58,24 +65,17 @@ import GoogleIcon from '../../common/icon/GoogleIcon';
 import LinkedInIcon from '../../common/icon/LinkedInIcon';
 import MicrosoftIcon from '../../common/icon/MicrosoftIcon';
 import TwitchIcon from '../../common/icon/TwitchIcon';
-import Message from '../../common/Message';
-import MyAccordion from '../../common/MyAccordion';
-import MyColorPicker from '../../common/MyColorPicker';
-import Promised from '../../common/Promised';
 import { FilterControlDatePicker, FilterControlSelect } from '../../common/search/FilterControls';
-import SubmitButton from '../../common/SubmitButton';
-import TextFieldWithColorPicker from '../../common/TextFieldWithColorPicker';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
-import UpdatableField from '../../common/UpdatableField';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { Bag } from '../../common/util/bag';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
-import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
-import { OAuthFlow, OAUTH_CODE_PARAM_NAME } from '../../common/util/oauthUtil';
+import { Environment, detectEnv, isProd } from '../../common/util/detectEnv';
+import { OAUTH_CODE_PARAM_NAME, OAuthFlow } from '../../common/util/oauthUtil';
 import { getProjectLink } from '../../common/util/projectUtil';
 import randomUuid from '../../common/util/uuid';
 import windowIso from '../../common/windowIso';
-import { getProject, Project } from '../DemoApp';
+import { Project, getProject } from '../DemoApp';
 import Demo from '../landing/Demo';
 import OnboardingDemo from '../landing/OnboardingDemo';
 import PostSelection from './PostSelection';
@@ -1074,14 +1074,16 @@ export const ProjectSettingsBranding = (props: {
           </>
         )}
       />
-      <Section
-        title='Whitelabel'
-        content={(
-          <>
-            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'whitelabel', 'poweredBy']} />
-          </>
-        )}
-      />
+      {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+        <Section
+          title='Whitelabel'
+          content={(
+            <>
+              <PropertyByPath server={props.server} editor={props.editor} path={['style', 'whitelabel', 'poweredBy']} />
+            </>
+          )}
+        />
+      )}
     </ProjectSettingsBase>
   );
 }

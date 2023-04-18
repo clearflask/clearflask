@@ -3,28 +3,18 @@
 package com.smotana.clearflask.util;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonNonNull;
 import com.google.inject.Inject;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.killbill.billing.catalog.api.Currency;
-import org.killbill.billing.notification.plugin.api.PaymentMetadata;
-import org.killbill.billing.payment.api.TransactionStatus;
-import org.killbill.billing.payment.api.TransactionType;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Slf4j

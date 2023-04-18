@@ -28,30 +28,13 @@ const TeammatePlan: Admin.Plan = {
   ],
 };
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'starter3-monthly': {
-    basePlanId: 'starter3-monthly', title: 'Starter',
-    pricing: { basePrice: 10, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+  'standard-unlimited': {
+    basePlanId: 'standard-unlimited', title: 'Standard',
+    pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Yearly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
       { desc: 'Unlimited teammates' },
       { desc: 'Unlimited users' },
-    ],
-  },
-  'standard3-monthly': {
-    basePlanId: 'standard3-monthly', title: 'Standard',
-    pricing: { basePrice: 100, baseMau: 0, unitPrice: 0, unitMau: 0, admins: { amountIncluded: 5, additionalPrice: 25 }, period: Admin.PlanPricingPeriodEnum.Monthly },
-    perks: [
-      { desc: 'Private projects' },
-      { desc: 'Integrations & API' },
-      { desc: 'SSO and OAuth' },
-    ],
-  },
-  'flat-yearly': {
-    basePlanId: 'flat-yearly', title: 'Business',
-    perks: [
-      { desc: 'Customized plan' },
-      { desc: 'Annual pricing' },
-      { desc: 'Support & SLA' },
     ],
   },
 };
@@ -67,20 +50,25 @@ const AllPlans: { [planId: string]: Admin.Plan } = {
   },
 };
 const FeaturesTable: Admin.FeaturesTable | undefined = {
-  plans: ['Starter', 'Standard', 'Flat'],
+  plans: ['Standard'],
   features: [
-    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
-    { feature: 'Tracked users', values: ['No limit', 'No limit', 'No limit'] },
-    { feature: 'Teammates', values: ['1', '8', 'No limit'] },
-    { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Credit System', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Content customization', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Private projects', values: ['No', 'Yes', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
-    { feature: 'SSO and OAuth', values: ['No', 'Yes', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
-    { feature: 'Site template', values: ['No', 'Yes', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
-    { feature: 'Volume discount', values: ['No', 'No', 'Yes'] },
-    { feature: 'Billing & Invoicing', values: ['No', 'No', 'Yes'], terms: 'Customized billing and invoicing.' },
+    { feature: "Projects", values: ["No limit"] },
+    { feature: "Users", values: ["No limit"] },
+    { feature: "Posts", values: ["No limit"] },
+    { feature: "Teammates", values: ["No limit"] },
+    { feature: "Credit System", values: ["Yes"] },
+    { feature: "Roadmap", values: ["Yes"] },
+    { feature: "Content customization", values: ["Yes"] },
+    { feature: "Custom domain", values: ["Yes"] },
+    { feature: "Private projects", values: ["Yes"] },
+    { feature: "SSO and OAuth", values: ["Yes"] },
+    { feature: "API", values: ["Yes"] },
+    { feature: "GitHub integration", values: ["Yes"] },
+    { feature: "Intercom integration", values: ["Yes"] },
+    { feature: "Tracking integrations", values: ["Yes"] },
+    { feature: "Site template", values: ["Yes"] },
+    { feature: "Whitelabel", values: ["No"] },
+    { feature: "Search engine", values: ["No"] },
   ],
 };
 
@@ -185,7 +173,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           name: 'Joe Doe',
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
-          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard3-monthly',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard-unlimited',
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
           couponId: request.accountBindAdmin.oauthToken.couponId,
         }
@@ -275,7 +263,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         : (request.accountSignupAdmin.couponId
           ? 'pro-lifetime'
           : request.accountSignupAdmin.basePlanId))
-        || 'standard3-monthly',
+        || 'standard-unlimited',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -339,8 +327,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         // Auto-upgrade test, simulate Java-land background upgrade
         setTimeout(() => {
           if (this.account) {
-            this.account.planId = 'standard3-monthly';
-            this.account.basePlanId = 'standard3-monthly';
+            this.account.planId = 'standard-unlimited';
+            this.account.basePlanId = 'standard-unlimited';
           }
         }, 500);
       }
