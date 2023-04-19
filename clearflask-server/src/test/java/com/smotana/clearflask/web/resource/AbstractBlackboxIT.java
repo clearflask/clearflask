@@ -20,45 +20,13 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.ning.http.client.Response;
 import com.smotana.clearflask.TestUtil;
-import com.smotana.clearflask.api.model.AccountAdmin;
-import com.smotana.clearflask.api.model.AccountBillingPayment;
-import com.smotana.clearflask.api.model.AccountBindAdmin;
-import com.smotana.clearflask.api.model.AccountSignupAdmin;
-import com.smotana.clearflask.api.model.AccountUpdateAdmin;
-import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
-import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaWithVote;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.billing.Billing;
-import com.smotana.clearflask.billing.DynamoCouponStore;
-import com.smotana.clearflask.billing.KillBillPlanStore;
-import com.smotana.clearflask.billing.KillBillSync;
-import com.smotana.clearflask.billing.KillBillUtil;
-import com.smotana.clearflask.billing.KillBilling;
-import com.smotana.clearflask.billing.StripeClientSetup;
+import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.*;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
-import com.smotana.clearflask.core.push.message.EmailLogin;
-import com.smotana.clearflask.core.push.message.EmailTemplates;
-import com.smotana.clearflask.core.push.message.EmailVerify;
-import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
-import com.smotana.clearflask.core.push.message.OnCreditChange;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
-import com.smotana.clearflask.core.push.message.OnModInvite;
-import com.smotana.clearflask.core.push.message.OnPaymentFailed;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
-import com.smotana.clearflask.core.push.message.OnTeammateInvite;
-import com.smotana.clearflask.core.push.message.OnTrialEnded;
+import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.CertFetcherImpl;
@@ -74,36 +42,13 @@ import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
-import com.smotana.clearflask.store.impl.DynamoCertStore;
-import com.smotana.clearflask.store.impl.DynamoDraftStore;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
-import com.smotana.clearflask.store.impl.DynamoNotificationStore;
-import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
-import com.smotana.clearflask.store.impl.DynamoVoteStore;
-import com.smotana.clearflask.store.impl.ResourceLegalStore;
-import com.smotana.clearflask.store.impl.S3ContentStore;
+import com.smotana.clearflask.store.impl.*;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.MarkdownAndQuillUtil;
-import com.smotana.clearflask.util.ModelUtil;
-import com.smotana.clearflask.util.ProjectUpgraderImpl;
-import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.resource.PaymentTestPluginConfigure.PaymentTestPluginAction;
-import com.smotana.clearflask.web.security.MockAuthCookie;
-import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
-import com.smotana.clearflask.web.security.Sanitizer;
-import com.smotana.clearflask.web.security.SuperAdminPredicate;
-import com.smotana.clearflask.web.security.UserBindUtil;
+import com.smotana.clearflask.web.security.*;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.dataspray.singletable.SingleTable;
 import io.jsonwebtoken.security.Keys;
@@ -354,7 +299,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected AccountAndProject getTrialAccount() throws Exception {
-        return getTrialAccount("growth2-monthly");
+        return getTrialAccount("flat-yearly");
     }
 
     protected AccountAndProject getTrialAccount(String planid) throws Exception {
@@ -390,7 +335,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected AccountAndProject getActiveAccount() throws Exception {
-        return getActiveAccount("growth2-monthly");
+        return getActiveAccount("flat-yearly");
     }
 
     protected AccountAndProject getActiveAccount(String planid) throws Exception {
